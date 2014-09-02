@@ -9,10 +9,10 @@ chunks into memory, performing an in-memory sum on each chunk in turn, and then
 summing the resulting sums.  E.g.
 
     @dispatch(sum, ChunkIterator)
-    def compute_one(expr, chunks):
+    def compute_up(expr, chunks):
         sums = []
         for chunk in chunks:
-            sums.append(compute_one(expr, chunk))
+            sums.append(compute_up(expr, chunk))
         return builtin.sum(sums)
 
 Using tricks like this we can apply the operations from rich in memory backends
@@ -21,12 +21,14 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
+from multipledispatch.dispatcher import MDNotImplementedError
 from blaze.expr import *
-from toolz import map, partition_all, reduce
+from toolz import map, partition_all, reduce, curry
 import numpy as np
 import math
 from collections import Iterator
 from toolz import concat, first
+import toolz
 from cytoolz import unique
 from datashape import var, isdimension
 import pandas as pd
@@ -81,105 +83,184 @@ class ChunkIndexable(ChunkIterable):
                 except IndexError:
                     raise StopIteration()
 
+    def __len__(self):
+        return nchunks(self.seq, **self.kwargs)
+
+
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
               any: (any, any), all: (all, all)}
 
 
 @dispatch(tuple(reductions), ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
     t = TableSymbol('_', dshape=expr.child.dshape)
     a, b = reductions[type(expr)]
 
-    return compute_one(b(t), [compute_one(a(t), chunk) for chunk in c])
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
+
+    return compute_up(b(t), [compute(expr, {leaf: chunk}) for chunk in c])
+
+
+def compute_chunk(expr, data, leaf, i, chunksize=2**10, **kwargs):
+    return compute(expr, {leaf: get_chunk(data, i, chunksize=chunksize)}, **kwargs)
+
+
+@dispatch(tuple(reductions), ChunkIndexable)
+def compute_down(expr, c, map=map, **kwargs):
+    t = TableSymbol('_', dshape=expr.child.dshape)
+    a, b = reductions[type(expr)]
+
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
+
+    intermediates = list(map(curry(compute_chunk, expr, c, leaf, **kwargs),
+                             range(nchunks(c.seq, **kwargs))))
+    return compute_up(b(t), intermediates)
 
 
 @dispatch(mean, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
     total_sum = 0
     total_count = 0
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_one(expr.child.sum(), chunk)
-        total_count += compute_one(expr.child.count(), chunk)
+        total_sum += compute(expr.child.sum(), {leaf: chunk})
+        total_count += compute(expr.child.count(), {leaf: chunk})
 
     return total_sum / total_count
 
 
+
 @dispatch(Head, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     c = iter(c)
-    df = into(DataFrame, compute_one(expr, next(c)),
+    if expr.iscolumn:
+        container = Series
+    else:
+        container = DataFrame
+    df = into(container, compute(expr, {leaf: next(c)}),
               columns=expr.columns)
     for chunk in c:
         if len(df) >= expr.n:
             break
-        df2 = into(DataFrame,
-                   compute_one(expr.child.head(expr.n - len(df)), chunk),
+        df2 = into(container,
+                   compute(expr.child.head(expr.n - len(df)), {leaf: chunk}),
                    columns=expr.columns)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
     return df
 
+def rowwise_path(expr, leaf):
+    """ Path from expr to leaf is all rowwise operations
+
+    >>> t = TableSymbol('t', '{name: string, amount: int}')
+    >>> rowwise_path(t.amount + 1, t)
+    True
+    >>> rowwise_path((t.amount + 1).sum(), t)  # top expression can be non-row
+    True
+    >>> rowwise_path((t.amount + 1).distinct().count(), t)
+    False
+    """
+    nodes = list(path(expr, leaf))[1:-1]
+    return builtins.all(isinstance(e, RowWise) for e in nodes)
 
 @dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk) for chunk in c)
-
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
+    return ChunkIterator(compute(expr, {leaf: chunk}) for chunk in c)
 
 @dispatch(Join, ChunkIterable, (ChunkIterable, ChunkIterator))
-def compute_one(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_one(expr, c1, chunk) for chunk in c2)
+def compute_down(expr, c1, c2, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
+    return ChunkIterator(compute(expr, {left_leaf: c1, right_leaf: chunk})
+                                for chunk in c2)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterable)
-def compute_one(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk, c2) for chunk in c1)
+def compute_down(expr, c1, c2, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
+    return ChunkIterator(compute(expr, {left_leaf: chunk, right_leaf: c2})
+                           for chunk in c1)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterator)
-def compute_one(expr, c1, c2, **kwargs):
+def compute_up(expr, c1, c2, **kwargs):
     raise NotImplementedError("Can not perform chunked join of "
             "two chunked iterators")
 
 dict_items = type(dict().items())
 
 @dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
-def compute_one(expr, other, c, **kwargs):
-    return ChunkIterator(compute_one(expr, other, chunk) for chunk in c)
+def compute_down(expr, other, c, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
+    return ChunkIterator(compute(expr, {left_leaf: other, right_leaf: chunk})
+                         for chunk in c)
 
 
 @dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
     DataDescriptor))
-def compute_one(expr, c, other, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk, other) for chunk in c)
+def compute_down(expr, c, other, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
+    return ChunkIterator(compute(expr, {left_leaf: chunk, right_leaf: other})
+                         for chunk in c)
 
 
 @dispatch(Distinct, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    intermediates = concat(into(Iterator, compute_one(expr, chunk)) for chunk in c)
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
+    intermediates = concat(into(Iterator, compute(expr, {leaf: chunk})) for chunk in c)
     return unique(intermediates)
 
 
 @dispatch(nunique, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    dist = compute_one(expr.child.distinct(), c)
-    return compute_one(expr.child.count(), dist)
+def compute_down(expr, c, **kwargs):
+    dist = compute_down(expr.child.distinct(), c)
+
+    t = TableSymbol('_1', expr.child.dshape, expr.child.iscolumn)
+    return compute(t.count(), {t: dist})
 
 
 @dispatch(By, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     if not isinstance(expr.apply, tuple(reductions)):
+        c2 = toolz.concat(into(list, chunk) for chunk in c)
+        return compute(expr, {leaf: c2})
         raise NotImplementedError("Chunked split-apply-combine only "
                 "implemented for simple reductions")
+
 
     a, b = reductions[type(expr.apply)]
 
     perchunk = by(expr.grouper, a(expr.apply.child))
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_one(perchunk, chunk))
+    intermediate = concat(into([], compute(perchunk, {leaf: chunk}))
                           for chunk in c)
 
     # Form computation to do on the concatenated union
@@ -192,7 +273,13 @@ def compute_one(expr, c, **kwargs):
     group = by(t[expr.grouper.columns],
                b(t[apply_cols]))
 
-    return compute_one(group, intermediate)
+    return compute(group, {t: intermediate})
+
+
+@dispatch(Reduction, ChunkIterator)
+def compute_up(expr, data, **kwargs):
+    seq = toolz.concat(into([], chunk) for chunk in data)
+    return compute_up(expr, seq, **kwargs)
 
 
 @dispatch(object)
@@ -207,7 +294,7 @@ def chunks(seq, chunksize=None):
     *  They should cover the dataset
     *  They should not overlap
     *  They should honor order if the underlying dataset is ordered
-    *  Has appropriate implementations for ``discover``, ``compute_one``,
+    *  Has appropriate implementations for ``discover``, ``compute_up``,
        and  ``into``
 
     Example
@@ -241,7 +328,7 @@ def get_chunk(data, i, chunksize=None):
     *  They should cover the dataset
     *  They should not overlap
     *  They should honor order if the underlying dataset is ordered
-    *  Has appropriate implementations for ``discover``, ``compute_one``,
+    *  Has appropriate implementations for ``discover``, ``compute_up``,
        and  ``into``
 
     Example
@@ -274,15 +361,24 @@ def get_chunk(seq, i, chunksize=1024):
     stop = chunksize * (i + 1)
     return seq[start:stop]
 
+@dispatch(object)
+def nchunks(b, chunksize=2**15):
+    """ Number of chunks in object
+
+    >>> nchunks([1, 2, 3, 4, 5], chunksize=2)
+    3
+    """
+    return int(math.ceil(len(b) / float(chunksize)))
+
 @dispatch((list, tuple), ChunkIterator)
 def into(a, b):
     return type(a)(concat((into(a, chunk) for chunk in b)))
 
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import pandas
 
-@dispatch(DataFrame, ChunkIterator)
+@dispatch((DataFrame, Series), ChunkIterator)
 def into(df, b, **kwargs):
     chunks = [into(df, chunk, **kwargs) for chunk in b]
     return pandas.concat(chunks, ignore_index=True)

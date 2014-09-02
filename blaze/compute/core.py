@@ -8,25 +8,25 @@ from ..expr.core import Expr
 from ..expr import TableSymbol, eval_str, Union
 from ..dispatch import dispatch
 
-__all__ = ['compute', 'compute_one', 'drop', 'create_index']
+__all__ = ['compute', 'compute_up', 'drop', 'create_index']
 
 base = (numbers.Real, str, date, datetime)
 
 
 @dispatch(object, object)
-def compute_one(a, b, **kwargs):
+def compute_up(a, b, **kwargs):
     raise NotImplementedError("Blaze does not know how to compute "
                               "expression of type `%s` on data of type `%s`"
                               % (type(a).__name__, type(b).__name__))
 
 
 @dispatch(base)
-def compute_one(a, **kwargs):
+def compute_up(a, **kwargs):
     return a
 
 
 @dispatch((list, tuple))
-def compute_one(seq, scope={}, **kwargs):
+def compute_up(seq, scope={}, **kwargs):
     return type(seq)(compute(item, scope, **kwargs) for item in seq)
 
 
@@ -60,24 +60,36 @@ def compute_down(expr):
     return expr
 
 
-def top_to_bottom(d, expr):
+def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
         return d[expr]
 
     # See if we have a direct computation path
-    if (hasattr(expr, 'leaves') and compute_down.resolve(
-            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
-        leaves = [d[leaf] for leaf in expr.leaves()]
-        return compute_down(expr, *leaves)
-    else:
-        # Compute children of this expression
-        children = ([top_to_bottom(d, child) for child in expr.inputs]
-                    if hasattr(expr, 'inputs') else [])
+    if hasattr(expr, 'leaves'):
+        try:
+            leaves = [d[leaf] for leaf in expr.leaves()]
+            return compute_down(expr, *leaves, **kwargs)
+        except (KeyError, NotImplementedError):
+            pass
 
-        # Compute this expression given the children
-        return compute_one(expr, *children, scope=d)
+    # Recursively compute children of this expression
+    children = ([top_to_bottom(d, child, **kwargs) for child in expr.inputs]
+                if hasattr(expr, 'inputs') else [])
+
+    # Compute this expression given the children
+    cd = compute_down.dispatch(type(expr), *map(type, children))
+    if isinstance(expr, Expr) and cd:
+        leaves = dict((inp, TableSymbol('_%d'%i, inp.schema, inp.iscolumn))
+                    for i, inp in enumerate(expr.inputs))
+        try:
+            return cd(expr.subs(leaves), *children, scope=d, **kwargs)
+        except NotImplementedError:
+            pass
+
+    return compute_up(expr, *children, scope=d, **kwargs)
+
 
 
 def bottom_up(d, expr):
@@ -103,7 +115,7 @@ def bottom_up(d, expr):
                 if hasattr(expr, 'inputs') else [])
 
     # Compute this expression given the children
-    result = compute_one(expr, *children, scope=d)
+    result = compute_up(expr, *children, scope=d)
 
     return result
 
@@ -121,7 +133,7 @@ def post_compute(expr, result, d):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d):
+def compute(expr, d, **kwargs):
     """ Compute expression against data sources
 
     >>> t = TableSymbol('t', '{name: string, balance: int}')
@@ -132,7 +144,7 @@ def compute(expr, d):
     ['Bob', 'Charlie']
     """
     expr = pre_compute(expr, d)
-    result = top_to_bottom(d, expr)
+    result = top_to_bottom(d, expr, **kwargs)
     return post_compute(expr, result, d)
 
 
@@ -190,8 +202,8 @@ def columnwise_funcstr(t, variadic=True, full=False):
 
 
 @dispatch(Union, (list, tuple))
-def compute_one(t, children, **kwargs):
-    return compute_one(t, children[0], tuple(children))
+def compute_up(t, children, **kwargs):
+    return compute_up(t, children[0], tuple(children))
 
 
 @dispatch(object, basestring, (basestring, list, tuple))

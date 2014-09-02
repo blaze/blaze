@@ -23,3 +23,17 @@ def test_contains():
     assert t['id'] not in t['name']
 
     assert t['id'] in t['id'].sum()
+
+def test_path():
+    from blaze.expr.table import TableSymbol, join
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    v = TableSymbol('v', '{city: string, id: int}')
+    expr = t['amount'].sum()
+
+    assert list(path(expr, t)) == [t.amount.sum(), t.amount, t]
+    assert list(path(expr, t.amount)) == [t.amount.sum(), t.amount]
+    assert list(path(expr, t.amount)) == [t.amount.sum(), t.amount]
+
+    expr = join(t, v).amount
+    assert list(path(expr, t)) == [join(t, v).amount, join(t, v), t]
+    assert list(path(expr, v)) == [join(t, v).amount, join(t, v), v]

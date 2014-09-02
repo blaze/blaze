@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.spark import *
-from blaze.compute import compute, compute_one
+from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
 
