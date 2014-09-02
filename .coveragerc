@@ -3,4 +3,3 @@ omit =
     blaze/tests/test*
     blaze/*/tests/test*
     blaze/compatibility.py
-    
