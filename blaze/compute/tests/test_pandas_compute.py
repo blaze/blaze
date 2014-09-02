@@ -268,13 +268,19 @@ def test_sort():
     assert str(compute(t.sort(['amount', 'id']), df)) == \
             str(df.sort(['amount', 'id']))
 
-    expected = df['amount'].copy()
-    expected.sort()
+
+def test_sort_on_series_no_warning(recwarn):
+    expected = df.amount.order()
+
+    recwarn.clear()
 
     assert str(compute(t['amount'].sort('amount'), df)) ==\
             str(expected)
+    assert recwarn.pop(FutureWarning).category is None
+
     assert str(compute(t['amount'].sort(), df)) ==\
             str(expected)
+    assert recwarn.pop(FutureWarning).category is None
 
 
 def test_head():
