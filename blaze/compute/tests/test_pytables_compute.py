@@ -7,11 +7,11 @@ tb = pytest.importorskip('tables')
 from blaze.compatibility import xfail
 
 import numpy as np
-import tempfile
+import pandas as pd
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
-from blaze import drop, discover, create_index
+from blaze import drop, discover, create_index, PyTables, into
 from blaze.utils import tmpfile
 
 
@@ -255,3 +255,102 @@ def test_create_multiple_indexes_fails(pyt):
 def test_create_index_fails(pyt):
     with pytest.raises(AttributeError):
         create_index(pyt, 'no column here!')
+
+
+@pytest.yield_fixture
+def tbfile():
+    with tmpfile('.h5') as filename:
+        f = tb.open_file(filename, mode='w')
+        d = f.create_table('/', 'title',  x)
+        d.close()
+        f.close()
+        yield filename
+
+
+now = np.datetime64('now').astype('datetime64[us]')
+
+
+dt_data = [[1, 'Alice', 100, now],
+           [2, 'Bob', -200, now],
+           [3, 'Charlie', 300, now],
+           [4, 'Denis', 400, now],
+           [5, 'Edith', -500, now]]
+
+
+for i, d in enumerate(dt_data):
+    d[-1] += np.timedelta64(i, 'D')
+    d[-1] = d[-1].astype('i8')
+
+
+orignal_dt_data = np.array(list(map(tuple, dt_data)),
+                           dtype=np.dtype([('id', 'int64'),
+                                           ('name', 'S7'),
+                                           ('amount', 'float64'),
+                                           ('date', 'datetime64[us]')]))
+
+
+@pytest.yield_fixture
+def dt_tb():
+    with tmpfile('.h5') as filename:
+        class Desc(tb.IsDescription):
+            id = tb.Int64Col(pos=0)
+            name = tb.StringCol(itemsize=7, pos=1)
+            amount = tb.Float64Col(pos=2)
+            date = tb.Time64Col(pos=3)
+
+        dshape = '{id: int, amount: float64, name: string[7], date: datetime}'
+        f = tb.open_file(filename, mode='w')
+        arr = np.array(list(map(tuple, dt_data)), dtype=np.dtype([('id', 'int'),
+                                                                  ('name',
+                                                                   'S7'),
+                                                                  ('amount',
+                                                                   'float64'),
+                                                                  ('date',
+                                                                   'int64')]))
+        d = f.create_table('/', 'dt', description=Desc)
+        for row in arr:
+            rowdata = dict(zip(sorted(arr.dtype.fields.keys(),
+                                      key=['id', 'name', 'amount', 'date'].index),
+                               tuple(row)))
+            trow = d.row
+            for k, v in rowdata.items():
+                trow[k] = v
+            trow.append()
+        d.close()
+        f.close()
+        yield filename
+
+
+class TestPyTablesLight(object):
+    def test_read(self, tbfile):
+        assert PyTables(path=tbfile, datapath='/title').shape == (5,)
+
+    def test_write_no_dshape(self, tbfile):
+        with pytest.raises(ValueError):
+            PyTables(path=tbfile, datapath='/write_this')
+
+    @xfail(raises=NotImplementedError,
+           reason='PyTables does not support object columns')
+    def test_write_with_bad_dshape(self, tbfile):
+        dshape = '{id: int, name: string, amount: float32}'
+        PyTables(path=tbfile, datapath='/write_this', dshape=dshape)
+
+    def test_write_with_dshape(self, tbfile):
+        f = tb.open_file(tbfile, mode='a')
+        try:
+            assert '/write_this' not in f
+        finally:
+            f.close()
+            del f
+
+        # create our table
+        dshape = '{id: int, name: string[7], amount: float32}'
+        t = PyTables(path=tbfile, datapath='/write_this', dshape=dshape)
+
+        assert t._v_file.filename == tbfile
+        assert t.shape == (0,)
+
+    def test_datetime_into_support(self, dt_tb):
+        t = PyTables(dt_tb, '/dt')
+        res = into(np.ndarray, t)
+        assert res.dtype == orignal_dt_data.dtype
