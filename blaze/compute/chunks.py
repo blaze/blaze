@@ -23,7 +23,7 @@ from __future__ import absolute_import, division, print_function
 
 from multipledispatch.dispatcher import MDNotImplementedError
 from blaze.expr import *
-from toolz import map, partition_all, reduce
+from toolz import map, partition_all, reduce, curry
 import numpy as np
 import math
 from collections import Iterator
@@ -83,6 +83,10 @@ class ChunkIndexable(ChunkIterable):
                 except IndexError:
                     raise StopIteration()
 
+    def __len__(self):
+        return nchunks(self.seq, **self.kwargs)
+
+
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
               any: (any, any), all: (all, all)}
@@ -98,6 +102,24 @@ def compute_down(expr, c, **kwargs):
         raise MDNotImplementedError()
 
     return compute_up(b(t), [compute(expr, {leaf: chunk}) for chunk in c])
+
+
+def compute_chunk(expr, data, leaf, i, chunksize=2**10, **kwargs):
+    return compute(expr, {leaf: get_chunk(data, i, chunksize=chunksize)}, **kwargs)
+
+
+@dispatch(tuple(reductions), ChunkIndexable)
+def compute_down(expr, c, map=map, **kwargs):
+    t = TableSymbol('_', dshape=expr.child.dshape)
+    a, b = reductions[type(expr)]
+
+    leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
+
+    intermediates = list(map(curry(compute_chunk, expr, c, leaf, **kwargs),
+                             range(nchunks(c.seq, **kwargs))))
+    return compute_up(b(t), intermediates)
 
 
 @dispatch(mean, ChunkIterator)
@@ -346,7 +368,7 @@ def nchunks(b, chunksize=2**15):
     >>> nchunks([1, 2, 3, 4, 5], chunksize=2)
     3
     """
-    return math.ceil(len(b) / float(chunksize))
+    return int(math.ceil(len(b) / float(chunksize)))
 
 @dispatch((list, tuple), ChunkIterator)
 def into(a, b):

@@ -60,7 +60,7 @@ def compute_down(expr):
     return expr
 
 
-def top_to_bottom(d, expr):
+def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
@@ -70,12 +70,12 @@ def top_to_bottom(d, expr):
     if hasattr(expr, 'leaves'):
         try:
             leaves = [d[leaf] for leaf in expr.leaves()]
-            return compute_down(expr, *leaves)
+            return compute_down(expr, *leaves, **kwargs)
         except (KeyError, NotImplementedError):
             pass
 
     # Recursively compute children of this expression
-    children = ([top_to_bottom(d, child) for child in expr.inputs]
+    children = ([top_to_bottom(d, child, **kwargs) for child in expr.inputs]
                 if hasattr(expr, 'inputs') else [])
 
     # Compute this expression given the children
@@ -84,11 +84,11 @@ def top_to_bottom(d, expr):
         leaves = dict((inp, TableSymbol('_%d'%i, inp.schema, inp.iscolumn))
                     for i, inp in enumerate(expr.inputs))
         try:
-            return cd(expr.subs(leaves), *children, scope=d)
+            return cd(expr.subs(leaves), *children, scope=d, **kwargs)
         except NotImplementedError:
             pass
 
-    return compute_up(expr, *children, scope=d)
+    return compute_up(expr, *children, scope=d, **kwargs)
 
 
 
@@ -133,7 +133,7 @@ def post_compute(expr, result, d):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d):
+def compute(expr, d, **kwargs):
     """ Compute expression against data sources
 
     >>> t = TableSymbol('t', '{name: string, balance: int}')
@@ -144,7 +144,7 @@ def compute(expr, d):
     ['Bob', 'Charlie']
     """
     expr = pre_compute(expr, d)
-    result = top_to_bottom(d, expr)
+    result = top_to_bottom(d, expr, **kwargs)
     return post_compute(expr, result, d)
 
 
