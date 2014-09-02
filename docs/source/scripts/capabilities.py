@@ -24,6 +24,7 @@ capabilities = {
         'Python Functions':True,
         'Indices':False,
         'Column Store': False,
+        'Bigger-than-memory data': "Using Streaming",
     },
     'Pandas':{
         'Scalar Expressions':True,
@@ -34,6 +35,7 @@ capabilities = {
         'Python Functions':True,
         'Indices':False,
         'Column Store': True,
+        'Bigger-than-memory data': False,
     },
     'SQL':{
         'Scalar Expressions':"Generally yes, but math is limited in SQLite",
@@ -44,6 +46,7 @@ capabilities = {
         'Python Functions':False,
         'Indices':True,
         'Column Store': False,
+        'Bigger-than-memory data': True,
     },
     'PySpark':{
         'Scalar Expressions':True,
@@ -54,6 +57,7 @@ capabilities = {
         'Python Functions':True,
         'Indices':False,
         'Column Store': False,
+        'Bigger-than-memory data': True,
     },
     'MongoDB':{
         'Scalar Expressions':False,
@@ -64,16 +68,18 @@ capabilities = {
         'Python Functions':False,
         'Indices':True,
         'Column Store': False,
+        'Bigger-than-memory data': True,
     },
     'PyTables':{
         'Scalar Expressions': "Using NumExpr",
         'Reductions': True,
         'Selections': "Using NumExpr",
-        'Split-Apply-Combine':"Defaults to Streaming Python",
+        'Split-Apply-Combine':"Using Streaming Python",
         'Join':False,
         'Python Functions':"Using streaming Python",
         'Indices':True,
         'Column Store': False,
+        'Bigger-than-memory data': "With fast compressed access",
     },
     'BColz':{
         'Scalar Expressions':"Using chunked NumPy",
@@ -84,6 +90,7 @@ capabilities = {
         'Python Functions': "Using streaming Python",
         'Indices':False,
         'Column Store': True,
+        'Bigger-than-memory data': "With fast compressed access",
     }
 }
 
@@ -92,7 +99,8 @@ colormap = {True: "#5EDA9E", False: "#FFFFFF"}
 backends = ['Streaming Python', 'Pandas', 'PySpark', 'SQL', 'PyTables', 'BColz',
             'MongoDB']
 operations = ['Scalar Expressions', 'Selections', 'Reductions',
-              'Split-Apply-Combine', 'Join', 'Python Functions', 'Indices', 'Column Store']
+              'Split-Apply-Combine', 'Join', 'Python Functions', 'Indices',
+              'Column Store', 'Bigger-than-memory data']
 
 statuses = [capabilities[backend][op] for backend in backends
                                       for op in operations]
