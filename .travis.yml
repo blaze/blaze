@@ -82,11 +82,20 @@ install:
 
   # Install Blaze
   - python setup.py install
+  - pip install coverage --use-mirrors
+
+  # Coverage
+  - pip install coverage
 
 before_script:
   - mysql -e 'create database test'
 
-script: py.test --doctest-modules --verbose --pyargs blaze
+script: 
+  - coverage run --source=toolz $(which py.test) --with-doctest
+  - coverage report --show-missing
+
+after_success:
+  - pip install coveralls --use-mirrors ; coveralls
 
 notifications:
   email: false
