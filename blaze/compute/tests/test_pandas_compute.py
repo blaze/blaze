@@ -7,7 +7,7 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze import dshape, Table
+from blaze import dshape, Table, discover, transform
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
                         min, max, any, all, Projection)
@@ -501,3 +501,14 @@ def test_summary_by_reduction_arithmetic():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
+
+
+def test_dplyr_transform():
+    df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
+    t = TableSymbol('t', discover(df))
+    expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
+                                             schema='{date: datetime}'))
+    lhs = compute(expr, df)
+    rhs = pd.concat([df, Series(df.timestamp.map(lambda x: x.date()),
+                                name='date').to_frame()], axis=1)
+    assert str(lhs) == str(rhs)
