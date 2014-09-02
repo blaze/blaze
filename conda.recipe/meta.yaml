@@ -1,0 +1,38 @@
+package:
+  name: blaze
+  version: {{environ['GIT_DESCRIBE_TAG']}}
+
+build:
+  number: {{environ.get('GIT_DESCRIBE_NUMBER', 0)}}
+
+requirements:
+  build:
+    - python
+
+  run:
+    - python
+    - dynd-python
+    - numpy
+    - multipledispatch
+    - sqlalchemy
+    - pandas
+    - h5py
+    - datashape
+    - flask
+    - requests
+    - cytoolz
+    - toolz
+    - unicodecsv
+    - bcolz
+    - pytables
+
+test:
+  requires:
+    - pytest
+
+  commands:
+    - py.test -r sxX --doctest-modules --verbose --pyargs blaze
+
+about:
+  home: http://blaze.pydata.org
+  license: BSD
