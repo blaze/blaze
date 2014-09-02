@@ -11,6 +11,12 @@ Blaze can be most easily installed from conda_
 
    $ conda install blaze
 
+We also have developer builds hosted on http://binstar.org/blaze
+
+::
+
+    conda install -c blaze blaze
+
 If you are interested in the development version of Blaze you can
 obtain the source from Github.
 
