@@ -276,11 +276,15 @@ def test_sort_on_series_no_warning(recwarn):
 
     assert str(compute(t['amount'].sort('amount'), df)) ==\
             str(expected)
-    assert recwarn.pop(FutureWarning).category is None
+
+    # raises as assertion error if no warning occurs, same thing for below
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
 
     assert str(compute(t['amount'].sort(), df)) ==\
             str(expected)
-    assert recwarn.pop(FutureWarning).category is None
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
 
 
 def test_head():
