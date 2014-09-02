@@ -320,7 +320,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
     from .dialect_mappings import dialect_terms
 
     def retrieve_kwarg(term):
-        terms = [k for k, v in dialect_terms.iteritems() if v == term]
+        terms = [k for k, v in dialect_terms.items() if v == term]
         for t in terms:
             val = kwargs.get(t, None)
             if val:
@@ -450,3 +450,5 @@ def into(sql, csv, if_exists="replace", **kwargs):
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")
         sql.extend(csv)
+
+    return sql

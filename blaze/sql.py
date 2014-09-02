@@ -5,6 +5,7 @@ from .data.sql import SQL, dispatch, first
 from .expr import Expr, TableExpr, Projection, Column, UnaryOp
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
+from .api.resource import resource
 
 
 import sqlalchemy as sa
@@ -65,3 +66,12 @@ def create_index(s, columns, name=None, unique=False):
     args = name,
     args += tuple(getattr(s.table.c, column) for column in columns)
     sa.Index(*args, unique=unique).create(s.engine)
+
+@resource.register('(sqlite|postgresql|mysql)://.*::\w*', priority=11)
+def resource_sql_single_uri(uri, *args, **kwargs):
+    uri, table_name = uri.rsplit('::', 1)
+    return SQL(uri, table_name, *args, **kwargs)
+
+@resource.register('(sqlite|postgresql|mysql)://.*')
+def resource_sql(uri, table_name, *args, **kwargs):
+    return SQL(uri, table_name, *args, **kwargs)

@@ -7,7 +7,7 @@ from blaze import TableSymbol, compute, Table, by, into
 from blaze.server import Server
 from blaze.data.python import Python
 from blaze.server.index import parse_index, emit_index
-from blaze.server.client import Client, ExprClient, discover
+from blaze.server.client import Client, ExprClient, discover, resource
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
@@ -69,6 +69,15 @@ def test_expr_client_interactive():
     t = Table(ec)
 
     assert compute(t.name) == ['Alice', 'Bob']
-    assert into(set, compute(by(t, t.name, min=t.amount.min(),
-                                     max=t.amount.max()))) == \
-            set([('Alice', 100, 100), ('Bob', 200, 200)])
+    assert (into(set, compute(by(t.name, min=t.amount.min(),
+                                         max=t.amount.max()))) ==
+            set([('Alice', 100, 100), ('Bob', 200, 200)]))
+
+
+def test_resource():
+    ec = resource('blaze://localhost:5000', 'accounts_df')
+    assert discover(ec) == discover(df)
+
+def test_resource_all_in_one():
+    ec = resource('blaze://localhost:5000::accounts_df')
+    assert discover(ec) == discover(df)

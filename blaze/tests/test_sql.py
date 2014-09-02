@@ -1,8 +1,9 @@
 import pytest
 from sqlalchemy.exc import OperationalError
 from cytoolz import first
-from blaze.sql import drop, create_index
+from blaze.sql import drop, create_index, resource
 from blaze import compute, Table, SQL
+from blaze.utils import tmpfile
 
 
 @pytest.fixture
@@ -63,3 +64,19 @@ class TestCreateIndex(object):
     def test_composite_index_fails_with_existing_columns(self, sql):
         with pytest.raises(AttributeError):
             create_index(sql, ['x', 'z', 'bizz'], name='idx_name')
+
+
+def test_register(sql):
+    with tmpfile('.db') as fn:
+        uri = 'sqlite:///' + fn
+        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
+        assert isinstance(resource(uri, 'foo'), SQL)
+        assert isinstance(resource(uri + '::foo'), SQL)
+
+    sql = SQL('sqlite:///:memory:', 'foo', schema='{x: int, y: int}')
+    assert isinstance(resource('sqlite:///:memory:', 'foo',
+                               schema='{x: int, y: int}'),
+                      SQL)
+    assert isinstance(resource('sqlite:///:memory:::foo',
+                               schema='{x: int, y: int}'),
+                      SQL)

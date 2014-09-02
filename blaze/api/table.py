@@ -13,6 +13,7 @@ from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
+from .resource import resource
 
 __all__ = ['Table', 'compute', 'into']
 
@@ -56,6 +57,8 @@ class Table(TableSymbol):
 
     def __init__(self, data, dshape=None, name=None, columns=None,
             iscolumn=False, schema=None):
+        if isinstance(data, str):
+            data = resource(data)
         if schema and dshape:
             raise ValueError("Please specify one of schema= or dshape= keyword"
                     " arguments")
@@ -133,6 +136,9 @@ def concrete_head(expr, n=10):
     if isinstance(expr, TableExpr):
         head = expr.head(n + 1)
         result = compute(head)
+
+        if not len(result):
+            return DataFrame(columns=expr.columns)
 
         if expr.columns:
             return into(DataFrame(columns=expr.columns), result)

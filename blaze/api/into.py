@@ -3,19 +3,17 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 import datashape
 import sys
-from datashape import DataShape, dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype
 import toolz
 from toolz import concat, partition_all, valmap
 from cytoolz import pluck
 import copy
 from datetime import datetime
-from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
 import gzip
 import numpy as np
 import pandas as pd
-import h5py
 import tables
 
 from ..compute.chunks import ChunkIterator
@@ -75,12 +73,13 @@ except ImportError:
     Collection = type(None)
 
 try:
-    from ..data import DataDescriptor, CSV, Excel
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
+    JSON = type(None)
+    JSON_STREAMING = type(None)
     Excel = type(None)
-
 
 @dispatch(type, object)
 def into(a, b, **kwargs):
@@ -117,7 +116,6 @@ def into(a, b):
         return set(b)
     except TypeError:
         return set(map(tuple, b))
-
 
 @dispatch(dict, (list, tuple, set))
 def into(a, b):
@@ -197,6 +195,7 @@ def into(df, x):
         columns = list(x.dtype.names)
     return pd.DataFrame(numpy_ensure_strings(x), columns=columns)
 
+
 @dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
 def into(a, t):
     x = into(np.ndarray, t)
@@ -239,9 +238,6 @@ def into(_, x, filename=None, datapath=None, **kwargs):
 @dispatch(tables.Table, pd.DataFrame)
 def into(a, df, **kwargs):
     return into(a, into(np.ndarray, df), **kwargs)
-    # store = pd.HDFStore(filename, mode='w')
-    # store.put(datapath, df, format='table', data_columns=True, index=False)
-    # return getattr(store.root, datapath).table
 
 
 @dispatch(tables.Table, _strtypes)
@@ -300,10 +296,8 @@ def into(ser, col):
     return ser
 
 @dispatch(pd.Series, np.ndarray)
-def into(_, x):
-    return pd.Series(numpy_ensure_strings(x))
-    df = into(pd.DataFrame(), x)
-    return df[df.columns[0]]
+def into(s, x):
+    return pd.Series(numpy_ensure_strings(x), name=s.name)
 
 @dispatch(pd.DataFrame, pd.Series)
 def into(_, df):
@@ -563,6 +557,144 @@ def into(l, coll, columns=None, schema=None):
     return type(l)(into(Iterator, coll, columns=columns, schema=schema))
 
 
+@dispatch(Collection, CSV)
+def into(coll, d, if_exists="replace", **kwargs):
+    """
+    Convert from TSV/CSV into MongoDB Collection
+
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    header: bool (TSV/CSV only)
+        Flag to define if file contains a header
+    columns: list (TSV/CSV only)
+        list of column names
+    ignore_blank: bool
+        Ignores empty fields in csv and tsv exports. Default: creates fields without values
+    """
+    import subprocess
+    from dateutil import parser
+
+    csv_dd = d
+    db = coll.database
+
+    try:
+        copy_info = {
+            'dbname':db.name,
+            'coll': coll.name,
+            'abspath': d._abspath
+            }
+        optional_flags = []
+
+        if if_exists=='replace':
+            optional_flags.append('--drop')
+
+        if kwargs.get('header',csv_dd.header):
+            optional_flags.append('--headerline')
+        if kwargs.get('ignore_blank', None):
+            optional_flags.append('--ignoreBlanks')
+
+        cols = kwargs.get('columns', csv_dd.columns)
+        copy_info['column_names'] = ','.join(cols)
+
+        if csv_dd.dialect['delimiter'] == ',':
+            copy_info['file_type'] = 'csv'
+        elif csv_dd.dialect['delimiter'] == '\t':
+            copy_info['file_type'] = 'tsv'
+        else:
+            raise NotImplementedError("Only CSV and TSV files are supported by mongoimport")
+
+        copy_cmd = """
+                mongoimport -d {dbname} \
+                 -c {coll} --type {file_type} \
+                 --file {abspath} --fields {column_names}\
+                 """
+
+        copy_cmd = copy_cmd.format(**copy_info)
+        copy_cmd = copy_cmd + ' '.join(optional_flags)
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+        output = ps.stdout.read()
+
+        #need to check for date columns and update
+        date_cols = []
+        dshape = csv_dd.dshape
+        for t, c in zip(dshape[1].types, dshape[1].names):
+            if hasattr(t, "ty"):
+                if isinstance(t.ty, datashape.Date) or isinstance(t.ty, datashape.DateTime):
+                    date_cols.append((c, t.ty))
+
+        for d_col, ty in date_cols:
+            mongo_data = list(coll.find({},{d_col:1}))
+            for doc in mongo_data:
+                try:
+                    t = parser.parse(doc[d_col])
+                except AttributeError:
+                    print(m_id, " is already of type datetime")
+                    t = doc[d_col]
+                m_id = doc['_id']
+                coll.update({'_id':m_id},{"$set": {d_col: t}})
+
+        return coll
+    except Exception as e:
+        # not sure what will go wrong yet
+        # should we roll back and drop collection?
+        print("Fast mongoimport operation failed.  Reason: ", e)
+        print("Trying again without mongoimport call")
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll,csv_dd)
+
+
+@dispatch(Collection, (JSON, JSON_Streaming))
+def into(coll, d, if_exists="replace", **kwargs):
+    """
+    into function which converts TSV/CSV/JSON into a MongoDB Collection
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    json_array : bool
+        Accepts the import of data expressed with multiple MongoDB documents within a single JSON array.
+    """
+    import subprocess
+
+    json_dd = d
+    db = coll.database
+
+    try:
+        copy_info = {
+            'dbname':db.name,
+            'coll': coll.name,
+            'abspath': d._abspath
+            }
+        optional_flags = []
+
+        if if_exists=='replace':
+            optional_flags.append('--drop')
+
+        if kwargs.get('json_array', None):
+            optional_flags.append('--jsonArray')
+
+        copy_info['file_type'] = 'json'
+
+        copy_cmd = "mongoimport -d {dbname} -c {coll} --type {file_type} --file {abspath} "
+
+        copy_cmd = copy_cmd.format(**copy_info)
+        copy_cmd = copy_cmd + ' '.join(optional_flags)
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+
+        output = ps.stdout.read()
+
+        return coll
+    except Exception as e:
+        # not sure what will go wrong yet
+        # should we roll back and drop collection?
+        print("Fast mongoimport operation failed.  Reason: ", e)
+        print("Trying again without mongoimport call")
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll,csv_dd)
+
+
 @dispatch(nd.array, DataDescriptor)
 def into(_, dd, **kwargs):
     return dd.dynd[:]
@@ -571,11 +703,6 @@ def into(_, dd, **kwargs):
 @dispatch(Iterator, DataDescriptor)
 def into(_, dd, **kwargs):
     return iter(dd)
-
-
-@dispatch((list, tuple, set), DataDescriptor)
-def into(c, dd, **kwargs):
-    return type(c)(dd)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable), DataDescriptor)
@@ -654,7 +781,7 @@ def into(a, b):
 
 @dispatch(pd.DataFrame, Excel)
 def into(df, xl):
-    return pd.read_excel(xl.path)
+    return pd.read_excel(xl.path, sheetname=xl.worksheet)
 
 @dispatch(pd.DataFrame, ChunkIterator)
 def into(df, chunks, **kwargs):
@@ -672,3 +799,16 @@ def into(coll, chunks, **kwargs):
     for chunk in chunks:
         into(coll, chunk, **kwargs)
     return coll
+
+
+@dispatch((list, tuple, set), DataDescriptor)
+def into(a, b, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(b)
+
+
+@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
+def into(a, b, **kwargs):
+    a.extend(b)
+    return a

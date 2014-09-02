@@ -351,3 +351,22 @@ def test_numpy_python3_bytes_to_string_conversion():
     assert all(isinstance(s, str) for s in into(list, x))
     x = np.array([(1, 'a'), (2, 'b')], dtype=[('id', 'i4'), ('letter', 'S1')])
     assert isinstance(into(list, x)[0][1], str)
+
+def test_into_DataFrame_Excel_xls_format():
+    dirname = os.path.dirname(__file__)
+    fn = os.path.join(dirname, 'accounts.xls')
+    exp = DataFrame([[100, 1, "Alice", "2000-12-25T00:00:01"],
+                    [200, 2, "Bob", "2001-12-25T00:00:01"],
+                    [300, 3, "Charlie", "2002-12-25T00:00:01"]], 
+                    columns = ["amount", "id", "name", "timestamp"])
+    df = into(DataFrame, fn)
+    assert (df == exp).all().all()
+
+def test_into_DataFrame_Excel_xlsx_format():
+    dirname = os.path.dirname(__file__)
+    fn = os.path.join(dirname, 'accounts_1.xlsx')
+    exp = DataFrame([[1, "Alice", 100],
+                     [2, "Bob", 200]],
+                    columns = ["id", "name", "amount"])
+    df = into(DataFrame, fn)
+    assert (df == exp).all().all()
