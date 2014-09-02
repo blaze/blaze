@@ -15,7 +15,7 @@ before_script:
   - python -V
 
 script: |
-  conda build conda.recipe;
+  conda build conda.recipe --quiet;
   echo `uname`;
   platform=`uname`;
   if [[ "$platform" == 'x86_64' ]]; then
@@ -32,4 +32,4 @@ build_targets:
 
 notifications:
   email:
-    recipients: ['ben.zaitlen@continuum.io',]
+    recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']
