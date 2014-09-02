@@ -10,96 +10,98 @@ from toolz import concat
 import itertools
 
 """
-Run this script AFTER you have done make html in the same directory you run make html. 
-It should automatically put the graph where it needs to be. 
+Run this script AFTER you have done make html in the same directory you run make html.
+It should automatically put the graph where it needs to be.
 """
 
 capabilities = {
     'Streaming Python':{
-        'Arithmetic':True,
+        'Scalar Expressions':True,
         'Reductions':True,
         'Selections':True,
-        'Grouping':True,
+        'Split-Apply-Combine':True,
         'Join':True,
-        'Sort':True,
-        'Distinct':True,
-        'Python Mapping':True
+        'Python Functions':True,
+        'Indices':False,
+        'Column Store': False,
     },
     'Pandas':{
-        'Arithmetic':True,
+        'Scalar Expressions':True,
         'Reductions':True,
         'Selections':True,
-        'Grouping':True,
+        'Split-Apply-Combine':True,
         'Join':True,
-        'Sort':True,
-        'Distinct':True,
-        'Python Mapping':True
+        'Python Functions':True,
+        'Indices':False,
+        'Column Store': True,
     },
     'SQL':{
-        'Arithmetic':"Generally yes, but math is limited in SQLite",
+        'Scalar Expressions':"Generally yes, but math is limited in SQLite",
         'Reductions':True,
         'Selections':True,
-        'Grouping':True,
+        'Split-Apply-Combine':True,
         'Join':True,
-        'Sort':True,
-        'Distinct':True,
-        'Python Mapping':"Only in Postgres"
+        'Python Functions':False,
+        'Indices':True,
+        'Column Store': False,
     },
-    'Spark':{
-        'Arithmetic':False,
+    'PySpark':{
+        'Scalar Expressions':True,
         'Reductions':True,
         'Selections':True,
-        'Grouping':True,
+        'Split-Apply-Combine':True,
         'Join':True,
-        'Sort':True,
-        'Distinct':True,
-        'Python Mapping':False
+        'Python Functions':True,
+        'Indices':False,
+        'Column Store': False,
     },
-    'Mongo':{
-        'Arithmetic':False,
+    'MongoDB':{
+        'Scalar Expressions':False,
         'Reductions':True,
-        'Selections':True,
-        'Grouping':True,
+        'Selections':"Limited due to lack of scalar expressions",
+        'Split-Apply-Combine':"Limited",
         'Join':False,
-        'Sort':True,
-        'Distinct':True,
-        'Python Mapping':False
+        'Python Functions':False,
+        'Indices':True,
+        'Column Store': False,
     },
     'PyTables':{
-        'Arithmetic':True,
-        'Reductions':True,
-        'Selections':True,
-        'Grouping':False,
+        'Scalar Expressions': "Using NumExpr",
+        'Reductions': True,
+        'Selections': "Using NumExpr",
+        'Split-Apply-Combine':"Defaults to Streaming Python",
         'Join':False,
-        'Sort':True,
-        'Distinct':False,
-        'Python Mapping':False
+        'Python Functions':"Using streaming Python",
+        'Indices':True,
+        'Column Store': False,
     },
     'BColz':{
-        'Arithmetic':False,
-        'Reductions':True,
-        'Selections':True,
-        'Grouping':True,
+        'Scalar Expressions':"Using chunked NumPy",
+        'Reductions':"Using chunked NumPy",
+        'Selections':"Using NumExpr",
+        'Split-Apply-Combine':"Using streaming Python",
         'Join':False,
-        'Sort':False,
-        'Distinct':True,
-        'Python Mapping':False
+        'Python Functions': "Using streaming Python",
+        'Indices':False,
+        'Column Store': True,
     }
 }
 
 colormap = {True: "#5EDA9E", False: "#FFFFFF"}
 
-xnames = [x for x in capabilities]
-statuses = [capabilities[x].values() for x in xnames]
-ynames = [capabilities['SQL'].keys()]
+backends = ['Streaming Python', 'Pandas', 'PySpark', 'SQL', 'PyTables', 'BColz',
+            'MongoDB']
+operations = ['Scalar Expressions', 'Selections', 'Reductions',
+              'Split-Apply-Combine', 'Join', 'Python Functions', 'Indices', 'Column Store']
 
-statuses = list(concat(statuses))
-ynames = list(concat(ynames))
-x, y = zip(*itertools.product(xnames, ynames))
+statuses = [capabilities[backend][op] for backend in backends
+                                      for op in operations]
 
-colors = [colormap[0] if not value else colormap[1] for value in statuses]
+x, y = zip(*itertools.product(backends, operations))
 x = list(x)
 y = list(y)
+
+colors = [colormap[1] if value else colormap[0] for value in statuses]
 
 reset_output()
 
@@ -118,7 +120,7 @@ source = ColumnDataSource(
 figure()
 
 rect('xname', 'yname', 0.99, 0.99, source=source,
-     x_range=xnames, y_range=list(reversed(ynames)),
+     x_range=backends, y_range=list(reversed(operations)),
      x_axis_location="above",
      color='colors', line_color=None,
      tools="hover,previewsave", title="Blaze Capabilities by Backend",
