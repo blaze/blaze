@@ -2,17 +2,22 @@ package: blaze
 
 platform:
   - linux-64
+  - linux-32
   - osx-64
 engine:
   - python=2.6
   - python=2.7
   - python=3.3
   - python=3.4
+
+before_script:
+  - python -V
+
 script: |
-  conda build conda.recipe --quiet;
+  conda build conda.recipe;
   echo `uname`;
   platform=`uname`;
-  if [[ "$platform" == 'Linux' ]]; then
+  if [[ "$platform" == 'x86_64' ]]; then
   mkdir -p /opt/anaconda/conda-bld/win-64;
   conda convert -p win-64 /opt/anaconda/conda-bld/linux-64/blaze*.tar.bz2;
   filename=`ls win-64/blaze*.tar.bz2 | xargs -n 1 basename`;
@@ -26,4 +31,4 @@ build_targets:
 
 notifications:
   email:
-    recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']
+    recipients: ['ben.zaitlen@continuum.io',]
