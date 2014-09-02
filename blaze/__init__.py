@@ -22,6 +22,7 @@ from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
+from .stata import resource
 from .sql import *
 
 try:
