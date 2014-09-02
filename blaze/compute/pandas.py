@@ -293,7 +293,7 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Sort, Series)
 def compute_one(t, s, **kwargs):
-    return s.order(t.key, ascending=t.ascending)
+    return s.order(ascending=t.ascending)
 
 
 @dispatch(Head, (Series, DataFrame))
