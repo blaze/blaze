@@ -125,7 +125,7 @@ class CSV(DataDescriptor):
     """
     def __init__(self, path, mode='rt',
             schema=None, columns=None, types=None, typehints=None,
-            dialect=None, header=None, open=open, nrows_discovery=50,
+            dialect=None, header=None, open=None, nrows_discovery=50,
             **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
@@ -134,10 +134,34 @@ class CSV(DataDescriptor):
         self.path = path
         self._abspath = os.path.abspath(path)
         self.mode = mode
-        self.open = open
+        self.open=open
 
-        if os.path.exists(path) and mode != 'w':
-            f = self.open(path)
+        if self.open == None:
+            #Try to determine what open function is needed for the given file extension
+            #Potentially we could do bz2, xz, etc. as long as they support the necessary 
+            #  operations like opening-for-append (which py2 bz2 does not)
+            _ignored,extension=os.path.splitext(path)
+            if extension == ".gz":
+                try:
+                    import gzip
+                    self.open=gzip.open
+                except ImportError:
+                    pass
+
+                        
+        #The default open function is the builtin open().
+        #If our open function hasn't been set by this point, we don't have any special file opener for the given file
+        if self.open == None:
+            if sys.version_info[0] == 3:
+                import builtins
+                self.open=builtins.open
+            if sys.version_info[0] == 2:
+                import __builtin__
+                self.open=__builtin__.open
+
+
+        if os.path.exists(path) and self.mode != 'w':
+            f = self.open(path, self.mode)
             sample = f.read(16384)
             try:
                 f.close()
@@ -159,9 +183,9 @@ class CSV(DataDescriptor):
             dialect['header'] = header
             header = True
 
-        if not schema and 'w' not in mode:
+        if not schema and 'w' not in self.mode:
             if not types:
-                with open(self.path) as f:
+                with self.open(self.path,self.mode) as f:
                     data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
                     types = discover(data)
                     rowtype = types.subshape[0]
@@ -180,7 +204,7 @@ class CSV(DataDescriptor):
                                   "Please specify schema.")
             if not columns:
                 if header:
-                    with open(self.path) as f:
+                    with self.open(self.path, self.mode) as f:
                         columns = next(csv.reader([next(f)], **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
@@ -209,7 +233,7 @@ class CSV(DataDescriptor):
             else:
                 return getter(result)
 
-        f = self.open(self.path)
+        f = self.open(self.path, self.mode)
         if self.header:
             next(f)
         if isinstance(key, compatibility._inttypes):
@@ -232,7 +256,7 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        f = self.open(self.path)
+        f = self.open(self.path, self.mode)
         if self.header:
             next(f)  # burn header
         for row in csv.reader(f, **self.dialect):
