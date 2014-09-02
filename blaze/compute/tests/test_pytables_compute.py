@@ -270,52 +270,49 @@ def tbfile():
 now = np.datetime64('now').astype('datetime64[us]')
 
 
-dt_data = [[1, 'Alice', 100, now],
-           [2, 'Bob', -200, now],
-           [3, 'Charlie', 300, now],
-           [4, 'Denis', 400, now],
-           [5, 'Edith', -500, now]]
+@pytest.fixture
+def raw_dt_data():
+    raw_dt_data = [[1, 'Alice', 100, now],
+                   [2, 'Bob', -200, now],
+                   [3, 'Charlie', 300, now],
+                   [4, 'Denis', 400, now],
+                   [5, 'Edith', -500, now]]
+
+    for i, d in enumerate(raw_dt_data):
+        d[-1] += np.timedelta64(i, 'D')
+    return list(map(tuple, raw_dt_data))
 
 
-for i, d in enumerate(dt_data):
-    d[-1] += np.timedelta64(i, 'D')
-    d[-1] = d[-1].astype('i8')
-
-
-orignal_dt_data = np.array(list(map(tuple, dt_data)),
-                           dtype=np.dtype([('id', 'int64'),
-                                           ('name', 'S7'),
-                                           ('amount', 'float64'),
-                                           ('date', 'datetime64[us]')]))
+@pytest.fixture
+def dt_data(raw_dt_data):
+    return np.array(raw_dt_data, dtype=np.dtype([('id', 'i8'),
+                                                 ('name', 'S7'),
+                                                 ('amount', 'f8'),
+                                                 ('date', 'M8[ms]')]))
 
 
 @pytest.yield_fixture
-def dt_tb():
-    with tmpfile('.h5') as filename:
-        class Desc(tb.IsDescription):
-            id = tb.Int64Col(pos=0)
-            name = tb.StringCol(itemsize=7, pos=1)
-            amount = tb.Float64Col(pos=2)
-            date = tb.Time64Col(pos=3)
+def dt_tb(dt_data):
+    class Desc(tb.IsDescription):
+        id = tb.Int64Col(pos=0)
+        name = tb.StringCol(itemsize=7, pos=1)
+        amount = tb.Float64Col(pos=2)
+        date = tb.Time64Col(pos=3)
 
-        dshape = '{id: int, amount: float64, name: string[7], date: datetime}'
+    non_date_types = list(zip(['id', 'name', 'amount'], ['i8', 'S7', 'f8']))
+
+    # has to be in microseconds as per pytables spec
+    dtype = np.dtype(non_date_types + [('date', 'M8[us]')])
+    rec = dt_data.astype(dtype)
+
+    # also has to be a floating point number
+    dtype = np.dtype(non_date_types + [('date', 'f8')])
+    rec = rec.astype(dtype)
+    rec['date'] /= 1e6
+    with tmpfile('.h5') as filename:
         f = tb.open_file(filename, mode='w')
-        arr = np.array(list(map(tuple, dt_data)), dtype=np.dtype([('id', 'int'),
-                                                                  ('name',
-                                                                   'S7'),
-                                                                  ('amount',
-                                                                   'float64'),
-                                                                  ('date',
-                                                                   'int64')]))
         d = f.create_table('/', 'dt', description=Desc)
-        for row in arr:
-            rowdata = dict(zip(sorted(arr.dtype.fields.keys(),
-                                      key=['id', 'name', 'amount', 'date'].index),
-                               tuple(row)))
-            trow = d.row
-            for k, v in rowdata.items():
-                trow[k] = v
-            trow.append()
+        d.append(rec)
         d.close()
         f.close()
         yield filename
@@ -350,7 +347,13 @@ class TestPyTablesLight(object):
         assert t._v_file.filename == tbfile
         assert t.shape == (0,)
 
-    def test_datetime_into_support(self, dt_tb):
-        t = PyTables(dt_tb, '/dt')
-        res = into(np.ndarray, t)
-        assert res.dtype == orignal_dt_data.dtype
+    def test_table_into_support(self, dt_tb, dt_data):
+        t = PyTables(dt_tb, '/dt', '%s * {id: int, name: string[7], '
+                     'amount: float64, date: datetime}' % len(dt_data))
+        res = into(t, dt_data)
+        for k in res.dtype.fields:
+            lhs, rhs = res[k], dt_data[k]
+            if (issubclass(np.datetime64, lhs.dtype.type) and
+                issubclass(np.datetime64, rhs.dtype.type)):
+                lhs, rhs = lhs.astype('M8[us]'), rhs.astype('M8[us]')
+            assert np.array_equal(lhs, rhs)
