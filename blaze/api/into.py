@@ -73,11 +73,12 @@ except ImportError:
     Collection = type(None)
 
 try:
-    from ..data import DataDescriptor, CSV
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
-
+    JSON = type(None)
+    JSON_STREAMING = type(None)
 
 @dispatch(type, object)
 def into(a, b, **kwargs):
@@ -553,6 +554,144 @@ def into(l, coll, columns=None, schema=None):
 @dispatch((tuple, list), Collection)
 def into(l, coll, columns=None, schema=None):
     return type(l)(into(Iterator, coll, columns=columns, schema=schema))
+
+
+@dispatch(Collection, CSV)
+def into(coll, d, if_exists="replace", **kwargs):
+    """
+    Convert from TSV/CSV into MongoDB Collection
+
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    header: bool (TSV/CSV only)
+        Flag to define if file contains a header
+    columns: list (TSV/CSV only)
+        list of column names
+    ignore_blank: bool
+        Ignores empty fields in csv and tsv exports. Default: creates fields without values
+    """
+    import subprocess
+    from dateutil import parser
+
+    csv_dd = d
+    db = coll.database
+
+    try:
+        copy_info = {
+            'dbname':db.name,
+            'coll': coll.name,
+            'abspath': d._abspath
+            }
+        optional_flags = []
+
+        if if_exists=='replace':
+            optional_flags.append('--drop')
+
+        if kwargs.get('header',csv_dd.header):
+            optional_flags.append('--headerline')
+        if kwargs.get('ignore_blank', None):
+            optional_flags.append('--ignoreBlanks')
+
+        cols = kwargs.get('columns', csv_dd.columns)
+        copy_info['column_names'] = ','.join(cols)
+
+        if csv_dd.dialect['delimiter'] == ',':
+            copy_info['file_type'] = 'csv'
+        elif csv_dd.dialect['delimiter'] == '\t':
+            copy_info['file_type'] = 'tsv'
+        else:
+            raise NotImplementedError("Only CSV and TSV files are supported by mongoimport")
+
+        copy_cmd = """
+                mongoimport -d {dbname} \
+                 -c {coll} --type {file_type} \
+                 --file {abspath} --fields {column_names}\
+                 """
+
+        copy_cmd = copy_cmd.format(**copy_info)
+        copy_cmd = copy_cmd + ' '.join(optional_flags)
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+        output = ps.stdout.read()
+
+        #need to check for date columns and update
+        date_cols = []
+        dshape = csv_dd.dshape
+        for t, c in zip(dshape[1].types, dshape[1].names):
+            if hasattr(t, "ty"):
+                if isinstance(t.ty, datashape.Date) or isinstance(t.ty, datashape.DateTime):
+                    date_cols.append((c, t.ty))
+
+        for d_col, ty in date_cols:
+            mongo_data = list(coll.find({},{d_col:1}))
+            for doc in mongo_data:
+                try:
+                    t = parser.parse(doc[d_col])
+                except AttributeError:
+                    print(m_id, " is already of type datetime")
+                    t = doc[d_col]
+                m_id = doc['_id']
+                coll.update({'_id':m_id},{"$set": {d_col: t}})
+
+        return coll
+    except Exception as e:
+        # not sure what will go wrong yet
+        # should we roll back and drop collection?
+        print("Fast mongoimport operation failed.  Reason: ", e)
+        print("Trying again without mongoimport call")
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll,csv_dd)
+
+
+@dispatch(Collection, (JSON, JSON_Streaming))
+def into(coll, d, if_exists="replace", **kwargs):
+    """
+    into function which converts TSV/CSV/JSON into a MongoDB Collection
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    json_array : bool
+        Accepts the import of data expressed with multiple MongoDB documents within a single JSON array.
+    """
+    import subprocess
+
+    json_dd = d
+    db = coll.database
+
+    try:
+        copy_info = {
+            'dbname':db.name,
+            'coll': coll.name,
+            'abspath': d._abspath
+            }
+        optional_flags = []
+
+        if if_exists=='replace':
+            optional_flags.append('--drop')
+
+        if kwargs.get('json_array', None):
+            optional_flags.append('--jsonArray')
+
+        copy_info['file_type'] = 'json'
+
+        copy_cmd = "mongoimport -d {dbname} -c {coll} --type {file_type} --file {abspath} "
+
+        copy_cmd = copy_cmd.format(**copy_info)
+        copy_cmd = copy_cmd + ' '.join(optional_flags)
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+
+        output = ps.stdout.read()
+
+        return coll
+    except Exception as e:
+        # not sure what will go wrong yet
+        # should we roll back and drop collection?
+        print("Fast mongoimport operation failed.  Reason: ", e)
+        print("Trying again without mongoimport call")
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll,csv_dd)
 
 
 @dispatch(nd.array, DataDescriptor)
