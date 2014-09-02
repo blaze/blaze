@@ -704,21 +704,20 @@ def into(_, dd, **kwargs):
     return iter(dd)
 
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable), DataDescriptor)
+@dispatch((np.ndarray, ColumnDataSource, ctable), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
-    list, tuple, set),
+@dispatch(pd.DataFrame, DataDescriptor)
+def into(a, b):
+    return pd.DataFrame(list(b), columns=b.columns)
+
+
+@dispatch((np.ndarray, ColumnDataSource, ctable, tables.Table, list, tuple, set),
           CSV)
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
-
-
-@dispatch(np.ndarray, CSV)
-def into(a, b, **kwargs):
-    return into(a, into(pd.DataFrame(), b, **kwargs))
 
 
 @dispatch(pd.DataFrame, CSV)
@@ -756,11 +755,6 @@ def into(a, b, **kwargs):
                        parse_dates=datenames,
                        names=b.columns,
                        **options)
-
-
-@dispatch(pd.DataFrame, DataDescriptor)
-def into(a, b):
-    return pd.DataFrame(list(b), columns=b.columns)
 
 
 @dispatch(object, Expr)
