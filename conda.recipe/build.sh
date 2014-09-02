@@ -8,8 +8,9 @@ pushd $SRC_DIR
 
 # X.X.X.dev builds
 version=`git describe --tags`
+u_version=`echo $version | tr "-" _`
 
-echo $version.dev> __conda_version__.txt
+echo $u_version.dev> __conda_version__.txt
 cp __conda_version__.txt $BLD_DIR
 
 $PYTHON setup.py install
