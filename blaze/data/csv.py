@@ -19,7 +19,7 @@ from .core import DataDescriptor
 from .utils import coerce_record_to_row
 from ..utils import nth, nth_list
 from .. import compatibility
-from ..compatibility import map
+from ..compatibility import map, builtins
 
 __all__ = ['CSV', 'drop']
 
@@ -134,30 +134,17 @@ class CSV(DataDescriptor):
         self.path = path
         self._abspath = os.path.abspath(path)
         self.mode = mode
-        self.open=open
+        self.open = open
 
-        if self.open == None:
-            #Try to determine what open function is needed for the given file extension
-            #Potentially we could do bz2, xz, etc. as long as they support the necessary 
-            #  operations like opening-for-append (which py2 bz2 does not)
-            _ignored,extension=os.path.splitext(path)
-            if extension == ".gz":
-                try:
-                    import gzip
-                    self.open=gzip.open
-                except ImportError:
-                    pass
+        import gzip
+        _openers={".gz" : gzip.open}
 
-                        
-        #The default open function is the builtin open().
-        #If our open function hasn't been set by this point, we don't have any special file opener for the given file
-        if self.open == None:
-            if sys.version_info[0] == 3:
-                import builtins
-                self.open=builtins.open
-            if sys.version_info[0] == 2:
-                import __builtin__
-                self.open=__builtin__.open
+        _ignored,extension=os.path.splitext(path)
+
+        if self.open is None:
+            #If the user didn't specify an open() function on object creation, 
+            #  either get one from our known dictionary _openers, or use the default builtin open().
+            self.open=_openers.get(extension, builtins.open)
 
 
         if os.path.exists(path) and self.mode != 'w':
