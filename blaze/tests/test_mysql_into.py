@@ -22,7 +22,7 @@ import numpy as np
 import getpass
 
 username = getpass.getuser()
-url = 'mysql+pymysql://{}@localhost:3306/test'.format(username)
+url = 'mysql+pymysql://{0}@localhost:3306/test'.format(username)
 file_name = 'test.csv'
 file_name_floats = 'test_floats.csv'
 
@@ -73,7 +73,7 @@ def test_csv_postgres_load():
 
     cursor = conn.cursor()
     full_path = os.path.abspath(file_name)
-    load = '''LOAD DATA INFILE '{}' INTO TABLE {} FIELDS TERMINATED BY ','
+    load = '''LOAD DATA INFILE '{0}' INTO TABLE {1} FIELDS TERMINATED BY ','
         lines terminated by '\n'
         '''.format(full_path, tbl)
     cursor.execute(load)

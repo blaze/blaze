@@ -12,7 +12,7 @@ import csv as csv_module
 import subprocess
 
 db_file_name = "db_test.db"
-url = 'sqlite:///{}'.format(db_file_name)
+url = 'sqlite:///{0}'.format(db_file_name)
 file_name = 'test.csv'
 
 # @pytest.fixture(scope='module')
@@ -88,7 +88,7 @@ def test_simple_into():
     into(sql,csv, if_exists="replace")
     conn = sql.engine.raw_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' and name='{}';".format(tbl))
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' and name='{0}';".format(tbl))
 
     sqlite_tbl_names = cursor.fetchall()
     assert sqlite_tbl_names[0][0] == tbl

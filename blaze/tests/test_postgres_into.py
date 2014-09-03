@@ -62,7 +62,7 @@ def test_csv_postgres_load():
 
     cursor = conn.cursor()
     full_path = os.path.abspath(file_name)
-    load = '''copy {} from '{}'(FORMAT CSV, DELIMITER ',', NULL '');'''.format(tbl, full_path)
+    load = '''copy {0} from '{1}'(FORMAT CSV, DELIMITER ',', NULL '');'''.format(tbl, full_path)
     cursor.execute(load)
     conn.commit()
 
