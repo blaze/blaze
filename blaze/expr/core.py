@@ -16,6 +16,7 @@ __all__ = ['Expr', 'discover']
 def get_callable_name(o):
     """Welcome to str inception. Leave your kittens at home.
     """
+    # special case partial objects
     if isinstance(o, functools.partial):
         return 'partial(%s, %s)' % (get_callable_name(o.func),
                                     ', '.join(map(str, o.args)))
@@ -25,10 +26,11 @@ def get_callable_name(o):
         return o.__qualname__
     except AttributeError:
         try:
+            # show the module of the object, if we can
             return '%s.%s' % (inspect.getmodule(o).__name__, o.__name__)
         except AttributeError:
-            # __self__ tells us the class the method is bound to
             try:
+                # __self__ tells us the class the method is bound to
                 return '%s.%s' % (o.__self__.__name__, o.__name__)
             except AttributeError:
                 # exhausted all avenues of printing callables so just print the
@@ -59,7 +61,6 @@ class Expr(object):
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
 
     @property
     def args(self):

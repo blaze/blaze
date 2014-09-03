@@ -757,3 +757,13 @@ class TestRepr(object):
         assert s == ("Map(child=t['amount'], "
                      "func=%s, _schema=None,"
                      " _iscolumn=None)" % funcname('test_udf', 'myfunc'))
+
+    def test_nested_partial(self, t):
+        def myfunc(x, y, z):
+            return x + y + z
+        f = partial(partial(myfunc, 2), 1)
+        expr = t.amount.map(f)
+        s = str(expr)
+        assert s == ("Map(child=t['amount'], func=partial(partial(%s, 2), 1),"
+                     " _schema=None, _iscolumn=None)" %
+                     funcname('test_nested_partial', 'myfunc'))
