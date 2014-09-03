@@ -32,13 +32,15 @@ install:
 
   # Install dependencies
   - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy
-  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz bokeh
+  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
 
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
+
+  # Install Bokeh
 
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
@@ -86,12 +88,15 @@ install:
   # Install Coverage
   - pip install coverage
 
+  # Bokeh because coverage demands it.
+
 before_script:
   - mysql -e 'create database test'
 
 script: 
   - py.test -r sxX --doctest-modules --verbose --pyargs blaze
-  - coverage run --source=blaze $(which py.test) --doctest-modules
+  - coverage run --source=blaze $(which py.test) -r sxX --doctest-modules --verbose --pyargs
+  - coverage report --show-missing
 
 after_success:
   - pip install coveralls --use-mirrors ; coveralls
