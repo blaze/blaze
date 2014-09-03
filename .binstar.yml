@@ -15,10 +15,11 @@ before_script:
   - python -V
 
 script: |
-  conda build conda.recipe;
-  echo `uname -m`;
-  platform=`uname -m`;
-  if [[ "$platform" == 'x86_64' ]]; then
+  conda build conda.recipe --quiet;
+  echo `uname`;
+  platform=`uname`;
+  arch=`uname -m`
+  if [[ "$arch" == 'x86_64' && "$platform" == 'Linux' ]]; then
   mkdir -p /opt/anaconda/conda-bld/win-64;
   conda convert -p win-64 /opt/anaconda/conda-bld/linux-64/blaze*.tar.bz2;
   filename=`ls win-64/blaze*.tar.bz2 | xargs -n 1 basename`;
