@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
+from datetime import datetime
 import pandas as pd
 import numpy as np
 from pandas import DataFrame, Series
@@ -512,3 +513,18 @@ def test_dplyr_transform():
     rhs = pd.concat([df, Series(df.timestamp.map(lambda x: x.date()),
                                 name='date').to_frame()], axis=1)
     assert str(lhs) == str(rhs)
+
+
+def test_nested_transform():
+    d = {'timestamp': [1379613528, 1379620047], 'platform': ["Linux",
+                                                             "Windows"]}
+    df = DataFrame(d)
+    t = TableSymbol('t', discover(df))
+    t = transform(t, timestamp=t.timestamp.map(datetime.fromtimestamp,
+                                               schema='{timestamp: datetime}'))
+    expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
+                                             schema='{date: datetime}'))
+    result = compute(expr, df)
+    df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
+    df['date'] = df.timestamp.map(lambda x: x.date())
+    assert str(result) == str(df)
