@@ -6,11 +6,17 @@ BLD_DIR=`pwd`
 SRC_DIR=$RECIPE_DIR/..
 pushd $SRC_DIR
 
-# X.X.X.dev builds
-version=`git describe --tags`
-u_version=`echo $version | tr "-" _`
+# YYYYMMDD.X.X.X.dev builds
+arr=$(git describe --tags | tr "-" " ")
+IFS=' ' read -a gitarray <<< "${arr}"
+version=${gitarray[0]}
+commithash=${gitarray[2]}
 
-echo $u_version.dev> __conda_version__.txt
+echo $version, $commithash
+
+date=`date "+%Y%m%d"`
+
+echo ${version}_${commithash} > __conda_version__.txt
 cp __conda_version__.txt $BLD_DIR
 
 $PYTHON setup.py install
