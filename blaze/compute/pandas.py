@@ -22,6 +22,7 @@ from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
+from toolz import merge as merge_dicts
 
 from ..api.into import into
 from ..dispatch import dispatch
@@ -347,10 +348,11 @@ def compute_one(t, df, **kwargs):
     return t.func(df)
 
 
-@dispatch(Merge, DataFrame)
-def compute_one(t, df, **kwargs):
+@dispatch(Merge, NDFrame)
+def compute_one(t, df, scope=None, **kwargs):
     subexpression = common_subexpression(*t.children)
-    children = [compute(child, {subexpression: df}) for child in t.children]
+    scope = merge_dicts(scope or {}, {subexpression: df})
+    children = [compute(child, scope) for child in t.children]
     return pd.concat(children, axis=1)
 
 
