@@ -6,7 +6,7 @@ import inspect
 import functools
 from toolz import unique, concat
 from pprint import pprint
-from io import StringIO
+from blaze.compatibility import StringIO
 
 from ..dispatch import dispatch
 
