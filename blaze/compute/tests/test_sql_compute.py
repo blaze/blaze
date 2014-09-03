@@ -1,9 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-import pytest
 from blaze.compute.sql import compute, computefull, select
-from blaze import SQL
-from blaze.expr import *
+from blaze.expr import TableSymbol
 import sqlalchemy
 import sqlalchemy as sa
 from blaze.compatibility import xfail
@@ -381,3 +379,11 @@ def test_summary_by():
     assert 'count(accounts.id) as b' in result.lower()
 
     assert 'group by accounts.name' in result.lower()
+
+
+def test_regex():
+    pass
+
+
+def test_like():
+    pass
