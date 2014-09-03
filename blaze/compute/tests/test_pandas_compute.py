@@ -268,13 +268,23 @@ def test_sort():
     assert str(compute(t.sort(['amount', 'id']), df)) == \
             str(df.sort(['amount', 'id']))
 
-    expected = df['amount'].copy()
-    expected.sort()
+
+def test_sort_on_series_no_warning(recwarn):
+    expected = df.amount.order()
+
+    recwarn.clear()
 
     assert str(compute(t['amount'].sort('amount'), df)) ==\
             str(expected)
+
+    # raises as assertion error if no warning occurs, same thing for below
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
+
     assert str(compute(t['amount'].sort(), df)) ==\
             str(expected)
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
 
 
 def test_head():
