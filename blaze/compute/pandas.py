@@ -29,7 +29,7 @@ from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, TableExpr)
 from ..expr import UnaryOp, BinOp
-from ..expr import TableSymbol, common_subexpression
+from ..expr import TableSymbol, common_subexpression, Regex
 from .core import compute, compute_one, base
 
 __all__ = []
@@ -50,15 +50,11 @@ def compute_one(_, s, **kwargs):
     return s
 
 
-@dispatch(ColumnWise, DataFrame)
+@dispatch(ColumnWise, NDFrame)
 def compute_one(t, df, **kwargs):
+    df = DataFrame(df)
     d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
     return compute(t.expr, d)
-
-
-@dispatch(ColumnWise, Series)
-def compute_one(t, s, **kwargs):
-    return compute_one(t, s.to_frame(), **kwargs)
 
 
 @dispatch(BinOp, Series, (Series, base))
@@ -357,3 +353,12 @@ def compute_one(t, example, children, **kwargs):
 def compute_one(expr, data, **kwargs):
     return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
                                         for val in expr.values])))
+
+
+@dispatch(Regex, NDFrame)
+def compute_one(t, df, **kwargs):
+    # result of compute_one(t.child, ...) should always be a Series because we
+    # can't do efficient string matching on any other pandas data structures
+    child = compute_one(t.child, df, **kwargs)
+    assert isinstance(child, Series)
+    return child.str.contains(t.rx)
