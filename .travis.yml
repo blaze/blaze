@@ -91,8 +91,7 @@ before_script:
 
 script: 
   - py.test -r sxX --doctest-modules --verbose --pyargs blaze
-  - coverage run --source=blaze $(which py.test)
-                 --doctest-modules
+  - coverage run --source=blaze $(which py.test) --doctest-modules
 
 after_success:
   - pip install coveralls --use-mirrors ; coveralls

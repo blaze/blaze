@@ -1,5 +1,5 @@
 [run]
 omit =
-    toolz/tests/test*
-    toolz/*/tests/test*
-    toolz/compatibility.py
+    blaze/tests/test*
+    blaze/*/tests/test*
+    blaze/compatibility.py
