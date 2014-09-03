@@ -15,9 +15,9 @@ before_script:
   - python -V
 
 script: |
-  conda build conda.recipe --quiet;
-  echo `uname`;
-  platform=`uname`;
+  conda build conda.recipe;
+  echo `uname -m`;
+  platform=`uname -m`;
   if [[ "$platform" == 'x86_64' ]]; then
   mkdir -p /opt/anaconda/conda-bld/win-64;
   conda convert -p win-64 /opt/anaconda/conda-bld/linux-64/blaze*.tar.bz2;
