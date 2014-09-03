@@ -6,7 +6,8 @@ psycopg2 = pytest.importorskip('psycopg2')
 import subprocess
 ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
 output = ps.stdout.read()
-pytestmark = pytest.mark.skipif(len(output.split('\n')) < 6, reason="No Postgres Installation")
+num_processes = len(output.splitlines())
+pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
 
 
 from blaze import SQL
@@ -61,7 +62,7 @@ def test_csv_postgres_load():
 
     cursor = conn.cursor()
     full_path = os.path.abspath(file_name)
-    load = '''copy {} from '{}'(FORMAT CSV, DELIMITER ',', NULL '');'''.format(tbl, full_path)
+    load = '''copy {0} from '{1}'(FORMAT CSV, DELIMITER ',', NULL '');'''.format(tbl, full_path)
     cursor.execute(load)
     conn.commit()
 
