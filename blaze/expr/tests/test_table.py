@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-import tempfile
 import pandas as pd
 from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
                       gt, le, ge)
@@ -11,15 +10,17 @@ try:
 except ImportError:
     from operator import truediv as div
 
+from functools import partial
+from datetime import datetime
 from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
                         Summary, count, ScalarSymbol)
+from blaze.compatibility import PY3
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
-from blaze.compatibility import xfail
 from datashape import dshape, var, int32, int64, Record, DataShape
 from toolz import identity, first
 import numpy as np
@@ -702,3 +703,57 @@ def test_leaves():
     assert join(v, t).leaves() == [v, t]
 
     assert (x + 1).leaves() == [x]
+
+
+@pytest.fixture
+def t():
+    return TableSymbol('t', '{id: int, amount: float64, name: string}')
+
+
+def funcname(x, y='<lambda>'):
+    if PY3:
+        return 'TestRepr.%s.<locals>.%s' % (x, y)
+    return 'test_table.%s' % y
+
+
+class TestRepr(object):
+    def test_partial_lambda(self, t):
+        expr = t.amount.map(partial(lambda x, y: x + y, 1))
+        s = str(expr)
+        assert s == ("Map(child=t['amount'], "
+                     "func=partial(%s, 1), "
+                     "_schema=None, _iscolumn=None)" %
+                     funcname('test_partial_lambda'))
+
+    def test_lambda(self, t):
+        expr = t.amount.map(lambda x: x)
+        s = str(expr)
+        assert s == ("Map(child=t['amount'], "
+                     "func=%s, _schema=None, _iscolumn=None)" %
+                     funcname('test_lambda'))
+
+    def test_partial(self, t):
+        def myfunc(x, y):
+            return x + y
+        expr = t.amount.map(partial(myfunc, 1))
+        s = str(expr)
+        assert s == ("Map(child=t['amount'], "
+                     "func=partial(%s, 1), "
+                     "_schema=None, _iscolumn=None)" % funcname('test_partial',
+                                                                'myfunc'))
+
+    def test_builtin(self, t):
+        expr = t.amount.map(datetime.fromtimestamp)
+        s = str(expr)
+        assert s == ("Map(child=t['amount'], "
+                     "func=datetime.fromtimestamp, _schema=None,"
+                     " _iscolumn=None)")
+
+    def test_udf(self, t):
+        def myfunc(x):
+            return x + 1
+        expr = t.amount.map(myfunc)
+        s = str(expr)
+        assert s == ("Map(child=t['amount'], "
+                     "func=%s, _schema=None,"
+                     " _iscolumn=None)" % funcname('test_udf', 'myfunc'))
