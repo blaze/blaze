@@ -1,4 +1,6 @@
 package: blaze
+user: blaze
+
 platform:
   - linux-64
   - linux-32
@@ -8,9 +10,26 @@ engine:
   - python=2.7
   - python=3.3
   - python=3.4
-script:
-  - touch build.sh
-  - conda build .
+
+before_script:
+  - python -V
+
+script: |
+  conda build conda.recipe --quiet;
+  echo `uname`;
+  platform=`uname`;
+  if [[ "$platform" == 'x86_64' ]]; then
+  mkdir -p /opt/anaconda/conda-bld/win-64;
+  conda convert -p win-64 /opt/anaconda/conda-bld/linux-64/blaze*.tar.bz2;
+  filename=`ls win-64/blaze*.tar.bz2 | xargs -n 1 basename`;
+  echo $filename;
+  cp -r win-64/$filename /opt/anaconda/conda-bld/win-64/$filename;
+  fi;
+
 build_targets:
-  files: conda
-  channels: main
+    files: /opt/anaconda/conda-bld/*/blaze*.tar.bz2
+    channels: 'main'
+
+notifications:
+  email:
+    recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']

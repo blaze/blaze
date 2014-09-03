@@ -30,6 +30,7 @@ def teardown_function(function):
     engine = sqlalchemy.create_engine(url)
     metadata = sqlalchemy.MetaData()
     metadata.reflect(engine)
+    os.remove(db_file_name)
 
     for t in metadata.tables:
         if 'testtable' in t:

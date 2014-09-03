@@ -198,11 +198,12 @@ def into(a, b):
 
 @dispatch(np.ndarray, TableExpr)
 def into(a, b):
+    schema = dshape(str(b.schema).replace('?', ''))
     if b.iscolumn:
         return into(np.ndarray(0), compute(b),
-                dtype=to_numpy_dtype(b.schema[0].types[0]))
+                dtype=to_numpy_dtype(schema[0].types[0]))
     else:
-        return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(b.schema))
+        return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(schema))
 
 
 def table_length(expr):
