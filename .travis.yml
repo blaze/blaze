@@ -91,7 +91,7 @@ before_script:
 
 script: 
   - py.test -r sxX --doctest-modules --verbose --pyargs blaze
-  - coverage run --source=blaze $(which py.test) -r sxX --doctest-modules --verbose --pyargs
+  - coverage run $(which py.test)
   - coverage report --show-missing
 
 after_success:
