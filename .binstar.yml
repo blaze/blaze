@@ -15,7 +15,8 @@ before_script:
   - python -V
 
 script: |
-  conda build conda.recipe --quiet;
+  CONDA_PY=`python -c 'import sys; sys.stdout.write("%s%s" % (sys.version_info.major, sys.version_info.minor))'`
+  CONDA_PY=$CONDA_PY conda build conda.recipe --quiet;
   echo `uname`;
   platform=`uname`;
   arch=`uname -m`
