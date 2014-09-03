@@ -5,6 +5,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
+import fnmatch
 from functools import partial
 from abc import abstractproperty
 from operator import methodcaller
@@ -27,7 +28,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary'''.split()
+projection union columnwise Summary summary Like like Regex regex'''.split()
 
 
 class TableExpr(Expr):
@@ -169,6 +170,12 @@ class TableExpr(Expr):
             return self['name']
         else:
             raise ValueError("Can not compute name of table")
+
+    def like(self, pattern):
+        return like(self, pattern)
+
+    def regex(self, pattern):
+        return regex(self, pattern)
 
 
 class TableSymbol(TableExpr):
@@ -1332,3 +1339,62 @@ def union(*children):
         raise ValueError("Inconsistent schemas:\n\t%s" %
                             '\n\t'.join(map(str, schemas)))
     return Union(children)
+
+
+class Regex(ColumnWise):
+    __slots__ = 'child', 'pattern'
+
+    __hash__ = Expr.__hash__
+
+    iscolumn = True
+
+    dtype = dshape('bool')
+
+    @property
+    def dshape(self):
+        return datashape.dshape('var * {%s: bool}' % self.child.column)
+
+    @property
+    def columns(self):
+        return self.child.columns
+
+    def __str__(self):
+        return '%s(child=%s, pattern=%r)' % (type(self).__name__, self.child,
+                                              self.pattern)
+
+    @property
+    def rx(self):
+        return self.pattern
+
+
+def regex(child, pattern):
+    """Pattern match `pattern` in `child`.
+
+    Parameters
+    ----------
+    child : Expr
+    pattern : str
+        The pattern to match the elements of `child` against
+
+    Returns
+    -------
+    expr : Regex
+        Pattern match expression
+    """
+    return Regex(child, pattern)
+
+
+class Like(Regex):
+    __slots__ = Regex.__slots__
+
+    __hash__ = Expr.__hash__
+
+    iscolumn = True
+
+    @property
+    def rx(self):
+        return fnmatch.translate(self.pattern)
+
+
+def like(child, pattern):
+    return Like(child, pattern)
