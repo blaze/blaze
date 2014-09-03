@@ -501,3 +501,47 @@ def test_summary_by_reduction_arithmetic():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
+
+
+@pytest.fixture
+def rx():
+    df = DataFrame([['Alice', 'F', 100, 1],
+                    ['Alice', 'F', 100, 3],
+                    ['Drew', 'F', 100, 4],
+                    ['Drew', 'M', 100, 5],
+                    ['Drew', 'M', 200, 5],
+                    ['Bob', 'M', 500, 6],
+                    ['Bob', 'M', 300, 7]],
+                    columns=['name', 'sex', 'amount', 'id'])
+    return df
+
+
+def test_like(rx):
+    df = rx
+    t = tbig
+    expr = t.name.like('A*')
+    assert expr.dshape == dshape('var * {name: bool}')
+    result = compute(expr, df)
+    assert str(expr) == "Like(child=tbig['name'], pattern='A*')"
+    expected = df.name.str.startswith('A')
+    assert str(result) == str(expected)
+
+
+def test_regex(rx):
+    df = rx
+    t = tbig
+    expr = t.name.regex('(?:A|B).*')
+    assert expr.dshape == dshape('var * {name: bool}')
+    result = compute(expr, df)
+    assert str(expr) == "Regex(child=tbig['name'], pattern='(?:A|B).*')"
+    expected = df.name.str.startswith(('A', 'B'))
+    assert str(result) == str(expected)
+
+
+def test_regex_selection(rx):
+    df = rx
+    t = tbig
+    expr = t[t.name.regex('(?:A|B).*')]
+    expected = df[df.name.str.startswith(('A', 'B'))]
+    result = compute(expr, df)
+    assert str(result) == str(expected)
