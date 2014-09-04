@@ -180,3 +180,9 @@ def test_datetime_handling(e, events):
                         events)) == set([2, 3])
     assert set(compute(e[e.time >= "2012-01-02"].x,
                         events)) == set([2, 3])
+
+
+def test_summary_kwargs(t, bank):
+    expr = by(t.name, total=t.amount.sum(), avg=t.amount.mean())
+    result = compute(expr, bank)
+    assert result == [('Bob', 200.0, 600), ('Alice', 150.0, 300)]
