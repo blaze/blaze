@@ -90,7 +90,7 @@ before_script:
   - mysql -e 'create database test'
 
 script: 
-  - coverage run ($which py.test)
+  - coverage run $(which py.test)
   - coverage report --show-missing
 
 after_success:
