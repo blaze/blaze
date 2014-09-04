@@ -73,12 +73,13 @@ except ImportError:
     Collection = type(None)
 
 try:
-    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
     JSON = type(None)
     JSON_STREAMING = type(None)
+    Excel = type(None)
 
 @dispatch(type, object)
 def into(a, b, **kwargs):
@@ -711,7 +712,7 @@ def into(a, b, **kwargs):
 
 @dispatch((np.ndarray, ColumnDataSource, ctable, tables.Table,
     list, tuple, set),
-          CSV)
+          (CSV, Excel))
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
@@ -796,6 +797,9 @@ def into(a, b, **kwargs):
 def into(a, b):
     return b
 
+@dispatch(pd.DataFrame, Excel)
+def into(df, xl):
+    return pd.read_excel(xl.path, sheetname=xl.worksheet)
 
 @dispatch(pd.DataFrame, ChunkIterator)
 def into(df, chunks, **kwargs):
