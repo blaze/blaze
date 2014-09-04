@@ -180,13 +180,18 @@ def group_apply(expr):
                               % type(expr).__name__)
 
 
+reductions = {mean: 'avg', count: 'sum'}
+
+
 @dispatch(Summary)
 def group_apply(expr):
-    funcs = expr.values
-    columns = [c.child.column for c in funcs]
-    values = zip(expr.names, expr.values, columns)
-    key_getter = lambda v: '$%s' % {mean: 'avg'}.get(type(v), type(v).__name__)
-    query = dict((k, {key_getter(v): '$%s' % z}) for k, v, z in values)
+    # TODO: implement columns variable more generally when ColumnWise works
+    reducs = expr.values
+    columns = [c.child.column for c in reducs]
+    values = zip(expr.names, reducs, columns)
+    key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
+    query = dict((k, {key_getter(v): int(isinstance(v, count)) or '$%s' % z})
+                 for k, v, z in values)
     return query
 
 
