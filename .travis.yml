@@ -83,7 +83,7 @@ install:
   # Install Blaze
   - python setup.py install
 
-  # Install pytest-cov
+  # Install coverage
   - pip install coverage
 
 before_script:
