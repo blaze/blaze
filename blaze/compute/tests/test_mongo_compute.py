@@ -130,7 +130,8 @@ def test_selection(t, bank):
                     ('Bob', 300)])
 
 
-@xfail
+@xfail(raises=NotImplementedError,
+       reason='ColumnWise not implemented for MongoDB')
 def test_columnwise(p, points):
     assert set(compute(p.x + p.y, points)) == set([11, 22, 33])
 
@@ -186,3 +187,11 @@ def test_summary_kwargs(t, bank):
     expr = by(t.name, total=t.amount.sum(), avg=t.amount.mean())
     result = compute(expr, bank)
     assert result == [('Bob', 200.0, 600), ('Alice', 150.0, 300)]
+
+
+@xfail(raises=AttributeError,
+       reason='ColumnWise not implemented for MongoDB')
+def test_summary_arith(t, bank):
+    expr = by(t.name, add_one_and_sum=(t.amount + 1).sum())
+    result = compute(expr, bank)
+    assert result == [('Bob', 601), ('Alice', 301)]
