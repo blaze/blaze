@@ -305,3 +305,14 @@ def test_spark_outer_join():
 
 def test_discover():
     assert discover(rdd) == discover(data)
+
+
+sqlContext = pyspark.SQLContext(sc)
+
+def test_into_SparkSQL_from_PySpark():
+    rdd = sc.parallelize(data)
+    srdd = into(pyspark.sql.SchemaRDD, rdd)
+    assert isinstance(srdd, pyspark.sql.SchemaRDD)
+
+    assert into(list, rdd) == into(list, srdd)
+
