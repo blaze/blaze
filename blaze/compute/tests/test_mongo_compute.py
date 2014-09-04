@@ -189,6 +189,12 @@ def test_summary_kwargs(t, bank):
     assert result == [('Bob', 200.0, 600), ('Alice', 150.0, 300)]
 
 
+def test_summary_count(t, bank):
+    expr = by(t.name, how_many=t.amount.count())
+    result = compute(expr, bank)
+    assert result == [('Bob', 3), ('Alice', 2)]
+
+
 @xfail(raises=AttributeError,
        reason='ColumnWise not implemented for MongoDB')
 def test_summary_arith(t, bank):
