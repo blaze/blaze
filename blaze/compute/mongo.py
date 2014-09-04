@@ -44,6 +44,9 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 
 from __future__ import absolute_import, division, print_function
 
+import operator as op
+import numbers
+
 try:
     import pymongo
     from pymongo.collection import Collection
@@ -59,7 +62,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
                     Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
-                    Like)
+                    Like, Relational, Arithmetic, ColumnWise)
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
@@ -118,6 +121,38 @@ def compute_up(t, coll, **kwargs):
 @dispatch(Head, MongoQuery)
 def compute_up(t, q, **kwargs):
     return q.append({'$limit': t.n})
+
+
+@dispatch(ColumnWise, MongoQuery)
+def compute_one(t, q, **kwargs):
+    return q.append(compute_one(t.expr, q, **kwargs))
+
+
+@dispatch((basestring, ScalarSymbol))
+def m(s):
+    return '$%s' % s
+
+
+@dispatch(numbers.Number)
+def m(s):
+    return s
+
+
+binops = {op.add: 'add',
+          op.mul: 'multiply',
+          op.div: 'divide',
+          op.sub: 'subtract'}
+
+
+def op_label(t):
+    return '%s(%s, %s)' % (t.op.__name__, t.lhs, t.rhs)
+
+
+@dispatch(Arithmetic, MongoQuery)
+def compute_one(t, q, **kwargs):
+    lhs, rhs = t.lhs, t.rhs
+    mexpr = {m('project'): {str(t): {m(binops[t.op]): [m(lhs), m(rhs)]}}}
+    return mexpr
 
 
 @dispatch(Projection, MongoQuery)
@@ -254,15 +289,25 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
+    try:
+        columns = e.active_columns()
+    except AttributeError:
+        columns = e.columns
+    expr_columns = dict((col, 1) for qry in q.query
+                        for col in qry.get('$project', []))
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
-                                 dict((col, 1) for col in e.columns))}
+                                 dict((col, 1) for col in columns),
+                                 expr_columns)}
     q = q.append(d)
     dicts = q.coll.aggregate(list(q.query))['result']
 
     if e.iscolumn:
-        return list(pluck(e.columns[0], dicts, default=None)) # dicts -> values
+        try:
+            return list(pluck(columns[0], dicts)) # dicts -> values
+        except KeyError:
+            return list(pluck(columns, dicts))
     else:
-        return list(pluck(e.columns, dicts, default=None))    # dicts -> tuples
+        return list(pluck(columns, dicts))    # dicts -> tuples
 
 
 def name(e):
