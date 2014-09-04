@@ -187,7 +187,7 @@ def test_spark_multi_column_join():
                 (1, 3, 5, 150)]
 
     print(result.collect())
-    assert result.collect() == expected
+    assert set(result.collect()) ==  set(expected)
 
 
 def test_spark_groupby():
