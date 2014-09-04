@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from blaze.expr import ColumnWise, Projection, Column, Not, Selection
-from blaze.expr import count, nunique, Reduction, Distinct, Sort, Head, Label
-from blaze.expr import TableExpr, ReLabel, Union, Sample
+from blaze.expr import Reduction, Column, Projection, ColumnWise, Selection
+from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, TableExpr, Sample
+from blaze.expr import std, var, count, nunique
+from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
 
-from blaze.expr.scalar import BinOp, UnaryOp, USub
 from .core import base, compute
 from ..dispatch import dispatch
 from blaze.api.into import into
@@ -82,6 +82,11 @@ def compute_one(t, x, **kwargs):
 @dispatch(Reduction, np.ndarray)
 def compute_one(t, x, **kwargs):
     return getattr(x, t.symbol)()
+
+
+@dispatch((std, var), np.ndarray)
+def compute_one(t, x, **kwargs):
+    return getattr(x, t.symbol)(ddof=t.unbiased)
 
 
 @dispatch(Distinct, np.ndarray)

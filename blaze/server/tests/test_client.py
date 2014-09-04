@@ -28,7 +28,7 @@ import blaze.server.client as client
 client.requests = test # OMG monkey patching
 
 
-dd = Client('http://localhost:5000', 'accounts')
+dd = Client('http://localhost:6363', 'accounts')
 
 def test_dshape():
     assert dd.dshape == accounts.dshape
@@ -54,7 +54,7 @@ def test_chunks():
 
 
 def test_expr_client():
-    ec = ExprClient('localhost:5000', 'accounts_df')
+    ec = ExprClient('localhost:6363', 'accounts_df')
     assert discover(ec) == discover(df)
 
     t = TableSymbol('t', discover(ec))
@@ -65,7 +65,7 @@ def test_expr_client():
 
 
 def test_expr_client_interactive():
-    ec = ExprClient('localhost:5000', 'accounts_df')
+    ec = ExprClient('localhost:6363', 'accounts_df')
     t = Table(ec)
 
     assert compute(t.name) == ['Alice', 'Bob']
@@ -75,9 +75,13 @@ def test_expr_client_interactive():
 
 
 def test_resource():
-    ec = resource('blaze://localhost:5000', 'accounts_df')
+    ec = resource('blaze://localhost:6363', 'accounts_df')
+    assert discover(ec) == discover(df)
+
+def test_resource_default_port():
+    ec = resource('blaze://localhost', 'accounts_df')
     assert discover(ec) == discover(df)
 
 def test_resource_all_in_one():
-    ec = resource('blaze://localhost:5000::accounts_df')
+    ec = resource('blaze://localhost:6363::accounts_df')
     assert discover(ec) == discover(df)

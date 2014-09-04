@@ -18,6 +18,10 @@ from datashape import Mono
 
 from .index import parse_index
 
+# http://www.speedguide.net/port.php?port=6363
+# http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+DEFAULT_PORT = 6363
+
 class Server(object):
     """ Blaze Data Server
 
@@ -32,7 +36,7 @@ class Server(object):
     ...                columns=['id', 'name', 'amount'])
 
     >>> server = Server({'accounts': df})
-    >>> server.app.run() # doctest: +SKIP
+    >>> server.run() # doctest: +SKIP
     """
     __slots__ = 'app', 'datasets'
 
@@ -50,6 +54,10 @@ class Server(object):
     def __setitem__(self, key, value):
         self.datasets[key] = value
         return value
+
+    def run(self, *args, **kwargs):
+        port = kwargs.pop('port', DEFAULT_PORT)
+        return self.app.run(*args, port=port, **kwargs)
 
 
 routes = list()
@@ -309,7 +317,7 @@ def from_tree(expr, namespace=None):
      }
 
     >>> from_tree(tree)
-    sum(t['x'])
+    sum(child=t['x'])
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
     below we replace the ``TableSymbol`` node with the string ``'t'``.

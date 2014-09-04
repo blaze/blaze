@@ -2,27 +2,65 @@ from __future__ import absolute_import, division, print_function
 
 import numbers
 import toolz
+import inspect
+import functools
 from toolz import unique, concat
+from pprint import pprint
+from blaze.compatibility import StringIO
 
 from ..dispatch import dispatch
 
 __all__ = ['Expr', 'discover']
 
 
+def get_callable_name(o):
+    """Welcome to str inception. Leave your kittens at home.
+    """
+    # special case partial objects
+    if isinstance(o, functools.partial):
+        return 'partial(%s, %s)' % (get_callable_name(o.func),
+                                    ', '.join(map(str, o.args)))
+
+    try:
+        # python 3 makes builtins look nice
+        return o.__qualname__
+    except AttributeError:
+        try:
+            # show the module of the object, if we can
+            return '%s.%s' % (inspect.getmodule(o).__name__, o.__name__)
+        except AttributeError:
+            try:
+                # __self__ tells us the class the method is bound to
+                return '%s.%s' % (o.__self__.__name__, o.__name__)
+            except AttributeError:
+                # exhausted all avenues of printing callables so just print the
+                # name of the object
+                return o.__name__
+
+
 def _str(s):
     """ Wrap single quotes around strings """
     if isinstance(s, str):
         return "'%s'" % s
+    elif callable(s):
+        return get_callable_name(s)
     else:
-        return str(s)
+        stream = StringIO()
+        pprint(s, stream=stream)
+        return stream.getvalue().rstrip()
 
 
 class Expr(object):
     __inputs__ = 'child',
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
+        assert frozenset(kwargs).issubset(self.__slots__)
+
         for slot, arg in zip(self.__slots__, args):
             setattr(self, slot, arg)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def args(self):
@@ -56,7 +94,6 @@ class Expr(object):
             return list(unique(concat(i.leaves() for i in self.inputs if
                                       isinstance(i, Expr))))
 
-
     def isidentical(self, other):
         return type(self) == type(other) and self.args == other.args
 
@@ -66,7 +103,9 @@ class Expr(object):
         return hash((type(self), self.args))
 
     def __str__(self):
-        return "%s(%s)" % (type(self).__name__, ', '.join(map(_str, self.args)))
+        rep = ["%s=%s" % (slot, _str(arg))
+               for slot, arg in zip(self.__slots__, self.args)]
+        return "%s(%s)" % (type(self).__name__, ', '.join(rep))
 
     def __repr__(self):
         return str(self)
@@ -179,7 +218,7 @@ def path(a, b):
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> expr = t['amount'].sum()
     >>> list(path(expr, t))
-    [sum(t['amount']), t['amount'], t]
+    [sum(child=t['amount']), t['amount'], t]
     """
     while not a.isidentical(b):
         yield a

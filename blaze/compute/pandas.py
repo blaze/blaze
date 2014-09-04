@@ -22,12 +22,13 @@ from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
+from toolz import merge as merge_dicts
 
 from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr, Sample)
+                    Map, Apply, Merge, Union, TableExpr, std, var, Sample)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
@@ -121,16 +122,28 @@ def compute_one(t, df, **kwargs):
     return getattr(df, t.symbol)()
 
 
-@dispatch(Reduction, (SeriesGroupBy, Series))
-def compute_one(t, s, **kwargs):
-    result = getattr(s, t.symbol)()
+@dispatch((std, var), (DataFrame, DataFrameGroupBy))
+def compute_one(t, df, **kwargs):
+    return getattr(df, t.symbol)(ddof=t.unbiased)
 
+
+def post_reduction(result):
     # pandas may return an int, numpy scalar or non scalar here so we need to
     # program defensively so that things are JSON serializable
     try:
         return result.item()
     except (AttributeError, ValueError):
         return result
+
+
+@dispatch(Reduction, (Series, SeriesGroupBy))
+def compute_one(t, s, **kwargs):
+    return post_reduction(getattr(s, t.symbol)())
+
+
+@dispatch((std, var), (Series, SeriesGroupBy))
+def compute_one(t, s, **kwargs):
+    return post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
 
 
 @dispatch(Distinct, DataFrame)
@@ -293,7 +306,7 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Sort, Series)
 def compute_one(t, s, **kwargs):
-    return s.order(t.key, ascending=t.ascending)
+    return s.order(ascending=t.ascending)
 
 
 @dispatch(Head, (Series, DataFrame))
@@ -333,7 +346,13 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Map, Series)
 def compute_one(t, df, **kwargs):
-    return df.map(t.func)
+    result = df.map(t.func)
+    try:
+        result.name = t.name
+    except NotImplementedError:
+        # We don't have a schema, but we should still be able to map
+        result.name = df.name
+    return result
 
 
 @dispatch(Apply, (Series, DataFrame))
@@ -341,10 +360,11 @@ def compute_one(t, df, **kwargs):
     return t.func(df)
 
 
-@dispatch(Merge, DataFrame)
-def compute_one(t, df, **kwargs):
+@dispatch(Merge, NDFrame)
+def compute_one(t, df, scope=None, **kwargs):
     subexpression = common_subexpression(*t.children)
-    children = [compute(child, {subexpression: df}) for child in t.children]
+    scope = merge_dicts(scope or {}, {subexpression: df})
+    children = [compute(child, scope) for child in t.children]
     return pd.concat(children, axis=1)
 
 

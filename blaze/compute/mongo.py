@@ -56,7 +56,7 @@ import toolz
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
-                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or)
+                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary)
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
@@ -90,7 +90,6 @@ class MongoQuery(object):
 
     def append(self, clause):
         return MongoQuery(self.coll, self.query + (clause,))
-
 
     def info(self):
         return self.coll, self.query
@@ -133,7 +132,7 @@ def compute_one(t, q, **kwargs):
     if not isinstance(t.grouper, Projection):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
-    name = t.apply.dshape[0].names[0]
+    names = t.apply.dshape[0].names
     return MongoQuery(q.coll, q.query +
     ({
         '$group': toolz.merge(
@@ -143,7 +142,7 @@ def compute_one(t, q, **kwargs):
      },
      {
          '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.columns),
-                                 {name: '$'+name})
+                                 dict((name, '$' + name) for name in names))
      }))
 
 
@@ -155,7 +154,7 @@ def compute_one(t, q, **kwargs):
                               {'_id': 0})}))
 
 
-
+@dispatch(Reduction)
 def group_apply(expr):
     """
     Dictionary corresponding to apply part of split-apply-combine operation
@@ -166,7 +165,7 @@ def group_apply(expr):
     """
     assert isinstance(expr.dshape[0], Record)
     key = expr.dshape[0].names[0]
-    col = '$'+expr.child.columns[0]
+    col = '$' + expr.child.columns[0]
     if isinstance(expr, count):
         return {key: {'$sum': 1}}
     if isinstance(expr, sum):
@@ -178,7 +177,22 @@ def group_apply(expr):
     if isinstance(expr, mean):
         return {key: {'$avg': col}}
     raise NotImplementedError("Reduction %s not yet supported in MongoDB"
-            % type(expr).__name__)
+                              % type(expr).__name__)
+
+
+reductions = {mean: 'avg', count: 'sum'}
+
+
+@dispatch(Summary)
+def group_apply(expr):
+    # TODO: implement columns variable more generally when ColumnWise works
+    reducs = expr.values
+    columns = [c.child.column for c in reducs]
+    values = zip(expr.names, reducs, columns)
+    key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
+    query = dict((k, {key_getter(v): int(isinstance(v, count)) or '$%s' % z})
+                 for k, v, z in values)
+    return query
 
 
 @dispatch(count, MongoQuery)
@@ -192,7 +206,8 @@ def compute_one(t, q, **kwargs):
     name = t.dshape[0].names[0]
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
     column = '$' + t.child.columns[0]
-    return q.append({'$group': {'_id': {}, name: {reduction: column}}})
+    arg = {'$group': {'_id': {}, name: {reduction: column}}}
+    return q.append(arg)
 
 
 @dispatch(Sort, MongoQuery)
@@ -229,8 +244,9 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
-    q = q.append({'$project': toolz.merge({'_id': 0}, # remove mongo identifier
-                                      dict((col, 1) for col in e.columns))})
+    d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
+                                 dict((col, 1) for col in e.columns))}
+    q = q.append(d)
     dicts = q.coll.aggregate(list(q.query))['result']
 
     if e.iscolumn:

@@ -32,7 +32,7 @@ install:
 
   # Install dependencies
   - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy
-  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz
+  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz xlrd
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
@@ -45,6 +45,9 @@ install:
 
   # Install PyMongo
   - pip install pymongo
+
+  # Install MySQL py2.y/3.x
+  - pip install pymysql
 
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz

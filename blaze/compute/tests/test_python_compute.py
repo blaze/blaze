@@ -4,12 +4,13 @@ import itertools
 import operator
 
 import blaze
-from blaze.compute.python import nunique, mean, std, rrowfunc
+from blaze.compute.python import nunique, mean, rrowfunc
 from blaze import dshape
 from blaze.compute.core import compute, compute_one
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, exp, summary, ScalarSymbol,
-                        count, scalar)
+                        Apply, sum, min, max, any, summary, ScalarSymbol,
+                        count, scalar, std)
+import numpy as np
 
 from blaze import cos, sin
 from blaze.compatibility import builtins
@@ -107,6 +108,16 @@ def test_reduction_compare():
 def test_mean():
     assert compute(mean(t['amount']), data) == float(100 + 200 + 50) / 3
     assert 50 < compute(std(t['amount']), data) < 100
+
+
+def test_std():
+    amt = [row[1] for row in data]
+    assert np.allclose(compute(t.amount.std(), data), np.std(amt))
+    assert np.allclose(compute(t.amount.std(unbiased=True), data),
+                       np.std(amt, ddof=1))
+    assert np.allclose(compute(t.amount.var(), data), np.var(amt))
+    assert np.allclose(compute(t.amount.var(unbiased=True), data),
+                       np.var(amt, ddof=1))
 
 
 def test_by_no_grouper():
