@@ -13,7 +13,7 @@ from blaze.expr import TableSymbol, by
 from blaze.compatibility import xfail
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def conn():
     try:
         return pymongo.MongoClient()
@@ -21,7 +21,7 @@ def conn():
         pytest.skip('No mongo server running')
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def db(conn):
     return conn.test_db
 
