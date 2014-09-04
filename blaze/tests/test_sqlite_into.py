@@ -2,12 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-psycopg2 = pytest.importorskip('psycopg2')
-import subprocess
-ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
-output = ps.stdout.read()
-pytestmark = pytest.mark.skipif(len(output.split('\n')) < 6, reason="No Postgres Installation")
-
 
 from blaze import SQL
 from blaze import CSV
@@ -15,14 +9,10 @@ from blaze.api.into import into
 import sqlalchemy
 import os
 import csv as csv_module
-from blaze import Table
-from blaze import compute
-import pandas as pd
-import datetime as dt
-
+import subprocess
 
 db_file_name = "db_test.db"
-url = 'sqlite:///{}'.format(db_file_name)
+url = 'sqlite:///{0}'.format(db_file_name)
 file_name = 'test.csv'
 
 # @pytest.fixture(scope='module')
@@ -98,7 +88,7 @@ def test_simple_into():
     into(sql,csv, if_exists="replace")
     conn = sql.engine.raw_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' and name='{}';".format(tbl))
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' and name='{0}';".format(tbl))
 
     sqlite_tbl_names = cursor.fetchall()
     assert sqlite_tbl_names[0][0] == tbl

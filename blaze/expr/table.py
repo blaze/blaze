@@ -388,11 +388,11 @@ class ColumnSyntaxMixin(object):
     def mean(self):
         return mean(self)
 
-    def var(self):
-        return var(self)
+    def var(self, unbiased=False):
+        return var(self, unbiased)
 
-    def std(self):
-        return std(self)
+    def std(self, unbiased=False):
+        return std(self, unbiased)
 
     def isnan(self):
         return columnwise(scalar.isnan, self)
@@ -824,9 +824,51 @@ class min(Reduction, Number):
 class mean(Reduction, Number):
     dtype = ct.real
 class var(Reduction, Number):
+    """Variance
+
+    Parameters
+    ----------
+    child : Expr
+        An expression
+    unbiased : bool, optional
+        Compute an unbiased estimate of the population variance if this is
+        ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
+        degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
+    """
+    __slots__ = 'child', 'unbiased'
+
     dtype = ct.real
+
+    def __init__(self, child, unbiased=False):
+        super(var, self).__init__(child, unbiased)
+
 class std(Reduction, Number):
+    """Standard Deviation
+
+    Parameters
+    ----------
+    child : Expr
+        An expression
+    unbiased : bool, optional
+        Compute the square root of an unbiased estimate of the population
+        variance if this is ``True``.
+
+        .. warning::
+
+            This does *not* return an unbiased estimate of the population
+            standard deviation.
+
+    See Also
+    --------
+    var
+    """
+    __slots__ = 'child', 'unbiased'
+
     dtype = ct.real
+
+    def __init__(self, child, unbiased=False):
+        super(std, self).__init__(child, unbiased)
+
 class count(Reduction, Number):
     dtype = ct.int_
 class nunique(Reduction, Number):

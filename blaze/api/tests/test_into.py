@@ -352,6 +352,7 @@ def test_numpy_python3_bytes_to_string_conversion():
     x = np.array([(1, 'a'), (2, 'b')], dtype=[('id', 'i4'), ('letter', 'S1')])
     assert isinstance(into(list, x)[0][1], str)
 
+
 def test_into_DataFrame_Excel_xls_format():
     dirname = os.path.dirname(__file__)
     fn = os.path.join(dirname, 'accounts.xls')
@@ -362,6 +363,7 @@ def test_into_DataFrame_Excel_xls_format():
     df = into(DataFrame, fn)
     assert (df == exp).all().all()
 
+
 def test_into_DataFrame_Excel_xlsx_format():
     dirname = os.path.dirname(__file__)
     fn = os.path.join(dirname, 'accounts_1.xlsx')
@@ -370,3 +372,10 @@ def test_into_DataFrame_Excel_xlsx_format():
                     columns = ["id", "name", "amount"])
     df = into(DataFrame, fn)
     assert (df == exp).all().all()
+
+
+def test_into_numpy_from_tableexpr_with_option_types():
+    t = Table([[1, 'Alice'], [2, 'Bob']],
+              schema='{id: ?int32, name: string[5, "ascii"]}')
+    assert into(np.ndarray, t).dtype == \
+            np.dtype([('id', 'i4'), ('name', 'S5')])

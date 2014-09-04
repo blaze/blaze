@@ -12,6 +12,7 @@ from ..expr import Expr, TableExpr
 from ..dispatch import dispatch
 from .index import emit_index
 from ..api.resource import resource
+from .server import DEFAULT_PORT
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
@@ -91,7 +92,7 @@ class ExprClient(object):
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> ec = ExprClient('localhost:5000', 'accounts')
+    >>> ec = ExprClient('localhost:6363', 'accounts')
     >>> t = Table(ec) # doctest: +SKIP
 
     See Also
@@ -147,11 +148,15 @@ def compute_down(expr, ec):
 @resource.register('blaze://.*')
 def resource_blaze(uri, name):
     uri = uri[len('blaze://'):]
+    sp = uri.split('/')
+    tld, rest = sp[0], sp[1:]
+    if ':' not in tld:
+        tld = tld + ':%d' % DEFAULT_PORT
+    uri = '/'.join([tld] + list(rest))
     return ExprClient(uri, name)
 
 
 @resource.register('blaze://.*::\w*', priority=11)
 def resource_blaze_all(uri):
-    uri = uri[len('blaze://'):]
     uri, name = uri.rsplit('::', 1)
-    return ExprClient(uri, name)
+    return resource(uri, name)

@@ -2,15 +2,16 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
+from datetime import datetime
 import pandas as pd
 import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze import dshape, Table
+from blaze import dshape, Table, discover, transform
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
-                        min, max, any, all, Projection)
+                        min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -163,6 +164,10 @@ def test_reductions():
     assert compute(nunique(t['name']), df) == 2
     assert compute(any(t['amount'] > 150), df) == True
     assert compute(any(t['amount'] > 250), df) == False
+    assert compute(var(t['amount']), df) == df.amount.var(ddof=0)
+    assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
+    assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
+    assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
 
 
 def test_distinct():
@@ -268,13 +273,23 @@ def test_sort():
     assert str(compute(t.sort(['amount', 'id']), df)) == \
             str(df.sort(['amount', 'id']))
 
-    expected = df['amount'].copy()
-    expected.sort()
+
+def test_sort_on_series_no_warning(recwarn):
+    expected = df.amount.order()
+
+    recwarn.clear()
 
     assert str(compute(t['amount'].sort('amount'), df)) ==\
             str(expected)
+
+    # raises as assertion error if no warning occurs, same thing for below
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
+
     assert str(compute(t['amount'].sort(), df)) ==\
             str(expected)
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
 
 
 def test_head():
@@ -491,3 +506,29 @@ def test_summary_by_reduction_arithmetic():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
+
+
+def test_dplyr_transform():
+    df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
+    t = TableSymbol('t', discover(df))
+    expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
+                                             schema='{date: datetime}'))
+    lhs = compute(expr, df)
+    rhs = pd.concat([df, Series(df.timestamp.map(lambda x: x.date()),
+                                name='date').to_frame()], axis=1)
+    assert str(lhs) == str(rhs)
+
+
+def test_nested_transform():
+    d = {'timestamp': [1379613528, 1379620047], 'platform': ["Linux",
+                                                             "Windows"]}
+    df = DataFrame(d)
+    t = TableSymbol('t', discover(df))
+    t = transform(t, timestamp=t.timestamp.map(datetime.fromtimestamp,
+                                               schema='{timestamp: datetime}'))
+    expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
+                                             schema='{date: datetime}'))
+    result = compute(expr, df)
+    df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
+    df['date'] = df.timestamp.map(lambda x: x.date())
+    assert str(result) == str(df)

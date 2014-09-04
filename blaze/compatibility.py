@@ -75,3 +75,9 @@ else:
         c_ssize_t = ctypes.c_int32
     else:
         c_ssize_t = ctypes.c_int64
+
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
