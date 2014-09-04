@@ -84,15 +84,12 @@ install:
   - python setup.py install
 
   # Install Coverage
-  - pip install coverage
+  - pip install pytest-cov
 
 before_script:
   - mysql -e 'create database test'
 
-script: 
-  - py.test -r sxX --doctest-modules --verbose --pyargs blaze
-  - coverage run $(which py.test)
-  - coverage report --show-missing
+script: py.test -r sxX --doctest-modules --verbose --pyargs --cov blaze
 
 after_success:
   - pip install coveralls --use-mirrors ; coveralls
