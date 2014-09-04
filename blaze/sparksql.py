@@ -4,6 +4,8 @@ from pyspark import sql
 import datashape
 from datashape import dshape, DataShape, Record, isdimension, Option
 
+from .dispatch import dispatch
+
 types = {datashape.int32: sql.IntegerType(),
          datashape.int64: sql.IntegerType(),
          datashape.float32: sql.FloatType(),
@@ -26,6 +28,9 @@ def ds_to_sparksql(ds):
 
     >>> print ds_to_sparksql('5 * int32')
     ArrayType(IntegerType,false)
+
+    >>> print ds_to_sparksql('5 * ?int32')
+    ArrayType(IntegerType,true)
 
     >>> print ds_to_sparksql('{name: string, amount: int32}')
     StructType(List(StructField(name,StringType,false),StructField(amount,IntegerType,false)))

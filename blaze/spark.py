@@ -5,6 +5,7 @@ from .compatibility import _strtypes
 from .compute.spark import *
 from .data.utils import coerce
 from .dispatch import dispatch
+from datashape import discover
 
 __all__ = ['pyspark', 'coerce']
 
@@ -13,7 +14,12 @@ def coerce(dshape, rdd):
     return rdd.mapPartitions(partial(coerce, dshape))
 
 
-@dispatch((type, object), RDD)
+@dispatch(type, RDD)
+def into(a, rdd, **kwargs):
+    f = into.dispatch(a, type(rdd))
+    return f(a, rdd, **kwargs)
+
+@dispatch(object, RDD)
 def into(o, rdd):
     return into(o, rdd.collect())
 
