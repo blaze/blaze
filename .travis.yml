@@ -89,7 +89,7 @@ install:
 before_script:
   - mysql -e 'create database test'
 
-script: py.test -r sxX --doctest-modules --verbose --pyargs --cov blaze
+script: py.test -r sxX --doctest-modules --verbose --pyargs blaze
 
 after_success:
   - pip install coveralls --use-mirrors ; coveralls
