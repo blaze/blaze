@@ -4,16 +4,14 @@ import pytest
 bcolz = pytest.importorskip('bcolz')
 
 import numpy as np
-from pandas import DataFrame
 
 from blaze.bcolz import into, chunks
-from blaze.expr import *
+from blaze.expr import TableSymbol
 from blaze.compute.core import compute
 
 
-b = bcolz.ctable([[1, 2, 3],
-                [1., 2., 3.]],
-               names=['a', 'b'])
+b = bcolz.ctable([[1, 2, 3], [1., 2., 3.]],
+                 names=['a', 'b'])
 
 t = TableSymbol('t', '{a: int32, b: float64}')
 
@@ -27,9 +25,13 @@ def test_reductions():
     assert compute(t.a.sum(), b) == 6
     assert compute(t.a.min(), b) == 1
     assert compute(t.a.max(), b) == 3
-    assert compute(t.a.mean(), b) == 2.
+    assert compute(t.a.mean(), b) == 2.0
     assert abs(compute(t.a.std(), b) - np.std([1, 2, 3])) < 1e-5
     assert abs(compute(t.a.var(), b) - np.var([1, 2, 3])) < 1e-5
+    assert abs(compute(t.a.std(unbiased=True), b) - np.std([1, 2, 3],
+                                                           ddof=1)) < 1e-5
+    assert abs(compute(t.a.var(unbiased=True), b) - np.var([1, 2, 3],
+                                                           ddof=1)) < 1e-5
     assert compute(t.a.nunique(), b) == 3
     assert compute(t.nunique(), b) == 3
     assert len(list(compute(t.distinct(), b))) == 3

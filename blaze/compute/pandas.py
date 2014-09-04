@@ -28,7 +28,7 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr)
+                    Map, Apply, Merge, Union, TableExpr, std, var)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
@@ -122,16 +122,28 @@ def compute_one(t, df, **kwargs):
     return getattr(df, t.symbol)()
 
 
-@dispatch(Reduction, (SeriesGroupBy, Series))
-def compute_one(t, s, **kwargs):
-    result = getattr(s, t.symbol)()
+@dispatch((std, var), (DataFrame, DataFrameGroupBy))
+def compute_one(t, df, **kwargs):
+    return getattr(df, t.symbol)(ddof=t.unbiased)
 
+
+def post_reduction(result):
     # pandas may return an int, numpy scalar or non scalar here so we need to
     # program defensively so that things are JSON serializable
     try:
         return result.item()
     except (AttributeError, ValueError):
         return result
+
+
+@dispatch(Reduction, (Series, SeriesGroupBy))
+def compute_one(t, s, **kwargs):
+    return post_reduction(getattr(s, t.symbol)())
+
+
+@dispatch((std, var), (Series, SeriesGroupBy))
+def compute_one(t, s, **kwargs):
+    return post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
 
 
 @dispatch(Distinct, DataFrame)
