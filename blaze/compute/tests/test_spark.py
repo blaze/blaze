@@ -302,3 +302,6 @@ def test_spark_outer_join():
              (3, None, None, 'LA'),
              (4, 'Dennis', 400, 'Moscow')])
     """
+
+def test_discover():
+    assert discover(rdd) == discover(data)

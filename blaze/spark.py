@@ -16,3 +16,9 @@ def coerce(dshape, rdd):
 @dispatch((type, object), RDD)
 def into(o, rdd):
     return into(o, rdd.collect())
+
+
+@dispatch(RDD)
+def discover(rdd):
+    data = rdd.take(50)
+    return rdd.count() * discover(data).subshape[0]
