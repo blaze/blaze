@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import tables as tb
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
-                        TableSymbol, Sort, Reduction, count)
+                        TableSymbol, Sort, Reduction, count, Sample)
 from blaze.expr import eval_str
 from blaze.compatibility import basestring, map
 from datashape import Record
@@ -110,3 +110,29 @@ def compute_one(s, t, **kwargs):
     if s.ascending:
         return result
     return result[::-1]
+
+@dispatch(Sample, tb.Table)
+def compute_one(expr, data, **kwargs):
+    """
+    @param expr - The TableExpr that we are calculating over
+    @param data - The numpy ndarray we are sampling from
+    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
+
+    Each time compute(sample(), ndarray) is called, a new, different ndarray should be returned
+    """
+
+    replace=getattr(kwargs, "replace", expr.replacement)
+
+    array_len=len(data)
+    count=expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count=array_len
+
+    indexes=np.random.choice(array_len, count, replace=replace)
+    result=data[indexes]
+
+    return result
+    

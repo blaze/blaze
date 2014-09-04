@@ -255,3 +255,37 @@ def test_create_multiple_indexes_fails(pyt):
 def test_create_index_fails(pyt):
     with pytest.raises(AttributeError):
         create_index(pyt, 'no column here!')
+
+
+def test_sample():
+    test_data=x
+    test_expr=t
+
+    result=compute(test_expr.sample(2), test_data)
+    assert(len(result) == 2)
+
+    for item in result:
+        assert(item in test_data)
+    
+    result=compute(test_expr.sample(len(test_data)+1), test_data)
+    assert(len(result) == len(test_data))
+    assert(len(result) < (len(test_data)+1))
+
+    for item in result:
+        assert(item in test_data)
+    
+    #This test should give us repeated data
+    result=compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
+    assert(len(result) == 2*(len(test_data)))
+
+    for item in result:
+        assert(item in test_data)
+    
+    #Test sampling from a single column from the array
+    result=compute(test_expr['name'].sample(2), test_data)
+    assert(len(result) == 2)
+    assert(type(result) == type(test_data['name']))
+    
+
+    for item in result:
+        assert(item in test_data['name'])

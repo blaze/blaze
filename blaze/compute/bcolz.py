@@ -3,8 +3,9 @@ from __future__ import absolute_import, division, print_function
 from blaze.expr import Selection, Head, Column, Projection, ReLabel, RowWise
 from blaze.expr import Label, Distinct, By, Reduction
 from blaze.expr import std, var, count, mean, nunique, sum
-from blaze.expr import eval_str
+from blaze.expr import eval_str, Sample
 
+import numpy as np
 import datashape
 import bcolz
 import math
@@ -110,3 +111,33 @@ def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return b[start:stop]
+
+@dispatch(Sample, (bcolz.carray, bcolz.ctable))
+def compute_one(expr, data, **kwargs):
+    """
+    @param expr - The TableExpr that we are calculating over
+    @param data - The numpy ndarray we are sampling from
+    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
+
+    Each time compute(sample(), whatever) is called, a new, different whatever should be returned
+    bcolz indexing operations return a numpy.void type or a numpy.ndarray type when doing fancy indexing.
+    We want to keep our original type (I think), so we save it with input_type and convert after sampling.
+    """
+
+    replace=getattr(kwargs, "replace", expr.replacement)
+    input_type=type(data)
+
+    array_len=len(data)
+    count=expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count=array_len
+
+    indexes=np.random.choice(array_len, count, replace=replace)
+    result=data[indexes]
+
+    return input_type(result)
+
+    
