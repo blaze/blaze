@@ -160,10 +160,8 @@ def test_selection(t, bank):
                     ('Bob', 300)])
 
 
-@xfail(raises=NotImplementedError,
-       reason='ColumnWise not implemented for MongoDB')
 def test_columnwise(p, points):
-    assert set(compute(p.x + p.y, points)) == set([11, 22, 33])
+    assert set(compute(p.x + p.y, points)) == set([11, 22, 33, 44])
 
 
 def test_by_one(t, q):
