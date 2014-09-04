@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from blaze.expr import ColumnWise, Projection, Column, Not, Selection
 from blaze.expr import count, nunique, Reduction, Distinct, Sort, Head, Label
-from blaze.expr import TableExpr, ReLabel, Union
+from blaze.expr import TableExpr, ReLabel, Union, Sample
 
 from blaze.expr.scalar import BinOp, UnaryOp, USub
 from .core import base, compute
@@ -139,6 +139,31 @@ def compute_one(t, x, **kwargs):
     else:
         df = Series(name=t.child.columns[0])
     return compute_one(t, into(df, x), **kwargs)
+
+@dispatch(Sample, np.ndarray)
+def compute_one(expr, data, **kwargs):
+    """
+    @param expr - The TableExpr that we are calculating over
+    @param data - The numpy ndarray we are sampling from
+    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
+
+    Each time compute(sample(), ndarray) is called, a new, different ndarray should be returned
+    """
+
+    replace=getattr(kwargs, "replace", expr.replacement)
+
+    array_len=len(data)
+    count=expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count=array_len
+
+    indexes=np.random.choice(array_len, count, replace=replace)
+    result=data.take(indexes)
+
+    return result
 
 
 @dispatch(np.ndarray)

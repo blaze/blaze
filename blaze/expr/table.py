@@ -27,7 +27,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary'''.split()
+projection union columnwise Summary summary Sample sample'''.split()
 
 
 class TableExpr(Expr):
@@ -150,6 +150,9 @@ class TableExpr(Expr):
 
     def max(self):
         return max(self)
+
+    def sample(self, n=10, replacement=False):
+        return sample(self, n=n, replacement=replacement)
 
     @property
     def iscolumn(self):
@@ -1332,3 +1335,46 @@ def union(*children):
         raise ValueError("Inconsistent schemas:\n\t%s" %
                             '\n\t'.join(map(str, schemas)))
     return Union(children)
+
+
+class Sample(TableExpr):
+    """ Return ``n`` randomly selected elements of the table
+
+    Examples
+    --------
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts.sample(5).dshape
+    dshape("5 * { name : string, amount : int32 }")
+
+
+    @param n - The maximum number of rows/items that will be returned.
+               Remember, this object is an expression that will be later evaluated against some data.
+               We don't know what data yet or how much data is in the Table.
+
+    @param replacement - A boolean denoting whether the data will be sampled with or without replacement (i.e. can the same data be returned twice or not)
+
+    Possible future parameters
+    random_stream - A function that takes an integer NUM and returns a iterable of length NUM of indexes to get from the table
+    """
+    __slots__ = 'child', 'n', 'replacement'
+
+    @property
+    def schema(self):
+        return self.child.schema
+
+    @property
+    def dshape(self):
+        return self.n * self.child.schema
+
+    @property
+    def iscolumn(self):
+        return self.child.iscolumn
+
+    def _len(self):
+        return builtins.min(self.child._len(), self.n)
+
+
+def sample(child, n=10, replacement=False):
+    return Sample(child, n, replacement)
+
+sample.__doc__ = Sample.__doc__

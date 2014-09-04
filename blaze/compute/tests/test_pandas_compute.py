@@ -27,7 +27,13 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Alice', 'F', 100, 3],
                    ['Drew', 'F', 100, 4],
                    ['Drew', 'M', 100, 5],
-                   ['Drew', 'M', 200, 5]],
+                   ['Drew', 'M', 200, 5],
+                   ['Bob',  'M', 350, 2],
+                   ['Bill', 'M', 200, 6],
+                   ['Jane', 'F', 710, 7],
+                   ['Alex', 'F', 130, 8],
+                   ['Alex', 'M', 210, 9],
+                   ['Drake','M', 145, 10]],
                   columns=['name', 'sex', 'amount', 'id'])
 
 
@@ -491,3 +497,38 @@ def test_summary_by_reduction_arithmetic():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
+
+
+def test_sample():
+    test_data=dfbig
+    test_data2=dfbig.get_values()
+    test_expr=t
+
+    result=compute(test_expr.sample(2), test_data)
+    assert(len(result) == 2)
+
+    for item in result.get_values():
+        assert(item in test_data2)
+    
+    result=compute(test_expr.sample(len(test_data)+1), test_data)
+    assert(len(result) == len(test_data))
+    assert(len(result) < (len(test_data)+1))
+
+    for item in result.get_values():
+        assert(item in test_data2)
+    
+    #This test should give us repeated data
+    result=compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
+    assert(len(result) == 2*(len(test_data)))
+
+    for item in result.get_values():
+        assert(item in test_data2)
+
+    #This tests sampling a single column (aka Series) from the dataframe
+    result=compute(test_expr['name'].sample(2), test_data)
+    assert(len(result) == 2)
+    assert(type(result) == type(test_data['name']))
+    
+    for item in result.get_values():
+        assert(item in test_data2)
+    

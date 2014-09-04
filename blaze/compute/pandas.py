@@ -27,7 +27,7 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr)
+                    Map, Apply, Merge, Union, TableExpr, Sample)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
@@ -357,3 +357,29 @@ def compute_one(t, example, children, **kwargs):
 def compute_one(expr, data, **kwargs):
     return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
                                         for val in expr.values])))
+
+@dispatch(Sample, (DataFrame, Series))
+def compute_one(expr, data, **kwargs):
+    """
+    @param expr - The TableExpr that we are calculating over
+    @param data - The DataFrame we are sampling from
+    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
+
+    Each time compute(sample(), DataFrame) is called, a new, different DataFrame should be returned
+    """
+
+    replace=getattr(kwargs, "replace", expr.replacement)
+
+    array_len=len(data)
+    count=expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count=array_len
+
+    indexes=np.random.choice(array_len, count, replace=replace)
+    result=data.take(indexes)
+
+    return result
+
