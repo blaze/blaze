@@ -9,6 +9,7 @@ cytoolz
 toolz
 flask >= 0.10.1
 pytest
+xlrd
 requests
 tables
 pymongo
