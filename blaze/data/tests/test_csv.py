@@ -57,7 +57,8 @@ class Test_Other(unittest.TestCase):
             csv.extend([(6, 'Frank', 600),
                         (7, 'Georgina', 700)])
 
-            assert 'Georgina' in set(csv[:, 'name'])
+            expected = set(csv[:, 'name'])
+            assert 'Georgina' in expected
 
     def test_sep_kwarg(self):
         csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
