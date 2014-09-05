@@ -12,7 +12,7 @@ from ..api import discover, Table
 from ..expr import Expr, TableSymbol, Selection, ColumnWise, TableSymbol
 from ..expr import TableExpr
 from ..expr.scalar.parser import exprify
-
+from .crossdomain import crossdomain
 from ..compatibility import map
 from datashape import Mono
 
@@ -351,7 +351,8 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
+@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
+@crossdomain(origin="*", headers=['content-type'])
 def comp(datasets, name):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
@@ -374,4 +375,5 @@ def comp(datasets, name):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
+                    'names' : t.columns,
                     'data': result})
