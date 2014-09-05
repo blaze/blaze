@@ -69,11 +69,10 @@ class Test_Other(unittest.TestCase):
         dd = CSV('foo', 'w', schema='{name: string, amount: int}')
         assert list(dd.columns) == ['name', 'amount']
 
-    @skipif(osx_py3, reason='presently failing on Python 3 OSX')
     def test_unicode(self):
         this_dir = os.path.dirname(__file__)
         filename = os.path.join(this_dir, 'unicode.csv')
-        dd = CSV(filename, columns=['a', 'b'])
+        dd = CSV(filename, columns=['a', 'b'], encoding='utf8')
         assert dd.schema == dshape('{a: string, b: ?int64}')
         assert dd[0]
 
