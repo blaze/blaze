@@ -4,11 +4,9 @@ from dynd import nd
 import numpy as np
 from datashape import dshape
 from datetime import datetime
-import tempfile
 import os
 
 from blaze.api.into import into, discover
-import blaze
 from blaze import Table
 from blaze.utils import tmpfile
 import pytest
@@ -66,7 +64,7 @@ class Test_into(unittest.TestCase):
 
 
 try:
-    from pandas import DataFrame, read_csv
+    from pandas import DataFrame
 except ImportError:
     DataFrame = None
 
@@ -354,6 +352,7 @@ def test_numpy_python3_bytes_to_string_conversion():
 
 
 def test_into_DataFrame_Excel_xls_format():
+    pytest.importorskip('xlrd')
     dirname = os.path.dirname(__file__)
     fn = os.path.join(dirname, 'accounts.xls')
     exp = DataFrame([[100, 1, "Alice", "2000-12-25T00:00:01"],
@@ -365,6 +364,7 @@ def test_into_DataFrame_Excel_xls_format():
 
 
 def test_into_DataFrame_Excel_xlsx_format():
+    pytest.importorskip('xlrd')
     dirname = os.path.dirname(__file__)
     fn = os.path.join(dirname, 'accounts_1.xlsx')
     exp = DataFrame([[1, "Alice", 100],

@@ -1,7 +1,14 @@
-from blaze.api.resource import *
-from blaze.data import *
-from blaze.api.into import into
 import os
+import pytest
+from blaze.api.resource import resource
+from blaze.data import CSV, Excel, SQL, HDF5
+from blaze.api.into import into
+
+from unittest import TestCase
+from blaze.compatibility import xfail
+from tempfile import mktemp
+import gzip
+from blaze.utils import filetext, filetexts, tmpfile
 
 dirname = os.path.dirname(__file__)
 
@@ -27,16 +34,19 @@ def test_into_directory_of_csv_files():
 
 
 def test_into_xls_file():
+    pytest.importorskip('xlrd')
     fn = os.path.join(dirname, 'accounts.xls')
     assert isinstance(resource(fn), Excel)
 
 
 def test_into_xlsx_file():
+    pytest.importorskip('xlrd')
     fn = os.path.join(dirname, 'accounts.xlsx')
     assert isinstance(resource(fn), Excel)
 
 
 def test_into_directory_of_xlsx_files():
+    pytest.importorskip('xlrd')
     fns = os.path.join(dirname, 'accounts_*.xlsx')
     assert into(list, fns) == [(1, 'Alice', 100),
                                (2, 'Bob', 200),
@@ -44,12 +54,6 @@ def test_into_directory_of_xlsx_files():
                                (4, 'Dan', 400),
                                (5, 'Edith', 500)]
 
-from unittest import TestCase
-from blaze.compatibility import xfail
-import os
-from tempfile import mktemp
-import gzip
-from blaze.utils import filetext, filetexts, tmpfile
 
 class TestResource(TestCase):
     def setUp(self):
