@@ -134,3 +134,8 @@ from blaze.expr import Expr, TableExpr
 @dispatch(pyspark.sql.SQLContext, (TableExpr, Expr, object))
 def into(sqlContext, o, **kwargs):
     return into(sqlContext, into(sqlContext._sc, o), **kwargs)
+
+
+@dispatch(sql.SchemaRDD)
+def discover(srdd):
+    return srdd.count() * sparksql_to_ds(srdd.schema())

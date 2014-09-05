@@ -317,3 +317,8 @@ def test_into_SparkSQL_from_PySpark():
 
     assert list(map(tuple, into(list, rdd))) == list(map(tuple, into(list,
         srdd)))
+
+def test_SparkSQL_discover():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert discover(srdd) == \
+            dshape('3 * {name: string, amount: int64, id: int64}')
