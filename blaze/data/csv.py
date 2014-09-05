@@ -9,7 +9,7 @@ else:
 import itertools as it
 import os
 from operator import itemgetter
-from collections import Iterator
+from functools import partial
 from multipledispatch import dispatch
 from toolz import keyfilter
 
@@ -153,11 +153,11 @@ class CSV(DataDescriptor):
 
         # Pandas uses sep instead of delimiter.
         # Lets support that too
-        if 'sep' in kwargs:
-            kwargs['delimiter'] = kwargs['sep']
-
         dialect = discover_dialect(sample, dialect, **kwargs)
         assert dialect
+        if 'sep' in kwargs:
+            dialect['delimiter'] = kwargs['sep']
+
         if header is None:
             header = has_header(sample)
         elif isinstance(header, int):
@@ -199,47 +199,10 @@ class CSV(DataDescriptor):
         self.header = header
         self.dialect = dialect
 
-    def _get_py(self, key):
-        if isinstance(key, tuple):
-            assert len(key) == 2
-            result = self._get_py(key[0])
-
-            if isinstance(key[1], list):
-                getter = itemgetter(*key[1])
-            else:
-                getter = itemgetter(key[1])
-
-            if isinstance(key[0], (list, slice)):
-                return map(getter, result)
-            else:
-                return getter(result)
-
-        f = self.open(self.path)
-        if self.header:
-            next(f)
-        if isinstance(key, compatibility._inttypes):
-            line = nth(key, f)
-            result = next(csv.reader([line], **self.dialect))
-        elif isinstance(key, list):
-            lines = nth_list(key, f)
-            result = csv.reader(lines, **self.dialect)
-        elif isinstance(key, slice):
-            start, stop, step = key.start, key.stop, key.step
-            result = csv.reader(it.islice(f, start, stop, step),
-                                **self.dialect)
-        else:
-            raise IndexError("key '%r' is not valid" % key)
-        try:
-            if not isinstance(result, Iterator):
-                f.close()
-        except AttributeError:
-            pass
-        return result
-
-    def _iter(self):
+    @property
+    def reader(self):
         filename, ext = os.path.splitext(self.path)
         ext = ext.lstrip('.')
-
         dialect = keyfilter(lambda x: x not in ('strict', 'lineterminator'),
                             self.dialect)
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
@@ -247,33 +210,71 @@ class CSV(DataDescriptor):
                              skiprows=int(bool(self.header)), header=None,
                              as_recarray=True, chunksize=self.chunksize,
                              **dialect)
-        return it.chain.from_iterable(bz.into(list, chunk) for chunk in reader)
+        return reader
+
+    def _get_py(self, key):
+        # [:, 'name'] or [[0, 1, 2], :]
+        if isinstance(key, tuple):
+            assert len(key) == 2
+            rows, cols = key
+            result = self._get_py(rows)
+
+            if isinstance(cols, list):
+                getter = itemgetter(*cols)
+            else:
+                getter = itemgetter(cols)
+
+            if isinstance(rows, (list, slice)):
+                return map(getter, result)
+            else:
+                return getter(result)
+
+        reader = self._iter()
+        if isinstance(key, compatibility._inttypes):
+            line = nth(key, reader)
+            try:
+                return next(line)
+            except TypeError:
+                return line
+        elif isinstance(key, list):
+            return nth_list(key, reader)
+        elif isinstance(key, slice):
+            return it.islice(reader, key.start, key.stop, key.step)
+        else:
+            raise IndexError("key '%r' is not valid" % key)
+
+    def _iter(self):
+        return it.chain.from_iterable(map(partial(bz.into, list), self.reader))
 
     def _extend(self, rows):
         rows = iter(rows)
-        if sys.version_info[0] == 3:
-            f = self.open(self.path, 'a', newline='')
-        elif sys.version_info[0] == 2:
-            f = self.open(self.path, 'ab')
+        version = sys.version_info[0]
+        mode = {2: 'ab', 3: 'a'}[version]
 
         try:
             row = next(rows)
         except StopIteration:
             return
+
         if isinstance(row, dict):
             schema = dshape(self.schema)
             row = coerce_record_to_row(schema, row)
             rows = (coerce_record_to_row(schema, row) for row in rows)
 
-        # Write all rows to file
-        writer = csv.writer(f, **self.dialect)
-        writer.writerow(row)
-        writer.writerows(rows)
+        f = self.open(self.path, mode)
 
         try:
-            f.close()
-        except AttributeError:
-            pass
+            # Write all rows to file
+            if os.path.getsize(self.path):
+                f.write('\n')
+            writer = csv.writer(f, **self.dialect)
+            writer.writerow(row)
+            writer.writerows(rows)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
     def remove(self):
         """Remove the persistent storage."""
