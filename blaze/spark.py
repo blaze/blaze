@@ -3,6 +3,8 @@ from functools import partial
 
 from .compatibility import _strtypes
 from .compute.spark import *
+from .compute.sparksql import *
+from .sparksql import *
 from .data.utils import coerce
 from .dispatch import dispatch
 from datashape import discover

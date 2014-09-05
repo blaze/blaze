@@ -1,9 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.spark import *
-from blaze.compute.sparksql import *
-from blaze.spark import into
-from blaze.sparksql import *
+from blaze import into
 from blaze.compute import compute, compute_one
 from blaze.compatibility import xfail
 from blaze.expr import *
@@ -19,6 +16,8 @@ data2 = [['Alice', 'Austin'],
 
 
 pyspark = pytest.importorskip('pyspark')
+
+from pyspark import RDD
 sc = pyspark.SparkContext("local", "Simple App")
 rdd = sc.parallelize(data)
 rdd2 = sc.parallelize(data2)
@@ -313,27 +312,37 @@ def test_discover():
 
 sqlContext = pyspark.SQLContext(sc)
 
+
 def test_into_SparkSQL_from_PySpark():
-    rdd = sc.parallelize(data)
-    srdd = into(sqlContext, rdd, schema=t.schema)
+    srdd = into(sqlContext, data, schema=t.schema)
     assert isinstance(srdd, pyspark.sql.SchemaRDD)
 
     assert list(map(tuple, into(list, rdd))) == list(map(tuple, into(list,
         srdd)))
 
+
 def test_SparkSQL_discover():
     srdd = into(sqlContext, data, schema=t.schema)
     assert discover(srdd).subshape[0] == \
-            dshape('{name: string, amount: int64, id: int64}')
+            dshape('{name: string, amount: int32, id: int32}')
 
 
 def test_sparksql_compute():
     srdd = into(sqlContext, data, schema=t.schema)
     assert compute_one(t, srdd).context == sqlContext
     assert discover(compute_one(t, srdd).query).subshape[0] == \
-            dshape('{name: string, amount: int64, id: int64}')
+            dshape('{name: string, amount: int32, id: int32}')
 
     assert isinstance(compute(t[['name', 'amount']], srdd),
                       pyspark.sql.SchemaRDD)
 
     assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
+
+
+def test_sparksql_with_literals():
+    srdd = into(sqlContext, data, schema=t.schema)
+    expr = t[t.amount >= 100]
+    result = compute(expr, srdd)
+    assert isinstance(result, pyspark.sql.SchemaRDD)
+    assert set(map(tuple, result.collect())) == \
+            set(map(tuple, compute(expr, data)))

@@ -5,10 +5,12 @@ import sqlalchemy as sa
 import itertools
 from ..data.sql import dshape_to_alchemy
 from ..dispatch import dispatch
-from ..expr import (Expr, TableSymbol, Column, Projection, By, Join, Sort, Head,
-Label, ReLabel, Reduction, BinOp, UnaryOp, any, all, sum, max ,min, var, std,
-count, nunique, mean, Selection, Apply, Distinct, RowWise)
-from ..sparksql import *
+from ..expr import *
+from .utils import literalquery
+from datashape import discover
+import toolz
+from toolz import pipe
+
 
 from pyspark.sql import SchemaRDD
 import pyspark
@@ -20,8 +22,18 @@ class SparkSQLQuery(object):
     """ Pair of PySpark SQLContext and SQLAlchemy Table
 
     Python's SparkSQL interface only accepts strings.  We use SQLAlchemy to
-    generate these strings.  To do this we'll have to pass around a pair of
-    (SQLContext, sqlalchemy.Selectable)
+    generate these strings.  To do this we'll have to pass around pairs of
+    (SQLContext, sqlalchemy.Selectable).  Additionally we track a mapping of
+    {schemardd: sqlalchemy.Table}
+
+    Parameters
+    ----------
+
+    context: pyspark.sql.SQLContext
+
+    query: sqlalchemy.Selectable
+
+    mapping: dict :: {pyspark.sql.SchemaRDD: sqlalchemy.Table}
     """
     __slots__ = 'context', 'query', 'mapping'
 
@@ -91,7 +103,7 @@ def compute_one(e, rdd, **kwargs):
 
 from .sql import select
 def sql_string(query):
-    return str(select(query)).replace('\n', ' ')
+    return pipe(query, select, literalquery, str)
 
 @dispatch(Expr, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
