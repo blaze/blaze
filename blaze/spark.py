@@ -8,6 +8,7 @@ from .sparksql import *
 from .data.utils import coerce
 from .dispatch import dispatch
 from datashape import discover
+from collections import iterator
 
 __all__ = ['pyspark', 'coerce']
 
@@ -24,6 +25,10 @@ def into(a, rdd, **kwargs):
 @dispatch(object, RDD)
 def into(o, rdd):
     return into(o, rdd.collect())
+
+@dispatch(pyspark.SparkContext, object)
+def into(sc, o, **kwargs):
+    return sc.parallelize(into(Iterator, o, **kwargs))
 
 
 @dispatch(RDD)

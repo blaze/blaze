@@ -142,7 +142,8 @@ def into(sqlContext, rdd, schema=None, columns=None, **kwargs):
 from blaze.expr import Expr, TableExpr
 @dispatch(pyspark.sql.SQLContext, (TableExpr, Expr, object))
 def into(sqlContext, o, **kwargs):
-    return into(sqlContext, into(sqlContext._sc, o), **kwargs)
+    schema = discover(o).subshape[0]
+    return into(sqlContext, into(sqlContext._sc, o), schema=schema, **kwargs)
 
 
 @dispatch(sql.SchemaRDD)
