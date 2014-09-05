@@ -194,7 +194,7 @@ class Test_Dialect(unittest.TestCase):
             self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
     def test_extend_structured(self):
-        with filetext('1,1.0\n2,2.0\n') as fn:
+        with filetext('1,1.0\n2,2.0') as fn:
             csv = CSV(fn, 'r+', schema='{x: int32, y: float32}',
                             delimiter=',')
             csv.extend([(3, 3)])
