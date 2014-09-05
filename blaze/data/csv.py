@@ -11,7 +11,7 @@ import os
 from operator import itemgetter
 from functools import partial
 from multipledispatch import dispatch
-from toolz import keyfilter
+from toolz import keyfilter, compose
 
 import pandas as pd
 from datashape.discovery import discover, null, unpack
@@ -19,6 +19,7 @@ import gzip
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 
 import blaze as bz
+from blaze.data.utils import tupleit
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
 from ..api.resource import resource
@@ -213,21 +214,19 @@ class CSV(DataDescriptor):
         return reader
 
     def _get_py(self, key):
-        # [:, 'name'] or [[0, 1, 2], :]
         if isinstance(key, tuple):
             assert len(key) == 2
             rows, cols = key
             result = self._get_py(rows)
 
             if isinstance(cols, list):
-                getter = itemgetter(*cols)
+                getter = compose(tupleit, itemgetter(*cols))
             else:
                 getter = itemgetter(cols)
 
             if isinstance(rows, (list, slice)):
                 return map(getter, result)
-            else:
-                return getter(result)
+            return getter(result)
 
         reader = self._iter()
         if isinstance(key, compatibility._inttypes):
