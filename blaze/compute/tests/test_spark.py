@@ -312,8 +312,8 @@ sqlContext = pyspark.SQLContext(sc)
 
 def test_into_SparkSQL_from_PySpark():
     rdd = sc.parallelize(data)
-    srdd = into(pyspark.sql.SchemaRDD, rdd)
+    srdd = into(sqlContext, rdd, schema=t.schema)
     assert isinstance(srdd, pyspark.sql.SchemaRDD)
 
-    assert into(list, rdd) == into(list, srdd)
-
+    assert list(map(tuple, into(list, rdd))) == list(map(tuple, into(list,
+        srdd)))

@@ -115,13 +115,22 @@ def ds_to_sparksql(ds):
     raise NotImplementedError()
 
 
-@dispatch(pyspark.sql.SchemaRDD, pyspark.RDD)
-def into(_, rdd, schema=None, **kwargs):
+@dispatch(pyspark.sql.SQLContext, pyspark.RDD)
+def into(sqlContext, rdd, schema=None, columns=None, **kwargs):
     """ Convert a normal PySpark RDD to a SparkSQL RDD
 
     Schema inferred by ds_to_sparksql.  Can also specify it explicitly with
     schema keyword argument.
     """
-    schema = schema or discover(rdd)
-    sql_schema = ds_to_sparksql(schema).subshape[0]
+    schema = schema or discover(rdd).subshape[0]
+    if isinstance(schema[0], Tuple):
+        columns = columns or list(range(len(schema[0].dshapes)))
+        types = schema[0].dshapes
+        schema = dshape(Record(list(zip(columns, types))))
+    sql_schema = ds_to_sparksql(schema)
     return sqlContext.applySchema(rdd, sql_schema)
+
+from blaze.expr import Expr, TableExpr
+@dispatch(pyspark.sql.SQLContext, (TableExpr, Expr, object))
+def into(sqlContext, o, **kwargs):
+    return into(sqlContext, into(sqlContext._sc, o), **kwargs)
