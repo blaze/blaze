@@ -312,4 +312,4 @@ from glob import glob
 @resource.register('.*\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
-    return ChunkList(list(map(resource, uris)))
+    return ChunkList([resource(uri, **kwargs) for uri in uris])
