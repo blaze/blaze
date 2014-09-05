@@ -11,6 +11,7 @@ import os
 from operator import itemgetter
 from collections import Iterator
 from multipledispatch import dispatch
+from toolz import keyfilter
 
 import pandas as pd
 from datashape.discovery import discover, null, unpack
@@ -239,13 +240,13 @@ class CSV(DataDescriptor):
         filename, ext = os.path.splitext(self.path)
         ext = ext.lstrip('.')
 
-        self.dialect.pop('lineterminator', None)
-        self.dialect.pop('strict', None)
+        dialect = keyfilter(lambda x: x not in ('strict', 'lineterminator'),
+                            self.dialect)
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
                              skiprows=int(bool(self.header)), header=None,
                              as_recarray=True, chunksize=self.chunksize,
-                             **self.dialect)
+                             **dialect)
         return it.chain.from_iterable(bz.into(list, chunk) for chunk in reader)
 
     def _extend(self, rows):
