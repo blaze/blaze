@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.spark import *
+from blaze.compute.sparksql import *
 from blaze.spark import into
+from blaze.sparksql import *
 from blaze.compute import compute, compute_one
 from blaze.compatibility import xfail
 from blaze.expr import *
@@ -307,6 +309,7 @@ def test_spark_outer_join():
 def test_discover():
     assert discover(rdd) == discover(data)
 
+### SparkSQL
 
 sqlContext = pyspark.SQLContext(sc)
 
@@ -320,5 +323,17 @@ def test_into_SparkSQL_from_PySpark():
 
 def test_SparkSQL_discover():
     srdd = into(sqlContext, data, schema=t.schema)
-    assert discover(srdd) == \
-            dshape('3 * {name: string, amount: int64, id: int64}')
+    assert discover(srdd).subshape[0] == \
+            dshape('{name: string, amount: int64, id: int64}')
+
+
+def test_sparksql_compute():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert compute_one(t, srdd).context == sqlContext
+    assert discover(compute_one(t, srdd).query).subshape[0] == \
+            dshape('{name: string, amount: int64, id: int64}')
+
+    assert isinstance(compute(t[['name', 'amount']], srdd),
+                      pyspark.sql.SchemaRDD)
+
+    assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']

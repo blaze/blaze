@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 import pyspark
 from pyspark import sql
 from pyspark.sql import (IntegerType, FloatType, StringType, TimestampType,
@@ -75,22 +76,23 @@ def sparksql_to_ds(ss):
                         for field in ss.fields])
     raise NotImplementedError("SparkSQL type not known %s" % ss)
 
+
 def ds_to_sparksql(ds):
     """ Convert datashape to SparkSQL type system
 
-    >>> print ds_to_sparksql('int32')
+    >>> print(ds_to_sparksql('int32'))
     IntegerType
 
-    >>> print ds_to_sparksql('5 * int32')
+    >>> print(ds_to_sparksql('5 * int32'))
     ArrayType(IntegerType,false)
 
-    >>> print ds_to_sparksql('5 * ?int32')
+    >>> print(ds_to_sparksql('5 * ?int32'))
     ArrayType(IntegerType,true)
 
-    >>> print ds_to_sparksql('{name: string, amount: int32}')
+    >>> print(ds_to_sparksql('{name: string, amount: int32}'))
     StructType(List(StructField(name,StringType,false),StructField(amount,IntegerType,false)))
 
-    >>> print ds_to_sparksql('10 * {name: string, amount: ?int32}')
+    >>> print(ds_to_sparksql('10 * {name: string, amount: ?int32}'))
     ArrayType(StructType(List(StructField(name,StringType,false),StructField(amount,IntegerType,true))),false)
     """
     if isinstance(ds, str):
@@ -130,6 +132,7 @@ def into(sqlContext, rdd, schema=None, columns=None, **kwargs):
     sql_schema = ds_to_sparksql(schema)
     return sqlContext.applySchema(rdd, sql_schema)
 
+
 from blaze.expr import Expr, TableExpr
 @dispatch(pyspark.sql.SQLContext, (TableExpr, Expr, object))
 def into(sqlContext, o, **kwargs):
@@ -138,4 +141,4 @@ def into(sqlContext, o, **kwargs):
 
 @dispatch(sql.SchemaRDD)
 def discover(srdd):
-    return srdd.count() * sparksql_to_ds(srdd.schema())
+    return datashape.var * sparksql_to_ds(srdd.schema())
