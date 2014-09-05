@@ -131,7 +131,7 @@ class CSV(DataDescriptor):
     """
     def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
                  typehints=None, dialect=None, header=None, open=open,
-                 nrows_discovery=50, chunksize=1024, **kwargs):
+                 nrows_discovery=50, chunksize=1024, encoding=None, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         if not schema and 'w' in mode:
@@ -141,6 +141,7 @@ class CSV(DataDescriptor):
         self.mode = mode
         self.open = open
         self.chunksize = chunksize
+        self.encoding = encoding
 
         if os.path.exists(path) and mode != 'w':
             f = self.open(path)
@@ -210,7 +211,7 @@ class CSV(DataDescriptor):
                                                      'bz2': 'bz2'}.get(ext),
                              skiprows=int(bool(self.header)), header=None,
                              as_recarray=True, chunksize=self.chunksize,
-                             **dialect)
+                             encoding=self.encoding, **dialect)
         return reader
 
     def _get_py(self, key):
