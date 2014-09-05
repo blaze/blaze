@@ -153,10 +153,11 @@ class CSV(DataDescriptor):
         else:
             sample = ''
 
-        # Pandas uses sep instead of delimiter.
-        # Lets support that too
         dialect = discover_dialect(sample, dialect, **kwargs)
         assert dialect
+
+        # Pandas uses sep instead of delimiter.
+        # Lets support that too
         if 'sep' in kwargs:
             dialect['delimiter'] = kwargs['sep']
 
