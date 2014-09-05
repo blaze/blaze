@@ -1,5 +1,6 @@
 
 import sys
+import pytest
 from functools import partial
 from blaze.data import CSV, JSON
 
@@ -18,9 +19,9 @@ def test_gzopen_csv():
         f.write('1,1\n2,2')
         f.close()
 
-
         # Not a valid CSV file
-        assert raises(Exception, lambda: list(CSV(filename, schema='2 * int')))
+        with pytest.raises(UnicodeDecodeError):
+            list(CSV(filename, schema='2 * int'))
 
         dd = CSV(filename, schema='2 * int', open=partial(gzip.open, mode='rt'))
 
