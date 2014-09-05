@@ -10,20 +10,26 @@ from datashape import (dshape, DataShape, Record, isdimension, Option,
 
 from .dispatch import dispatch
 
-types = {datashape.int32: sql.IntegerType(),
-         datashape.int64: sql.IntegerType(),
+types = {datashape.int16: sql.ShortType(),
+         datashape.int32: sql.IntegerType(),
+         datashape.int64: sql.LongType(),
          datashape.float32: sql.FloatType(),
-         datashape.float64: sql.FloatType(),
-         datashape.real: sql.FloatType(),
+         datashape.float64: sql.DoubleType(),
+         datashape.real: sql.DoubleType(),
          datashape.time_: sql.TimestampType(),
          datashape.date_: sql.TimestampType(),
          datashape.datetime_: sql.TimestampType(),
+         datashape.bool_: sql.BooleanType(),
          datashape.string: sql.StringType()}
 
-rev_types = {sql.IntegerType(): datashape.int64,
-             sql.FloatType(): datashape.float64,
+rev_types = {sql.IntegerType(): datashape.int32,
+             sql.ShortType(): datashape.int16,
+             sql.LongType(): datashape.int64,
+             sql.FloatType(): datashape.float32,
+             sql.DoubleType(): datashape.float64,
              sql.StringType(): datashape.string,
-             sql.TimestampType(): datashape.datetime_}
+             sql.TimestampType(): datashape.datetime_,
+             sql.BooleanType(): datashape.bool_}
 
 def deoption(ds):
     """
@@ -48,18 +54,18 @@ def sparksql_to_ds(ss):
     """ Convert datashape to SparkSQL type system
 
     >>> sparksql_to_ds(IntegerType())
-    ctype("int64")
+    ctype("int32")
 
     >>> sparksql_to_ds(ArrayType(IntegerType(), False))
-    dshape("var * int64")
+    dshape("var * int32")
 
     >>> sparksql_to_ds(ArrayType(IntegerType(), True))
-    dshape("var * ?int64")
+    dshape("var * ?int32")
 
     >>> sparksql_to_ds(StructType([
     ...                         StructField('name', StringType(), False),
     ...                         StructField('amount', IntegerType(), True)]))
-    dshape("{ name : string, amount : ?int64 }")
+    dshape("{ name : string, amount : ?int32 }")
     """
     if ss in rev_types:
         return rev_types[ss]
