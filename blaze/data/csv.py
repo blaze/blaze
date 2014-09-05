@@ -5,18 +5,22 @@ if sys.version_info[0] == 2:
     import unicodecsv as csv
 else:
     import csv
+
 import itertools as it
 import os
 from operator import itemgetter
 from collections import Iterator
 from multipledispatch import dispatch
 
+import pandas as pd
 from datashape.discovery import discover, null, unpack
 import gzip
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 
+import blaze as bz
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
+from ..api.resource import resource
 from ..utils import nth, nth_list
 from .. import compatibility
 from ..compatibility import map
@@ -123,10 +127,9 @@ class CSV(DataDescriptor):
     nrows_discovery : int
         Number of rows to read when determining datashape
     """
-    def __init__(self, path, mode='rt',
-            schema=None, columns=None, types=None, typehints=None,
-            dialect=None, header=None, open=open, nrows_discovery=50,
-            **kwargs):
+    def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
+                 typehints=None, dialect=None, header=None, open=open,
+                 nrows_discovery=50, chunksize=1024, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         if not schema and 'w' in mode:
@@ -135,6 +138,7 @@ class CSV(DataDescriptor):
         self._abspath = os.path.abspath(path)
         self.mode = mode
         self.open = open
+        self.chunksize = chunksize
 
         if os.path.exists(path) and mode != 'w':
             f = self.open(path)
@@ -232,16 +236,17 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        f = self.open(self.path)
-        if self.header:
-            next(f)  # burn header
-        for row in csv.reader(f, **self.dialect):
-            yield row
+        filename, ext = os.path.splitext(self.path)
+        ext = ext.lstrip('.')
 
-        try:
-            f.close()
-        except AttributeError:
-            pass
+        self.dialect.pop('lineterminator', None)
+        self.dialect.pop('strict', None)
+        reader = pd.read_csv(self.path, compression={'gz': 'gzip',
+                                                     'bz2': 'bz2'}.get(ext),
+                             skiprows=int(bool(self.header)), header=None,
+                             as_recarray=True, chunksize=self.chunksize,
+                             **self.dialect)
+        return it.chain.from_iterable(bz.into(list, chunk) for chunk in reader)
 
     def _extend(self, rows):
         rows = iter(rows)
@@ -279,7 +284,6 @@ def drop(c):
     c.remove()
 
 
-from ..api.resource import resource
 @resource.register('.*\.(csv|data|txt|dat)')
 def resource_csv(uri, **kwargs):
     return CSV(uri, **kwargs)
