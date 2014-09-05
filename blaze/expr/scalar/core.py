@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import Record
+from datetime import date, datetime
 from blaze.expr.core import Expr
 from ...compatibility import unicode
 
@@ -13,6 +14,8 @@ def eval_str(expr):
         return "'%s'" % expr
     elif isinstance(expr, unicode):
         return "u'%s'" % expr
+    elif isinstance(expr, (date, datetime)):
+        return repr(expr)
     else:
         return str(expr)
 
