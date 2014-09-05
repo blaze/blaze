@@ -208,3 +208,8 @@ def into(seq, rdd):
 @dispatch(Union, RDD, tuple)
 def compute_one(t, _, children):
     return reduce(RDD.union, children)
+
+@dispatch(Sample, RDD)
+def compute_one(expr, rdd, **kwargs):
+    return rdd.takeSample(expr.replacement, expr.n)
+

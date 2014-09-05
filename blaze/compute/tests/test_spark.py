@@ -14,11 +14,18 @@ data = [['Alice', 100, 1],
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
 
+x = [(1, 'Alice', 100),
+     (2, 'Bob', -200),
+     (3, 'Charlie', 300),
+     (4, 'Denis', 400),
+     (5, 'Edith', -500)]
+
 
 pyspark = pytest.importorskip('pyspark')
 sc = pyspark.SparkContext("local", "Simple App")
 rdd = sc.parallelize(data)
 rdd2 = sc.parallelize(data2)
+rddx = sc.parallelize(x)
 
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -302,3 +309,43 @@ def test_spark_outer_join():
              (3, None, None, 'LA'),
              (4, 'Dennis', 400, 'Moscow')])
     """
+
+
+def test_sample():
+    test_data=rddx
+    test_expr=t
+    collected_data=rddx.collect()
+
+
+    result=compute(test_expr.sample(2), test_data)
+    assert(len(result) == 2)
+
+    for item in result:
+        assert(item in collected_data)
+    
+    result=compute(test_expr.sample(test_data.count()+1), test_data)
+    assert(len(result) == test_data.count())
+    assert(len(result) < (test_data.count()+1))
+
+    for item in result:
+        assert(item in collected_data)
+    
+    #This test should give us repeated data
+    result=compute(test_expr.sample(2*test_data.count(), replacement=True), test_data)
+    assert(len(result) == 2*test_data.count())
+
+    for item in result:
+        assert(item in collected_data)
+    
+    #Test sampling from a single column from the array
+    result=compute(test_expr['name'].sample(2), test_data)
+    assert(len(result) == 2)
+    #We need to compare items in the RDD against the result of our computation,
+    #but we can't get a column out of an RDD like we would a dataframe, so run
+    #another computation to get the column we want.
+    
+    independent_result=compute(t['name'], rddx).collect()
+    assert(type(result) == type(independent_result))
+    
+    for item in result:
+        assert(item in independent_result)
