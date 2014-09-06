@@ -10,7 +10,7 @@ __all__ = []
 
 try:
     import pyspark
-    from pyspark import sql
+    from pyspark import sql, RDD
     from pyspark.sql import (IntegerType, FloatType, StringType, TimestampType,
             StructType, StructField, ArrayType, SchemaRDD, SQLContext,
             ShortType, DoubleType, BooleanType, LongType)

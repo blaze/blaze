@@ -365,3 +365,23 @@ def test_sparksql_by_summary():
     assert result.collect()
     assert (str(discover(result)).replace('?', '')
          == str(expr.dshape).replace('?', ''))
+
+
+def test_spqrksql_join():
+    accounts = TableSymbol('accounts', '{name: string, amount: int64, id: int64}')
+    accounts_rdd = into(sqlContext, data, schema=accounts.schema)
+
+    cities = TableSymbol('cities', '{name: string, city: string}')
+    cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
+    cities_rdd = into(sqlContext,
+                      cities_data,
+                      schema='{name: string, city: string}')
+
+    expr = join(accounts, cities)
+
+    result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
+
+    assert isinstance(result, pyspark.sql.SchemaRDD)
+
+    assert (str(discover(result)).replace('?', '') ==
+            str(expr.dshape))

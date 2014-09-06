@@ -70,28 +70,6 @@ def make_query(rdd, primary_key='', name=None):
     return SparkSQLQuery(context, query, mapping)
 
 
-@dispatch((UnaryOp, Expr), SparkSQLQuery)
-def compute_one(expr, q, **kwargs):
-    scope = kwargs.pop('scope', dict())
-    scope = {t: q.mapping.get(data, data) for t, data in scope.items()}
-
-    q2 = compute_one(expr, q.query, scope=scope, **kwargs)
-    return SparkSQLQuery(q.context, q2, q.mapping)
-
-
-@dispatch((BinOp, Expr), SparkSQLQuery, SparkSQLQuery)
-def compute_one(expr, a, b, **kwargs):
-    assert a.context == b.context
-
-    mapping = toolz.merge(a.mapping, b.mapping)
-
-    scope = kwargs.pop('scope', dict())
-    scope = {t: mapping.get(data, data) for t, data in scope.items()}
-
-    c = compute_one(expr, a.query, b.query, scope=scope, **kwargs)
-    return SparkSQLQuery(a.context, c, mapping)
-
-
 @dispatch(TableSymbol, SchemaRDD)
 def compute_one(ts, rdd, **kwargs):
     return make_query(rdd)
@@ -103,6 +81,38 @@ def compute_one(ts, rdd, **kwargs):
 def compute_one(e, rdd, **kwargs):
     return compute_one(e, make_query(rdd), **kwargs)
 
+
+@dispatch((BinOp, Join),
+          (SparkSQLQuery, SchemaRDD),
+          (SparkSQLQuery, SchemaRDD))
+def compute_one(e, a, b, **kwargs):
+    if not isinstance(a, SparkSQLQuery):
+        a = make_query(a)
+    if not isinstance(b, SparkSQLQuery):
+        b = make_query(b)
+    return compute_one(e, a, b, **kwargs)
+
+
+@dispatch((UnaryOp, Expr), SparkSQLQuery)
+def compute_one(expr, q, **kwargs):
+    scope = kwargs.pop('scope', dict())
+    scope = {t: q.mapping.get(data, data) for t, data in scope.items()}
+
+    q2 = compute_one(expr, q.query, scope=scope, **kwargs)
+    return SparkSQLQuery(q.context, q2, q.mapping)
+
+
+@dispatch((BinOp, Join, Expr), SparkSQLQuery, SparkSQLQuery)
+def compute_one(expr, a, b, **kwargs):
+    assert a.context == b.context
+
+    mapping = toolz.merge(a.mapping, b.mapping)
+
+    scope = kwargs.pop('scope', dict())
+    scope = {t: mapping.get(data, data) for t, data in scope.items()}
+
+    c = compute_one(expr, a.query, b.query, scope=scope, **kwargs)
+    return SparkSQLQuery(a.context, c, mapping)
 
 
 from .sql import select
