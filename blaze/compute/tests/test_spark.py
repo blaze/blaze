@@ -308,7 +308,7 @@ def test_spark_outer_join():
     """
 
 def test_discover():
-    assert discover(rdd) == discover(data)
+    assert discover(rdd).subshape[0] == discover(data).subshape[0]
 
 ### SparkSQL
 

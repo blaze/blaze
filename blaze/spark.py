@@ -6,7 +6,7 @@ from .compute.spark import *
 from .data.utils import coerce
 from .dispatch import dispatch
 from .expr import Expr, TableExpr
-from datashape import discover
+from datashape import discover, var
 from collections import Iterator, Iterable
 
 __all__ = ['pyspark', 'coerce']
@@ -36,7 +36,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(pyspark.SparkContext, (Expr, TableExpr, RDD, object))
+@dispatch(SparkContext, (Expr, TableExpr, RDD, object))
 def into(sc, o, **kwargs):
     return sc.parallelize(into(list, o, **kwargs))
 
@@ -44,4 +44,4 @@ def into(sc, o, **kwargs):
 @dispatch(RDD)
 def discover(rdd):
     data = rdd.take(50)
-    return rdd.count() * discover(data).subshape[0]
+    return var * discover(data).subshape[0]
