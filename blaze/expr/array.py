@@ -10,7 +10,7 @@ import datashape
 
 from . import scalar
 from .core import Expr, path
-from .scalar import ScalarSymbol, Number
+from .scalar import ScalarSymbol, Number, Scalar
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
@@ -52,9 +52,22 @@ class ArrayExpr(Expr):
     def names(self):
         return self.schema[0].names
 
+    @property
+    def ndim(self):
+        return len(self.dshape) - 1
+
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) +
                           self.names))
+
+    def __getitem__(self, key):
+        if (    isinstance(key, tuple)
+            and len(key) == self.ndim
+            and all(isinstance(k, (int, Scalar)) for k in key)):
+            return ArrayElement(self, key)
+        else:
+            raise NotImplementedError()
+
 
 class ArraySymbol(ArrayExpr):
     __slots__ = '_name', 'dshape'
@@ -65,3 +78,11 @@ class ArraySymbol(ArrayExpr):
 
     def __str__(self):
         return self._name
+
+
+class ArrayElement(Scalar):
+    __slots__ = 'child', 'index'
+
+    @property
+    def dshape(self):
+        return self.child.dshape.subshape[self.index]
