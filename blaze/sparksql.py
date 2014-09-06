@@ -1,10 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import pyspark
-from pyspark import sql
-from pyspark.sql import (IntegerType, FloatType, StringType, TimestampType,
-        StructType, StructField, ArrayType)
-
 import datashape
 from datashape import (dshape, DataShape, Record, isdimension, Option,
         discover, Tuple)
@@ -13,26 +8,41 @@ from .dispatch import dispatch
 
 __all__ = []
 
-types = {datashape.int16: sql.ShortType(),
-         datashape.int32: sql.IntegerType(),
-         datashape.int64: sql.IntegerType(),
-         datashape.float32: sql.FloatType(),
-         datashape.float64: sql.DoubleType(),
-         datashape.real: sql.DoubleType(),
-         datashape.time_: sql.TimestampType(),
-         datashape.date_: sql.TimestampType(),
-         datashape.datetime_: sql.TimestampType(),
-         datashape.bool_: sql.BooleanType(),
-         datashape.string: sql.StringType()}
+try:
+    import pyspark
+    from pyspark import sql
+    from pyspark.sql import (IntegerType, FloatType, StringType, TimestampType,
+            StructType, StructField, ArrayType, SchemaRDD, SQLContext,
+            ShortType, DoubleType, BooleanType, LongType)
+    from pyspark import SparkContext
+except ImportError:
+    pyspark = None
+    IntegerType = FloatType = StringType = TimestampType = StructType =\
+            StructField = ArrayType = ShortType = DoubleType = BooleanType = \
+            LongType = lambda *args: None
+    SparkContext = RDD = SchemaRDD = SQLContext = type(None)
 
-rev_types = {sql.IntegerType(): datashape.int64,
-             sql.ShortType(): datashape.int32,
-             sql.LongType(): datashape.int64,
-             sql.FloatType(): datashape.float32,
-             sql.DoubleType(): datashape.float64,
-             sql.StringType(): datashape.string,
-             sql.TimestampType(): datashape.datetime_,
-             sql.BooleanType(): datashape.bool_}
+
+types = {datashape.int16: ShortType(),
+         datashape.int32: IntegerType(),
+         datashape.int64: IntegerType(),
+         datashape.float32: FloatType(),
+         datashape.float64: DoubleType(),
+         datashape.real: DoubleType(),
+         datashape.time_: TimestampType(),
+         datashape.date_: TimestampType(),
+         datashape.datetime_: TimestampType(),
+         datashape.bool_: BooleanType(),
+         datashape.string: StringType()}
+
+rev_types = {IntegerType(): datashape.int64,
+             ShortType(): datashape.int32,
+             LongType(): datashape.int64,
+             FloatType(): datashape.float32,
+             DoubleType(): datashape.float64,
+             StringType(): datashape.string,
+             TimestampType(): datashape.datetime_,
+             BooleanType(): datashape.bool_}
 
 def deoption(ds):
     """
@@ -126,7 +136,7 @@ def ds_to_sparksql(ds):
     raise NotImplementedError()
 
 
-@dispatch(pyspark.sql.SQLContext, pyspark.RDD)
+@dispatch(SQLContext, RDD)
 def into(sqlContext, rdd, schema=None, columns=None, **kwargs):
     """ Convert a normal PySpark RDD to a SparkSQL RDD
 
@@ -143,19 +153,19 @@ def into(sqlContext, rdd, schema=None, columns=None, **kwargs):
 
 
 from blaze.expr import Expr, TableExpr
-@dispatch(pyspark.sql.SQLContext, (TableExpr, Expr, object))
+@dispatch(SQLContext, (TableExpr, Expr, object))
 def into(sqlContext, o, **kwargs):
     schema = kwargs.pop('schema', None) or discover(o).subshape[0]
     return into(sqlContext, into(sqlContext._sc, o), schema=schema, **kwargs)
 
 
-@dispatch((tuple, list, set), pyspark.sql.SchemaRDD)
+@dispatch((tuple, list, set), SchemaRDD)
 def into(a, b, **kwargs):
     if not isinstance(a, type):
         a = type(a)
     return a(map(tuple, b.collect()))
 
 
-@dispatch(sql.SchemaRDD)
+@dispatch(SchemaRDD)
 def discover(srdd):
     return datashape.var * sparksql_to_ds(srdd.schema())

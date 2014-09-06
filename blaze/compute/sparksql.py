@@ -2,8 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 from toolz import pipe
-import pyspark
-from pyspark.sql import SchemaRDD
 import itertools
 from datashape import discover
 import sqlalchemy as sa
@@ -15,6 +13,11 @@ from .utils import literalquery
 
 __all__ = []
 
+try:
+    import pyspark
+    from pyspark import SchemaRDD
+except ImportError:
+    SchemaRDD = type(None)
 
 names = ('_table_%d' % i for i in itertools.count(1))
 
