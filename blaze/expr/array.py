@@ -60,7 +60,7 @@ class ArrayExpr(Expr):
         if (    isinstance(key, tuple)
             and len(key) == self.ndim
             and all(isinstance(k, (int, Scalar)) for k in key)):
-            return ArrayElement(self, key)
+            return Element(self, key)
         elif isinstance(key, tuple):
             return Slice(self, key)
         elif isinstance(key, (slice, int)):
@@ -104,7 +104,7 @@ class ArraySymbol(ArrayExpr):
         return self._name
 
 
-class ArrayElement(Scalar):
+class Element(Scalar):
     __slots__ = 'child', 'index'
 
     @property
