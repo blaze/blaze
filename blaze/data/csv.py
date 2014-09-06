@@ -132,7 +132,7 @@ class CSV(DataDescriptor):
     def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
                  typehints=None, dialect=None, header=None, open=open,
                  nrows_discovery=50, chunksize=1024, encoding=None, **kwargs):
-        if 'r' in mode and os.path.isfile(path) is not True:
+        if 'r' in mode and not os.path.isfile(path):
             raise ValueError('CSV file "%s" does not exist' % path)
         if not schema and 'w' in mode:
             raise ValueError('Please specify schema for writable CSV file')
