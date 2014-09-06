@@ -217,6 +217,20 @@ def test_by_three():
 
     assert str(result) == str(expected)
 
+def test_by_summary_clean():
+    expr = by(t.name, min=t.amount.min(), max=t.amount.max())
+    result = compute(expr, s)
+
+    expected = """
+    SELECT accounts.name, max(accounts.amount) AS max, min(accounts.amount) AS min
+    FROM accounts
+    GROUP BY accounts.name
+    """
+
+    assert normalize(str(result)) == normalize(expected)
+
+
+
 
 def test_join_projection():
     metadata = sa.MetaData()

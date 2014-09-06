@@ -183,8 +183,17 @@ def compute_one(t, s, **kwargs):
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    reduction = compute(t.apply, {t.child: s})
-    return select(grouper + [reduction]).group_by(*grouper)
+    if isinstance(t.apply, Reduction):
+        reduction = compute(t.apply, {t.child: s})
+        return select(grouper + [reduction]).group_by(*grouper)
+    elif isinstance(t.apply, Summary):
+        t2 = select(grouper + [compute(value, {t.child: s}).label(name)
+                    for value, name in zip(t.apply.values, t.apply.names)])
+        return t2.group_by(*grouper)
+    else:
+        raise NotImplementedError("Unknown reduction type %s" % t.apply)
+
+
 
 
 @dispatch(Sort, Selectable)
