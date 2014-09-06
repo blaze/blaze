@@ -4,6 +4,7 @@ import numbers
 import toolz
 import inspect
 import functools
+import datashape
 from toolz import unique, concat
 from pprint import pprint
 from blaze.compatibility import StringIO
@@ -145,6 +146,13 @@ class Expr(object):
 
     def __setstate__(self, state):
         self.__init__(*state)
+
+    @property
+    def schema(self):
+        return datashape.dshape(self.dshape[-1])
+    @property
+    def names(self):
+        return self.schema[0].names
 
 
 @dispatch(Expr)
