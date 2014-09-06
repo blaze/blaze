@@ -6,7 +6,7 @@ from blaze.data import CSV, JSON
 
 from blaze.utils import tmpfile, raises
 from blaze.data.utils import tuplify
-from blaze.compatibility import xfail, PY2, PY3
+from blaze.compatibility import xfail, PY2
 
 import gzip
 
