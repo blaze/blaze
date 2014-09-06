@@ -64,6 +64,30 @@ class ArrayExpr(Expr):
         elif isinstance(key, tuple):
             return Slice(self, key)
 
+    def sum(self, axis=None):
+        return sum(self, axis)
+
+    def min(self, axis=None):
+        return min(self, axis)
+
+    def max(self, axis=None):
+        return max(self, axis)
+
+    def mean(self, axis=None):
+        return mean(self, axis)
+
+    def var(self, axis=None):
+        return var(self, axis)
+
+    def std(self, axis=None):
+        return std(self, axis)
+
+    def any(self, axis=None):
+        return any(self, axis)
+
+    def all(self, axis=None):
+        return all(self, axis)
+
 
 class ArraySymbol(ArrayExpr):
     __slots__ = '_name', 'dshape'
@@ -90,3 +114,27 @@ class Slice(ArrayExpr):
     @property
     def dshape(self):
         return self.child.dshape.subshape[self.index]
+
+class Reduction(Expr):
+    __slots__ = 'child', 'axis'
+
+    @property
+    def dshape(self):
+        if self.axis == None:
+            return self.child.schema
+        if isinstance(self.axis, int):
+            axes = [self.axis]
+        else:
+            axes = self.axis
+        s = tuple(slice(None) if i not in axes else 0
+                            for i in range(self.child.ndim))
+        return self.child.dshape.subshape[s]
+
+class sum(Reduction): pass
+class min(Reduction): pass
+class max(Reduction): pass
+class mean(Reduction): pass
+class std(Reduction): pass
+class var(Reduction): pass
+class any(Reduction): pass
+class all(Reduction): pass

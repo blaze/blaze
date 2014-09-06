@@ -30,3 +30,10 @@ def test_slice():
     x = ArraySymbol('x', '5 * 3 * {name: string, amount: float32}')
     y = x[2:, 0]
     assert y.dshape == dshape('3 * {name: string, amount: float32}')
+
+def test_reduction_dshape():
+    x = ArraySymbol('x', '5 * 3 * float32')
+    assert x.sum().dshape == x.schema
+    assert x.sum(axis=0).dshape == dshape('3 * float32')
+    assert x.sum(axis=1).dshape == dshape('5 * float32')
+    assert x.sum(axis=(0, 1)).dshape == dshape('float32')
