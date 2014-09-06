@@ -49,10 +49,6 @@ class ArrayExpr(Expr):
         return dshape(self.dshape[-1])
 
     @property
-    def names(self):
-        return self.schema[0].names
-
-    @property
     def ndim(self):
         return len(self.dshape) - 1
 
@@ -65,8 +61,8 @@ class ArrayExpr(Expr):
             and len(key) == self.ndim
             and all(isinstance(k, (int, Scalar)) for k in key)):
             return ArrayElement(self, key)
-        else:
-            raise NotImplementedError()
+        elif isinstance(key, tuple):
+            return Slice(self, key)
 
 
 class ArraySymbol(ArrayExpr):
@@ -81,6 +77,14 @@ class ArraySymbol(ArrayExpr):
 
 
 class ArrayElement(Scalar):
+    __slots__ = 'child', 'index'
+
+    @property
+    def dshape(self):
+        return self.child.dshape.subshape[self.index]
+
+
+class Slice(ArrayExpr):
     __slots__ = 'child', 'index'
 
     @property

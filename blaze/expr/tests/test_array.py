@@ -25,3 +25,8 @@ def test_element_record():
     assert isinstance(x[1, 2], Scalar)
     assert x[1, 2].dshape == dshape('{name: string, amount: float32}')
     assert x[1, 2].names == x.names
+
+def test_slice():
+    x = ArraySymbol('x', '5 * 3 * {name: string, amount: float32}')
+    y = x[2:, 0]
+    assert y.dshape == dshape('3 * {name: string, amount: float32}')
