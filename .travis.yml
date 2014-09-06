@@ -41,7 +41,6 @@ install:
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 
-
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
 
@@ -85,11 +84,11 @@ install:
   #
   - pip install cytoolz toolz multipledispatch
 
-  # Install Blaze
-  - python setup.py install
-
   # Install coveralls
   - pip install coveralls --use-mirrors
+
+  # Install Blaze
+  - python setup.py install
 
 before_script:
   - mysql -e 'create database test'
