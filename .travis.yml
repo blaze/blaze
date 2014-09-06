@@ -96,7 +96,7 @@ before_script:
 
 script:
   - echo '[pytest]' >> pytest.ini
-  - echo 'addopts = -r -sxX --doctest-modules --verbose --pyargs blaze' >> pytest.ini
+  - echo 'addopts = -r sxX --doctest-modules --verbose --pyargs blaze' >> pytest.ini
   - coverage run $(which py.test)
   - coverage report --show-missing
 
