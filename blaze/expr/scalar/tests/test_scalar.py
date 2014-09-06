@@ -31,6 +31,12 @@ def test_eval_str():
     assert '~' in eval_str(~x)
 
 
+def test_eval_str_on_datetimes():
+    import datetime
+    dt = datetime.datetime(2000, 1, 1, 1, 1 ,1)
+    assert eval(eval_str(dt)) == dt
+
+
 def test_str():
     x = ScalarSymbol('x', 'real')
     assert str(x + 10) == 'x + 10'
