@@ -95,7 +95,9 @@ before_script:
   - mysql -e 'create database test'
 
 script:
-  - coverage run "$(which py.test) -v -r -sxX --doctest-modules --pyargs blaze"
+  - echo '[pytest]' >> pytest.ini
+  - echo 'addopts = -r -sxX --doctest-modules --verbose --pyargs blaze' >> pytest.ini
+  - coverage run $(which py.test)
   - coverage report --show-missing
 
 after_success:
