@@ -14,6 +14,8 @@ data = [['Alice', 100, 1],
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
 
+from pandas import DataFrame
+df = DataFrame(data, columns=['name', 'amount', 'id'])
 
 pyspark = pytest.importorskip('pyspark')
 
@@ -317,26 +319,33 @@ def test_into_SparkSQL_from_PySpark():
     srdd = into(sqlContext, data, schema=t.schema)
     assert isinstance(srdd, pyspark.sql.SchemaRDD)
 
-    assert list(map(tuple, into(list, rdd))) == list(map(tuple, into(list,
-        srdd)))
+    assert into(list, rdd) == into(list, srdd)
+
+def test_into_sparksql_from_other():
+    srdd = into(sqlContext, df)
+    assert isinstance(srdd, pyspark.sql.SchemaRDD)
+    assert into(list, srdd) == into(list, df)
 
 
 def test_SparkSQL_discover():
     srdd = into(sqlContext, data, schema=t.schema)
     assert discover(srdd).subshape[0] == \
-            dshape('{name: string, amount: int32, id: int32}')
+            dshape('{name: string, amount: int64, id: int64}')
 
 
 def test_sparksql_compute():
     srdd = into(sqlContext, data, schema=t.schema)
     assert compute_one(t, srdd).context == sqlContext
     assert discover(compute_one(t, srdd).query).subshape[0] == \
-            dshape('{name: string, amount: int32, id: int32}')
+            dshape('{name: string, amount: int64, id: int64}')
 
     assert isinstance(compute(t[['name', 'amount']], srdd),
                       pyspark.sql.SchemaRDD)
 
     assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
+
+    assert isinstance(compute(t[['name', 'amount']].head(2), srdd),
+                     (tuple, list))
 
 
 def test_sparksql_with_literals():
@@ -346,3 +355,13 @@ def test_sparksql_with_literals():
     assert isinstance(result, pyspark.sql.SchemaRDD)
     assert set(map(tuple, result.collect())) == \
             set(map(tuple, compute(expr, data)))
+
+
+def test_sparksql_by_summary():
+    t = TableSymbol('t', '{name: string, amount: int64, id: int64}')
+    srdd = into(sqlContext, data, schema=t.schema)
+    expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
+    result = compute(expr, srdd)
+    assert result.collect()
+    assert (str(discover(result)).replace('?', '')
+         == str(expr.dshape).replace('?', ''))

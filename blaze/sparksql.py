@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+
 import pyspark
 from pyspark import sql
 from pyspark.sql import (IntegerType, FloatType, StringType, TimestampType,
@@ -10,9 +11,11 @@ from datashape import (dshape, DataShape, Record, isdimension, Option,
 
 from .dispatch import dispatch
 
+__all__ = []
+
 types = {datashape.int16: sql.ShortType(),
          datashape.int32: sql.IntegerType(),
-         datashape.int64: sql.LongType(),
+         datashape.int64: sql.IntegerType(),
          datashape.float32: sql.FloatType(),
          datashape.float64: sql.DoubleType(),
          datashape.real: sql.DoubleType(),
@@ -22,8 +25,8 @@ types = {datashape.int16: sql.ShortType(),
          datashape.bool_: sql.BooleanType(),
          datashape.string: sql.StringType()}
 
-rev_types = {sql.IntegerType(): datashape.int32,
-             sql.ShortType(): datashape.int16,
+rev_types = {sql.IntegerType(): datashape.int64,
+             sql.ShortType(): datashape.int32,
              sql.LongType(): datashape.int64,
              sql.FloatType(): datashape.float32,
              sql.DoubleType(): datashape.float64,
@@ -54,18 +57,18 @@ def sparksql_to_ds(ss):
     """ Convert datashape to SparkSQL type system
 
     >>> sparksql_to_ds(IntegerType())
-    ctype("int32")
+    ctype("int64")
 
     >>> sparksql_to_ds(ArrayType(IntegerType(), False))
-    dshape("var * int32")
+    dshape("var * int64")
 
     >>> sparksql_to_ds(ArrayType(IntegerType(), True))
-    dshape("var * ?int32")
+    dshape("var * ?int64")
 
     >>> sparksql_to_ds(StructType([
     ...                         StructField('name', StringType(), False),
     ...                         StructField('amount', IntegerType(), True)]))
-    dshape("{ name : string, amount : ?int32 }")
+    dshape("{ name : string, amount : ?int64 }")
     """
     if ss in rev_types:
         return rev_types[ss]
@@ -142,8 +145,15 @@ def into(sqlContext, rdd, schema=None, columns=None, **kwargs):
 from blaze.expr import Expr, TableExpr
 @dispatch(pyspark.sql.SQLContext, (TableExpr, Expr, object))
 def into(sqlContext, o, **kwargs):
-    schema = discover(o).subshape[0]
+    schema = kwargs.pop('schema', None) or discover(o).subshape[0]
     return into(sqlContext, into(sqlContext._sc, o), schema=schema, **kwargs)
+
+
+@dispatch((tuple, list, set), pyspark.sql.SchemaRDD)
+def into(a, b, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(map(tuple, b.collect()))
 
 
 @dispatch(sql.SchemaRDD)

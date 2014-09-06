@@ -1,22 +1,23 @@
 from __future__ import absolute_import, division, print_function
 
-
-import sqlalchemy as sa
+import toolz
+from toolz import pipe
+import pyspark
+from pyspark.sql import SchemaRDD
 import itertools
+from datashape import discover
+import sqlalchemy as sa
+
 from ..data.sql import dshape_to_alchemy
 from ..dispatch import dispatch
 from ..expr import *
 from .utils import literalquery
-from datashape import discover
-import toolz
-from toolz import pipe
 
-
-from pyspark.sql import SchemaRDD
-import pyspark
+__all__ = []
 
 
 names = ('_table_%d' % i for i in itertools.count(1))
+
 
 class SparkSQLQuery(object):
     """ Pair of PySpark SQLContext and SQLAlchemy Table
@@ -111,3 +112,11 @@ def post_compute(expr, query, d):
     if isinstance(expr, TableExpr) and expr.iscolumn:
         result = result.map(lambda x: x[0])
     return result
+
+
+@dispatch(Head, SparkSQLQuery, dict)
+def post_compute(expr, query, d):
+    result = query.context.sql(sql_string(query.query))
+    if isinstance(expr, TableExpr) and expr.iscolumn:
+        result = result.map(lambda x: x[0])
+    return result.collect()

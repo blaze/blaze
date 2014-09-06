@@ -3,12 +3,10 @@ from functools import partial
 
 from .compatibility import _strtypes
 from .compute.spark import *
-from .compute.sparksql import *
-from .sparksql import *
 from .data.utils import coerce
 from .dispatch import dispatch
 from datashape import discover
-from collections import iterator
+from collections import Iterator, Iterable
 
 __all__ = ['pyspark', 'coerce']
 
@@ -26,9 +24,20 @@ def into(a, rdd, **kwargs):
 def into(o, rdd):
     return into(o, rdd.collect())
 
+
+@dispatch((tuple, list, set), RDD)
+def into(a, b, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    b = b.collect()
+    if isinstance(b[0], Iterable) and not type(b) == tuple:
+        b = map(tuple, b)
+    return a(b)
+
+
 @dispatch(pyspark.SparkContext, object)
 def into(sc, o, **kwargs):
-    return sc.parallelize(into(Iterator, o, **kwargs))
+    return sc.parallelize(into(list, o, **kwargs))
 
 
 @dispatch(RDD)
