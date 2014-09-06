@@ -63,6 +63,10 @@ class ArrayExpr(Expr):
             return ArrayElement(self, key)
         elif isinstance(key, tuple):
             return Slice(self, key)
+        elif isinstance(key, (slice, int)):
+            return self.__getitem__((key,))
+        else:
+            raise NotImplementedError()
 
     def sum(self, axis=None):
         return sum(self, axis)
