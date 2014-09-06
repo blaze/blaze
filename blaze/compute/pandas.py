@@ -380,26 +380,55 @@ def compute_one(expr, data, **kwargs):
 
 @dispatch(Sample, (DataFrame, Series))
 def compute_one(expr, data, **kwargs):
+    """ A small,randomly selected sample of data from the given pandas.DataFrame
+    or pandas.Series
+
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : pandas.DataFrame or pandas.Series
+        The pandas DataFrame or Series we are sampling from
+
+    Returns
+    -------
+    pandas.DataFrame or pandas.Series
+        A new pandas.DataFrame or pandas.Series
+
+    Notes
+    -----
+    Each time compute(expression.sample(), (DataFrame|Series)) is called a new, different
+    result should be returned.
+
+    Examples
+    --------
+    >>> dfbig = DataFrame([['Alice', 'F', 100, 1],
+                   ['Alice', 'F', 100, 3],
+                   ['Drew', 'F', 100, 4],
+                   ['Drew', 'M', 100, 5],
+                   ['Drew', 'M', 200, 5],
+                   ['Bob',  'M', 350, 2],
+                   ['Bill', 'M', 200, 6],
+                   ['Jane', 'F', 710, 7],
+                   ['Alex', 'F', 130, 8],
+                   ['Alex', 'M', 210, 9],
+                   ['Drake','M', 145, 10]],
+                  columns=['name', 'sex', 'amount', 'id'])
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> result=compute(t.sample(2),dfbig)
+    >>> assert(len(result) == 2)
     """
-    @param expr - The TableExpr that we are calculating over
-    @param data - The DataFrame we are sampling from
-    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
 
-    Each time compute(sample(), DataFrame) is called, a new, different DataFrame should be returned
-    """
-
-    replace=getattr(kwargs, "replace", expr.replacement)
-
-    array_len=len(data)
-    count=expr.n
+    array_len = len(data)
+    count = expr.n
     if count > array_len and expr.replacement is False:
         #If we make it here, the user has requested more values than can be returned
         #  So, we need to pare things down.
         #In essence, this now works like a permutation()
-        count=array_len
+        count = array_len
 
-    indexes=np.random.choice(array_len, count, replace=replace)
-    result=data.take(indexes)
+    indices = np.random.choice(array_len, count, replace=expr.replacement)
+    result = data.take(indices)
 
     return result
 

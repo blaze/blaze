@@ -211,5 +211,40 @@ def compute_one(t, _, children):
 
 @dispatch(Sample, RDD)
 def compute_one(expr, rdd, **kwargs):
+    """A Spark RDD operation
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : pyspark.rdd.RDD
+        The Spark RDD that we are sampling from
+
+
+    Returns
+    -------
+    pyspark.rdd.RDD
+          A not-yet-executed Spark RDD operation. Once result.collect() is
+          called, this final data should be a Python list.
+
+    Notes
+    -----
+    Each time compute(expression.sample(), RDD) is called a new, different
+    pyspark.rdd.RDD should be returned.
+
+    Examples
+    --------
+    >>> sc = pyspark.SparkContext("local", "Simple App")
+    >>> x = [(1, 'Alice', 100),
+     (2, 'Bob', -200),
+     (3, 'Charlie', 300),
+     (4, 'Denis', 400),
+     (5, 'Edith', -500)]
+    >>> rddx = sc.parallelize(x)
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> result = compute(t.sample(2),rddx)
+    >>> assert(len(result) == 2)
+
+    """
+
     return rdd.takeSample(expr.replacement, expr.n)
 

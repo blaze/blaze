@@ -312,40 +312,36 @@ def test_spark_outer_join():
 
 
 def test_sample():
-    test_data=rddx
-    test_expr=t
-    collected_data=rddx.collect()
+    test_data = rddx
+    test_expr = t
+    collected_data = rddx.collect()
 
-
-    result=compute(test_expr.sample(2), test_data)
+    result = compute(test_expr.sample(2), test_data)
+    print(result)
     assert(len(result) == 2)
 
-    for item in result:
-        assert(item in collected_data)
+    assert(set(result).issubset(collected_data))
     
-    result=compute(test_expr.sample(test_data.count()+1), test_data)
+    result = compute(test_expr.sample(test_data.count()+1), test_data)
     assert(len(result) == test_data.count())
     assert(len(result) < (test_data.count()+1))
 
-    for item in result:
-        assert(item in collected_data)
+    assert(set(result).issubset(collected_data))
     
     #This test should give us repeated data
-    result=compute(test_expr.sample(2*test_data.count(), replacement=True), test_data)
+    result = compute(test_expr.sample(2*test_data.count(), replacement=True), test_data)
     assert(len(result) == 2*test_data.count())
 
-    for item in result:
-        assert(item in collected_data)
+    assert(set(result).issubset(collected_data))
     
     #Test sampling from a single column from the array
-    result=compute(test_expr['name'].sample(2), test_data)
+    result = compute(test_expr['name'].sample(2), test_data)
     assert(len(result) == 2)
     #We need to compare items in the RDD against the result of our computation,
     #but we can't get a column out of an RDD like we would a dataframe, so run
     #another computation to get the column we want.
     
-    independent_result=compute(t['name'], rddx).collect()
+    independent_result = compute(t['name'], rddx).collect()
     assert(type(result) == type(independent_result))
     
-    for item in result:
-        assert(item in independent_result)
+    assert(set(result).issubset(independent_result))

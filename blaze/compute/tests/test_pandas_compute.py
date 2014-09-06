@@ -540,17 +540,17 @@ def test_summary():
 
 
 def test_sample():
-    test_data=dfbig
-    test_data2=dfbig.get_values()
-    test_expr=t
+    test_data = dfbig
+    test_data2 = dfbig.get_values()
+    test_expr = t
 
-    result=compute(test_expr.sample(2), test_data)
+    result = compute(test_expr.sample(2), test_data)
     assert(len(result) == 2)
 
     for item in result.get_values():
         assert(item in test_data2)
     
-    result=compute(test_expr.sample(len(test_data)+1), test_data)
+    result = compute(test_expr.sample(len(test_data)+1), test_data)
     assert(len(result) == len(test_data))
     assert(len(result) < (len(test_data)+1))
 
@@ -558,14 +558,14 @@ def test_sample():
         assert(item in test_data2)
     
     #This test should give us repeated data
-    result=compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
+    result = compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
     assert(len(result) == 2*(len(test_data)))
 
     for item in result.get_values():
         assert(item in test_data2)
 
     #This tests sampling a single column (aka Series) from the dataframe
-    result=compute(test_expr['name'].sample(2), test_data)
+    result = compute(test_expr['name'].sample(2), test_data)
     assert(len(result) == 2)
     assert(type(result) == type(test_data['name']))
     

@@ -114,29 +114,47 @@ def get_chunk(b, i, chunksize=2**15):
 
 @dispatch(Sample, (bcolz.carray, bcolz.ctable))
 def compute_one(expr, data, **kwargs):
+    """ A small,randomly selected sample of data from the given bcolz.carray or
+    bcolz.ctable 
+
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : bcolz.carray or bcolz.ctable
+        The bcolz carray or ctable we are sampling from
+
+    Returns
+    -------
+    bcolz.carray or bcolz.ctable
+        A new bcolz.carray or bcolz.ctable
+
+    Notes
+    -----
+    Each time compute(expression.sample(), (bcolz.carray,bcolz.ctable)) is called a new, different
+    bcolz.carray or bcolz.ctable should be returned.
+
+    Examples
+    --------
+    >>> x = bcolz.ctable([[1,2,3,4,5], ['Alice','Bob','Charlie','Denis','Edith'], [100,-200,300,400,-500]], names=['id', 'name', 'amount'])
+    >>> tx=TableSymbol('tx', '{id :int32, name:string, amount:int64}')
+    >>> result = compute(tx.sample(2), x)
+    >>> assert(len(result) == 2)
+
     """
-    @param expr - The TableExpr that we are calculating over
-    @param data - The numpy ndarray we are sampling from
-    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
 
-    Each time compute(sample(), whatever) is called, a new, different whatever should be returned
-    bcolz indexing operations return a numpy.void type or a numpy.ndarray type when doing fancy indexing.
-    We want to keep our original type (I think), so we save it with input_type and convert after sampling.
-    """
+    input_type = type(data)
 
-    replace=getattr(kwargs, "replace", expr.replacement)
-    input_type=type(data)
-
-    array_len=len(data)
-    count=expr.n
+    array_len = len(data)
+    count = expr.n
     if count > array_len and expr.replacement is False:
         #If we make it here, the user has requested more values than can be returned
         #  So, we need to pare things down.
         #In essence, this now works like a permutation()
-        count=array_len
+        count = array_len
 
-    indexes=np.random.choice(array_len, count, replace=replace)
-    result=data[indexes]
+    indices = np.random.choice(array_len, count, replace=expr.replacement)
+    result = data[indices]
 
     return input_type(result)
 

@@ -113,26 +113,51 @@ def compute_one(s, t, **kwargs):
 
 @dispatch(Sample, tb.Table)
 def compute_one(expr, data, **kwargs):
+    """ A small,randomly selected sample of data from the given tables.Table
+
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : tables.Table
+        The pytables Table we are sampling from
+
+    Returns
+    -------
+    numpy.ndarray
+        A new numpy.ndarray (Yes, a numpy.ndarray not a tb.Table)
+
+    Notes
+    -----
+    Each time compute(expression.sample(), tables.Table) is called a new, different
+    numpy.ndarray is returned.
+
+    Example
+    -------
+    >>> x = np.array([(1, 'Alice', 100),
+              (2, 'Bob', -200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
+              (5, 'Edith', -500)],
+             dtype=[('id', '<i8'), ('name', 'S7'), ('amount', '<i8')])
+    >>> import tempfile
+    >>> f = tempfile.mktemp('.h5', mode="w")
+    >>> d = f.create_table('/', 'pytablestest',  x)
+    >>> t = TableSymbol('t', '{id: int, name: string, amount: int}')
+    >>> result = compute(t.sample(2), d)
+    >>> assert(len(result) == 2)
     """
-    @param expr - The TableExpr that we are calculating over
-    @param data - The numpy ndarray we are sampling from
-    @param replace (Optional) - Tells whether to sample with or without replacement. The default is False.
 
-    Each time compute(sample(), ndarray) is called, a new, different ndarray should be returned
-    """
-
-    replace=getattr(kwargs, "replace", expr.replacement)
-
-    array_len=len(data)
-    count=expr.n
+    array_len = len(data)
+    count = expr.n
     if count > array_len and expr.replacement is False:
         #If we make it here, the user has requested more values than can be returned
         #  So, we need to pare things down.
         #In essence, this now works like a permutation()
-        count=array_len
+        count = array_len
 
-    indexes=np.random.choice(array_len, count, replace=replace)
-    result=data[indexes]
+    indices=np.random.choice(array_len, count, replace = expr.replacement)
+    result=data[indices]
 
     return result
     
