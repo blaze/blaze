@@ -40,6 +40,7 @@ install:
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 
+
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
 
@@ -88,16 +89,17 @@ install:
 
   # Install coverage
   - pip install coverage
+  - pip install coveralls --use-mirrors
 
 before_script:
   - mysql -e 'create database test'
 
-script: 
-  - coverage run $(which py.test)
+script:
+  - coverage run "$(which py.test) -v -r -sxX --doctest-modules --pyargs blaze"
   - coverage report --show-missing
 
 after_success:
-  - pip install coveralls --use-mirrors ; coveralls
+  - coveralls
 
 notifications:
   email: false
