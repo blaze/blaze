@@ -11,7 +11,7 @@ from cytoolz import merge
 from toolz import unique, concat
 from pprint import pprint
 import datashape as ds
-from blaze.compatibility import StringIO, map
+from blaze.compatibility import StringIO, map, zip
 import math
 
 from ..dispatch import dispatch
