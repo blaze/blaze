@@ -7,10 +7,10 @@ import inspect
 import functools
 import operator as op
 import pandas as pd
-from toolz import unique, concat, merge
+from cytoolz import merge
+from toolz import unique, concat
 from pprint import pprint
 import datashape as ds
-import blaze as bz
 from blaze.compatibility import StringIO, map
 import math
 
@@ -357,7 +357,6 @@ class Lambda(Expr):
         return 'lambda (%s): %s' % (', '.join(self.columns), self.expr)
 
     def __call__(self, row):
-        scope = toolz.merge(self.__default_scope__,
-                            dict(zip(self.columns, row)))
+        scope = merge(self.__default_scope__, dict(zip(self.columns, row)))
         parser = Expressify(scope)
         return parser.visit(self._ast)
