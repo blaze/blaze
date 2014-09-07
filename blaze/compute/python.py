@@ -101,7 +101,7 @@ def rowfunc(t):
 
 @dispatch(ColumnWise)
 def rowfunc(t):
-    return Lambda(eval_str(t.expr), list(map(str, t.child.columns)))
+    return Lambda(t.expr, list(map(str, t.child.columns)))
 
 
 @dispatch(Map)
