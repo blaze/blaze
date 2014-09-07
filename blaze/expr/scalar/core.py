@@ -10,12 +10,10 @@ def eval_str(expr):
     """ String suitable for evaluation """
     if hasattr(expr, 'eval_str'):
         return expr.eval_str()
-    elif isinstance(expr, str):
+    elif isinstance(expr, (str, date, datetime)):
         return "'%s'" % expr
     elif isinstance(expr, unicode):
         return "u'%s'" % expr
-    elif isinstance(expr, (date, datetime)):
-        return repr(expr)
     else:
         return str(expr)
 
