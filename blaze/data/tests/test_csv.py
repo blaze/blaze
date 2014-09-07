@@ -10,7 +10,7 @@ import pytest
 import datashape
 from datashape import dshape
 
-from blaze.compatibility import min_python_version
+from blaze.compatibility import min_python_version, xfail
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
 from blaze.utils import filetext
@@ -257,6 +257,9 @@ class TestCSV_New_File(unittest.TestCase):
 
 class TestTransfer(unittest.TestCase):
 
+    @xfail(raises=AssertionError,
+           reason='pandas.to_csv does not correctly write a custom line '
+           'terminator')
     def test_re_dialect(self):
         dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
         dialect2 = {'delimiter': ';', 'lineterminator': '--'}
@@ -275,7 +278,6 @@ class TestTransfer(unittest.TestCase):
 
                 with open(dest_fn) as f:
                     self.assertEquals(f.read(), '1;1--2;2--')
-
 
     def test_iter(self):
         with filetext('1,1\n2,2\n') as fn:
