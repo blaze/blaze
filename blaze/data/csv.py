@@ -7,8 +7,8 @@ from operator import itemgetter
 from functools import partial
 
 from multipledispatch import dispatch
-from toolz import keyfilter, compose
-from cytoolz import partition_all
+from toolz import keyfilter, compose, first
+from cytoolz import partition_all, merge
 
 import pandas as pd
 from datashape.discovery import discover, null, unpack
@@ -144,6 +144,7 @@ class CSV(DataDescriptor):
         self.path = path
         self.mode = mode
         self.open = open
+        self.header = header
         self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
         self.encoding = encoding
@@ -166,6 +167,10 @@ class CSV(DataDescriptor):
         if 'sep' in kwargs:
             dialect['delimiter'] = kwargs['sep']
 
+        dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
+        lt = dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
+        dialect['lineterminator'] = lt
+
         if header is None:
             header = has_header(sample)
         elif isinstance(header, int):
@@ -174,27 +179,29 @@ class CSV(DataDescriptor):
 
         if not schema and 'w' not in mode:
             if not types:
-                with open(self.path) as f:
-                    data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
-                    types = discover(data)
-                    rowtype = types.subshape[0]
-                    if isinstance(rowtype[0], Tuple):
-                        types = types.subshape[0][0].dshapes
-                        types = [unpack(t) for t in types]
-                        types = [string if t == null else t
-                                        for t in types]
-                        types = [t if isinstance(t, Option) or t==string else Option(t)
-                                      for t in types]
-                    elif (isinstance(rowtype[0], Fixed) and
-                          isinstance(rowtype[1], CType)):
-                        types = int(rowtype[0]) * [rowtype[1]]
-                    else:
-                       ValueError("Could not discover schema from data.\n"
-                                  "Please specify schema.")
+                data = list(map(tuple, self.reader(skiprows=1,
+                                                   nrows=nrows_discovery,
+                                                   chunksize=None, **dialect)))
+                types = discover(data)
+                rowtype = types.subshape[0]
+                if isinstance(rowtype[0], Tuple):
+                    types = types.subshape[0][0].dshapes
+                    types = [unpack(t) for t in types]
+                    types = [string if t == null else t
+                                    for t in types]
+                    types = [t if isinstance(t, Option) or t==string else Option(t)
+                                    for t in types]
+                elif (isinstance(rowtype[0], Fixed) and
+                        isinstance(rowtype[1], CType)):
+                    types = int(rowtype[0]) * [rowtype[1]]
+                else:
+                    ValueError("Could not discover schema from data.\n"
+                                "Please specify schema.")
             if not columns:
                 if header:
-                    with open(self.path) as f:
-                        columns = next(csv.reader([next(f)], **dialect))
+                    columns = first(self.reader(skiprows=0, nrows=1, header=None,
+                                               chunksize=None,
+                                               **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
             if typehints:
@@ -207,18 +214,17 @@ class CSV(DataDescriptor):
         self.header = header
         self.dialect = dialect
 
-    @property
-    def reader(self):
+    def reader(self, **kwargs):
+        kwargs.setdefault('chunksize', self.chunksize)
+        kwargs.setdefault('skiprows', int(bool(self.header)))
+        kwargs.setdefault('as_recarray', True)
+        kwargs.setdefault('header', None)
         filename, ext = os.path.splitext(self.path)
         ext = ext.lstrip('.')
-        dialect = keyfilter(read_csv_kwargs.__contains__, self.dialect)
-        lt = dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
-        dialect['lineterminator'] = lt
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
-                             skiprows=int(bool(self.header)), header=None,
-                             as_recarray=True, chunksize=self.chunksize,
-                             encoding=self.encoding, **dialect)
+                             encoding=self.encoding,
+                             **merge(getattr(self, 'dialect', {}), kwargs))
         return reader
 
     def _get_py(self, key):
@@ -251,7 +257,8 @@ class CSV(DataDescriptor):
             raise IndexError("key '%r' is not valid" % key)
 
     def _iter(self):
-        return it.chain.from_iterable(map(partial(bz.into, list), self.reader))
+        return it.chain.from_iterable(map(partial(bz.into, list),
+                                          self.reader()))
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
