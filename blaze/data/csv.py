@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
 import itertools as it
 import os
 import gzip
@@ -9,6 +8,7 @@ from functools import partial
 
 from multipledispatch import dispatch
 from toolz import keyfilter, compose
+from cytoolz import partition_all
 
 import pandas as pd
 from datashape.discovery import discover, null, unpack
@@ -17,7 +17,6 @@ from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 import blaze as bz
 from blaze.data.utils import tupleit
 from .core import DataDescriptor
-from .utils import coerce_record_to_row
 from ..api.resource import resource
 from ..utils import nth, nth_list
 from .. import compatibility
@@ -251,29 +250,20 @@ class CSV(DataDescriptor):
         return it.chain.from_iterable(map(partial(bz.into, list), self.reader))
 
     def _extend(self, rows):
-        rows = iter(rows)
-        version = sys.version_info[0]
-        mode = {2: 'ab', 3: 'a'}[version]
-
-        try:
-            row = next(rows)
-        except StopIteration:
-            return
-
-        if isinstance(row, dict):
-            schema = dshape(self.schema)
-            row = coerce_record_to_row(schema, row)
-            rows = (coerce_record_to_row(schema, row) for row in rows)
+        mode = 'ab' if PY2 else 'a'
+        dialect = keyfilter(lambda x: x != 'strict', self.dialect)
+        dialect.setdefault('sep', dialect['delimiter'])
 
         f = self.open(self.path, mode)
 
         try:
-            # Write all rows to file
+            # we have data in the file, append a newline
             if os.path.getsize(self.path):
                 f.write('\n')
-            writer = csv.writer(f, **self.dialect)
-            writer.writerow(row)
-            writer.writerows(rows)
+
+            for df in map(partial(bz.into, pd.DataFrame),
+                          partition_all(self.chunksize, iter(rows))):
+                df.to_csv(f, index=False, header=None, **dialect)
         finally:
             try:
                 f.close()
