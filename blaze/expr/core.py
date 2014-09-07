@@ -331,18 +331,16 @@ class Expressify(ast.NodeVisitor):
         return self.scope[node.id]
 
 
-class Lambda(object):
+class Lambda(Expr):
 
-    __slots__ = 'child', 'expr', 'ast'
+    __slots__ = 'child', 'expr', '_ast'
 
     __default_scope__ = toolz.keyfilter(lambda x: not x.startswith('__'),
                                         merge(math.__dict__))
 
-    def __init__(self, child, expr):
-        super(Lambda, self).__init__()
-        self.child = child
-        self.expr = expr
-        self.ast = ast.parse(str(expr), mode='eval').body
+    def __init__(self, child, expr, _ast=None):
+        super(Lambda, self).__init__(child, expr, _ast=_ast)
+        self._ast = _ast or ast.parse(str(expr), mode='eval').body
 
     @property
     def columns(self):
@@ -358,7 +356,7 @@ class Lambda(object):
         return 'lambda (%s): %s' % (', '.join(self.columns), self.expr)
 
     def __call__(self, row):
-        scope = toolz.merge(dict(zip(self.columns, row)),
-                            self.__default_scope__)
+        scope = toolz.merge(self.__default_scope__,
+                            dict(zip(self.columns, row)))
         parser = Expressify(scope)
-        return parser.visit(self.ast)
+        return parser.visit(self._ast)
