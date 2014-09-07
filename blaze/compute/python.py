@@ -36,7 +36,6 @@ from .core import compute, compute_one
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
-import math
 from math import *
 
 
