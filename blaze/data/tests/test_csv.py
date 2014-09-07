@@ -10,10 +10,9 @@ import pytest
 import datashape
 from datashape import dshape
 
-from blaze.compatibility import min_python_version, skipif
+from blaze.compatibility import min_python_version
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
-from blaze.data.csv import has_header, discover_dialect
 from blaze.utils import filetext
 from blaze.data.utils import tuplify
 from blaze.data.csv import drop
