@@ -18,9 +18,9 @@ import blaze as bz
 from blaze.data.utils import tupleit
 from .core import DataDescriptor
 from ..api.resource import resource
-from ..utils import nth, nth_list
+from ..utils import nth, nth_list, keywords
 from .. import compatibility
-from ..compatibility import map, PY2
+from ..compatibility import map, zip, PY2
 
 if PY2:
     import unicodecsv as csv
@@ -28,6 +28,9 @@ else:
     import csv
 
 __all__ = ['CSV', 'drop']
+
+
+read_csv_kwargs = set(keywords(pd.read_csv))
 
 
 def has_header(sample):
@@ -208,8 +211,9 @@ class CSV(DataDescriptor):
     def reader(self):
         filename, ext = os.path.splitext(self.path)
         ext = ext.lstrip('.')
-        dialect = keyfilter(lambda x: x not in ('strict', 'lineterminator'),
-                            self.dialect)
+        dialect = keyfilter(read_csv_kwargs.__contains__, self.dialect)
+        lt = dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
+        dialect['lineterminator'] = lt
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
                              skiprows=int(bool(self.header)), header=None,
@@ -251,7 +255,7 @@ class CSV(DataDescriptor):
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
-        dialect = keyfilter(lambda x: x != 'strict', self.dialect)
+        dialect = keyfilter(read_csv_kwargs.__contains__, self.dialect)
         dialect.setdefault('sep', dialect['delimiter'])
 
         f = self.open(self.path, mode)
