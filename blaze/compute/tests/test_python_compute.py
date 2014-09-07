@@ -562,7 +562,7 @@ def test_scalar_arithmetic():
 
     assert compute_one(-x, 1) == -1
 
-    assert compute_one(scalar.sin(x), 1) == math.sin(1)
+    assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)
 
 
 def test_datetime_columnwise():
