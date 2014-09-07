@@ -69,6 +69,7 @@ class ArrayExpr(Expr):
             raise NotImplementedError()
 
     def sum(self, axis=None):
+        # TODO: check axis input
         return sum(self, axis)
 
     def min(self, axis=None):
@@ -119,6 +120,7 @@ class Slice(ArrayExpr):
     def dshape(self):
         return self.child.dshape.subshape[self.index]
 
+
 class Reduction(Expr):
     __slots__ = 'child', 'axis'
 
@@ -133,6 +135,7 @@ class Reduction(Expr):
         s = tuple(slice(None) if i not in axes else 0
                             for i in range(self.child.ndim))
         return self.child.dshape.subshape[s]
+
 
 class sum(Reduction): pass
 class min(Reduction): pass
