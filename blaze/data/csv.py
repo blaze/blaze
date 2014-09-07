@@ -168,6 +168,8 @@ class CSV(DataDescriptor):
             dialect['delimiter'] = kwargs['sep']
 
         dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
+
+        # pandas doesn't like two character line terminators
         lt = dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
         dialect['lineterminator'] = lt
 
