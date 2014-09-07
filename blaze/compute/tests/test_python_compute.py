@@ -2,10 +2,11 @@ from __future__ import absolute_import, division, print_function
 import math
 import itertools
 import operator
+from datetime import datetime
 
 import blaze
 from blaze.compute.python import nunique, mean, rrowfunc
-from blaze import dshape
+from blaze import dshape, discover, into
 from blaze.compute.core import compute, compute_one
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
@@ -561,3 +562,17 @@ def test_scalar_arithmetic():
     assert compute_one(-x, 1) == -1
 
     assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)
+
+
+def test_datetime_columnwise():
+    d = datetime(2000, 1, 1, 1, 1, 1)
+    df = [(1, datetime.now()), (2, d)]
+    t = TableSymbol('t', '{id: int64, datetime: datetime}')
+    expr = t[t.datetime == d]
+
+    expected = "t[t['datetime'] == ('2000-01-01 01:01:01')]"
+    assert str(expr) == expected
+
+    res = compute(expr, df)
+    final = into(list, res)
+    assert final == [(2, d)]
