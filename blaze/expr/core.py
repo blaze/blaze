@@ -350,7 +350,8 @@ class Lambda(Expr):
     def dshape(self):
         restype = self.expr.dshape
         argtypes = tuple(map(ds.dshape, self.child.schema[0].types))
-        return ds.DataShape(ds.Function(*(argtypes + (restype,))))
+        types = argtypes + (restype,)
+        return ds.DataShape(ds.Function(*types))
 
     def __repr__(self):
         return 'lambda (%s): %s' % (', '.join(self.columns), self.expr)
