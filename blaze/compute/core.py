@@ -1,12 +1,17 @@
 from __future__ import absolute_import, division, print_function
+
 import numbers
+import ast
+import operator as op
 from datetime import date, datetime
-from toolz import first
+
+from toolz import first, merge, keyfilter, complement
 
 from ..compatibility import basestring
 from ..expr.core import Expr
-from ..expr import TableSymbol, eval_str, Union
+from ..expr import TableSymbol, Union, eval_str
 from ..dispatch import dispatch
+import math
 
 __all__ = ['compute', 'compute_one', 'drop', 'create_index']
 
@@ -134,59 +139,6 @@ def compute(expr, d):
     expr = pre_compute(expr, d)
     result = top_to_bottom(d, expr)
     return post_compute(expr, result, d)
-
-
-def columnwise_funcstr(t, variadic=True, full=False):
-    """Build a string that can be eval'd to return a ``lambda`` expression.
-
-    Parameters
-    ----------
-    t : ColumnWise
-        An expression whose leaves (at each application of the returned
-        expression) are all instances of ``ScalarExpression``.
-        For example ::
-
-            t.petal_length / max(t.petal_length)
-
-        is **not** a valid ``ColumnWise``, since the expression ::
-
-            max(t.petal_length)
-
-        has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
-        valid ``ColumnWise`` expression is ::
-
-            t.petal_length / 4
-
-    Returns
-    -------
-    f : str
-        A string that can be passed to ``eval`` and will return a function that
-        operates on each row and applies a scalar expression to a subset of the
-        columns in each row.
-
-    Examples
-    --------
-    >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
-    >>> cw = t['x'] + t['z']
-    >>> columnwise_funcstr(cw)
-    'lambda x, z: x + z'
-
-    >>> columnwise_funcstr(cw, variadic=False)
-    'lambda (x, z): x + z'
-
-    >>> columnwise_funcstr(cw, variadic=False, full=True)
-    'lambda (x, y, z): x + z'
-    """
-    if full:
-        columns = t.child.columns
-    else:
-        columns = t.active_columns()
-    if variadic:
-        prefix = 'lambda %s: '
-    else:
-        prefix = 'lambda (%s): '
-
-    return prefix % ', '.join(map(str, columns)) + eval_str(t.expr)
 
 
 @dispatch(Union, (list, tuple))
