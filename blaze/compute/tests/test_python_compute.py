@@ -3,6 +3,7 @@ import math
 import itertools
 import operator
 from datetime import datetime
+import pytest
 
 import blaze
 from blaze.compute.python import nunique, mean, rrowfunc
@@ -578,10 +579,19 @@ def test_datetime_columnwise():
     assert final == [(2, d)]
 
 
-def test_lambda_dshape():
+@pytest.fixture
+def lam():
     d = datetime(2000, 1, 1, 1, 1, 1)
     t = TableSymbol('t', '{id: int64, datetime: datetime}')
     expr = t[t.datetime == d]
     f = rowfunc(expr.predicate)
-    ds = f.dshape
+    return f
+
+
+def test_lambda_dshape(lam):
+    ds = lam.dshape
     assert str(ds) == '(int64, datetime) -> bool'
+
+
+def test_lambda_columns(lam):
+    assert lam.columns == ['id', 'datetime']
