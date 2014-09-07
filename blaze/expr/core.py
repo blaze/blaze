@@ -9,6 +9,8 @@ import operator as op
 import pandas as pd
 from toolz import unique, concat, merge
 from pprint import pprint
+import datashape as ds
+import blaze as bz
 from blaze.compatibility import StringIO, map
 import math
 
@@ -307,7 +309,8 @@ class Expressify(ast.NodeVisitor):
         return op.neg
 
     def visit_UnaryOp(self, node):
-        return self.visit(node.op)(self.visit(node.operand))
+        f = self.visit(node.op)
+        return f(self.visit(node.operand))
 
     def visit_Call(self, node):
         f = self.visit(node.func)
@@ -317,8 +320,8 @@ class Expressify(ast.NodeVisitor):
         return getattr(self.visit(node.value), node.attr)
 
     def visit_Compare(self, node):
-        return self.visit(node.ops[0])(self.visit(node.left),
-                                       self.visit(node.comparators[0]))
+        f = self.visit(node.ops[0])
+        return f(self.visit(node.left), self.visit(node.comparators[0]))
 
     def visit_BinOp(self, node):
         f = self.visit(node.op)
@@ -330,21 +333,32 @@ class Expressify(ast.NodeVisitor):
 
 class Lambda(object):
 
-    __default_scope__ = toolz.keyfilter(
-        toolz.complement(op.methodcaller('startswith', '__')),
-        merge(math.__dict__))
+    __slots__ = 'child', 'expr', 'ast'
 
-    def __init__(self, expr, columns):
+    __default_scope__ = toolz.keyfilter(lambda x: not x.startswith('__'),
+                                        merge(math.__dict__))
+
+    def __init__(self, child, expr):
         super(Lambda, self).__init__()
-        self._expr = expr
-        self.columns = columns
-        self.expr = ast.parse(str(expr), mode='eval').body
+        self.child = child
+        self.expr = expr
+        self.ast = ast.parse(str(expr), mode='eval').body
+
+    @property
+    def columns(self):
+        return list(map(str, self.child.columns))
+
+    @property
+    def dshape(self):
+        restype = self.expr.dshape
+        argtypes = tuple(map(ds.dshape, self.child.schema[0].types))
+        return ds.DataShape(ds.Function(*(argtypes + (restype,))))
 
     def __repr__(self):
-        return 'lambda %s: %s' % (', '.join(self.columns), self._expr)
+        return 'lambda (%s): %s' % (', '.join(self.columns), self.expr)
 
     def __call__(self, row):
         scope = toolz.merge(dict(zip(self.columns, row)),
                             self.__default_scope__)
         parser = Expressify(scope)
-        return parser.visit(self.expr)
+        return parser.visit(self.ast)
