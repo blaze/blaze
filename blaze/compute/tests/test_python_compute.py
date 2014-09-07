@@ -6,7 +6,7 @@ from datetime import datetime
 
 import blaze
 from blaze.compute.python import nunique, mean, rrowfunc
-from blaze import dshape, discover, into
+from blaze import dshape, into, rowfunc
 from blaze.compute.core import compute, compute_one
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
@@ -576,3 +576,12 @@ def test_datetime_columnwise():
     res = compute(expr, df)
     final = into(list, res)
     assert final == [(2, d)]
+
+
+def test_lambda_dshape():
+    d = datetime(2000, 1, 1, 1, 1, 1)
+    t = TableSymbol('t', '{id: int64, datetime: datetime}')
+    expr = t[t.datetime == d]
+    f = rowfunc(expr.predicate)
+    ds = f.dshape
+    assert str(ds) == '(int64, datetime) -> bool'
