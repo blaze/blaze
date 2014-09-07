@@ -18,7 +18,7 @@ file_name = 'test.csv'
 def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
 
-    kwargs = {'newline': ''} if PY3 else {}
+    kwargs = {'newline': ''} if PY3 and os.name == 'nt' else {}
 
     with open(file_name, 'w', **kwargs) as f:
         csv_writer = csv_module.writer(f)
