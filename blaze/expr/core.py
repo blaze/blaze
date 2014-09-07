@@ -336,7 +336,7 @@ class Lambda(Expr):
     __slots__ = 'child', 'expr', '_ast'
 
     __default_scope__ = toolz.keyfilter(lambda x: not x.startswith('__'),
-                                        merge(math.__dict__))
+                                        math.__dict__)
 
     def __init__(self, child, expr, _ast=None):
         super(Lambda, self).__init__(child, expr, _ast=_ast)
