@@ -1,16 +1,20 @@
 from __future__ import absolute_import, division, print_function
 
+import ast
 import numbers
 import toolz
 import inspect
 import functools
-from toolz import unique, concat
+import operator as op
+import pandas as pd
+from toolz import unique, concat, merge
 from pprint import pprint
 from blaze.compatibility import StringIO
+import math
 
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover']
+__all__ = ['Expr', 'discover', 'Lambda']
 
 
 def get_callable_name(o):
@@ -224,3 +228,119 @@ def path(a, b):
         yield a
         a = a.child
     yield a
+
+
+class Expressify(ast.NodeVisitor):
+
+    def __init__(self, scope):
+        self.scope = scope
+
+    def visit(self, node):
+        result = super(Expressify, self).visit(node)
+
+        if result is None:
+            raise TypeError('%s nodes are not implemented' %
+                            type(node).__name__)
+        return result
+
+    def visit_Num(self, node):
+        return node.n
+
+    def visit_Str(self, node):
+        s = node.s
+        try:
+            return pd.Timestamp(s).to_pydatetime()
+        except ValueError:
+            return s
+
+    def visit_Add(self, node):
+        return op.add
+
+    def visit_Sub(self, node):
+        return op.sub
+
+    def visit_Mult(self, node):
+        return op.mul
+
+    def visit_Div(self, node):
+        return op.truediv
+
+    def visit_Mod(self, node):
+        return op.mod
+
+    def visit_Pow(self, node):
+        return op.pow
+
+    def visit_Lt(self, node):
+        return op.lt
+
+    def visit_Gt(self, node):
+        return op.gt
+
+    def visit_Le(self, node):
+        return op.le
+
+    def visit_Ge(self, node):
+        return op.ge
+
+    def visit_Eq(self, node):
+        return op.eq
+
+    def visit_NotEq(self, node):
+        return op.ne
+
+    def visit_BitAnd(self, node):
+        return op.and_
+
+    def visit_BitOr(self, node):
+        return op.or_
+
+    def visit_Invert(self, node):
+        return op.not_
+
+    def visit_USub(self, node):
+        return op.neg
+
+    def visit_UnaryOp(self, node):
+        return self.visit(node.op)(self.visit(node.operand))
+
+    def visit_Call(self, node):
+        f = self.visit(node.func)
+        return f(*map(self.visit, node.args))
+
+    def visit_Attribute(self, node):
+        return getattr(self.visit(node.value), node.attr)
+
+    def visit_Compare(self, node):
+        return self.visit(node.ops[0])(self.visit(node.left),
+                                       self.visit(node.comparators[0]))
+
+    def visit_BinOp(self, node):
+        f = self.visit(node.op)
+        if f is None:
+            import ipdb; ipdb.set_trace()
+        return f(self.visit(node.left), self.visit(node.right))
+
+    def visit_Name(self, node):
+        return self.scope[node.id]
+
+
+class Lambda(object):
+
+    __scope__ = toolz.keyfilter(toolz.complement(op.methodcaller('startswith',
+                                                                 '__')),
+                                merge(math.__dict__))
+
+    def __init__(self, expr, columns):
+        super(Lambda, self).__init__()
+        self._expr = expr
+        self.columns = columns
+        self.expr = ast.parse(str(self._expr), mode='eval').body
+
+    def __repr__(self):
+        return 'lambda %s: %s' % (', '.join(self.columns), self._expr)
+
+    def __call__(self, row):
+        scope = toolz.merge(dict(zip(self.columns, row)), self.__scope__)
+        parser = Expressify(scope)
+        return parser.visit(self.expr)
