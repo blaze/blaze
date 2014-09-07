@@ -3,13 +3,12 @@ from __future__ import absolute_import, division, print_function
 import operator
 from toolz import first
 import numpy as np
-from datashape import dshape
 from dateutil.parser import parse as dt_parse
 from .core import Scalar, BinOp, UnaryOp
 from ..core import Expr
 from ...dispatch import dispatch
 from ...compatibility import _strtypes
-from datashape import coretypes as ct
+from datashape import coretypes as ct, dshape
 from .boolean import (Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not,
                       Invert, BooleanInterface)
 
@@ -215,7 +214,6 @@ class cos(RealMath): pass
 class cosh(RealMath): pass
 class tan(RealMath): pass
 class tanh(RealMath): pass
-
 class exp(RealMath): pass
 class expm1(RealMath): pass
 class log(RealMath): pass
