@@ -189,21 +189,20 @@ class CSV(DataDescriptor):
                 if isinstance(rowtype[0], Tuple):
                     types = types.subshape[0][0].dshapes
                     types = [unpack(t) for t in types]
-                    types = [string if t == null else t
-                                    for t in types]
-                    types = [t if isinstance(t, Option) or t==string else Option(t)
-                                    for t in types]
+                    types = [string if t == null else t for t in types]
+                    types = [t if isinstance(t, Option) or t == string
+                             else Option(t) for t in types]
                 elif (isinstance(rowtype[0], Fixed) and
                         isinstance(rowtype[1], CType)):
                     types = int(rowtype[0]) * [rowtype[1]]
                 else:
                     ValueError("Could not discover schema from data.\n"
-                                "Please specify schema.")
+                               "Please specify schema.")
             if not columns:
                 if header:
-                    columns = first(self.reader(skiprows=0, nrows=1, header=None,
-                                               chunksize=None,
-                                               **dialect))
+                    columns = first(self.reader(skiprows=0, nrows=1,
+                                                header=None, chunksize=None,
+                                                **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
             if typehints:
