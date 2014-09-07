@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
 import itertools as it
 import os
 import gzip
@@ -22,10 +23,7 @@ from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import map, zip, PY2
 
-if PY2:
-    import unicodecsv as csv
-else:
-    import csv
+import csv
 
 __all__ = ['CSV', 'drop']
 
@@ -33,12 +31,29 @@ __all__ = ['CSV', 'drop']
 read_csv_kwargs = set(keywords(pd.read_csv))
 
 
-def has_header(sample):
-    """ Sample text has a header """
-    sniffer = csv.Sniffer()
+def has_header(sample, encoding=sys.getdefaultencoding()):
+    """Check whether a piece of sample text from a file has a header
+
+    Parameters
+    ----------
+    sample : str
+        Text to check for existence of a header
+    encoding : str
+        Encoding to use if ``isinstance(sample, bytes)``
+
+    Returns
+    -------
+    h : bool or NoneType
+        None if an error is thrown, otherwise ``True`` if a header exists and
+        ``False`` otherwise.
+    """
+    sniffer = csv.Sniffer().has_header
+
     try:
-        return sniffer.has_header(sample)
-    except:
+        return sniffer(sample)
+    except TypeError:
+        return sniffer(sample.decode(encoding))
+    except csv.Error:
         return None
 
 
@@ -68,6 +83,36 @@ def discover_dialect(sample, dialect=None, **kwargs):
             dialect[k] = v
 
     return dialect
+
+
+def get_dialect(sample, dialect=None, **kwargs):
+    dialect = discover_dialect(sample, dialect, **kwargs)
+    assert dialect
+
+    # Pandas uses sep instead of delimiter.
+    # Lets support that too
+    if 'sep' in kwargs:
+        dialect['delimiter'] = kwargs['sep']
+
+    dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
+
+    # pandas doesn't like two character line terminators
+    dialect['lineterminator'] = dialect['lineterminator'].replace(
+        '\r\n', '\n').replace('\r', '\n')
+    return dialect
+
+
+def get_sample(csv, size=16384):
+    if os.path.exists(csv.path) and csv.mode != 'w':
+        f = csv.open(csv.path)
+        sample = f.read(size)
+        try:
+            f.close()
+        except AttributeError:
+            pass
+    else:
+        sample = ''
+    return sample
 
 
 class CSV(DataDescriptor):
@@ -134,7 +179,8 @@ class CSV(DataDescriptor):
     """
     def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
                  typehints=None, dialect=None, header=None, open=open,
-                 nrows_discovery=50, chunksize=1024, encoding=None, **kwargs):
+                 nrows_discovery=50, chunksize=1024,
+                 encoding=sys.getdefaultencoding(), **kwargs):
         if 'r' in mode and not os.path.isfile(path):
             raise ValueError('CSV file "%s" does not exist' % path)
 
@@ -149,32 +195,11 @@ class CSV(DataDescriptor):
         self.chunksize = chunksize
         self.encoding = encoding
 
-        if os.path.exists(path) and mode != 'w':
-            f = self.open(path)
-            sample = f.read(16384)
-            try:
-                f.close()
-            except AttributeError:
-                pass
-        else:
-            sample = ''
-
-        dialect = discover_dialect(sample, dialect, **kwargs)
-        assert dialect
-
-        # Pandas uses sep instead of delimiter.
-        # Lets support that too
-        if 'sep' in kwargs:
-            dialect['delimiter'] = kwargs['sep']
-
-        dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
-
-        # pandas doesn't like two character line terminators
-        lt = dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
-        dialect['lineterminator'] = lt
+        sample = get_sample(self)
+        dialect = get_dialect(sample, dialect, **kwargs)
 
         if header is None:
-            header = has_header(sample)
+            header = has_header(sample, encoding=encoding)
         elif isinstance(header, int):
             dialect['header'] = header
             header = True
