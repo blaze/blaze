@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-
 from blaze import SQL
 from blaze import CSV
 from blaze.api.into import into
@@ -10,33 +9,26 @@ import sqlalchemy
 import os
 import csv as csv_module
 import subprocess
+from blaze.compatibility import PY3
 
-db_file_name = "db_test.db"
-url = 'sqlite:///{0}'.format(db_file_name)
+url = 'sqlite:///:memory:'
 file_name = 'test.csv'
 
 # @pytest.fixture(scope='module')
 def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
 
-    with open(file_name, 'w') as f:
+    kwargs = {'newline': ''} if PY3 and os.name == 'nt' else {}
+
+    with open(file_name, 'w', **kwargs) as f:
         csv_writer = csv_module.writer(f)
-        for row in data:
-            csv_writer.writerow(row)
+        csv_writer.writerows(data)
 
 def teardown_function(function):
     os.remove(file_name)
-    os.remove(db_file_name)
-    engine = sqlalchemy.create_engine(url)
-    metadata = sqlalchemy.MetaData()
-    metadata.reflect(engine)
-    os.remove(db_file_name)
-
-    for t in metadata.tables:
-        if 'testtable' in t:
-            metadata.tables[t].drop(engine)
 
 
+@pytest.mark.xfail(os.name == 'nt', reason='no sqlite3 command in windows')
 def test_csv_sqlite_load():
 
     tbl = 'testtable'
@@ -66,8 +58,6 @@ def test_csv_sqlite_load():
                  'tblname': tblname,
                  'db': db,
                 }
-
-
 
     copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
     copy_cmd = copy_cmd.format(**copy_info)
