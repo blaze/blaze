@@ -589,8 +589,7 @@ def lam():
 
 
 def test_lambda_dshape(lam):
-    ds = lam.dshape
-    assert str(ds) == '(int64, datetime) -> bool'
+    assert str(lam.dshape) == '(int64, datetime) -> bool'
 
 
 def test_lambda_columns(lam):
