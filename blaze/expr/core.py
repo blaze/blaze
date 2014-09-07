@@ -248,10 +248,15 @@ class Expressify(ast.NodeVisitor):
 
     def visit_Str(self, node):
         s = node.s
-        try:
-            return pd.Timestamp(s).to_pydatetime()
-        except ValueError:
-            return s
+
+        # dateutil accepts the empty string as a valid datetime, don't let it do
+        # that
+        if s:
+            try:
+                return pd.Timestamp(s).to_pydatetime()
+            except ValueError:
+                return s
+        return s
 
     def visit_Add(self, node):
         return op.add
@@ -317,8 +322,6 @@ class Expressify(ast.NodeVisitor):
 
     def visit_BinOp(self, node):
         f = self.visit(node.op)
-        if f is None:
-            import ipdb; ipdb.set_trace()
         return f(self.visit(node.left), self.visit(node.right))
 
     def visit_Name(self, node):
