@@ -8,7 +8,7 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze import dshape, Table, discover, transform
+from blaze import dshape, Table, discover, transform, into
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
                         min, max, any, all, Projection, var, std)
@@ -532,3 +532,11 @@ def test_nested_transform():
     df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
     df['date'] = df.timestamp.map(lambda x: x.date())
     assert str(result) == str(df)
+
+
+def test_datetime_columnwise():
+    d = datetime(2000, 1, 1, 1, 1, 1)
+    t = Table(DataFrame({'a': [1, 2],
+                         'datetime': [datetime.now(), d]}))
+    res = t[t.datetime == d]
+    assert into(list, res) == [(2, d)]
