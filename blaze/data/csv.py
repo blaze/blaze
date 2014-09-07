@@ -142,6 +142,7 @@ class CSV(DataDescriptor):
         self.path = path
         self.mode = mode
         self.open = open
+        self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
         self.encoding = encoding
 
