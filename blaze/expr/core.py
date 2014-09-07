@@ -9,7 +9,7 @@ import operator as op
 import pandas as pd
 from toolz import unique, concat, merge
 from pprint import pprint
-from blaze.compatibility import StringIO
+from blaze.compatibility import StringIO, map
 import math
 
 from ..dispatch import dispatch
