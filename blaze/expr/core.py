@@ -330,20 +330,21 @@ class Expressify(ast.NodeVisitor):
 
 class Lambda(object):
 
-    __scope__ = toolz.keyfilter(toolz.complement(op.methodcaller('startswith',
-                                                                 '__')),
-                                merge(math.__dict__))
+    __default_scope__ = toolz.keyfilter(
+        toolz.complement(op.methodcaller('startswith', '__')),
+        merge(math.__dict__))
 
     def __init__(self, expr, columns):
         super(Lambda, self).__init__()
         self._expr = expr
         self.columns = columns
-        self.expr = ast.parse(str(self._expr), mode='eval').body
+        self.expr = ast.parse(str(expr), mode='eval').body
 
     def __repr__(self):
         return 'lambda %s: %s' % (', '.join(self.columns), self._expr)
 
     def __call__(self, row):
-        scope = toolz.merge(dict(zip(self.columns, row)), self.__scope__)
+        scope = toolz.merge(dict(zip(self.columns, row)),
+                            self.__default_scope__)
         parser = Expressify(scope)
         return parser.visit(self.expr)
