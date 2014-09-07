@@ -1,21 +1,17 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-if sys.version_info[0] == 2:
-    import unicodecsv as csv
-else:
-    import csv
-
 import itertools as it
 import os
+import gzip
 from operator import itemgetter
 from functools import partial
+
 from multipledispatch import dispatch
 from toolz import keyfilter, compose
 
 import pandas as pd
 from datashape.discovery import discover, null, unpack
-import gzip
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 
 import blaze as bz
@@ -25,7 +21,12 @@ from .utils import coerce_record_to_row
 from ..api.resource import resource
 from ..utils import nth, nth_list
 from .. import compatibility
-from ..compatibility import map
+from ..compatibility import map, PY2
+
+if PY2:
+    import unicodecsv as csv
+else:
+    import csv
 
 __all__ = ['CSV', 'drop']
 
@@ -134,10 +135,11 @@ class CSV(DataDescriptor):
                  nrows_discovery=50, chunksize=1024, encoding=None, **kwargs):
         if 'r' in mode and not os.path.isfile(path):
             raise ValueError('CSV file "%s" does not exist' % path)
-        if not schema and 'w' in mode:
+
+        if schema is None and 'w' in mode:
             raise ValueError('Please specify schema for writable CSV file')
+
         self.path = path
-        self._abspath = os.path.abspath(path)
         self.mode = mode
         self.open = open
         self.chunksize = chunksize
