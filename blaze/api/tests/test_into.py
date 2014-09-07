@@ -116,7 +116,6 @@ def h5():
 
 @pytest.yield_fixture
 def good_csv():
-
     with tmpfile(".csv") as filename:
         badfile = open(filename, mode="w")
         # Insert a new record
@@ -132,7 +131,6 @@ def good_csv():
 
 @pytest.yield_fixture
 def bad_csv_df():
-
     with tmpfile(".csv") as filename:
         badfile = open(filename, mode="w")
         # Insert a new record
@@ -324,6 +322,15 @@ def test_into_tables_path(good_csv, out_hdf5):
     tble.close()
 
 
+@skip_if_not(CSV and DataFrame)
+def test_into_tables_path(good_csv):
+    csv = CSV(good_csv.name)
+    t = Table(csv)
+    df = into(DataFrame, t[['userid', 'text']])
+    assert list(df.columns) == ['userid', 'text']
+
+
+
 @skip_if_not(PyTables and DataFrame)
 def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     tble = into(PyTables, bad_csv_df.name,
@@ -358,7 +365,7 @@ def test_into_DataFrame_Excel_xls_format():
     fn = os.path.join(dirname, 'accounts.xls')
     exp = DataFrame([[100, 1, "Alice", "2000-12-25T00:00:01"],
                     [200, 2, "Bob", "2001-12-25T00:00:01"],
-                    [300, 3, "Charlie", "2002-12-25T00:00:01"]], 
+                    [300, 3, "Charlie", "2002-12-25T00:00:01"]],
                     columns = ["amount", "id", "name", "timestamp"])
     df = into(DataFrame, fn)
     assert (df == exp).all().all()
