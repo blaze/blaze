@@ -214,8 +214,12 @@ def into(a, t):
 @dispatch(np.ndarray, tables.Table)
 def into(_, t):
     res = t[:]
+    dt_fields = valfilter(lambda x: x == 'time64', t.coltypes).keys()
 
-    for f in valfilter(lambda x: x == 'time64', t.coltypes).keys():
+    if not dt_fields:
+        return res
+
+    for f in dt_fields:
         # pytables is in seconds since epoch
         res[f] *= 1e6
 
