@@ -6,7 +6,7 @@ import datashape
 import sys
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all, valmap, first, compose
+from toolz import concat, partition_all, valmap, first, compose, merge
 from cytoolz import pluck, valfilter
 import copy
 from datetime import datetime
@@ -244,10 +244,12 @@ def numpy_fixlen_strings(x):
           dtype=[('id', '<i8'), ('name', 'S5'), ('amount', '<i8')])
     """
     if "'O'" in str(x.dtype):
-        dt = [(n, "S%d" % max(map(len, x[n])) if x.dtype[n] == 'O' else x.dtype[n])
+        dt = [(n, "S%d" % max(map(len, x[n]))
+               if x.dtype[n] == 'O' else x.dtype[n])
                 for n in x.dtype.names]
         x = x.astype(dt)
     return x
+
 
 @dispatch(tables.Table, np.ndarray)
 def into(_, x, filename=None, datapath=None, **kwargs):
@@ -255,8 +257,15 @@ def into(_, x, filename=None, datapath=None, **kwargs):
         raise ValueError("Must specify filename for new PyTables file. \n"
         "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
 
+    #import ipdb; ipdb.set_trace()
+    dtypes = dict((k, 'f8') for k, v in x.dtype.fields.items()
+                  if issubclass(v.type, np.datetime64))
+    dtypes = sort_dtype(list(merge(x.dtype.fields, dtypes).items()),
+                        x.dtype.names)
+    x = numpy_fixlen_strings(x.astype(np.dtype(dtypes)))
     f = tables.open_file(filename, 'w')
-    t = f.create_table('/', datapath, obj=numpy_fixlen_strings(x))
+    t = f.create_table('/', datapath, obj=x,
+                       description=to_tables_descr(x.dtype))
     return t
 
 
