@@ -1,25 +1,28 @@
 from __future__ import absolute_import, division, print_function
 
-import os
-import shutil
 from functools import partial
 import numpy as np
 import tables as tb
-from blaze.utils import tmpfile
-from toolz import first, compose
+import datashape as ds
 
-import datashape
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
                         TableSymbol, Sort, Reduction, count)
 from blaze.expr import eval_str
 from blaze.compatibility import basestring, map
-from datashape import Record
 from ..dispatch import dispatch
 
 
 @dispatch(tb.Table)
 def discover(t):
-    return t.shape[0] * Record([[col, t.coltypes[col]] for col in t.colnames])
+    return t.shape[0] * ds.Record([[col, discover(getattr(t.cols, col))]
+                                   for col in t.colnames])
+
+
+@dispatch(tb.Column)
+def discover(c):
+    import ipdb; ipdb.set_trace()
+    return {'time64': ds.datetime,
+            'time32': ds.date}.get(c.name, ds.from_numpy(c.dtype))
 
 
 @dispatch(tb.Table)
