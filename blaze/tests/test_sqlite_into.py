@@ -34,36 +34,6 @@ def teardown_function(function):
     os.remove(file_name)
 
 
-def test_csv_sqlite_load(engine):
-
-    tbl = 'testtable'
-
-    csv = CSV(file_name)
-
-    # how to handle path to DB.
-    sql = SQL(engine, tbl, schema=csv.schema)
-    engine = sql.engine
-    conn = engine.raw_connection()
-
-    dbtype = sql.engine.url.drivername
-    db = sql.engine.url.database
-    engine = sql.engine
-    abspath = csv._abspath
-    tblname = sql.tablename
-
-    copy_info = {'abspath': abspath,
-                 'tblname': tblname,
-                 'db': db,
-                }
-
-    copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
-    copy_cmd = copy_cmd.format(**copy_info)
-
-    ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-    output = ps.stdout.read()
-    assert list(csv) == list(sql)
-
-
 def test_simple_into(engine):
 
     tbl = 'testtable_into_2'
