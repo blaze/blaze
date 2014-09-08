@@ -148,7 +148,7 @@ def test_reductions():
     assert 'amount_sum' == compute(sum(t['amount']), s).name
 
 def test_count_on_table():
-    assert normalize(str(s.count())) == normalize("""
+    assert normalize(str(select(compute(t.count(), s)))) == normalize("""
     SELECT count(accounts.id) as tbl_row_count
     FROM accounts""")
 

@@ -18,14 +18,14 @@ from __future__ import absolute_import, division, print_function
 import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql
-from sqlalchemy.sql import Selectable
+from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
 from datashape import Record
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
-from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction
+from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary
 from ..compatibility import reduce
@@ -50,6 +50,7 @@ def compute_one(t, s, scope=None, **kwargs):
     columns = [csubexpression.c.get(col) for col in t.columns]
 
     return select(s).with_only_columns(columns)
+
 
 
 @dispatch(Column, Selectable)
@@ -163,6 +164,11 @@ def compute_one(t, s, **kwargs):
         result = result.label(name + '_' + type(t).__name__)
 
     return result
+
+
+@dispatch(count, (Selectable, Select))
+def compute_one(t, s, **kwargs):
+    return s.count()
 
 
 @dispatch(nunique, ClauseElement)
