@@ -200,14 +200,26 @@ class Test_Dialect(unittest.TestCase):
 
     def test_discover_dialect(self):
         s = '1,1\r\n2,2'
-        self.assertEqual(discover_dialect(s),
+        assert (discover_dialect(s) ==
                 {'escapechar': None,
                  'skipinitialspace': False,
                  'quoting': 0,
                  'delimiter': ',',
-                 'lineterminator': '\r\n',
+                 'line_terminator': '\n',
                  'quotechar': '"',
-                 'doublequote': False})
+                 'doublequote': False,
+                 'lineterminator': '\n',
+                 'sep': ','})
+        assert (discover_dialect('1,1\n2,2') ==
+                {'escapechar': None,
+                 'skipinitialspace': False,
+                 'quoting': 0,
+                 'delimiter': ',',
+                 'line_terminator': '\n',
+                 'quotechar': '"',
+                 'doublequote': False,
+                 'lineterminator': '\n',
+                 'sep': ','})
 
 
 class TestCSV_New_File(unittest.TestCase):
@@ -238,16 +250,17 @@ class TestCSV_New_File(unittest.TestCase):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
         dd.extend([self.data[0]])
         with open(self.filename) as f:
-            self.assertEqual(f.readlines()[0].strip(), 'Alice 100')
+            s = f.readlines()[0].strip()
+        assert s == 'Alice 100'
 
     def test_extend(self):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
         dd.extend(self.data)
         with open(self.filename) as f:
             lines = f.readlines()
-            self.assertEqual(lines[0].strip(), 'Alice 100')
-            self.assertEqual(lines[1].strip(), 'Bob 200')
-            self.assertEqual(lines[2].strip(), 'Alice 50')
+        expected_lines = 'Alice 100', 'Bob 200', 'Alice 50'
+        for i, eline in enumerate(expected_lines):
+            assert lines[i].strip() == eline
 
         expected_dshape = datashape.DataShape(datashape.Var(), self.schema)
         # TODO: datashape comparison is broken
@@ -257,9 +270,6 @@ class TestCSV_New_File(unittest.TestCase):
 
 class TestTransfer(unittest.TestCase):
 
-    @xfail(raises=AssertionError,
-           reason='pandas.to_csv does not correctly write a custom line '
-           'terminator')
     def test_re_dialect(self):
         dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
         dialect2 = {'delimiter': ';', 'lineterminator': '--'}
