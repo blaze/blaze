@@ -61,10 +61,6 @@ def has_header(sample, encoding=sys.getdefaultencoding()):
 
 
 def get_dialect(sample, dialect=None, **kwargs):
-    """ Discover CSV dialect from string sample
-
-    Returns dict
-    """
     if isinstance(dialect, compatibility._strtypes):
         dialect = csv.get_dialect(dialect)
 
@@ -89,6 +85,18 @@ def get_dialect(sample, dialect=None, **kwargs):
 
 
 def discover_dialect(sample, dialect=None, **kwargs):
+    """Discover a CSV dialect from string sample and additional keyword
+    arguments
+
+    Parameters
+    ----------
+    sample : str
+    dialect : str or csv.Dialect
+
+    Returns
+    -------
+    dialect : dict
+    """
     dialect = get_dialect(sample, dialect, **kwargs)
     assert dialect
 
