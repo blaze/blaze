@@ -29,7 +29,7 @@ sbig = sa.Table('accountsbig', metadata,
              )
 
 def normalize(s):
-    return ' '.join(s.strip().split())
+    return ' '.join(s.strip().split()).lower()
 
 def test_table():
     result = str(computefull(t, s))
@@ -146,6 +146,12 @@ def test_reductions():
             str(sa.sql.func.count(s.c.amount))
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
+
+def test_count_on_table():
+    assert normalize(str(s.count())) == normalize("""
+    SELECT count(accounts.id) as tbl_row_count
+    FROM accounts""")
+
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
