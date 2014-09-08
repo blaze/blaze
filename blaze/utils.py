@@ -178,6 +178,6 @@ def assert_allclose(lhs, rhs):
 
             if isinstance(left, (np.floating, float)):
                 # account for nans
-                assert np.allclose(left, right) or isnan(left) and isnan(right)
+                assert np.all(np.isclose(left, right, equal_nan=True))
             else:
                 assert left == right
