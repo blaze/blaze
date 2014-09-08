@@ -7,7 +7,7 @@ tb = pytest.importorskip('tables')
 from blaze.compatibility import xfail
 
 import numpy as np
-import pandas as pd
+import datashape as ds
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
@@ -347,9 +347,20 @@ class TestPyTablesLight(object):
         assert t._v_file.filename == tbfile
         assert t.shape == (0,)
 
-    def test_table_into_support(self, dt_tb, dt_data):
+    def test_table_into_ndarray(self, dt_tb, dt_data):
         t = PyTables(dt_tb, '/dt')
         res = into(np.ndarray, t)
+        for k in res.dtype.fields:
+            lhs, rhs = res[k], dt_data[k]
+            if (issubclass(np.datetime64, lhs.dtype.type) and
+                issubclass(np.datetime64, rhs.dtype.type)):
+                lhs, rhs = lhs.astype('M8[us]'), rhs.astype('M8[us]')
+            assert np.array_equal(lhs, rhs)
+
+    def test_ndarray_into_table(self, dt_tb, dt_data):
+        dtype = ds.from_numpy(dt_data.shape, dt_data.dtype)
+        t = PyTables(dt_tb, '/out', dtype)
+        res = into(np.ndarray, into(t, dt_data, filename=dt_tb, datapath='/out'))
         for k in res.dtype.fields:
             lhs, rhs = res[k], dt_data[k]
             if (issubclass(np.datetime64, lhs.dtype.type) and
