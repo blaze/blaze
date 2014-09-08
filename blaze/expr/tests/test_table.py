@@ -12,12 +12,13 @@ except ImportError:
 
 from functools import partial
 from datetime import datetime
+import datashape
 from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol)
+                        Summary, count, ScalarSymbol, like, Like)
 from blaze.compatibility import PY3
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
@@ -778,3 +779,13 @@ class TestRepr(object):
         assert s == ("Map(child=t['amount'], func=partial(partial(%s, 2), 1),"
                      " _schema=None, _iscolumn=None)" %
                      funcname('test_nested_partial', 'myfunc'))
+
+
+def test_like():
+    t = TableSymbol('t', '{name: string, amount: int, city: string}')
+
+    expr = like(t, name='Alice*')
+
+    assert eval(str(expr)).isidentical(expr)
+    assert expr.schema == t.schema
+    assert expr.dshape[0] == datashape.var
