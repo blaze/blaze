@@ -5,7 +5,7 @@ import tables as tb
 
 from cytoolz import compose, first
 
-import datashape
+import datashape as ds
 
 import shutil
 from blaze.utils import tmpfile
@@ -44,7 +44,8 @@ def PyTables(path, datapath, dshape=None):
             f.close()
 
     if dshape is not None:
-        dtype = to_tables_descr(datashape.to_numpy_dtype(dshape))
+        import ipdb; ipdb.set_trace()
+        dtype = to_tables_descr(ds.to_numpy_dtype(ds.dshape(dshape)))
     else:
         dtype = None
 
