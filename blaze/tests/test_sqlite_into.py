@@ -25,12 +25,9 @@ def csv():
     data = [(1, 2), (10, 20), (100, 200)]
 
     with tmpfile('csv') as filename:
-        with open(filename, 'w') as f:
-            csv_writer = csv_module.writer(f)
-            for row in data:
-                csv_writer.writerow(row)
-        csv = CSV(filename, columns=['a', 'b'])
-
+        csv = CSV(filename, 'w', schema='{a: int32, b: int32}')
+        csv.extend(data)
+        csv = CSV(filename, schema='{a: int32, b: int32}')
         yield csv
 
 
