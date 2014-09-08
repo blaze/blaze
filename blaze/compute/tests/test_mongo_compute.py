@@ -201,3 +201,10 @@ def test_summary_arith(t, bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).sum())
     result = compute(expr, bank)
     assert result == [('Bob', 601), ('Alice', 301)]
+
+
+def test_like(t, bank):
+    bank.create_index([('name', pymongo.TEXT)])
+    expr = t.like(name='*Alice*')
+    result = compute(expr, bank)
+    assert set(result) == set((('Alice', 100), ('Alice', 200)))

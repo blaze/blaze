@@ -45,6 +45,7 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 from __future__ import absolute_import, division, print_function
 
 try:
+    import pymongo
     from pymongo.collection import Collection
 except ImportError:
     Collection = type(None)
@@ -52,11 +53,13 @@ except ImportError:
 from datashape import Record
 from toolz import pluck
 import toolz
+from toolz import first
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
-                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary)
+                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
+                    Like)
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
@@ -102,7 +105,7 @@ class MongoQuery(object):
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Apply, Distinct, RowWise, By), Collection)
+           Head, ReLabel, Apply, Distinct, RowWise, By, Like), Collection)
 def compute_one(e, coll, **kwargs):
     return compute_one(e, MongoQuery(coll, []))
 
@@ -125,6 +128,41 @@ def compute_one(t, q, **kwargs):
 @dispatch(Selection, MongoQuery)
 def compute_one(t, q, **kwargs):
     return q.append({'$match': match(t.predicate.expr)})
+
+
+def has_text_index(coll, name):
+    """ Does the collection have a text index on name column?
+
+    >>> db = pymongo.MongoClient().db
+    >>> db.coll.drop()
+    >>> has_text_index(db.coll, 'name')
+    False
+
+    >>> _ = db.coll.create_index([('name', pymongo.TEXT)])
+    >>> has_text_index(db.coll, 'name')
+    True
+
+    >>> db.coll.drop()
+    """
+    return '%s_text' % name in coll.index_information()
+
+
+@dispatch(Like, MongoQuery)
+def compute_one(t, q, **kwargs):
+    if len(t.patterns) != 1:
+        raise ValueError("MongoDB supports text search on only one column")
+    name = first(t.patterns.keys())
+    if not has_text_index(q.coll, name):
+        raise ValueError("Must create text index on column like \n"
+                "\tdb.%s.create_index([('%s', pymongo.TEXT)])" %
+                (q.coll.name, name))
+    pattern = first(t.patterns.values())
+    if not (pattern[0] == pattern[-1] == '*') or '*' in pattern[1:-1]:
+        raise ValueError("Can only match patterns like `*text*`")
+
+    pattern2 = '"' + pattern[1:-1] + '"'
+
+    return q.append({'$match': {'$text': {'$search': pattern2}}})
 
 
 @dispatch(By, MongoQuery)
