@@ -12,8 +12,6 @@ import os
 import csv as csv_module
 import subprocess
 
-db_file_name = "db_test.db"
-url = 'sqlite:///{0}'.format(db_file_name)
 file_name = 'test.csv'
 
 @pytest.yield_fixture
@@ -40,16 +38,10 @@ def test_csv_sqlite_load(engine):
 
     tbl = 'testtable'
 
-    if engine.has_table(tbl):
-        metadata = sqlalchemy.MetaData()
-        metadata.reflect(engine)
-        t = metadata.tables[tbl]
-        t.drop(engine)
-
     csv = CSV(file_name)
 
     # how to handle path to DB.
-    sql = SQL(url,tbl, schema=csv.schema)
+    sql = SQL(engine, tbl, schema=csv.schema)
     engine = sql.engine
     conn = engine.raw_connection()
 
@@ -69,8 +61,7 @@ def test_csv_sqlite_load(engine):
 
     ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
     output = ps.stdout.read()
-    print(sql[0])
-    print(list(sql[:]))
+    assert list(csv) == list(sql)
 
 
 def test_simple_into(engine):
