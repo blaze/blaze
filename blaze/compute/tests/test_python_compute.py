@@ -561,3 +561,14 @@ def test_scalar_arithmetic():
     assert compute_one(-x, 1) == -1
 
     assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)
+
+def test_like():
+    t = TableSymbol('t', '{name: string, city: string}')
+    data = [('Alice Smith', 'New York'),
+            ('Bob Smith', 'Chicago'),
+            ('Alice Walker', 'LA')]
+
+    assert list(compute(t.like(name='Alice*'), data)) == [data[0], data[2]]
+    assert list(compute(t.like(name='lice*'), data)) == []
+    assert list(compute(t.like(name='*Smith*'), data)) == [data[0], data[1]]
+    assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]

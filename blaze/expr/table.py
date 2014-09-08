@@ -151,6 +151,9 @@ class TableExpr(Expr):
     def max(self):
         return max(self)
 
+    def like(self, **kwargs):
+        return like(self, **kwargs)
+
     @property
     def iscolumn(self):
         if len(self.columns) > 1:

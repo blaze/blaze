@@ -14,6 +14,8 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 import numbers
+import fnmatch
+import re
 from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
@@ -27,7 +29,7 @@ from ..dispatch import dispatch
 from ..expr.table import TableSymbol
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union, Summary)
+                          By, Sort, Head, Apply, Union, Summary, Like)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -479,3 +481,17 @@ def compute_one(expr, x, y, **kwargs):
 @dispatch(UnaryOp, object)
 def compute_one(expr, x, **kwargs):
     return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
+
+
+@dispatch(Like, Sequence)
+def compute_one(expr, seq, **kwargs):
+    regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
+                    for name, pattern in expr.patterns.items())
+    regex_tup = [regexes.get(name, None) for name in expr.columns]
+    def predicate(tup):
+        for item, regex in zip(tup, regex_tup):
+            if regex and not regex.match(item):
+                return False
+        return True
+
+    return filter(predicate, seq)
