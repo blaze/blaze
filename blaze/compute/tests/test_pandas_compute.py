@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from pandas import DataFrame, Series
+from pandas.util.testing import assert_frame_equal
 
 from blaze.compute.core import compute
 from blaze import dshape, Table, discover, transform
@@ -28,8 +29,33 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Alice', 'F', 100, 3],
                    ['Drew', 'F', 100, 4],
                    ['Drew', 'M', 100, 5],
-                   ['Drew', 'M', 200, 5]],
+                   ['Drew', 'M', 200, 5],
+                   ['Bob',  'M', 350, 2],
+                   ['Bill', 'M', 200, 6],
+                   ['Jane', 'F', 710, 7],
+                   ['Alex', 'F', 130, 8],
+                   ['Alex', 'M', 210, 9],
+                   ['Drake','M', 145, 10]],
                   columns=['name', 'sex', 'amount', 'id'])
+
+#This dataframe has duplicates (see the "Drew" rows)
+dfbig_dups = DataFrame([['Alice', 'F', 100, 1],
+                        ['Alice', 'F', 100, 3],
+                        ['Drew', 'F', 100, 4],
+                        ['Drew', 'M', 100, 5],
+                        ['Drew', 'M', 200, 5],
+                        ['Bob',  'M', 350, 2],
+                        ['Bill', 'M', 200, 6],
+                        ['Jane', 'F', 710, 7],
+                        ['Alex', 'F', 130, 8],
+                        ['Alex', 'M', 210, 9],
+                        ['Drake','M', 145, 10],
+                        ['Drew', 'F', 100, 4],
+                        ['Drew', 'M', 100, 5],
+                        ['Drew', 'M', 200, 5],
+                        ['Drew', 'M', 200, 5]],
+                       columns=['name', 'sex', 'amount', 'id'])
+
 
 
 def df_all(a_df, b_df):
@@ -171,16 +197,8 @@ def test_reductions():
 
 
 def test_distinct():
-    dftoobig = DataFrame([['Alice', 'F', 100, 1],
-                          ['Alice', 'F', 100, 1],
-                          ['Alice', 'F', 100, 3],
-                          ['Drew', 'F', 100, 4],
-                          ['Drew', 'M', 100, 5],
-                          ['Drew', 'F', 100, 4],
-                          ['Drew', 'M', 100, 5],
-                          ['Drew', 'M', 200, 5],
-                          ['Drew', 'M', 200, 5]],
-                          columns=['name', 'sex', 'amount', 'id'])
+    dftoobig = dfbig_dups
+
     d_t = Distinct(tbig)
     d_df = compute(d_t, dftoobig)
     assert df_all(d_df, dfbig)
@@ -199,9 +217,15 @@ def test_by_one():
 def test_by_two():
     result = compute(by(tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
 
-    expected = DataFrame([['Alice', 'F', 200],
+    expected = DataFrame([['Alex',  'F', 130],
+                          ['Alex',  'M', 210],
+                          ['Alice', 'F', 200],
+                          ['Bill',  'M', 200],
+                          ['Bob' ,  'M', 350],
+                          ['Drake', 'M', 145],
                           ['Drew',  'F', 100],
-                          ['Drew',  'M', 300]],
+                          ['Drew',  'M', 300],
+                          ['Jane' , 'F', 710]],
                           columns=['name', 'sex', 'amount_sum'])
 
     assert str(result) == str(expected)
@@ -215,9 +239,16 @@ def test_by_three():
     result = compute(expr, dfbig)
 
     groups = dfbig.groupby(['name', 'sex'])
-    expected = DataFrame([['Alice', 'F', 204],
-                          ['Drew', 'F', 104],
-                          ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
+    expected = DataFrame([['Alex',  'F', 138],
+                          ['Alex',  'M', 219],
+                          ['Alice', 'F', 204],
+                          ['Bill',  'M', 206],
+                          ['Bob' ,  'M', 352],
+                          ['Drake', 'M', 155],
+                          ['Drew',  'F', 104],
+                          ['Drew',  'M', 310],
+                          ['Jane' , 'F', 717]],
+                         columns=['name', 'sex', '0'])
     expected.columns = expr.columns
 
     assert str(result) == str(expected)
@@ -228,8 +259,8 @@ def test_by_four():
     expr = by(t['sex'], t['amount'].max())
     result = compute(expr, dfbig)
 
-    expected = DataFrame([['F', 100],
-                          ['M', 200]], columns=['sex', 'amount_max'])
+    expected = DataFrame([['F', 710],
+                          ['M', 350]], columns=['sex', 'amount_max'])
 
     assert str(result) == str(expected)
 
@@ -508,6 +539,41 @@ def test_summary():
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
 
 
+def test_sample():
+    test_data = dfbig
+    test_data2 = dfbig.get_values()
+    test_expr = t
+
+    result = compute(test_expr.sample(2), test_data)
+    assert(len(result) == 2)
+
+    for item in result.get_values():
+        assert(item in test_data2)
+    
+    result = compute(test_expr.sample(len(test_data)+1), test_data)
+    assert(len(result) == len(test_data))
+    assert(len(result) < (len(test_data)+1))
+
+    for item in result.get_values():
+        assert(item in test_data2)
+    
+    #This test should give us repeated data
+    result = compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
+    assert(len(result) == 2*(len(test_data)))
+
+    for item in result.get_values():
+        assert(item in test_data2)
+
+    #This tests sampling a single column (aka Series) from the dataframe
+    result = compute(test_expr['name'].sample(2), test_data)
+    assert(len(result) == 2)
+    assert(type(result) == type(test_data['name']))
+    
+    for item in result.get_values():
+        assert(item in test_data2)
+
+
+    
 def test_dplyr_transform():
     df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
     t = TableSymbol('t', discover(df))
@@ -532,3 +598,4 @@ def test_nested_transform():
     df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
     df['date'] = df.timestamp.map(lambda x: x.date())
     assert str(result) == str(df)
+

@@ -3,8 +3,9 @@ from __future__ import absolute_import, division, print_function
 from blaze.expr import Selection, Head, Column, Projection, ReLabel, RowWise
 from blaze.expr import Label, Distinct, By, Reduction
 from blaze.expr import std, var, count, mean, nunique, sum
-from blaze.expr import eval_str
+from blaze.expr import eval_str, Sample
 
+import numpy as np
 import datashape
 import bcolz
 import math
@@ -110,3 +111,51 @@ def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return b[start:stop]
+
+@dispatch(Sample, (bcolz.carray, bcolz.ctable))
+def compute_one(expr, data, **kwargs):
+    """ A small,randomly selected sample of data from the given bcolz.carray or
+    bcolz.ctable 
+
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : bcolz.carray or bcolz.ctable
+        The bcolz carray or ctable we are sampling from
+
+    Returns
+    -------
+    bcolz.carray or bcolz.ctable
+        A new bcolz.carray or bcolz.ctable
+
+    Notes
+    -----
+    Each time compute(expression.sample(), (bcolz.carray,bcolz.ctable)) is called a new, different
+    bcolz.carray or bcolz.ctable should be returned.
+
+    Examples
+    --------
+    >>> x = bcolz.ctable([[1,2,3,4,5], ['Alice','Bob','Charlie','Denis','Edith'], [100,-200,300,400,-500]], names=['id', 'name', 'amount'])
+    >>> tx=TableSymbol('tx', '{id :int32, name:string, amount:int64}')
+    >>> result = compute(tx.sample(2), x)
+    >>> assert(len(result) == 2)
+
+    """
+
+    input_type = type(data)
+
+    array_len = len(data)
+    count = expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count = array_len
+
+    indices = np.random.choice(array_len, count, replace=expr.replacement)
+    result = data[indices]
+
+    return input_type(result)
+
+    

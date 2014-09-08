@@ -15,6 +15,9 @@ b = bcolz.ctable([[1, 2, 3], [1., 2., 3.]],
 
 t = TableSymbol('t', '{a: int32, b: float64}')
 
+x = bcolz.ctable([[1,2,3,4,5], ['Alice','Bob','Charlie','Denis','Edith'], [100,-200,300,400,-500]], names=['id', 'name', 'amount'])
+tx=TableSymbol('tx', '{id :int32, name:string, amount:int64}')
+
 
 def test_chunks():
     assert len(list(chunks(b, chunksize=2))) == 2
@@ -58,3 +61,38 @@ def test_selection_head():
 def test_selection_isnan():
     assert compute(t[t.a.isnan()].count(), b) == 0
     assert compute(t[~(t.a.isnan())].count(), b) == 3
+
+
+def test_sample():
+    test_data = x
+    test_expr = tx
+
+    result = compute(test_expr.sample(2), test_data)
+
+    assert(len(result) == 2)
+
+    for item in result:
+        assert(item in test_data)
+
+    
+    result = compute(test_expr.sample(len(test_data)+1), test_data)
+    assert(len(result) == len(test_data))
+    assert(len(result) < (len(test_data)+1))
+
+    for item in result:
+        assert(item in test_data)
+    
+    #This test should give us repeated data
+    result = compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
+    assert(len(result) == 2*(len(test_data)))
+
+    for item in result:
+        assert(item in test_data)
+    
+    #Test sampling from a single column from the array
+    result = compute(test_expr['name'].sample(2), test_data)
+    assert(len(result) == 2)
+    assert(type(result) == type(test_data['name']))
+    
+    for item in result:
+        assert(item in test_data['name'])

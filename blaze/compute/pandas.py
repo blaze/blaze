@@ -28,7 +28,7 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr, std, var)
+                    Map, Apply, Merge, Union, TableExpr, std, var, Sample)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
@@ -377,3 +377,58 @@ def compute_one(t, example, children, **kwargs):
 def compute_one(expr, data, **kwargs):
     return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
                                         for val in expr.values])))
+
+@dispatch(Sample, (DataFrame, Series))
+def compute_one(expr, data, **kwargs):
+    """ A small,randomly selected sample of data from the given pandas.DataFrame
+    or pandas.Series
+
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : pandas.DataFrame or pandas.Series
+        The pandas DataFrame or Series we are sampling from
+
+    Returns
+    -------
+    pandas.DataFrame or pandas.Series
+        A new pandas.DataFrame or pandas.Series
+
+    Notes
+    -----
+    Each time compute(expression.sample(), (DataFrame|Series)) is called a new, different
+    result should be returned.
+
+    Examples
+    --------
+    >>> dfbig = DataFrame([['Alice', 'F', 100, 1],
+                   ['Alice', 'F', 100, 3],
+                   ['Drew', 'F', 100, 4],
+                   ['Drew', 'M', 100, 5],
+                   ['Drew', 'M', 200, 5],
+                   ['Bob',  'M', 350, 2],
+                   ['Bill', 'M', 200, 6],
+                   ['Jane', 'F', 710, 7],
+                   ['Alex', 'F', 130, 8],
+                   ['Alex', 'M', 210, 9],
+                   ['Drake','M', 145, 10]],
+                  columns=['name', 'sex', 'amount', 'id'])
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> result=compute(t.sample(2),dfbig)
+    >>> assert(len(result) == 2)
+    """
+
+    array_len = len(data)
+    count = expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count = array_len
+
+    indices = np.random.choice(array_len, count, replace=expr.replacement)
+    result = data.take(indices)
+
+    return result
+

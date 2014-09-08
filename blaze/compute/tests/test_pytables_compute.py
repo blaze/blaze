@@ -13,6 +13,7 @@ from blaze.compute.core import compute
 from blaze.expr import TableSymbol
 from blaze import drop, discover, create_index
 from blaze.utils import tmpfile
+from blaze.api import into
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -255,3 +256,50 @@ def test_create_multiple_indexes_fails(pyt):
 def test_create_index_fails(pyt):
     with pytest.raises(AttributeError):
         create_index(pyt, 'no column here!')
+
+
+def test_sample():
+    with tmpfile('.h5') as filename:
+        f = tb.open_file(filename, mode='w')
+        d = f.create_table('/', 'title',  x)
+
+    #I know that I could use the data() function above, but I
+    #  find its usage too unclear for a self-contained test
+    test_data = d
+    test_expr = t
+    array_data=into(np.ndarray, d)
+
+    result = compute(test_expr.sample(2), test_data)
+    assert(len(result) == 2)
+
+    for item in result:
+        assert(item in array_data)
+    
+    result = compute(test_expr.sample(len(test_data)+1), test_data)
+    assert(len(result) == len(test_data))
+    assert(len(result) < (len(test_data)+1))
+
+    for item in result:
+        assert(item in array_data)
+    
+    #This test should give us repeated data
+    result = compute(test_expr.sample(2*(len(test_data)), replacement=True), test_data)
+    assert(len(result) == 2*(len(test_data)))
+
+    for item in result:
+        assert(item in array_data)
+    
+    """TODO: Fix this broken test (2014-09-05)
+    #Test sampling from a single column from the array
+    result = compute(test_expr['name'].sample(2), test_data)
+    assert(len(result) == 2)
+    assert(type(result) == type(test_data['name']))
+    
+
+    name_column=[row['name'] for row in d]
+    for item in result:
+        assert(item in name_column)
+    """
+
+    d.close()
+    f.close()

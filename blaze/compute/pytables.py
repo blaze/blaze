@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import tables as tb
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
-                        TableSymbol, Sort, Reduction, count)
+                        TableSymbol, Sort, Reduction, count, Sample)
 from blaze.expr import eval_str
 from blaze.compatibility import basestring, map
 from datashape import Record
@@ -110,3 +110,54 @@ def compute_one(s, t, **kwargs):
     if s.ascending:
         return result
     return result[::-1]
+
+@dispatch(Sample, tb.Table)
+def compute_one(expr, data, **kwargs):
+    """ A small,randomly selected sample of data from the given tables.Table
+
+    Parameters
+    ----------
+    expr : TableExpr
+        The TableExpr that we are calculating over
+    data : tables.Table
+        The pytables Table we are sampling from
+
+    Returns
+    -------
+    numpy.ndarray
+        A new numpy.ndarray (Yes, a numpy.ndarray not a tb.Table)
+
+    Notes
+    -----
+    Each time compute(expression.sample(), tables.Table) is called a new, different
+    numpy.ndarray is returned.
+
+    Example
+    -------
+    >>> x = np.array([(1, 'Alice', 100),
+              (2, 'Bob', -200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
+              (5, 'Edith', -500)],
+             dtype=[('id', '<i8'), ('name', 'S7'), ('amount', '<i8')])
+    >>> import tempfile
+    >>> f = tempfile.mktemp('.h5', mode="w")
+    >>> d = f.create_table('/', 'pytablestest',  x)
+    >>> t = TableSymbol('t', '{id: int, name: string, amount: int}')
+    >>> result = compute(t.sample(2), d)
+    >>> assert(len(result) == 2)
+    """
+
+    array_len = len(data)
+    count = expr.n
+    if count > array_len and expr.replacement is False:
+        #If we make it here, the user has requested more values than can be returned
+        #  So, we need to pare things down.
+        #In essence, this now works like a permutation()
+        count = array_len
+
+    indices=np.random.choice(array_len, count, replace = expr.replacement)
+    result=data[indices]
+
+    return result
+    
