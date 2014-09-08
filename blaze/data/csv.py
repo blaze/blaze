@@ -97,10 +97,12 @@ def discover_dialect(sample, dialect=None, **kwargs):
     if 'sep' in kwargs:
         dialect['delimiter'] = kwargs['sep']
     else:
-        # but only on read_csv, to_csv doesn't accept delimiter
+        # but only on read_csv, to_csv doesn't accept delimiter so we need sep
+        # for sure
         dialect['sep'] = dialect['delimiter']
 
-    # pandas doesn't like two character line terminators
+    # pandas doesn't like two character newline terminators and line_terminator
+    # is for to_csv
     dialect['lineterminator'] = dialect['line_terminator'] = \
         dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
 
