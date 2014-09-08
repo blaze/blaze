@@ -427,3 +427,10 @@ def test_clean_join():
           FROM friends JOIN name ON friends.a = name.id)
     JOIN place on friends.a = place.id""")
 
+
+def test_like():
+    expr = t.like(name='Alice*')
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name LIKE :name_1""")
