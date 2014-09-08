@@ -1,11 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-from itertools import islice
-from contextlib import contextmanager
 import tempfile
 import os
-from collections import Iterator
 import inspect
+
+from itertools import islice
+from contextlib import contextmanager
+from collections import Iterator
+
+import numpy as np
+from math import isnan
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
@@ -163,3 +167,15 @@ def keywords(func):
     ['x', 'y']
     """
     return inspect.getargspec(func).args
+
+
+def assert_allclose(lhs, rhs):
+    for tb in map(zip, lhs, rhs):
+        for left, right in tb:
+            assert type(left) == type(right)
+
+            if isinstance(left, (np.floating, float)):
+                # account for nans
+                assert np.allclose(left, right) or isnan(left) and isnan(right)
+            else:
+                assert left == right
