@@ -6,6 +6,7 @@ from functools import partial
 import numpy as np
 import tables as tb
 from blaze.utils import tmpfile
+from toolz import first, compose
 
 import datashape
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
@@ -45,17 +46,23 @@ def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
     c.create_index(optlevel=optlevel, kind=kind, **kwargs)
 
 
-def to_dtype(dshape):
-    dshape = datashape.dshape(dshape)
-    dtype = datashape.to_numpy_dtype(dshape)
-    fields = dict(dtype.fields.items())
-    for k, (v, _) in fields.items():
-        # pytables borks on unicode (even in Py3!) and object, probably should
-        # raise here if either of those is the case
-        if issubclass(v.type, basestring) and isinstance(dshape.subshape[k],
-                                                         datashape.String):
-            fields[k] = np.dtype('|S%d' % v.itemsize)
-    return np.dtype(list(fields.items()))
+def sort_dtype(items, names):
+    return np.dtype(sorted(items, key=compose(names.index, first)))
+
+
+def to_tables_descr(dtype):
+    d = {}
+    for (pos, name), (dtype, _) in zip(enumerate(dtype.names),
+                                       map(dtype.fields.__getitem__,
+                                           dtype.names)):
+        if issubclass(dtype.type, np.datetime64):
+            tdtype = tb.Description({name: tb.Time64Col(pos=pos)}),
+        else:
+            tdtype = tb.descr_from_dtype(np.dtype([(name, dtype)]))
+        el = first(tdtype)
+        getattr(el, name)._v_pos = pos
+        d.update(el._v_colobjects)
+    return d
 
 
 def PyTables(path, datapath, dshape=None):
@@ -72,7 +79,7 @@ def PyTables(path, datapath, dshape=None):
             f.close()
 
     if dshape is not None:
-        dtype = to_dtype(dshape)
+        dtype = to_tables_descr(datashape.to_numpy_dtype(dshape))
     else:
         dtype = None
 
