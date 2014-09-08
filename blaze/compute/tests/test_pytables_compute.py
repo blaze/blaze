@@ -348,9 +348,8 @@ class TestPyTablesLight(object):
         assert t.shape == (0,)
 
     def test_table_into_support(self, dt_tb, dt_data):
-        t = PyTables(dt_tb, '/dt', '%s * {id: int, name: string[7], '
-                     'amount: float64, date: datetime}' % len(dt_data))
-        res = into(t, dt_data)
+        t = PyTables(dt_tb, '/dt')
+        res = into(np.ndarray, t)
         for k in res.dtype.fields:
             lhs, rhs = res[k], dt_data[k]
             if (issubclass(np.datetime64, lhs.dtype.type) and
