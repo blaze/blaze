@@ -6,6 +6,7 @@ import pytest
 from blaze import SQL
 from blaze import CSV
 from blaze.api.into import into
+from blaze.utils import tmpfile
 import sqlalchemy
 import os
 import csv as csv_module
@@ -15,7 +16,13 @@ db_file_name = "db_test.db"
 url = 'sqlite:///{0}'.format(db_file_name)
 file_name = 'test.csv'
 
-# @pytest.fixture(scope='module')
+@pytest.yield_fixture
+def engine():
+    with tmpfile('db') as filename:
+        engine = sqlalchemy.create_engine('sqlite:///' + filename)
+        yield engine
+
+
 def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
 
@@ -24,24 +31,14 @@ def setup_function(function):
         for row in data:
             csv_writer.writerow(row)
 
+
 def teardown_function(function):
     os.remove(file_name)
-    os.remove(db_file_name)
-    engine = sqlalchemy.create_engine(url)
-    metadata = sqlalchemy.MetaData()
-    metadata.reflect(engine)
-    os.remove(db_file_name)
-
-    for t in metadata.tables:
-        if 'testtable' in t:
-            metadata.tables[t].drop(engine)
 
 
-def test_csv_sqlite_load():
+def test_csv_sqlite_load(engine):
 
     tbl = 'testtable'
-
-    engine = sqlalchemy.create_engine(url)
 
     if engine.has_table(tbl):
         metadata = sqlalchemy.MetaData()
@@ -67,8 +64,6 @@ def test_csv_sqlite_load():
                  'db': db,
                 }
 
-
-
     copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
     copy_cmd = copy_cmd.format(**copy_info)
 
@@ -78,12 +73,12 @@ def test_csv_sqlite_load():
     print(list(sql[:]))
 
 
-def test_simple_into():
+def test_simple_into(engine):
 
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+    sql = SQL(engine, tbl, schema= csv.schema)
 
     into(sql,csv, if_exists="replace")
     conn = sql.engine.raw_connection()
@@ -96,4 +91,3 @@ def test_simple_into():
 
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
-
