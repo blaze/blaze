@@ -109,7 +109,7 @@ def compute_one(expr, a, b, **kwargs):
     mapping = toolz.merge(a.mapping, b.mapping)
 
     scope = kwargs.pop('scope', dict())
-    scope = {t: mapping.get(data, data) for t, data in scope.items()}
+    scope = dict((t, mapping.get(data, data)) for t, data in scope.items())
 
     c = compute_one(expr, a.query, b.query, scope=scope, **kwargs)
     return SparkSQLQuery(a.context, c, mapping)
