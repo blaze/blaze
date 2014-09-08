@@ -66,16 +66,16 @@ def deoption(ds):
 def sparksql_to_ds(ss):
     """ Convert datashape to SparkSQL type system
 
-    >>> sparksql_to_ds(IntegerType())
+    >>> sparksql_to_ds(IntegerType())  # doctest: +SKIP
     ctype("int64")
 
-    >>> sparksql_to_ds(ArrayType(IntegerType(), False))
+    >>> sparksql_to_ds(ArrayType(IntegerType(), False))  # doctest: +SKIP
     dshape("var * int64")
 
-    >>> sparksql_to_ds(ArrayType(IntegerType(), True))
+    >>> sparksql_to_ds(ArrayType(IntegerType(), True))  # doctest: +SKIP
     dshape("var * ?int64")
 
-    >>> sparksql_to_ds(StructType([
+    >>> sparksql_to_ds(StructType([  # doctest: +SKIP
     ...                         StructField('name', StringType(), False),
     ...                         StructField('amount', IntegerType(), True)]))
     dshape("{ name : string, amount : ?int64 }")
@@ -89,29 +89,29 @@ def sparksql_to_ds(ss):
         else:
             return datashape.var * elem
     if isinstance(ss, StructType):
-        return Record([[field.name, Option(sparksql_to_ds(field.dataType))
+        return dshape(Record([[field.name, Option(sparksql_to_ds(field.dataType))
                                     if field.nullable
                                     else sparksql_to_ds(field.dataType)]
-                        for field in ss.fields])
+                        for field in ss.fields]))
     raise NotImplementedError("SparkSQL type not known %s" % ss)
 
 
 def ds_to_sparksql(ds):
     """ Convert datashape to SparkSQL type system
 
-    >>> print(ds_to_sparksql('int32'))
+    >>> print(ds_to_sparksql('int32')) # doctest: +SKIP
     IntegerType
 
-    >>> print(ds_to_sparksql('5 * int32'))
+    >>> print(ds_to_sparksql('5 * int32')) # doctest: +SKIP
     ArrayType(IntegerType,false)
 
-    >>> print(ds_to_sparksql('5 * ?int32'))
+    >>> print(ds_to_sparksql('5 * ?int32'))  # doctest: +SKIP
     ArrayType(IntegerType,true)
 
-    >>> print(ds_to_sparksql('{name: string, amount: int32}'))
+    >>> print(ds_to_sparksql('{name: string, amount: int32}'))  # doctest: +SKIP
     StructType(List(StructField(name,StringType,false),StructField(amount,IntegerType,false)))
 
-    >>> print(ds_to_sparksql('10 * {name: string, amount: ?int32}'))
+    >>> print(ds_to_sparksql('10 * {name: string, amount: ?int32}'))  # doctest: +SKIP
     ArrayType(StructType(List(StructField(name,StringType,false),StructField(amount,IntegerType,true))),false)
     """
     if isinstance(ds, str):
