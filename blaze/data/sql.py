@@ -398,11 +398,10 @@ def into(sql, csv, if_exists="replace", **kwargs):
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
 
-    #only works on OSX/Unix
     elif dbtype == 'sqlite':
         import subprocess
-        if sys.platform == 'win32':
-            try:
+        try:
+            if sys.platform == 'win32':
                 from blaze.utils import tmpfile
                 with tmpfile('sql') as filename:
 
@@ -410,12 +409,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
                     # need to convert to raw string to appropriately handle \\ in path
                     copy_info['abspath'] = copy_info['abspath'].replace('\\',r'\\')
                     copy_info['sql_file'] = filename
-
-                    # copy_info = {'abspath': csv._abspath.replace('\\',r'\\'),
-                    #  'tblname': tbl,
-                    #  'db': db,
-                    #  'sql_file': filename,
-                    # }
 
                     with open(filename,'w') as f:
                         f.writelines(".mode csv\n");
@@ -429,23 +422,21 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
                     if 'not recognized' in err:
                         raise Exception("sqlite3.exe not installed")
-            except Exception as e:
-                print(e)
-                print("Defaulting to sql.extend() method")
-                sql.extend(csv)
 
-        else:
-            #only to be used when table isn't already created?
-            # cmd = """
-            #     echo 'create table {tblname}
-            #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
-            #     """
+            # linux/osx
+            else:
+                copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
+                copy_cmd = copy_cmd.format(**copy_info)
 
-            copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
-            copy_cmd = copy_cmd.format(**copy_info)
+                ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                output = ps.stdout.read()
+                err = ps.stderr.read()
 
-            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-            output = ps.stdout.read()
+        except Exception as e:
+            print(e)
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+
 
     elif dbtype == 'mysql':
         import MySQLdb
