@@ -251,11 +251,9 @@ class CSV(DataDescriptor):
         self.header = header
         self.dialect = dialect
 
-    def reader(self, **kwargs):
+    def reader(self, header=None, as_recarray=True, **kwargs):
         kwargs.setdefault('chunksize', self.chunksize)
         kwargs.setdefault('skiprows', int(bool(self.header)))
-        kwargs.setdefault('as_recarray', True)
-        kwargs.setdefault('header', None)
         dialect = merge(keyfilter(read_csv_kwargs.__contains__, getattr(self,
                                                                   'dialect',
                                                                   {})),
@@ -264,7 +262,8 @@ class CSV(DataDescriptor):
         ext = ext.lstrip('.')
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
-                             encoding=self.encoding, **dialect)
+                             encoding=self.encoding, as_recarray=as_recarray,
+                             header=header, **dialect)
         return reader
 
     def _get_py(self, key):
