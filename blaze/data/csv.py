@@ -282,18 +282,7 @@ class CSV(DataDescriptor):
             return getter(result)
 
         reader = self._iter()
-        if isinstance(key, compatibility._inttypes):
-            line = nth(key, reader)
-            try:
-                return next(line)
-            except TypeError:
-                return line
-        elif isinstance(key, list):
-            return nth_list(key, reader)
-        elif isinstance(key, slice):
-            return it.islice(reader, key.start, key.stop, key.step)
-        else:
-            raise IndexError("key '%r' is not valid" % key)
+        return slice_with(key)(reader)
 
     def _iter(self):
         return it.chain.from_iterable(map(partial(bz.into, list),
@@ -322,6 +311,32 @@ class CSV(DataDescriptor):
     def remove(self):
         """Remove the persistent storage."""
         os.unlink(self.path)
+
+
+@dispatch(compatibility._inttypes)
+def slice_with(key):
+    def f(reader):
+        line = nth(key, reader)
+        try:
+            return next(line)
+        except TypeError:
+            return line
+    return f
+
+
+@dispatch(list)
+def slice_with(key):
+    return partial(nth_list, key)
+
+
+@dispatch(slice)
+def slice_with(key):
+    return lambda reader: it.islice(reader, key.start, key.stop, key.step)
+
+
+@dispatch(object)
+def slice_with(key):
+    raise IndexError("key %r is not valid" % key)
 
 
 @dispatch(CSV)
