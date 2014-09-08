@@ -96,7 +96,7 @@ def compute_one(e, a, b, **kwargs):
 @dispatch((UnaryOp, Expr), SparkSQLQuery)
 def compute_one(expr, q, **kwargs):
     scope = kwargs.pop('scope', dict())
-    scope = {t: q.mapping.get(data, data) for t, data in scope.items()}
+    scope = dict((t, q.mapping.get(data, data)) for t, data in scope.items())
 
     q2 = compute_one(expr, q.query, scope=scope, **kwargs)
     return SparkSQLQuery(q.context, q2, q.mapping)
