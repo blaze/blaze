@@ -29,6 +29,10 @@ __all__ = ['CSV', 'drop']
 
 
 read_csv_kwargs = set(keywords(pd.read_csv))
+assert read_csv_kwargs
+
+to_csv_kwargs = set(keywords(pd.core.format.CSVFormatter.__init__))
+assert to_csv_kwargs
 
 
 def has_header(sample, encoding=sys.getdefaultencoding()):
@@ -57,7 +61,7 @@ def has_header(sample, encoding=sys.getdefaultencoding()):
         return None
 
 
-def discover_dialect(sample, dialect=None, **kwargs):
+def get_dialect(sample, dialect=None, **kwargs):
     """ Discover CSV dialect from string sample
 
     Returns dict
@@ -85,20 +89,22 @@ def discover_dialect(sample, dialect=None, **kwargs):
     return dialect
 
 
-def get_dialect(sample, dialect=None, **kwargs):
-    dialect = discover_dialect(sample, dialect, **kwargs)
+def discover_dialect(sample, dialect=None, **kwargs):
+    dialect = get_dialect(sample, dialect, **kwargs)
     assert dialect
 
     # Pandas uses sep instead of delimiter.
     # Lets support that too
     if 'sep' in kwargs:
         dialect['delimiter'] = kwargs['sep']
-
-    dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
+    else:
+        # but only on read_csv, to_csv doesn't accept delimiter
+        dialect['sep'] = dialect['delimiter']
 
     # pandas doesn't like two character line terminators
-    dialect['lineterminator'] = dialect['lineterminator'].replace(
-        '\r\n', '\n').replace('\r', '\n')
+    dialect['lineterminator'] = dialect['line_terminator'] = \
+        dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
+
     return dialect
 
 
@@ -196,7 +202,7 @@ class CSV(DataDescriptor):
         self.encoding = encoding
 
         sample = get_sample(self)
-        dialect = get_dialect(sample, dialect, **kwargs)
+        dialect = discover_dialect(sample, dialect, **kwargs)
 
         if header is None:
             header = has_header(sample, encoding=encoding)
@@ -204,11 +210,14 @@ class CSV(DataDescriptor):
             dialect['header'] = header
             header = True
 
+        reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
+        # import ipdb; ipdb.set_trace()
         if not schema and 'w' not in mode:
             if not types:
                 data = list(map(tuple, self.reader(skiprows=1,
                                                    nrows=nrows_discovery,
-                                                   chunksize=None, **dialect)))
+                                                   chunksize=None,
+                                                   **reader_dialect)))
                 types = discover(data)
                 rowtype = types.subshape[0]
                 if isinstance(rowtype[0], Tuple):
@@ -227,7 +236,7 @@ class CSV(DataDescriptor):
                 if header:
                     columns = first(self.reader(skiprows=0, nrows=1,
                                                 header=None, chunksize=None,
-                                                **dialect))
+                                                **reader_dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
             if typehints:
@@ -245,12 +254,15 @@ class CSV(DataDescriptor):
         kwargs.setdefault('skiprows', int(bool(self.header)))
         kwargs.setdefault('as_recarray', True)
         kwargs.setdefault('header', None)
+        dialect = merge(keyfilter(read_csv_kwargs.__contains__, getattr(self,
+                                                                  'dialect',
+                                                                  {})),
+                                  kwargs)
         filename, ext = os.path.splitext(self.path)
         ext = ext.lstrip('.')
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
-                             encoding=self.encoding,
-                             **merge(getattr(self, 'dialect', {}), kwargs))
+                             encoding=self.encoding, **dialect)
         return reader
 
     def _get_py(self, key):
@@ -288,8 +300,7 @@ class CSV(DataDescriptor):
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
-        dialect = keyfilter(read_csv_kwargs.__contains__, self.dialect)
-        dialect.setdefault('sep', dialect['delimiter'])
+        dialect = keyfilter(to_csv_kwargs.__contains__, self.dialect)
 
         f = self.open(self.path, mode)
 
