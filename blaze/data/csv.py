@@ -212,7 +212,6 @@ class CSV(DataDescriptor):
             header = True
 
         reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
-        # import ipdb; ipdb.set_trace()
         if not schema and 'w' not in mode:
             if not types:
                 data = list(map(tuple, self.reader(skiprows=1,
