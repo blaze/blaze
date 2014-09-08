@@ -402,9 +402,38 @@ def into(sql, csv, if_exists="replace", **kwargs):
     elif dbtype == 'sqlite':
         import subprocess
         if sys.platform == 'win32':
-            print("Windows native sqlite copy is not supported")
-            print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+            try:
+                from blaze.utils import tmpfile
+                with tmpfile('sql') as filename:
+
+                    # path to database must use two backslashes
+                    # need to convert to raw string to appropriately handle \\ in path
+                    copy_info['abspath'] = copy_info['abspath'].replace('\\',r'\\')
+                    copy_info['sql_file'] = filename
+
+                    # copy_info = {'abspath': csv._abspath.replace('\\',r'\\'),
+                    #  'tblname': tbl,
+                    #  'db': db,
+                    #  'sql_file': filename,
+                    # }
+
+                    with open(filename,'w') as f:
+                        f.writelines(".mode csv\n");
+                        f.write(".import {abspath} {tblname}".format(**copy_info))
+
+                    copy_cmd = "sqlite3.exe {db} < {sql_file}"
+                    copy_cmd = copy_cmd.format(**copy_info)
+                    ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    output = ps.stdout.read()
+                    err = ps.stderr.read()
+
+                    if 'not recognized' in err:
+                        raise Exception("sqlite3.exe not installed")
+            except Exception as e:
+                print(e)
+                print("Defaulting to sql.extend() method")
+                sql.extend(csv)
+
         else:
             #only to be used when table isn't already created?
             # cmd = """
