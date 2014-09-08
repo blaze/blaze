@@ -119,8 +119,14 @@ def discover_dialect(sample, dialect=None, **kwargs):
 
 def get_sample(csv, size=16384):
     if os.path.exists(csv.path) and csv.mode != 'w':
-        with csv.open(csv.path) as f:
+        f = csv.open(csv.path)
+        try:
             return f.read(size)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
     return ''
 
 
