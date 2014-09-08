@@ -381,3 +381,11 @@ def test_summary_by():
     assert 'count(accounts.id) as b' in result.lower()
 
     assert 'group by accounts.name' in result.lower()
+
+
+def test_like():
+    expr = t.like(name='Alice*')
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name LIKE :name_1""")
