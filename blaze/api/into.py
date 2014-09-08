@@ -5,8 +5,8 @@ import datashape
 import sys
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all, valmap
-from cytoolz import pluck
+from toolz import concat, partition_all, valmap, first, compose
+from cytoolz import pluck, valfilter
 import copy
 from datetime import datetime
 from numbers import Number
@@ -204,7 +204,19 @@ def into(a, t):
 
 @dispatch(np.ndarray, tables.Table)
 def into(_, t):
-    return t[:]
+    res = t[:]
+
+    for f in valfilter(lambda x: x == 'time64', t.coltypes).keys():
+        # pytables is in seconds since epoch
+        res[f] *= 1e6
+
+    fields = []
+    for name, dtype in sorted(t.coldtypes.items(), key=compose(t.colnames.index,
+                                                               first)):
+        typ = getattr(t.cols, name).type
+        fields.append((name, {'time64': 'M8[us]',
+                              'string': dtype.str}.get(typ, typ)))
+    return res.astype(np.dtype(fields))
 
 
 def numpy_fixlen_strings(x):
