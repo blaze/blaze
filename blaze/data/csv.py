@@ -8,8 +8,7 @@ from operator import itemgetter
 from functools import partial
 
 from multipledispatch import dispatch
-from toolz import keyfilter, compose, first
-from cytoolz import partition_all, merge
+from cytoolz import partition_all, merge, keyfilter, compose, first
 
 import pandas as pd
 from datashape.discovery import discover, null, unpack
