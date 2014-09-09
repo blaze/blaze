@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr import Selection, Head, Column, Projection, ReLabel, RowWise
-from blaze.expr import Label, Distinct, By, Reduction
+from blaze.expr import Label, Distinct, By, Reduction, Like
 from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str
 
@@ -81,7 +81,7 @@ def compute_one(expr, b, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch((RowWise, Distinct, By, nunique), bcolz.ctable)
+@dispatch((RowWise, Distinct, By, nunique, Like), bcolz.ctable)
 def compute_one(c, t, **kwargs):
     return compute_one(c, iter(t), **kwargs)
 
