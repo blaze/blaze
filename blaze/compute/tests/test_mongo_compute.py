@@ -37,6 +37,19 @@ def bank_raw():
 
 
 @pytest.yield_fixture
+def big_bank(db):
+    data = [{'name': 'Alice', 'amount': 100, 'city': 'New York City'},
+            {'name': 'Alice', 'amount': 200, 'city': 'Austin'},
+            {'name': 'Bob', 'amount': 100, 'city': 'New York City'},
+            {'name': 'Bob', 'amount': 200, 'city': 'New York City'},
+            {'name': 'Bob', 'amount': 300, 'city': 'San Francisco'}]
+    coll = db.bigbank
+    coll = into(coll, data)
+    yield coll
+    coll.drop()
+
+
+@pytest.yield_fixture
 def bank(db, bank_raw):
     coll = db.tmp_collection
     coll = into(coll, bank_raw)
@@ -70,6 +83,11 @@ def events(db):
 @pytest.fixture
 def t():
     return TableSymbol('t', '{name: string, amount: int}')
+
+
+@pytest.fixture
+def bigt():
+    return TableSymbol('bigt', '{name: string, amount: int, city: string}')
 
 
 @pytest.fixture
@@ -208,3 +226,11 @@ def test_like(t, bank):
     expr = t.like(name='*Alice*')
     result = compute(expr, bank)
     assert set(result) == set((('Alice', 100), ('Alice', 200)))
+
+
+def test_like_multiple(bigt, big_bank):
+    big_bank.create_index([('name', pymongo.TEXT), ('city', pymongo.TEXT)])
+    expr = bigt.like(name='*Bob*', city='*York*')
+    result = compute(expr, big_bank)
+    assert set(result) == set((('Bob', 100, 'New York City'),
+                               ('Bob', 200, 'New York City')))
