@@ -7,11 +7,10 @@ tb = pytest.importorskip('tables')
 from blaze.compatibility import xfail
 
 import numpy as np
-import datashape as ds
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
-from blaze import drop, discover, create_index, PyTables, into
+from blaze import drop, discover, create_index
 from blaze.utils import tmpfile
 
 
