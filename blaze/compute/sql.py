@@ -133,7 +133,8 @@ def listpack(x):
 
 @dispatch(Join, Selectable, Selectable)
 def compute_one(t, lhs, rhs, **kwargs):
-    condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
+    condition = reduce(and_,
+            [lower_column(lhs.c.get(l)) == lower_column(rhs.c.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
@@ -151,6 +152,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 
     columns = unique(list(main.columns) + list(other.columns),
                      key=lambda c: c.name)
+    columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
     return select(list(columns)).select_from(join)
 

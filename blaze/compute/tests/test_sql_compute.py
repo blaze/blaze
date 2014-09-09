@@ -391,3 +391,30 @@ def test_summary_by():
     assert 'count(accounts.id) as b' in result.lower()
 
     assert 'group by accounts.name' in result.lower()
+
+
+def test_clean_join():
+    city = SQL('sqlite:///:memory:', 'place',
+                schema='{id: int, city: string, country: string}')
+    friends = SQL('sqlite:///:memory:', 'friends', schema='{a: int, b: int}')
+    name = SQL('sqlite:///:memroy:', 'name', schema='{name: string, id: int}')
+
+    tcity = TableSymbol('city', city.schema)
+    tfriends = TableSymbol('friends', friends.schema)
+    tname = TableSymbol('name', name.schema)
+
+    ns = {tname: name.table, tfriends: friends.table, tcity: city.table}
+
+    expr = join(tfriends, tname, 'a', 'id')
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT friends.a, friends.b, name.name
+    FROM friends JOIN name on friends.a = name.id""")
+
+
+    expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT a, b, name, place.city, place.country
+    FROM (SELECT friends.a as a, friends.b as b, name.name as name
+          FROM friends JOIN name ON friends.a = name.id)
+    JOIN place on friends.a = place.id""")
+
