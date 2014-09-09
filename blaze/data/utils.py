@@ -4,8 +4,9 @@ from itertools import chain
 from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record, DataShape
-from datashape.predicates import isunit, isdimension
-from toolz import partition_all, partial, map
+from datashape.predicates import isdimension
+import numpy as np
+from toolz import partition_all, partial, map, compose, first
 from ..dispatch import dispatch
 
 from ..compatibility import _strtypes
@@ -153,3 +154,7 @@ def tuplify(x):
         return tuple(map(tuplify, x))
     else:
         return x
+
+
+def sort_dtype_items(items, names):
+    return sorted(items, key=compose(names.index, first))
