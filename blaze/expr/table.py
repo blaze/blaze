@@ -656,10 +656,10 @@ class Join(TableExpr):
 
     @property
     def on_right(self):
-        if isinstance(self._on_left, tuple):
-            return list(self._on_left)
+        if isinstance(self._on_right, tuple):
+            return list(self._on_right)
         else:
-            return self._on_left
+            return self._on_right
 
     @property
     def schema(self):

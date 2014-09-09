@@ -200,6 +200,17 @@ def test_join():
 
     assert join(t, s, 'name') == join(t, s, 'name')
 
+    assert join(t, s, 'name').on_left == 'name'
+    assert join(t, s, 'name').on_right == 'name'
+
+
+def test_join_different_on_right_left_columns():
+    t = TableSymbol('t', '{x: int, y: int}')
+    s = TableSymbol('t', '{a: int, b: int}')
+    j = join(t, s, 'x', 'a')
+    assert j.on_left == 'x'
+    assert j.on_right == 'a'
+
 
 def test_joined_column_first_in_schema():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
