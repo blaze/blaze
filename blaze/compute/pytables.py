@@ -20,9 +20,9 @@ def discover(t):
 
 @dispatch(tb.Column)
 def discover(c):
-    import ipdb; ipdb.set_trace()
-    return {'time64': ds.datetime,
-            'time32': ds.date}.get(c.name, ds.from_numpy(c.dtype))
+    dshape = ds.from_numpy(c.shape, c.dtype)
+    return {'time64': ds.datetime, 'time32': ds.date_}.get(c.name,
+                                                           dshape.subshape[1])
 
 
 @dispatch(tb.Table)
