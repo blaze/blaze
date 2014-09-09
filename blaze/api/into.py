@@ -252,6 +252,9 @@ def numpy_fixlen_strings(x):
 
 
 def typehint(x, typedict):
+    """Replace the dtypes in `x` keyed by `typedict` with the dtypes in
+    `typedict`.
+    """
     lhs = dict(zip(x.dtype.fields.keys(), map(first, x.dtype.fields.values())))
     dtype_list = list(merge(lhs, typedict).items())
     return np.dtype(sort_dtype_items(dtype_list, x.dtype.names))
