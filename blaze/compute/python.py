@@ -483,8 +483,7 @@ def compute_one(expr, x, **kwargs):
     return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
 
 
-@dispatch(Like, Sequence)
-def compute_one(expr, seq, **kwargs):
+def like_regex_predicate(expr):
     regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
                     for name, pattern in expr.patterns.items())
     regex_tup = [regexes.get(name, None) for name in expr.columns]
@@ -494,4 +493,8 @@ def compute_one(expr, seq, **kwargs):
                 return False
         return True
 
+    return predicate
+@dispatch(Like, Sequence)
+def compute_one(expr, seq, **kwargs):
+    predicate = like_regex_predicate(expr)
     return filter(predicate, seq)
