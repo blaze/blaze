@@ -20,7 +20,7 @@ A ``TableSymbol`` refers to a single table in storage.  It must be given a name
 and a schema.
 
 .. code-block:: python
-
+   >>> from blaze import *
    >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
 
 
@@ -47,7 +47,7 @@ a comutation to do in the future.
    accounts[accounts['balance'] < 0]['name']
 
    >>> deadbeats.schema
-   dshape("{name: string}")
+   dshape("{ name : string }")
 
 Split-apply-combine, Reductions
 -------------------------------
@@ -59,7 +59,7 @@ split-apply-combine workflows.
 .. code-block:: python
 
    >>> by(accounts['name'],             # Splitting/grouping element
-   ...    accounts['balance'].sum())    # Apply and reduction
+   ... accounts['balance'].sum())       # Apply and reduction
 
 This operation groups the table by name and then sums the balance of each
 group.  It finds out how much all of the "Alice"s, "Bob"s, etc. of the world

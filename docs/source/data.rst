@@ -24,7 +24,8 @@ Over the course of this document we'll refer to the following simple
 
 .. code-block:: python
 
-   >>> csv = CSV('accounts.csv')
+   >>> from blaze import *
+   >>> csv = CSV('examples/data/accounts.csv')
 
 Interface
 =========
@@ -39,11 +40,7 @@ by default.
 .. code-block:: python
 
    >>> list(csv)
-   [(1L, u'Alice', 100L),
-    (2L, u'Bob', 200L),
-    (3L, u'Charlie', 300L),
-    (4L, u'Denis', 400L),
-    (5L, u'Edith', 500L)]
+   [(1, u'Alice', 100), (2, u'Bob', 200), (3, u'Charlie', 300), (4, u'Denis', 400), (5, u'Edith', 500)]
 
 
 Data descriptors also expose a ``chunks`` method, which also iterates over the
@@ -56,12 +53,9 @@ to NumPy arrays.
 .. code-block:: python
 
    >>> next(csv.chunks())
-   nd.array([[1, "Alice", 100],
-             [2, "Bob", 200],
-             [3, "Charlie", 300],
-             [4, "Denis", 400],
-             [5, "Edith", 500]],
-            type="5 * {id : int64, name : string, balance : int64}")
+   nd.array([  [1, "Alice", 100],     [2, "Bob", 200], [3, "Charlie", 300],
+               [4, "Denis", 400],   [5, "Edith", 500]],
+            type="5 * {id : ?int64, name : string, balance : ?int64}")
 
 Insertion
 ---------
@@ -75,7 +69,7 @@ for CSV or ``INSERT`` statements for SQL.
 
 .. code-block:: python
 
-   >>> csv = CSV('accounts.csv', mode='a')
+   >>> csv = CSV('examples/data/accounts.csv', mode='a')
    >>> csv.extend([(6, 'Frank', 600),
    ...             (7, 'Georgina', 700)])
 
