@@ -229,8 +229,14 @@ def test_like(t, bank):
 
 
 def test_like_multiple(bigt, big_bank):
-    big_bank.create_index([('name', pymongo.TEXT), ('city', pymongo.TEXT)])
     expr = bigt.like(name='*Bob*', city='*York*')
     result = compute(expr, big_bank)
     assert set(result) == set((('Bob', 100, 'New York City'),
                                ('Bob', 200, 'New York City')))
+
+
+def test_like_mulitple_no_match(bigt, big_bank):
+    # make sure we aren't OR-ing the matches
+    expr = bigt.like(name='*York*', city='*Bob*')
+    result = compute(expr, big_bank)
+    assert not set(result)
