@@ -215,7 +215,7 @@ def into(a, t):
 @dispatch(np.ndarray, tables.Table)
 def into(_, t):
     res = t[:]
-    dt_fields = valfilter(lambda x: x == 'time64', t.coltypes).keys()
+    dt_fields = [k for k, v in t.coltypes.items() if v == 'time64']
 
     if not dt_fields:
         return res
