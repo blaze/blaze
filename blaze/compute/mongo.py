@@ -144,25 +144,23 @@ def has_text_index(coll, name):
 
     >>> db.coll.drop()
     """
-    return '%s_text' % name in coll.index_information()
+    return any('%s_text' % name in ss for ss in coll.index_information())
 
 
 @dispatch(Like, MongoQuery)
 def compute_one(t, q, **kwargs):
-    if len(t.patterns) != 1:
-        raise ValueError("MongoDB supports text search on only one column")
-    name = first(t.patterns.keys())
-    if not has_text_index(q.coll, name):
-        raise ValueError("Must create text index on column like \n"
-                "\tdb.%s.create_index([('%s', pymongo.TEXT)])" %
-                (q.coll.name, name))
-    pattern = first(t.patterns.values())
-    if not (pattern[0] == pattern[-1] == '*') or '*' in pattern[1:-1]:
-        raise ValueError("Can only match patterns like `*text*`")
+    qs = []
+    for name, pattern in t.patterns.items():
+        if not has_text_index(q.coll, name):
+            raise ValueError("Must create text index on column like \n"
+                    "\tdb.%s.create_index([('%s', pymongo.TEXT)])" %
+                    (q.coll.name, name))
+        if not (pattern[0] == pattern[-1] == '*') or '*' in pattern[1:-1]:
+            raise ValueError("Can only match patterns like `*text*`")
 
-    pattern2 = '"' + pattern[1:-1] + '"'
+        qs.append('"%s"' % pattern[1:-1])
 
-    return q.append({'$match': {'$text': {'$search': pattern2}}})
+    return q.append({'$match': {'$text': {'$search': ' '.join(qs)}}})
 
 
 @dispatch(By, MongoQuery)
