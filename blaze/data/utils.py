@@ -4,7 +4,7 @@ from itertools import chain
 from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record, DataShape
-from datashape.predicates import isunit, isdimension
+from datashape.predicates import isdimension
 from toolz import partition_all, partial, map
 from ..dispatch import dispatch
 
