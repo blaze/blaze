@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import pytest
 from blaze.compute.sql import compute, computefull, select
 from blaze import SQL
 from blaze.expr import *
