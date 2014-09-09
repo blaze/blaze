@@ -3,7 +3,7 @@ import os
 import numpy as np
 import tables as tb
 
-from cytoolz import compose, first
+from toolz import first
 
 import datashape as ds
 
@@ -11,19 +11,14 @@ import shutil
 from blaze.utils import tmpfile
 
 
-def sort_dtype(items, names):
-    return np.dtype(sorted(items, key=compose(names.index, first)))
-
-
 def to_tables_descr(dtype):
     d = {}
-    for (pos, name), (dtype, _) in zip(enumerate(dtype.names),
-                                       map(dtype.fields.__getitem__,
-                                           dtype.names)):
-        if issubclass(dtype.type, np.datetime64):
+    for pos, name in enumerate(dtype.names):
+        dt, _ = dtype.fields[name]
+        if issubclass(dt.type, np.datetime64):
             tdtype = tb.Description({name: tb.Time64Col(pos=pos)}),
         else:
-            tdtype = tb.descr_from_dtype(np.dtype([(name, dtype)]))
+            tdtype = tb.descr_from_dtype(np.dtype([(name, dt)]))
         el = first(tdtype)
         getattr(el, name)._v_pos = pos
         d.update(el._v_colobjects)
@@ -44,7 +39,6 @@ def PyTables(path, datapath, dshape=None):
             f.close()
 
     if dshape is not None:
-        import ipdb; ipdb.set_trace()
         dtype = to_tables_descr(ds.to_numpy_dtype(ds.dshape(dshape)))
     else:
         dtype = None
@@ -55,4 +49,4 @@ def PyTables(path, datapath, dshape=None):
         with tmpfile('.h5') as filename:
             possibly_create_table(filename, dtype)
             shutil.copyfile(filename, path)
-    return tb.open_file(path).get_node(datapath)
+    return tb.open_file(path, mode='a').get_node(datapath)
