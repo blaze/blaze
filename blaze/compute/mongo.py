@@ -50,10 +50,10 @@ try:
 except ImportError:
     Collection = type(None)
 
+import fnmatch
 from datashape import Record
 from toolz import pluck
 import toolz
-from toolz import first
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
@@ -149,20 +149,9 @@ def has_text_index(coll, name):
 
 @dispatch(Like, MongoQuery)
 def compute_one(t, q, **kwargs):
-    if len(t.patterns) != 1:
-        raise ValueError("MongoDB supports text search on only one column")
-    name = first(t.patterns.keys())
-    if not has_text_index(q.coll, name):
-        raise ValueError("Must create text index on column like \n"
-                "\tdb.%s.create_index([('%s', pymongo.TEXT)])" %
-                (q.coll.name, name))
-    pattern = first(t.patterns.values())
-    if not (pattern[0] == pattern[-1] == '*') or '*' in pattern[1:-1]:
-        raise ValueError("Can only match patterns like `*text*`")
-
-    pattern2 = '"' + pattern[1:-1] + '"'
-
-    return q.append({'$match': {'$text': {'$search': pattern2}}})
+    pats = dict((name, {'$regex': fnmatch.translate(pattern)})
+                for name, pattern in t.patterns.items())
+    return q.append({'$match': pats})
 
 
 @dispatch(By, MongoQuery)
