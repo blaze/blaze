@@ -8,11 +8,13 @@ import os
 
 from blaze.api.into import into, discover
 from blaze import Table
-from blaze.utils import tmpfile
+from blaze.utils import tmpfile, filetext
 import pytest
+
 
 def skip(test_foo):
     return
+
 
 def skip_if_not(x):
     def maybe_a_test_function(test_foo):
@@ -316,9 +318,8 @@ def test_DataFrame_CSV():
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_tables_path(good_csv, out_hdf5):
-    tble = into(PyTables, good_csv.name, filename=out_hdf5, datapath='foo')
+    tble = into(PyTables, good_csv.name, filename=out_hdf5, datapath='/foo')
     assert len(tble) == 3
-
     tble.close()
 
 
@@ -326,7 +327,7 @@ def test_into_tables_path(good_csv, out_hdf5):
 def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     tble = into(PyTables, bad_csv_df.name,
                           filename=out_hdf5,
-                          datapath='foo',
+                          datapath='/foo',
                           error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
     #Check that it's the same as straight from the CSV
