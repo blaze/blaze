@@ -130,23 +130,6 @@ def compute_one(t, q, **kwargs):
     return q.append({'$match': match(t.predicate.expr)})
 
 
-def has_text_index(coll, name):
-    """ Does the collection have a text index on name column?
-
-    >>> db = pymongo.MongoClient().db
-    >>> db.coll.drop()
-    >>> has_text_index(db.coll, 'name')
-    False
-
-    >>> _ = db.coll.create_index([('name', pymongo.TEXT)])
-    >>> has_text_index(db.coll, 'name')
-    True
-
-    >>> db.coll.drop()
-    """
-    return '%s_text' % name in coll.index_information()
-
-
 @dispatch(Like, MongoQuery)
 def compute_one(t, q, **kwargs):
     pats = dict((name, {'$regex': fnmatch.translate(pattern)})
