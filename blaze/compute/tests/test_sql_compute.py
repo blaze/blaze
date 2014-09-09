@@ -193,11 +193,15 @@ def test_by_head():
     expr = by(t2['name'], t2['amount'].sum())
     result = compute(expr, s)
     s2 = select(s).limit(100)
-    expected = sa.select([s2.c.name,
-                          sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
-                         ).group_by(s2.c.name)
-
-    assert str(result) == str(expected)
+    # expected = sa.select([s2.c.name,
+    #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
+    #                      ).group_by(s2.c.name)
+    expected = """
+    SELECT accounts.name, sum(accounts.amount) as amount_sum
+    FROM accounts
+    GROUP by accounts.name
+    LIMIT :param_1"""
+    assert normalize(str(result)) == normalize(str(expected))
 
 
 def test_by_two():
