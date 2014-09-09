@@ -15,7 +15,7 @@ __all__ = []
 
 try:
     import pyspark
-    from pyspark import SchemaRDD
+    from pyspark.sql import SchemaRDD
 except ImportError:
     SchemaRDD = type(None)
 

@@ -312,18 +312,19 @@ def test_discover():
 
 ### SparkSQL
 
-sqlContext = pyspark.SQLContext(sc)
+from pyspark.sql import SchemaRDD, SQLContext
+sqlContext = SQLContext(sc)
 
 
 def test_into_SparkSQL_from_PySpark():
     srdd = into(sqlContext, data, schema=t.schema)
-    assert isinstance(srdd, pyspark.sql.SchemaRDD)
+    assert isinstance(srdd, SchemaRDD)
 
     assert into(list, rdd) == into(list, srdd)
 
 def test_into_sparksql_from_other():
     srdd = into(sqlContext, df)
-    assert isinstance(srdd, pyspark.sql.SchemaRDD)
+    assert isinstance(srdd, SchemaRDD)
     assert into(list, srdd) == into(list, df)
 
 
@@ -340,7 +341,7 @@ def test_sparksql_compute():
             dshape('{name: string, amount: int64, id: int64}')
 
     assert isinstance(compute(t[['name', 'amount']], srdd),
-                      pyspark.sql.SchemaRDD)
+                      SchemaRDD)
 
     assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
 
@@ -352,7 +353,7 @@ def test_sparksql_with_literals():
     srdd = into(sqlContext, data, schema=t.schema)
     expr = t[t.amount >= 100]
     result = compute(expr, srdd)
-    assert isinstance(result, pyspark.sql.SchemaRDD)
+    assert isinstance(result, SchemaRDD)
     assert set(map(tuple, result.collect())) == \
             set(map(tuple, compute(expr, data)))
 
@@ -381,7 +382,7 @@ def test_spqrksql_join():
 
     result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
 
-    assert isinstance(result, pyspark.sql.SchemaRDD)
+    assert isinstance(result, SchemaRDD)
 
     assert (str(discover(result)).replace('?', '') ==
             str(expr.dshape))
