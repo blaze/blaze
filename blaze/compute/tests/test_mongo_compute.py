@@ -228,8 +228,6 @@ def test_like(t, bank):
     assert set(result) == set((('Alice', 100), ('Alice', 200)))
 
 
-@xfail(raises=ValueError,
-       reason="Mongo doesn't support multiple distinct column queries")
 def test_like_multiple(bigt, big_bank):
     big_bank.create_index([('name', pymongo.TEXT), ('city', pymongo.TEXT)])
     expr = bigt.like(name='*Bob*', city='*York*')
