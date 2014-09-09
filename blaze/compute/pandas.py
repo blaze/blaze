@@ -23,7 +23,6 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
 from toolz import merge as merge_dicts
-from operator import and_
 import fnmatch
 
 from ..api.into import into
@@ -380,8 +379,9 @@ def compute_one(expr, data, **kwargs):
     return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
                                         for val in expr.values])))
 
+
 @dispatch(Like, DataFrame)
 def compute_one(expr, df, **kwargs):
-    return (df[reduce(and_,
-                      [df[name].str.contains('^' + fnmatch.translate(pattern) + '$')
-                       for name, pattern in expr.patterns.items()])])
+    arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
+            for name, pattern in expr.patterns.items()]
+    return df[np.logical_and.reduce(arrs)]
