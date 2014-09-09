@@ -10,7 +10,7 @@ from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
 from .python import (compute, rrowfunc, rowfunc, RowWise, listpack,
-        pair_assemble, reduce_by_funcs, binops)
+        pair_assemble, reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
 from ..expr import table
 from ..dispatch import dispatch
@@ -183,6 +183,12 @@ def compute_one(t, rdd, **kwargs):
 def compute_one(t, rdd, **kwargs):
     rdd = rdd.cache()
     return tuple(compute(value, {t.child: rdd}) for value in t.values)
+
+
+@dispatch(Like, RDD)
+def compute_one(t, rdd, **kwargs):
+    predicate = like_regex_predicate(t)
+    return rdd.filter(predicate)
 
 
 @dispatch(RDD, RDD)
