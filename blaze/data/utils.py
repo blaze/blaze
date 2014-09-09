@@ -5,7 +5,7 @@ from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record, DataShape
 from datashape.predicates import isdimension
-from toolz import partition_all, partial, map
+from toolz import partition_all, partial, map, compose, first
 from ..dispatch import dispatch
 
 from ..compatibility import _strtypes
@@ -171,3 +171,7 @@ def listpack(x):
         return x
     else:
         return [x]
+
+
+def sort_dtype_items(items, names):
+    return sorted(items, key=compose(names.index, first))
