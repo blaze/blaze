@@ -28,7 +28,7 @@ from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Union, Summary
+from ..expr import common_subexpression, Union, Summary, Like
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
@@ -340,3 +340,20 @@ def compute_one(t, _, children):
 def compute_one(t, s, **kwargs):
     return select([compute(value, {t.child: s}).label(name)
         for value, name in zip(t.values, t.names)])
+
+
+@dispatch(Like, Selectable)
+def compute_one(t, s, **kwargs):
+    return compute_one(t, select(s), **kwargs)
+
+
+@dispatch(Like, Select)
+def compute_one(t, s, **kwargs):
+    d = dict()
+    for name, pattern in t.patterns.items():
+        for f in s.froms:
+            if f.c.has_key(name):
+                d[f.c.get(name)] = pattern.replace('*', '%')
+
+    return s.where(reduce(and_,
+                          [key.like(pattern) for key, pattern in d.items()]))

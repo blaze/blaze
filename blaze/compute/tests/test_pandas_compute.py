@@ -11,7 +11,7 @@ from blaze.compute.core import compute
 from blaze import dshape, Table, discover, transform
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
-                        min, max, any, all, Projection, var, std)
+                        min, max, any, all, Projection, var, std, Like)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -532,3 +532,12 @@ def test_nested_transform():
     df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
     df['date'] = df.timestamp.map(lambda x: x.date())
     assert str(result) == str(df)
+
+def test_like():
+    expr = t.like(name='Alice*')
+    expected = DataFrame([['Alice', 100, 1],
+                          ['Alice', 50, 3]],
+                         columns=['name', 'amount', 'id'])
+
+    result = compute(expr, df).reset_index(drop=True)
+    assert (result == expected).all().all()

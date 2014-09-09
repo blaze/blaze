@@ -393,6 +393,14 @@ def test_summary_by():
     assert 'group by accounts.name' in result.lower()
 
 
+def test_like():
+    expr = t.like(name='Alice*')
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name LIKE :name_1""")
+
+
 def test_clean_join():
     city = SQL('sqlite:///:memory:', 'place',
                 schema='{id: int, city: string, country: string}')
@@ -417,4 +425,3 @@ def test_clean_join():
     FROM (SELECT friends.a as a, friends.b as b, name.name as name
           FROM friends JOIN name ON friends.a = name.id)
     JOIN place on friends.a = place.id""")
-
