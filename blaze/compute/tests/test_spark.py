@@ -433,6 +433,12 @@ def test_comprehensive():
 
     for e, exclusions in expressions.items():
         if rdd not in exclusions:
-            assert into(set, compute(e, rdd)) == into(set, compute(e, df))
+            if isinstance(e, TableExpr):
+                assert into(set, compute(e, rdd)) == into(set, compute(e, df))
+            else:
+                assert compute(e, rdd) == compute(e, df)
         if srdd not in exclusions:
-            assert into(set, compute(e, srdd)) == into(set, compute(e, df))
+            if isinstance(e, TableExpr):
+                assert into(set, compute(e, srdd)) == into(set, compute(e, df))
+            else:
+                assert compute(e, rdd) == compute(e, df)
