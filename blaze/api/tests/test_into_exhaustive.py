@@ -3,13 +3,15 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from dynd import nd
 import numpy as np
+import tables as tb
 from pandas import DataFrame
 
 from blaze.api.into import into, discover
 from blaze.api.into import degrade_numpy_dtype_to_python
+from blaze.utils import tmpfile
 from datashape import dshape
 import blaze
-from blaze import Table, TableExpr, TableSymbol, compute
+from blaze import Table, TableExpr, TableSymbol, compute, PyTables
 import bcolz
 from blaze.data import CSV
 from blaze.sql import SQL
@@ -200,3 +202,11 @@ def test_mongo_Collection(mdb):
         db.test_into.drop()
         into(db.test_into, a)
         assert normalize(into([], db.test_into)) == normalize(L)
+
+
+def test_into_PyTables():
+    sources = [v for k, v in data.items() if k not in [list]]
+    for a in sources:
+        with tmpfile('h5') as filename:
+            assert (into(tables.Table, a, filename=filename,
+                         datapath='/data')[:] == tb[:]).all()
