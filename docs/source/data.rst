@@ -192,18 +192,6 @@ case you may be prompted to provide more information
    csv = CSV(filename, columns=['id', 'name', 'amount'],
              typehints={'amount': 'float64'})
 
-Interacting with ``open``
--------------------------
-
-Files that are compressed or hosted from the web (via ``urlopen``) can still be
-accessed by specifying a custom ``open`` function.
-
-.. code-block:: python
-
-   import gzip
-   csv = CSV('accounts.csv.gz', open=gzip.open)
-
-
 
 
 .. _iopro: http://docs.continuum.io/iopro/index.html

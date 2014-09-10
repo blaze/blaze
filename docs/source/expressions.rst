@@ -20,6 +20,7 @@ A ``TableSymbol`` refers to a single table in storage.  It must be given a name
 and a schema.
 
 .. code-block:: python
+
    >>> from blaze import *
    >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
 
