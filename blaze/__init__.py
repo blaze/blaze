@@ -26,6 +26,8 @@ from .sql import *
 
 try:
     from .spark import *
+    from .compute.sparksql import *
+    from .sparksql import *
 except ImportError:
     pass
 try:

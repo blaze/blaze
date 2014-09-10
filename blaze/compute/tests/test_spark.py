@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.spark import *
+from blaze import into
 from blaze.compute import compute, compute_one
 from blaze.compatibility import xfail
 from blaze.expr import *
@@ -14,8 +14,12 @@ data = [['Alice', 100, 1],
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
 
+from pandas import DataFrame
+df = DataFrame(data, columns=['name', 'amount', 'id'])
 
 pyspark = pytest.importorskip('pyspark')
+
+from pyspark import RDD
 sc = pyspark.SparkContext("local", "Simple App")
 rdd = sc.parallelize(data)
 rdd2 = sc.parallelize(data2)
@@ -188,7 +192,7 @@ def test_spark_multi_column_join():
                 (1, 3, 5, 150)]
 
     print(result.collect())
-    assert result.collect() == expected
+    assert set(result.collect()) ==  set(expected)
 
 
 def test_spark_groupby():
@@ -303,3 +307,139 @@ def test_spark_outer_join():
              (3, None, None, 'LA'),
              (4, 'Dennis', 400, 'Moscow')])
     """
+
+def test_discover():
+    assert discover(rdd).subshape[0] == discover(data).subshape[0]
+
+### SparkSQL
+
+from pyspark.sql import SchemaRDD, SQLContext
+sqlContext = SQLContext(sc)
+
+
+def test_into_SparkSQL_from_PySpark():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert isinstance(srdd, SchemaRDD)
+
+    assert into(list, rdd) == into(list, srdd)
+
+def test_into_sparksql_from_other():
+    srdd = into(sqlContext, df)
+    assert isinstance(srdd, SchemaRDD)
+    assert into(list, srdd) == into(list, df)
+
+
+def test_SparkSQL_discover():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert discover(srdd).subshape[0] == \
+            dshape('{name: string, amount: int64, id: int64}')
+
+
+def test_sparksql_compute():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert compute_one(t, srdd).context == sqlContext
+    assert discover(compute_one(t, srdd).query).subshape[0] == \
+            dshape('{name: string, amount: int64, id: int64}')
+
+    assert isinstance(compute(t[['name', 'amount']], srdd),
+                      SchemaRDD)
+
+    assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
+
+    assert isinstance(compute(t[['name', 'amount']].head(2), srdd),
+                     (tuple, list))
+
+
+def test_sparksql_with_literals():
+    srdd = into(sqlContext, data, schema=t.schema)
+    expr = t[t.amount >= 100]
+    result = compute(expr, srdd)
+    assert isinstance(result, SchemaRDD)
+    assert set(map(tuple, result.collect())) == \
+            set(map(tuple, compute(expr, data)))
+
+
+def test_sparksql_by_summary():
+    t = TableSymbol('t', '{name: string, amount: int64, id: int64}')
+    srdd = into(sqlContext, data, schema=t.schema)
+    expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
+    result = compute(expr, srdd)
+    assert result.collect()
+    assert (str(discover(result)).replace('?', '')
+         == str(expr.dshape).replace('?', ''))
+
+
+def test_spqrksql_join():
+    accounts = TableSymbol('accounts', '{name: string, amount: int64, id: int64}')
+    accounts_rdd = into(sqlContext, data, schema=accounts.schema)
+
+    cities = TableSymbol('cities', '{name: string, city: string}')
+    cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
+    cities_rdd = into(sqlContext,
+                      cities_data,
+                      schema='{name: string, city: string}')
+
+    expr = join(accounts, cities)
+
+    result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
+
+    assert isinstance(result, SchemaRDD)
+
+    assert (str(discover(result)).replace('?', '') ==
+            str(expr.dshape))
+
+def test_comprehensive():
+    L = [[100, 1, 'Alice'],
+         [200, 2, 'Bob'],
+         [300, 3, 'Charlie'],
+         [400, 4, 'Dan'],
+         [500, 5, 'Edith']]
+
+    df = DataFrame(L, columns=['amount', 'id', 'name'])
+
+    rdd = into(sc, df)
+    srdd = into(sqlContext, df)
+
+    t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
+
+    expressions = {
+            t: [],
+            t['id']: [],
+            t.id.max(): [],
+            t.amount.sum(): [],
+            t.amount + 1: [],
+            sin(t.amount): [srdd], # sparksql without hiveql doesn't support math
+            exp(t.amount): [srdd], # sparksql without hiveql doesn't support math
+            t.amount > 50: [],
+            t[t.amount > 50]: [],
+            t.sort('name'): [],
+            t.sort('name', ascending=False): [],
+            t.head(3): [],
+            t.name.distinct(): [],
+            t[t.amount > 50]['name']: [],
+            t.id.map(lambda x: x + 1, '{id: int}'): [srdd], # no udfs yet
+            t[t.amount > 50]['name']: [],
+            by(t.name, t.amount.sum()): [],
+            by(t.id, t.id.count()): [],
+            by(t[['id', 'amount']], t.id.count()): [],
+            by(t[['id', 'amount']], (t.amount + 1).sum()): [],
+            by(t[['id', 'amount']], t.name.nunique()): [rdd, srdd],
+            by(t.id, t.amount.count()): [],
+            by(t.id, t.id.nunique()): [rdd, srdd],
+            # by(t, t.count()): [],
+            # by(t.id, t.count()): [df],
+            t[['amount', 'id']]: [],
+            t[['id', 'amount']]: [],
+            }
+
+    for e, exclusions in expressions.items():
+        if rdd not in exclusions:
+            if isinstance(e, TableExpr):
+                assert into(set, compute(e, rdd)) == into(set, compute(e, df))
+            else:
+                assert compute(e, rdd) == compute(e, df)
+        if srdd not in exclusions:
+            if isinstance(e, TableExpr):
+                assert into(set, compute(e, srdd)) == into(set, compute(e, df))
+            else:
+                assert compute(e, rdd) == compute(e, df)

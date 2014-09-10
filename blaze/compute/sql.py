@@ -219,7 +219,6 @@ def compute_one(t, s, **kwargs):
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t.child: s})]
     elif isinstance(t.apply, Summary):
@@ -288,7 +287,6 @@ def compute_one(t, s, **kwargs):
             s2.append_column(r)
 
         return s2.with_only_columns(grouper + reductions)
-
 
 
 @dispatch(Sort, Selectable)

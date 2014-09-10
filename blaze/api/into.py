@@ -187,6 +187,11 @@ def into(a, b):
     return numpy_ensure_strings(b).tolist()
 
 
+@dispatch(set, object)
+def into(a, b, **kwargs):
+    return set(into(list, b, **kwargs))
+
+
 @dispatch(pd.DataFrame, np.ndarray)
 def into(df, x):
     if len(df.columns) > 0:
@@ -746,11 +751,12 @@ def into(a, b, **kwargs):
     if b.open == gzip.open:
         options['compression'] = 'gzip'
 
+    options['names'] = options.get('names', b.columns)
+
     return pd.read_csv(b.path,
                        skiprows=1 if b.header else 0,
                        dtype=dtypes,
                        parse_dates=datenames,
-                       names=b.columns,
                        **options)
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
