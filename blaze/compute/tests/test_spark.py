@@ -386,3 +386,53 @@ def test_spqrksql_join():
 
     assert (str(discover(result)).replace('?', '') ==
             str(expr.dshape))
+
+def test_comprehensive():
+    L = [[100, 1, 'Alice'],
+         [200, 2, 'Bob'],
+         [300, 3, 'Charlie'],
+         [400, 4, 'Dan'],
+         [500, 5, 'Edith']]
+
+    df = DataFrame(L, columns=['amount', 'id', 'name'])
+
+    rdd = into(sc, df)
+    srdd = into(sqlContext, df)
+
+    t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
+
+    expressions = {
+            t: [],
+            t['id']: [],
+            t.id.max(): [],
+            t.amount.sum(): [],
+            t.amount + 1: [],
+            sin(t.amount): [srdd], # sparksql without hiveql doesn't support math
+            exp(t.amount): [srdd], # sparksql without hiveql doesn't support math
+            t.amount > 50: [],
+            t[t.amount > 50]: [],
+            t.sort('name'): [],
+            t.sort('name', ascending=False): [],
+            t.head(3): [],
+            t.name.distinct(): [],
+            t[t.amount > 50]['name']: [],
+            t.id.map(lambda x: x + 1, '{id: int}'): [srdd], # no udfs yet
+            t[t.amount > 50]['name']: [],
+            by(t.name, t.amount.sum()): [],
+            by(t.id, t.id.count()): [],
+            by(t[['id', 'amount']], t.id.count()): [],
+            by(t[['id', 'amount']], (t.amount + 1).sum()): [],
+            by(t[['id', 'amount']], t.name.nunique()): [rdd, srdd],
+            by(t.id, t.amount.count()): [],
+            by(t.id, t.id.nunique()): [rdd, srdd],
+            # by(t, t.count()): [],
+            # by(t.id, t.count()): [df],
+            t[['amount', 'id']]: [],
+            t[['id', 'amount']]: [],
+            }
+
+    for e, exclusions in expressions.items():
+        if rdd not in exclusions:
+            assert into(set, compute(e, rdd)) == into(set, compute(e, df))
+        if srdd not in exclusions:
+            assert into(set, compute(e, srdd)) == into(set, compute(e, df))
