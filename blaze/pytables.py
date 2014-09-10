@@ -6,10 +6,12 @@ import tables as tb
 from toolz import first
 from .dispatch import dispatch
 
-import datashape as ds
+import datashape
 
 import shutil
 from blaze.utils import tmpfile
+
+__all__ = ['PyTables']
 
 
 def dtype_to_pytables(dtype):
@@ -40,6 +42,8 @@ def PyTables(path, datapath, dshape=None):
             f.close()
 
     if dshape:
+        if isinstance(dshape, str):
+            dshape = datashape.dshape(dshape)
         dtype = dtype_to_pytables(datashape.to_numpy_dtype(dshape))
     else:
         dtype = None
