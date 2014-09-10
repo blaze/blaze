@@ -93,7 +93,7 @@ install:
 before_script:
   - mysql -e 'create database test'
   - sleep 15
-  - mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'
+  - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
 
 script:
   - echo '[pytest]' > pytest.ini
