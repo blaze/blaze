@@ -108,23 +108,23 @@ def into(a, b, **kwargs):
 
 @dispatch((list, tuple, set), (list, tuple, set, Iterator,
                                type(dict().items())))
-def into(a, b):
+def into(a, b, **kwargs):
     return type(a)(b)
 
 
 @dispatch(set, list)
-def into(a, b):
+def into(a, b, **kwargs):
     try:
         return set(b)
     except TypeError:
         return set(map(tuple, b))
 
 @dispatch(dict, (list, tuple, set))
-def into(a, b):
+def into(a, b, **kwargs):
     return dict(b)
 
 @dispatch((list, tuple, set), dict)
-def into(a, b):
+def into(a, b, **kwargs):
     return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
 @dispatch(nd.array, (Iterable, Number, str))
@@ -132,7 +132,7 @@ def into(a, b, **kwargs):
     return nd.array(b, **kwargs)
 
 @dispatch(nd.array, nd.array)
-def into(a, b):
+def into(a, b, **kwargs):
     return b
 
 @dispatch(np.ndarray, np.ndarray)
@@ -140,11 +140,11 @@ def into(a, b, **kwargs):
     return b
 
 @dispatch(list, nd.array)
-def into(a, b):
+def into(a, b, **kwargs):
     return nd.as_py(b, tuple=True)
 
 @dispatch(tuple, nd.array)
-def into(a, b):
+def into(a, b, **kwargs):
     return tuple(nd.as_py(b, tuple=True))
 
 @dispatch(np.ndarray, nd.array)
@@ -183,14 +183,14 @@ def degrade_numpy_dtype_to_python(dt):
 
 
 @dispatch(list, np.ndarray)
-def into(a, b):
+def into(a, b, **kwargs):
     if 'M8' in str(b.dtype) or 'datetime' in str(b.dtype):
         b = b.astype(degrade_numpy_dtype_to_python(b.dtype))
     return numpy_ensure_strings(b).tolist()
 
 
 @dispatch(pd.DataFrame, np.ndarray)
-def into(df, x):
+def into(df, x, **kwargs):
     if len(df.columns) > 0:
         columns = list(df.columns)
     else:
@@ -199,13 +199,13 @@ def into(df, x):
 
 
 @dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tb.Table)
-def into(a, t):
+def into(a, t, **kwargs):
     x = into(np.ndarray, t)
-    return into(a, x)
+    return into(a, x, **kwargs)
 
 
 @dispatch(np.ndarray, tb.Table)
-def into(_, t):
+def into(_, t, **kwargs):
     res = t[:]
     dt_fields = [k for k, v in t.coltypes.items() if v == 'time64']
 
@@ -272,10 +272,10 @@ def into(t, c, **kwargs):
         into(t, chunk, **kwargs)
     return t
 
-@dispatch(tb.node.MetaNode, (ctable, tb.Table))
-def into(table, data, filename=None, datapath=None, **kwargs):
-    t = PyTables(filename, datapath=datapath,
-                 dshape=discover(data))
+@dispatch(tb.node.MetaNode, (ctable, tb.Table, list))
+def into(table, data, filename=None, datapath=None, dshape=None, **kwargs):
+    dshape = dshape or discover(data)
+    t = PyTables(filename, datapath=datapath, dshape=dshape)
     for chunk in chunks(data):
         into(t, chunk)
     return t
@@ -314,12 +314,12 @@ def into(a, b, **kwargs):
 
 
 @dispatch(list, pd.DataFrame)
-def into(_, df):
+def into(_, df, **kwargs):
     return into([], into(np.ndarray(0), df))
 
 
 @dispatch(pd.DataFrame, nd.array)
-def into(a, b):
+def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
     if list(a.columns):
         names = a.columns
@@ -340,11 +340,11 @@ def into(df, seq, **kwargs):
         return pd.DataFrame(list(seq), **kwargs)
 
 @dispatch(pd.DataFrame, pd.DataFrame)
-def into(_, df):
+def into(_, df, **kwargs):
     return df.copy()
 
 @dispatch(pd.Series, pd.Series)
-def into(_, ser):
+def into(_, ser, **kwargs):
     return ser
 
 @dispatch(pd.Series, Iterator)
@@ -356,25 +356,25 @@ def into(a, b, **kwargs):
     return pd.Series(b, **kwargs)
 
 @dispatch(pd.Series, TableExpr)
-def into(ser, col):
+def into(ser, col, **kwargs):
     ser = into(ser, compute(col))
     ser.name = col.name
     return ser
 
 @dispatch(pd.Series, np.ndarray)
-def into(s, x):
+def into(s, x, **kwargs):
     return pd.Series(numpy_ensure_strings(x), name=s.name)
 
 @dispatch(pd.DataFrame, pd.Series)
-def into(_, df):
+def into(_, df, **kwargs):
     return pd.DataFrame(df)
 
 @dispatch(list, pd.Series)
-def into(_, ser):
+def into(_, ser, **kwargs):
     return ser.tolist()
 
 @dispatch(nd.array, pd.DataFrame)
-def into(a, df):
+def into(a, df, **kwargs):
     schema = discover(df)
     arr = nd.empty(str(schema))
     for i in range(len(df.columns)):
@@ -407,33 +407,33 @@ def into(a, b, **kwargs):
     return b[:]
 
 @dispatch(pd.Series, carray)
-def into(a, b):
+def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b))
 
 @dispatch(ColumnDataSource, (TableExpr, pd.DataFrame, np.ndarray, ctable))
-def into(cds, t):
+def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
 
 @dispatch(ColumnDataSource, tb.Table)
-def into(cds, t):
+def into(cds, t, **kwargs):
     return into(cds, into(pd.DataFrame, t))
 
 
 @dispatch(ColumnDataSource, nd.array)
-def into(cds, t):
+def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
     return ColumnDataSource(data=dict((col, into([], getattr(t, col)))
                                       for col in columns))
 
 @dispatch(ColumnDataSource, Collection)
-def into(cds, other):
+def into(cds, other, **kwargs):
     return into(cds, into(pd.DataFrame(), other))
 
 
 @dispatch(pd.DataFrame, ColumnDataSource)
-def into(df, cds):
+def into(df, cds, **kwargs):
     return cds.to_df()
 
 
@@ -448,7 +448,7 @@ def into(a, b, **kwargs):
 
 
 @dispatch(pd.DataFrame, ColumnDataSource)
-def into(df, cds):
+def into(df, cds, **kwargs):
     return cds.to_df()
 
 
