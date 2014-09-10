@@ -2,14 +2,16 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd
 import numpy as np
+import tables as tb
 from pandas import DataFrame
 
 from blaze.api.into import into, discover
 from blaze.api.into import degrade_numpy_dtype_to_python
+from blaze.utils import tmpfile
 from datashape import dshape
 from blaze.bcolz import *
 import blaze
-from blaze import Table, TableExpr, TableSymbol, compute
+from blaze import Table, TableExpr, TableSymbol, compute, PyTables
 import bcolz
 from blaze.data import CSV
 from datetime import datetime
@@ -43,13 +45,16 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                              datetime(2002, 12, 25, 0, 0, 1)], dtype='M8[us]')],
                   names=['amount', 'id', 'name', 'timestamp'])
 
+pytab = PyTables(os.path.join(dirname, 'accounts.h5'), '/data')
+
 data = {list: L,
         Table: Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}'),
         DataFrame: df,
         np.ndarray: x,
         nd.array: arr,
         bcolz.ctable: bc,
-        CSV: csv}
+        CSV: csv,
+        tb.Table: pytab}
 
 no_date = {list: list(pluck([0, 1, 2], L)),
            Table: Table(list(pluck([0, 1, 2], L)),
@@ -79,19 +84,6 @@ if pymongo:
         pymongo = None
         Collection = None
 
-try:
-    import tables
-    # f = tables.open_file('blaze/blaze/api/tests/accounts.h5', 'w')
-    # t = f.create_table('/', 'accounts', obj=x)
-    # t.flush()
-    f = tables.open_file(os.path.join(dirname, 'accounts.h5'))
-    tb = f.get_node('/accounts')
-    no_date[tables.Table] = tb
-    from tables import Table as PyTable
-except ImportError:
-    tables = None
-    PyTable = None
-
 
 def normalize(a):
     """ Normalize results prior to equality test
@@ -111,7 +103,7 @@ def test_base():
     """ Test all pairs of base in-memory data structures """
     sources = [v for k, v in data.items() if k not in [list]]
     targets = [v for k, v in data.items() if k not in [Table, Collection, CSV,
-        nd.array]]
+        nd.array, tb.Table]]
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
@@ -120,7 +112,7 @@ def test_base():
 def test_expressions():
     sources = [v for k, v in data.items() if k not in [nd.array, CSV, Table]]
     targets = [v for k, v in no_date.items() if k not in [Table, CSV,
-        Collection, nd.array, PyTable]]
+        Collection, nd.array, tb.Table]]
 
     for a in sources:
         for b in targets:
@@ -156,6 +148,14 @@ def test_ColumnDataSource():
     sources = [v for k, v in data.items() if k not in [list]]
     for a in sources:
         assert into(ColumnDataSource, a).data == cds.data
+
+
+def test_into_PyTables():
+    sources = [v for k, v in data.items() if k not in [list]]
+    for a in sources:
+        with tmpfile('h5') as filename:
+            assert (into(tb.Table, a, filename=filename, datapath='/data')[:] \
+                    == pytab[:]).all()
 
 
 @skip_if_not(pymongo)
