@@ -19,7 +19,6 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> csv = CSV('examples/data/iris.csv')
    >>> csv.schema
    dshape("{ sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }")
-
    >>> Table(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -32,6 +31,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    7            5.0          3.4           1.5          0.2  Iris-setosa
    8            4.4          2.9           1.4          0.2  Iris-setosa
    9            4.9          3.1           1.5          0.1  Iris-setosa
+   ...
 
 
 Then we host this under the name ``'iris'`` and serve publicly on port
@@ -40,9 +40,9 @@ Then we host this under the name ``'iris'`` and serve publicly on port
 
 .. code-block:: python
 
-   >>> from blaze.server import Server
-   >>> server = Server({'iris': csv})
-   >>> server.run(host='0.0.0.0', port=6363)
+   from blaze.server import Server
+   server = Server({'iris': csv})
+   server.run(host='0.0.0.0', port=6363)
 
 A Server is the following
 
@@ -100,30 +100,30 @@ can help you to build them.
 
 
 Using the Python Requests Library
----------------------------------
+---------------------------------f
 
 First we repeat the same experiment as before, this time using the Python
 ``requests`` library instead of the command line tool ``curl``.
 
 .. code-block:: python
 
-   >>> # Client code, run this in a separate process from the Server
+   # Client code, run this in a separate process from the Server
 
-   >>> import json
-   >>> import requests
+   import json
+   import requests
 
-   >>> query = {'expr': {'op': 'sum',
-   ...                   'args': [{'op': 'Column',
-   ...                             'args': ['iris', 'petal_length']}]}}
+   query = {'expr': {'op': 'sum',
+                     'args': [{'op': 'Column',
+                               'args': ['iris', 'petal_length']}]}}
 
-   >>> r = requests.get('http://localhost:6363/compute/iris.json',
-   ...                 data=json.dumps(query),
-   ...                 headers={'Content-Type': 'application/json'})
+   r = requests.get('http://localhost:6363/compute/iris.json',
+                   data=json.dumps(query),
+                   headers={'Content-Type': 'application/json'})
 
-   >>> json.loads(r.content)
-   {u'data': 563.8000000000004,
-    u'datashape': u'{ petal_length_sum : ?float64 }',
-    u'name': u'iris'}
+   json.loads(r.content)
+      {u'data': 563.8000000000004,
+       u'datashape': u'{ petal_length_sum : ?float64 }',
+       u'name': u'iris'}
 
 Now we use Blaze to generate the query programmatically
 
@@ -140,7 +140,7 @@ Now we use Blaze to generate the query programmatically
 
    >>> d = to_tree(expr, names={t: 'iris'})
    >>> d
-   {'op': 'sum', 'args': [{'args': ['iris', 'petal_length'], 'op': 'Column'}]}
+   {'args': [{'args': ['iris', 'petal_length'], 'op': 'Column'}], 'op': 'sum'}
 
    >>> query = {'expr': d}
 
@@ -149,7 +149,7 @@ Alternatively we build a query to grab a single column
 .. code-block:: python
 
    >>> to_tree(t.species, names={t: 'iris'})
-   {'op': 'Column', 'args': ['iris', 'species']}
+   {'args': ['iris', 'species'], 'op': 'Column'}
 
 Fully Interactive Python-to-Python Remote work
 ----------------------------------------------
@@ -160,13 +160,13 @@ do work for us
 
 .. code-block:: python
 
-   >>> # Client code, run this in a separate process from the Server
+   # Client code, run this in a separate process from the Server
 
-   >>> from blaze import *
-   >>> from blaze.server import ExprClient
-   >>> ec = ExprClient('http://localhost:6363', 'iris')
+   from blaze import *
+   from blaze.server import ExprClient
+   ec = ExprClient('http://localhost:6363', 'iris')
 
-   >>> t = Table(ec)
+   t = Table(ec)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -180,7 +180,7 @@ do work for us
    9            4.9          3.1           1.5          0.1  Iris-setosa
    ...
 
-   >>> by(t, t.species, min=t.petal_length.min(), max=t.petal_length.max())
+   by(t, t.species, min=t.petal_length.min(), max=t.petal_length.max())
               species  max  min
    0   Iris-virginica  6.9  4.5
    1      Iris-setosa  1.9  1.0

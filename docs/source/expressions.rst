@@ -58,7 +58,7 @@ split-apply-combine workflows.
 
 .. code-block:: python
 
-   >>> by(accounts['name'],             # Splitting/grouping element
+   >>> split_apply_combine = by(accounts['name'],             # Splitting/grouping element
    ... accounts['balance'].sum())       # Apply and reduction
 
 This operation groups the table by name and then sums the balance of each
@@ -81,13 +81,12 @@ queries to span multiple tables.
    >>> accounts = TableSymbol('accounts', '{name: string, balance: int}')
    >>> cities = TableSymbol('cities', '{name: string, city: string}')
 
-   >>> join(accounts, cities, 'name')
+   >>> accounts_cities = join(accounts, cities, 'name')
 
 If given no inputs, ``join`` will join on all columns with shared names between
 the two tables.
 
-   >>> join(accounts, cities)
-
+   >>> shared_names = join(accounts, cities)
 
 Other
 -----

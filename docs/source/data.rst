@@ -82,8 +82,8 @@ migration between storage systems.
 
 .. code-block:: python
 
-   >>> sql = SQL('postgres://user:password@hostname/', 'accounts')
-   >>> sql.extend(iter(csv))  # Migrate csv file to Postgres database
+   >>> sql = SQL('sqlite:///:memory:', 'accounts', schema='{id: int, name: string, balance: int}')
+   >>> sql.extend(iter(csv))  # Migrate csv file to SQLite database
 
 
 Indexing
@@ -95,19 +95,13 @@ interfaces.
 
 .. code-block:: python
 
-   >>> list(csv.py[::2, ['name', 'balance']])
-   [(u'Alice', 100L),
-    (u'Charlie', 300L),
-    (u'Edith', 500L),
-    (u'Georgina', 700L),
-    (u'Georgina', 700L)]
+   >>> list(csv[::2, ['name', 'balance']])
+   [(u'Alice', 100), (u'Charlie', 300), (u'Edith', 500), (u'Georgina', 700)]
 
-   >>> csv.dynd[::10, ['name', 'balance']]
-   nd.array([["Alice", 100],
-             ["Charlie", 300],
-             ["Edith", 500],
-             ["Georgina", 700]],
-            type="var * {name : string, balance : int64}")
+   >>> csv.dynd[2::, ['name', 'balance']]
+   nd.array([ ["Charlie", 300],    ["Denis", 400],    ["Edith", 500],
+                ["Frank", 600], ["Georgina", 700]],
+            type="var * {name : string, balance : ?int64}")
 
 Performance of this approach varies depending on the underlying storage system.
 For file-based storage systems like CSV and JSON we must seek through the file
@@ -132,8 +126,8 @@ approach ideal for subsampling datasets.
 
 .. code-block:: python
 
-   >>> csv = CSV(filename)
-   >>> csv.py[::2, 'name']  # Fast, deserializes a small fraction of dataset
+   >>> csv = CSV('examples/data/accounts.csv')
+   >>> selection = csv[::2, 'name']  # Fast, deserializes a small fraction of dataset
 
 HDF5
 ----
@@ -143,7 +137,7 @@ and offers various forms of compression for binary data.
 
 .. code-block:: python
 
-   >>> hdf5 = HDF5(path, datapath)
+   >>> hdf5 = HDF5('examples/data/accounts.h5', 'accounts') # HDF5(path, datapath)
 
 Directories
 -----------
@@ -154,14 +148,15 @@ data source.
 
 .. code-block:: python
 
-   >>> filenames = glob('*.csv')
-   >>> csvs = [CSV(filename) for filename in filename]
+   >>> from glob import glob
+   >>> filenames = glob('examples/data/accounts*.csv')
+   >>> csvs = [CSV(filename) for filename in filenames]
 
    >>> stack = Stack(csvs)
-   >>> stack.py[:, ::2, 'name']
+   >>> stack_slice = stack[:, ::2, 'name']
 
    >>> cat = Concat(csvs)
-   >>> cat.py[::2, 'name']
+   >>> combined = cat[::2, 'name']
 
 SQL
 ---
@@ -172,7 +167,7 @@ SQLite, etc...
 
 .. code-block:: python
 
-   >>> sql = SQL('postgresql://username:password@hostname/path', 'table-name')
+   >>> sql = SQL('sqlite:///:memory:', 'accounts', schema='{id:int}')
 
 Specifying Datashape
 --------------------
@@ -184,18 +179,18 @@ case you may be prompted to provide more information
 
 .. code-block:: python
 
-   >>> csv = CSV(filename)
+   csv = CSV(filename)
    TypeError: Could not determine schema
 
-   >>> # Full schema specification as a datashape string
-   >>> csv = CSV(filename, schema='{id: int, name: string, amount: float32}')
+   # Full schema specification as a datashape string
+   csv = CSV(filename, schema='{id: int, name: string, amount: float32}')
 
-   >>> # Just specify the column names, please discover types
-   >>> csv = CSV(filename, columns=['id', 'name', 'amount'])
+   # Just specify the column names, please discover types
+   csv = CSV(filename, columns=['id', 'name', 'amount'])
 
-   >>> # Provide corrections where needed
-   >>> csv = CSV(filename, columns=['id', 'name', 'amount'],
-   ...           typehints={'amount': 'float64'})
+   # Provide corrections where needed
+   csv = CSV(filename, columns=['id', 'name', 'amount'],
+             typehints={'amount': 'float64'})
 
 Interacting with ``open``
 -------------------------
@@ -205,8 +200,8 @@ accessed by specifying a custom ``open`` function.
 
 .. code-block:: python
 
-   >>> import gzip
-   >>> csv = CSV('accounts.csv.gz', open=gzip.open)
+   import gzip
+   csv = CSV('accounts.csv.gz', open=gzip.open)
 
 
 
