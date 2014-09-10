@@ -5,7 +5,7 @@ import pytest
 from blaze import into
 from blaze.utils import tmpfile
 from blaze.compatibility import xfail
-from blaze.data.pytables import PyTables
+from blaze import PyTables
 
 
 tb = pytest.importorskip('tables')
