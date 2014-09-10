@@ -8,7 +8,7 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze import dshape, Table, discover, transform
+from blaze import dshape, Table, discover, transform, into
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
                         min, max, any, all, Projection, var, std)

@@ -6,7 +6,7 @@ import inspect
 import functools
 from toolz import unique, concat
 from pprint import pprint
-from blaze.compatibility import StringIO
+from blaze.compatibility import StringIO, map, zip
 
 from ..dispatch import dispatch
 
@@ -224,3 +224,5 @@ def path(a, b):
         yield a
         a = a.child
     yield a
+
+

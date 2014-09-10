@@ -20,7 +20,6 @@ from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first
 import cytoolz
 import toolz
-import sys
 import math
 
 from ..dispatch import dispatch
@@ -29,16 +28,14 @@ from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
                           By, Sort, Head, Apply, Union, Summary)
 from ..expr.table import count, nunique, mean, var, std
-from ..expr import table, eval_str
+from ..expr import table, eval_str, Lambda
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
-from ..compatibility import builtins, apply, unicode
-from . import core
+from ..compatibility import builtins, apply, unicode, map
 from .core import compute, compute_one
 
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
-import math
 from math import *
 
 
@@ -103,14 +100,7 @@ def rowfunc(t):
 
 @dispatch(ColumnWise)
 def rowfunc(t):
-    if sys.version_info[0] == 3:
-        # Python3 doesn't allow argument unpacking
-        # E.g. ``lambda (x, y, z): x + z`` is illegal
-        # Solution: Make ``lambda x, y, z: x + y``, then wrap with ``apply``
-        func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
-        return partial(apply, func)
-    elif sys.version_info[0] == 2:
-        return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+    return Lambda(t.child, t.expr)
 
 
 @dispatch(Map)
