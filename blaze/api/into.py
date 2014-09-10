@@ -25,6 +25,7 @@ from .resource import resource
 from ..compatibility import _strtypes
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
+from ..pytables import PyTables
 
 
 __all__ = ['into', 'discover']
@@ -73,15 +74,15 @@ try:
 except ImportError:
     Collection = type(None)
 
+
 try:
-    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel, PyTables
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
     JSON = type(None)
     JSON_STREAMING = type(None)
     Excel = type(None)
-    PyTables = type(None)
 
 @dispatch(type, object)
 def into(a, b, **kwargs):

@@ -13,11 +13,8 @@ halt_ordering() # Turn off multipledispatch ordering
 from .expr import *
 from .expr.functions import *
 from .api import *
-from .data.csv import *
-from .data.json import *
-from .data.hdf5 import *
+from .data import *
 from .compute.python import *
-from .data.meta import *
 from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
