@@ -125,9 +125,15 @@ class CleanCommand(Command):
 
 longdesc = open('README.md').read()
 
+if 'BLAZE_DEV_VERSION' in os.environ:
+    _version = os.environ['BLAZE_DEV_VERSION']
+else:
+    _version = '0.6.3'
+
+
 setup(
     name='blaze',
-    version='0.6.3',
+    version=_version,
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',

@@ -22,7 +22,8 @@ requirements:
     - requests
     - cytoolz
     - toolz
-    - unicodecsv
+    - unicodecsv [py2k]
+    - unittest2 [py2k]
     - bcolz
     - pytables
 
