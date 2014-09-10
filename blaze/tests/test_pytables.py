@@ -5,7 +5,7 @@ import pytest
 from blaze import into
 from blaze.utils import tmpfile
 from blaze.compatibility import xfail
-from blaze import PyTables
+from blaze import PyTables, discover
 
 
 tb = pytest.importorskip('tables')
@@ -131,3 +131,7 @@ class TestPyTablesLight(object):
                 issubclass(np.datetime64, rhs.dtype.type)):
                 lhs, rhs = lhs.astype('M8[us]'), rhs.astype('M8[us]')
             assert np.array_equal(lhs, rhs)
+
+    def test_datetime_discovery(self, dt_tb, dt_data):
+        t = PyTables(dt_tb, '/dt')
+        assert discover(t) == discover(dt_data)
