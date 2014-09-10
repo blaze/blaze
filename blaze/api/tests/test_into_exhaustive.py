@@ -132,7 +132,7 @@ def test_base():
 
 def test_into_empty_sql():
     """ Test all sources into empty SQL database """
-    sources = [v for k, v in data.items() if k not in [list]]
+    sources = [v for k, v in data.items() if k not in [list, Collection]]
     for a in sources:
             sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
             assert normalize(into(sql_empty, a)) == normalize(sql)

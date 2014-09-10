@@ -158,13 +158,10 @@ def into(a, b, **kwargs):
         b = map(np.datetime64, b)
     if isinstance(first, (list, tuple)):
         return np.rec.fromrecords(list(b), **kwargs)
+    elif hasattr(first, 'values'):
+        return np.asarray([tuple(x.values()) for x in b], **kwargs)
     else:
-        if hasattr(first, 'values'):
-            # np.asarray requires tuples
-            vals = list(map(compose(tuple, lambda x: x.values()), b))
-        else:
-            vals = list(b)
-        return np.asarray(vals, **kwargs)
+        return np.asarray(list(b), **kwargs)
 
 def degrade_numpy_dtype_to_python(dt):
     """
