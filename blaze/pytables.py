@@ -50,6 +50,8 @@ def PyTables(path, datapath, dshape=None):
     if dshape:
         if isinstance(dshape, str):
             dshape = datashape.dshape(dshape)
+        if dshape[0] == datashape.var:
+            dshape = dshape.subshape[0]
         dtype = dtype_to_pytables(datashape.to_numpy_dtype(dshape))
     else:
         dtype = None
