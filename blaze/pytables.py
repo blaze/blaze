@@ -4,7 +4,7 @@ import numpy as np
 import tables as tb
 
 from toolz import first
-from ..dispatch import dispatch
+from .dispatch import dispatch
 
 import datashape as ds
 
@@ -12,8 +12,7 @@ import shutil
 from blaze.utils import tmpfile
 
 
-@dispatch(tb.Description, np.dtype)
-def into(_, dtype):
+def dtype_to_pytables(dtype):
     d = {}
     for pos, name in enumerate(dtype.names):
         dt, _ = dtype.fields[name]
@@ -25,21 +24,6 @@ def into(_, dtype):
         getattr(el, name)._v_pos = pos
         d.update(el._v_colobjects)
     return d
-
-
-@dispatch(np.dtype, tb.Description)
-def into(a, b):
-    pass
-
-
-@dispatch(np.dtype, ds.DataShape)
-def into(_, b):
-    return ds.to_numpy_dtype(b)
-
-
-@dispatch(ds.DataShape, np.dtype)
-def into(a, b):
-    pass
 
 
 def PyTables(path, datapath, dshape=None):
@@ -55,8 +39,8 @@ def PyTables(path, datapath, dshape=None):
         finally:
             f.close()
 
-    if dshape is not None:
-        dtype = into(tb.Description, into(np.dtype, ds.dshape(dshape)))
+    if dshape:
+        dtype = dtype_to_pytables(datashape.to_numpy_dtype(dshape))
     else:
         dtype = None
 
