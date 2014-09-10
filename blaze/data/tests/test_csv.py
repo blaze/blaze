@@ -93,7 +93,7 @@ class Test_Indexing(unittest.TestCase):
         with open(self.csv_file, "w") as f:
             f.write(self.buf)
         self.dd = CSV(self.csv_file, dialect='excel', schema=self.schema,
-                            delimiter=' ', mode='r+')
+                      delimiter=' ', mode='r+')
         assert self.dd.header
 
     def tearDown(self):
