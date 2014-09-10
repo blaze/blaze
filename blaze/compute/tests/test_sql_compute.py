@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import pytest
 from blaze.compute.sql import compute, computefull, select
 from blaze import SQL
 from blaze.expr import *
@@ -427,3 +426,10 @@ def test_clean_join():
           FROM friends JOIN name ON friends.a = name.id)
     JOIN place on friends.a = place.id""")
 
+
+def test_like():
+    expr = t.like(name='Alice*')
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name LIKE :name_1""")

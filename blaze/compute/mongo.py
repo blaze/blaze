@@ -45,10 +45,12 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 from __future__ import absolute_import, division, print_function
 
 try:
+    import pymongo
     from pymongo.collection import Collection
 except ImportError:
     Collection = type(None)
 
+import fnmatch
 from datashape import Record
 from toolz import pluck
 import toolz
@@ -56,7 +58,8 @@ import toolz
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
-                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary)
+                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
+                    Like)
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
@@ -102,7 +105,7 @@ class MongoQuery(object):
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Apply, Distinct, RowWise, By), Collection)
+           Head, ReLabel, Apply, Distinct, RowWise, By, Like), Collection)
 def compute_one(e, coll, **kwargs):
     return compute_one(e, MongoQuery(coll, []))
 
@@ -125,6 +128,13 @@ def compute_one(t, q, **kwargs):
 @dispatch(Selection, MongoQuery)
 def compute_one(t, q, **kwargs):
     return q.append({'$match': match(t.predicate.expr)})
+
+
+@dispatch(Like, MongoQuery)
+def compute_one(t, q, **kwargs):
+    pats = dict((name, {'$regex': fnmatch.translate(pattern)})
+                for name, pattern in t.patterns.items())
+    return q.append({'$match': pats})
 
 
 @dispatch(By, MongoQuery)
