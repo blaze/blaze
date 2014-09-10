@@ -31,7 +31,7 @@ def into(a, b, **kwargs):
     if not isinstance(a, type):
         a = type(a)
     b = b.collect()
-    if isinstance(b[0], Iterable) and not type(b) == tuple:
+    if isinstance(b[0], (tuple, list)) and not type(b[0]) == tuple:
         b = map(tuple, b)
     return a(b)
 
