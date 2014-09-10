@@ -146,8 +146,7 @@ container type.
    >>> result = by(iris.species,
    ...             iris.petal_width.mean())
 
-   >>> into(list, result)                     # Push result into a list
-   [(u'Iris-setosa', 0.24599999999999991), (u'Iris-versicolor', 1.3259999999999998), (u'Iris-virginica', 2.0259999999999998)]
+   >>> result_list = into(list, result)                     # Push result into a list
 
    >>> into(DataFrame, result)                # Push result into a DataFrame
               species  petal_width_mean
