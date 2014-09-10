@@ -298,6 +298,7 @@ def into(bc, data, **kwargs):
         bc.append(chunk)
     return bc
 
+
 @dispatch(tb.node.MetaNode, np.ndarray)
 def into(table, x, filename=None, datapath=None, **kwargs):
     # tb.node.MetaNode == type(tb.Table)
