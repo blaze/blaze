@@ -21,7 +21,7 @@ def discover(t):
 @dispatch(tb.Column)
 def discover(c):
     dshape = ds.from_numpy(c.shape, c.dtype)
-    return {'time64': ds.datetime, 'time32': ds.date_}.get(c.name,
+    return {'time64': ds.datetime_, 'time32': ds.date_}.get(c.type,
                                                            dshape.subshape[1])
 
 
