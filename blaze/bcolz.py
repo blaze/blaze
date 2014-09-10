@@ -46,17 +46,19 @@ def into(a, b, dtype=None, **kwargs):
 
 
 @dispatch(ctable, (tuple, list))
-def into(a, b, types=None, **kwargs):
+def into(a, b, names=None, types=None, **kwargs):
 
     if isinstance(b[0], (tuple, list)):
         if not types:
             types=[None] * len(b[0])
         return ctable([into(np.ndarray(0), c2, dtype=dt)
-                        for (c2, dt) in zip(zip(*b), types)],
+                        for (c2, dt) in zip(zip(*b), types)], names,
                       **kwargs)
     else:
-        arr = into(np.ndarray(0), b, dtype=np.dtype(list(zip(kwargs['names'], types))))
-        return ctable(arr, **kwargs)
+        if not names:
+            names =[None] * len(b)
+        arr = into(np.ndarray(0), b, dtype=np.dtype(list(zip(names, types))))
+        return ctable(arr, names, **kwargs)
 
 
 @dispatch((carray, ctable), Iterator)

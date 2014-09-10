@@ -159,6 +159,7 @@ def into(a, b, **kwargs):
     if isinstance(first, (list, tuple)):
         return np.rec.fromrecords(list(b), **kwargs)
     elif hasattr(first, 'values'):
+        #detecting sqlalchemy.engine.result.RowProxy types and similar
         return np.asarray([tuple(x.values()) for x in b], **kwargs)
     else:
         return np.asarray(list(b), **kwargs)
