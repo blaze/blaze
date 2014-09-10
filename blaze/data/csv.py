@@ -4,15 +4,17 @@ import sys
 import itertools as it
 import os
 import gzip
-from operator import itemgetter
+from operator import itemgetter, methodcaller
 from functools import partial
 
 from multipledispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, compose, first
 
+import numpy as np
 import pandas as pd
 from datashape.discovery import discover, null, unpack
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
+import datashape as ds
 
 import blaze as bz
 from blaze.data.utils import tupleit
@@ -21,6 +23,7 @@ from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import map, zip, PY2
+from .utils import ordered_index
 
 import csv
 
@@ -131,6 +134,23 @@ def get_sample(csv, size=16384):
             except AttributeError:
                 pass
     return ''
+
+
+def isdatelike(typ):
+    return (typ == ds.date_ or typ == ds.datetime_ or
+            (isinstance(typ, Option) and
+             (typ.ty == ds.date_ or typ.ty == ds.datetime_)))
+
+
+def get_date_columns(schema):
+    try:
+        names = schema.measure.names
+        types = schema.measure.types
+    except AttributeError:
+        return []
+    else:
+        return [(name, typ) for name, typ in zip(names, types)
+                if isdatelike(typ)]
 
 
 class CSV(DataDescriptor):
@@ -255,7 +275,6 @@ class CSV(DataDescriptor):
             schema = dshape(Record(list(zip(columns, types))))
 
         self._schema = schema
-
         self.header = header
 
     def reader(self, header=None, keep_default_na=False,
@@ -273,11 +292,14 @@ class CSV(DataDescriptor):
                              encoding=self.encoding, header=header, **dialect)
         return reader
 
+    def get_py(self, key):
+        return self._get_py(ordered_index(key, self.dshape))
+
     def _get_py(self, key):
         if isinstance(key, tuple):
             assert len(key) == 2
             rows, cols = key
-            result = self._get_py(rows)
+            result = self.get_py(rows)
 
             if isinstance(cols, list):
                 getter = compose(tupleit, itemgetter(*cols))
@@ -289,11 +311,62 @@ class CSV(DataDescriptor):
             return getter(result)
 
         reader = self._iter()
-        return slice_with(key)(reader)
+        if isinstance(key, compatibility._inttypes):
+            line = nth(key, reader)
+            try:
+                return next(line)
+            except TypeError:
+                return line
+        elif isinstance(key, list):
+            return nth_list(key, reader)
+        elif isinstance(key, slice):
+            return it.islice(reader, key.start, key.stop, key.step)
+        else:
+            raise IndexError("key %r is not valid" % key)
+
+    def get_streaming_dtype(self, dtype):
+        date_pairs = get_date_columns(self.schema)
+
+        if not date_pairs:
+            return dtype
+
+        typemap = dict((k, ds.to_numpy_dtype(getattr(v, 'ty', v)))
+                       for k, v in date_pairs)
+        formats = [typemap.get(name, dtype[str(i)])
+                   for i, name in enumerate(self.schema.measure.names)]
+        return np.dtype({'names': dtype.names, 'formats': formats})
 
     def _iter(self):
-        reader = self.reader(chunksize=self.chunksize)
-        return it.chain.from_iterable(map(partial(bz.into, list), reader))
+        # get the date column [(name, type)] pairs
+        datecols = list(map(first, get_date_columns(self.schema)))
+
+        # figure out which ones pandas needs to parse
+        parse_dates = ordered_index(datecols, self.schema)
+        reader = self.reader(chunksize=self.chunksize, parse_dates=parse_dates)
+
+        # pop one off the iterator
+        initial = next(iter(reader))
+        initial_dtype = np.dtype({'names': list(map(str, initial.columns)),
+                                  'formats': initial.dtypes.values.tolist()})
+
+        # what dtype do we actually want to see
+        streaming_dtype = self.get_streaming_dtype(initial_dtype)
+
+        # everything must ultimately be a list
+        mapper = partial(bz.into, list)
+
+        if dtype != initial_dtype:
+            # we don't have the desired type so jump through hoops with
+            # to_records -> astype(desired dtype) -> listify
+            mapper = compose(mapper,
+                             # astype copies by default, try not to
+                             methodcaller('astype', dtype=streaming_dtype,
+                                          copy=False),
+                             methodcaller('to_records', index=False))
+
+        # convert our initial to a list
+        return it.chain(mapper(initial),
+                        it.chain.from_iterable(map(mapper, reader)))
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
@@ -318,32 +391,6 @@ class CSV(DataDescriptor):
     def remove(self):
         """Remove the persistent storage."""
         os.unlink(self.path)
-
-
-@dispatch(compatibility._inttypes)
-def slice_with(key):
-    def f(reader):
-        line = nth(key, reader)
-        try:
-            return next(line)
-        except TypeError:
-            return line
-    return f
-
-
-@dispatch(list)
-def slice_with(key):
-    return partial(nth_list, key)
-
-
-@dispatch(slice)
-def slice_with(key):
-    return lambda reader: it.islice(reader, key.start, key.stop, key.step)
-
-
-@dispatch(object)
-def slice_with(key):
-    raise IndexError("key %r is not valid" % key)
 
 
 @dispatch(CSV)
