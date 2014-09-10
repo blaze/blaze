@@ -27,6 +27,9 @@ import csv
 __all__ = ['CSV', 'drop']
 
 
+na_values = frozenset(filter(None, pd.io.parsers._NA_VALUES))
+
+
 read_csv_kwargs = set(keywords(pd.read_csv))
 assert read_csv_kwargs
 
@@ -222,10 +225,9 @@ class CSV(DataDescriptor):
         reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
         if not schema and 'w' not in mode:
             if not types:
-                data = list(map(tuple, self.reader(skiprows=1,
-                                                   nrows=nrows_discovery,
-                                                   chunksize=None,
-                                                   **reader_dialect)))
+                data = list(self.reader(skiprows=1, nrows=nrows_discovery,
+                                        **reader_dialect
+                                        ).itertuples(index=False))
                 types = discover(data)
                 rowtype = types.subshape[0]
                 if isinstance(rowtype[0], Tuple):
@@ -238,13 +240,13 @@ class CSV(DataDescriptor):
                         isinstance(rowtype[1], CType)):
                     types = int(rowtype[0]) * [rowtype[1]]
                 else:
-                    ValueError("Could not discover schema from data.\n"
-                               "Please specify schema.")
+                    raise ValueError("Could not discover schema from data.\n"
+                                     "Please specify schema.")
             if not columns:
                 if header:
                     columns = first(self.reader(skiprows=0, nrows=1,
-                                                header=None, chunksize=None,
-                                                **reader_dialect))
+                                                header=None, **reader_dialect
+                                                ).itertuples(index=False))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
             if typehints:
@@ -256,8 +258,8 @@ class CSV(DataDescriptor):
 
         self.header = header
 
-    def reader(self, header=None, as_recarray=True, **kwargs):
-        kwargs.setdefault('chunksize', self.chunksize)
+    def reader(self, header=None, keep_default_na=False,
+               na_values=na_values, chunksize=None, **kwargs):
         kwargs.setdefault('skiprows', int(bool(self.header)))
 
         dialect = merge(keyfilter(read_csv_kwargs.__contains__, self.dialect),
@@ -266,8 +268,9 @@ class CSV(DataDescriptor):
         ext = ext.lstrip('.')
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
-                             encoding=self.encoding, as_recarray=as_recarray,
-                             header=header, **dialect)
+                             chunksize=chunksize, na_values=na_values,
+                             keep_default_na=keep_default_na,
+                             encoding=self.encoding, header=header, **dialect)
         return reader
 
     def _get_py(self, key):
@@ -289,8 +292,8 @@ class CSV(DataDescriptor):
         return slice_with(key)(reader)
 
     def _iter(self):
-        return it.chain.from_iterable(map(partial(bz.into, list),
-                                          self.reader()))
+        reader = self.reader(chunksize=self.chunksize)
+        return it.chain.from_iterable(map(partial(bz.into, list), reader))
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
