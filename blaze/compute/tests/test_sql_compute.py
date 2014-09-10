@@ -394,16 +394,25 @@ def test_summary_by():
 
 
 def test_clean_join():
-    city = SQL('sqlite:///:memory:', 'place',
-                schema='{id: int, city: string, country: string}')
-    friends = SQL('sqlite:///:memory:', 'friends', schema='{a: int, b: int}')
-    name = SQL('sqlite:///:memroy:', 'name', schema='{name: string, id: int}')
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+    friends = sa.Table('friends', metadata,
+             sa.Column('a', sa.Integer),
+             sa.Column('b', sa.Integer),
+             )
 
-    tcity = TableSymbol('city', city.schema)
-    tfriends = TableSymbol('friends', friends.schema)
-    tname = TableSymbol('name', name.schema)
+    tcity = TableSymbol('city', discover(city))
+    tfriends = TableSymbol('friends', discover(friends))
+    tname = TableSymbol('name', discover(name))
 
-    ns = {tname: name.table, tfriends: friends.table, tcity: city.table}
+    ns = {tname: name, tfriends: friends, tcity: city}
 
     expr = join(tfriends, tname, 'a', 'id')
     assert normalize(str(compute(expr, ns))) == normalize("""
