@@ -358,7 +358,7 @@ def test_into_DataFrame_Excel_xls_format():
     fn = os.path.join(dirname, 'accounts.xls')
     exp = DataFrame([[100, 1, "Alice", "2000-12-25T00:00:01"],
                     [200, 2, "Bob", "2001-12-25T00:00:01"],
-                    [300, 3, "Charlie", "2002-12-25T00:00:01"]], 
+                    [300, 3, "Charlie", "2002-12-25T00:00:01"]],
                     columns = ["amount", "id", "name", "timestamp"])
     df = into(DataFrame, fn)
     assert (df == exp).all().all()
