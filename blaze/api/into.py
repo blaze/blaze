@@ -15,9 +15,9 @@ from collections import Iterable, Iterator
 import gzip
 import numpy as np
 import pandas as pd
-import tables
+import tables as tb
 
-from ..compute.chunks import ChunkIterator
+from ..compute.chunks import ChunkIterator, chunks
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
@@ -206,13 +206,13 @@ def into(df, x):
     return pd.DataFrame(numpy_ensure_strings(x), columns=columns)
 
 
-@dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
+@dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tb.Table)
 def into(a, t):
     x = into(np.ndarray, t)
     return into(a, x)
 
 
-@dispatch(np.ndarray, tables.Table)
+@dispatch(np.ndarray, tb.Table)
 def into(_, t):
     res = t[:]
     dt_fields = [k for k, v in t.coltypes.items() if v == 'time64']
@@ -260,7 +260,7 @@ def typehint(x, typedict):
     return np.dtype(sort_dtype_items(dtype_list, x.dtype.names))
 
 
-@dispatch(tables.Table, np.ndarray)
+@dispatch(tb.Table, np.ndarray)
 def into(t, x, **kwargs):
     dt_types = dict((k, 'datetime64[us]') for k, (v, _) in
                     x.dtype.fields.items() if issubclass(v.type, np.datetime64))
@@ -274,22 +274,44 @@ def into(t, x, **kwargs):
     return t
 
 
-@dispatch(tables.node.MetaNode, np.ndarray)
+@dispatch(tb.Table, ChunkIterator)
+def into(t, c, **kwargs):
+    for chunk in c:
+        into(t, chunk, **kwargs)
+    return t
+
+@dispatch(tb.node.MetaNode, (ctable, tb.Table))
+def into(table, data, filename=None, datapath=None, **kwargs):
+    t = PyTables(filename, datapath=datapath,
+                 dshape=discover(data))
+    for chunk in chunks(data):
+        into(t, chunk)
+    return t
+
+
+@dispatch(ctable, tb.Table)
+def into(bc, data, **kwargs):
+    cs = chunks(data)
+    bc = into(bc, next(cs))
+    for chunk in chunks(data):
+        bc.append(chunk)
+    return bc
+
+@dispatch(tb.node.MetaNode, np.ndarray)
 def into(table, x, filename=None, datapath=None, **kwargs):
-    """tables.node.MetaNode == type(tables.Table)
-    """
+    # tb.node.MetaNode == type(tb.Table)
     x = numpy_fixlen_strings(x)
     t = PyTables(filename, datapath=datapath,
-                 dshape=from_numpy(x.shape, x.dtype))
+                 dshape=discover(x))
     return into(t, x, **kwargs)
 
 
-@dispatch(tables.Table, (pd.DataFrame, CSV))
+@dispatch(tb.Table, (pd.DataFrame, CSV))
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b), **kwargs)
 
 
-@dispatch(tables.Table, _strtypes)
+@dispatch(tb.Table, _strtypes)
 def into(a, b, **kwargs):
     kw = dict(kwargs)
     if 'output_path' in kw:
@@ -400,6 +422,11 @@ def into(cds, t):
     columns = discover(t).subshape[0][0].names
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
+
+@dispatch(ColumnDataSource, tb.Table)
+def into(cds, t):
+    return into(cds, into(pd.DataFrame, t))
+
 
 @dispatch(ColumnDataSource, nd.array)
 def into(cds, t):
@@ -742,7 +769,7 @@ def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, ColumnDataSource, ctable, tables.Table,
+@dispatch((np.ndarray, ColumnDataSource, ctable, tb.Table,
     list, tuple, set),
           (CSV, Excel))
 def into(a, b, **kwargs):
@@ -787,7 +814,7 @@ def into(a, b, **kwargs):
                        usecols=usecols,
                        **options)
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table,
     list, tuple, set), Projection)
 def into(a, b, **kwargs):
     """ Special case on anything <- Table(CSV)[columns]
