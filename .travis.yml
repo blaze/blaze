@@ -20,10 +20,6 @@ services:
     - mysql
 
 
-before_install:
-    - "mongo --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true})' admin"
-
-
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
@@ -96,6 +92,8 @@ install:
 
 before_script:
   - mysql -e 'create database test'
+  - sleep 15
+  - mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'
 
 script:
   - echo '[pytest]' > pytest.ini
