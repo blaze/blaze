@@ -187,6 +187,11 @@ def into(a, b):
     return numpy_ensure_strings(b).tolist()
 
 
+@dispatch(set, object)
+def into(a, b, **kwargs):
+    return set(into(list, b, **kwargs))
+
+
 @dispatch(pd.DataFrame, np.ndarray)
 def into(df, x):
     if len(df.columns) > 0:
