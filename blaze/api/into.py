@@ -5,7 +5,7 @@ import datashape
 import sys
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all, valmap
+from toolz import concat, partition_all, valmap, compose
 from cytoolz import pluck
 import copy
 from datetime import datetime
@@ -159,7 +159,12 @@ def into(a, b, **kwargs):
     if isinstance(first, (list, tuple)):
         return np.rec.fromrecords(list(b), **kwargs)
     else:
-        return np.asarray(list(b), **kwargs)
+        if hasattr(first, 'values'):
+            # np.asarray requires tuples
+            vals = list(map(compose(tuple, lambda x: x.values()), b))
+        else:
+            vals = list(b)
+        return np.asarray(vals, **kwargs)
 
 def degrade_numpy_dtype_to_python(dt):
     """
@@ -829,4 +834,9 @@ def into(a, b, **kwargs):
 @dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
 def into(a, b, **kwargs):
     a.extend(b)
+    return a
+
+@dispatch(DataDescriptor, (np.ndarray, nd.array, pd.DataFrame))
+def into(a, b, **kwargs):
+    a.extend(into(list,b))
     return a

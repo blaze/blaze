@@ -12,6 +12,7 @@ import blaze
 from blaze import Table, TableExpr, TableSymbol, compute
 import bcolz
 from blaze.data import CSV
+from blaze.sql import SQL
 from datetime import datetime
 from toolz import pluck
 import os
@@ -32,6 +33,7 @@ x = np.array(list(map(tuple, L)),
                     ('name', 'U7'), ('timestamp', 'M8[us]')])
 
 schema = '{amount: int64, id: int64, name: string, timestamp: datetime}'
+sql_schema = "{amount: int64, id: int64, name: string, timestamp: datetime[tz='UTC']}"
 
 arr = nd.array(L, dtype=schema)
 
@@ -43,13 +45,25 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                              datetime(2002, 12, 25, 0, 0, 1)], dtype='M8[us]')],
                   names=['amount', 'id', 'name', 'timestamp'])
 
+sql = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
+sql.extend(L)
+
+sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
+
 data = {list: L,
         Table: Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}'),
         DataFrame: df,
         np.ndarray: x,
         nd.array: arr,
         bcolz.ctable: bc,
-        CSV: csv}
+        CSV: csv,
+        SQL: sql}
+
+schema_no_date = '{amount: int64, id: int64, name: string[7]}'
+sql_no_date = SQL('sqlite:///:memory:', 'accounts_no_date', schema=schema_no_date)
+
+L_no_date = list(pluck([0, 1, 2], L))
+sql_no_date.extend(L_no_date)
 
 no_date = {list: list(pluck([0, 1, 2], L)),
            Table: Table(list(pluck([0, 1, 2], L)),
@@ -57,7 +71,8 @@ no_date = {list: list(pluck([0, 1, 2], L)),
            DataFrame: df[['amount', 'id', 'name']],
            np.ndarray: x[['amount', 'id', 'name']],
            nd.array: nd.fields(arr, 'amount', 'id', 'name'),
-           bcolz.ctable: bc[['amount', 'id', 'name']]}
+           bcolz.ctable: bc[['amount', 'id', 'name']],
+           SQL: sql_no_date}
 
 
 try:
@@ -81,9 +96,6 @@ if pymongo:
 
 try:
     import tables
-    # f = tables.open_file('blaze/blaze/api/tests/accounts.h5', 'w')
-    # t = f.create_table('/', 'accounts', obj=x)
-    # t.flush()
     f = tables.open_file(os.path.join(dirname, 'accounts.h5'))
     tb = f.get_node('/accounts')
     no_date[tables.Table] = tb
@@ -102,6 +114,8 @@ def normalize(a):
         a = a.astype(degrade_numpy_dtype_to_python(a.dtype))
     if isinstance(a, bcolz.ctable):
         return normalize(a[:])
+    if isinstance(a, SQL):
+        return list(a)
     return (str(a).replace("u'", "'")
                   .replace("(", "[").replace(")", "]")
                   .replace('L', ''))
@@ -111,20 +125,27 @@ def test_base():
     """ Test all pairs of base in-memory data structures """
     sources = [v for k, v in data.items() if k not in [list]]
     targets = [v for k, v in data.items() if k not in [Table, Collection, CSV,
-        nd.array]]
+        nd.array, SQL]]
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
+
+def test_into_empty_sql():
+    """ Test all sources into empty SQL database """
+    sources = [v for k, v in data.items() if k not in [list]]
+    for a in sources:
+            sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
+            assert normalize(into(sql_empty, a)) == normalize(sql)
 
 
 def test_expressions():
     sources = [v for k, v in data.items() if k not in [nd.array, CSV, Table]]
     targets = [v for k, v in no_date.items() if k not in [Table, CSV,
-        Collection, nd.array, PyTable]]
+        Collection, nd.array, PyTable, SQL]]
 
     for a in sources:
         for b in targets:
-            c = Table(a, '{amount: int64, id: int64, name: string[7], timestamp: datetime}')[['amount', 'id', 'name']]
+            c = Table(a, "{amount: int64, id: int64, name: string, timestamp: datetime[tz='UTC']}")[['amount', 'id', 'name']]
             assert normalize(into(type(b), c)) == normalize(b)
 
 try:

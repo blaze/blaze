@@ -35,6 +35,7 @@ types = {'int64': sql.types.BigInteger,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
          'bool': sql.types.Boolean,
+         "datetime[tz='UTC']": sql.types.DateTime(timezone=True)
 #         ??: sql.types.LargeBinary,
 #         Decimal: sql.types.Numeric,
 #         ??: sql.types.PickleType,
@@ -401,7 +402,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #only works on OSX/Unix
     elif dbtype == 'sqlite':
         import subprocess
-        if sys.platform == 'win32':
+        if sys.platform == 'win32' or db == ":memory:":
             print("Windows native sqlite copy is not supported")
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
