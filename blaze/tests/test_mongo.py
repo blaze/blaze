@@ -13,6 +13,7 @@ from blaze.compatibility import PY3
 from datashape import discover, dshape
 
 from blaze import drop, into, create_index
+from blaze.utils import assert_allclose
 
 
 no_mongoimport = pytest.mark.skipif(raises(OSError,
@@ -256,21 +257,11 @@ def test_csv_into_mongodb_complex(empty_collec):
     into(coll, csv)
 
     mongo_data = list(coll.find({}, {'_id': 0}))
-    import numpy as np
 
     # This assertion doesn't work due to python floating errors
     # into(list, csv) == into(list, into(coll, csv))
-    def compare(lhs, rhs):
-        assert len(lhs) == len(rhs)
-        for left, right in zip(lhs, rhs):
-            assert type(left) == type(right)
-            if isinstance(left, (np.float64, float)):
-                assert np.allclose(left, right)
-            else:
-                assert left == right
-
-    compare(list(csv[0]), [mongo_data[0][col] for col in csv.columns])
-    compare(list(csv[9]), [mongo_data[-1][col] for col in csv.columns])
+    assert_allclose([list(csv[0])], [[mongo_data[0][col] for col in csv.columns]])
+    assert_allclose([list(csv[9])], [[mongo_data[-1][col] for col in csv.columns]])
 
 
 les_mis_data = {"nodes":[{"name":"Myriel","group":1},
