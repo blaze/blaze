@@ -82,7 +82,7 @@ migration between storage systems.
 
 .. code-block:: python
 
-   >>> sql = SQL('sqlite:///:memory:', 'accounts', schema='{id: int, name: string, balance: int}')
+   >>> sql = SQL('sqlite:///:memory:', 'accounts', schema=csv.schema)
    >>> sql.extend(iter(csv))  # Migrate csv file to SQLite database
 
 
@@ -137,7 +137,7 @@ and offers various forms of compression for binary data.
 
 .. code-block:: python
 
-   >>> hdf5 = HDF5('examples/data/accounts.h5', 'accounts') # HDF5(path, datapath)
+   >>> hdf5 = HDF5('examples/data/accounts.h5', 'accounts')
 
 Directories
 -----------

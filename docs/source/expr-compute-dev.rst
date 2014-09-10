@@ -12,15 +12,15 @@ Expressions
 
 Blaze represents expressions as Python objects.  Classes include
 
-- **TableSymbol**: leaf expression, t
-- **Projection**: subset of columns, t[['name', 'amount']]
-- **Selection**: subset of rows t[t['amount'] < 0]
+- **TableSymbol**: leaf expression, ``t``
+- **Projection**: subset of columns, ``t[['name', 'amount']]``
+- **Selection**: subset of rows ``t[t['amount'] < 0]``
 - **Column**: single column t['name']
-- **ColumnWise**: a combination of a table and a scalar expression, -t['amount'] + 1
-- **Join**: join two tables on shared columns, join(t, s, 'id')
-- **Reduction**: perform a sum or min or max on a table, t['amount'].sum()
-- **By**: split-apply-combine operation, by(t['name'], t['amount'].sum())
-- **Also**: Sort, Distinct, Head, Label, Map, Apply, Merge
+- **ColumnWise**: a combination of a table and a scalar expression, ``t['amount'] + 1``
+- **Join**: join two tables on shared columns, ``join(t, s, 'id')``
+- **Reduction**: perform a sum or min or max on a table, ``t['amount'].sum()``
+- **By**: split-apply-combine operation, by(t['name'], ``t['amount'].sum())``
+- **Also**: ``Sort, Distinct, Head, Label, Map, Apply, Merge``
 
 In each case an operation (like ``Selection``) is a Python class.  Each
 expression defines a fixed set of fields in the ``__slots__`` attribute
@@ -155,9 +155,8 @@ mapping a ``Selection`` to a ``DataFrame``:
 
    >>> @dispatch(Selection, DataFrame)
    ... def compute_one(t, df, **kwargs):
-   ...     predicate = compute(t.predicate, {t.child: df})
-   ...     apply = compute(t.apply, {t.child: df})
-   ...     return apply[predicate]
+   ...     predicate = compute(t.predicate, df)
+   ...     return df[predicate]
 
 This approach is modular and allows interpretation systems to be built up as a
 collection of small pieces.  One can begin the construction of a new backend by

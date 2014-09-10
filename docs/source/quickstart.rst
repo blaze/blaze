@@ -114,11 +114,12 @@ of data
 .. code-block:: python
 
    >>> by(iris.species,                # Group by species
-   ...    iris.petal_width.mean())     # Take the mean of the petal_width column
-              species  petal_width_mean
-   0      Iris-setosa             0.246
-   1  Iris-versicolor             1.326
-   2   Iris-virginica             2.026
+   ...    min=iris.petal_width.min(),     # Minimum of the petal_width column per group
+   ...    max=iris.petal_width.max()),    # Maximum of the petal_width column per group
+   (           species  max  min
+   0      Iris-setosa  2.5  0.1
+   1  Iris-versicolor  2.5  0.1
+   2   Iris-virginica  2.5  0.1,)
 
 
 Finishing Up
