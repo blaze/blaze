@@ -355,7 +355,7 @@ class CSV(DataDescriptor):
         # everything must ultimately be a list
         mapper = partial(bz.into, list)
 
-        if dtype != initial_dtype:
+        if streaming_dtype != initial_dtype:
             # we don't have the desired type so jump through hoops with
             # to_records -> astype(desired dtype) -> listify
             mapper = compose(mapper,
