@@ -254,9 +254,9 @@ class CSV(DataDescriptor):
         reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
         if not schema and 'w' not in mode:
             if not types:
-                data = list(self.reader(skiprows=1, nrows=nrows_discovery,
-                                        **reader_dialect
-                                        ).itertuples(index=False))
+                data = self.reader(skiprows=1, nrows=nrows_discovery,
+                                   as_recarray=True, index_col=False,
+                                   **reader_dialect).tolist()
                 types = discover(data)
                 rowtype = types.subshape[0]
                 if isinstance(rowtype[0], Tuple):
@@ -367,8 +367,8 @@ class CSV(DataDescriptor):
         else:
             if usecols is None:
                 usecols = slice(None)
-            names = list(map(str, initial.columns[usecols]))
-            formats = initial.dtypes.values[usecols].tolist()
+            names = list(map(str, initial.loc[:, usecols].columns))
+            formats = initial.loc[:, usecols].dtypes.tolist()
             slicer = slice(None), usecols
 
         initial_dtype = np.dtype({'names': names, 'formats': formats})
@@ -378,7 +378,8 @@ class CSV(DataDescriptor):
 
         # everything must ultimately be a list
         m = partial(bz.into, list)
-        slicerf = lambda x: x.iloc[slicer]
+        slicerf = lambda x: x.loc[slicer].fillna('').convert_objects(
+            convert_numeric=True)
 
         if streaming_dtype != initial_dtype:
             # we don't have the desired type so jump through hoops with
