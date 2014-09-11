@@ -398,25 +398,45 @@ def into(sql, csv, if_exists="replace", **kwargs):
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
 
-    #only works on OSX/Unix
     elif dbtype == 'sqlite':
         import subprocess
-        if sys.platform == 'win32':
-            print("Windows native sqlite copy is not supported")
+        try:
+            if sys.platform == 'win32':
+                from blaze.utils import tmpfile
+                with tmpfile('sql') as filename:
+
+                    # path to database must use two backslashes
+                    # need to convert to raw string to appropriately handle \\ in path
+                    copy_info['abspath'] = copy_info['abspath'].replace('\\',r'\\')
+                    copy_info['sql_file'] = filename
+
+                    with open(filename,'w') as f:
+                        f.writelines(".mode csv\n");
+                        f.write(".import {abspath} {tblname}".format(**copy_info))
+
+                    copy_cmd = "sqlite3.exe {db} < {sql_file}"
+                    copy_cmd = copy_cmd.format(**copy_info)
+                    ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    output = ps.stdout.read()
+                    err = ps.stderr.read()
+
+                    if 'not recognized' in err:
+                        raise Exception("sqlite3.exe not installed")
+
+            # linux/osx
+            else:
+                copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
+                copy_cmd = copy_cmd.format(**copy_info)
+
+                ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                output = ps.stdout.read()
+                err = ps.stderr.read()
+
+        except Exception as e:
+            print(e)
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
-        else:
-            #only to be used when table isn't already created?
-            # cmd = """
-            #     echo 'create table {tblname}
-            #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
-            #     """
 
-            copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
-            copy_cmd = copy_cmd.format(**copy_info)
-
-            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-            output = ps.stdout.read()
 
     elif dbtype == 'mysql':
         import MySQLdb
