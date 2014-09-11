@@ -9,11 +9,12 @@ from collections import Iterator
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import (compute, rrowfunc, rowfunc, RowWise, listpack,
-        pair_assemble, reduce_by_funcs, binops, like_regex_predicate)
+from .python import (compute, rrowfunc, rowfunc, RowWise, pair_assemble,
+                     reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
 from ..expr import table
 from ..dispatch import dispatch
+from ..data.utils import listpack
 
 from .core import compute, compute_one
 

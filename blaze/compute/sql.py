@@ -31,6 +31,7 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary, Like
 from ..compatibility import reduce
 from ..utils import unique
+from ..data.utils import listpack
 from .core import compute_one, compute, base
 
 __all__ = ['sqlalchemy', 'select']
@@ -122,13 +123,6 @@ def select(s):
 
 def computefull(t, s):
     return select(compute(t, s))
-
-
-def listpack(x):
-    if isinstance(x, list):
-        return x
-    else:
-        return [x]
 
 
 @dispatch(Join, Selectable, Selectable)

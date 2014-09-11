@@ -38,6 +38,7 @@ from . import core
 from .core import compute, compute_one
 
 from ..data import DataDescriptor
+from ..data.utils import listpack
 
 # Dump exp, log, sin, ... into namespace
 import math
@@ -339,24 +340,6 @@ def compute_one(t, seq, **kwargs):
     else:
         valfunc = identity
     return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
-
-
-def listpack(x):
-    """
-
-    >>> listpack(1)
-    [1]
-    >>> listpack((1, 2))
-    [1, 2]
-    >>> listpack([1, 2])
-    [1, 2]
-    """
-    if isinstance(x, tuple):
-        return list(x)
-    elif isinstance(x, list):
-        return x
-    else:
-        return [x]
 
 
 def pair_assemble(t):

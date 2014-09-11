@@ -153,3 +153,21 @@ def tuplify(x):
         return tuple(map(tuplify, x))
     else:
         return x
+
+
+def listpack(x):
+    """
+
+    >>> listpack(1)
+    [1]
+    >>> listpack((1, 2))
+    [1, 2]
+    >>> listpack([1, 2])
+    [1, 2]
+    """
+    if isinstance(x, tuple):
+        return list(x)
+    elif isinstance(x, list):
+        return x
+    else:
+        return [x]
