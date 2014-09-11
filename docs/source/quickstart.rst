@@ -32,8 +32,6 @@ dimensionality and data type to use.
     3   4    Denis      400
     4   5    Edith     -500
 
-    [5 rows x 3 columns]
-
 
 Simple Calculations
 ~~~~~~~~~~~~~~~~~~~
@@ -88,7 +86,6 @@ stored in a `sqlite file`_.
 
 .. code-block:: python
 
-   >>> from blaze.sql import *
    >>> sql = SQL('sqlite:///examples/data/iris.db', 'iris')
    >>> iris = Table(sql)
    >>> iris
@@ -114,8 +111,8 @@ of data
 .. code-block:: python
 
    >>> by(iris.species,                # Group by species
-   ...    min=iris.petal_width.min(),     # Minimum of the petal_width column per group
-   ...    max=iris.petal_width.max())    # Maximum of the petal_width column per group
+   ...    min=iris.petal_width.min(),  # Minimum of petal_width per group
+   ...    max=iris.petal_width.max())  # Maximum of petal_width per group
               species  max  min
    0      Iris-setosa  0.6  0.1
    1  Iris-versicolor  1.8  1.0
