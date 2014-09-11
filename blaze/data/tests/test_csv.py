@@ -5,16 +5,17 @@ import tempfile
 import sys
 import os
 from collections import Iterator
+from datetime import datetime
 import pytest
 
 import datashape
 from datashape import dshape
 
-from blaze import Table, resource
+from blaze import Table, resource, into
 from blaze.compatibility import min_python_version, xfail
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
-from blaze.utils import filetext
+from blaze.utils import filetext, tmpfile
 from blaze.data.utils import tuplify
 from blaze.data.csv import drop, has_header, discover_dialect
 from dynd import nd
@@ -378,6 +379,37 @@ class TestCSV(unittest.TestCase):
     @xfail(raises=ValueError, reason='s3 resource function not implemented')
     def test_repr_hdma(self):
         assert repr(Table(CSV(resource('s3://hdma-small.csv'))))
+
+
+@pytest.yield_fixture
+def date_data():
+    data = [('Alice', 100.0, datetime(2014, 9, 11, 0, 0, 0, 0)),
+            ('Alice', -200.0, datetime(2014, 9, 10, 0, 0, 0, 0)),
+            ('Bob', 300.0, None)]
+    schema = dshape('{name: string, amount: float32, date: ?datetime}')
+    with tmpfile('.csv') as f:
+        csv = CSV(f, schema=schema, mode='w')
+        csv.extend(data)
+        yield CSV(f, schema=schema, mode='r')
+
+
+def test_subset_with_date(date_data):
+    csv = date_data
+    sub = csv[[0, 1], 'date']
+    expected = [datetime(2014, 9, 11, 0, 0, 0, 0),
+                datetime(2014, 9, 10, 0, 0, 0, 0)]
+    assert into(list, sub) == expected
+
+
+def test_subset_no_date(date_data):
+    csv = date_data
+    sub = csv[:, ['amount', 'name']]
+    expected = [(100.0, 'Alice'),
+                (-200.0, 'Alice'),
+                (300.0, 'Bob')]
+    result = into(list, sub)
+    # import ipdb; ipdb.set_trace()
+    assert result == expected
 
 
 @pytest.yield_fixture
