@@ -39,8 +39,8 @@ by default.
 
 .. code-block:: python
 
-   >>> list(csv)
-   [(1, u'Alice', 100), (2, u'Bob', 200), (3, u'Charlie', 300), (4, u'Denis', 400), (5, u'Edith', 500)]
+   >>> list(csv) #doctest: +SKIP
+   [(1, 'Alice', 100), (2, 'Bob', 200), (3, 'Charlie', 300), (4, 'Denis', 400), (5, 'Edith', 500)]
 
 
 Data descriptors also expose a ``chunks`` method, which also iterates over the
@@ -95,8 +95,8 @@ interfaces.
 
 .. code-block:: python
 
-   >>> list(csv[::2, ['name', 'balance']])
-   [(u'Alice', 100), (u'Charlie', 300), (u'Edith', 500), (u'Georgina', 700)]
+   >>> list(csv[::2, ['name', 'balance']]) #doctest: +SKIP
+   [('Alice', 100), ('Charlie', 300), ('Edith', 500), ('Georgina', 700)]
 
    >>> csv.dynd[2::, ['name', 'balance']]
    nd.array([ ["Charlie", 300],    ["Denis", 400],    ["Edith", 500],
