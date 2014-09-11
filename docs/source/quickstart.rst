@@ -117,9 +117,9 @@ of data
    ...    min=iris.petal_width.min(),     # Minimum of the petal_width column per group
    ...    max=iris.petal_width.max())    # Maximum of the petal_width column per group
               species  max  min
-   0      Iris-setosa  2.5  0.1
-   1  Iris-versicolor  2.5  0.1
-   2   Iris-virginica  2.5  0.1
+   0      Iris-setosa  0.6  0.1
+   1  Iris-versicolor  1.8  1.0
+   2   Iris-virginica  2.5  1.4
 
 Finishing Up
 ~~~~~~~~~~~~

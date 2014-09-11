@@ -40,7 +40,7 @@ by default.
 .. code-block:: python
 
    >>> from __future__ import unicode_literals
-   >>> list(csv)
+   >>> str(list(csv))
    [(1, 'Alice', 100), (2, 'Bob', 200), (3, 'Charlie', 300), (4, 'Denis', 400), (5, 'Edith', 500)]
 
 
