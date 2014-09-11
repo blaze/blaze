@@ -408,7 +408,6 @@ def test_subset_no_date(date_data):
                 (-200.0, 'Alice'),
                 (300.0, 'Bob')]
     result = into(list, sub)
-    # import ipdb; ipdb.set_trace()
     assert result == expected
 
 
