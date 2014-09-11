@@ -146,8 +146,7 @@ Alternatively we build a query to grab a single column
 
 .. code-block:: python
 
-   >>> to_tree(t.species, names={t: 'iris'})
-   {'args': ['iris', 'species'], 'op': 'Column'}
+   >>> b = to_tree(t.species, names={t: 'iris'})
 
 Fully Interactive Python-to-Python Remote work
 ----------------------------------------------
