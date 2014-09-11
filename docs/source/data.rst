@@ -69,8 +69,8 @@ for CSV or ``INSERT`` statements for SQL.
 
 .. code-block:: python
 
-   >>> csv = CSV('examples/data/accounts.csv', mode='a')
-   >>> csv.extend([(6, 'Frank', 600),
+   >>> csv = CSV('examples/data/accounts.csv', mode='a')    # doctest: +SKIP
+   >>> csv.extend([(6, 'Frank', 600),                       # doctest: +SKIP
    ...             (7, 'Georgina', 700)])
 
 
@@ -95,10 +95,10 @@ interfaces.
 
 .. code-block:: python
 
-   >>> list(csv[::2, ['name', 'balance']]) #doctest: +SKIP
+   >>> list(csv[::2, ['name', 'balance']])                  # doctest: +SKIP
    [('Alice', 100), ('Charlie', 300), ('Edith', 500), ('Georgina', 700)]
 
-   >>> csv.dynd[2::, ['name', 'balance']]
+   >>> csv.dynd[2::, ['name', 'balance']]                   # doctest: +SKIP
    nd.array([ ["Charlie", 300],    ["Denis", 400],    ["Edith", 500],
                 ["Frank", 600], ["Georgina", 700]],
             type="var * {name : string, balance : ?int64}")
