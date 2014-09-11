@@ -19,6 +19,7 @@ from blaze.utils import filetext, tmpfile
 from blaze.data.utils import tuplify
 from blaze.data.csv import drop, has_header, discover_dialect
 from dynd import nd
+import numpy as np
 
 osx_py3 = sys.platform == 'darwin' and sys.version_info[0] == 3
 
@@ -193,12 +194,27 @@ class Test_Dialect(unittest.TestCase):
         with open(self.csv_file) as f:
             self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
-    def test_extend_structured(self):
-        with filetext('1,1.0\n2,2.0') as fn:
-            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}',
-                            delimiter=',')
+    def test_extend_structured_newline(self):
+        with filetext('1,1.0\n2,2.0\n') as fn:
+            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
             csv.extend([(3, 3)])
             assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
+
+    def test_extend_structured_no_newline(self):
+        with filetext('1,1.0\n2,2.0') as fn:
+            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
+            csv.extend([(3, 3)])
+            assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
+
+    def test_extend_structured_many_newlines(self):
+        inan = np.array([np.nan]).astype('int32').item()
+        with filetext('1,1.0\n2,2.0\n\n\n\n') as fn:
+            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
+            csv.extend([(3, 3)])
+            result = tuplify(tuple(csv))
+            expected = ((1, 1.0), (2, 2.0), (inan, np.nan), (inan, np.nan),
+                        (inan, np.nan), (3, 3.0))
+            assert np.isclose(result, expected, equal_nan=True).all()
 
     def test_discover_dialect(self):
         s = '1,1\r\n2,2'
