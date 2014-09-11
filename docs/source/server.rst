@@ -139,8 +139,6 @@ Now we use Blaze to generate the query programmatically
    >>> from blaze.server import to_tree
 
    >>> d = to_tree(expr, names={t: 'iris'})
-   >>> d
-   {'args': [{'args': ['iris', 'petal_length'], 'op': 'Column'}], 'op': 'sum'}
 
    >>> query = {'expr': d}
 

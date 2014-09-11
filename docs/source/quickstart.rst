@@ -121,7 +121,6 @@ of data
    1  Iris-versicolor  2.5  0.1
    2   Iris-virginica  2.5  0.1
 
-
 Finishing Up
 ~~~~~~~~~~~~
 
