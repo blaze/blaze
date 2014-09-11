@@ -347,8 +347,6 @@ class CSV(DataDescriptor):
         return np.dtype({'names': names, 'formats': formats})
 
     def _iter(self, usecols=None):
-        from blaze.api.into import numpy_fixlen_strings
-
         # get the date column [(name, type)] pairs
         datecols = list(map(first, get_date_columns(self.schema)))
 
