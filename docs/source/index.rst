@@ -49,6 +49,7 @@ Index
    api
    dev_workflow
    expr-compute-dev
+   examples
 
 Older Versions
 ~~~~~~~~~~~~~~
