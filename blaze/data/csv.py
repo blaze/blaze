@@ -342,8 +342,8 @@ class CSV(DataDescriptor):
         newtypes = [(str(i), get_pandas_dtype(typ)) for i, typ in types_names]
 
         # we only keep those fields that are in dtype
-        formats = list(map(second, sorted(newtypes,
-                                          key=lambda x: names.index(x[0]))))
+        formats = [t for _, t in sorted(newtypes,
+                                        key=lambda x: names.index(x[0]))]
         return np.dtype({'names': names, 'formats': formats})
 
     def _iter(self, usecols=None):
