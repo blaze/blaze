@@ -174,8 +174,6 @@ def keywords(func):
 def assert_allclose(lhs, rhs):
     for tb in map(zip, lhs, rhs):
         for left, right in tb:
-            assert type(left) == type(right)
-
             if isinstance(left, (np.floating, float)):
                 # account for nans
                 assert np.all(np.isclose(left, right, equal_nan=True))
