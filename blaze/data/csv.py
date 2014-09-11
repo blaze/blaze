@@ -74,7 +74,7 @@ def get_dialect(sample, dialect=None, **kwargs):
     if not dialect:
         try:
             dialect = sniffer.sniff(sample)
-        except:
+        except csv.Error:
             dialect = csv.get_dialect('excel')
 
     # Convert dialect to dictionary
