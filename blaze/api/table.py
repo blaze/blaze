@@ -81,7 +81,7 @@ class Table(TableSymbol):
                 types = (dshape[2],) * int(dshape[1])
             if not columns:
                 raise TypeError("Could not infer column names from data. "
-                                "Please specify column names with `column=` "
+                                "Please specify column names with `columns=` "
                                 "keyword")
             if not types:
                 raise TypeError("Could not infer data types from data. "

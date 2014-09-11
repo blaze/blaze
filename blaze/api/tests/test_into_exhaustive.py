@@ -45,10 +45,8 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                              datetime(2002, 12, 25, 0, 0, 1)], dtype='M8[us]')],
                   names=['amount', 'id', 'name', 'timestamp'])
 
-sql = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
+sql = SQL('sqlite:///:memory:', 'accounts', schema=schema)
 sql.extend(L)
-
-sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
 
 data = {list: L,
         Table: Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}'),
@@ -132,7 +130,7 @@ def test_base():
 
 def test_into_empty_sql():
     """ Test all sources into empty SQL database """
-    sources = [v for k, v in data.items() if k not in [list, Collection]]
+    sources = [v for k, v in data.items() if k not in [list]]
     for a in sources:
             sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
             assert normalize(into(sql_empty, a)) == normalize(sql)
@@ -145,7 +143,7 @@ def test_expressions():
 
     for a in sources:
         for b in targets:
-            c = Table(a, "{amount: int64, id: int64, name: string, timestamp: datetime[tz='UTC']}")[['amount', 'id', 'name']]
+            c = Table(a, "{amount: int64, id: int64, name: string, timestamp: datetime}")[['amount', 'id', 'name']]
             assert normalize(into(type(b), c)) == normalize(b)
 
 try:

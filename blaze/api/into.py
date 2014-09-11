@@ -834,7 +834,7 @@ def into(a, b, **kwargs):
     a.extend(b)
     return a
 
-@dispatch(DataDescriptor, (np.ndarray, nd.array, pd.DataFrame))
+@dispatch(DataDescriptor, (np.ndarray, nd.array, pd.DataFrame, Collection))
 def into(a, b, **kwargs):
     a.extend(into(list,b))
     return a
