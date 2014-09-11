@@ -39,8 +39,9 @@ by default.
 
 .. code-block:: python
 
+   >>> from __future__ import unicode_literals
    >>> list(csv)
-   [(1, u'Alice', 100), (2, u'Bob', 200), (3, u'Charlie', 300), (4, u'Denis', 400), (5, u'Edith', 500)]
+   [(1, 'Alice', 100), (2, 'Bob', 200), (3, 'Charlie', 300), (4, 'Denis', 400), (5, 'Edith', 500)]
 
 
 Data descriptors also expose a ``chunks`` method, which also iterates over the
