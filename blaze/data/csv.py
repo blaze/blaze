@@ -7,7 +7,7 @@ import gzip
 from functools import partial
 
 from multipledispatch import dispatch
-from cytoolz import partition_all, merge, keyfilter, compose, first, second
+from cytoolz import partition_all, merge, keyfilter, compose, first
 
 import numpy as np
 import pandas as pd
@@ -347,6 +347,7 @@ class CSV(DataDescriptor):
         return np.dtype({'names': names, 'formats': formats})
 
     def _iter(self, usecols=None):
+
         # get the date column [(name, type)] pairs
         datecols = list(map(first, get_date_columns(self.schema)))
 
@@ -360,28 +361,31 @@ class CSV(DataDescriptor):
 
         # pop one off the iterator
         initial = next(iter(reader))
+
+        # get our names and initial dtypes for later inference
         if isinstance(initial, pd.Series):
             names = [str(initial.name)]
             formats = [initial.dtype]
-            slicer = slice(None),
         else:
             if usecols is None:
-                index = usecols = slice(None)
+                index = slice(None)
             else:
                 index = initial.columns.get_indexer(usecols)
             names = list(map(str, initial.columns[index]))
             formats = initial.dtypes[index].tolist()
-            slicer = slice(None), usecols
 
         initial_dtype = np.dtype({'names': names, 'formats': formats})
 
         # what dtype do we actually want to see when we read
         streaming_dtype = self.get_streaming_dtype(initial_dtype)
 
-        # everything must ultimately be a list
+        # everything must ultimately be a list of tuples
         m = partial(bz.into, list)
-        slicerf = lambda x: x.loc[slicer].fillna('').convert_objects(
-            convert_numeric=True)
+
+        slicerf = lambda x: x.fillna('').convert_objects(convert_numeric=True)
+
+        if isinstance(initial, pd.Series):
+            streaming_dtype = streaming_dtype[first(streaming_dtype.names)]
 
         if streaming_dtype != initial_dtype:
             # we don't have the desired type so jump through hoops with
@@ -392,14 +396,13 @@ class CSV(DataDescriptor):
                 try:
                     r = r.to_records(index=False)
                 except AttributeError:
-                    # series doesn't allow struct dtypes
+                    # We have a series
                     r = r.values
-                    dtype = first(first(dtype.fields.values()))
                 return m(r.astype(dtype))
         else:
             mapper = compose(m, slicerf)
 
-        # convert our initial to a list
+        # convert our initial NDFrame to a list
         return it.chain(mapper(initial),
                         it.chain.from_iterable(map(mapper, reader)))
 
