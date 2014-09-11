@@ -4,6 +4,7 @@ import sys
 import itertools as it
 import os
 import gzip
+import io
 from functools import partial
 
 from multipledispatch import dispatch
@@ -406,15 +407,63 @@ class CSV(DataDescriptor):
         return it.chain(mapper(initial),
                         it.chain.from_iterable(map(mapper, reader)))
 
+    def last_char(self):
+        r"""Get the last character of the file.
+
+        Warning
+        -------
+        * This shouldn't be used when self.path is already open.
+
+        Notes
+        -----
+        Blaze's CSV data descriptor differs from both pandas' (to_csv) and
+        python's (csv.writer.writerow(s)) CSV writing tools. Both of these
+        libraries assume a newline at the end of the file when appending and are
+        not robust to data that may or may not have a newline at the end of the
+        file.
+
+        In our case we want users to be able to make multiple calls to extend
+        without having to worry about this annoying detail, like this:
+
+        ::
+
+            a.extend(np.ndarray)
+            a.extend(tables.Table)
+            a.extend(pd.DataFrame)
+
+
+        Another way to put it is calling extend on this
+
+            a,b\n1,2\n
+
+        and this
+
+            a,b\n1,2
+
+        should do the same thing, thus the need to know the last character in
+        the file.
+        """
+        if not os.path.exists(self.path) or not os.path.getsize(self.path):
+            return b'\n'
+
+        f = self.open(self.path, mode='rb')
+
+        try:
+            f.seek(-1, io.SEEK_END)
+            return f.read(1)
+        finally:
+            f.close()
+
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
         dialect = keyfilter(to_csv_kwargs.__contains__, self.dialect)
 
+        should_write_newline = self.last_char() != b'\n'
         f = self.open(self.path, mode)
 
         try:
             # we have data in the file, append a newline
-            if os.path.getsize(self.path):
+            if should_write_newline:
                 f.write('\n')
 
             for df in map(partial(bz.into, pd.DataFrame),
