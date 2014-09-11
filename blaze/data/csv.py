@@ -67,15 +67,15 @@ def has_header(sample, encoding=sys.getdefaultencoding()):
 
 
 def get_dialect(sample, dialect=None, **kwargs):
-    if isinstance(dialect, compatibility._strtypes):
+    try:
         dialect = csv.get_dialect(dialect)
-
-    sniffer = csv.Sniffer()
-    if not dialect:
+    except csv.Error:
         try:
-            dialect = sniffer.sniff(sample)
+            dialect = csv.Sniffer().sniff(sample)
         except csv.Error:
             dialect = csv.excel
+
+    assert dialect is not None
 
     # Convert dialect to dictionary
     dialect = dict((key, getattr(dialect, key))
