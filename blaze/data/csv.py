@@ -366,9 +366,11 @@ class CSV(DataDescriptor):
             slicer = slice(None),
         else:
             if usecols is None:
-                usecols = slice(None)
-            names = list(map(str, initial.loc[:, usecols].columns))
-            formats = initial.loc[:, usecols].dtypes.tolist()
+                index = usecols = slice(None)
+            else:
+                index = initial.columns.get_indexer(usecols)
+            names = list(map(str, initial.columns[index]))
+            formats = initial.dtypes[index].tolist()
             slicer = slice(None), usecols
 
         initial_dtype = np.dtype({'names': names, 'formats': formats})
