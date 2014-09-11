@@ -4,11 +4,10 @@ import sys
 import itertools as it
 import os
 import gzip
-from operator import itemgetter, methodcaller
 from functools import partial
 
 from multipledispatch import dispatch
-from cytoolz import partition_all, merge, keyfilter, compose, first
+from cytoolz import partition_all, merge, keyfilter, compose, first, second
 
 import numpy as np
 import pandas as pd
@@ -17,19 +16,19 @@ from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 import datashape as ds
 
 import blaze as bz
-from blaze.data.utils import tupleit
 from .core import DataDescriptor
 from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import map, zip, PY2
-from .utils import ordered_index
+from .utils import ordered_index, listpack
 
 import csv
 
 __all__ = ['CSV', 'drop']
 
 
+numtypes = frozenset(ds.integral.types) | frozenset(ds.floating.types)
 na_values = frozenset(filter(None, pd.io.parsers._NA_VALUES))
 
 
@@ -151,6 +150,16 @@ def get_date_columns(schema):
     else:
         return [(name, typ) for name, typ in zip(names, types)
                 if isdatelike(typ)]
+
+
+def get_pandas_dtype(typ):
+    # ugh conform to pandas "everything empty is a float or object",
+    # otherwise we get '' trying to be an integer
+    if isinstance(typ, Option):
+        if typ.ty in numtypes:
+            return np.dtype('f8')
+        return typ.ty.to_numpy_dtype()
+    return typ.to_numpy_dtype()
 
 
 class CSV(DataDescriptor):
@@ -299,70 +308,95 @@ class CSV(DataDescriptor):
         if isinstance(key, tuple):
             assert len(key) == 2
             rows, cols = key
-            result = self.get_py(rows)
-
-            if isinstance(cols, list):
-                getter = compose(tupleit, itemgetter(*cols))
-            else:
-                getter = itemgetter(cols)
-
-            if isinstance(rows, (list, slice)):
-                return map(getter, result)
-            return getter(result)
-
-        reader = self._iter()
-        if isinstance(key, compatibility._inttypes):
-            line = nth(key, reader)
-            try:
-                return next(line)
-            except TypeError:
-                return line
-        elif isinstance(key, list):
-            return nth_list(key, reader)
-        elif isinstance(key, slice):
-            return it.islice(reader, key.start, key.stop, key.step)
+            usecols = ordered_index(cols, self.schema)
+            usecols = None if isinstance(usecols, slice) else listpack(usecols)
         else:
-            raise IndexError("key %r is not valid" % key)
+            rows = key
+            usecols = None
+
+        reader = self._iter(usecols=usecols)
+        if isinstance(rows, compatibility._inttypes):
+            line = nth(rows, reader)
+            try:
+                return next(line).item()
+            except TypeError:
+                try:
+                    return line.item()
+                except AttributeError:
+                    return line
+        elif isinstance(rows, list):
+            return nth_list(rows, reader)
+        elif isinstance(rows, slice):
+            return it.islice(reader, rows.start, rows.stop, rows.step)
+        else:
+            raise IndexError("key %r is not valid" % rows)
+
 
     def get_streaming_dtype(self, dtype):
-        date_pairs = get_date_columns(self.schema)
-
-        if not date_pairs:
+        if not isinstance(self.schema.measure, Record):
             return dtype
 
-        typemap = dict((k, ds.to_numpy_dtype(getattr(v, 'ty', v)))
-                       for k, v in date_pairs)
-        formats = [typemap.get(name, dtype[str(i)])
-                   for i, name in enumerate(self.schema.measure.names)]
-        return np.dtype({'names': dtype.names, 'formats': formats})
+        names = dtype.names
+        types_names = ((i, t) for i, t in enumerate(self.schema.measure.types)
+                       if str(i) in names)
+        newtypes = [(str(i), get_pandas_dtype(typ)) for i, typ in types_names]
 
-    def _iter(self):
+        # we only keep those fields that are in dtype
+        formats = list(map(second, sorted(newtypes,
+                                          key=lambda x: names.index(x[0]))))
+        return np.dtype({'names': names, 'formats': formats})
+
+    def _iter(self, usecols=None):
+        from blaze.api.into import numpy_fixlen_strings
+
         # get the date column [(name, type)] pairs
         datecols = list(map(first, get_date_columns(self.schema)))
 
         # figure out which ones pandas needs to parse
         parse_dates = ordered_index(datecols, self.schema)
-        reader = self.reader(chunksize=self.chunksize, parse_dates=parse_dates)
+        if usecols is not None:
+            parse_dates = [d for d in parse_dates if d in set(usecols)]
+
+        reader = self.reader(chunksize=self.chunksize, parse_dates=parse_dates,
+                             usecols=usecols, squeeze=True)
 
         # pop one off the iterator
         initial = next(iter(reader))
-        initial_dtype = np.dtype({'names': list(map(str, initial.columns)),
-                                  'formats': initial.dtypes.values.tolist()})
+        if isinstance(initial, pd.Series):
+            names = [str(initial.name)]
+            formats = [initial.dtype]
+            slicer = slice(None),
+        else:
+            if usecols is None:
+                usecols = slice(None)
+            names = list(map(str, initial.columns[usecols]))
+            formats = initial.dtypes.values[usecols].tolist()
+            slicer = slice(None), usecols
 
-        # what dtype do we actually want to see
+        initial_dtype = np.dtype({'names': names, 'formats': formats})
+
+        # what dtype do we actually want to see when we read
         streaming_dtype = self.get_streaming_dtype(initial_dtype)
 
         # everything must ultimately be a list
-        mapper = partial(bz.into, list)
+        m = partial(bz.into, list)
+        slicerf = lambda x: x.iloc[slicer]
 
         if streaming_dtype != initial_dtype:
             # we don't have the desired type so jump through hoops with
             # to_records -> astype(desired dtype) -> listify
-            mapper = compose(mapper,
-                             # astype copies by default, try not to
-                             methodcaller('astype', dtype=streaming_dtype,
-                                          copy=False),
-                             methodcaller('to_records', index=False))
+            def mapper(x, dtype=streaming_dtype):
+                r = slicerf(x)
+
+                try:
+                    r = r.to_records(index=False)
+                except AttributeError:
+                    # series doesn't allow struct dtypes
+                    r = r.values
+                    dtype = first(first(dtype.fields.values()))
+                return m(r.astype(dtype))
+        else:
+            mapper = compose(m, slicerf)
 
         # convert our initial to a list
         return it.chain(mapper(initial),
