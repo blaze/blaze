@@ -20,7 +20,7 @@ def into(a, b, **kwargs):
     return f(a, b, **kwargs)
 
 @dispatch((tuple, set, list), (ctable, carray))
-def into(o, b):
+def into(o, b, **kwargs):
     return into(o, into(np.ndarray(0), b))
 
 
@@ -70,7 +70,7 @@ def into(a, b, **kwargs):
 
 
 @dispatch(DataFrame, ctable)
-def into(a, b, columns=None, schema=None):
+def into(a, b, columns=None, schema=None, **kwargs):
     if not columns and schema:
         columns = dshape(schema)[0].names
     return DataFrame.from_items(((column, b[column][:]) for column in

@@ -182,8 +182,8 @@ def into(a, b, **kwargs):
 
 
 @dispatch(object, TableExpr)
-def into(a, b):
-    return into(a, compute(b))
+def into(a, b, **kwargs):
+    return into(a, compute(b), dshape=b.dshape, schema=b.schema, **kwargs)
 
 
 @dispatch(DataFrame, TableExpr)
