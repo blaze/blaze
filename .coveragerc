@@ -3,3 +3,5 @@ omit =
     blaze/tests/test*
     blaze/*/tests/test*
     blaze/compatibility.py
+    blaze/spark.py
+    blaze/compute/spark.py
