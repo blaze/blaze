@@ -1,9 +1,9 @@
-from datashape import *
-from blaze.sparksql import sparksql_to_ds, ds_to_sparksql
 
 import pytest
 pyspark = pytest.importorskip('pyspark')
 from pyspark.sql import *
+from blaze.sparksql import sparksql_to_ds, ds_to_sparksql
+from datashape import *
 
 def test_sparksql_to_ds():
     assert sparksql_to_ds(IntegerType()) == int64
