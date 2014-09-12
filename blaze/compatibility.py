@@ -55,6 +55,15 @@ else:
     basestring = str
 
 
+import io
+
+
+try:
+    SEEK_END = io.SEEK_END
+except AttributeError:
+    SEEK_END = 2
+
+
 try:
     import pytest
     skipif = pytest.mark.skipif

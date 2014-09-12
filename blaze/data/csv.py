@@ -4,7 +4,6 @@ import sys
 import itertools as it
 import os
 import gzip
-import io
 from functools import partial
 
 from multipledispatch import dispatch
@@ -21,6 +20,7 @@ from .core import DataDescriptor
 from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
+from ..compatibility import SEEK_END
 from ..compatibility import map, zip, PY2
 from .utils import ordered_index, listpack
 
@@ -449,7 +449,7 @@ class CSV(DataDescriptor):
         f = self.open(self.path, mode='rb')
 
         try:
-            f.seek(-1, io.SEEK_END)
+            f.seek(-1, SEEK_END)
             return f.read(1)
         finally:
             f.close()
