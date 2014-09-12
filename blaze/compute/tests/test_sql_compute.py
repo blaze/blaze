@@ -151,6 +151,11 @@ def test_count_on_table():
     SELECT count(accounts.id) as tbl_row_count
     FROM accounts""")
 
+    assert normalize(str(select(compute(t[t.amount > 0].count(), s)))) == \
+    normalize("""
+    SELECT count(accounts.id) as tbl_row_count
+    FROM accounts
+    WHERE accounts.amount > """)
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -447,3 +452,9 @@ def test_like():
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
+def test_reductions_on_complex_selections():
+    assert normalize(select(compute(t[t.amount > 0].id.sum(), s))) == """
+    SELECT sum(accounts.id)
+    FROM accounts
+    WHERE accounts.amount > 0 """)
