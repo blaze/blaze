@@ -332,7 +332,6 @@ class CSV(DataDescriptor):
         else:
             raise IndexError("key %r is not valid" % rows)
 
-
     def get_streaming_dtype(self, dtype):
         if not isinstance(self.schema.measure, Record):
             return dtype
@@ -406,6 +405,8 @@ class CSV(DataDescriptor):
         # convert our initial NDFrame to a list
         return it.chain(mapper(initial),
                         it.chain.from_iterable(map(mapper, reader)))
+
+    __iter__ = _iter
 
     def last_char(self):
         r"""Get the last character of the file.
