@@ -257,9 +257,9 @@ def test_DataFrame_CSV():
 def test_into_tables_path(good_csv, out_hdf5):
     import tables as tb
     tble = into(tb.Table, good_csv, filename=out_hdf5, datapath='foo')
-    assert len(tble) == 3
-
-    tble.close()
+    n = len(tble)
+    tble._v_file.close()
+    assert n == 3
 
 
 def test_into_csv_blaze_table(good_csv):
@@ -273,7 +273,7 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     tble = into(tb.Table, bad_csv_df, filename=out_hdf5, datapath='foo',
                 error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
-    tble.close()
+    tble._v_file.close()
 
     # Check that it's the same as straight from the CSV
     df_from_csv = into(DataFrame, bad_csv_df, error_bad_lines=False)
