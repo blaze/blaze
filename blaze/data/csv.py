@@ -412,15 +412,16 @@ class CSV(DataDescriptor):
 
         Warning
         -------
-        * This shouldn't be used when self.path is already open.
+        * This method should not be used when the file :attr:`~blaze.CSV.path`
+          is already open.
 
         Notes
         -----
-        Blaze's CSV data descriptor differs from both pandas' (to_csv) and
-        python's (csv.writer.writerow(s)) CSV writing tools. Both of these
-        libraries assume a newline at the end of the file when appending and are
-        not robust to data that may or may not have a newline at the end of the
-        file.
+        Blaze's CSV data descriptor :meth:`~blaze.CSV.extend` method differs
+        from both pandas' (to_csv) and python's (csv.writer.writerow(s)) CSV
+        writing tools. Both of these libraries assume a newline at the end of
+        the file when appending and are not robust to data that may or may not
+        have a newline at the end of the file.
 
         In our case we want users to be able to make multiple calls to extend
         without having to worry about this annoying detail, like this:
@@ -432,7 +433,7 @@ class CSV(DataDescriptor):
             a.extend(pd.DataFrame)
 
 
-        Another way to put it is calling extend on this
+        Another way to put it is calling :meth:`~blaze.CSV.extend` on this
 
             a,b\n1,2\n
 
