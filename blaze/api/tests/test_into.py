@@ -105,8 +105,7 @@ def good_csv():
             f.write("1,Alice,az\n")
             f.write("2,Bob,bl\n")
             f.write("3,Charlie,cz\n")
-            f.flush()
-            yield f
+        yield filename
 
 
 @pytest.yield_fixture
@@ -120,8 +119,7 @@ def bad_csv_df():
             for i in range(100):
                 badfile.write("%d,badguy,zz\n" % i)
             badfile.write("4,Dan,gb,extra,extra\n")
-            badfile.flush()
-            yield badfile
+        yield filename
 
 
 @pytest.yield_fixture
@@ -168,12 +166,10 @@ def test_pandas_numpy(data):
 
 
 def test_pandas_seq():
-    assert str(into(DataFrame, [1, 2])) == \
-            str(DataFrame([1, 2]))
-    assert str(into(DataFrame, (1, 2))) == \
-            str(DataFrame([1, 2]))
-    assert str(into(DataFrame(columns=['a', 'b']), [(1, 2), (3, 4)])) == \
-            str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b']))
+    assert str(into(DataFrame, [1, 2])) == str(DataFrame([1, 2]))
+    assert str(into(DataFrame, (1, 2))) == str(DataFrame([1, 2]))
+    assert (str(into(DataFrame(columns=['a', 'b']), [(1, 2), (3, 4)])) ==
+            str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b'])))
 
 
 def test_pandas_pandas(data):
@@ -260,29 +256,26 @@ def test_DataFrame_CSV():
 
 def test_into_tables_path(good_csv, out_hdf5):
     import tables as tb
-    tble = into(tb.Table, good_csv.name, filename=out_hdf5, datapath='foo')
+    tble = into(tb.Table, good_csv, filename=out_hdf5, datapath='foo')
     assert len(tble) == 3
 
     tble.close()
 
 
-@pytest.mark.xfail(raises=(TypeError, AttributeError),
-                   reason='Pandas does not like extra newline')
 def test_into_csv_blaze_table(good_csv):
-    csv = CSV(good_csv.name)
-    t = Table(csv)
+    t = Table(CSV(good_csv))
     df = into(pd.DataFrame, t[['userid', 'text']])
     assert list(df.columns) == ['userid', 'text']
 
 
 def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     import tables as tb
-    tble = into(tb.Table, bad_csv_df.name, filename=out_hdf5, datapath='foo',
+    tble = into(tb.Table, bad_csv_df, filename=out_hdf5, datapath='foo',
                 error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
 
     # Check that it's the same as straight from the CSV
-    df_from_csv = into(DataFrame, bad_csv_df.name, error_bad_lines=False)
+    df_from_csv = into(DataFrame, bad_csv_df, error_bad_lines=False)
     assert len(df_from_csv) == len(df_from_tbl)
     assert list(df_from_csv.columns) == list(df_from_tbl.columns)
     assert (df_from_csv == df_from_tbl).all().all()
