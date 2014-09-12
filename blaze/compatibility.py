@@ -14,7 +14,6 @@ else:
     import __builtin__ as builtins
     apply = apply
 
-import itertools
 
 # Portions of this taken from the six library, licensed as follows.
 #
