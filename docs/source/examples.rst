@@ -64,7 +64,7 @@ Split-Apply-Combine
    8            4.4          2.9           1.4          0.2  Iris-setosa   
    9            4.9          3.1           1.5          0.1  Iris-setosa   
    10           5.4          3.7           1.5          0.2  Iris-setosa   
-   
+
        petal_ratio  
    0      7.000000  
    1      7.000000  
