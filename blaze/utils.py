@@ -131,7 +131,7 @@ def filetexts(d, open=open):
 @contextmanager
 def tmpfile(extension=''):
     extension = '.' + extension.lstrip('.')
-    _, filename = tempfile.mkstemp(extension)
+    handle, filename = tempfile.mkstemp(extension)
 
     try:
         yield filename
@@ -139,8 +139,10 @@ def tmpfile(extension=''):
         try:
             if os.path.exists(filename):
                 os.remove(filename)
-        except Exception:  # Sometimes Windows can't close files
-            pass
+        except OSError:  # Sometimes Windows can't close files
+            if os.name == 'nt':
+                os.close(handle)
+                os.remove(filename)
 
 
 def raises(err, lamda):
