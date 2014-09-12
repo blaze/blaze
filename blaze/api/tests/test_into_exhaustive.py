@@ -6,11 +6,9 @@ import numpy as np
 import tables as tb
 from pandas import DataFrame
 
-from blaze.api.into import into, discover
+from blaze.api.into import into
 from blaze.api.into import degrade_numpy_dtype_to_python
 from blaze.utils import tmpfile
-from datashape import dshape
-import blaze
 from blaze import Table, TableExpr, TableSymbol, compute, PyTables
 import bcolz
 from blaze.data import CSV
@@ -18,7 +16,6 @@ from blaze.sql import SQL
 from datetime import datetime
 from toolz import pluck
 import os
-from blaze.compatibility import xfail
 
 dirname = os.path.dirname(__file__)
 
@@ -87,10 +84,10 @@ if pymongo:
         db = pymongo.MongoClient().db
 
         db.test.drop()
-        data[Collection] = into(db.test, df)
+        data.append((Collection, into(db.test, df)))
 
         db.no_date.drop()
-        no_date[Collection] = into(db.no_date, no_date[DataFrame])
+        no_date.append((Collection, into(db.no_date, dict(no_date)[DataFrame])))
     except pymongo.errors.ConnectionFailure:
         pymongo = None
         Collection = None
