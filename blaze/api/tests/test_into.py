@@ -266,7 +266,8 @@ def test_into_tables_path(good_csv, out_hdf5):
     tble.close()
 
 
-@pytest.mark.xfail(raises=TypeError)
+@pytest.mark.xfail(raises=(TypeError, AttributeError),
+                   reason='Pandas does not like extra newline')
 def test_into_csv_blaze_table(good_csv):
     csv = CSV(good_csv.name)
     t = Table(csv)
