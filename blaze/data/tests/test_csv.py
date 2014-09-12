@@ -11,11 +11,11 @@ import pytest
 import datashape
 from datashape import dshape
 
-from blaze import Table, resource, into
-from blaze.compatibility import min_python_version, xfail
+from blaze import Table, into
+from blaze.compatibility import min_python_version
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
-from blaze.utils import filetext, tmpfile
+from blaze.utils import filetext, tmpfile, example
 from blaze.data.utils import tuplify
 from blaze.data.csv import drop, has_header, discover_dialect
 from dynd import nd
@@ -392,9 +392,8 @@ class TestCSV(unittest.TestCase):
         dd = CSV(self.csv_file, schema=self.schema)
         self.assertEqual(tuplify(dd[1::2]), self.data[1::2])
 
-    @xfail(raises=ValueError, reason='s3 resource function not implemented')
     def test_repr_hdma(self):
-        assert repr(Table(CSV(resource('s3://hdma-small.csv'))))
+        assert repr(Table(CSV(example('hmda-small.csv'))))
 
 
 @pytest.yield_fixture
