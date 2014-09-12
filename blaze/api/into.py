@@ -3,10 +3,10 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 import datashape
 import sys
-from datashape import dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype, from_numpy
 import toolz
-from toolz import concat, partition_all, valmap
-from cytoolz import pluck
+from toolz import concat, partition_all, valmap, first, merge
+from cytoolz import pluck, valfilter
 import copy
 from datetime import datetime
 from numbers import Number
@@ -23,6 +23,7 @@ from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes
 from ..utils import keywords
+from ..data.utils import sort_dtype_items
 
 
 __all__ = ['into', 'discover']
@@ -67,19 +68,19 @@ except ImportError:
     carray = type(None)
 
 try:
-    import pymongo
     from pymongo.collection import Collection
 except ImportError:
     Collection = type(None)
 
 try:
-    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel, PyTables
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
     JSON = type(None)
     JSON_STREAMING = type(None)
     Excel = type(None)
+    PyTables = type(None)
 
 @dispatch(type, object)
 def into(a, b, **kwargs):
@@ -209,7 +210,22 @@ def into(a, t):
 
 @dispatch(np.ndarray, tables.Table)
 def into(_, t):
-    return t[:]
+    res = t[:]
+    dt_fields = [k for k, v in t.coltypes.items() if v == 'time64']
+
+    if not dt_fields:
+        return res
+
+    for f in dt_fields:
+        # pytables is in seconds since epoch
+        res[f] *= 1e6
+
+    fields = []
+    for name, dtype in sort_dtype_items(t.coldtypes.items(), t.colnames):
+        typ = getattr(t.cols, name).type
+        fields.append((name, {'time64': 'datetime64[us]',
+                              'string': dtype.str}.get(typ, typ)))
+    return res.astype(np.dtype(fields))
 
 
 def numpy_fixlen_strings(x):
@@ -224,25 +240,49 @@ def numpy_fixlen_strings(x):
           dtype=[('id', '<i8'), ('name', 'S5'), ('amount', '<i8')])
     """
     if "'O'" in str(x.dtype):
-        dt = [(n, "S%d" % max(map(len, x[n])) if x.dtype[n] == 'O' else x.dtype[n])
+        dt = [(n, "S%d" % max(map(len, x[n]))
+               if x.dtype[n] == 'O' else x.dtype[n])
                 for n in x.dtype.names]
         x = x.astype(dt)
     return x
 
-@dispatch(tables.Table, np.ndarray)
-def into(_, x, filename=None, datapath=None, **kwargs):
-    if filename is None or datapath is None:
-        raise ValueError("Must specify filename for new PyTables file. \n"
-        "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
 
-    f = tables.open_file(filename, 'w')
-    t = f.create_table('/', datapath, obj=numpy_fixlen_strings(x))
+def typehint(x, typedict):
+    """Replace the dtypes in `x` keyed by `typedict` with the dtypes in
+    `typedict`.
+    """
+    lhs = dict(zip(x.dtype.fields.keys(), map(first, x.dtype.fields.values())))
+    dtype_list = list(merge(lhs, typedict).items())
+    return np.dtype(sort_dtype_items(dtype_list, x.dtype.names))
+
+
+@dispatch(tables.Table, np.ndarray)
+def into(t, x, **kwargs):
+    dt_types = dict((k, 'datetime64[us]') for k, (v, _) in
+                    x.dtype.fields.items() if issubclass(v.type, np.datetime64))
+    x = numpy_fixlen_strings(x)
+    x = x.astype(typehint(x, dt_types))
+    x = x.astype(typehint(x, valmap(lambda x: 'f8', dt_types)))
+    for name in dt_types:
+        x[name] /= 1e6
+
+    t.append(x)
     return t
 
 
-@dispatch(tables.Table, pd.DataFrame)
-def into(a, df, **kwargs):
-    return into(a, into(np.ndarray, df), **kwargs)
+@dispatch(tables.node.MetaNode, np.ndarray)
+def into(table, x, filename=None, datapath=None, **kwargs):
+    """tables.node.MetaNode == type(tables.Table)
+    """
+    x = numpy_fixlen_strings(x)
+    t = PyTables(filename, datapath=datapath,
+                 dshape=from_numpy(x.shape, x.dtype))
+    return into(t, x, **kwargs)
+
+
+@dispatch(tables.Table, (pd.DataFrame, CSV))
+def into(a, b, **kwargs):
+    return into(a, into(np.ndarray, b), **kwargs)
 
 
 @dispatch(tables.Table, _strtypes)
@@ -250,12 +290,14 @@ def into(a, b, **kwargs):
     kw = dict(kwargs)
     if 'output_path' in kw:
         del kw['output_path']
-    return into(a, resource(b, **kw), **kwargs)
+    r = resource(b, **kw)
+    return into(a, r, **kwargs)
 
 
 @dispatch(list, pd.DataFrame)
 def into(_, df):
     return into([], into(np.ndarray(0), df))
+
 
 @dispatch(pd.DataFrame, nd.array)
 def into(a, b):
