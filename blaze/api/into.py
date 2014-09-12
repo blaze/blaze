@@ -729,19 +729,18 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     dialect = b.dialect.copy()
     del dialect['lineterminator']
-    dates = [i for i, typ in enumerate(b.schema[0].types)
-               if 'date' in str(typ)]
+
     schema = b.schema
     if '?' in str(schema):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
 
-    datenames = [name for name in dtypes
-                      if np.issubdtype(dtypes[name], np.datetime64)]
+    datenames = [name for name in dtypes if np.issubdtype(dtypes[name],
+                                                          np.datetime64)]
 
     dtypes = dict((k, v) for k, v in dtypes.items()
-                         if not np.issubdtype(v, np.datetime64))
+                  if not np.issubdtype(v, np.datetime64))
 
     if 'strict' in dialect:
         del dialect['strict']
