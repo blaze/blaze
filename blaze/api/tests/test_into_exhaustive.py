@@ -33,7 +33,7 @@ x = np.array(list(map(tuple, L)),
                     ('name', 'U7'), ('timestamp', 'M8[us]')])
 
 schema = '{amount: int64, id: int64, name: string, timestamp: datetime}'
-sql_schema = "{amount: int64, id: int64, name: string, timestamp: datetime[tz='UTC']}"
+sql_schema = '{amount: int64, id: int64, name: string, timestamp: datetime[tz="UTC"]}'
 
 arr = nd.array(L, dtype=schema)
 

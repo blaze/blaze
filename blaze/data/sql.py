@@ -35,7 +35,6 @@ types = {'int64': sql.types.BigInteger,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
          'bool': sql.types.Boolean,
-         "datetime[tz='UTC']": sql.types.DateTime(timezone=True)
 #         ??: sql.types.LargeBinary,
 #         Decimal: sql.types.Numeric,
 #         ??: sql.types.PickleType,
@@ -132,6 +131,11 @@ def dshape_to_alchemy(dshape):
             return sql.types.Unicode(length=dshape[0].fixlen)
         if 'A' in dshape.encoding:
             return sql.types.String(length=dshape[0].fixlen)
+    if isinstance(dshape, datashape.DateTime):
+        if dshape.tz:
+            return sql.types.DateTime(timezone=True)
+        else:
+            return sql.types.DateTime(timezone=False)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
