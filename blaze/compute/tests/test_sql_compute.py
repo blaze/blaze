@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import pytest
 from blaze.compute.sql import compute, computefull, select
 from blaze import SQL
 from blaze.expr import *
@@ -29,7 +28,7 @@ sbig = sa.Table('accountsbig', metadata,
              )
 
 def normalize(s):
-    return ' '.join(s.strip().split())
+    return ' '.join(s.strip().split()).lower()
 
 def test_table():
     result = str(computefull(t, s))
@@ -147,6 +146,12 @@ def test_reductions():
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
 
+def test_count_on_table():
+    assert normalize(str(select(compute(t.count(), s)))) == normalize("""
+    SELECT count(accounts.id) as tbl_row_count
+    FROM accounts""")
+
+
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
 
@@ -187,11 +192,15 @@ def test_by_head():
     expr = by(t2['name'], t2['amount'].sum())
     result = compute(expr, s)
     s2 = select(s).limit(100)
-    expected = sa.select([s2.c.name,
-                          sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
-                         ).group_by(s2.c.name)
-
-    assert str(result) == str(expected)
+    # expected = sa.select([s2.c.name,
+    #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
+    #                      ).group_by(s2.c.name)
+    expected = """
+    SELECT accounts.name, sum(accounts.amount) as amount_sum
+    FROM accounts
+    GROUP by accounts.name
+    LIMIT :param_1"""
+    assert normalize(str(result)) == normalize(str(expected))
 
 
 def test_by_two():
@@ -216,6 +225,20 @@ def test_by_three():
                     .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
+
+def test_by_summary_clean():
+    expr = by(t.name, min=t.amount.min(), max=t.amount.max())
+    result = compute(expr, s)
+
+    expected = """
+    SELECT accounts.name, max(accounts.amount) AS max, min(accounts.amount) AS min
+    FROM accounts
+    GROUP BY accounts.name
+    """
+
+    assert normalize(str(result)) == normalize(expected)
+
+
 
 
 def test_join_projection():
@@ -381,3 +404,46 @@ def test_summary_by():
     assert 'count(accounts.id) as b' in result.lower()
 
     assert 'group by accounts.name' in result.lower()
+
+
+def test_clean_join():
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+    friends = sa.Table('friends', metadata,
+             sa.Column('a', sa.Integer),
+             sa.Column('b', sa.Integer),
+             )
+
+    tcity = TableSymbol('city', discover(city))
+    tfriends = TableSymbol('friends', discover(friends))
+    tname = TableSymbol('name', discover(name))
+
+    ns = {tname: name, tfriends: friends, tcity: city}
+
+    expr = join(tfriends, tname, 'a', 'id')
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT friends.a, friends.b, name.name
+    FROM friends JOIN name on friends.a = name.id""")
+
+
+    expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT a, b, name, place.city, place.country
+    FROM (SELECT friends.a as a, friends.b as b, name.name as name
+          FROM friends JOIN name ON friends.a = name.id)
+    JOIN place on friends.a = place.id""")
+
+
+def test_like():
+    expr = t.like(name='Alice*')
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name LIKE :name_1""")

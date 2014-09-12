@@ -27,7 +27,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary'''.split()
+projection union columnwise Summary summary Like like'''.split()
 
 
 class TableExpr(Expr):
@@ -150,6 +150,9 @@ class TableExpr(Expr):
 
     def max(self):
         return max(self)
+
+    def like(self, **kwargs):
+        return like(self, **kwargs)
 
     @property
     def iscolumn(self):
@@ -656,10 +659,10 @@ class Join(TableExpr):
 
     @property
     def on_right(self):
-        if isinstance(self._on_left, tuple):
-            return list(self._on_left)
+        if isinstance(self._on_right, tuple):
+            return list(self._on_right)
         else:
-            return self._on_left
+            return self._on_right
 
     @property
     def schema(self):
@@ -1374,3 +1377,31 @@ def union(*children):
         raise ValueError("Inconsistent schemas:\n\t%s" %
                             '\n\t'.join(map(str, schemas)))
     return Union(children)
+
+
+class Like(TableExpr):
+    __slots__ = 'child', '_patterns'
+
+    @property
+    def patterns(self):
+        return dict(self._patterns)
+
+    @property
+    def schema(self):
+        return self.child.schema
+
+
+def like(child, **kwargs):
+    """ Filter table by string comparison
+
+    >>> from blaze import TableSymbol, like, compute
+    >>> t = TableSymbol('t', '{name: string, city: string}')
+    >>> expr = like(t, name='Alice*')
+
+    >>> data = [('Alice Smith', 'New York'),
+    ...         ('Bob Jones', 'Chicago'),
+    ...         ('Alice Walker', 'LA')]
+    >>> list(compute(expr, data))
+    [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
+    """
+    return Like(child, tuple(kwargs.items()))

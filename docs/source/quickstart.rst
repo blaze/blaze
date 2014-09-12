@@ -5,7 +5,7 @@ This quickstart is here to show some simple ways to get started created
 and manipulating Blaze Tables. To run these examples, import blaze
 as follows.
 
-.. doctest::
+.. code-block:: python
 
     >>> from blaze import *
 
@@ -15,7 +15,7 @@ Blaze Tables
 Create simple Blaze tables from nested lists/tuples. Blaze will deduce the
 dimensionality and data type to use.
 
-.. doctest::
+.. code-block:: python
 
     >>> t = Table([(1, 'Alice', 100),
     ...            (2, 'Bob', -200),
@@ -32,8 +32,6 @@ dimensionality and data type to use.
     3   4    Denis      400
     4   5    Edith     -500
 
-    [5 rows x 3 columns]
-
 
 Simple Calculations
 ~~~~~~~~~~~~~~~~~~~
@@ -41,7 +39,7 @@ Simple Calculations
 Blaze supports simple computations like column selection and filtering
 with familiar Pandas getitem or attribute syntax.
 
-.. doctest::
+.. code-block:: python
 
    >>> t[t['balance'] < 0]
       id   name  balance
@@ -65,9 +63,9 @@ Stored Data
 Define Blaze Tables directly from storage like CSV or HDF5 files.  Here we
 operate on a CSV file of the traditional `iris dataset`_.
 
-.. doctest::
+.. code-block:: python
 
-   >>> iris = Table(CSV('iris.csv'))
+   >>> iris = Table(CSV('examples/data/iris.csv'))
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -80,19 +78,16 @@ operate on a CSV file of the traditional `iris dataset`_.
    7            5.0          3.4           1.5          0.2  Iris-setosa
    8            4.4          2.9           1.4          0.2  Iris-setosa
    9            4.9          3.1           1.5          0.1  Iris-setosa
-   10           5.4          3.7           1.5          0.2  Iris-setosa
-
    ...
 
 Use remote data like SQL databases or Spark resilient distributed
 data-structures in exactly the same way.  Here we operate on a SQL database
 stored in a `sqlite file`_.
 
-.. doctest::
+.. code-block:: python
 
-   >>> from blaze.sql import *
-   >>> sql = SQL('sqlite:///iris.db', 'iris')
-   >>> iris = Table(SQL)
+   >>> sql = SQL('sqlite:///examples/data/iris.db', 'iris')
+   >>> iris = Table(sql)
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -105,8 +100,6 @@ stored in a `sqlite file`_.
    7            5.0          3.4           1.5          0.2  Iris-setosa
    8            4.4          2.9           1.4          0.2  Iris-setosa
    9            4.9          3.1           1.5          0.1  Iris-setosa
-   10           5.4          3.7           1.5          0.2  Iris-setosa
-
    ...
 
 More Computations
@@ -115,15 +108,15 @@ More Computations
 Common operations like Joins and split-apply-combine are available on any kind
 of data
 
-.. doctest::
+.. code-block:: python
 
    >>> by(iris.species,                # Group by species
-   ...    iris.petal_width.mean())     # Take the mean of the petal_width column
-              species  petal_width
-   0   Iris-virginica        2.026
-   1      Iris-setosa        0.246
-   2  Iris-versicolor        1.326
-
+   ...    min=iris.petal_width.min(),  # Minimum of petal_width per group
+   ...    max=iris.petal_width.max())  # Maximum of petal_width per group
+              species  max  min
+   0      Iris-setosa  0.6  0.1
+   1  Iris-versicolor  1.8  1.0
+   2   Iris-virginica  2.5  1.4
 
 Finishing Up
 ~~~~~~~~~~~~
@@ -132,7 +125,7 @@ Blaze computes only as much as is necessary to present the results on screen.
 Fully evaluate the computation, returning an output similar to the input type
 by calling ``compute``.
 
-.. doctest::
+.. code-block:: python
 
    >>> t[t.balance < 0].name                  # Still a Table Expression
        name
@@ -145,25 +138,21 @@ by calling ``compute``.
 Alternatively use the ``into`` operation to push your output into a suitable
 container type.
 
-.. doctest::
+.. code-block:: python
 
    >>> result = by(iris.species,
    ...             iris.petal_width.mean())
 
-   >>> into(list, result)                     # Push result into a list
-   [(u'Iris-virginica', 2.026),
-    (u'Iris-setosa', 0.2459999999999999),
-    (u'Iris-versicolor', 1.3259999999999998)]
+   >>> result_list = into(list, result)                     # Push result into a list
 
-   >>> from pandas import DataFrame
    >>> into(DataFrame, result)                # Push result into a DataFrame
-              species  petal_width
-   0   Iris-virginica        2.026
-   1      Iris-setosa        0.246
-   2  Iris-versicolor        1.326
+              species  petal_width_mean
+   0      Iris-setosa             0.246
+   1  Iris-versicolor             1.326
+   2   Iris-virginica             2.026
 
-   >>> csv = CSV('output.csv', schema=result.schema)
-   >>> into(csv, result)                      # Write result to CSV file
+   >>> csv = CSV('examples/data/output.csv', schema=result.schema, mode='w')
+   >>> write_to = into(csv, result)                      # Write result to CSV file
 
 .. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.csv
 .. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db

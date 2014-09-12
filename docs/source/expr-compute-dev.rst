@@ -10,19 +10,17 @@ document in order to use Blaze.
 Expressions
 -----------
 
-Blaze represents expressions as Python objects.  Classes include::
+Blaze represents expressions as Python objects.  Classes include
 
-    TableSymbol - leaf expression, t
-    Projection - subset of columns, t[['name', 'amount']]
-    Selection - subset of rows t[t['amount'] < 0]
-    Column - single column t['name']
-    ColumnWise - a combination of a table and a scalar expression, -t['amount'] + 1
-    Join - join two tables on shared columns, join(t, s, 'id')
-    Reduction - perform a sum or min or max on a table, t['amount'].sum()
-    By - split-apply-combine operation, by(t['name'], t['amount'].sum())
-
-    Also:
-        Sort, Distinct, Head, Label, Map, Apply, Merge
+- **TableSymbol**: leaf expression, ``t``
+- **Projection**: subset of columns, ``t[['name', 'amount']]``
+- **Selection**: subset of rows ``t[t['amount'] < 0]``
+- **Column**: single column t['name']
+- **ColumnWise**: a combination of a table and a scalar expression, ``t['amount'] + 1``
+- **Join**: join two tables on shared columns, ``join(t, s, 'id')``
+- **Reduction**: perform a sum or min or max on a table, ``t['amount'].sum()``
+- **By**: split-apply-combine operation, by(t['name'], ``t['amount'].sum())``
+- **Also**: ``Sort, Distinct, Head, Label, Map, Apply, Merge``
 
 In each case an operation (like ``Selection``) is a Python class.  Each
 expression defines a fixed set of fields in the ``__slots__`` attribute
@@ -37,7 +35,9 @@ To create a node in the tree explicitly we create a Python object of this class
 
 .. code-block:: python
 
-   names = Column(t, 'name')
+   >>> from blaze import *
+   >>> t = TableSymbol('t', '{id: int, name: string, amount: int}')
+   >>> names = Column(t, 'name')
 
 This object contains its information in a .args attribute
 
@@ -105,21 +105,21 @@ Once we have a Blaze expression like the following:
 
 .. code-block:: python
 
-   deadbeats = t[t['amount'] < 0]['name']
+   >>> deadbeats = t[t['amount'] < 0]['name']
 
 and some data like the following:
 
 .. code-block:: python
 
-   data = [[1, 'Alice', 100],
-           [2, 'Bob', -200],
-           [3, 'Charlie', 300]]
+   >>> data = [[1, 'Alice', 100],
+   ...         [2, 'Bob', -200],
+   ...         [3, 'Charlie', 300]]
 
 and a mapping of TableSymbols to data like the following:
 
 .. code-block:: python
 
-   d = {t: data}
+   >>> d = {t: data}
 
 then we need to evaluate the intent of the expression on the data.  We do this
 in a step-by-step system outlined by various ``compute`` functions.  The user
@@ -127,7 +127,7 @@ experience is as follows
 
 .. code-block:: python
 
-   >>> compute(deadbeats, d)
+   >>> list(compute(deadbeats, d))
    ['Bob']
 
 But internally ``compute`` traverses our expression from the leaves (like
@@ -136,14 +136,14 @@ node in the Blaze expression graph like
 
 .. code-block:: python
 
-   t[t['amount'] < 0]]
+   >>> selection_t = t[t['amount'] < 0]
 
 and transforms the data appropriately, like
 
 .. code-block:: python
 
-   predicate = lambda id, name, amt: amt < 0
-   data = filter(predicate, data)
+   >>> predicate = lambda amt: amt < 0
+   >>> data = filter(predicate, data)
 
 This step-by-step approach is easy to define through dispatched ``compute_one``
 functions.  We create a small recipe for how to compute each expression type
@@ -153,11 +153,10 @@ mapping a ``Selection`` to a ``DataFrame``:
 
 .. code-block:: python
 
-   @dispatch(Selection, DataFrame)
-   def compute_one(t, df, **kwargs):
-       predicate = compute(t.predicate, {t.child: df})
-       apply = compute(t.apply, {t.child: df})
-       return apply[predicate]
+   >>> @dispatch(Selection, DataFrame)
+   ... def compute_one(t, df, **kwargs):
+   ...     predicate = compute(t.predicate, df)
+   ...     return df[predicate]
 
 This approach is modular and allows interpretation systems to be built up as a
 collection of small pieces.  One can begin the construction of a new backend by
@@ -166,18 +165,18 @@ example here is a start of a backend for PyTables:
 
 .. code-block:: python
 
-   @dispatch(Selection, tb.Table)
-   def compute_one(expr, data):
-       s = eval_str(expr.predicate)  # Produce string like 'amount < 0'
-       return data.read_where(s)     # Use PyTables read_where method
+   >>> @dispatch(Selection, tb.Table)
+   ... def compute_one(expr, data):
+   ...     s = eval_str(expr.predicate)  # Produce string like 'amount < 0'
+   ...     return data.read_where(s)     # Use PyTables read_where method
 
-   @dispatch(Head, tb.Table)
-   def compute_one(expr, data):
-       return data[:expr.n]          # PyTables supports standard indexing
+   >>> @dispatch(Head, tb.Table)
+   ... def compute_one(expr, data):
+   ...     return data[:expr.n]          # PyTables supports standard indexing
 
-    @dispatch(Column, tb.Table)
-    def compute_one(expr, data):
-        return data.col(expr.column) # Use the PyTables .col method
+   >>> @dispatch(Column, tb.Table)
+   ... def compute_one(expr, data):
+   ...     return data.col(expr.column)  # Use the PyTables .col method
 
 
 These small functions are isolated enough from Blaze to be easy for new

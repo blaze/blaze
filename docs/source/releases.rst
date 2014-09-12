@@ -10,7 +10,7 @@ Release 0.6.3
 * Better handling of pandas Series object
 * Better printing of empty results in interactive mode
 * Regex dispatched resource function bound to Table, e.g.
-  >>> Table('/path/to/file.csv')
+   ``Table('/path/to/file.csv')``
 
 
 Release 0.6.2

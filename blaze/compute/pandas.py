@@ -23,12 +23,13 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
 from toolz import merge as merge_dicts
+import fnmatch
 
 from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr, std, var)
+                    Map, Apply, Merge, Union, TableExpr, std, var, Like)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
@@ -377,3 +378,10 @@ def compute_one(t, example, children, **kwargs):
 def compute_one(expr, data, **kwargs):
     return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
                                         for val in expr.values])))
+
+
+@dispatch(Like, DataFrame)
+def compute_one(expr, df, **kwargs):
+    arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
+            for name, pattern in expr.patterns.items()]
+    return df[np.logical_and.reduce(arrs)]

@@ -131,6 +131,11 @@ def dshape_to_alchemy(dshape):
             return sql.types.Unicode(length=dshape[0].fixlen)
         if 'A' in dshape.encoding:
             return sql.types.String(length=dshape[0].fixlen)
+    if isinstance(dshape, datashape.DateTime):
+        if dshape.tz:
+            return sql.types.DateTime(timezone=True)
+        else:
+            return sql.types.DateTime(timezone=False)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
@@ -401,7 +406,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #only works on OSX/Unix
     elif dbtype == 'sqlite':
         import subprocess
-        if sys.platform == 'win32':
+        if sys.platform == 'win32' or db == ":memory:":
             print("Windows native sqlite copy is not supported")
             print("Defaulting to sql.extend() method")
             sql.extend(csv)

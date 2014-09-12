@@ -92,10 +92,13 @@ install:
 
 before_script:
   - mysql -e 'create database test'
+  - sleep 15
+  - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
 
 script:
   - echo '[pytest]' > pytest.ini
-  - echo 'addopts = -v -r sxX --doctest-modules --pyargs blaze' >> pytest.ini
+  - echo 'addopts = -v -r sxX --doctest-modules --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
+  - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
   - coverage run $(which py.test)
   - coverage report --show-missing
 

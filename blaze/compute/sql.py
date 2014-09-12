@@ -18,16 +18,17 @@ from __future__ import absolute_import, division, print_function
 import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql
-from sqlalchemy.sql import Selectable
+from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
 from datashape import Record
+from copy import copy
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
-from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction
+from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Union, Summary
+from ..expr import common_subexpression, Union, Summary, Like
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
@@ -52,15 +53,22 @@ def compute_one(t, s, scope=None, **kwargs):
     return select(s).with_only_columns(columns)
 
 
-@dispatch(Column, Selectable)
+@dispatch((Column, Projection), Select)
 def compute_one(t, s, **kwargs):
-    return s.c.get(t.columns[0])
+    cols = [lower_column(s.c.get(col)) for col in t.columns]
+    return s.with_only_columns(cols)
+
+
+@dispatch(Column, sqlalchemy.Table)
+def compute_one(t, s, **kwargs):
+    return s.c.get(t.column)
 
 
 @dispatch(ColumnWise, Selectable)
 def compute_one(t, s, **kwargs):
     columns = [t.child[c] for c in t.child.columns]
-    d = dict((t.child[c].scalar_symbol, getattr(s.c, c)) for c in t.child.columns)
+    d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
+                    for c in t.child.columns)
     return compute(t.expr, d)
 
 
@@ -79,10 +87,14 @@ def compute_one(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
 
-
 @dispatch(USub, (sa.Column, Selectable))
 def compute_one(t, s, **kwargs):
     return -s
+
+@dispatch(Selection, Select)
+def compute_one(t, s, **kwargs):
+    predicate = compute_one(t.predicate, s)
+    return s.where(predicate)
 
 
 @dispatch(Selection, Selectable)
@@ -121,7 +133,8 @@ def listpack(x):
 
 @dispatch(Join, Selectable, Selectable)
 def compute_one(t, lhs, rhs, **kwargs):
-    condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
+    condition = reduce(and_,
+            [lower_column(lhs.c.get(l)) == lower_column(rhs.c.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
@@ -139,6 +152,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 
     columns = unique(list(main.columns) + list(other.columns),
                      key=lambda c: c.name)
+    columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
     return select(list(columns)).select_from(join)
 
@@ -147,6 +161,13 @@ def compute_one(t, lhs, rhs, **kwargs):
 names = {mean: 'avg',
          var: 'variance',
          std: 'stdev'}
+
+@dispatch((count, nunique, Reduction, Distinct), Select)
+def compute_one(t, s, **kwargs):
+    return compute_one(t, lower_column(list(s.columns)[0]), **kwargs)
+    s = copy(s)
+    s.append_column(col)
+    return s.with_only_columns([col])
 
 
 @dispatch(Reduction, sql.elements.ClauseElement)
@@ -165,6 +186,11 @@ def compute_one(t, s, **kwargs):
     return result
 
 
+@dispatch(count, (Selectable, Select))
+def compute_one(t, s, **kwargs):
+    return s.count()
+
+
 @dispatch(nunique, ClauseElement)
 def compute_one(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
@@ -174,17 +200,93 @@ def compute_one(t, s, **kwargs):
 def compute_one(t, s, **kwargs):
     return sqlalchemy.distinct(s)
 
+@dispatch(By, sqlalchemy.Column)
+def compute_one(t, s, **kwargs):
+    grouper = lower_column(s)
+    if isinstance(t.apply, Reduction):
+        reductions = [compute(t.apply, {t.child: s})]
+    elif isinstance(t.apply, Summary):
+        reductions = [compute(val, {t.child: s}).label(name)
+                for val, name in zip(t.apply.values, t.apply.names)]
 
-@dispatch(By, (Selectable, ClauseElement))
+    return sqlalchemy.select([grouper] + reductions).group_by(grouper)
+
+
+@dispatch(By, ClauseElement)
 def compute_one(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
-        grouper = [compute(t.grouper.child[col], {t.child: s})
-                    for col in t.grouper.columns]
+        grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    reduction = compute(t.apply, {t.child: s})
-    return select(grouper + [reduction]).group_by(*grouper)
+    if isinstance(t.apply, Reduction):
+        reductions = [compute(t.apply, {t.child: s})]
+    elif isinstance(t.apply, Summary):
+        reductions = [compute(val, {t.child: s}).label(name)
+                for val, name in zip(t.apply.values, t.apply.names)]
+
+    return sqlalchemy.select(grouper + reductions).group_by(*grouper)
+
+
+def lower_column(col):
+    """ Return column from lower level tables if possible
+
+    >>>
+    >>> metadata = sa.MetaData()
+
+    >>> s = sa.Table('accounts', metadata,
+    ...              sa.Column('name', sa.String),
+    ...              sa.Column('amount', sa.Integer),
+    ...              sa.Column('id', sa.Integer, primary_key=True),
+    ...              )
+
+    >>> s2 = select([s])
+    >>> s2.c.amount is s.c.amount
+    False
+
+    >>> lower_column(s2.c.amount) is s.c.amount
+    True
+
+    >>> lower_column(s2.c.amount)
+    Column('amount', Integer(), table=<accounts>)
+    """
+
+    old = None
+    while col is not None and col is not old:
+        old = col
+        if not hasattr(col, 'table') or not hasattr(col.table, 'froms'):
+            return col
+        for f in col.table.froms:
+            if f.corresponding_column(col) is not None:
+                col = f.corresponding_column(col)
+
+    return old
+
+
+@dispatch(By, Select)
+def compute_one(t, s, **kwargs):
+    if not isinstance(t.grouper, Projection):
+        raise NotImplementedError("Grouper must be a projection, got %s"
+                                  % t.grouper)
+
+    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
+
+    s2 = s.group_by(*grouper)
+    for g in grouper:
+        s2.append_column(g)
+
+    if isinstance(t.apply, Reduction):
+        reduction = compute(t.apply, {t.child: s})
+        s2.append_column(reduction)
+        return s2.with_only_columns(grouper + [reduction])
+
+    elif isinstance(t.apply, Summary):
+        reductions = [compute(val, {t.child: s}).label(name)
+                for val, name in zip(t.apply.values, t.apply.names)]
+        for r in reductions:
+            s2.append_column(r)
+
+        return s2.with_only_columns(grouper + reductions)
 
 
 @dispatch(Sort, Selectable)
@@ -236,3 +338,20 @@ def compute_one(t, _, children):
 def compute_one(t, s, **kwargs):
     return select([compute(value, {t.child: s}).label(name)
         for value, name in zip(t.values, t.names)])
+
+
+@dispatch(Like, Selectable)
+def compute_one(t, s, **kwargs):
+    return compute_one(t, select(s), **kwargs)
+
+
+@dispatch(Like, Select)
+def compute_one(t, s, **kwargs):
+    d = dict()
+    for name, pattern in t.patterns.items():
+        for f in s.froms:
+            if f.c.has_key(name):
+                d[f.c.get(name)] = pattern.replace('*', '%')
+
+    return s.where(reduce(and_,
+                          [key.like(pattern) for key, pattern in d.items()]))

@@ -21,6 +21,7 @@ and a schema.
 
 .. code-block:: python
 
+   >>> from blaze import *
    >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
 
 
@@ -47,7 +48,7 @@ a comutation to do in the future.
    accounts[accounts['balance'] < 0]['name']
 
    >>> deadbeats.schema
-   dshape("{name: string}")
+   dshape("{ name : string }")
 
 Split-apply-combine, Reductions
 -------------------------------
@@ -59,7 +60,8 @@ split-apply-combine workflows.
 .. code-block:: python
 
    >>> by(accounts['name'],             # Splitting/grouping element
-   ...    accounts['balance'].sum())    # Apply and reduction
+   ... accounts['balance'].sum())       # Apply and reduction
+   By(grouper=accounts['name'], apply=sum(child=accounts['balance']))
 
 This operation groups the table by name and then sums the balance of each
 group.  It finds out how much all of the "Alice"s, "Bob"s, etc. of the world
@@ -78,16 +80,16 @@ queries to span multiple tables.
 
 .. code-block:: python
 
-   >>> accounts = TableSymbol('accounts', '{name: string, balance: int}')
+   >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
    >>> cities = TableSymbol('cities', '{name: string, city: string}')
 
    >>> join(accounts, cities, 'name')
+   Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner')
 
 If given no inputs, ``join`` will join on all columns with shared names between
 the two tables.
 
-   >>> join(accounts, cities)
-
+   >>> shared_names = join(accounts, cities)
 
 Other
 -----

@@ -5,7 +5,7 @@ import datashape
 import sys
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all, valmap
+from toolz import concat, partition_all, valmap, compose
 from cytoolz import pluck
 import copy
 from datetime import datetime
@@ -158,6 +158,9 @@ def into(a, b, **kwargs):
         b = map(np.datetime64, b)
     if isinstance(first, (list, tuple)):
         return np.rec.fromrecords(list(b), **kwargs)
+    elif hasattr(first, 'values'):
+        #detecting sqlalchemy.engine.result.RowProxy types and similar
+        return np.asarray([tuple(x.values()) for x in b], **kwargs)
     else:
         return np.asarray(list(b), **kwargs)
 
@@ -185,6 +188,11 @@ def into(a, b):
     if 'M8' in str(b.dtype) or 'datetime' in str(b.dtype):
         b = b.astype(degrade_numpy_dtype_to_python(b.dtype))
     return numpy_ensure_strings(b).tolist()
+
+
+@dispatch(set, object)
+def into(a, b, **kwargs):
+    return set(into(list, b, **kwargs))
 
 
 @dispatch(pd.DataFrame, np.ndarray)
@@ -746,11 +754,12 @@ def into(a, b, **kwargs):
     if b.open == gzip.open:
         options['compression'] = 'gzip'
 
+    options['names'] = options.get('names', b.columns)
+
     return pd.read_csv(b.path,
                        skiprows=1 if b.header else 0,
                        dtype=dtypes,
                        parse_dates=datenames,
-                       names=b.columns,
                        **options)
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
@@ -829,4 +838,9 @@ def into(a, b, **kwargs):
 @dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
 def into(a, b, **kwargs):
     a.extend(b)
+    return a
+
+@dispatch(DataDescriptor, (np.ndarray, nd.array, pd.DataFrame, Collection))
+def into(a, b, **kwargs):
+    a.extend(into(list,b))
     return a
