@@ -273,14 +273,13 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     tble = into(tb.Table, bad_csv_df, filename=out_hdf5, datapath='foo',
                 error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
+    tble.close()
 
     # Check that it's the same as straight from the CSV
     df_from_csv = into(DataFrame, bad_csv_df, error_bad_lines=False)
     assert len(df_from_csv) == len(df_from_tbl)
     assert list(df_from_csv.columns) == list(df_from_tbl.columns)
     assert (df_from_csv == df_from_tbl).all().all()
-
-    tble.close()
 
 
 def test_numpy_datetimes():
