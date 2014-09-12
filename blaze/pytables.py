@@ -17,9 +17,16 @@ __all__ = ['PyTables']
 def dtype_to_pytables(dtype):
     """ Convert NumPy dtype to PyTable descriptor
 
+    Examples
+    --------
+    >>> from tables import Int32Col, StringCol, Time64Col
     >>> dt = np.dtype([('name', 'S7'), ('amount', 'i4'), ('time', 'M8[us]')])
-    >>> dtype_to_pytables(dt)
-    {'amount': Int32Col(shape=(), dflt=0, pos=1), 'name': StringCol(itemsize=7, shape=(), dflt='', pos=0), 'time': Time64Col(shape=(), dflt=0.0, pos=2)}
+    >>> table_desc = dtype_to_pytables(dt)
+    >>> expected = {'amount': Int32Col(shape=(), dflt=0, pos=1),
+    ...             'name': StringCol(itemsize=7, shape=(), dflt='', pos=0),
+    ...             'time': Time64Col(shape=(), dflt=0.0, pos=2)}
+    >>> table_desc == expected
+    True
     """
     d = {}
     for pos, name in enumerate(dtype.names):
