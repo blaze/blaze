@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from collections import Iterator
 
 import numpy as np
-from math import isnan
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
@@ -179,3 +178,9 @@ def assert_allclose(lhs, rhs):
                 assert np.all(np.isclose(left, right, equal_nan=True))
             else:
                 assert left == right
+
+
+def example(filename, datapath=os.path.join('examples', 'data')):
+    import blaze
+    return os.path.join(os.path.dirname(blaze.__file__), os.pardir, datapath,
+                        filename)
