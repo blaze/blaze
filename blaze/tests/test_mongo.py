@@ -8,13 +8,7 @@ import tempfile
 import json
 import os
 from blaze.utils import filetext, tmpfile
-
-pymongo = pytest.importorskip('pymongo')
-
-try:
-    pymongo.MongoClient()
-except pymongo.errors.ConnectionFailure:
-    pytest.importorskip('fhskjfdskfhsf')
+from blaze.compatibility import PY3
 
 from datashape import discover, dshape
 
@@ -43,19 +37,24 @@ def tuple_data():
     return [(1, 2), (10, 20), (100, 200)]
 
 
+@pytest.fixture
+def newline():
+    return '' if PY3 else None
+
+
 @pytest.yield_fixture
-def file_name_colon(tuple_data):
+def file_name_colon(tuple_data, newline):
     with tmpfile('.csv') as filename:
-        with open(filename, 'w') as f:
+        with open(filename, 'w', newline=newline) as f:
             csv_writer = csv_module.writer(f, delimiter=':')
             csv_writer.writerows(tuple_data)
         yield filename
 
 
 @pytest.yield_fixture
-def file_name(tuple_data):
+def file_name(tuple_data, newline):
     with tmpfile('.csv') as filename:
-        with open(filename, 'w') as f:
+        with open(filename, 'w', newline=newline) as f:
             csv_writer = csv_module.writer(f)
             csv_writer.writerows(tuple_data)
         yield filename
@@ -183,7 +182,7 @@ class TestCreateNamedIndex(object):
         assert coll.index_information()['c_idx']['unique']
 
 
-def test_csv_mongodb_load(file_name, empty_collec):
+def test_csv_mongodb_load(db, file_name, empty_collec):
 
     csv = CSV(file_name)
 
@@ -201,9 +200,7 @@ def test_csv_mongodb_load(file_name, empty_collec):
         'column_names': ','.join(csv.columns)
     }
 
-    copy_cmd = """
-                mongoimport -d {dbname} -c {coll} --type csv --file {abspath} --fields {column_names}
-               """
+    copy_cmd = """mongoimport -d {dbname} -c {coll} --type csv --file {abspath} --fields {column_names}"""
     copy_cmd = copy_cmd.format(**copy_info)
 
     ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
