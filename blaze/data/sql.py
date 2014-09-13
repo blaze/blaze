@@ -192,7 +192,7 @@ class SQL(DataDescriptor):
         self.tablename = tablename.split('.')[-1]
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
-        if engine.has_table(tablename, schema=self.schemaname):
+        if engine.has_table(self.tablename, schema=self.schemaname):
             metadata.reflect(engine, schema=self.schemaname)
             table = metadata.tables[tablename]
             engine_schema = discover(table).subshape[0]
