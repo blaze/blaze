@@ -1,4 +1,5 @@
 from blaze.expr.array import *
+from blaze.expr.array import _slice
 import numpy as np
 
 def test_dshape():
@@ -33,6 +34,14 @@ def test_element_record():
     assert isinstance(x[1, 2], Scalar)
     assert x[1, 2].dshape == dshape('{name: string, amount: float32}')
     assert x[1, 2].names == x.names
+
+
+def test__slice_object():
+    s = _slice(1, 10, 2)
+    assert str(s) == '1:10:2'
+    assert hash(s)
+
+    assert _slice(1, 10, 2) == _slice(1, 10, 2)
 
 
 def test_slice():
