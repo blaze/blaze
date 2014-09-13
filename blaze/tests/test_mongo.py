@@ -20,60 +20,74 @@ from datashape import discover, dshape
 
 from blaze import drop, into, create_index
 
-conn = pymongo.MongoClient()
-db = conn.test_db
 
-from pymongo import ASCENDING, DESCENDING
+@pytest.yield_fixture(scope='module')
+def conn():
+    pymongo = pytest.importorskip('pymongo')
+    try:
+        c = pymongo.MongoClient()
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('No mongo server running')
+    else:
+        yield c
+        c.close()
 
 
 @pytest.fixture
-def data():
+def db(conn):
+    return conn.test_db
+
+
+@pytest.fixture
+def tuple_data():
     return [(1, 2), (10, 20), (100, 200)]
 
 
 @pytest.yield_fixture
-def file_name_colon(data):
+def file_name_colon(tuple_data):
     with tmpfile('.csv') as filename:
         with open(filename, 'w') as f:
             csv_writer = csv_module.writer(f, delimiter=':')
-            csv_writer.writerows(data)
+            csv_writer.writerows(tuple_data)
         yield filename
 
 
 @pytest.yield_fixture
-def file_name(data):
+def file_name(tuple_data):
     with tmpfile('.csv') as filename:
         with open(filename, 'w') as f:
             csv_writer = csv_module.writer(f)
-            csv_writer.writerows(data)
+            csv_writer.writerows(tuple_data)
         yield filename
 
 
 @pytest.yield_fixture
-def empty_collec():
+def empty_collec(db):
     yield db.tmp_collection
     db.tmp_collection.drop()
 
 
+@pytest.fixture
+def bank():
+    return [{'name': 'Alice', 'amount': 100},
+            {'name': 'Alice', 'amount': 200},
+            {'name': 'Bob', 'amount': 100},
+            {'name': 'Bob', 'amount': 200},
+            {'name': 'Bob', 'amount': 300}]
+
+
 @pytest.yield_fixture
-def bank_collec():
+def bank_collec(db, bank):
     coll = into(db.tmp_collection, bank)
     yield coll
     coll.drop()
-
-
-bank = [{'name': 'Alice', 'amount': 100},
-        {'name': 'Alice', 'amount': 200},
-        {'name': 'Bob', 'amount': 100},
-        {'name': 'Bob', 'amount': 200},
-        {'name': 'Bob', 'amount': 300}]
 
 
 def test_discover(bank_collec):
     assert discover(bank_collec) == dshape('5 * {amount: int64, name: string}')
 
 
-def test_into(empty_collec):
+def test_into(empty_collec, bank):
     lhs = set(into([], into(empty_collec, bank), columns=['name', 'amount']))
     rhs = set([('Alice', 100), ('Alice', 200), ('Bob', 100), ('Bob', 200),
                ('Bob', 300)])
@@ -81,13 +95,10 @@ def test_into(empty_collec):
 
 
 @pytest.yield_fixture
-def mongo():
-    conn = pymongo.MongoClient()
-    db = conn.db
+def mongo(db, bank):
     db.tmp_collection.insert(bank)
     yield db
     db.tmp_collection.drop()
-    conn.close()
 
 
 def test_drop(mongo):
@@ -95,7 +106,9 @@ def test_drop(mongo):
     assert mongo.tmp_collection.count() == 0
 
 
-bank_idx = [{'name': 'Alice', 'amount': 100, 'id': 1},
+@pytest.fixture
+def bank_idx():
+    return [{'name': 'Alice', 'amount': 100, 'id': 1},
             {'name': 'Alice', 'amount': 200, 'id': 2},
             {'name': 'Bob', 'amount': 100, 'id': 3},
             {'name': 'Bob', 'amount': 200, 'id': 4},
@@ -103,14 +116,10 @@ bank_idx = [{'name': 'Alice', 'amount': 100, 'id': 1},
 
 
 @pytest.yield_fixture
-def mongo_idx():
-    pymongo = pytest.importorskip('pymongo')
-    conn = pymongo.MongoClient()
-    db = conn.db
+def mongo_idx(db, bank_idx):
     db.tmp_collection.insert(bank_idx)
     yield db
     db.tmp_collection.drop()
-    conn.close()
 
 
 class TestCreateIndex(object):
@@ -127,11 +136,13 @@ class TestCreateIndex(object):
         assert 'id_1_amount_1' in mongo_idx.tmp_collection.index_information()
 
     def test_create_composite_index_params(self, mongo_idx):
+        from pymongo import ASCENDING, DESCENDING
         create_index(mongo_idx.tmp_collection,
                      [('id', ASCENDING), ('amount', DESCENDING)])
         assert 'id_1_amount_-1' in mongo_idx.tmp_collection.index_information()
 
     def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
+        from pymongo import DESCENDING
         with pytest.raises(TypeError):
             create_index(mongo_idx.tmp_collection, [['id', DESCENDING]])
 
@@ -155,12 +166,14 @@ class TestCreateNamedIndex(object):
         assert 'c_idx' in mongo_idx.tmp_collection.index_information()
 
     def test_create_composite_index_params(self, mongo_idx):
+        from pymongo import ASCENDING, DESCENDING
         create_index(mongo_idx.tmp_collection,
                      [('id', ASCENDING), ('amount', DESCENDING)],
                      name='c_idx')
         assert 'c_idx' in mongo_idx.tmp_collection.index_information()
 
     def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
+        from pymongo import DESCENDING
         with pytest.raises(TypeError):
             create_index(mongo_idx.tmp_collection, [['id', DESCENDING]])
 
@@ -170,7 +183,7 @@ class TestCreateNamedIndex(object):
         assert coll.index_information()['c_idx']['unique']
 
 
-def test_csv_mongodb_load(empty_collec):
+def test_csv_mongodb_load(file_name, empty_collec):
 
     csv = CSV(file_name)
 
