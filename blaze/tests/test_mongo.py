@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import json
 import os
-from blaze.utils import filetext
+from blaze.utils import filetext, tmpfile
 
 pymongo = pytest.importorskip('pymongo')
 
@@ -22,28 +22,31 @@ from blaze import drop, into, create_index
 
 conn = pymongo.MongoClient()
 db = conn.test_db
-file_name = 'test.csv'
-file_name_colon = 'colon_test.csv'
 
 from pymongo import ASCENDING, DESCENDING
 
-def setup_function(function):
-    data = [(1, 2), (10, 20), (100, 200)]
 
-    with open(file_name, 'w') as f:
-        csv_writer = csv_module.writer(f)
-        for row in data:
-            csv_writer.writerow(row)
-
-    with open(file_name_colon, 'w') as f:
-        csv_writer = csv_module.writer(f, delimiter=':')
-        for row in data:
-            csv_writer.writerow(row)
+@pytest.fixture
+def data():
+    return [(1, 2), (10, 20), (100, 200)]
 
 
-def teardown_function(function):
-    os.remove(file_name)
-    os.remove(file_name_colon)
+@pytest.yield_fixture
+def file_name_colon(data):
+    with tmpfile('.csv') as filename:
+        with open(filename, 'w') as f:
+            csv_writer = csv_module.writer(f, delimiter=':')
+            csv_writer.writerows(data)
+        yield filename
+
+
+@pytest.yield_fixture
+def file_name(data):
+    with tmpfile('.csv') as filename:
+        with open(filename, 'w') as f:
+            csv_writer = csv_module.writer(f)
+            csv_writer.writerows(data)
+        yield filename
 
 
 @pytest.yield_fixture
@@ -197,41 +200,39 @@ def test_csv_mongodb_load(empty_collec):
     assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
 
 
-def test_csv_into_mongodb(empty_collec):
+def test_csv_into_mongodb(empty_collec, file_name):
     csv = CSV(file_name)
-
     coll = empty_collec
-    into(coll,csv)
-    mongo_data = list(coll.find({},{'_0': 1, '_id': 0}))
+    into(coll, csv)
+    mongo_data = list(coll.find({}, {'_0': 1, '_id': 0}))
 
-    assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
+    assert list(csv[:, '_0']) == [i['_0'] for i in mongo_data]
 
 
-def test_csv_into_mongodb_colon_del(empty_collec):
+def test_csv_into_mongodb_colon_del(empty_collec, file_name_colon):
     csv = CSV(file_name_colon)
-
     coll = empty_collec
-
     assert into(list, csv) == into(list, into(coll, csv))
 
 
-def test_csv_into_mongodb_columns(empty_collec):
+def test_csv_into_mongodb_columns(empty_collec, file_name):
     csv = CSV(file_name, schema='{x: int, y: int}')
 
     coll = empty_collec
 
     assert into(list, csv) == into(list, into(coll, csv))
 
+
 def test_csv_into_mongodb_complex(empty_collec):
 
     this_dir = os.path.dirname(__file__)
     file_name = os.path.join(this_dir, 'dummydata.csv')
 
-    csv = CSV(file_name, schema = "{ Name : string, RegistrationDate : ?datetime, ZipCode : ?int64, Consts : ?float64 }")
+    csv = CSV(file_name, schema="{ Name : string, RegistrationDate : ?datetime, ZipCode : ?int64, Consts : ?float64 }")
     coll = empty_collec
-    into(coll,csv)
+    into(coll, csv)
 
-    mongo_data = list(coll.find({},{'_id': 0}))
+    mongo_data = list(coll.find({}, {'_id': 0}))
 
     # This assertion doesn't work due to python floating errors
     # into(list, csv) == into(list, into(coll, csv))
