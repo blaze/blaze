@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
 from dynd import nd
 import numpy as np
 from pandas import DataFrame
@@ -7,7 +8,6 @@ from pandas import DataFrame
 from blaze.api.into import into, discover
 from blaze.api.into import degrade_numpy_dtype_to_python
 from datashape import dshape
-from blaze.bcolz import *
 import blaze
 from blaze import Table, TableExpr, TableSymbol, compute
 import bcolz
@@ -16,6 +16,7 @@ from blaze.sql import SQL
 from datetime import datetime
 from toolz import pluck
 import os
+from blaze.compatibility import xfail
 
 dirname = os.path.dirname(__file__)
 
@@ -177,8 +178,23 @@ def test_ColumnDataSource():
         assert into(ColumnDataSource, a).data == cds.data
 
 
-@skip_if_not(pymongo)
-def test_mongo_Collection():
+@pytest.fixture
+def mconn():
+    pymongo = pytest.importorskip('pymongo')
+    try:
+        c = pymongo.MongoClient()
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('unable to connect')
+    else:
+        return c
+
+
+@pytest.fixture
+def mdb(mconn):
+    return mconn.db
+
+
+def test_mongo_Collection(mdb):
     sources = [v for k, v in data.items() if k not in [list]]
     for a in sources:
         db.test_into.drop()

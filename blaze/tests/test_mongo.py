@@ -8,7 +8,7 @@ import tempfile
 import json
 import os
 from blaze.utils import filetext, tmpfile
-from blaze.compatibility import PY3
+from blaze.compatibility import PY3, xfail
 
 from datashape import discover, dshape
 
@@ -182,6 +182,7 @@ class TestCreateNamedIndex(object):
         assert coll.index_information()['c_idx']['unique']
 
 
+@xfail(os.system('mongoimport') != 0, reason='mongoimport cannot be found')
 def test_csv_mongodb_load(db, file_name, empty_collec):
 
     csv = CSV(file_name)
@@ -203,17 +204,8 @@ def test_csv_mongodb_load(db, file_name, empty_collec):
     copy_cmd = """mongoimport -d {dbname} -c {coll} --type csv --file {abspath} --fields {column_names}"""
     copy_cmd = copy_cmd.format(**copy_info)
 
-    ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+    ps = subprocess.Popen(copy_cmd, shell=True, stdout=subprocess.PIPE)
     output = ps.stdout.read()
-    mongo_data = list(coll.find({},{'_0': 1, '_id': 0}))
-
-    assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
-
-
-def test_csv_into_mongodb(empty_collec, file_name):
-    csv = CSV(file_name)
-    coll = empty_collec
-    into(coll, csv)
     mongo_data = list(coll.find({}, {'_0': 1, '_id': 0}))
 
     assert list(csv[:, '_0']) == [i['_0'] for i in mongo_data]
@@ -222,7 +214,19 @@ def test_csv_into_mongodb(empty_collec, file_name):
 def test_csv_into_mongodb_colon_del(empty_collec, file_name_colon):
     csv = CSV(file_name_colon)
     coll = empty_collec
-    assert into(list, csv) == into(list, into(coll, csv))
+    lhs = into(list, csv)
+    newcoll = into(coll, csv)
+    rhs = into(list, newcoll)
+    assert lhs == rhs
+
+
+def test_csv_into_mongodb(empty_collec, file_name):
+    csv = CSV(file_name)
+    coll = empty_collec
+    res = into(coll, csv)
+    mongo_data = list(res.find({}, {'_0': 1, '_id': 0}))
+
+    assert list(csv[:, '_0']) == [i['_0'] for i in mongo_data]
 
 
 def test_csv_into_mongodb_columns(empty_collec, file_name):
@@ -262,6 +266,8 @@ les_mis_data = {"nodes":[{"name":"Myriel","group":1},
                 }
 
 
+@xfail(os.system('mongoimport') != 0,
+       raises=TypeError, reason='nested schemas not yet supported')
 def test_json_into_mongodb(empty_collec):
 
     with filetext(json.dumps(les_mis_data)) as filename:
@@ -306,18 +312,20 @@ data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
          u'tv_show': u'Battlestar Galactica'}]
 
 
+@xfail(os.system('mongoimport') != 0,
+       raises=ValueError, reason='nested schemas not yet supported')
 def test_jsonarray_into_mongodb(empty_collec):
 
     filename = tempfile.mktemp(".json")
     with open(filename, "w") as f:
         json.dump(data, f)
 
-    dd = JSON(filename, schema = "3 * { id : string, name : string, posts : var * { content : string, title : string },\
-                                 tv_show : string }")
+    dd = JSON(filename, schema="3 * { id : string, name : string, "
+                                "posts : var * { content : string, title : string },"
+                                " tv_show : string }")
     coll = empty_collec
     into(coll,dd, json_array=True)
 
-
-    mongo_data = list(coll.find({},{'_id': 0,}))
+    mongo_data = list(coll.find({}, {'_id': 0}))
 
     assert mongo_data[0] == data[0]
