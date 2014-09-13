@@ -39,13 +39,13 @@ def tuple_data():
 
 @pytest.fixture
 def newline():
-    return '' if PY3 else None
+    return {'newline': '' if os.name == 'nt' else None} if PY3 else {}
 
 
 @pytest.yield_fixture
 def file_name_colon(tuple_data, newline):
     with tmpfile('.csv') as filename:
-        with open(filename, 'w', newline=newline) as f:
+        with open(filename, 'w', **newline) as f:
             csv_writer = csv_module.writer(f, delimiter=':')
             csv_writer.writerows(tuple_data)
         yield filename
@@ -54,7 +54,7 @@ def file_name_colon(tuple_data, newline):
 @pytest.yield_fixture
 def file_name(tuple_data, newline):
     with tmpfile('.csv') as filename:
-        with open(filename, 'w', newline=newline) as f:
+        with open(filename, 'w', **newline) as f:
             csv_writer = csv_module.writer(f)
             csv_writer.writerows(tuple_data)
         yield filename
