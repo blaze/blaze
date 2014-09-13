@@ -687,18 +687,14 @@ def into(coll, d, if_exists="replace", **kwargs):
 
         copy_cmd = copy_cmd.format(**copy_info)
         copy_cmd = copy_cmd + ' '.join(optional_flags)
-        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-
-        output = ps.stdout.read()
-
+        ps = subprocess.Popen(copy_cmd, stdout=subprocess.PIPE)
+        ps.communicate()
         return coll
     except Exception as e:
         # not sure what will go wrong yet
         # should we roll back and drop collection?
-        print("Fast mongoimport operation failed.  Reason: ", e)
-        print("Trying again without mongoimport call")
         dd_into_coll = into.dispatch(Collection, DataDescriptor)
-        return dd_into_coll(coll,csv_dd)
+        return dd_into_coll(coll, json_dd)
 
 
 @dispatch(nd.array, DataDescriptor)
