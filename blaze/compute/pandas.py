@@ -30,9 +30,11 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, TableExpr, std, var, Like)
+from ..expr.array import Element, Slice
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
+from ..compatibility import _inttypes
 
 __all__ = []
 
@@ -385,3 +387,18 @@ def compute_one(expr, df, **kwargs):
     arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
             for name, pattern in expr.patterns.items()]
     return df[np.logical_and.reduce(arrs)]
+
+
+@dispatch((Slice, Element), DataFrame)
+def compute_one(expr, df, **kwargs):
+    if isinstance(expr.index, _inttypes):
+        return df.loc[expr.index]
+    elif isinstance(expr.index, slice):
+        if expr.index.stop is not None:
+            return df.loc[slice(expr.index.start,
+                                expr.index.stop - 1,
+                                expr.index.step)]
+        else:
+            return df.loc[expr.index]
+    else:
+        raise NotImplementedError()
