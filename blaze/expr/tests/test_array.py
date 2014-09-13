@@ -28,6 +28,8 @@ def test_element():
     x = ArraySymbol('x', '5 * float32')
     assert isinstance(x[3], Scalar)
 
+    assert str(x[1, 2]) == 'x[1, 2]'
+
 
 def test_element_record():
     x = ArraySymbol('x', '5 * 3 * {name: string, amount: float32}')
@@ -55,6 +57,11 @@ def test_slice():
 
     hash(x[:2])
     hash(x[0, :2])
+
+    assert str(x[1]) == 'x[1]'
+    assert str(x[:2]) == 'x[:2]'
+    assert str(x[0, :2]) == 'x[0, :2]'
+    assert str(x[1:4:2, :2]) == 'x[1:4:2, :2]'
 
 
 def test_reduction_dshape():

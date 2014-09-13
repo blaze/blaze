@@ -113,6 +113,14 @@ class Element(Scalar):
     def dshape(self):
         return self.child.dshape.subshape[self.index]
 
+    def __str__(self):
+        if isinstance(self.index, tuple):
+            return '%s[%s]' % (self.child, ', '.join(map(str, self.index)))
+        else:
+            return '%s[%s]' % (self.child, self.index)
+
+    __repr__ = __str__
+
 
 class _slice(object):
     """ A hashable slice object
@@ -186,6 +194,14 @@ class Slice(ArrayExpr):
     @property
     def index(self):
         return replace_slices(self._index)
+
+    def __str__(self):
+        if isinstance(self.index, tuple):
+            return '%s[%s]' % (self.child, ', '.join(map(str, self._index)))
+        else:
+            return '%s[%s]' % (self.child, self._index)
+
+    __repr__ = __str__
 
 
 class Reduction(Expr):
