@@ -2,6 +2,7 @@
 
 >>> x = ArraySymbol('x', '5 * 3 * float32')
 >>> x.sum(axis=0)
+sum(child=x, axis=0)
 """
 from __future__ import absolute_import, division, print_function
 from datashape import dshape, DataShape, Record, isdimension, Option
@@ -59,7 +60,7 @@ class ArrayExpr(Expr):
     def __getitem__(self, key):
         if (    isinstance(key, tuple)
             and len(key) == self.ndim
-            and all(isinstance(k, (int, Scalar)) for k in key)):
+            and builtins.all(isinstance(k, (int, Scalar)) for k in key)):
             return Element(self, key)
         elif isinstance(key, tuple):
             return Slice(self, key)
@@ -113,12 +114,56 @@ class Element(Scalar):
         return self.child.dshape.subshape[self.index]
 
 
+class _slice(object):
+    """ A hashable slice object """
+    def __init__(self, start, stop, step):
+        self.start = start
+        self.stop = stop
+        self.step = step
+
+    def __hash__(self):
+        return hash((slice, self.start, self.stop, self.step))
+
+
+def hashable_index(index):
+    """
+
+    >>> hashable_index(1)
+    1
+
+    >>> isinstance(hash(hashable_index((1, slice(10)))), int)
+    True
+    """
+    if isinstance(index, tuple):
+        return tuple(map(hashable_index, index))
+    elif isinstance(index, slice):
+        return _slice(index.start, index.stop, index.step)
+    return index
+
+
+def replace_slices(index):
+    if isinstance(index, tuple):
+        return tuple(map(replace_slices, index))
+    elif isinstance(index, _slice):
+        return slice(index.start, index.stop, index.step)
+    return index
+
+
 class Slice(ArrayExpr):
-    __slots__ = 'child', 'index'
+    __slots__ = 'child', '_index'
+
+    def __init__(self, child, index):
+        self.child = child
+        self._index = hashable_index(index)
+        hash(self)
 
     @property
     def dshape(self):
         return self.child.dshape.subshape[self.index]
+
+    @property
+    def index(self):
+        return replace_slices(self._index)
 
 
 class Reduction(Expr):

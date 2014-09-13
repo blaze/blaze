@@ -41,6 +41,12 @@ def test_slice():
 
     assert x[2:].dshape == x[2:, :].dshape
 
+    assert isinstance(x[0, :2], Slice)
+    assert isinstance(x[0, 2], Element)
+
+    hash(x[:2])
+    hash(x[0, :2])
+
 
 def test_reduction_dshape():
     x = ArraySymbol('x', '5 * 3 * float32')
