@@ -729,19 +729,18 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     dialect = b.dialect.copy()
     del dialect['lineterminator']
-    dates = [i for i, typ in enumerate(b.schema[0].types)
-               if 'date' in str(typ)]
+
     schema = b.schema
     if '?' in str(schema):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
 
-    datenames = [name for name in dtypes
-                      if np.issubdtype(dtypes[name], np.datetime64)]
+    datenames = [name for name in dtypes if np.issubdtype(dtypes[name],
+                                                          np.datetime64)]
 
     dtypes = dict((k, v) for k, v in dtypes.items()
-                         if not np.issubdtype(v, np.datetime64))
+                  if not np.issubdtype(v, np.datetime64))
 
     if 'strict' in dialect:
         del dialect['strict']
@@ -754,12 +753,14 @@ def into(a, b, **kwargs):
     if b.open == gzip.open:
         options['compression'] = 'gzip'
 
-    options['names'] = options.get('names', b.columns)
+    usecols = names = options.pop('names', b.columns)
 
     return pd.read_csv(b.path,
-                       skiprows=1 if b.header else 0,
+                       header=0 if b.header else None,
                        dtype=dtypes,
                        parse_dates=datenames,
+                       names=names,
+                       usecols=usecols,
                        **options)
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
