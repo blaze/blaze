@@ -172,6 +172,9 @@ class SQL(DataDescriptor):
     schema : string, list of Columns
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
+    schema : string
+        Name of table's owning schema,
+        if differing from connecting user's
     """
     @property
     def remote(self):
@@ -181,7 +184,7 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-    def __init__(self, engine, tablename, primary_key='', schema=None):
+    def __init__(self, engine, tablename, primary_key='', schema=None, schema_name=None):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
@@ -190,7 +193,7 @@ class SQL(DataDescriptor):
         metadata = sql.MetaData()
 
         if engine.has_table(tablename):
-            metadata.reflect(engine)
+            metadata.reflect(engine, schema=schema_name)
             table = metadata.tables[tablename]
             engine_schema = discover(table).subshape[0]
             # if schema and dshape(schema) != engine_schema:
