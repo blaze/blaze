@@ -619,7 +619,7 @@ def into(coll, d, if_exists="replace", **kwargs):
 
         copy_cmd = copy_cmd.format(**copy_info)
         copy_cmd = copy_cmd + ' '.join(optional_flags)
-        ps = subprocess.Popen(copy_cmd, shell=True, stdout=subprocess.PIPE)
+        ps = subprocess.Popen(copy_cmd, stdout=subprocess.PIPE)
         ps.communicate()
 
         #need to check for date columns and update
