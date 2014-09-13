@@ -562,7 +562,8 @@ def into(l, coll, columns=None, schema=None):
 
 @dispatch((tuple, list), Collection)
 def into(l, coll, columns=None, schema=None):
-    return type(l)(into(Iterator, coll, columns=columns, schema=schema))
+    r = into(Iterator, coll, columns=columns, schema=schema)
+    return type(l)(r)
 
 
 @dispatch(Collection, CSV)
@@ -613,16 +614,13 @@ def into(coll, d, if_exists="replace", **kwargs):
         else:
             raise NotImplementedError("Only CSV and TSV files are supported by mongoimport")
 
-        copy_cmd = """
-                mongoimport -d {dbname} \
-                 -c {coll} --type {file_type} \
-                 --file {abspath} --fields {column_names}\
-                 """
+        copy_cmd = ("mongoimport -d {dbname} -c {coll} --type {file_type} "
+                    "--file {abspath} --fields {column_names} ")
 
         copy_cmd = copy_cmd.format(**copy_info)
         copy_cmd = copy_cmd + ' '.join(optional_flags)
-        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-        output = ps.stdout.read()
+        ps = subprocess.Popen(copy_cmd, shell=True, stdout=subprocess.PIPE)
+        ps.communicate()
 
         #need to check for date columns and update
         date_cols = []
@@ -633,7 +631,7 @@ def into(coll, d, if_exists="replace", **kwargs):
                     date_cols.append((c, t.ty))
 
         for d_col, ty in date_cols:
-            mongo_data = list(coll.find({},{d_col:1}))
+            mongo_data = list(coll.find({}, {d_col: 1}))
             for doc in mongo_data:
                 try:
                     t = parser.parse(doc[d_col])
@@ -641,7 +639,7 @@ def into(coll, d, if_exists="replace", **kwargs):
                     print(m_id, " is already of type datetime")
                     t = doc[d_col]
                 m_id = doc['_id']
-                coll.update({'_id':m_id},{"$set": {d_col: t}})
+                coll.update({'_id': m_id}, {"$set": {d_col: t}})
 
         return coll
     except Exception as e:
@@ -650,7 +648,7 @@ def into(coll, d, if_exists="replace", **kwargs):
         print("Fast mongoimport operation failed.  Reason: ", e)
         print("Trying again without mongoimport call")
         dd_into_coll = into.dispatch(Collection, DataDescriptor)
-        return dd_into_coll(coll,csv_dd)
+        return dd_into_coll(coll, csv_dd)
 
 
 @dispatch(Collection, (JSON, JSON_Streaming))
