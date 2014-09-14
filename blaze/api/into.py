@@ -619,36 +619,29 @@ def into(coll, d, if_exists="replace", **kwargs):
 
     copy_cmd = copy_cmd.format(**copy_info) + ' '.join(optional_flags)
 
-    try:
-        ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
-                              stdout=subprocess.PIPE)
-        ps.wait()
+    ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
+                          stdout=subprocess.PIPE)
+    ps.wait()
 
-        # need to check for date columns and update
-        date_cols = []
-        dshape = csv_dd.dshape
-        for t, c in zip(dshape[1].types, dshape[1].names):
-            if hasattr(t, "ty"):
-                if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
-                    date_cols.append((c, t.ty))
+    # need to check for date columns and update
+    date_cols = []
+    dshape = csv_dd.dshape
+    for t, c in zip(dshape[1].types, dshape[1].names):
+        if hasattr(t, "ty"):
+            if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
+                date_cols.append((c, t.ty))
 
-        for d_col, ty in date_cols:
-            mongo_data = list(coll.find({}, {d_col: 1}))
-            for doc in mongo_data:
-                try:
-                    t = parser.parse(doc[d_col])
-                except AttributeError:
-                    t = doc[d_col]
-                m_id = doc['_id']
-                coll.update({'_id': m_id}, {"$set": {d_col: t}})
+    for d_col, ty in date_cols:
+        mongo_data = list(coll.find({}, {d_col: 1}))
+        for doc in mongo_data:
+            try:
+                t = parser.parse(doc[d_col])
+            except AttributeError:
+                t = doc[d_col]
+            m_id = doc['_id']
+            coll.update({'_id': m_id}, {"$set": {d_col: t}})
 
-        return coll
-    except OSError as e:
-        # not sure what will go wrong yet
-        # should we roll back and drop collection?
-        print("Fast mongoimport operation failed.  Reason: %s" % e)
-        dd_into_coll = into.dispatch(Collection, DataDescriptor)
-        return dd_into_coll(coll, csv_dd)
+    return coll
 
 
 @dispatch(Collection, (JSON, JSON_Streaming))
@@ -687,17 +680,9 @@ def into(coll, d, if_exists="replace", **kwargs):
 
     copy_cmd = copy_cmd.format(**copy_info) + ' '.join(optional_flags)
 
-    try:
-        ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
-                              stdout=subprocess.PIPE)
-    except OSError:
-        # not sure what will go wrong yet
-        # should we roll back and drop collection?
-        dd_into_coll = into.dispatch(Collection, DataDescriptor)
-        return dd_into_coll(coll, json_dd)
-    else:
-        ps.wait()
-        return coll
+    ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
+                          stdout=subprocess.PIPE)
+    ps.wait()
 
 
 @dispatch(nd.array, DataDescriptor)
