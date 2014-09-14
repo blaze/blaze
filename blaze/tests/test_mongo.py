@@ -8,7 +8,7 @@ import tempfile
 import json
 import os
 from blaze.utils import filetext, tmpfile, raises
-from blaze.compatibility import PY3, xfail
+from blaze.compatibility import PY3
 
 from datashape import discover, dshape
 
@@ -16,7 +16,9 @@ from blaze import drop, into, create_index
 
 
 no_mongoimport = pytest.mark.skipif(raises(OSError,
-    lambda : subprocess.Popen('mongoimport', stdout=subprocess.PIPE).wait()),
+    lambda : subprocess.Popen('mongoimport',
+                              shell=os.name != 'nt',
+                              stdout=subprocess.PIPE).wait()),
     reason='mongoimport cannot be found')
 
 
@@ -209,7 +211,8 @@ def test_csv_mongodb_load(db, file_name, empty_collec):
     copy_cmd = """mongoimport -d {dbname} -c {coll} --type csv --file {abspath} --fields {column_names}"""
     copy_cmd = copy_cmd.format(**copy_info)
 
-    ps = subprocess.Popen(copy_cmd, stdout=subprocess.PIPE)
+    ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
+                          stdout=subprocess.PIPE)
     output = ps.stdout.read()
     mongo_data = list(coll.find({}, {'_0': 1, '_id': 0}))
 
