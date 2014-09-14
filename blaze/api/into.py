@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+import os
 from dynd import nd
 import datashape
 import sys
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all, valmap, compose
+from toolz import concat, partition_all, valmap
 from cytoolz import pluck
 import copy
 from datetime import datetime
@@ -588,46 +589,47 @@ def into(coll, d, if_exists="replace", **kwargs):
     csv_dd = d
     db = coll.database
 
+    copy_info = {
+        'dbname': db.name,
+        'coll': coll.name,
+        'abspath': d._abspath
+    }
+
+    optional_flags = []
+
+    if if_exists == 'replace':
+        optional_flags.append('--drop')
+
+    if kwargs.get('header', csv_dd.header):
+        optional_flags.append('--headerline')
+    if kwargs.get('ignore_blank', None):
+        optional_flags.append('--ignoreBlanks')
+
+    cols = kwargs.get('columns', csv_dd.columns)
+    copy_info['column_names'] = ','.join(cols)
+
+    delim = csv_dd.dialect['delimiter']
+    typ = copy_info['file_type'] = {',': 'csv', '\t': 'tsv'}.get(delim, None)
+    if typ is None:
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll, csv_dd)
+
+    copy_cmd = ("mongoimport -d {dbname} -c {coll} --type {file_type} "
+                "--file {abspath} --fields {column_names} ")
+
+    copy_cmd = copy_cmd.format(**copy_info) + ' '.join(optional_flags)
+
     try:
-        copy_info = {
-            'dbname':db.name,
-            'coll': coll.name,
-            'abspath': d._abspath
-            }
-        optional_flags = []
+        ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
+                              stdout=subprocess.PIPE)
+        ps.wait()
 
-        if if_exists=='replace':
-            optional_flags.append('--drop')
-
-        if kwargs.get('header',csv_dd.header):
-            optional_flags.append('--headerline')
-        if kwargs.get('ignore_blank', None):
-            optional_flags.append('--ignoreBlanks')
-
-        cols = kwargs.get('columns', csv_dd.columns)
-        copy_info['column_names'] = ','.join(cols)
-
-        if csv_dd.dialect['delimiter'] == ',':
-            copy_info['file_type'] = 'csv'
-        elif csv_dd.dialect['delimiter'] == '\t':
-            copy_info['file_type'] = 'tsv'
-        else:
-            raise NotImplementedError("Only CSV and TSV files are supported by mongoimport")
-
-        copy_cmd = ("mongoimport -d {dbname} -c {coll} --type {file_type} "
-                    "--file {abspath} --fields {column_names} ")
-
-        copy_cmd = copy_cmd.format(**copy_info)
-        copy_cmd = copy_cmd + ' '.join(optional_flags)
-        ps = subprocess.Popen(copy_cmd, stdout=subprocess.PIPE)
-        ps.communicate()
-
-        #need to check for date columns and update
+        # need to check for date columns and update
         date_cols = []
         dshape = csv_dd.dshape
         for t, c in zip(dshape[1].types, dshape[1].names):
             if hasattr(t, "ty"):
-                if isinstance(t.ty, datashape.Date) or isinstance(t.ty, datashape.DateTime):
+                if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
                     date_cols.append((c, t.ty))
 
         for d_col, ty in date_cols:
@@ -636,17 +638,15 @@ def into(coll, d, if_exists="replace", **kwargs):
                 try:
                     t = parser.parse(doc[d_col])
                 except AttributeError:
-                    print(m_id, " is already of type datetime")
                     t = doc[d_col]
                 m_id = doc['_id']
                 coll.update({'_id': m_id}, {"$set": {d_col: t}})
 
         return coll
-    except Exception as e:
+    except OSError as e:
         # not sure what will go wrong yet
         # should we roll back and drop collection?
-        print("Fast mongoimport operation failed.  Reason: ", e)
-        print("Trying again without mongoimport call")
+        print("Fast mongoimport operation failed.  Reason: %s" % e)
         dd_into_coll = into.dispatch(Collection, DataDescriptor)
         return dd_into_coll(coll, csv_dd)
 
@@ -667,34 +667,37 @@ def into(coll, d, if_exists="replace", **kwargs):
     json_dd = d
     db = coll.database
 
+    copy_info = {
+        'dbname': db.name,
+        'coll': coll.name,
+        'abspath': d._abspath
+    }
+    optional_flags = []
+
+    if if_exists == 'replace':
+        optional_flags.append('--drop')
+
+    if kwargs.get('json_array', None):
+        optional_flags.append('--jsonArray')
+
+    copy_info['file_type'] = 'json'
+
+    copy_cmd = ("mongoimport -d {dbname} -c {coll} --type {file_type} "
+                "--file {abspath} ")
+
+    copy_cmd = copy_cmd.format(**copy_info) + ' '.join(optional_flags)
+
     try:
-        copy_info = {
-            'dbname':db.name,
-            'coll': coll.name,
-            'abspath': d._abspath
-            }
-        optional_flags = []
-
-        if if_exists=='replace':
-            optional_flags.append('--drop')
-
-        if kwargs.get('json_array', None):
-            optional_flags.append('--jsonArray')
-
-        copy_info['file_type'] = 'json'
-
-        copy_cmd = "mongoimport -d {dbname} -c {coll} --type {file_type} --file {abspath} "
-
-        copy_cmd = copy_cmd.format(**copy_info)
-        copy_cmd = copy_cmd + ' '.join(optional_flags)
-        ps = subprocess.Popen(copy_cmd, stdout=subprocess.PIPE)
-        ps.communicate()
-        return coll
-    except Exception as e:
+        ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
+                              stdout=subprocess.PIPE)
+    except OSError:
         # not sure what will go wrong yet
         # should we roll back and drop collection?
         dd_into_coll = into.dispatch(Collection, DataDescriptor)
         return dd_into_coll(coll, json_dd)
+    else:
+        ps.wait()
+        return coll
 
 
 @dispatch(nd.array, DataDescriptor)
