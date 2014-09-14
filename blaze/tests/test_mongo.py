@@ -7,12 +7,17 @@ import subprocess
 import tempfile
 import json
 import os
-from blaze.utils import filetext, tmpfile
+from blaze.utils import filetext, tmpfile, raises
 from blaze.compatibility import PY3, xfail
 
 from datashape import discover, dshape
 
 from blaze import drop, into, create_index
+
+
+no_mongoimport = pytest.mark.skipif(raises(OSError,
+    lambda : subprocess.Popen('mongoimport', stdout=subprocess.PIPE).wait()),
+    reason='mongoimport cannot be found')
 
 
 @pytest.yield_fixture(scope='module')
@@ -182,7 +187,7 @@ class TestCreateNamedIndex(object):
         assert coll.index_information()['c_idx']['unique']
 
 
-@xfail(os.system('mongoimport') != 0, reason='mongoimport cannot be found')
+@no_mongoimport
 def test_csv_mongodb_load(db, file_name, empty_collec):
 
     csv = CSV(file_name)
@@ -266,8 +271,7 @@ les_mis_data = {"nodes":[{"name":"Myriel","group":1},
                 }
 
 
-@xfail(os.system('mongoimport') != 0,
-       raises=TypeError, reason='nested schemas not yet supported')
+@no_mongoimport
 def test_json_into_mongodb(empty_collec):
 
     with filetext(json.dumps(les_mis_data)) as filename:
@@ -312,8 +316,7 @@ data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
          u'tv_show': u'Battlestar Galactica'}]
 
 
-@xfail(os.system('mongoimport') != 0,
-       raises=ValueError, reason='nested schemas not yet supported')
+@no_mongoimport
 def test_jsonarray_into_mongodb(empty_collec):
 
     filename = tempfile.mktemp(".json")
