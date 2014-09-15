@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, json
 from dynd import nd
 from cytoolz import first
 from functools import partial, wraps
-from blaze import into, compute
+from blaze import into, compute, compute_one
 from ..api import discover, Table
 from ..expr import Expr, TableSymbol, Selection, ColumnWise, TableSymbol
 from ..expr import TableExpr
@@ -278,6 +278,20 @@ def to_tree(expr, names=None):
     else:
         return expr
 
+def expression_from_name(name):
+    """
+
+    >>> expression_from_name('By')
+    <class 'blaze.expr.table.By'>
+    """
+    for signature, func in compute_one.funcs.items():
+        try:
+            if signature[0].__name__ == name:
+                return signature[0]
+        except TypeError:
+            pass
+    raise ValueError('%s not found in compute_one' % name)
+
 
 def from_tree(expr, namespace=None):
     """ Convert core data structures to Blaze expression
@@ -337,7 +351,10 @@ def from_tree(expr, namespace=None):
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
-        cls = getattr(blaze.expr, op)
+        if hasattr(blaze.expr, op):
+            cls = getattr(blaze.expr, op)
+        else:
+            cls = expression_from_name(op)
         if 'Symbol' in op:
             children = [from_tree(arg) for arg in args]
         else:
