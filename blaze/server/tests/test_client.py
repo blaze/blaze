@@ -24,7 +24,7 @@ server = Server(datasets={'accounts': accounts,
 
 test = server.app.test_client()
 
-import blaze.server.client as client
+from blaze.server import client
 client.requests = test # OMG monkey patching
 
 
