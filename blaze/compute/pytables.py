@@ -22,7 +22,7 @@ def discover(t):
 def discover(c):
     dshape = ds.from_numpy(c.shape, c.dtype)
     return {'time64': ds.datetime_, 'time32': ds.date_}.get(c.type,
-                                                           dshape.subshape[1])
+                                                            dshape.subshape[1])
 
 
 @dispatch(tb.Table)
