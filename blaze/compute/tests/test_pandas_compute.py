@@ -541,3 +541,11 @@ def test_like():
 
     result = compute(expr, df).reset_index(drop=True)
     assert (result == expected).all().all()
+
+
+def test_element_slice():
+    assert (compute(t[0], df) == df.loc[0]).all()
+    assert (compute(t[2], df) == df.loc[2]).all()
+    assert (compute(t[:2], df) == df.loc[:1]).all().all()
+    assert (compute(t[1:3], df) == df.loc[1:2]).all().all()
+    assert (compute(t[1::2], df) == df.loc[1::2]).all().all()

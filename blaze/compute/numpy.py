@@ -154,3 +154,11 @@ def chunks(x, chunksize=1024):
     while start < n:
         yield x[start:start + chunksize]
         start += chunksize
+
+
+# Arrays
+from blaze.expr.array import *
+
+@dispatch((Element, Slice), np.ndarray)
+def compute_one(t, x, **kwargs):
+    return x[t.index]

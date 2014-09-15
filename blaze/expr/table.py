@@ -15,10 +15,12 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies)
 from . import scalar
 from .core import Expr, path
+from .array import Element, Slice
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
+from ..compatibility import (_inttypes, _strtypes, builtins, unicode,
+        basestring, map, zip)
 from ..dispatch import dispatch
 
 __all__ = '''
@@ -84,7 +86,11 @@ class TableExpr(Expr):
             return dshape(ds)
 
     def __getitem__(self, key):
-        if isinstance(key, (list, basestring, unicode)):
+        if isinstance(key, _inttypes):
+            return Element(self, key)
+        if isinstance(key, slice):
+            return Slice(self, key)
+        if isinstance(key, (list,) + _strtypes):
             return self.project(key)
         if isinstance(key, TableExpr):
             return selection(self, key)

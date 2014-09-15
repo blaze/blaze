@@ -66,6 +66,12 @@ def test_arithmetic():
              x / y, x / 2, 2 / x,
              x % y, x % 2, 2 % x]
 
+def test_slice():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    expr = t[1:6]
+    assert expr.dshape == dshape('5 * {name: string, amount: int}')
+
+    assert eval(str(expr)).isidentical(expr)
 
 def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
