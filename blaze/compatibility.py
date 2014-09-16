@@ -38,8 +38,11 @@ else:
 # SOFTWARE.
 
 
+import os
+
 PY2 = sys.version_info[0] == 2
 from toolz.compatibility import map, zip, range, reduce
+WIN = os.name == 'nt'
 
 if PY2:
     _strtypes = (str, unicode)

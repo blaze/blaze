@@ -223,20 +223,20 @@ class Test_Dialect(unittest.TestCase):
                  'skipinitialspace': False,
                  'quoting': 0,
                  'delimiter': ',',
-                 'line_terminator': '\n',
+                 'line_terminator': '\r\n',
                  'quotechar': '"',
                  'doublequote': False,
-                 'lineterminator': '\n',
+                 'lineterminator': '\r\n',
                  'sep': ','})
         assert (discover_dialect('1,1\n2,2') ==
                 {'escapechar': None,
                  'skipinitialspace': False,
                  'quoting': 0,
                  'delimiter': ',',
-                 'line_terminator': '\n',
+                 'line_terminator': '\r\n',
                  'quotechar': '"',
                  'doublequote': False,
-                 'lineterminator': '\n',
+                 'lineterminator': '\r\n',
                  'sep': ','})
 
 

@@ -21,7 +21,7 @@ from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END
-from ..compatibility import map, zip, PY2
+from ..compatibility import map, zip, PY2, WIN
 from .utils import ordered_index, listpack
 
 import csv
@@ -115,11 +115,9 @@ def discover_dialect(sample, dialect=None, **kwargs):
         # for sure
         dialect['sep'] = dialect['delimiter']
 
-    # pandas doesn't like two character newline terminators and line_terminator
-    # is for to_csv
+    # line_terminator is for to_csv
     dialect['lineterminator'] = dialect['line_terminator'] = \
-        dialect['lineterminator'].replace('\r\n', '\n').replace('\r', '\n')
-
+        dialect.get('line_terminator', dialect.get('lineterminator', os.linesep))
     return dialect
 
 
@@ -295,6 +293,9 @@ class CSV(DataDescriptor):
                         kwargs)
         filename, ext = os.path.splitext(self.path)
         ext = ext.lstrip('.')
+        # handle windows
+        if dialect['lineterminator'] == '\r\n':
+            dialect['lineterminator'] = None
         reader = pd.read_csv(self.path, compression={'gz': 'gzip',
                                                      'bz2': 'bz2'}.get(ext),
                              chunksize=chunksize, na_values=na_values,
@@ -446,27 +447,29 @@ class CSV(DataDescriptor):
         the file.
         """
         if not os.path.exists(self.path) or not os.path.getsize(self.path):
-            return b'\n'
+            return os.linesep
 
         f = self.open(self.path, mode='rb')
+        offset = 1 + int(WIN)
 
         try:
-            f.seek(-1, SEEK_END)
-            return f.read(1)
+
+            f.seek(-offset, SEEK_END)
+            return f.read(offset).decode(self.encoding)
         finally:
             f.close()
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
+        newline = dict() if PY2 else dict(newline='')
         dialect = keyfilter(to_csv_kwargs.__contains__, self.dialect)
-
-        should_write_newline = self.last_char() != b'\n'
-        f = self.open(self.path, mode)
+        should_write_newline = self.last_char() != os.linesep
+        f = self.open(self.path, mode, **newline)
 
         try:
             # we have data in the file, append a newline
             if should_write_newline:
-                f.write('\n')
+                f.write(os.linesep)
 
             for df in map(partial(bz.into, pd.DataFrame),
                           partition_all(self.chunksize, iter(rows))):
