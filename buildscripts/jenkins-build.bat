@@ -28,7 +28,7 @@ REM TODO: Add cffi to this list once it is added to anaconda windows.
 call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py pandas requests pytest toolz cytoolz bcolz || exit /b 1
 
 
-call C:\Anaconda\Scripts\conda install --yes --channel blaze mongodb || exit /b 1
+call C:\Anaconda\Scripts\conda install -p %PYENV_PREFIX% --yes --channel blaze mongodb || exit /b 1
 
 
 REM create a mongo service
