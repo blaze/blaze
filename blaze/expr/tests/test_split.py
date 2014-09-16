@@ -53,3 +53,22 @@ def test_summary():
     assert not agg.schema == dshape('{a: int32, b: int32}')
     assert agg_expr.isidentical(summary(a=agg.a.sum(),
                                         b=agg.b.sum() + 1))
+
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, summary(total=t.amount.sum()))
+
+    assert chunk_expr.isidentical(summary(total=chunk.amount.sum()))
+    assert agg_expr.isidentical(summary(total=agg.total.sum()))
+
+
+
+def test_by():
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, by(t.name, total=t.amount.sum()))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(by(chunk.name, total=chunk.amount.sum()))
+
+    assert not agg.iscolumn
+    assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
+

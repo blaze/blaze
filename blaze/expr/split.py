@@ -53,7 +53,7 @@ def split(leaf, expr, chunk=None, agg=None):
         agg = agg or TableSymbol('aggregate', center.schema, center.iscolumn)
     else:
         agg = agg or TableSymbol('aggregate',
-                                 datashape.var * center.dshape,
+                                 center.dshape,
                                  isinstance(center, Reduction))
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
@@ -88,3 +88,22 @@ def _split(expr, leaf=None, chunk=None, agg=None):
     agg_expr = summary(**{name: split(leaf, val, agg=agg)[1][1].subs({agg: agg[name]})
                             for name, val in zip(expr.names, expr.values)})
     return ((chunk, chunk_expr), (agg, agg_expr))
+
+
+@dispatch(By)
+def _split(expr, leaf=None, chunk=None, agg=None):
+    (chunk, chunk_apply), (agg, agg_apply) = \
+            split(leaf, expr.apply, chunk=chunk, agg=agg)
+
+    chunk_grouper = expr.grouper.subs({leaf: chunk})
+    if expr.grouper.iscolumn:
+        agg_grouper = agg[expr.columns[0]]
+    else:
+        agg_grouper = agg[list(expr.columns[:len(expr.grouper.columns)])]
+
+    return ((chunk, by(chunk_grouper, chunk_apply)),
+            (agg, by(agg_grouper, agg_apply)))
+
+
+
+
