@@ -37,7 +37,7 @@ set logpath=%PYENV_PREFIX%\mongodata\log
 mkdir %dbpath%
 mkdir %logpath%
 
-REM start in the background
+REM /b -> start without creating a new window. disables ^C handling
 start /b mongod.exe --dbpath %dbpath% --logpath %logpath%\mongod.log || exit /b 1
 
 echo on
@@ -64,6 +64,7 @@ REM Build/install Blaze
 
 call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml
 
+REM /im -> process name, /f -> force kill
 taskkill /im mongod.exe /f || exit /b 1
 
 IF %ERRORLEVEL% NEQ 0 exit /b 1
