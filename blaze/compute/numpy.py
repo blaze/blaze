@@ -86,7 +86,7 @@ def compute_up(t, x, **kwargs):
 
 
 @dispatch((std, var), np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(ddof=t.unbiased)
 
 

@@ -494,7 +494,9 @@ def like_regex_predicate(expr):
         return True
 
     return predicate
+
+
 @dispatch(Like, Sequence)
-def compute_one(expr, seq, **kwargs):
+def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)

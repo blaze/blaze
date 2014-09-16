@@ -97,7 +97,7 @@ class CustomExpr(TableExpr):
 
 
 @dispatch(CustomExpr, DataFrame)
-def compute_one(expr, data, **kwargs):
+def compute_up(expr, data, **kwargs):
     return data
 
 
