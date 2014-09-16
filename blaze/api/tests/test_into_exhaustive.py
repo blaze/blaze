@@ -9,7 +9,7 @@ from pandas import DataFrame
 from blaze.api.into import into
 from blaze.api.into import degrade_numpy_dtype_to_python
 from blaze.utils import tmpfile
-from blaze import Table, TableExpr, TableSymbol, compute, PyTables
+from blaze import Table
 import bcolz
 from blaze.data import CSV
 from blaze.sql import SQL
