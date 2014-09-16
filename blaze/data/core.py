@@ -6,6 +6,9 @@ import datashape
 from datashape.internal_utils import IndexCallable
 from datashape import discover
 from functools import partial
+from ..dispatch import dispatch
+from blaze.expr.table import Projection, Column
+from blaze.expr import Expr, UnaryOp
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
@@ -175,9 +178,6 @@ class DataDescriptor(object):
                             'datashapes of records, got %s' % self.dshape)
 
 
-from ..dispatch import dispatch
-from blaze.expr.table import Join, TableExpr, Projection, Column
-from blaze.expr import Expr, UnaryOp
 @dispatch((Expr, UnaryOp), DataDescriptor)
 def compute_one(t, ddesc, **kwargs):
     return compute_one(t, iter(ddesc))  # use Python streaming by default

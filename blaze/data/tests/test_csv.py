@@ -5,19 +5,21 @@ import tempfile
 import sys
 import os
 from collections import Iterator
+from datetime import datetime
 import pytest
 
 import datashape
 from datashape import dshape
 
-from blaze.compatibility import min_python_version, skipif
+from blaze import Table, into
+from blaze.compatibility import min_python_version
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
-from blaze.data.csv import has_header, discover_dialect
-from blaze.utils import filetext
+from blaze.utils import filetext, tmpfile, example
 from blaze.data.utils import tuplify
-from blaze.data.csv import drop
+from blaze.data.csv import drop, has_header, discover_dialect
 from dynd import nd
+import numpy as np
 
 osx_py3 = sys.platform == 'darwin' and sys.version_info[0] == 3
 
@@ -57,7 +59,8 @@ class Test_Other(unittest.TestCase):
             csv.extend([(6, 'Frank', 600),
                         (7, 'Georgina', 700)])
 
-            assert 'Georgina' in set(csv[:, 'name'])
+            expected = set(csv[:, 'name'])
+            assert 'Georgina' in expected
 
     def test_sep_kwarg(self):
         csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
@@ -68,11 +71,10 @@ class Test_Other(unittest.TestCase):
         dd = CSV('foo', 'w', schema='{name: string, amount: int}')
         assert list(dd.columns) == ['name', 'amount']
 
-    @skipif(osx_py3, reason='presently failing on Python 3 OSX')
     def test_unicode(self):
         this_dir = os.path.dirname(__file__)
         filename = os.path.join(this_dir, 'unicode.csv')
-        dd = CSV(filename, columns=['a', 'b'])
+        dd = CSV(filename, columns=['a', 'b'], encoding='utf8')
         assert dd.schema == dshape('{a: string, b: ?int64}')
         assert dd[0]
 
@@ -93,7 +95,7 @@ class Test_Indexing(unittest.TestCase):
         with open(self.csv_file, "w") as f:
             f.write(self.buf)
         self.dd = CSV(self.csv_file, dialect='excel', schema=self.schema,
-                            delimiter=' ', mode='r+')
+                      delimiter=' ', mode='r+')
         assert self.dd.header
 
     def tearDown(self):
@@ -192,23 +194,50 @@ class Test_Dialect(unittest.TestCase):
         with open(self.csv_file) as f:
             self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
-    def test_extend_structured(self):
+    def test_extend_structured_newline(self):
         with filetext('1,1.0\n2,2.0\n') as fn:
-            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}',
-                            delimiter=',')
+            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
             csv.extend([(3, 3)])
             assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
 
+    def test_extend_structured_no_newline(self):
+        with filetext('1,1.0\n2,2.0') as fn:
+            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
+            csv.extend([(3, 3)])
+            assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
+
+    def test_extend_structured_many_newlines(self):
+        inan = np.array([np.nan]).astype('int32').item()
+        with filetext('1,1.0\n2,2.0\n\n\n\n') as fn:
+            csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
+            csv.extend([(3, 3)])
+            result = tuplify(tuple(csv))
+            expected = ((1, 1.0), (2, 2.0), (inan, np.nan), (inan, np.nan),
+                        (inan, np.nan), (3, 3.0))
+            assert np.isclose(result, expected, equal_nan=True).all()
+
     def test_discover_dialect(self):
         s = '1,1\r\n2,2'
-        self.assertEqual(discover_dialect(s),
+        assert (discover_dialect(s) ==
                 {'escapechar': None,
                  'skipinitialspace': False,
                  'quoting': 0,
                  'delimiter': ',',
-                 'lineterminator': '\r\n',
+                 'line_terminator': '\r\n',
                  'quotechar': '"',
-                 'doublequote': False})
+                 'doublequote': False,
+                 'lineterminator': '\r\n',
+                 'sep': ','})
+        assert (discover_dialect('1,1\n2,2') ==
+                {'escapechar': None,
+                 'skipinitialspace': False,
+                 'quoting': 0,
+                 'delimiter': ',',
+                 'line_terminator': '\r\n',
+                 'quotechar': '"',
+                 'doublequote': False,
+                 'lineterminator': '\r\n',
+                 'sep': ','})
 
 
 class TestCSV_New_File(unittest.TestCase):
@@ -239,16 +268,17 @@ class TestCSV_New_File(unittest.TestCase):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
         dd.extend([self.data[0]])
         with open(self.filename) as f:
-            self.assertEqual(f.readlines()[0].strip(), 'Alice 100')
+            s = f.readlines()[0].strip()
+        assert s == 'Alice 100'
 
     def test_extend(self):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
         dd.extend(self.data)
         with open(self.filename) as f:
             lines = f.readlines()
-            self.assertEqual(lines[0].strip(), 'Alice 100')
-            self.assertEqual(lines[1].strip(), 'Bob 200')
-            self.assertEqual(lines[2].strip(), 'Alice 50')
+        expected_lines = 'Alice 100', 'Bob 200', 'Alice 50'
+        for i, eline in enumerate(expected_lines):
+            assert lines[i].strip() == eline
 
         expected_dshape = datashape.DataShape(datashape.Var(), self.schema)
         # TODO: datashape comparison is broken
@@ -276,7 +306,6 @@ class TestTransfer(unittest.TestCase):
 
                 with open(dest_fn) as f:
                     self.assertEquals(f.read(), '1;1--2;2--')
-
 
     def test_iter(self):
         with filetext('1,1\n2,2\n') as fn:
@@ -362,6 +391,39 @@ class TestCSV(unittest.TestCase):
     def test_getitem_start_step(self):
         dd = CSV(self.csv_file, schema=self.schema)
         self.assertEqual(tuplify(dd[1::2]), self.data[1::2])
+
+    def test_repr_hdma(self):
+        assert repr(Table(CSV(example('hmda-small.csv'))))
+
+
+@pytest.yield_fixture
+def date_data():
+    data = [('Alice', 100.0, datetime(2014, 9, 11, 0, 0, 0, 0)),
+            ('Alice', -200.0, datetime(2014, 9, 10, 0, 0, 0, 0)),
+            ('Bob', 300.0, None)]
+    schema = dshape('{name: string, amount: float32, date: ?datetime}')
+    with tmpfile('.csv') as f:
+        csv = CSV(f, schema=schema, mode='w')
+        csv.extend(data)
+        yield CSV(f, schema=schema, mode='r')
+
+
+def test_subset_with_date(date_data):
+    csv = date_data
+    sub = csv[[0, 1], 'date']
+    expected = [datetime(2014, 9, 11, 0, 0, 0, 0),
+                datetime(2014, 9, 10, 0, 0, 0, 0)]
+    assert into(list, sub) == expected
+
+
+def test_subset_no_date(date_data):
+    csv = date_data
+    sub = csv[:, ['amount', 'name']]
+    expected = [(100.0, 'Alice'),
+                (-200.0, 'Alice'),
+                (300.0, 'Bob')]
+    result = into(list, sub)
+    assert result == expected
 
 
 @pytest.yield_fixture
