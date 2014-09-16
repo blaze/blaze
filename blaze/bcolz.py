@@ -5,10 +5,11 @@ from bcolz import carray, ctable
 import numpy as np
 from pandas import DataFrame
 from collections import Iterator
-from toolz import partition_all
+from toolz import partition_all, keyfilter
 
 from .dispatch import dispatch
 from .compute.bcolz import *
+from .utils import keywords
 
 
 __all__ = ['into', 'bcolz', 'chunks']
