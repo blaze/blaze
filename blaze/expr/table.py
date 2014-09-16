@@ -902,6 +902,10 @@ class Summary(Expr):
         return dshape(Record(list(zip(self.names,
                                       [v.dtype for v in self.values]))))
 
+    def __str__(self):
+        return 'summary(' + ', '.join('%s=%s' % (name, str(val))
+                for name, val in zip(self.names, self.values)) + ')'
+
 
 def summary(**kwargs):
     items = sorted(kwargs.items(), key=first)
