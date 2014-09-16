@@ -913,8 +913,13 @@ def summary(**kwargs):
     values = tuple(map(second, items))
     child = common_subexpression(*values)
 
-    if len(kwargs) == 1 and isinstance(child, Reduction):
-        child = child.child
+    if len(kwargs) == 1 and not isinstance(child, TableExpr):
+        while not isinstance(child, TableExpr):
+            children = [i for i in child.inputs if isinstance(i, Expr)]
+            if len(children) == 1:
+                child = children[0]
+            else:
+                raise ValueError()
 
     return Summary(child, names, values)
 

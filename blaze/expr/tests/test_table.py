@@ -378,6 +378,7 @@ def test_summary():
 
     assert not summary(total=t.amount.sum()).child.isidentical(
             t.amount.sum())
+    assert isinstance(summary(total=t.amount.sum() + 1).child, TableExpr)
 
 
 def test_reduction_arithmetic():
