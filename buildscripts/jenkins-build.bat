@@ -35,7 +35,7 @@ REM create a mongo service
 set dbpath=%PYENV_PREFIX%\mongodata\db
 set logpath=%PYENV_PREFIX%\mongodata\log
 mkdir %dbpath%
-mkdir %dblogpath%
+mkdir %logpath%
 
 REM start in the background
 start /b mongod.exe --dbpath %dbpath% --logpath %logpath%
