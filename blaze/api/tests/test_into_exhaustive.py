@@ -48,14 +48,14 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
 sql = SQL('sqlite:///:memory:', 'accounts', schema=schema)
 sql.extend(L)
 
-data = {list: L,
-        Table: Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}'),
-        DataFrame: df,
-        np.ndarray: x,
-        nd.array: arr,
-        bcolz.ctable: bc,
-        CSV: csv,
-        SQL: sql}
+data = [(list, L),
+        (Table, Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}')),
+        (DataFrame, df),
+        (np.ndarray, x),
+        (nd.array, arr),
+        (bcolz.ctable, bc),
+        (CSV, csv),
+        (SQL, sql)]
 
 schema_no_date = '{amount: int64, id: int64, name: string[7]}'
 sql_no_date = SQL('sqlite:///:memory:', 'accounts_no_date', schema=schema_no_date)
@@ -63,14 +63,14 @@ sql_no_date = SQL('sqlite:///:memory:', 'accounts_no_date', schema=schema_no_dat
 L_no_date = list(pluck([0, 1, 2], L))
 sql_no_date.extend(L_no_date)
 
-no_date = {list: list(pluck([0, 1, 2], L)),
-           Table: Table(list(pluck([0, 1, 2], L)),
-                        '{amount: int64, id: int64, name: string[7]}'),
-           DataFrame: df[['amount', 'id', 'name']],
-           np.ndarray: x[['amount', 'id', 'name']],
-           nd.array: nd.fields(arr, 'amount', 'id', 'name'),
-           bcolz.ctable: bc[['amount', 'id', 'name']],
-           SQL: sql_no_date}
+no_date = [(list, list(pluck([0, 1, 2], L))),
+           (Table, Table(list(pluck([0, 1, 2], L)),
+                         '{amount: int64, id: int64, name: string[7]}')),
+           (DataFrame, df[['amount', 'id', 'name']]),
+           (np.ndarray, x[['amount', 'id', 'name']]),
+           (nd.array, nd.fields(arr, 'amount', 'id', 'name')),
+           (bcolz.ctable, bc[['amount', 'id', 'name']]),
+           (SQL, sql_no_date)]
 
 
 try:
@@ -95,8 +95,8 @@ if pymongo:
 try:
     import tables
     f = tables.open_file(os.path.join(dirname, 'accounts.h5'))
-    tb = f.get_node('/accounts')
-    no_date[tables.Table] = tb
+    pytab = tb = f.get_node('/accounts')
+    no_date.append((tables.Table, tb))
     from tables import Table as PyTable
 except ImportError:
     tables = None
@@ -121,8 +121,8 @@ def normalize(a):
 
 def test_base():
     """ Test all pairs of base in-memory data structures """
-    sources = [v for k, v in data.items() if k not in [list]]
-    targets = [v for k, v in data.items() if k not in [Table, Collection, CSV,
+    sources = [v for k, v in data if k not in [list]]
+    targets = [v for k, v in data if k not in [Table, Collection, CSV,
         nd.array, SQL]]
     for a in sources:
         for b in targets:
@@ -130,16 +130,16 @@ def test_base():
 
 def test_into_empty_sql():
     """ Test all sources into empty SQL database """
-    sources = [v for k, v in data.items() if k not in [list]]
+    sources = [v for k, v in data if k not in [list]]
     for a in sources:
             sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
             assert normalize(into(sql_empty, a)) == normalize(sql)
 
 
 def test_expressions():
-    sources = [v for k, v in data.items() if k not in [nd.array, CSV, Table]]
-    targets = [v for k, v in no_date.items() if k not in [Table, CSV,
-        Collection, nd.array, PyTable, SQL]]
+    sources = [v for k, v in data if k not in [nd.array, CSV, Table]]
+    targets = [v for k, v in no_date if k not in
+               [Table, CSV, Collection, nd.array, PyTable, SQL]]
 
     for a in sources:
         for b in targets:
@@ -172,9 +172,23 @@ def skip_if_not(x):
 
 @skip_if_not(ColumnDataSource)
 def test_ColumnDataSource():
-    sources = [v for k, v in data.items() if k not in [list]]
+    sources = [v for k, v in data if k not in [list]]
     for a in sources:
         assert into(ColumnDataSource, a).data == cds.data
+
+
+@pytest.fixture
+def tables_dshape():
+    return ('var * {amount: int64, id: int64, '
+            'name: string[7, "A"], timestamp: datetime}')
+
+
+@pytest.mark.parametrize('a', [v for k, v in data if k != list])
+def test_into_PyTables(a, tables_dshape):
+    with tmpfile('h5') as filename:
+        lhs = into(tables.Table, a, dshape=tables_dshape, filename=filename,
+                   datapath='/data')
+        np.testing.assert_array_equal(lhs[:][['amount', 'id', 'name']], tb[:])
 
 
 @pytest.fixture
