@@ -32,13 +32,13 @@ call C:\Anaconda\Scripts\conda install -p %PYENV_PREFIX% --yes --channel blaze m
 
 
 REM create a mongo service
-mkdir c:\data\db
-mkdir c:\data\log
-set cfgpath="C:\users\%username%\Anaconda\mongod.cfg"
-echo logpath=c:\data\log\mongod.log> %cfgpath%
-echo dbpath=c:\data\db>> %cfgpath%
-sc.exe create MongoDB binPath= "\"%cfgpath%\" --service --config=\"%cfgpath%\"" DisplayName= "MongoDB 2.6 Standard" start= "auto"
-net start MongoDB
+set dbpath=%PYENV_PREFIX%\mongodata\db
+set logpath=%PYENV_PREFIX%\mongodata\log
+mkdir %dbpath%
+mkdir %dblogpath%
+
+REM start in the background
+start /b mongod.exe --dbpath %dbpath% --logpath %logpath%
 
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
@@ -64,8 +64,7 @@ REM Build/install Blaze
 
 call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml
 
-net stop MongoDB
-sc.exe delete MongoDB
+taskkill /im mongod.exe /f
 
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 exit /b 0
