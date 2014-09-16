@@ -1,4 +1,5 @@
 from blaze.expr import *
+import datashape
 
 good_to_split = (Reduction, By)
 can_split = good_to_split + (Distinct, Selection, RowWise)
@@ -22,3 +23,47 @@ def path_split(leaf, expr):
             return last
         last = node
     return node
+
+
+def split(leaf, expr):
+    """ Split expression for chunked computation
+
+    Break up a computation ``leaf -> expr`` so that it can be run in chunks.
+    This returns two computations, one to perform on each chunk and then one to
+    perform on the union of these intermediate results
+
+        chunk -> chunk-expr
+        aggregate -> aggregate-expr
+
+    Returns
+    -------
+
+    Pair of (TableSymbol, Expr) pairs
+
+        (chunk, chunk_expr), (aggregate, aggregate_expr)
+
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> expr = t.id.count()
+    >>> split(t, expr)
+    ((chunk, count(child=chunk['id'])), (aggregate, sum(child=aggregate)))
+    """
+    center = path_split(leaf, expr)
+    chunk = TableSymbol('chunk', leaf.dshape, leaf.iscolumn)
+    if isinstance(center, TableExpr):
+        agg = TableSymbol('aggregate', center.schema, center.iscolumn)
+    else:
+        agg = TableSymbol('aggregate', datashape.var * center.dshape, True)
+
+    return _split(expr, leaf=leaf, chunk=chunk, agg=agg)
+
+
+reductions = {sum: (sum, sum), count: (count, sum),
+              min: (min, min), max: (max, max),
+              any: (any, any), all: (all, all)}
+
+
+@dispatch(tuple(reductions))
+def _split(expr, leaf=None, chunk=None, agg=None):
+    a, b = reductions[type(expr)]
+    return ((chunk, a(expr.subs({leaf: chunk}).child)),
+            (agg, b(agg)))
