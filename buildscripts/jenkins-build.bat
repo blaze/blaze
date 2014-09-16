@@ -26,7 +26,9 @@ SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
 REM TODO: Add cffi to this list once it is added to anaconda windows.
 
 call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py pandas requests pytest toolz cytoolz bcolz || exit /b 1
-call C:\Anaconda\Scripts\conda install --yes --channel blaze mongodb
+
+
+call C:\Anaconda\Scripts\conda install -p %PYENV_PREFIX% --yes --channel blaze mongodb || exit /b 1
 
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
@@ -50,6 +52,22 @@ IF %ERRORLEVEL% NEQ 0 exit /b 1
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 
-call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit /b 1
+REM create a mongodb process
+set dbpath=%PYENV_PREFIX%\mongodata\db
+set logpath=%PYENV_PREFIX%\mongodata\log
+mkdir %dbpath%
+mkdir %logpath%
+
+REM /b -> start without creating a new window. disables ^C handling
+start /b mongod.exe --dbpath %dbpath% --logpath %logpath%\mongod.log || exit /b 1
+
+call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml
+
+set testerror=%errorlevel%
+
+REM /im -> process name, /f -> force kill
+taskkill /im mongod.exe /f || exit /b 1
+
+if %testerror% NEQ 0 exit /b 1
 
 exit /b 0
