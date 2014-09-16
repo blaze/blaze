@@ -20,6 +20,8 @@ def test_path_split():
     expr = count(t.amount.distinct())
     assert path_split(t, expr).isidentical(t.amount.distinct())
 
+    expr = summary(total=t.amount.sum())
+    assert path_split(t, expr).isidentical(expr)
 
 
 def test_sum():
@@ -59,7 +61,6 @@ def test_summary():
 
     assert chunk_expr.isidentical(summary(total=chunk.amount.sum()))
     assert agg_expr.isidentical(summary(total=agg.total.sum()))
-
 
 
 def test_by():
