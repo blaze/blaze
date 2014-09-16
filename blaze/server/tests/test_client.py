@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import TableSymbol, compute, Table, by, into
+from blaze import TableSymbol, compute, Table, by, into, TableExpr
+from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.data.python import Python
 from blaze.server.index import parse_index, emit_index
@@ -24,7 +25,7 @@ server = Server(datasets={'accounts': accounts,
 
 test = server.app.test_client()
 
-import blaze.server.client as client
+from blaze.server import client
 client.requests = test # OMG monkey patching
 
 
@@ -85,3 +86,23 @@ def test_resource_default_port():
 def test_resource_all_in_one():
     ec = resource('blaze://localhost:6363::accounts_df')
     assert discover(ec) == discover(df)
+
+
+class CustomExpr(TableExpr):
+    __slots__ = 'child',
+
+    @property
+    def dshape(self):
+        return self.child.dshape
+
+
+@dispatch(CustomExpr, DataFrame)
+def compute_one(expr, data, **kwargs):
+    return data
+
+
+def test_custom_expressions():
+    ec = ExprClient('localhost:6363', 'accounts_df')
+    t = TableSymbol('t', discover(ec))
+
+    assert list(map(tuple, compute(CustomExpr(t), ec))) == into(list, df)

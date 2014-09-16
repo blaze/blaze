@@ -23,6 +23,7 @@ from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
 from .sql import *
+from .server import *
 
 try:
     from .spark import *
