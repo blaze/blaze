@@ -1,8 +1,8 @@
 from blaze.expr import *
 import datashape
 
-good_to_split = (Reduction, By)
-can_split = good_to_split + (Distinct, Selection, RowWise)
+good_to_split = (Reduction, By, Distinct)
+can_split = good_to_split + (Selection, RowWise)
 
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
@@ -54,7 +54,11 @@ def split(leaf, expr):
     else:
         agg = TableSymbol('aggregate', datashape.var * center.dshape, True)
 
-    return _split(expr, leaf=leaf, chunk=chunk, agg=agg)
+    ((chunk, chunk_expr), (agg, agg_expr)) = \
+            _split(center, leaf=leaf, chunk=chunk, agg=agg)
+
+    return ((chunk, chunk_expr),
+            (agg, expr.subs({center: agg}).subs({agg: agg_expr})))
 
 
 reductions = {sum: (sum, sum), count: (count, sum),
@@ -67,3 +71,9 @@ def _split(expr, leaf=None, chunk=None, agg=None):
     a, b = reductions[type(expr)]
     return ((chunk, a(expr.subs({leaf: chunk}).child)),
             (agg, b(agg)))
+
+
+@dispatch(Distinct)
+def _split(expr, leaf=None, chunk=None, agg=None):
+    return ((chunk, expr.subs({leaf: chunk})),
+            (agg, agg.distinct()))
