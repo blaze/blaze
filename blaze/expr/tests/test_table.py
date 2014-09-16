@@ -50,10 +50,10 @@ def test_nonzero():
 
 
 def test_eq():
-    assert TableSymbol('t', '{a: string, b: int}') == \
-            TableSymbol('t', '{a: string, b: int}')
-    assert TableSymbol('t', '{b: string, a: int}') != \
-            TableSymbol('t', '{a: string, b: int}')
+    assert TableSymbol('t', '{a: string, b: int}').isidentical(
+            TableSymbol('t', '{a: string, b: int}'))
+    assert not TableSymbol('t', '{b: string, a: int}').isidentical(
+            TableSymbol('t', '{a: string, b: int}'))
 
 
 def test_arithmetic():
@@ -138,6 +138,14 @@ def test_selection_path_check():
     t2 = t[t.name == 'Alice']
     t3 = t2[t2.amount > 0]
     assert t3
+
+def test_path_issue():
+    from blaze.api.dplyr import transform
+    t = TableSymbol('t', "{ topic : string, word : string, result : ?float64}")
+    t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
+                                         schema='{size: float64}'))
+
+    assert t2.sizes in t2.children
 
 
 def test_different_schema_raises():
@@ -609,8 +617,8 @@ def test_iscolumn():
 
     assert TableSymbol('b', '{x: int}', iscolumn=True).iscolumn
     assert not TableSymbol('b', '{x: int}', iscolumn=False).iscolumn
-    assert TableSymbol('b', '{x: int}', iscolumn=True) != \
-            TableSymbol('b', '{x: int}', iscolumn=False)
+    assert not TableSymbol('b', '{x: int}', iscolumn=True).isidentical(
+            TableSymbol('b', '{x: int}', iscolumn=False))
 
 
 def test_discover():
@@ -789,3 +797,5 @@ def test_like():
     assert eval(str(expr)).isidentical(expr)
     assert expr.schema == t.schema
     assert expr.dshape[0] == datashape.var
+
+
