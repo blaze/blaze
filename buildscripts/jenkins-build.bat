@@ -26,7 +26,19 @@ SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
 REM TODO: Add cffi to this list once it is added to anaconda windows.
 
 call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py pandas requests pytest toolz cytoolz bcolz || exit /b 1
-call C:\Anaconda\Scripts\conda install --yes --channel blaze mongodb
+
+
+call C:\Anaconda\Scripts\conda install --yes --channel blaze mongodb || exit /b 1
+
+
+REM create a mongo service
+mkdir c:\data\db
+mkdir c:\data\log
+set cfgpath="C:\users\%username%\Anaconda\mongod.cfg"
+echo logpath=c:\data\log\mongod.log> %cfgpath%
+echo dbpath=c:\data\db>> %cfgpath%
+sc.exe create MongoDB binPath= "\"%cfgpath%\" --service --config=\"%cfgpath%\"" DisplayName= "MongoDB 2.6 Standard" start= "auto"
+net start MongoDB
 
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
@@ -50,6 +62,10 @@ IF %ERRORLEVEL% NEQ 0 exit /b 1
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 
-call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit /b 1
+call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml
 
+net stop MongoDB
+sc.exe delete MongoDB
+
+IF %ERRORLEVEL% NEQ 0 exit /b 1
 exit /b 0
