@@ -4,10 +4,10 @@ import os
 from dynd import nd
 import datashape
 import sys
-from datashape import dshape, Record, to_numpy_dtype, from_numpy
+from datashape import dshape, Record, to_numpy_dtype
 import toolz
 from toolz import concat, partition_all, valmap, first, merge
-from cytoolz import pluck, valfilter
+from cytoolz import pluck
 import copy
 from datetime import datetime
 from numbers import Number
@@ -229,6 +229,7 @@ def into(_, t, **kwargs):
     for name, dtype in sort_dtype_items(t.coldtypes.items(), t.colnames):
         typ = getattr(t.cols, name).type
         fields.append((name, {'time64': 'datetime64[us]',
+                              'time32': 'datetime64[D]',
                               'string': dtype.str}.get(typ, typ)))
     return res.astype(np.dtype(fields))
 
@@ -256,9 +257,10 @@ def typehint(x, typedict):
     """Replace the dtypes in `x` keyed by `typedict` with the dtypes in
     `typedict`.
     """
-    lhs = dict(zip(x.dtype.fields.keys(), map(first, x.dtype.fields.values())))
+    dtype = x.dtype
+    lhs = dict(zip(dtype.fields.keys(), map(first, dtype.fields.values())))
     dtype_list = list(merge(lhs, typedict).items())
-    return np.dtype(sort_dtype_items(dtype_list, x.dtype.names))
+    return x.astype(np.dtype(sort_dtype_items(dtype_list, dtype.names)))
 
 
 @dispatch(tb.Table, np.ndarray)
@@ -266,8 +268,8 @@ def into(t, x, **kwargs):
     dt_types = dict((k, 'datetime64[us]') for k, (v, _) in
                     x.dtype.fields.items() if issubclass(v.type, np.datetime64))
     x = numpy_fixlen_strings(x)
-    x = x.astype(typehint(x, dt_types))
-    x = x.astype(typehint(x, valmap(lambda x: 'f8', dt_types)))
+    x = typehint(typehint(x, dt_types), dict.fromkeys(dt_types, 'f8'))
+
     for name in dt_types:
         x[name] /= 1e6
 
@@ -281,12 +283,14 @@ def into(t, c, **kwargs):
         into(t, chunk, **kwargs)
     return t
 
+
 @dispatch(tb.node.MetaNode, (ctable, tb.Table, list))
 def into(table, data, filename=None, datapath=None, dshape=None, **kwargs):
-    dshape = dshape or discover(data)
-    t = PyTables(filename, datapath=datapath, dshape=dshape)
+    ds = datashape.dshape(dshape if dshape is not None else discover(data))
+    t = PyTables(filename, datapath=datapath, dshape=ds)
     for chunk in chunks(data):
-        into(t, chunk)
+        a = np.array(list(map(tuple, chunk)), dtype=ds.measure.to_numpy_dtype())
+        into(t, a)
     return t
 
 
@@ -303,8 +307,7 @@ def into(bc, data, **kwargs):
 def into(table, x, filename=None, datapath=None, **kwargs):
     # tb.node.MetaNode == type(tb.Table)
     x = numpy_fixlen_strings(x)
-    t = PyTables(filename, datapath=datapath,
-                 dshape=discover(x))
+    t = PyTables(filename, datapath=datapath, dshape=discover(x))
     return into(t, x, **kwargs)
 
 
@@ -771,8 +774,7 @@ def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, ColumnDataSource, ctable, tb.Table,
-    list, tuple, set),
+@dispatch((np.ndarray, ColumnDataSource, ctable, tb.Table, list, tuple, set),
           (CSV, Excel))
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
