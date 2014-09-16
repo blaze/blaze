@@ -145,7 +145,7 @@ and transforms the data appropriately, like
    >>> predicate = lambda amt: amt < 0
    >>> data = filter(predicate, data)
 
-This step-by-step approach is easy to define through dispatched ``compute_one``
+This step-by-step approach is easy to define through dispatched ``compute_up``
 functions.  We create a small recipe for how to compute each expression type
 (e.g. ``Projection``, ``Selection``, ``By``) against each data type (e.g.,
 ``list``, ``DataFrame``, ``sqlalchemy.Table``, ....)  Here is the recipe
@@ -154,7 +154,7 @@ mapping a ``Selection`` to a ``DataFrame``:
 .. code-block:: python
 
    >>> @dispatch(Selection, DataFrame)
-   ... def compute_one(t, df, **kwargs):
+   ... def compute_up(t, df, **kwargs):
    ...     predicate = compute(t.predicate, df)
    ...     return df[predicate]
 
@@ -166,16 +166,16 @@ example here is a start of a backend for PyTables:
 .. code-block:: python
 
    >>> @dispatch(Selection, tb.Table)
-   ... def compute_one(expr, data):
+   ... def compute_up(expr, data):
    ...     s = eval_str(expr.predicate)  # Produce string like 'amount < 0'
    ...     return data.read_where(s)     # Use PyTables read_where method
 
    >>> @dispatch(Head, tb.Table)
-   ... def compute_one(expr, data):
+   ... def compute_up(expr, data):
    ...     return data[:expr.n]          # PyTables supports standard indexing
 
    >>> @dispatch(Column, tb.Table)
-   ... def compute_one(expr, data):
+   ... def compute_up(expr, data):
    ...     return data.col(expr.column)  # Use the PyTables .col method
 
 
@@ -186,16 +186,16 @@ developers to write, even without deep knowledge of Blaze internals.
 Compute Traversal
 -----------------
 
-The ``compute_one`` functions expect to be given:
+The ``compute_up`` functions expect to be given:
 
 1.  The expression containing information about the computation to be performed
 2.  The data elements corresponding to the ``.inputs`` of that expression
 
-The ``compute`` function orchestrates ``compute_one`` functions and performs
+The ``compute`` function orchestrates ``compute_up`` functions and performs
 the actual traversal, accruing intermediate results from the use of
-``compute_one``.  By default ``compute`` performs a ``bottom_up`` traversal.
+``compute_up``.  By default ``compute`` performs a ``bottom_up`` traversal.
 First it evaluates the leaves of the computation by swapping out keys for
-values in the input dictionary, ``{t: data}``.  It then calls ``compute_one``
+values in the input dictionary, ``{t: data}``.  It then calls ``compute_up``
 functions on these leaves to find intermediate nodes in the tree.  It repeats
 this process, walking up the tree, and at each stage translating a Blaze
 expression into the matching data element given the data elements of the
@@ -205,7 +205,7 @@ node, at which point it can return the result to the user.
 Sometimes we want to perform pre-processing or post-processing on the
 expression or the result.  For example when calling ``compute`` on a
 ``blaze.data.SQL`` object we actually want to pre-process this input to extract
-out the ``sqlalchemy.Table`` object and call ``compute_one`` on that.  When
+out the ``sqlalchemy.Table`` object and call ``compute_up`` on that.  When
 we're finished and have successfully translated our Blaze expression to a
 SQLAlchemy expression we want to post-process this result by actually running
 the query in our SQL database and returning the concrete results.
