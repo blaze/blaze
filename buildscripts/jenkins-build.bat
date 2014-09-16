@@ -38,7 +38,7 @@ mkdir %dbpath%
 mkdir %logpath%
 
 REM start in the background
-start /b mongod.exe --dbpath %dbpath% --logpath %logpath%
+start /b mongod.exe --dbpath %dbpath% --logpath %logpath%\mongod.log || exit /b 1
 
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
@@ -64,7 +64,7 @@ REM Build/install Blaze
 
 call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml
 
-taskkill /im mongod.exe /f
+taskkill /im mongod.exe /f || exit /b 1
 
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 exit /b 0
