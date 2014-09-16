@@ -222,6 +222,8 @@ def path(a, b):
     """
     while not a.isidentical(b):
         yield a
+        if not a.inputs:
+            break
         for child in a.inputs:
             if b in child.traverse():
                 a = child
