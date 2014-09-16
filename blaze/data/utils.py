@@ -4,7 +4,7 @@ from itertools import chain
 from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record, DataShape
-from datashape.predicates import isunit, isdimension
+from datashape.predicates import isdimension
 from toolz import partition_all, partial, map
 from ..dispatch import dispatch
 
@@ -153,3 +153,21 @@ def tuplify(x):
         return tuple(map(tuplify, x))
     else:
         return x
+
+
+def listpack(x):
+    """
+
+    >>> listpack(1)
+    [1]
+    >>> listpack((1, 2))
+    [1, 2]
+    >>> listpack([1, 2])
+    [1, 2]
+    """
+    if isinstance(x, tuple):
+        return list(x)
+    elif isinstance(x, list):
+        return x
+    else:
+        return [x]

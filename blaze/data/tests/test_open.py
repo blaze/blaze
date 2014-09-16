@@ -1,30 +1,36 @@
-
 import sys
+import pytest
 from functools import partial
 from blaze.data import CSV, JSON
 
 from blaze.utils import tmpfile, raises
 from blaze.data.utils import tuplify
-from blaze.compatibility import xfail
+from blaze.compatibility import xfail, PY2
 
 import gzip
 
-is_py2_win = sys.platform == 'win32' and sys.version_info[:2] < (3, 0)
+is_py2_win = sys.platform == 'win32' and PY2
 
-@xfail(is_py2_win, reason='Win32 py2.7 unicode/gzip/eol needs sorting out')
-def test_gzopen_csv():
+
+@pytest.yield_fixture
+def rsrc():
     with tmpfile('.csv.gz') as filename:
         f = gzip.open(filename, 'wt')
         f.write('1,1\n2,2')
         f.close()
+        yield filename
 
 
-        # Not a valid CSV file
-        assert raises(Exception, lambda: list(CSV(filename, schema='2 * int')))
+@xfail(reason='Invalid opener')
+def test_gzopen_no_gzip_open(rsrc):
+    dd = CSV(rsrc, schema='2 * int')
+    assert tuplify(list(dd)) == ((1, 1), (2, 2))
 
-        dd = CSV(filename, schema='2 * int', open=partial(gzip.open, mode='rt'))
 
-        assert tuplify(list(dd)) == ((1, 1), (2, 2))
+@xfail(is_py2_win, reason='Win32 py2.7 unicode/gzip/eol needs sorting out')
+def test_gzopen_csv(rsrc):
+    dd = CSV(rsrc, schema='2 * int', open=partial(gzip.open, mode='rt'))
+    assert tuplify(list(dd)) == ((1, 1), (2, 2))
 
 
 @xfail(is_py2_win, reason='Win32 py2.7 unicode/gzip/eol needs sorting out')

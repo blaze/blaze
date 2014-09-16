@@ -8,6 +8,7 @@ from datetime import datetime
 from pandas import DataFrame
 
 import blaze
+from blaze.utils import example
 from blaze import discover, TableSymbol, by, CSV, compute
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.data.python import Python
@@ -203,9 +204,7 @@ def test_compute_with_namespace():
 
 @pytest.fixture
 def iris_server():
-    iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir, 'examples',
-                            'data', 'iris.csv')
-    iris = CSV(iris_path)
+    iris = CSV(example('iris.csv'))
     server = Server(datasets={'iris': iris})
     return server.app.test_client()
 

@@ -1,14 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
-from itertools import islice
-from contextlib import contextmanager
 import tempfile
 import os
-from collections import Iterator
 import inspect
+
+from itertools import islice
+from contextlib import contextmanager
+from collections import Iterator
+
+import numpy as np
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
+from blaze.compatibility import map, zip
+
 
 def nth_list(n, seq):
     """
@@ -163,3 +168,19 @@ def keywords(func):
     ['x', 'y']
     """
     return inspect.getargspec(func).args
+
+
+def assert_allclose(lhs, rhs):
+    for tb in map(zip, lhs, rhs):
+        for left, right in tb:
+            if isinstance(left, (np.floating, float)):
+                # account for nans
+                assert np.all(np.isclose(left, right, equal_nan=True))
+            else:
+                assert left == right
+
+
+def example(filename, datapath=os.path.join('examples', 'data')):
+    import blaze
+    return os.path.join(os.path.dirname(blaze.__file__), os.pardir, datapath,
+                        filename)

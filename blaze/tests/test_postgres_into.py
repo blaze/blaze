@@ -13,13 +13,13 @@ pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installat
 from blaze import SQL
 from blaze import CSV
 from blaze.api.into import into
+from blaze.utils import assert_allclose
 import sqlalchemy
 import os
 import csv as csv_module
-from blaze import Table
-from blaze import compute
 import pandas as pd
 import datetime as dt
+import numpy as np
 
 url = 'postgresql://localhost/postgres'
 file_name = 'test.csv'
@@ -142,26 +142,22 @@ def test_complex_into():
     tbl = 'testtable_into_complex'
 
     csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
-    sql = SQL(url,tbl, schema=csv.schema)
+    sql = SQL(url, tbl, schema=csv.schema)
 
-    into(sql,csv, if_exists="replace")
+    into(sql, csv, if_exists="replace")
 
     df = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
 
-    assert sql[0] == csv[0]
+    assert_allclose([sql[0]], [csv[0]])
 
-    #implement count method
-    print(len(list(sql[:])))
-
-    # assert sql[] == csv[-1]
     for col in sql.columns:
-        #need to convert to python datetime
+        # need to convert to python datetime
         if col == "RegistrationDate":
-            py_dates = list(df['RegistrationDate'].astype(object).values)
-            py_dates = [dt.date(d.year, d.month, d.day) for d in py_dates]
-            assert list(sql[:,col]) == list(csv[:,col]) == py_dates
-        #handle floating point precision -- perhaps it's better to call out to assert_array_almost_equal
+            py_dates = list(df['RegistrationDate'].map(lambda x: x.date()).values)
+            assert list(sql[:, col]) == list(csv[:, col]) == py_dates
         elif col == 'Consts':
-            assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 6) for val in df[col].values]
+            l, r = list(sql[:, col]), list(csv[:, col])
+            assert np.allclose(l, df[col].values)
+            assert np.allclose(l, r)
         else:
-            assert list(sql[:,col]) == list(csv[:,col]) == list(df[col].values)
+            assert list(sql[:, col]) == list(csv[:,col]) == list(df[col].values)

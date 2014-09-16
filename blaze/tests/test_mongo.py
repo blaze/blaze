@@ -7,70 +7,94 @@ import subprocess
 import tempfile
 import json
 import os
-from blaze.utils import filetext
-
-pymongo = pytest.importorskip('pymongo')
-
-try:
-    pymongo.MongoClient()
-except pymongo.errors.ConnectionFailure:
-    pytest.importorskip('fhskjfdskfhsf')
+from blaze.utils import filetext, tmpfile, raises
+from blaze.compatibility import PY3
 
 from datashape import discover, dshape
 
 from blaze import drop, into, create_index
-
-conn = pymongo.MongoClient()
-db = conn.test_db
-file_name = 'test.csv'
-file_name_colon = 'colon_test.csv'
-
-from pymongo import ASCENDING, DESCENDING
-
-def setup_function(function):
-    data = [(1, 2), (10, 20), (100, 200)]
-
-    with open(file_name, 'w') as f:
-        csv_writer = csv_module.writer(f)
-        for row in data:
-            csv_writer.writerow(row)
-
-    with open(file_name_colon, 'w') as f:
-        csv_writer = csv_module.writer(f, delimiter=':')
-        for row in data:
-            csv_writer.writerow(row)
+from blaze.utils import assert_allclose
 
 
-def teardown_function(function):
-    os.remove(file_name)
-    os.remove(file_name_colon)
+no_mongoimport = pytest.mark.skipif(raises(OSError,
+    lambda : subprocess.Popen('mongoimport',
+                              shell=os.name != 'nt',
+                              stdout=subprocess.PIPE).wait()),
+    reason='mongoimport cannot be found')
+
+
+@pytest.yield_fixture(scope='module')
+def conn():
+    pymongo = pytest.importorskip('pymongo')
+    try:
+        c = pymongo.MongoClient()
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('No mongo server running')
+    else:
+        yield c
+        c.close()
+
+
+@pytest.fixture
+def db(conn):
+    return conn.test_db
+
+
+@pytest.fixture
+def tuple_data():
+    return [(1, 2), (10, 20), (100, 200)]
+
+
+@pytest.fixture
+def newline():
+    return {'newline': '' if os.name == 'nt' else None} if PY3 else {}
 
 
 @pytest.yield_fixture
-def empty_collec():
+def file_name_colon(tuple_data, newline):
+    with tmpfile('.csv') as filename:
+        with open(filename, 'w', **newline) as f:
+            csv_writer = csv_module.writer(f, delimiter=':')
+            csv_writer.writerows(tuple_data)
+        yield filename
+
+
+@pytest.yield_fixture
+def file_name(tuple_data, newline):
+    with tmpfile('.csv') as filename:
+        with open(filename, 'w', **newline) as f:
+            csv_writer = csv_module.writer(f)
+            csv_writer.writerows(tuple_data)
+        yield filename
+
+
+@pytest.yield_fixture
+def empty_collec(db):
     yield db.tmp_collection
     db.tmp_collection.drop()
 
 
+@pytest.fixture
+def bank():
+    return [{'name': 'Alice', 'amount': 100},
+            {'name': 'Alice', 'amount': 200},
+            {'name': 'Bob', 'amount': 100},
+            {'name': 'Bob', 'amount': 200},
+            {'name': 'Bob', 'amount': 300}]
+
+
 @pytest.yield_fixture
-def bank_collec():
+def bank_collec(db, bank):
     coll = into(db.tmp_collection, bank)
     yield coll
     coll.drop()
-
-
-bank = [{'name': 'Alice', 'amount': 100},
-        {'name': 'Alice', 'amount': 200},
-        {'name': 'Bob', 'amount': 100},
-        {'name': 'Bob', 'amount': 200},
-        {'name': 'Bob', 'amount': 300}]
 
 
 def test_discover(bank_collec):
     assert discover(bank_collec) == dshape('5 * {amount: int64, name: string}')
 
 
-def test_into(empty_collec):
+def test_into(empty_collec, bank):
     lhs = set(into([], into(empty_collec, bank), columns=['name', 'amount']))
     rhs = set([('Alice', 100), ('Alice', 200), ('Bob', 100), ('Bob', 200),
                ('Bob', 300)])
@@ -78,13 +102,10 @@ def test_into(empty_collec):
 
 
 @pytest.yield_fixture
-def mongo():
-    conn = pymongo.MongoClient()
-    db = conn.db
+def mongo(db, bank):
     db.tmp_collection.insert(bank)
     yield db
     db.tmp_collection.drop()
-    conn.close()
 
 
 def test_drop(mongo):
@@ -92,7 +113,9 @@ def test_drop(mongo):
     assert mongo.tmp_collection.count() == 0
 
 
-bank_idx = [{'name': 'Alice', 'amount': 100, 'id': 1},
+@pytest.fixture
+def bank_idx():
+    return [{'name': 'Alice', 'amount': 100, 'id': 1},
             {'name': 'Alice', 'amount': 200, 'id': 2},
             {'name': 'Bob', 'amount': 100, 'id': 3},
             {'name': 'Bob', 'amount': 200, 'id': 4},
@@ -100,14 +123,10 @@ bank_idx = [{'name': 'Alice', 'amount': 100, 'id': 1},
 
 
 @pytest.yield_fixture
-def mongo_idx():
-    pymongo = pytest.importorskip('pymongo')
-    conn = pymongo.MongoClient()
-    db = conn.db
+def mongo_idx(db, bank_idx):
     db.tmp_collection.insert(bank_idx)
     yield db
     db.tmp_collection.drop()
-    conn.close()
 
 
 class TestCreateIndex(object):
@@ -124,11 +143,13 @@ class TestCreateIndex(object):
         assert 'id_1_amount_1' in mongo_idx.tmp_collection.index_information()
 
     def test_create_composite_index_params(self, mongo_idx):
+        from pymongo import ASCENDING, DESCENDING
         create_index(mongo_idx.tmp_collection,
                      [('id', ASCENDING), ('amount', DESCENDING)])
         assert 'id_1_amount_-1' in mongo_idx.tmp_collection.index_information()
 
     def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
+        from pymongo import DESCENDING
         with pytest.raises(TypeError):
             create_index(mongo_idx.tmp_collection, [['id', DESCENDING]])
 
@@ -152,12 +173,14 @@ class TestCreateNamedIndex(object):
         assert 'c_idx' in mongo_idx.tmp_collection.index_information()
 
     def test_create_composite_index_params(self, mongo_idx):
+        from pymongo import ASCENDING, DESCENDING
         create_index(mongo_idx.tmp_collection,
                      [('id', ASCENDING), ('amount', DESCENDING)],
                      name='c_idx')
         assert 'c_idx' in mongo_idx.tmp_collection.index_information()
 
     def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
+        from pymongo import DESCENDING
         with pytest.raises(TypeError):
             create_index(mongo_idx.tmp_collection, [['id', DESCENDING]])
 
@@ -167,7 +190,8 @@ class TestCreateNamedIndex(object):
         assert coll.index_information()['c_idx']['unique']
 
 
-def test_csv_mongodb_load(empty_collec):
+@no_mongoimport
+def test_csv_mongodb_load(db, file_name, empty_collec):
 
     csv = CSV(file_name)
 
@@ -185,59 +209,59 @@ def test_csv_mongodb_load(empty_collec):
         'column_names': ','.join(csv.columns)
     }
 
-    copy_cmd = """
-                mongoimport -d {dbname} -c {coll} --type csv --file {abspath} --fields {column_names}
-               """
+    copy_cmd = """mongoimport -d {dbname} -c {coll} --type csv --file {abspath} --fields {column_names}"""
     copy_cmd = copy_cmd.format(**copy_info)
 
-    ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+    ps = subprocess.Popen(copy_cmd, shell=os.name != 'nt',
+                          stdout=subprocess.PIPE)
     output = ps.stdout.read()
-    mongo_data = list(coll.find({},{'_0': 1, '_id': 0}))
+    mongo_data = list(coll.find({}, {'_0': 1, '_id': 0}))
 
-    assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
-
-
-def test_csv_into_mongodb(empty_collec):
-    csv = CSV(file_name)
-
-    coll = empty_collec
-    into(coll,csv)
-    mongo_data = list(coll.find({},{'_0': 1, '_id': 0}))
-
-    assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
+    assert list(csv[:, '_0']) == [i['_0'] for i in mongo_data]
 
 
-def test_csv_into_mongodb_colon_del(empty_collec):
+def test_csv_into_mongodb_colon_del(empty_collec, file_name_colon):
     csv = CSV(file_name_colon)
-
     coll = empty_collec
+    lhs = into(list, csv)
+    newcoll = into(coll, csv)
+    rhs = into(list, newcoll)
+    assert lhs == rhs
 
-    assert into(list, csv) == into(list, into(coll, csv))
+
+def test_csv_into_mongodb(empty_collec, file_name):
+    csv = CSV(file_name)
+    coll = empty_collec
+    res = into(coll, csv)
+    mongo_data = list(res.find({}, {'_0': 1, '_id': 0}))
+
+    assert list(csv[:, '_0']) == [i['_0'] for i in mongo_data]
 
 
-def test_csv_into_mongodb_columns(empty_collec):
+def test_csv_into_mongodb_columns(empty_collec, file_name):
     csv = CSV(file_name, schema='{x: int, y: int}')
 
     coll = empty_collec
 
     assert into(list, csv) == into(list, into(coll, csv))
 
+
 def test_csv_into_mongodb_complex(empty_collec):
 
     this_dir = os.path.dirname(__file__)
     file_name = os.path.join(this_dir, 'dummydata.csv')
 
-    csv = CSV(file_name, schema = "{ Name : string, RegistrationDate : ?datetime, ZipCode : ?int64, Consts : ?float64 }")
+    s = "{ Name : string, RegistrationDate : ?datetime, ZipCode : ?int64, Consts : ?float64 }"
+    csv = CSV(file_name, schema=s)
     coll = empty_collec
-    into(coll,csv)
+    into(coll, csv)
 
-    mongo_data = list(coll.find({},{'_id': 0}))
+    mongo_data = list(coll.find({}, {'_id': 0}))
 
     # This assertion doesn't work due to python floating errors
     # into(list, csv) == into(list, into(coll, csv))
-
-    assert list(csv[0]) == [mongo_data[0][col] for col in csv.columns]
-    assert list(csv[9]) == [mongo_data[-1][col] for col in csv.columns]
+    assert_allclose([list(csv[0])], [[mongo_data[0][col] for col in csv.columns]])
+    assert_allclose([list(csv[9])], [[mongo_data[-1][col] for col in csv.columns]])
 
 
 les_mis_data = {"nodes":[{"name":"Myriel","group":1},
@@ -251,6 +275,7 @@ les_mis_data = {"nodes":[{"name":"Myriel","group":1},
                 }
 
 
+@no_mongoimport
 def test_json_into_mongodb(empty_collec):
 
     with filetext(json.dumps(les_mis_data)) as filename:
@@ -295,18 +320,19 @@ data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
          u'tv_show': u'Battlestar Galactica'}]
 
 
+@no_mongoimport
 def test_jsonarray_into_mongodb(empty_collec):
 
     filename = tempfile.mktemp(".json")
     with open(filename, "w") as f:
         json.dump(data, f)
 
-    dd = JSON(filename, schema = "3 * { id : string, name : string, posts : var * { content : string, title : string },\
-                                 tv_show : string }")
+    dd = JSON(filename, schema="3 * { id : string, name : string, "
+                                "posts : var * { content : string, title : string },"
+                                " tv_show : string }")
     coll = empty_collec
     into(coll,dd, json_array=True)
 
-
-    mongo_data = list(coll.find({},{'_id': 0,}))
+    mongo_data = list(coll.find({}, {'_id': 0}))
 
     assert mongo_data[0] == data[0]
