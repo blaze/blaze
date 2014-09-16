@@ -913,6 +913,9 @@ def summary(**kwargs):
     values = tuple(map(second, items))
     child = common_subexpression(*values)
 
+    if len(kwargs) == 1 and isinstance(child, Reduction):
+        child = child.child
+
     return Summary(child, names, values)
 
 summary.__doc__ = Summary.__doc__

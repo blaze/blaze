@@ -376,6 +376,9 @@ def test_summary():
     assert 'num=' in str(s)
     assert str(t.amount.sum()) in str(s)
 
+    assert not summary(total=t.amount.sum()).child.isidentical(
+            t.amount.sum())
+
 
 def test_reduction_arithmetic():
     t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
