@@ -40,3 +40,16 @@ def test_distinct():
 
     assert agg.iscolumn
     assert agg_expr.isidentical(count(agg.distinct()))
+
+
+def test_summary():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, summary(a=t.amount.count(),
+                                                            b=t.id.sum() + 1))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(a=chunk.amount.count(),
+                                          b=chunk.id.sum()))
+
+    assert not agg.schema == dshape('{a: int32, b: int32}')
+    assert agg_expr.isidentical(summary(a=agg.a.sum(),
+                                        b=agg.b.sum() + 1))

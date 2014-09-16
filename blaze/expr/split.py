@@ -1,7 +1,7 @@
 from blaze.expr import *
 import datashape
 
-good_to_split = (Reduction, By, Distinct)
+good_to_split = (Reduction, Summary, By, Distinct)
 can_split = good_to_split + (Selection, RowWise)
 
 def path_split(leaf, expr):
@@ -25,7 +25,7 @@ def path_split(leaf, expr):
     return node
 
 
-def split(leaf, expr):
+def split(leaf, expr, chunk=None, agg=None):
     """ Split expression for chunked computation
 
     Break up a computation ``leaf -> expr`` so that it can be run in chunks.
@@ -48,11 +48,13 @@ def split(leaf, expr):
     ((chunk, count(child=chunk['id'])), (aggregate, sum(child=aggregate)))
     """
     center = path_split(leaf, expr)
-    chunk = TableSymbol('chunk', leaf.dshape, leaf.iscolumn)
+    chunk = chunk or TableSymbol('chunk', leaf.dshape, leaf.iscolumn)
     if isinstance(center, TableExpr):
-        agg = TableSymbol('aggregate', center.schema, center.iscolumn)
+        agg = agg or TableSymbol('aggregate', center.schema, center.iscolumn)
     else:
-        agg = TableSymbol('aggregate', datashape.var * center.dshape, True)
+        agg = agg or TableSymbol('aggregate',
+                                 datashape.var * center.dshape,
+                                 isinstance(center, Reduction))
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
             _split(center, leaf=leaf, chunk=chunk, agg=agg)
@@ -77,3 +79,12 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 def _split(expr, leaf=None, chunk=None, agg=None):
     return ((chunk, expr.subs({leaf: chunk})),
             (agg, agg.distinct()))
+
+
+@dispatch(Summary)
+def _split(expr, leaf=None, chunk=None, agg=None):
+    chunk_expr = summary(**{name: split(leaf, val, chunk=chunk)[0][1]
+                            for name, val in zip(expr.names, expr.values)})
+    agg_expr = summary(**{name: split(leaf, val, agg=agg)[1][1].subs({agg: agg[name]})
+                            for name, val in zip(expr.names, expr.values)})
+    return ((chunk, chunk_expr), (agg, agg_expr))
