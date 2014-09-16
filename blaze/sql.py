@@ -10,12 +10,12 @@ from .api.resource import resource
 
 import sqlalchemy as sa
 
-__all__ = ['compute_one', 'SQL']
+__all__ = ['compute_up', 'SQL']
 
 
 @dispatch((Column, Projection, Expr, UnaryOp), SQL)
-def compute_one(t, ddesc, **kwargs):
-    return compute_one(t, ddesc.table, **kwargs)
+def compute_up(t, ddesc, **kwargs):
+    return compute_up(t, ddesc.table, **kwargs)
 
 
 @dispatch(Expr, sa.sql.ClauseElement, dict)

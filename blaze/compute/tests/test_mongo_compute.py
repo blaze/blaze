@@ -6,7 +6,7 @@ pymongo = pytest.importorskip('pymongo')
 from datetime import datetime
 from toolz import pluck
 
-from blaze import into, compute, compute_one
+from blaze import into, compute, compute_up
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import TableSymbol, by
@@ -106,7 +106,7 @@ def q():
 
 
 def test_tablesymbol_one(t, bank):
-    assert compute_one(t, bank) == MongoQuery(bank, ())
+    assert compute_up(t, bank) == MongoQuery(bank, ())
 
 
 def test_tablesymbol(t, bank, bank_raw):
@@ -114,11 +114,11 @@ def test_tablesymbol(t, bank, bank_raw):
 
 
 def test_projection_one(t, q):
-    assert compute_one(t[['name']], q).query == ({'$project': {'name': 1}},)
+    assert compute_up(t[['name']], q).query == ({'$project': {'name': 1}},)
 
 
 def test_head_one(t, q):
-    assert compute_one(t.head(5), q).query == ({'$limit': 5},)
+    assert compute_up(t.head(5), q).query == ({'$limit': 5},)
 
 
 def test_head(t, bank):
@@ -155,7 +155,7 @@ def test_columnwise(p, points):
 
 
 def test_by_one(t, q):
-    assert compute_one(by(t.name, t.amount.sum()), q).query == \
+    assert compute_up(by(t.name, t.amount.sum()), q).query == \
             ({'$group': {'_id': {'name': '$name'},
                          'amount_sum': {'$sum': '$amount'}}},
              {'$project': {'amount_sum': '$amount_sum', 'name': '$_id.name'}})

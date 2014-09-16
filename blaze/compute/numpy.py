@@ -16,7 +16,7 @@ __all__ = ['np']
 
 
 @dispatch(Column, np.ndarray)
-def compute_one(c, x, **kwargs):
+def compute_up(c, x, **kwargs):
     if x.dtype.names and c.column in x.dtype.names:
         return x[c.column]
     if not x.dtype.names and x.shape[1] == len(c.child.columns):
@@ -25,7 +25,7 @@ def compute_one(c, x, **kwargs):
 
 
 @dispatch(Projection, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     if all(col in x.dtype.names for col in t.columns):
         return x[t.columns]
     if not x.dtype.names and x.shape[1] == len(t.child.columns):
@@ -34,69 +34,69 @@ def compute_one(t, x, **kwargs):
 
 
 @dispatch(ColumnWise, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     d = dict((t.child[c].scalar_symbol, x[c]) for c in t.child.columns)
     return compute(t.expr, d)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, base, np.ndarray)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return getattr(np, t.symbol)(x)
 
 
 @dispatch(Not, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return ~x
 
 
 @dispatch(USub, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return -x
 
 
 @dispatch(Selection, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     predicate = compute(t.predicate, {t.child: x})
     return x[predicate]
 
 
 @dispatch(count, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return len(x)
 
 
 @dispatch(nunique, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return len(np.unique(x))
 
 
 @dispatch(Reduction, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)()
 
 
 @dispatch((std, var), np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(ddof=t.unbiased)
 
 
 @dispatch(Distinct, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return np.unique(x)
 
 
 @dispatch(Sort, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     if (t.key in x.dtype.names or
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
@@ -112,39 +112,39 @@ def compute_one(t, x, **kwargs):
 
 
 @dispatch(Head, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return x[:t.n]
 
 
 @dispatch(Label, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     return np.array(x, dtype=[(t.label, x.dtype.type)])
 
 
 @dispatch(ReLabel, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     types = [x.dtype[i] for i in range(len(x.dtype))]
     return np.array(x, dtype=list(zip(t.columns, types)))
 
 
 @dispatch(Selection, np.ndarray)
-def compute_one(sel, x, **kwargs):
+def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel.child: x})]
 
 
 @dispatch(Union, np.ndarray, tuple)
-def compute_one(expr, example, children, **kwargs):
+def compute_up(expr, example, children, **kwargs):
     return np.concatenate(list(children), axis=0)
 
 
 
 @dispatch(TableExpr, np.ndarray)
-def compute_one(t, x, **kwargs):
+def compute_up(t, x, **kwargs):
     if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
         df = DataFrame(columns=t.child.columns)
     else:
         df = Series(name=t.child.columns[0])
-    return compute_one(t, into(df, x), **kwargs)
+    return compute_up(t, into(df, x), **kwargs)
 
 
 @dispatch(np.ndarray)

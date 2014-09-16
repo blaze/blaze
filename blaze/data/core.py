@@ -13,7 +13,7 @@ from blaze.expr import Expr, UnaryOp
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
 
-__all__ = ['DataDescriptor', 'discover', 'compute_one']
+__all__ = ['DataDescriptor', 'discover', 'compute_up']
 
 
 def isdimension(ds):
@@ -179,17 +179,17 @@ class DataDescriptor(object):
 
 
 @dispatch((Expr, UnaryOp), DataDescriptor)
-def compute_one(t, ddesc, **kwargs):
-    return compute_one(t, iter(ddesc))  # use Python streaming by default
+def compute_up(t, ddesc, **kwargs):
+    return compute_up(t, iter(ddesc))  # use Python streaming by default
 
 
 @dispatch(Projection, DataDescriptor)
-def compute_one(t, ddesc, **kwargs):
+def compute_up(t, ddesc, **kwargs):
     return ddesc[:, t.columns]
 
 
 @dispatch(Column, DataDescriptor)
-def compute_one(t, ddesc, **kwargs):
+def compute_up(t, ddesc, **kwargs):
     return ddesc[:, t.columns[0]]
 
 

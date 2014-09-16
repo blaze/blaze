@@ -6,7 +6,7 @@ import operator
 import blaze
 from blaze.compute.python import nunique, mean, rrowfunc
 from blaze import dshape
-from blaze.compute.core import compute, compute_one
+from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
                         count, scalar, std)
@@ -547,20 +547,20 @@ def test_scalar_arithmetic():
     x = ScalarSymbol('x', 'real')
     y = ScalarSymbol('y', 'real')
     assert compute(x + y, {x: 2, y: 3}) == 5
-    assert compute_one(x + y, 2, 3) == 5
-    assert compute_one(x * y, 2, 3) == 6
-    assert compute_one(x / y, 6, 3) == 2
-    assert compute_one(x % y, 4, 3) == 1
-    assert compute_one(x ** y, 4, 3) == 64
+    assert compute_up(x + y, 2, 3) == 5
+    assert compute_up(x * y, 2, 3) == 6
+    assert compute_up(x / y, 6, 3) == 2
+    assert compute_up(x % y, 4, 3) == 1
+    assert compute_up(x ** y, 4, 3) == 64
 
     assert compute(x + 1, {x: 2}) == 3
     assert compute(x * 2, {x: 2}) == 4
     assert compute(1 + x, {x: 2}) == 3
     assert compute(2 * x, {x: 2}) == 4
 
-    assert compute_one(-x, 1) == -1
+    assert compute_up(-x, 1) == -1
 
-    assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)
+    assert compute_up(scalar.numbers.sin(x), 1) == math.sin(1)
 
 def test_like():
     t = TableSymbol('t', '{name: string, city: string}')

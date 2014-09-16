@@ -41,23 +41,23 @@ def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
 
 
 @dispatch(Selection, tb.Table)
-def compute_one(sel, t, **kwargs):
+def compute_up(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     return t.read_where(s)
 
 
 @dispatch(TableSymbol, tb.Table)
-def compute_one(ts, t, **kwargs):
+def compute_up(ts, t, **kwargs):
     return t
 
 
 @dispatch(Reduction, (tb.Column, tb.Table))
-def compute_one(r, c, **kwargs):
-    return compute_one(r, c[:])
+def compute_up(r, c, **kwargs):
+    return compute_up(r, c[:])
 
 
 @dispatch(Projection, tb.Table)
-def compute_one(proj, t, **kwargs):
+def compute_up(proj, t, **kwargs):
     # only options here are
     # read the whole thing in and then select
     # or
@@ -78,29 +78,29 @@ def compute_one(proj, t, **kwargs):
 
 
 @dispatch(Column, tb.Table)
-def compute_one(c, t, **kwargs):
+def compute_up(c, t, **kwargs):
     return getattr(t.cols, c.column)
 
 
 @dispatch(count, tb.Column)
-def compute_one(r, c, **kwargs):
+def compute_up(r, c, **kwargs):
     return len(c)
 
 
 @dispatch(Head, tb.Table)
-def compute_one(h, t, **kwargs):
+def compute_up(h, t, **kwargs):
     return t[:h.n]
 
 
 @dispatch(ColumnWise, tb.Table)
-def compute_one(c, t, **kwargs):
+def compute_up(c, t, **kwargs):
     uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
     e = tb.Expr(str(c.expr), uservars=uservars, truediv=True)
     return e.eval()
 
 
 @dispatch(Sort, tb.Table)
-def compute_one(s, t, **kwargs):
+def compute_up(s, t, **kwargs):
     if isinstance(s.key, Column) and s.key.child.isidentical(s.child):
         key = s.key.name
     else:
