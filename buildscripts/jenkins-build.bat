@@ -30,13 +30,6 @@ call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/
 
 call C:\Anaconda\Scripts\conda install -p %PYENV_PREFIX% --yes --channel blaze mongodb || exit /b 1
 
-
-REM create a mongo service
-set dbpath=%PYENV_PREFIX%\mongodata\db
-set logpath=%PYENV_PREFIX%\mongodata\log
-mkdir %dbpath%
-mkdir %logpath%
-
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
 set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
@@ -58,6 +51,12 @@ IF %ERRORLEVEL% NEQ 0 exit /b 1
 
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
+
+REM create a mongodb process
+set dbpath=%PYENV_PREFIX%\mongodata\db
+set logpath=%PYENV_PREFIX%\mongodata\log
+mkdir %dbpath%
+mkdir %logpath%
 
 REM /b -> start without creating a new window. disables ^C handling
 start /b mongod.exe --dbpath %dbpath% --logpath %logpath%\mongod.log || exit /b 1
