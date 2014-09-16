@@ -64,8 +64,11 @@ REM Build/install Blaze
 
 call py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml
 
+set testerror=%errorlevel%
+
 REM /im -> process name, /f -> force kill
 taskkill /im mongod.exe /f || exit /b 1
 
-IF %ERRORLEVEL% NEQ 0 exit /b 1
+if %testerror% NEQ 0 exit /b 1
+
 exit /b 0
