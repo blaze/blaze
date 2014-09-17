@@ -13,7 +13,7 @@ from blaze.expr import Expr, UnaryOp
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
 
-__all__ = ['DataDescriptor', 'discover', 'compute_up']
+__all__ = ['DataDescriptor', 'discover', 'compute_up', 'chunks']
 
 
 def isdimension(ds):
@@ -196,3 +196,7 @@ def compute_up(t, ddesc, **kwargs):
 @dispatch(DataDescriptor)
 def discover(dd):
     return dd.dshape
+
+@dispatch(DataDescriptor)
+def chunks(dd, chunksize=2**15, **kwargs):
+    return partition_all(chunksize, dd)

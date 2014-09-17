@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import tables as tb
 
-from ..compute.chunks import ChunkIterator, chunks
+from ..compute.chunks import ChunkIterator, ChunkIterable, chunks
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
@@ -71,6 +71,14 @@ except ImportError:
     carray = type(None)
 
 try:
+    import h5py
+    from h5py import Dataset
+except ImportError:
+    Dataset = type(None)
+
+
+try:
+    import pymongo
     from pymongo.collection import Collection
 except ImportError:
     Collection = type(None)
@@ -266,6 +274,15 @@ def numpy_fixlen_strings(x):
     return x
 
 
+@dispatch(tb.Table, pd.DataFrame)
+def into(a, df, **kwargs):
+    if isinstance(a, type):
+        return into(a, into(np.ndarray, df), **kwargs)
+    else:
+        a.append(into(np.ndarray, df).astype(a.dtype))
+        return a
+
+
 def typehint(x, typedict):
     """Replace the dtypes in `x` keyed by `typedict` with the dtypes in
     `typedict`.
@@ -307,7 +324,7 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 @dispatch(ctable, tb.Table)
 def into(bc, data, **kwargs):
     cs = chunks(data)
-    bc = into(bc, next(cs))
+    bc = into(bc, next(cs), **kwargs)
     for chunk in chunks(data):
         bc.append(chunk)
     return bc
@@ -332,7 +349,7 @@ def into(_, data, filename=None, datapath=None, **kwargs):
 
 @dispatch(tb.Table, (pd.DataFrame, CSV, SQL, nd.array, Collection))
 def into(a, b, **kwargs):
-    return into(a, into(np.ndarray, b), **kwargs)
+    return into(a, into(np.ndarray, b, **kwargs), **kwargs)
 
 
 @dispatch(tb.Table, _strtypes)
@@ -504,8 +521,12 @@ def into(a, b, **kwargs):
 
 @dispatch(ctable, pd.DataFrame)
 def into(a, df, **kwargs):
-    return ctable([fix_len_string_filter(df[c]) for c in df.columns],
-                      names=list(df.columns), **kwargs)
+    if isinstance(a, type):
+        columns = [fix_len_string_filter(df[c]) for c in df.columns]
+        return ctable(columns, names=list(df.columns), **kwargs)
+    else:
+        a.append(into(np.ndarray, df))
+        return a
 
 
 @dispatch(pd.DataFrame, ctable)
@@ -518,12 +539,24 @@ def into(a, b, **kwargs):
     return into(a, b[:], **kwargs)
 
 
-@dispatch(ctable, ctable)
+@dispatch(Dataset, (ctable, tb.Table, Dataset))
+def into(a, b, **kwargs):
+    if isinstance(a, type):
+        raise NotImplementedError("Please construct h5py.Dataset explicitly")
+    else:
+        into(a, ChunkIterable(b))
+        a.file.flush()
+        return a
+
+
+@dispatch(ctable, (ctable, tb.Table, Dataset))
 def into(a, b, **kwargs):
     if not kwargs and a == ctable:
         return b
     else:
-        raise NotImplementedError()
+        into(a, ChunkIterable(b))
+        a.flush()
+        return a
 
 
 @dispatch(Collection, DataDescriptor)
@@ -819,12 +852,17 @@ def into(_, dd, **kwargs):
     return iter(dd)
 
 
-@dispatch((np.ndarray, ColumnDataSource, ctable), DataDescriptor)
+@dispatch((tb.Table, ctable), DataDescriptor)
+def into(a, b, **kwargs):
+    return into(a, ChunkIterable(b, **kwargs), **kwargs)
+
+
+@dispatch((np.ndarray, ColumnDataSource), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, ColumnDataSource, ctable, tb.Table, list, tuple, set),
+@dispatch((np.ndarray, ColumnDataSource, list, tuple, set),
           (CSV, Excel))
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
@@ -949,4 +987,24 @@ def into(a, b, **kwargs):
 @dispatch(DataDescriptor, (np.ndarray, nd.array, pd.DataFrame, Collection))
 def into(a, b, **kwargs):
     a.extend(into(list,b))
+    return a
+
+
+@dispatch(Dataset, np.ndarray)
+def into(a, b, **kwargs):
+    shape = list(a.shape)
+    shape[0] += len(b)
+    a.resize(tuple(shape))
+
+    a[-len(b):] = np.array(b).astype(a.dtype)
+    return a
+
+
+@dispatch((carray, ctable, Dataset), ChunkIterator)
+def into(a, b, **kwargs):
+    cs = (into(np.ndarray, chunk) for chunk in b)
+    chunk = next(cs)
+    a = into(a, chunk, **kwargs)
+    for chunk in cs:
+        into(a, chunk)
     return a

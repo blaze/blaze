@@ -7,6 +7,7 @@ import os
 from collections import Iterator
 from datetime import datetime
 import pytest
+from pandas import DataFrame
 
 import datashape
 from datashape import dshape
@@ -17,7 +18,7 @@ from blaze.data.core import DataDescriptor
 from blaze.data import CSV
 from blaze.utils import filetext, tmpfile, example
 from blaze.data.utils import tuplify
-from blaze.data.csv import drop, has_header, discover_dialect
+from blaze.data.csv import drop, has_header, discover_dialect, chunks
 from dynd import nd
 import numpy as np
 
@@ -449,6 +450,9 @@ def test_drop(csv):
     drop(csv)
     assert not os.path.exists(csv.path)
 
+
+def test_chunks(csv):
+    assert all(isinstance(chunk, DataFrame) for chunk in chunks(csv))
 
 if __name__ == '__main__':
     unittest.main()

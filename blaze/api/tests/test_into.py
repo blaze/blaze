@@ -4,10 +4,12 @@ from dynd import nd
 import numpy as np
 from datashape import dshape
 from datetime import datetime
+import tables as tb
 import os
 
 import pandas as pd
 from pandas import DataFrame
+from bcolz import ctable, carray
 from blaze.data.python import Python
 from blaze.data import CSV
 
@@ -54,6 +56,20 @@ class TestInto(unittest.TestCase):
                          into([], (1, 2, 3)))
         self.assertEqual(str(into(np.ndarray, (1, 2, 3))),
                          str(into(np.ndarray(()), (1, 2, 3))))
+
+
+@pytest.yield_fixture
+def h5py_data():
+    pytest.importorskip('h5py')
+    import h5py
+
+    with tmpfile('hdf5') as filename:
+        f = h5py.File(filename, mode='a')
+        dset = f.create_dataset('/data', chunks=True, maxshape=(None,),
+                shape=(0,), dtype=[('name', 'S7'), ('amount', 'i8')])
+        yield dset
+
+        f.close()
 
 
 @pytest.yield_fixture
@@ -323,3 +339,43 @@ def test_into_numpy_from_tableexpr_with_option_types():
               schema='{id: ?int32, name: string[5, "ascii"]}')
     assert into(np.ndarray, t).dtype == \
             np.dtype([('id', 'i4'), ('name', 'S5')])
+
+
+def test_multiple_dataframes_into_bcolz_ctable(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    bc = into(ctable, df)
+    bc = into(bc, df)
+    assert len(bc) == 2 * len(df)
+
+
+def test_multiple_ndarrays_into_bcolz_ctable(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    x = into(np.ndarray, df)
+    bc = into(ctable, x)
+    bc = into(bc, x)
+    assert len(bc) == 2 * len(x)
+
+
+def test_bcolz_to_bcolz(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    bc = into(ctable, df)
+    bc2 = into(ctable, df)
+
+    bc2 = into(bc2, bc)
+
+    assert len(bc2) == 2*len(bc)
+
+def test_multiple_dataframes_to_pytables(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    with tmpfile('h5') as tb_filename:
+        pt = into(tb.Table, df, filename=tb_filename, datapath='/data')
+        pt = into(pt, df)
+        assert len(pt) == 2 * len(df)
+
+def test_h5py_numpy(h5py_data, data):
+    df = DataFrame(data, columns=['name', 'amount'])
+    x = into(np.ndarray, df)
+
+    assert str(into(h5py_data, x)[:]) == str(np.array(x))
+
+    assert len(into(h5py_data, x)) == 2 * len(x)
