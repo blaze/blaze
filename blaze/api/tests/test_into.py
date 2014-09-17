@@ -230,7 +230,7 @@ def test_Column_data_source(data_table):
 
 def test_numpy_list(data):
     dtype = into(np.ndarray, data).dtype
-    assert np.issubdtype(dtype[0], str)
+    assert np.issubdtype(dtype[0], object)
     assert np.issubdtype(dtype[1], int)
 
     assert into([], into(np.ndarray, data)) == data
