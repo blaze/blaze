@@ -577,7 +577,7 @@ def numpy_ensure_strings(x):
 
 
 def numpy_ensure_bytes(x):
-    if sys.version_info[0] >= 3 and 'U' in str(x.dtype):
+    if 'U' in str(x.dtype):
         if x.dtype.names is not None:
             dt = [(n, x.dtype[n].str.replace('U', 'S')) for n in x.dtype.names]
         else:
