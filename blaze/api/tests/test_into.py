@@ -331,3 +331,11 @@ def test_multiple_dataframes_into_bcolz_ctable(data):
     bc = into(ctable, df)
     bc = into(bc, df)
     assert len(bc) == 2 * len(df)
+
+
+def test_multiple_ndarrays_into_bcolz_ctable(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    x = into(np.ndarray, df)
+    bc = into(ctable, x)
+    bc = into(bc, x)
+    assert len(bc) == 2 * len(x)
