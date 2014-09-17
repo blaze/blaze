@@ -454,5 +454,11 @@ def test_drop(csv):
 def test_chunks(csv):
     assert all(isinstance(chunk, DataFrame) for chunk in chunks(csv))
 
+
+def test_reader(csv):
+    for chunk in chunks(csv, chunksize=2):
+        assert len(chunk) in (1, 2)
+        assert list(chunk.columns) == csv.columns
+
 if __name__ == '__main__':
     unittest.main()

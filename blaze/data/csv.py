@@ -6,7 +6,7 @@ import os
 import gzip
 from functools import partial
 
-from multipledispatch import dispatch
+from ..dispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, compose, first
 
 import numpy as np
@@ -286,7 +286,8 @@ class CSV(DataDescriptor):
         self.header = header
 
     def reader(self, header=None, keep_default_na=False,
-               na_values=na_values, chunksize=None, **kwargs):
+               na_values=na_values, chunksize=None, columns=None,
+               **kwargs):
         kwargs.setdefault('skiprows', int(bool(self.header)))
 
         dialect = merge(keyfilter(read_csv_kwargs.__contains__, self.dialect),
@@ -300,7 +301,8 @@ class CSV(DataDescriptor):
                                                      'bz2': 'bz2'}.get(ext),
                              chunksize=chunksize, na_values=na_values,
                              keep_default_na=keep_default_na,
-                             encoding=self.encoding, header=header, **dialect)
+                             encoding=self.encoding, header=header,
+                             names=columns, **dialect)
         return reader
 
     def get_py(self, key):
@@ -502,4 +504,6 @@ def resource_csv_gz(uri, **kwargs):
 
 @dispatch(CSV)
 def chunks(csv, chunksize=2**15, **kwargs):
-    return csv.reader(chunksize=chunksize)
+    reader = csv.reader(chunksize=chunksize, columns=csv.columns)
+    while True:
+        yield reader.get_chunk()
