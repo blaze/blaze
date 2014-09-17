@@ -501,5 +501,5 @@ def resource_csv_gz(uri, **kwargs):
 
 
 @dispatch(CSV)
-def chunks(csv, chunksize=2**15):
+def chunks(csv, chunksize=2**15, **kwargs):
     return csv.reader(chunksize=chunksize)

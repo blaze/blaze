@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 import sqlalchemy as sa
 from dynd import nd
 import unittest
-from toolz import concat
+from toolz import concat, count
 
 from blaze.data.sql import SQL, discover, dshape_to_alchemy
 from blaze.data import chunks
@@ -185,3 +185,4 @@ def test_chunks():
     sql.extend([('Alice', 100), ('Bob', 200)])
     assert chunks(sql)
     assert list(sql) == list(concat(into(list, c) for c in chunks(sql)))
+    assert count(chunks(sql, chunksize=10)) == 1

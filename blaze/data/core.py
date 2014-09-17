@@ -198,5 +198,5 @@ def discover(dd):
     return dd.dshape
 
 @dispatch(DataDescriptor)
-def chunks(dd, chunksize=2**15):
+def chunks(dd, chunksize=2**15, **kwargs):
     return partition_all(chunksize, dd)
