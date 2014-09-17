@@ -7,7 +7,7 @@ import tables as tb
 from pandas import DataFrame
 
 from blaze.api.into import into
-from blaze.api.into import degrade_numpy_dtype_to_python
+from blaze.api.into import degrade_numpy_dtype_to_python, numpy_ensure_bytes
 from blaze.utils import tmpfile
 from blaze import Table
 import bcolz
@@ -177,22 +177,21 @@ def test_ColumnDataSource():
         assert into(ColumnDataSource, a).data == cds.data
 
 
-@pytest.fixture
-def tables_dshape():
-    return ('var * {amount: int64, id: int64, '
-            'name: string[7, "A"], timestamp: datetime}')
+
+tables_data = [v for k, v in data if k != list]
 
 
-tables_data = [pytest.mark.xfail(d) if isinstance(d, np.ndarray) else d
-               for d in [v for k, v in data if k != list]]
+@pytest.yield_fixture
+def h5tmp():
+    with tmpfile('.h5') as filename:
+        yield filename
 
 
 @pytest.mark.parametrize('a', tables_data)
-def test_into_PyTables(a, tables_dshape):
-    with tmpfile('h5') as filename:
-        lhs = into(tables.Table, a, dshape=tables_dshape, filename=filename,
-                   datapath='/data')
-        np.testing.assert_array_equal(lhs[:][['amount', 'id', 'name']], tb[:])
+def test_into_PyTables(a, h5tmp):
+    dshape = 'var * {amount: int64, id: int64, name: string[7, "A"], timestamp: datetime}'
+    lhs = into(tables.Table, a, dshape=dshape, filename=h5tmp, datapath='/data')
+    np.testing.assert_array_equal(into(np.ndarray, lhs), numpy_ensure_bytes(x))
 
 
 @pytest.fixture
