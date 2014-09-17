@@ -117,7 +117,8 @@ def normalize(a):
         return list(a)
     return (str(a).replace("u'", "'")
                   .replace("(", "[").replace(")", "]")
-                  .replace('L', ''))
+                  .replace('L', '')
+                  .replace('.0,', ','))
 
 
 def test_base():
