@@ -57,22 +57,17 @@ def PyTables(path, datapath, dshape=None):
 
     Examples
     --------
+    >>> from blaze.utils import tmpfile
     >>> # create from scratch
-    >>> filename = 'foo.h5'
-    >>> t = PyTables(filename, '/bar',
-    ...              dshape='var * {volume: float64, planet: string[10, "A"]}')
-    >>> data = [(100.3, 'mars'), (100.42, 'jupyter')]
-    >>> t.append(data)
-    >>> t[:]  # doctest: +SKIP
+    >>> with tmpfile('.h5') as f:
+    ...     t = PyTables(filename, '/bar',
+    ...                  dshape='var * {volume: float64, planet: string[10, "A"]}')
+    ...     data = [(100.3, 'mars'), (100.42, 'jupyter')]
+    ...     t.append(data)
+    ...     t[:]  # doctest: +SKIP
+    ...
     array([(100.3, b'mars'), (100.42, b'jupyter')],
           dtype=[('volume', '<f8'), ('planet', 'S10')])
-    >>> # open an existing file
-    >>> g = PyTables(filename, '/bar')  # no datashape necessary
-    >>> g[:]  # doctest: +SKIP
-    array([(100.3, b'mars'), (100.42, b'jupyter')],
-          dtype=[('volume', '<f8'), ('planet', 'S10')])
-    >>> import os
-    >>> os.remove(filename)
     """
     def possibly_create_table(filename, dtype):
         f = tb.open_file(filename, mode='a')
