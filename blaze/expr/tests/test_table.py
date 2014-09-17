@@ -30,11 +30,13 @@ import numpy as np
 def test_dshape():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.dshape == dshape('var * {name: string, amount: int}')
+    with pytest.raises(TypeError):
+        t.dtype
 
 
 def test_length():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
-    f = TableSymbol('f', '{name:string, amount:int}')
+    s = TableSymbol('f', '{name:string, amount:int}')
     assert t.dshape == dshape('10 * {name: string, amount: int}')
     assert len(t) == 10
     assert len(t.name) == 10
@@ -44,7 +46,7 @@ def test_length():
     assert len(t.head(50)) == 10
     assert t.__len__() == 10
     with pytest.raises(ValueError):
-        len(f)
+        len(s)
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
