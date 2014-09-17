@@ -21,12 +21,10 @@ def dtype_to_pytables(dtype):
     --------
     >>> from tables import Int32Col, StringCol, Time64Col
     >>> dt = np.dtype([('name', 'S7'), ('amount', 'i4'), ('time', 'M8[us]')])
-    >>> table_desc = dtype_to_pytables(dt)
-    >>> expected = {'amount': Int32Col(shape=(), dflt=0, pos=1),
-    ...             'name': StringCol(itemsize=7, shape=(), dflt='', pos=0),
-    ...             'time': Time64Col(shape=(), dflt=0.0, pos=2)}
-    >>> table_desc == expected
-    True
+    >>> dtype_to_pytables(dt)  # doctest: +SKIP
+    {'amount': Int32Col(shape=(), dflt=0, pos=1),
+     'name': StringCol(itemsize=7, shape=(), dflt='', pos=0),
+     'time': Time64Col(shape=(), dflt=0.0, pos=2)}
     """
     d = {}
     for pos, name in enumerate(dtype.names):
