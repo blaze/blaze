@@ -577,6 +577,29 @@ def numpy_ensure_strings(x):
 
 
 def numpy_ensure_bytes(x):
+    """Return a numpy array whose string fields are converted to the bytes type
+    appropriate for the Python version.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Record array
+
+    Returns
+    -------
+    x : np.ndarray
+        Record array with any unicode string type as a bytes type
+
+    Examples
+    --------
+    >>> x = np.array(['a', 'b'])
+    >>> # Python 2
+    >>> numpy_ensure_bytes(x)  # doctest: +SKIP
+    np.array(['a', 'b'], dtype='|S1')
+    >>> # Python 3
+    >>> numpy_ensure_strings(x)  # doctest: +SKIP
+    np.array([b'a', b'b'], dtype='|S1')
+    """
     if 'U' in str(x.dtype):
         if x.dtype.names is not None:
             dt = [(n, x.dtype[n].str.replace('U', 'S')) for n in x.dtype.names]
