@@ -8,6 +8,7 @@ import os
 
 import pandas as pd
 from pandas import DataFrame
+from bcolz import ctable, carray
 from blaze.data.python import Python
 from blaze.data import CSV
 
@@ -323,3 +324,10 @@ def test_into_numpy_from_tableexpr_with_option_types():
               schema='{id: ?int32, name: string[5, "ascii"]}')
     assert into(np.ndarray, t).dtype == \
             np.dtype([('id', 'i4'), ('name', 'S5')])
+
+
+def test_multiple_dataframes_into_bcolz_ctable(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    bc = into(ctable, df)
+    bc = into(bc, df)
+    assert len(bc) == 2 * len(df)

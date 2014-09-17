@@ -411,8 +411,12 @@ def into(a, b, **kwargs):
 
 @dispatch(ctable, pd.DataFrame)
 def into(a, df, **kwargs):
-    return ctable([fix_len_string_filter(df[c]) for c in df.columns],
-                      names=list(df.columns), **kwargs)
+    if isinstance(a, type):
+        columns = [fix_len_string_filter(df[c]) for c in df.columns]
+        return ctable(columns, names=list(df.columns), **kwargs)
+    else:
+        a.append(into(np.ndarray, df))
+        return a
 
 
 @dispatch(pd.DataFrame, ctable)
