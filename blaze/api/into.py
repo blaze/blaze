@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import tables
 
-from ..compute.chunks import ChunkIterator
+from ..compute.chunks import ChunkIterator, chunks
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
@@ -434,7 +434,12 @@ def into(a, b, **kwargs):
     if not kwargs and a == ctable:
         return b
     else:
-        raise NotImplementedError()
+        cs = chunks(b)
+        chunk = next(cs)
+        a = into(a, chunk, **kwargs)
+        for chunk in cs:
+            into(a, chunk)
+        return a
 
 
 @dispatch(Collection, DataDescriptor)
