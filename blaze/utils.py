@@ -167,6 +167,8 @@ def keywords(func):
     >>> keywords(f)
     ['x', 'y']
     """
+    if isinstance(func, type):
+        return keywords(func.__init__)
     return inspect.getargspec(func).args
 
 

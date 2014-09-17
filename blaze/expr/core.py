@@ -10,7 +10,7 @@ from blaze.compatibility import StringIO
 
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover']
+__all__ = ['Expr', 'discover', 'path']
 
 
 def get_callable_name(o):
@@ -222,5 +222,10 @@ def path(a, b):
     """
     while not a.isidentical(b):
         yield a
-        a = a.child
+        if not a.inputs:
+            break
+        for child in a.inputs:
+            if b in child.traverse():
+                a = child
+                break
     yield a
