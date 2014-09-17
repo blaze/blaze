@@ -4,6 +4,7 @@ import os
 from dynd import nd
 import datashape
 import sys
+from functools import partial
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
 from toolz import concat, partition_all, valmap, first, merge
@@ -22,7 +23,7 @@ from ..dispatch import dispatch
 from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
 from .resource import resource
-from ..compatibility import _strtypes
+from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
@@ -76,7 +77,7 @@ except ImportError:
 
 
 try:
-    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel, SQL
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
@@ -152,6 +153,14 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return nd.as_numpy(b, allow_copy=True)
 
+
+def dtype_from_tuple(t):
+    dshape = discover(t)
+    names = ['f%d' % i for i in range(len(t))]
+    types = [x.measure.to_numpy_dtype() for x in dshape.measure.dshapes]
+    return np.dtype(list(zip(names, types)))
+
+
 @dispatch(np.ndarray, (Iterable, Iterator))
 def into(a, b, **kwargs):
     b = iter(b)
@@ -160,12 +169,16 @@ def into(a, b, **kwargs):
     if isinstance(first, datetime):
         b = map(np.datetime64, b)
     if isinstance(first, (list, tuple)):
-        return np.rec.fromrecords(list(b), **kwargs)
+        return np.rec.fromrecords([tuple(x) for x in b],
+                                  dtype=kwargs.pop('dtype',
+                                                   dtype_from_tuple(first)),
+                                  **kwargs)
     elif hasattr(first, 'values'):
         #detecting sqlalchemy.engine.result.RowProxy types and similar
         return np.asarray([tuple(x.values()) for x in b], **kwargs)
     else:
         return np.asarray(list(b), **kwargs)
+
 
 def degrade_numpy_dtype_to_python(dt):
     """
@@ -267,7 +280,7 @@ def typehint(x, typedict):
 def into(t, x, **kwargs):
     dt_types = dict((k, 'datetime64[us]') for k, (v, _) in
                     x.dtype.fields.items() if issubclass(v.type, np.datetime64))
-    x = numpy_fixlen_strings(x)
+    x = numpy_ensure_bytes(numpy_fixlen_strings(x))
     x = typehint(typehint(x, dt_types), dict.fromkeys(dt_types, 'f8'))
 
     for name in dt_types:
@@ -284,14 +297,11 @@ def into(t, c, **kwargs):
     return t
 
 
-@dispatch(tb.node.MetaNode, (ctable, tb.Table, list))
-def into(table, data, filename=None, datapath=None, dshape=None, **kwargs):
-    ds = datashape.dshape(dshape if dshape is not None else discover(data))
-    t = PyTables(filename, datapath=datapath, dshape=ds)
-    for chunk in chunks(data):
-        a = np.array(list(map(tuple, chunk)), dtype=ds.measure.to_numpy_dtype())
-        into(t, a)
-    return t
+@dispatch(tb.node.MetaNode, tb.Table)
+def into(table, data, filename=None, datapath=None, **kwargs):
+    dshape = datashape.dshape(kwargs.setdefault('dshape', discover(data)))
+    t = PyTables(filename, datapath=datapath, dshape=dshape)
+    return into(t, data)
 
 
 @dispatch(ctable, tb.Table)
@@ -304,14 +314,23 @@ def into(bc, data, **kwargs):
 
 
 @dispatch(tb.node.MetaNode, np.ndarray)
-def into(table, x, filename=None, datapath=None, **kwargs):
+def into(_, x, filename=None, datapath=None, **kwargs):
     # tb.node.MetaNode == type(tb.Table)
-    x = numpy_fixlen_strings(x)
+    x = numpy_ensure_bytes(numpy_fixlen_strings(x))
     t = PyTables(filename, datapath=datapath, dshape=discover(x))
     return into(t, x, **kwargs)
 
 
-@dispatch(tb.Table, (pd.DataFrame, CSV))
+@dispatch(tb.node.MetaNode, (ctable, list))
+def into(_, data, filename=None, datapath=None, **kwargs):
+    t = PyTables(filename, datapath=datapath,
+                 dshape=kwargs.get('dshape', discover(data)))
+    for chunk in map(partial(into, np.ndarray), chunks(data)):
+        into(t, chunk)
+    return t
+
+
+@dispatch(tb.Table, (pd.DataFrame, CSV, SQL, nd.array, Collection))
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b), **kwargs)
 
@@ -539,8 +558,7 @@ def numpy_ensure_strings(x):
     numpy type to a form that will create ``str`` objects
 
     Examples
-    ========
-
+    --------
     >>> x = np.array(['a', 'b'], dtype='S1')
     >>> # Python 2
     >>> numpy_ensure_strings(x)  # doctest: +SKIP
@@ -549,13 +567,22 @@ def numpy_ensure_strings(x):
     >>> numpy_ensure_strings(x)  # doctest: +SKIP
     np.array(['a', 'b'], dtype='U1')
     """
-    if sys.version_info[0] >= 3 and "S" in str(x.dtype):
+    if sys.version_info[0] >= 3 and 'S' in str(x.dtype):
         if x.dtype.names:
             dt = [(n, x.dtype[n].str.replace('S', 'U')) for n in x.dtype.names]
-            x = x.astype(dt)
         else:
             dt = x.dtype.str.replace('S', 'U')
-            x = x.astype(dt)
+        x = x.astype(dt)
+    return x
+
+
+def numpy_ensure_bytes(x):
+    if sys.version_info[0] >= 3 and 'U' in str(x.dtype):
+        if x.dtype.names is not None:
+            dt = [(n, x.dtype[n].str.replace('U', 'S')) for n in x.dtype.names]
+        else:
+            dt = x.dtype.str.replace('U', 'S')
+        x = x.astype(dt)
     return x
 
 
