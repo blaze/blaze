@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import tables
 
-from ..compute.chunks import ChunkIterator, chunks
+from ..compute.chunks import ChunkIterator, ChunkIterable, chunks
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
@@ -439,6 +439,7 @@ def into(a, b, **kwargs):
         a = into(a, chunk, **kwargs)
         for chunk in cs:
             into(a, chunk)
+        a.flush()
         return a
 
 
@@ -704,12 +705,17 @@ def into(_, dd, **kwargs):
     return iter(dd)
 
 
-@dispatch((np.ndarray, ColumnDataSource, ctable), DataDescriptor)
+@dispatch(ctable, DataDescriptor)
+def into(a, b, **kwargs):
+    return into(a, ChunkIterable(b, **kwargs), **kwargs)
+
+
+@dispatch((np.ndarray, ColumnDataSource), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, ColumnDataSource, ctable, tables.Table,
+@dispatch((np.ndarray, ColumnDataSource, tables.Table,
     list, tuple, set),
           (CSV, Excel))
 def into(a, b, **kwargs):

@@ -94,10 +94,11 @@ from .compute.chunks import ChunkIterator, chunks
 
 @dispatch((carray, ctable), ChunkIterator)
 def into(a, b, **kwargs):
-    b = iter(b)
-    a = into(a, next(b), **kwargs)
-    for chunk in b:
-        a.append(into(np.ndarray(0), chunk))
+    cs = (into(np.ndarray, chunk) for chunk in b)
+    chunk = next(cs)
+    a = into(a, chunk, **kwargs)
+    for chunk in cs:
+        into(a, chunk)
     a.flush()
     return a
 
