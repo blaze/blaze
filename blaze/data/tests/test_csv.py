@@ -409,6 +409,11 @@ def date_data():
         yield CSV(f, schema=schema, mode='r')
 
 
+def test_chunks_csv_datetimes(date_data):
+    assert np.issubdtype(next(chunks(date_data)).dtypes.date,
+                         np.datetime64)
+
+
 def test_subset_with_date(date_data):
     csv = date_data
     sub = csv[[0, 1], 'date']
