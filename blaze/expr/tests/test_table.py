@@ -19,7 +19,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
                         Summary, count, ScalarSymbol, like, Like)
-from blaze.compatibility import PY3
+from blaze.compatibility import PY3, _strtypes
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -36,7 +36,7 @@ def test_dshape():
 
 def test_length():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
-    s = TableSymbol('f', '{name:string, amount:int}')
+    s = TableSymbol('s', '{name:string, amount:int}')
     assert t.dshape == dshape('10 * {name: string, amount: int}')
     assert len(t) == 10
     assert len(t.name) == 10
@@ -44,7 +44,6 @@ def test_length():
     assert len(t.sort('name')) == 10
     assert len(t.head(5)) == 5
     assert len(t.head(50)) == 10
-    assert t.__len__() == 10
     with pytest.raises(ValueError):
         len(s)
 
@@ -83,6 +82,16 @@ def test_column():
 
     assert eval(str(t['name'])) == t['name']
     assert str(t['name']) == "t['name']"
+
+
+def test_projection_failures():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    with pytest.raises(ValueError):
+        t.project(['name', 'id'])
+    with pytest.raises(ValueError):
+        t.project('id')
+    with pytest.raises(ValueError):
+        t.project(t.dshape)
 
 
 def test_Projection():
