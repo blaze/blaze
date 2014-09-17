@@ -40,6 +40,40 @@ def dtype_to_pytables(dtype):
 
 
 def PyTables(path, datapath, dshape=None):
+    """Create or open a ``tables.Table`` object.
+
+    Parameters
+    ----------
+    path : str
+        Path to a PyTables HDF5 file.
+    datapath : str
+        The name of the node in the ``tables.File``.
+    dshape : str or datashape.DataShape
+        DataShape to use to create the ``Table``.
+
+    Returns
+    -------
+    t : tables.Table
+
+    Examples
+    --------
+    >>> # create from scratch
+    >>> filename = 'foo.h5'
+    >>> t = PyTables(filename, '/bar',
+    ...              dshape='var * {volume: float64, planet: string[10, "A"]}')
+    >>> data = [(100.3, 'mars'), (100.42, 'jupyter')]
+    >>> t.append(data)
+    >>> t[:]  # doctest: +SKIP
+    array([(100.3, b'mars'), (100.42, b'jupyter')],
+          dtype=[('volume', '<f8'), ('planet', 'S10')])
+    >>> # open an existing file
+    >>> g = PyTables(filename, '/bar')  # no datashape necessary
+    >>> g[:]  # doctest: +SKIP
+    array([(100.3, b'mars'), (100.42, b'jupyter')],
+          dtype=[('volume', '<f8'), ('planet', 'S10')])
+    >>> import os
+    >>> os.remove(filename)
+    """
     def possibly_create_table(filename, dtype):
         f = tb.open_file(filename, mode='a')
         try:
