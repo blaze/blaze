@@ -34,6 +34,7 @@ def test_dshape():
 
 def test_length():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
+    f = TableSymbol('f', '{name:string, amount:int}')
     assert t.dshape == dshape('10 * {name: string, amount: int}')
     assert len(t) == 10
     assert len(t.name) == 10
@@ -41,6 +42,13 @@ def test_length():
     assert len(t.sort('name')) == 10
     assert len(t.head(5)) == 5
     assert len(t.head(50)) == 10
+    assert t.__len__() == 10
+    with pytest.raises(ValueError):
+        len(f)
+
+def test_table_symbol_bool():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    assert t.__bool__() == True
 
 
 def test_nonzero():
