@@ -177,14 +177,13 @@ def test_ColumnDataSource():
         assert into(ColumnDataSource, a).data == cds.data
 
 
-
-tables_data = [v for k, v in data if k != list]
-
-
 @pytest.yield_fixture
 def h5tmp():
     with tmpfile('.h5') as filename:
         yield filename
+
+
+tables_data = [v for k, v in data if k != list]
 
 
 @pytest.mark.parametrize('a', tables_data)
@@ -192,6 +191,7 @@ def test_into_PyTables(a, h5tmp):
     dshape = 'var * {amount: int64, id: int64, name: string[7, "A"], timestamp: datetime}'
     lhs = into(tables.Table, a, dshape=dshape, filename=h5tmp, datapath='/data')
     np.testing.assert_array_equal(into(np.ndarray, lhs), numpy_ensure_bytes(x))
+    lhs._v_file.close()
 
 
 @pytest.fixture
