@@ -4,6 +4,7 @@ from dynd import nd
 import numpy as np
 from datashape import dshape
 from datetime import datetime
+import tables as tb
 import os
 
 import pandas as pd
@@ -349,3 +350,10 @@ def test_bcolz_to_bcolz(data):
     bc2 = into(bc2, bc)
 
     assert len(bc2) == 2*len(bc)
+
+def test_multiple_dataframes_to_pytables(data):
+    df = DataFrame(data, columns=['name', 'balance'])
+    with tmpfile('h5') as tb_filename:
+        pt = into(tb.Table, df, filename=tb_filename, datapath='data')
+        pt = into(pt, df)
+        assert len(pt) == 2 * len(df)

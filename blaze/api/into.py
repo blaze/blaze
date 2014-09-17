@@ -234,19 +234,27 @@ def numpy_fixlen_strings(x):
     return x
 
 @dispatch(tables.Table, np.ndarray)
-def into(_, x, filename=None, datapath=None, **kwargs):
-    if filename is None or datapath is None:
-        raise ValueError("Must specify filename for new PyTables file. \n"
-        "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
+def into(a, x, filename=None, datapath=None, **kwargs):
+    if isinstance(a, type):
+        if filename is None or datapath is None:
+            raise ValueError("Must specify filename for new PyTables file. \n"
+            "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
 
-    f = tables.open_file(filename, 'w')
-    t = f.create_table('/', datapath, obj=numpy_fixlen_strings(x))
-    return t
+        f = tables.open_file(filename, 'w')
+        t = f.create_table('/', datapath, obj=numpy_fixlen_strings(x))
+        return t
+    else:
+        a.append(x.astype(a.dtype))
+        return a
 
 
 @dispatch(tables.Table, pd.DataFrame)
 def into(a, df, **kwargs):
-    return into(a, into(np.ndarray, df), **kwargs)
+    if isinstance(a, type):
+        return into(a, into(np.ndarray, df), **kwargs)
+    else:
+        a.append(into(np.ndarray, df).astype(a.dtype))
+        return a
 
 
 @dispatch(tables.Table, _strtypes)
