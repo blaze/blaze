@@ -3,8 +3,10 @@ from sqlalchemy import create_engine
 import sqlalchemy as sa
 from dynd import nd
 import unittest
+from toolz import concat
 
 from blaze.data.sql import SQL, discover, dshape_to_alchemy
+from blaze.data import chunks
 from blaze.utils import raises
 from datashape import dshape
 import datashape
@@ -175,3 +177,11 @@ def test_dshape_to_alchemy():
 
     assert dshape_to_alchemy('float32').precision == 24
     assert dshape_to_alchemy('float64').precision == 53
+
+def test_chunks():
+    from blaze import into
+    sql = SQL('sqlite:///:memory:', 'accounts',
+              schema='{name: string, amount: int}')
+    sql.extend([('Alice', 100), ('Bob', 200)])
+    assert chunks(sql)
+    assert list(sql) == list(concat(into(list, c) for c in chunks(sql)))
