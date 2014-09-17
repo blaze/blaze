@@ -444,16 +444,22 @@ def into(a, b, **kwargs):
     return into(a, b[:], **kwargs)
 
 
-@dispatch(ctable, ctable)
+@dispatch(Dataset, (ctable, tables.Table, Dataset))
+def into(a, b, **kwargs):
+    if isinstance(a, type):
+        raise NotImplementedError("Please construct h5py.Dataset explicitly")
+    else:
+        into(a, ChunkIterable(b))
+        a.file.flush()
+        return a
+
+
+@dispatch(ctable, (ctable, tables.Table, Dataset))
 def into(a, b, **kwargs):
     if not kwargs and a == ctable:
         return b
     else:
-        cs = chunks(b)
-        chunk = next(cs)
-        a = into(a, chunk, **kwargs)
-        for chunk in cs:
-            into(a, chunk)
+        into(a, ChunkIterable(b))
         a.flush()
         return a
 
@@ -720,7 +726,7 @@ def into(_, dd, **kwargs):
     return iter(dd)
 
 
-@dispatch(ctable, DataDescriptor)
+@dispatch((tables.Table, ctable), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, ChunkIterable(b, **kwargs), **kwargs)
 
@@ -730,8 +736,7 @@ def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, ColumnDataSource, tables.Table,
-    list, tuple, set),
+@dispatch((np.ndarray, ColumnDataSource, list, tuple, set),
           (CSV, Excel))
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
