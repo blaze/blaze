@@ -68,6 +68,13 @@ except ImportError:
     carray = type(None)
 
 try:
+    import h5py
+    from h5py import Dataset
+except ImportError:
+    Dataset = type(None)
+
+
+try:
     import pymongo
     from pymongo.collection import Collection
 except ImportError:
@@ -849,4 +856,24 @@ def into(a, b, **kwargs):
 @dispatch(DataDescriptor, (np.ndarray, nd.array, pd.DataFrame, Collection))
 def into(a, b, **kwargs):
     a.extend(into(list,b))
+    return a
+
+
+@dispatch(Dataset, np.ndarray)
+def into(a, b, **kwargs):
+    shape = list(a.shape)
+    shape[0] += len(b)
+    a.resize(tuple(shape))
+
+    a[-len(b):] = np.array(b).astype(a.dtype)
+    return a
+
+
+@dispatch((carray, ctable, tables.Table, Dataset), ChunkIterator)
+def into(a, b, **kwargs):
+    cs = (into(np.ndarray, chunk) for chunk in b)
+    chunk = next(cs)
+    a = into(a, chunk, **kwargs)
+    for chunk in cs:
+        into(a, chunk)
     return a

@@ -59,6 +59,20 @@ class TestInto(unittest.TestCase):
 
 
 @pytest.yield_fixture
+def h5py_data():
+    pytest.importorskip('h5py')
+    import h5py
+
+    with tmpfile('hdf5') as filename:
+        f = h5py.File(filename, mode='a')
+        dset = f.create_dataset('/data', chunks=True, maxshape=(None,),
+                shape=(0,), dtype=[('name', 'S7'), ('amount', 'i8')])
+        yield dset
+
+        f.close()
+
+
+@pytest.yield_fixture
 def h5():
     pytest.importorskip('tables')
     from tables import IsDescription, UInt8Col, StringCol, open_file
@@ -357,3 +371,11 @@ def test_multiple_dataframes_to_pytables(data):
         pt = into(tb.Table, df, filename=tb_filename, datapath='data')
         pt = into(pt, df)
         assert len(pt) == 2 * len(df)
+
+def test_h5py_numpy(h5py_data, data):
+    df = DataFrame(data, columns=['name', 'amount'])
+    x = into(np.ndarray, df)
+
+    assert str(into(h5py_data, x)[:]) == str(np.array(x))
+
+    assert len(into(h5py_data, x)) == 2 * len(x)
