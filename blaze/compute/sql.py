@@ -210,7 +210,11 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    c = lower_column(list(s.primary_key)[0])
+    try:
+        c = lower_column(list(s.primary_key)[0])
+    except IndexError:
+        c = lower_column(list(s.columns)[0])
+
     col = sqlalchemy.func.count(c)
 
     s = copy(s)
