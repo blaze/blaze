@@ -8,7 +8,7 @@ import tempfile
 import json
 import os
 from blaze.utils import filetext, tmpfile, raises
-from blaze.compatibility import PY3
+from blaze.compatibility import PY3, PY2
 
 from datashape import discover, dshape
 
@@ -46,25 +46,26 @@ def tuple_data():
 
 
 @pytest.fixture
-def newline():
-    return {'newline': '' if os.name == 'nt' else None} if PY3 else {}
+def openargs():
+    d = {'mode': 'wb' if PY2 else 'w'}
+    if PY3:
+        d['newline'] = ''
+    return d
 
 
 @pytest.yield_fixture
-def file_name_colon(tuple_data, newline):
+def file_name_colon(tuple_data, openargs):
     with tmpfile('.csv') as filename:
-        with open(filename, 'w', **newline) as f:
-            csv_writer = csv_module.writer(f, delimiter=':')
-            csv_writer.writerows(tuple_data)
+        with open(filename, **openargs) as f:
+            csv_module.writer(f, delimiter=':').writerows(tuple_data)
         yield filename
 
 
 @pytest.yield_fixture
-def file_name(tuple_data, newline):
+def file_name(tuple_data, openargs):
     with tmpfile('.csv') as filename:
-        with open(filename, 'w', **newline) as f:
-            csv_writer = csv_module.writer(f)
-            csv_writer.writerows(tuple_data)
+        with open(filename, **openargs) as f:
+            csv_module.writer(f).writerows(tuple_data)
         yield filename
 
 
@@ -243,7 +244,8 @@ def test_csv_into_mongodb_columns(empty_collec, file_name):
 
     coll = empty_collec
 
-    assert into(list, csv) == into(list, into(coll, csv))
+    lhs = into(list, csv)
+    assert lhs == into(list, into(coll, csv))
 
 
 def test_csv_into_mongodb_complex(empty_collec):
