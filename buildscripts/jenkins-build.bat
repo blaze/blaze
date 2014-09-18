@@ -42,8 +42,7 @@ pushd datashape
 popd
 
 REM Temporary hack to install blz
-IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2 unicodecsv
-IF "%PYTHON_VERSION%" == "2.7" call pip install unicodecsv
+IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2
 
 call pip install multipledispatch
 
