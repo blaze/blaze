@@ -454,7 +454,8 @@ def test_like():
     WHERE accounts.name LIKE :name_1""")
 
 def test_reductions_on_complex_selections():
-    assert normalize(select(compute(t[t.amount > 0].id.sum(), s))) == """
+    assert normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) == \
+            normalize("""
     SELECT sum(accounts.id)
     FROM accounts
     WHERE accounts.amount > 0 """)
