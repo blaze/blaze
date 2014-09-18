@@ -188,9 +188,3 @@ def drop(h):
 @resource.register('.*\.hdf5')
 def resource_hdf5(uri, datapath, *args, **kwargs):
     return HDF5(uri, datapath, *args, **kwargs)
-
-
-@resource.register('.*\.hdf5::.*')
-def resource_hdf5(uri, *args, **kwargs):
-    uri, datapath = uri.rsplit('::', 1)
-    return HDF5(uri, datapath, *args, **kwargs)

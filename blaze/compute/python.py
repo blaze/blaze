@@ -35,16 +35,17 @@ from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply, unicode
 from . import core
-from .core import compute, compute_one
+from .core import compute, compute_up
 
 from ..data import DataDescriptor
+from ..data.utils import listpack
 
 # Dump exp, log, sin, ... into namespace
 import math
 from math import *
 
 
-__all__ = ['compute', 'compute_one', 'Sequence', 'rowfunc', 'rrowfunc']
+__all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
 
@@ -150,34 +151,34 @@ def rowfunc(t):
 
 
 @dispatch(RowWise, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return map(rowfunc(t), seq)
 
 
 @dispatch(Selection, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     predicate = rrowfunc(t.predicate, t.child)
     return filter(predicate, seq)
 
 
 @dispatch(Reduction, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     op = getattr(builtins, t.symbol)
     return op(seq)
 
 
 @dispatch(BinOp, numbers.Real, numbers.Real)
-def compute_one(bop, a, b, **kwargs):
+def compute_up(bop, a, b, **kwargs):
     return bop.op(a, b)
 
 
 @dispatch(UnaryOp, numbers.Real)
-def compute_one(uop, x, **kwargs):
+def compute_up(uop, x, **kwargs):
     return uop.op(x)
 
 
 @dispatch(RealMath, numbers.Real)
-def compute_one(f, n, **kwargs):
+def compute_up(f, n, **kwargs):
     return getattr(math, type(f).__name__)(n)
 
 
@@ -207,12 +208,12 @@ def _std(seq, unbiased):
 
 
 @dispatch(count, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return cytoolz.count(seq)
 
 
 @dispatch(Distinct, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     try:
         row = first(seq)
     except StopIteration:
@@ -226,22 +227,22 @@ def compute_one(t, seq, **kwargs):
 
 
 @dispatch(nunique, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return len(set(seq))
 
 
 @dispatch(mean, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return _mean(seq)
 
 
 @dispatch(var, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return _var(seq, t.unbiased)
 
 
 @dispatch(std, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return _std(seq, t.unbiased)
 
 
@@ -288,7 +289,7 @@ def reduce_by_funcs(t):
     several binary operators are juxtaposed together.
 
     See Also:
-        compute_one(By, Sequence)
+        compute_up(By, Sequence)
     """
     grouper = rrowfunc(t.grouper, t.child)
     if (isinstance(t.apply, Reduction) and
@@ -319,7 +320,7 @@ def reduce_by_funcs(t):
 
 
 @dispatch(By, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):
@@ -339,24 +340,6 @@ def compute_one(t, seq, **kwargs):
     else:
         valfunc = identity
     return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
-
-
-def listpack(x):
-    """
-
-    >>> listpack(1)
-    [1]
-    >>> listpack((1, 2))
-    [1, 2]
-    >>> listpack([1, 2])
-    [1, 2]
-    """
-    if isinstance(x, tuple):
-        return list(x)
-    elif isinstance(x, list):
-        return x
-    else:
-        return [x]
 
 
 def pair_assemble(t):
@@ -395,7 +378,7 @@ def pair_assemble(t):
 
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
 
     Note that a pure streaming Join is challenging/impossible because any row
@@ -429,7 +412,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 
 
 @dispatch(Sort, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t.child[t.key])
     else:
@@ -440,7 +423,7 @@ def compute_one(t, seq, **kwargs):
 
 
 @dispatch(Head, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     if t.n < 100:
         return tuple(take(t.n, seq))
     else:
@@ -448,22 +431,22 @@ def compute_one(t, seq, **kwargs):
 
 
 @dispatch((Label, ReLabel), Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return seq
 
 
 @dispatch(Apply, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return t.func(seq)
 
 
 @dispatch(Union, Sequence, tuple)
-def compute_one(t, example, children, **kwargs):
+def compute_up(t, example, children, **kwargs):
     return concat(children)
 
 
 @dispatch(Summary, Sequence)
-def compute_one(expr, data, **kwargs):
+def compute_up(expr, data, **kwargs):
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
         return tuple(compute(val, {expr.child: data})
@@ -474,12 +457,12 @@ def compute_one(expr, data, **kwargs):
 
 
 @dispatch(BinOp, object, object)
-def compute_one(expr, x, y, **kwargs):
+def compute_up(expr, x, y, **kwargs):
     return expr.op(x, y)
 
 
 @dispatch(UnaryOp, object)
-def compute_one(expr, x, **kwargs):
+def compute_up(expr, x, **kwargs):
     return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
 
 
@@ -494,7 +477,9 @@ def like_regex_predicate(expr):
         return True
 
     return predicate
+
+
 @dispatch(Like, Sequence)
-def compute_one(expr, seq, **kwargs):
+def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)

@@ -31,13 +31,14 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary, Like
 from ..compatibility import reduce
 from ..utils import unique
-from .core import compute_one, compute, base
+from .core import compute_up, compute, base
+from ..data.utils import listpack
 
 __all__ = ['sqlalchemy', 'select']
 
 
 @dispatch(Projection, Selectable)
-def compute_one(t, s, scope=None, **kwargs):
+def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
     if scope is None:
         scope = {}
@@ -54,18 +55,18 @@ def compute_one(t, s, scope=None, **kwargs):
 
 
 @dispatch((Column, Projection), Select)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     cols = [lower_column(s.c.get(col)) for col in t.columns]
     return s.with_only_columns(cols)
 
 
 @dispatch(Column, sqlalchemy.Table)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.c.get(t.column)
 
 
 @dispatch(ColumnWise, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     columns = [t.child[c] for c in t.child.columns]
     d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
                     for c in t.child.columns)
@@ -73,32 +74,32 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(BinOp, ClauseElement, (ClauseElement, base))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, (ClauseElement, base), ClauseElement)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
 
 @dispatch(USub, (sa.Column, Selectable))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return -s
 
 @dispatch(Selection, Select)
-def compute_one(t, s, **kwargs):
-    predicate = compute_one(t.predicate, s)
+def compute_up(t, s, **kwargs):
+    predicate = compute_up(t.predicate, s)
     return s.where(predicate)
 
 
 @dispatch(Selection, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     predicate = compute(t.predicate, {t.child: s})
     try:
         return s.where(predicate)
@@ -124,15 +125,8 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
-def listpack(x):
-    if isinstance(x, list):
-        return x
-    else:
-        return [x]
-
-
 @dispatch(Join, Selectable, Selectable)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     condition = reduce(and_,
             [lower_column(lhs.c.get(l)) == lower_column(rhs.c.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
@@ -163,15 +157,15 @@ names = {mean: 'avg',
          std: 'stdev'}
 
 @dispatch((count, nunique, Reduction, Distinct), Select)
-def compute_one(t, s, **kwargs):
-    return compute_one(t, lower_column(list(s.columns)[0]), **kwargs)
+def compute_up(t, s, **kwargs):
+    return compute_up(t, lower_column(list(s.columns)[0]), **kwargs)
     s = copy(s)
     s.append_column(col)
     return s.with_only_columns([col])
 
 
 @dispatch(Reduction, sql.elements.ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except AttributeError:
@@ -187,21 +181,21 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(count, (Selectable, Select))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.count()
 
 
 @dispatch(nunique, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
 
 
 @dispatch(Distinct, (sa.Column, Selectable))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return sqlalchemy.distinct(s)
 
 @dispatch(By, sqlalchemy.Column)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t.child: s})]
@@ -213,7 +207,7 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(By, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
     else:
@@ -264,7 +258,7 @@ def lower_column(col):
 
 
 @dispatch(By, Select)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if not isinstance(t.grouper, Projection):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
@@ -290,7 +284,7 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Sort, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
     col = getattr(s.c, t.key)
@@ -300,7 +294,7 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Head, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if hasattr(s, 'limit'):
         return s.limit(t.n)
     else:
@@ -308,12 +302,12 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Label, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
 @dispatch(ReLabel, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
@@ -323,30 +317,30 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Merge, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     subexpression = common_subexpression(*t.children)
     children = [compute(child, {subexpression: s}) for child in t.children]
     return select(children)
 
 
 @dispatch(Union, Selectable, tuple)
-def compute_one(t, _, children):
+def compute_up(t, _, children):
     return sqlalchemy.union(*children)
 
 
 @dispatch(Summary, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return select([compute(value, {t.child: s}).label(name)
         for value, name in zip(t.values, t.names)])
 
 
 @dispatch(Like, Selectable)
-def compute_one(t, s, **kwargs):
-    return compute_one(t, select(s), **kwargs)
+def compute_up(t, s, **kwargs):
+    return compute_up(t, select(s), **kwargs)
 
 
 @dispatch(Like, Select)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     d = dict()
     for name, pattern in t.patterns.items():
         for f in s.froms:

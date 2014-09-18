@@ -9,10 +9,10 @@ chunks into memory, performing an in-memory sum on each chunk in turn, and then
 summing the resulting sums.  E.g.
 
     @dispatch(sum, ChunkIterator)
-    def compute_one(expr, chunks):
+    def compute_up(expr, chunks):
         sums = []
         for chunk in chunks:
-            sums.append(compute_one(expr, chunk))
+            sums.append(compute_up(expr, chunk))
         return builtin.sum(sums)
 
 Using tricks like this we can apply the operations from rich in memory backends
@@ -87,36 +87,36 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 
 @dispatch(tuple(reductions), ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_up(expr, c, **kwargs):
     t = TableSymbol('_', dshape=expr.child.dshape)
     a, b = reductions[type(expr)]
 
-    return compute_one(b(t), [compute_one(a(t), chunk) for chunk in c])
+    return compute_up(b(t), [compute_up(a(t), chunk) for chunk in c])
 
 
 @dispatch(mean, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_up(expr, c, **kwargs):
     total_sum = 0
     total_count = 0
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_one(expr.child.sum(), chunk)
-        total_count += compute_one(expr.child.count(), chunk)
+        total_sum += compute_up(expr.child.sum(), chunk)
+        total_count += compute_up(expr.child.count(), chunk)
 
     return total_sum / total_count
 
 
 @dispatch(Head, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_up(expr, c, **kwargs):
     c = iter(c)
-    df = into(DataFrame, compute_one(expr, next(c)),
+    df = into(DataFrame, compute_up(expr, next(c)),
               columns=expr.columns)
     for chunk in c:
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
-                   compute_one(expr.child.head(expr.n - len(df)), chunk),
+                   compute_up(expr.child.head(expr.n - len(df)), chunk),
                    columns=expr.columns)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
@@ -124,52 +124,52 @@ def compute_one(expr, c, **kwargs):
 
 
 @dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk) for chunk in c)
+def compute_up(expr, c, **kwargs):
+    return ChunkIterator(compute_up(expr, chunk) for chunk in c)
 
 
 @dispatch(Join, ChunkIterable, (ChunkIterable, ChunkIterator))
-def compute_one(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_one(expr, c1, chunk) for chunk in c2)
+def compute_up(expr, c1, c2, **kwargs):
+    return ChunkIterator(compute_up(expr, c1, chunk) for chunk in c2)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterable)
-def compute_one(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk, c2) for chunk in c1)
+def compute_up(expr, c1, c2, **kwargs):
+    return ChunkIterator(compute_up(expr, chunk, c2) for chunk in c1)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterator)
-def compute_one(expr, c1, c2, **kwargs):
+def compute_up(expr, c1, c2, **kwargs):
     raise NotImplementedError("Can not perform chunked join of "
             "two chunked iterators")
 
 dict_items = type(dict().items())
 
 @dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
-def compute_one(expr, other, c, **kwargs):
-    return ChunkIterator(compute_one(expr, other, chunk) for chunk in c)
+def compute_up(expr, other, c, **kwargs):
+    return ChunkIterator(compute_up(expr, other, chunk) for chunk in c)
 
 
 @dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
     DataDescriptor))
-def compute_one(expr, c, other, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk, other) for chunk in c)
+def compute_up(expr, c, other, **kwargs):
+    return ChunkIterator(compute_up(expr, chunk, other) for chunk in c)
 
 
 @dispatch(Distinct, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    intermediates = concat(into(Iterator, compute_one(expr, chunk)) for chunk in c)
+def compute_up(expr, c, **kwargs):
+    intermediates = concat(into(Iterator, compute_up(expr, chunk)) for chunk in c)
     return unique(intermediates)
 
 
 @dispatch(nunique, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    dist = compute_one(expr.child.distinct(), c)
-    return compute_one(expr.child.count(), dist)
+def compute_up(expr, c, **kwargs):
+    dist = compute_up(expr.child.distinct(), c)
+    return compute_up(expr.child.count(), dist)
 
 
 @dispatch(By, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_up(expr, c, **kwargs):
     if not isinstance(expr.apply, tuple(reductions)):
         raise NotImplementedError("Chunked split-apply-combine only "
                 "implemented for simple reductions")
@@ -179,7 +179,7 @@ def compute_one(expr, c, **kwargs):
     perchunk = by(expr.grouper, a(expr.apply.child))
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_one(perchunk, chunk))
+    intermediate = concat(into([], compute_up(perchunk, chunk))
                           for chunk in c)
 
     # Form computation to do on the concatenated union
@@ -192,7 +192,7 @@ def compute_one(expr, c, **kwargs):
     group = by(t[expr.grouper.columns],
                b(t[apply_cols]))
 
-    return compute_one(group, intermediate)
+    return compute_up(group, intermediate)
 
 
 @dispatch(object)
@@ -207,7 +207,7 @@ def chunks(seq, chunksize=None):
     *  They should cover the dataset
     *  They should not overlap
     *  They should honor order if the underlying dataset is ordered
-    *  Has appropriate implementations for ``discover``, ``compute_one``,
+    *  Has appropriate implementations for ``discover``, ``compute_up``,
        and  ``into``
 
     Example
@@ -241,7 +241,7 @@ def get_chunk(data, i, chunksize=None):
     *  They should cover the dataset
     *  They should not overlap
     *  They should honor order if the underlying dataset is ordered
-    *  Has appropriate implementations for ``discover``, ``compute_one``,
+    *  Has appropriate implementations for ``discover``, ``compute_up``,
        and  ``into``
 
     Example

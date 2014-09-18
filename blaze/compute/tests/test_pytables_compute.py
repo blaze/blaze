@@ -7,7 +7,6 @@ tb = pytest.importorskip('tables')
 from blaze.compatibility import xfail
 
 import numpy as np
-import tempfile
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol

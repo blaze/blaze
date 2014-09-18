@@ -173,6 +173,21 @@ class TableExpr(Expr):
         else:
             raise ValueError("Can not compute name of table")
 
+    def __ne__(self, other):
+        return columnwise(Ne, self, other)
+
+    def __lt__(self, other):
+        return columnwise(Lt, self, other)
+
+    def __le__(self, other):
+        return columnwise(Le, self, other)
+
+    def __gt__(self, other):
+        return columnwise(Gt, self, other)
+
+    def __ge__(self, other):
+        return columnwise(Ge, self, other)
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -297,21 +312,6 @@ class ColumnSyntaxMixin(object):
 
     def __eq__(self, other):
         return columnwise(Eq, self, other)
-
-    def __ne__(self, other):
-        return columnwise(Ne, self, other)
-
-    def __lt__(self, other):
-        return columnwise(Lt, self, other)
-
-    def __le__(self, other):
-        return columnwise(Le, self, other)
-
-    def __gt__(self, other):
-        return columnwise(Gt, self, other)
-
-    def __ge__(self, other):
-        return columnwise(Ge, self, other)
 
     def __add__(self, other):
         return columnwise(Add, self, other)
@@ -1091,6 +1091,7 @@ class Label(RowWise, ColumnSyntaxMixin):
 
     blaze.expr.table.ReLabel
     """
+    iscolumn = True
     __slots__ = 'child', 'label'
 
     @property
@@ -1324,7 +1325,10 @@ class Merge(RowWise):
         if isinstance(key, _strtypes):
             for child in self.children:
                 if key in child.columns:
-                    return child[key]
+                    if child.iscolumn:
+                        return child
+                    else:
+                        return child[key]
         elif isinstance(key, list):
             cols = [self.project(c) for c in key]
             return merge(*cols)

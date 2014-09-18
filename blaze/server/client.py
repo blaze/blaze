@@ -154,9 +154,3 @@ def resource_blaze(uri, name):
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
     return ExprClient(uri, name)
-
-
-@resource.register('blaze://.*::\w*', priority=11)
-def resource_blaze_all(uri):
-    uri, name = uri.rsplit('::', 1)
-    return resource(uri, name)
