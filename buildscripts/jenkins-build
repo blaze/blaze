@@ -63,10 +63,7 @@ popd
 # Temporary hack to install blz
 # BLZ needs unittest2 for Python 2.6
 if [ "${PYTHON_VERSION}" == "2.6" ]; then
-  pip install unittest2 unicodecsv
-fi
-if [ "${PYTHON_VERSION}" == "2.7" ]; then
-  pip install unicodecsv
+  pip install unittest2
 fi
 
 pip install multipledispatch || exit 1

@@ -22,7 +22,6 @@ requirements:
     - requests
     - cytoolz
     - toolz
-    - unicodecsv
     - bcolz
     - pytables
 
