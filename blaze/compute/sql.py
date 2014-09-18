@@ -296,24 +296,23 @@ def compute_up(t, s, **kwargs):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
-    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
-
-    s2 = s.group_by(*grouper)
-    for g in grouper:
-        s2.append_column(g)
-
     if isinstance(t.apply, Reduction):
         reduction = compute(t.apply, {t.child: s})
-        s2.append_column(reduction)
-        return s2.with_only_columns(grouper + [reduction])
+        reductions = [reduction]
 
     elif isinstance(t.apply, Summary):
         reductions = [compute(val, {t.child: s}).label(name)
                 for val, name in zip(t.apply.values, t.apply.names)]
-        for r in reductions:
-            s2.append_column(r)
+        reduction = select(reductions)
 
-        return s2.with_only_columns(grouper + reductions)
+    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
+    s2 = reduction.group_by(*grouper)
+
+    for g in grouper:
+        s2.append_column(g)
+
+    cols = [lower_column(s2.c.get(col)) for col in t.columns]
+    return s2.with_only_columns(cols)
 
 
 @dispatch(Sort, Selectable)
@@ -326,12 +325,14 @@ def compute_up(t, s, **kwargs):
     return select(s).order_by(col)
 
 
+@dispatch(Head, Select)
+def compute_up(t, s, **kwargs):
+    return s.limit(t.n)
+
+
 @dispatch(Head, ClauseElement)
 def compute_up(t, s, **kwargs):
-    if hasattr(s, 'limit'):
-        return s.limit(t.n)
-    else:
-        return select(s).limit(t.n)
+    return select(s).limit(t.n)
 
 
 @dispatch(Label, ClauseElement)
