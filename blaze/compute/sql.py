@@ -65,6 +65,18 @@ def compute_up(t, s, **kwargs):
     return s.c.get(t.column)
 
 
+@dispatch(ColumnWise, Select)
+def compute_up(t, s, **kwargs):
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
+                    for c in t.child.columns)
+    result = compute(t.expr, d)
+
+    s = copy(s)
+    s.append_column(result)
+    return s.with_only_columns([result])
+
+
 @dispatch(ColumnWise, Selectable)
 def compute_up(t, s, **kwargs):
     columns = [t.child[c] for c in t.child.columns]
