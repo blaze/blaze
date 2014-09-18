@@ -16,7 +16,7 @@ from .boolean import (Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not,
 
 @dispatch(ct.Option, object)
 def scalar_coerce(ds, val):
-    if val:
+    if val or val == 0:
         return scalar_coerce(ds.ty, val)
     else:
         return None
