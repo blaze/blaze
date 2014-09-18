@@ -65,6 +65,18 @@ def compute_up(t, s, **kwargs):
     return s.c.get(t.column)
 
 
+@dispatch(ColumnWise, Select)
+def compute_up(t, s, **kwargs):
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
+                    for c in t.child.columns)
+    result = compute(t.expr, d)
+
+    s = copy(s)
+    s.append_column(result)
+    return s.with_only_columns([result])
+
+
 @dispatch(ColumnWise, Selectable)
 def compute_up(t, s, **kwargs):
     columns = [t.child[c] for c in t.child.columns]
@@ -156,7 +168,18 @@ names = {mean: 'avg',
          var: 'variance',
          std: 'stdev'}
 
-@dispatch((count, nunique, Reduction, Distinct), Select)
+@dispatch((nunique, Reduction), Select)
+def compute_up(t, s, **kwargs):
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c], lower_column(s.c.get(c)))
+                    for c in t.child.columns)
+    col = compute(t, d)
+
+    s = copy(s)
+    s.append_column(col)
+    return s.with_only_columns([col])
+
+@dispatch(Distinct, Select)
 def compute_up(t, s, **kwargs):
     return compute_up(t, lower_column(list(s.columns)[0]), **kwargs)
     s = copy(s)
@@ -180,9 +203,23 @@ def compute_up(t, s, **kwargs):
     return result
 
 
-@dispatch(count, (Selectable, Select))
+@dispatch(count, Selectable)
 def compute_up(t, s, **kwargs):
-    return s.count()
+    return compute_up(t, select(s), **kwargs)
+
+
+@dispatch(count, Select)
+def compute_up(t, s, **kwargs):
+    try:
+        c = lower_column(list(s.primary_key)[0])
+    except IndexError:
+        c = lower_column(list(s.columns)[0])
+
+    col = sqlalchemy.func.count(c)
+
+    s = copy(s)
+    s.append_column(col)
+    return s.with_only_columns([col])
 
 
 @dispatch(nunique, ClauseElement)
@@ -263,24 +300,23 @@ def compute_up(t, s, **kwargs):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
-    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
-
-    s2 = s.group_by(*grouper)
-    for g in grouper:
-        s2.append_column(g)
-
     if isinstance(t.apply, Reduction):
         reduction = compute(t.apply, {t.child: s})
-        s2.append_column(reduction)
-        return s2.with_only_columns(grouper + [reduction])
+        reductions = [reduction]
 
     elif isinstance(t.apply, Summary):
         reductions = [compute(val, {t.child: s}).label(name)
                 for val, name in zip(t.apply.values, t.apply.names)]
-        for r in reductions:
-            s2.append_column(r)
+        reduction = select(reductions)
 
-        return s2.with_only_columns(grouper + reductions)
+    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
+    s2 = reduction.group_by(*grouper)
+
+    for g in grouper:
+        s2.append_column(g)
+
+    cols = [lower_column(s2.c.get(col)) for col in t.columns]
+    return s2.with_only_columns(cols)
 
 
 @dispatch(Sort, Selectable)
@@ -293,12 +329,14 @@ def compute_up(t, s, **kwargs):
     return select(s).order_by(col)
 
 
+@dispatch(Head, Select)
+def compute_up(t, s, **kwargs):
+    return s.limit(t.n)
+
+
 @dispatch(Head, ClauseElement)
 def compute_up(t, s, **kwargs):
-    if hasattr(s, 'limit'):
-        return s.limit(t.n)
-    else:
-        return select(s).limit(t.n)
+    return select(s).limit(t.n)
 
 
 @dispatch(Label, ClauseElement)
