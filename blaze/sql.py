@@ -70,3 +70,9 @@ def create_index(s, columns, name=None, unique=False):
 @resource.register('(sqlite|postgresql|mysql)://.*')
 def resource_sql(uri, table_name, *args, **kwargs):
     return SQL(uri, table_name, *args, **kwargs)
+
+
+@resource.register('impala://.*')
+def resource_sql(uri, table_name, *args, **kwargs):
+    import impala.sqlalchemy
+    return SQL(uri, table_name, *args, **kwargs)
