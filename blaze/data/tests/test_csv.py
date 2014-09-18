@@ -450,5 +450,16 @@ def test_drop(csv):
     assert not os.path.exists(csv.path)
 
 
+def test_string_dataset():
+    raw = 'a,b,2.0\nc,1999,3.0\nd,3.0,4.0'
+    with tmpfile('.csv') as fn:
+        with open(fn, mode='w') as f:
+            f.write(raw)
+        csv = CSV(fn, columns=list('xyz'))
+        t = Table(csv)
+        x = into(list, t)
+    assert x == [('a', 'b', 2.0), ('c', '1999', 3.0), ('d', '3.0', 4.0)]
+
+
 if __name__ == '__main__':
     unittest.main()
