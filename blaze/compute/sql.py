@@ -168,7 +168,18 @@ names = {mean: 'avg',
          var: 'variance',
          std: 'stdev'}
 
-@dispatch((count, nunique, Reduction, Distinct), Select)
+@dispatch((nunique, Reduction), Select)
+def compute_up(t, s, **kwargs):
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c], lower_column(s.c.get(c)))
+                    for c in t.child.columns)
+    col = compute(t, d)
+
+    s = copy(s)
+    s.append_column(col)
+    return s.with_only_columns([col])
+
+@dispatch(Distinct, Select)
 def compute_up(t, s, **kwargs):
     return compute_up(t, lower_column(list(s.columns)[0]), **kwargs)
     s = copy(s)
@@ -192,9 +203,19 @@ def compute_up(t, s, **kwargs):
     return result
 
 
-@dispatch(count, (Selectable, Select))
+@dispatch(count, Selectable)
 def compute_up(t, s, **kwargs):
-    return s.count()
+    return compute_up(t, select(s), **kwargs)
+
+
+@dispatch(count, Select)
+def compute_up(t, s, **kwargs):
+    c = lower_column(list(s.primary_key)[0])
+    col = sqlalchemy.func.count(c)
+
+    s = copy(s)
+    s.append_column(col)
+    return s.with_only_columns([col])
 
 
 @dispatch(nunique, ClauseElement)

@@ -148,14 +148,14 @@ def test_reductions():
 
 def test_count_on_table():
     assert normalize(str(select(compute(t.count(), s)))) == normalize("""
-    SELECT count(accounts.id) as tbl_row_count
+    SELECT count(accounts.id) as count_1
     FROM accounts""")
 
     assert normalize(str(select(compute(t[t.amount > 0].count(), s)))) == \
     normalize("""
-    SELECT count(accounts.id) as tbl_row_count
+    SELECT count(accounts.id) as count_1
     FROM accounts
-    WHERE accounts.amount > """)
+    WHERE accounts.amount > :amount_1""")
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -465,6 +465,6 @@ def test_reductions_on_complex_selections():
 
     assert normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) == \
             normalize("""
-    SELECT sum(accounts.id)
+    SELECT sum(accounts.id) as id_sum
     FROM accounts
-    WHERE accounts.amount > 0 """)
+    WHERE accounts.amount > :amount_1 """)
