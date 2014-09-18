@@ -69,13 +69,14 @@ class TestResource(TestCase):
             assert isinstance(dd, CSV)
             self.assertEqual(into(list, dd), [(1, 1), (2, 2)])
 
-    @xfail
+    @xfail(os.name.lower() not in ['posix'],
+           reason='Windows is hard to please')
     def test_resource_gz(self):
         with filetext('1,1\n2,2', extension='.csv.gz', open=gzip.open) as fn:
             dd = resource(fn, schema='{x: int, y: int}')
             assert isinstance(dd, CSV)
-            self.assertEqual(dd.open, gzip.open)
-            self.assertEqual(into(list, dd), [(1, 1), (2, 2)])
+            assert dd.open == gzip.open
+            assert into(list, dd) == [(1, 1), (2, 2)]
 
     def test_filesystem(self):
         prefix = 'test_filesystem'
