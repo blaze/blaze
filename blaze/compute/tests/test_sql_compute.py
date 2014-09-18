@@ -167,6 +167,12 @@ def test_distinct():
     assert result == str(sa.distinct(s.c.amount))
 
 
+def test_distinct_multiple_columns():
+    assert normalize(str(compute(t.distinct(), s))) == normalize("""
+    SELECT DISTINCT accounts.name, accounts.amount, accounts.id
+    FROM accounts""")
+
+
 def test_nunique():
     result = str(computefull(nunique(t['amount']), s))
 

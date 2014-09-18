@@ -179,12 +179,14 @@ def compute_up(t, s, **kwargs):
     s.append_column(col)
     return s.with_only_columns([col])
 
+@dispatch(Distinct, sqlalchemy.Column)
+def compute_up(t, s, **kwargs):
+    return s.distinct()
+
+
 @dispatch(Distinct, Select)
 def compute_up(t, s, **kwargs):
-    return compute_up(t, lower_column(list(s.columns)[0]), **kwargs)
-    s = copy(s)
-    s.append_column(col)
-    return s.with_only_columns([col])
+    return s.distinct()
 
 
 @dispatch(Reduction, sql.elements.ClauseElement)
@@ -222,14 +224,14 @@ def compute_up(t, s, **kwargs):
     return s.with_only_columns([col])
 
 
-@dispatch(nunique, ClauseElement)
+@dispatch(nunique, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
-    return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
+    return sqlalchemy.sql.functions.count(s.distinct())
 
 
-@dispatch(Distinct, (sa.Column, Selectable))
+@dispatch(Distinct, sqlalchemy.Table)
 def compute_up(t, s, **kwargs):
-    return sqlalchemy.distinct(s)
+    return select(s).distinct()
 
 @dispatch(By, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):

@@ -255,6 +255,8 @@ def test_scalar_coerce():
     assert scalar_coerce('?date', 'Jan 1st, 2012') == date(2012, 1, 1)
     assert scalar_coerce('?date', '2012-12-01') == date(2012, 12, 1)
     assert scalar_coerce('?date', '') == None
+    assert scalar_coerce('?int', 0) == 0
+    assert scalar_coerce('?int', '0') == 0
 
 
 def test_scalar_name_dtype():
