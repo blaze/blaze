@@ -198,7 +198,6 @@ def test_by():
     assert str(result) == str(expected)
 
 
-@xfail(reason='Works, but looks bad')
 def test_by_head():
     t2 = t.head(100)
     expr = by(t2['name'], t2['amount'].sum())
@@ -407,6 +406,17 @@ def test_summary():
     assert 'count(accounts.id) as b' in result.lower()
 
 
+def test_summary_clean():
+    t2 = t[t.amount > 0]
+    expr = summary(a=t2.amount.sum(), b=t2.id.count())
+    result = str(compute(expr, s))
+
+    assert normalize(result) == normalize("""
+    SELECT sum(accounts.amount) as a, count(accounts.id) as b
+    FROM accounts
+    WHERE accounts.amount > :amount_1""")
+
+
 def test_summary_by():
     expr = by(t.name, summary(a=t.amount.sum(), b=t.id.count()))
 
@@ -475,3 +485,27 @@ def test_reductions_on_complex_selections():
     SELECT sum(accounts.id) as id_sum
     FROM accounts
     WHERE accounts.amount > :amount_1 """)
+
+
+def test_clean_summary_by_where():
+    t2 = t[t.id ==1]
+    expr = by(t2.name, sum=t2.amount.sum(), count=t2.amount.count())
+    result = compute(expr, s)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT accounts.name, count(accounts.amount) AS count, sum(accounts.amount) AS sum
+    FROM accounts
+    WHERE accounts.id = :id_1
+    GROUP BY accounts.name
+    """)
+
+
+def test_by_on_count():
+    expr = by(t.name, count=t.count())
+    result = compute(expr, s)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT accounts.name, count(accounts.id) AS count
+    FROM accounts
+    GROUP BY accounts.name
+    """)
