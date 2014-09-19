@@ -444,8 +444,9 @@ def into(a, b, **kwargs):
 @dispatch(ColumnDataSource, (TableExpr, pd.DataFrame, np.ndarray, ctable))
 def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
-    return ColumnDataSource(data=dict((col, into([], t[col]))
+    return ColumnDataSource(data=dict((col, into(list, into(pd.Series, t[col])))
                                       for col in columns))
+
 
 @dispatch(ColumnDataSource, tb.Table)
 def into(cds, t, **kwargs):
@@ -858,8 +859,8 @@ def into(a, b, **kwargs):
     if b.open == gzip.open:
         options['compression'] = 'gzip'
 
-    usecols = names = options.pop('names', b.columns)
-
+    names = options.pop('names', b.columns)
+    usecols = options.pop('usecols', [b.columns.index(name) for name in names])
     return pd.read_csv(b.path,
                        header=0 if b.header else None,
                        dtype=dtypes,
@@ -868,8 +869,9 @@ def into(a, b, **kwargs):
                        usecols=usecols,
                        **options)
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table,
-    list, tuple, set), Projection)
+
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
+           tuple, set), Projection)
 def into(a, b, **kwargs):
     """ Special case on anything <- Table(CSV)[columns]
 
@@ -879,10 +881,11 @@ def into(a, b, **kwargs):
 
     >>> csv = CSV('/path/to/file.csv')              # doctest: +SKIP
     >>> t = Table(csv)                              # doctest: +SKIP
-    >>> into(list, t[['column-1', 'column-2']]      # doctest: +SKIP
+    >>> into(list, t[['column-1', 'column-2']])      # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        return into(a, b.child.data, names=b.columns, **kwargs)
+        names = kwargs.pop('names', b.columns)
+        return into(a, b.child.data, names=names, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once
         # https://github.com/mrocklin/multipledispatch/pull/39 is merged
