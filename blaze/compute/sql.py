@@ -37,6 +37,14 @@ from ..data.utils import listpack
 __all__ = ['sqlalchemy', 'select']
 
 
+@dispatch(Projection, Select)
+def compute_up(t, s, scope=None, **kwargs):
+    cols = list(s._raw_columns)
+    cols = [cols[t.child.columns.index(c)] for c in t.columns]
+
+    return s.with_only_columns(cols)
+
+
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
@@ -210,6 +218,15 @@ def compute_up(t, s, **kwargs):
     return compute_up(t, select(s), **kwargs)
 
 
+@dispatch(count, sqlalchemy.Table)
+def compute_up(t, s, **kwargs):
+    try:
+        c = list(s.primary_key)[0]
+    except IndexError:
+        c = list(s.columns)[0]
+
+    return sqlalchemy.sql.functions.count(c)
+
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
     try:
@@ -307,9 +324,7 @@ def compute_up(t, s, **kwargs):
         reductions = [reduction]
 
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t.child: s}).label(name)
-                for val, name in zip(t.apply.values, t.apply.names)]
-        reduction = select(reductions)
+        reduction = compute(t.apply, {t.child: s})
 
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
     s2 = reduction.group_by(*grouper)
@@ -317,7 +332,8 @@ def compute_up(t, s, **kwargs):
     for g in grouper:
         s2.append_column(g)
 
-    cols = [lower_column(s2.c.get(col)) for col in t.columns]
+    cols = s2._raw_columns
+    cols = cols[-len(grouper):] + cols[:-len(grouper)]
     return s2.with_only_columns(cols)
 
 
@@ -366,6 +382,22 @@ def compute_up(t, s, **kwargs):
 @dispatch(Union, Selectable, tuple)
 def compute_up(t, _, children):
     return sqlalchemy.union(*children)
+
+
+@dispatch(Summary, Select)
+def compute_up(t, s, **kwargs):
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c], lower_column(s.c.get(c)))
+                    for c in t.child.columns)
+
+    cols = [compute(val, d).label(name)
+                for name, val in zip(t.names, t.values)]
+
+    s = copy(s)
+    for c in cols:
+        s.append_column(c)
+
+    return s.with_only_columns(cols)
 
 
 @dispatch(Summary, ClauseElement)

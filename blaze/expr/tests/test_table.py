@@ -379,6 +379,15 @@ def test_summary():
     assert hash(s)
     assert eval(str(s)).isidentical(s)
 
+    assert 'summary(' in str(s)
+    assert 'total=' in str(s)
+    assert 'num=' in str(s)
+    assert str(t.amount.sum()) in str(s)
+
+    assert not summary(total=t.amount.sum()).child.isidentical(
+            t.amount.sum())
+    assert isinstance(summary(total=t.amount.sum() + 1).child, TableExpr)
+
 
 def test_reduction_arithmetic():
     t = TableSymbol('t', '{id: int32, name: string, amount: int32}')

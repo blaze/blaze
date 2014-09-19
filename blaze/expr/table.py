@@ -902,12 +902,24 @@ class Summary(Expr):
         return dshape(Record(list(zip(self.names,
                                       [v.dtype for v in self.values]))))
 
+    def __str__(self):
+        return 'summary(' + ', '.join('%s=%s' % (name, str(val))
+                for name, val in zip(self.names, self.values)) + ')'
+
 
 def summary(**kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
     values = tuple(map(second, items))
     child = common_subexpression(*values)
+
+    if len(kwargs) == 1 and not isinstance(child, TableExpr):
+        while not isinstance(child, TableExpr):
+            children = [i for i in child.inputs if isinstance(i, Expr)]
+            if len(children) == 1:
+                child = children[0]
+            else:
+                raise ValueError()
 
     return Summary(child, names, values)
 
