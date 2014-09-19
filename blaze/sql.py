@@ -77,6 +77,5 @@ def resource_sql(uri, table_name, *args, **kwargs):
     try:
         import impala.sqlalchemy
     except ImportError:
-        raise ImportError("Please install recent impyla library\n"
-                "    pip install impyla --upgrade")
+        raise ImportError("Please install or update `impyla` library")
     return SQL(uri, table_name, *args, **kwargs)
