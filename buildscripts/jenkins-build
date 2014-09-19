@@ -73,11 +73,14 @@ pip install multipledispatch || exit 1
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
 py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit 1
-
-Retrieve the version number
+echo `ls`
+echo `git describe --tags`
+echo `pwd`
+# Retrieve the version number
 # X.X.X.dev builds
 version=`git describe --tags`
 BLAZE_VERSION=`echo $version | tr "-" _`
+echo BLAZE_VERSION, ${BLAZE_VERSION}
 if [ '${BLAZE_VERSION}' == '' ]; then
     echo Could not determine the blaze version.
     exit 1
