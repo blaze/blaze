@@ -150,7 +150,10 @@ def tmpfile(extension=''):
     except OSError:  # Sometimes Windows can't close files
         if os.name == 'nt':
             os.close(handle)
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except OSError:  # pass
+                pass
 
 
 def raises(err, lamda):
