@@ -307,9 +307,7 @@ def compute_up(t, s, **kwargs):
         reductions = [reduction]
 
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t.child: s}).label(name)
-                for val, name in zip(t.apply.values, t.apply.names)]
-        reduction = select(reductions)
+        reduction = compute(t.apply, {t.child: s})
 
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
     s2 = reduction.group_by(*grouper)
@@ -382,10 +380,6 @@ def compute_up(t, s, **kwargs):
         s.append_column(c)
 
     return s.with_only_columns(cols)
-
-    columns = [list(compute(value, {t.child: s}).columns)[0].label(name)
-                for value, name in zip(t.values, t.names)]
-    return select(columns)
 
 
 @dispatch(Summary, ClauseElement)
