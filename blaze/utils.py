@@ -140,18 +140,19 @@ def filetexts(d, open=open):
 @contextmanager
 def tmpfile(extension=''):
     extension = '.' + extension.lstrip('.')
-    handle, filename = tempfile.mkstemp(extension)
+    with tempfile.NamedTemporaryFile(suffix=extension) as f:
+        yield f.name
 
-    try:
-        yield filename
-    finally:
-        try:
-            if os.path.exists(filename):
-                os.remove(filename)
-        except OSError:  # Sometimes Windows can't close files
-            if os.name == 'nt':
-                os.close(handle)
-                os.remove(filename)
+    # try:
+    #     yield filename
+    # finally:
+    #     try:
+    #         if os.path.exists(filename):
+    #             os.remove(filename)
+    #     except OSError:  # Sometimes Windows can't close files
+    #         if os.name == 'nt':
+    #             os.close(handle)
+    #             os.remove(filename)
 
 
 def raises(err, lamda):
