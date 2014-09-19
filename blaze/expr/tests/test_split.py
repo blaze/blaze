@@ -73,3 +73,16 @@ def test_by():
     assert not agg.iscolumn
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
 
+
+def test_embarassing_rowwise():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount + 1)
+
+    assert chunk_expr.isidentical(chunk.amount + 1)
+    assert agg_expr.isidentical(agg)
+
+
+def test_embarassing_selection():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t[t.amount > 0])
+
+    assert chunk_expr.isidentical(chunk[chunk.amount > 0])
+    assert agg_expr.isidentical(agg)

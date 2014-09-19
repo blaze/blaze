@@ -106,5 +106,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
             (agg, by(agg_grouper, agg_apply)))
 
 
-
-
+@dispatch((RowWise, Selection))
+def _split(expr, leaf=None, chunk=None, agg=None):
+    return ((chunk, expr.subs({leaf: chunk})),
+            (agg, agg))
