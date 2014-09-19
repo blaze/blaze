@@ -19,6 +19,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
                         Summary, count, ScalarSymbol, like, Like)
+from blaze.expr.table import _expr_child, unpack
 from blaze.compatibility import PY3, _strtypes
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
@@ -46,6 +47,11 @@ def test_length():
     assert len(t.head(50)) == 10
     with pytest.raises(ValueError):
         len(s)
+
+def test_table_name():
+    t = TableSymbol('t', '10 * {people: string, amount: int}')
+    with pytest.raises(ValueError):
+        t.name
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
@@ -82,9 +88,11 @@ def test_column():
 
     assert eval(str(t['name'])) == t['name']
     assert str(t['name']) == "t['name']"
+    with pytest.raises(ValueError):
+        t['name'].project('balance')
 
 
-def test_projection_failures():
+def test_symbol_projection_failures():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
     with pytest.raises(ValueError):
         t.project(['name', 'id'])
@@ -103,6 +111,9 @@ def test_Projection():
     assert t['amount'].dshape == dshape('var * {amount: int32}')
 
     assert eval(str(p)).isidentical(p)
+    assert p.project(['amount','name']) == p[['amount','name']]
+    with pytest.raises(ValueError):
+        p.project('balance')
 
 
 def test_indexing():
@@ -123,8 +134,10 @@ def test_selection():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     s = selection(t, t['name'] == 'Alice')
+    f = selection(t, t['name'] > t['amount'])
 
     assert s.dshape == t.dshape
+
 
 
 def test_selection_typecheck():
@@ -214,6 +227,8 @@ def test_str():
 def test_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
+    r = TableSymbol('r', '{name: int}')
+
     j = join(t, s, 'name', 'name')
 
     assert j.schema == dshape('{name: string, amount: int, id: int}')
@@ -222,6 +237,11 @@ def test_join():
 
     assert join(t, s, 'name').on_left == 'name'
     assert join(t, s, 'name').on_right == 'name'
+
+    assert join(t, r, ('name', 'amount')).on_left == ['name', 'amount']
+    with pytest.raises()
+
+    assert unpack('unpack') == 'unpack'
 
 
 def test_join_different_on_right_left_columns():
@@ -517,11 +537,16 @@ def test_apply():
 
 
 def test_columnwise():
-    from blaze.expr.scalar import Add, Eq, Mult
+    from blaze.expr.scalar import Add, Eq, Mult, Le
     t = TableSymbol('t', '{x: int, y: int, z: int}')
+    t2 = TableSymbol('t', '{a: int, b: int, c: int}')
     x = t['x']
     y = t['y']
     z = t['z']
+    a = t2['a']
+    b = t2['b']
+    c = t2['c']
+
     assert str(columnwise(Add, x, y).expr) == 'x + y'
     assert columnwise(Add, x, y).child.isidentical(t)
 
@@ -532,6 +557,21 @@ def test_columnwise():
     assert columnwise(Eq, c1, c2).child.isidentical(t)
 
     assert str(columnwise(Add, x, 1).expr) == 'x + 1'
+
+    assert str(x.__le__(y)) == "t['x'] <= t['y']"
+    assert str(x.__ge__(y)) == "t['x'] >= t['y']"
+    assert str(x.__or__(y)) == "t['x'] | t['y']"
+    assert str(x.__ror__(y)) == "t['y'] | t['x']"
+    assert str(x.__rand__(y)) == "t['y'] & t['x']"
+
+    with pytest.raises(ValueError):
+        columnwise(Add, x, a)
+
+
+def test_expr_child():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    w = t['x'].label('w')
+    assert str(_expr_child(w)) == '(x, t)'
 
 
 def test_TableSymbol_printing_is_legible():
