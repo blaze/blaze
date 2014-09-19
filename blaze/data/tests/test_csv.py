@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
 import os
 from collections import Iterator
 from datetime import datetime
@@ -20,9 +19,6 @@ from blaze.data.csv import drop, has_header, discover_dialect
 from dynd import nd
 
 
-osx_py3 = sys.platform == 'darwin' and sys.version_info[0] == 3
-
-
 def sanitize(lines):
     return '\n'.join(line.strip() for line in lines.split('\n'))
 
@@ -30,9 +26,10 @@ def sanitize(lines):
 def test_schema_detection_modifiers():
     text = "name amount date\nAlice 100 20120101\nBob 200 20120102"
     with filetext(text) as fn:
-        assert CSV(fn).schema == dshape('{name: string, amount: ?int64, date: ?int64}')
+        assert (CSV(fn).schema ==
+                dshape('{name: string, amount: ?int64, date: ?int64}'))
         assert (CSV(fn, columns=['NAME', 'AMOUNT', 'DATE']).schema ==
-                        dshape('{NAME: string, AMOUNT: ?int64, DATE: ?int64}'))
+                dshape('{NAME: string, AMOUNT: ?int64, DATE: ?int64}'))
         assert (str(CSV(fn, types=['string', 'int32', 'date']).schema) ==
                 str(dshape('{name: string, amount: int32, date: date}')))
 
