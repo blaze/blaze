@@ -330,7 +330,9 @@ class CSV(DataDescriptor):
                                           na_values=na_values, **kwargs)
         assert chunksize is not None, ('iterreader is for chunking only, '
                                        'for in memory reading use reader()')
-        with open(self.path, mode='r') as f:
+
+        f = self.open(self.path, mode='r')
+        try:
             for chunk in pd.read_csv(f, compression={'gz': 'gzip', 'bz2':
                                                      'bz2'}.get(ext),
                                      chunksize=chunksize, na_values=na_values,
@@ -338,6 +340,11 @@ class CSV(DataDescriptor):
                                      encoding=self.encoding, header=header,
                                      **dialect):
                 yield chunk
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
     def get_py(self, key):
         return self._get_py(ordered_index(key, self.dshape))
