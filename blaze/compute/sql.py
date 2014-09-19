@@ -218,6 +218,15 @@ def compute_up(t, s, **kwargs):
     return compute_up(t, select(s), **kwargs)
 
 
+@dispatch(count, sqlalchemy.Table)
+def compute_up(t, s, **kwargs):
+    try:
+        c = list(s.primary_key)[0]
+    except IndexError:
+        c = list(s.columns)[0]
+
+    return sqlalchemy.sql.functions.count(c)
+
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
     try:

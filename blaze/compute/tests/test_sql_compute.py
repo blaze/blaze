@@ -498,3 +498,14 @@ def test_clean_summary_by_where():
     WHERE accounts.id = :id_1
     GROUP BY accounts.name
     """)
+
+
+def test_by_on_count():
+    expr = by(t.name, count=t.count())
+    result = compute(expr, s)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT accounts.name, count(accounts.id) AS count
+    FROM accounts
+    GROUP BY accounts.name
+    """)
