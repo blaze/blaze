@@ -338,5 +338,17 @@ def test_into_cds_mixed():
         df.to_csv(fn, header=None, index=False, encoding='utf8')
         csv = CSV(fn, columns=['first', 'second', 'third'], encoding='utf8')
         t = Table(csv)
+
         cds = into(ColumnDataSource, t)
         assert isinstance(cds, ColumnDataSource)
+        assert cds.data == dict((k, into(list, csv[:, k]))
+                                for k in ['first', 'second', 'third'])
+
+        cds = into(ColumnDataSource, t[['first', 'second']])
+        assert isinstance(cds, ColumnDataSource)
+        assert cds.data == dict((k, into(list, csv[:, k]))
+                                for k in ['first', 'second'])
+
+        cds = into(ColumnDataSource, t['first'])
+        assert isinstance(cds, ColumnDataSource)
+        assert cds.data == {'first': into(list, csv[:, 'first'])}
