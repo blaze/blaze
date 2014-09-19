@@ -4,6 +4,7 @@ import sys
 import itertools as it
 import os
 import gzip
+import bz2
 from functools import partial
 
 from multipledispatch import dispatch
@@ -242,7 +243,7 @@ class CSV(DataDescriptor):
 
         self.path = path
         self.mode = mode
-        self.open = open
+        self.open = {'gz': gzip.open, 'bz2': bz2.BZ2File}.get(self.ext, open)
         self.header = header
         self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
@@ -294,48 +295,56 @@ class CSV(DataDescriptor):
         self._schema = schema
         self.header = header
 
+    @property
+    def ext(self):
+        _, ext = os.path.splitext(self.path)
+        return ext.lstrip('.')
+
     def _clean_params(self, header=None, keep_default_na=False,
                       na_values=na_values, chunksize=None, **kwargs):
         kwargs.setdefault('skiprows', int(bool(self.header)))
 
         dialect = merge(keyfilter(read_csv_kwargs.__contains__, self.dialect),
                         kwargs)
-        filename, ext = os.path.splitext(self.path)
-        ext = ext.lstrip('.')
         # handle windows
         if dialect['lineterminator'] == '\r\n':
             dialect['lineterminator'] = None
-        return dialect, ext
+        return dialect
 
     def reader(self, header=None, keep_default_na=False,
                na_values=na_values, **kwargs):
         chunksize = kwargs.pop('chunksize', None)
         assert chunksize is None, ('reader is for in memory only, '
                                    'use iterreader to read chunks')
-        dialect, ext = self._clean_params(header=header,
-                                          keep_default_na=keep_default_na,
-                                          na_values=na_values, **kwargs)
-        reader = pd.read_csv(self.path, compression={'gz': 'gzip',
-                                                     'bz2': 'bz2'}.get(ext),
-                             chunksize=chunksize, na_values=na_values,
-                             keep_default_na=keep_default_na,
-                             encoding=self.encoding, header=header, **dialect)
-        return reader
+        dialect = self._clean_params(header=header,
+                                     keep_default_na=keep_default_na,
+                                     na_values=na_values, **kwargs)
+        f = self.open(self.path)
+
+        try:
+            return pd.read_csv(f, chunksize=chunksize,
+                               na_values=na_values,
+                               keep_default_na=keep_default_na,
+                               encoding=self.encoding, header=header, **dialect)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
     def iterreader(self, header=None, keep_default_na=False,
                    na_values=na_values, **kwargs):
         chunksize = kwargs.pop('chunksize', self.chunksize)
-        dialect, ext = self._clean_params(header=header,
-                                          keep_default_na=keep_default_na,
-                                          na_values=na_values, **kwargs)
+        dialect = self._clean_params(header=header,
+                                     keep_default_na=keep_default_na,
+                                     na_values=na_values, **kwargs)
         assert chunksize is not None, ('iterreader is for chunking only, '
                                        'for in memory reading use reader()')
 
-        f = self.open(self.path, mode='r')
+        f = self.open(self.path)
         try:
-            for chunk in pd.read_csv(f, compression={'gz': 'gzip', 'bz2':
-                                                     'bz2'}.get(ext),
-                                     chunksize=chunksize, na_values=na_values,
+            for chunk in pd.read_csv(f, chunksize=chunksize,
+                                     na_values=na_values,
                                      keep_default_na=keep_default_na,
                                      encoding=self.encoding, header=header,
                                      **dialect):
