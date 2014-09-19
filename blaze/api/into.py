@@ -867,6 +867,7 @@ def into(a, b, **kwargs):
                        parse_dates=datenames,
                        names=names,
                        usecols=usecols,
+                       encoding=b.encoding,
                        **options)
 
 
