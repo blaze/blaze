@@ -1,3 +1,5 @@
+# encoding: utf8
+
 import unittest
 
 from dynd import nd
@@ -321,5 +323,20 @@ def test_into_DataFrame_Excel_xlsx_format():
 def test_into_numpy_from_tableexpr_with_option_types():
     t = Table([[1, 'Alice'], [2, 'Bob']],
               schema='{id: ?int32, name: string[5, "ascii"]}')
-    assert into(np.ndarray, t).dtype == \
-            np.dtype([('id', 'i4'), ('name', 'S5')])
+    assert into(np.ndarray, t).dtype == np.dtype([('id', 'i4'), ('name', 'S5')])
+
+
+def test_into_cds_mixed():
+    from bokeh.objects import ColumnDataSource
+    n = 100
+    ddict = {'first': np.random.choice(list('abc'), size=n),
+             'second': np.random.choice(['cachaça', 'tres leches', 'pizza'],
+                                        size=n),
+             'third': np.random.rand(n) * 1000}
+    df = pd.DataFrame(ddict)
+    with tmpfile('.csv') as fn:
+        df.to_csv(fn, header=None, index=False)
+        csv = CSV(fn, columns=['first', 'second', 'third'])
+        t = Table(csv)
+        cds = into(ColumnDataSource, t)
+        assert isinstance(cds, ColumnDataSource)
