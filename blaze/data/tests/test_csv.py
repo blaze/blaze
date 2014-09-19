@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import unittest
 import sys
 import os
 from collections import Iterator
@@ -28,49 +27,47 @@ def sanitize(lines):
     return '\n'.join(line.strip() for line in lines.split('\n'))
 
 
-class Test_Other(unittest.TestCase):
-    def test_schema_detection_modifiers(self):
-        text = "name amount date\nAlice 100 20120101\nBob 200 20120102"
-        with filetext(text) as fn:
-            self.assertEqual(CSV(fn).schema,
-                         dshape('{name: string, amount: ?int64, date: ?int64}'))
+def test_schema_detection_modifiers():
+    text = "name amount date\nAlice 100 20120101\nBob 200 20120102"
+    with filetext(text) as fn:
+        assert CSV(fn).schema == dshape('{name: string, amount: ?int64, date: ?int64}')
+        assert (CSV(fn, columns=['NAME', 'AMOUNT', 'DATE']).schema ==
+                        dshape('{NAME: string, AMOUNT: ?int64, DATE: ?int64}'))
+        assert (str(CSV(fn, types=['string', 'int32', 'date']).schema) ==
+                str(dshape('{name: string, amount: int32, date: date}')))
 
-            self.assertEqual(CSV(fn, columns=['NAME', 'AMOUNT', 'DATE']).schema,
-                         dshape('{NAME: string, AMOUNT: ?int64, DATE: ?int64}'))
+        a = CSV(fn, typehints={'date': 'date'}).schema
+        b = dshape('{name: string, amount: ?int64, date: date}')
+        assert str(a) == str(b)
 
-            self.assertEqual(
-                    str(CSV(fn, types=['string', 'int32', 'date']).schema),
-                    str(dshape('{name: string, amount: int32, date: date}')))
 
-            a = CSV(fn, typehints={'date': 'date'}).schema
-            b = dshape('{name: string, amount: ?int64, date: date}')
-            self.assertEqual(str(a), str(b))
+def test_homogenous_schema():
+    with filetext("1,1\n2,2\n3,3") as fn:
+        assert (CSV(fn, columns=['x', 'y']).schema ==
+                dshape('{x: int64, y: int64}'))
 
-    def test_homogenous_schema(self):
-        text = "1,1\n2,2\n3,3"
-        with filetext(text) as fn:
-            self.assertEqual(CSV(fn, columns=['x', 'y']).schema,
-                    dshape('{x: int64, y: int64}'))
 
-    def test_a_mode(self):
-        text = ("id, name, balance\n1, Alice, 100\n2, Bob, 200\n"
-                "3, Charlie, 300\n4, Denis, 400\n5, Edith, 500")
-        with filetext(text) as fn:
-            csv = CSV(fn, 'a')
-            csv.extend([(6, 'Frank', 600),
-                        (7, 'Georgina', 700)])
+def test_a_mode():
+    text = ("id, name, balance\n1, Alice, 100\n2, Bob, 200\n"
+            "3, Charlie, 300\n4, Denis, 400\n5, Edith, 500")
+    with filetext(text) as fn:
+        csv = CSV(fn, 'a')
+        csv.extend([(6, 'Frank', 600),
+                    (7, 'Georgina', 700)])
 
-            expected = set(csv[:, 'name'])
-            assert 'Georgina' in expected
+        expected = set(csv[:, 'name'])
+        assert 'Georgina' in expected
 
-    def test_sep_kwarg(self):
-        csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
-        self.assertEqual(csv.dialect['delimiter'], ';')
 
-    def test_columns(self):
-        # This is really testing the core interface
-        dd = CSV('foo', 'w', schema='{name: string, amount: int}')
-        assert list(dd.columns) == ['name', 'amount']
+def test_sep_kwarg():
+    csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
+    assert csv.dialect['delimiter'] == ';'
+
+
+def test_columns():
+    # This is really testing the core interface
+    dd = CSV('foo', 'w', schema='{name: string, amount: int}')
+    assert list(dd.columns) == ['name', 'amount']
 
 
 def test_unicode():
