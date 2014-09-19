@@ -328,7 +328,7 @@ def test_into_numpy_from_tableexpr_with_option_types():
 
 def test_into_cds_mixed():
     from bokeh.objects import ColumnDataSource
-    n = 100
+    n = 25
     ddict = {'first': np.random.choice(list('abc'), size=n),
              'second': np.random.choice(['cachaça', 'tres leches', 'pizza'],
                                         size=n),
