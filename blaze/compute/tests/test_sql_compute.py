@@ -407,6 +407,17 @@ def test_summary():
     assert 'count(accounts.id) as b' in result.lower()
 
 
+def test_summary_clean():
+    t2 = t[t.amount > 0]
+    expr = summary(a=t2.amount.sum(), b=t2.id.count())
+    result = str(compute(expr, s))
+
+    assert normalize(result) == normalize("""
+    SELECT sum(accounts.amount) as a, count(accounts.id) as b
+    FROM accounts
+    WHERE accounts.amount > :amount_1""")
+
+
 def test_summary_by():
     expr = by(t.name, summary(a=t.amount.sum(), b=t.id.count()))
 

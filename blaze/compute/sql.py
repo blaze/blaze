@@ -368,6 +368,26 @@ def compute_up(t, _, children):
     return sqlalchemy.union(*children)
 
 
+@dispatch(Summary, Select)
+def compute_up(t, s, **kwargs):
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c], lower_column(s.c.get(c)))
+                    for c in t.child.columns)
+
+    cols = [compute(val, d).label(name)
+                for name, val in zip(t.names, t.values)]
+
+    s = copy(s)
+    for c in cols:
+        s.append_column(c)
+
+    return s.with_only_columns(cols)
+
+    columns = [list(compute(value, {t.child: s}).columns)[0].label(name)
+                for value, name in zip(t.values, t.names)]
+    return select(columns)
+
+
 @dispatch(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
     return select([compute(value, {t.child: s}).label(name)
