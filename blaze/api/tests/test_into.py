@@ -327,6 +327,7 @@ def test_into_numpy_from_tableexpr_with_option_types():
 
 
 def test_into_cds_mixed():
+    pytest.importorskip('bokeh')
     from bokeh.objects import ColumnDataSource
     n = 25
     ddict = {'first': np.random.choice(list('abc'), size=n),
