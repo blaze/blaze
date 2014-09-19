@@ -20,8 +20,7 @@ and also because it itself is split among a few projects.
    cd blaze
 
    # Install most of the requirements through conda
-   conda install --yes --file requirements.txt  # Basic requirements
-   conda install --yes -c mwiebe dynd-python    # Development version of DyND
+   conda install --yes -c blaze
 
    # Some requirements are kept up-to-date on PyPI
    conda install --yes pip
