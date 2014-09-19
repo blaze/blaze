@@ -335,8 +335,8 @@ def test_into_cds_mixed():
              'third': np.random.rand(n) * 1000}
     df = pd.DataFrame(ddict)
     with tmpfile('.csv') as fn:
-        df.to_csv(fn, header=None, index=False)
-        csv = CSV(fn, columns=['first', 'second', 'third'])
+        df.to_csv(fn, header=None, index=False, encoding='utf8')
+        csv = CSV(fn, columns=['first', 'second', 'third'], encoding='utf8')
         t = Table(csv)
         cds = into(ColumnDataSource, t)
         assert isinstance(cds, ColumnDataSource)
