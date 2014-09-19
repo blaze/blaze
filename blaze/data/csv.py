@@ -520,7 +520,8 @@ class CSV(DataDescriptor):
 
             for df in map(partial(bz.into, pd.DataFrame),
                           partition_all(self.chunksize, iter(rows))):
-                df.to_csv(f, index=False, header=None, **dialect)
+                df.to_csv(f, index=False, header=None, encoding=self.encoding,
+                          **dialect)
 
     def remove(self):
         """Remove the persistent storage."""
