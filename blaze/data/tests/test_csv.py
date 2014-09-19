@@ -92,11 +92,9 @@ def buf():
     return b
 
 
-@pytest.fixture
-def data():
-    return (('Alice', 100),
-            ('Bob', 200),
-            ('Alice', 50))
+data = (('Alice', 100),
+        ('Bob', 200),
+        ('Alice', 50))
 
 
 @pytest.yield_fixture
@@ -262,7 +260,7 @@ def test_creation_rw(tmpcsv, schema):
     assert dd is not None
 
 
-def test_append(tmpcsv, data, schema):
+def test_append(tmpcsv, schema):
     dd = CSV(tmpcsv, 'w', schema=schema, delimiter=' ')
     dd.extend([data[0]])
     with open(tmpcsv) as f:
@@ -270,7 +268,7 @@ def test_append(tmpcsv, data, schema):
     assert s == 'Alice 100'
 
 
-def test_extend(tmpcsv, data, schema):
+def test_extend(tmpcsv, schema):
     dd = CSV(tmpcsv, 'w', schema=schema, delimiter=' ')
     dd.extend(data)
     with open(tmpcsv) as f:
@@ -428,7 +426,7 @@ def test_subset_no_date(date_data):
 
 
 @pytest.yield_fixture
-def csv(schema, data):
+def csv(schema):
     csv = CSV('test.csv', schema=schema, mode='w')
     csv.extend(data)
     yield csv
