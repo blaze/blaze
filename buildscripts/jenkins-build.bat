@@ -69,4 +69,18 @@ taskkill /im mongod.exe /f || exit /b 1
 
 if %testerror% NEQ 0 exit /b 1
 
+FOR /F "delims=" %%i IN ('git describe') DO set BLAZE_VERSION=%%i
+if "%BLAZE_VERSION%" == "" exit /b 1
+
+REM Create a conda package from the build
+call C:\Anaconda\Scripts\conda package -p %PYENV_PREFIX% --pkg-name=blaze --pkg-version=%BLAZE_VERSION%
+IF %ERRORLEVEL% NEQ 0 exit /b 1
+echo on
+
+REM Upload the package to binstar
+FOR /F "delims=" %%i IN ('dir /b blaze-*.tar.bz2') DO set PKG_FILE=%%i
+call C:\Anaconda\Scripts\binstar -t %BINSTAR_BLAZE_AUTH% upload --force %PKG_FILE% || exit 1
+
+cd ..
+
 exit /b 0

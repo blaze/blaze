@@ -72,3 +72,34 @@ pip install multipledispatch || exit 1
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
 py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit 1
+
+Retrieve the version number
+# X.X.X.dev builds
+version=`git describe --tags`
+BLAZE_VERSION=`echo $version | tr "-" _`
+if [ '${BLAZE_VERSION}' == '' ]; then
+    echo Could not determine the blaze version.
+    exit 1
+fi
+
+# Put the conda package by itself in the directory pkgs
+rm -rf pkgs
+mkdir pkgs
+cd pkgs
+if [ `uname` == Darwin ]; then
+ mkdir osx-64
+ cd osx-64
+elif [ `uname -m` == x86_64 ]; then
+ mkdir linux-64
+ cd linux-64
+else
+ mkdir linux-32
+ cd linux-32
+fi
+
+# Create a conda package from the build
+~/anaconda/bin/conda package -p ${PYENV_PREFIX} --pkg-name=blaze --pkg-version=${BLAZE_VERSION}
+
+# Upload the package to binstar
+~/anaconda/bin/binstar -t ${BINSTAR_BLAZE_AUTH} upload --force blaze*.tar.bz2
+
