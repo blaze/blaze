@@ -77,6 +77,11 @@ call C:\Anaconda\Scripts\conda package -p %PYENV_PREFIX% --pkg-name=blaze --pkg-
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 echo on
 
+REM Make sure binstar is installed in the main environment
+echo Updating binstar...
+call C:\Anaconda\Scripts\conda install --yes binstar || exit 1
+call C:\Anaconda\Scripts\binstar --version
+
 REM Upload the package to binstar
 FOR /F "delims=" %%i IN ('dir /b blaze-*.tar.bz2') DO set PKG_FILE=%%i
 call C:\Anaconda\Scripts\binstar -t %BINSTAR_BLAZE_AUTH% upload --force %PKG_FILE% || exit 1

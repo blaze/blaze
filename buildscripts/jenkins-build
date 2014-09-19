@@ -42,6 +42,7 @@ export PYENV_PREFIX=${WORKSPACE}/build/pyenv
     dateutil pip pytables sqlalchemy h5py pandas requests pytest \
     toolz cytoolz bcolz || exit 1
 
+
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
 if [ -f "${PYENV_PREFIX}/bin/python" ]; then
@@ -97,9 +98,16 @@ else
  cd linux-32
 fi
 
+# Make sure binstar is installed in the main environment
+echo Updating binstar...
+~/anaconda/bin/conda install --yes binstar
+~/anaconda/bin/binstar --version
+
 # Create a conda package from the build
 ~/anaconda/bin/conda package -p ${PYENV_PREFIX} --pkg-name=blaze --pkg-version=${BLAZE_VERSION}
-
+echo `ls`
+echo ${BLAZE_VERSION}
+echo ${PYENV_PREFIX}
 # Upload the package to binstar
 ~/anaconda/bin/binstar -t ${BINSTAR_BLAZE_AUTH} upload --force blaze*.tar.bz2
 
