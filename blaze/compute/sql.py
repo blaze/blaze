@@ -315,7 +315,8 @@ def compute_up(t, s, **kwargs):
     for g in grouper:
         s2.append_column(g)
 
-    cols = [lower_column(s2.c.get(col)) for col in t.columns]
+    cols = s2._raw_columns
+    cols = cols[-len(grouper):] + cols[:-len(grouper)]
     return s2.with_only_columns(cols)
 
 

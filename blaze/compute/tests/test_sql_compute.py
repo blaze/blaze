@@ -198,7 +198,6 @@ def test_by():
     assert str(result) == str(expected)
 
 
-@xfail(reason='Works, but looks bad')
 def test_by_head():
     t2 = t.head(100)
     expr = by(t2['name'], t2['amount'].sum())
@@ -488,14 +487,13 @@ def test_reductions_on_complex_selections():
     WHERE accounts.amount > :amount_1 """)
 
 
-@xfail(reason="Waiting on clean by")
 def test_clean_summary_by_where():
     t2 = t[t.id ==1]
     expr = by(t2.name, sum=t2.amount.sum(), count=t2.amount.count())
     result = compute(expr, s)
 
     assert normalize(str(result)) == normalize("""
-    SELECT count(accounts.amount) AS count, sum(accounts.amount) AS sum
+    SELECT accounts.name, count(accounts.amount) AS count, sum(accounts.amount) AS sum
     FROM accounts
     WHERE accounts.id = :id_1
     GROUP BY accounts.name
