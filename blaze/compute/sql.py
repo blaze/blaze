@@ -37,6 +37,14 @@ from ..data.utils import listpack
 __all__ = ['sqlalchemy', 'select']
 
 
+@dispatch(Projection, Select)
+def compute_up(t, s, scope=None, **kwargs):
+    cols = list(s._raw_columns)
+    cols = [cols[t.child.columns.index(c)] for c in t.columns]
+
+    return s.with_only_columns(cols)
+
+
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
