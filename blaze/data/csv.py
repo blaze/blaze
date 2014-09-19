@@ -169,6 +169,11 @@ def get_pandas_dtype(typ):
     return typ.to_numpy_dtype()
 
 
+def ext(path):
+    _, e = os.path.splitext(path)
+    return e.lstrip('.')
+
+
 class CSV(DataDescriptor):
     """
     Blaze data descriptor to a CSV file.
@@ -243,7 +248,7 @@ class CSV(DataDescriptor):
 
         self.path = path
         self.mode = mode
-        self.open = {'gz': gzip.open, 'bz2': bz2.BZ2File}.get(self.ext, open)
+        self.open = {'gz': gzip.open, 'bz2': bz2.BZ2File}.get(ext(path), open)
         self.header = header
         self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
@@ -294,11 +299,6 @@ class CSV(DataDescriptor):
 
         self._schema = schema
         self.header = header
-
-    @property
-    def ext(self):
-        _, ext = os.path.splitext(self.path)
-        return ext.lstrip('.')
 
     def _clean_params(self, header=None, keep_default_na=False,
                       na_values=na_values, chunksize=None, **kwargs):
