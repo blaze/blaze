@@ -143,6 +143,7 @@ def tmpfile(extension=''):
     handle, filename = tempfile.mkstemp(extension)
 
     yield filename
+
     try:
         if os.path.exists(filename):
             os.remove(filename)
