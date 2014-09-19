@@ -208,16 +208,11 @@ class Test_Dialect(unittest.TestCase):
     @xfail(PY3, raises=ValueError, reason="No float nan conversion to integer "
            "allowed in Python 3")
     def test_extend_structured_many_newlines(self):
-        inan = np.array([np.nan]).astype('int32').item()
         with filetext('1,1.0\n2,2.0\n\n\n\n') as fn:
             csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
             csv.extend([(3, 3)])
             result = tuplify(tuple(csv))
-            expected = ((1, 1.0), (2, 2.0), (inan, np.nan), (inan, np.nan),
-                        (inan, np.nan), (3, 3.0))
-            assert discover(result) == discover(expected)
-            assert len(result) == len(expected)
-            assert list(map(len, result)) == list(map(len, result))
+            assert discover(result) == dshape('6 * (int64, float64)')
 
     def test_discover_dialect(self):
         s = '1,1\r\n2,2'
