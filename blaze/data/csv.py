@@ -260,8 +260,10 @@ class CSV(DataDescriptor):
         reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
         if not schema and 'w' not in mode:
             if not types:
-                data = self.reader(skiprows=1, nrows=nrows_discovery,
+                data = self.reader(skiprows=1 if header else 0,
+                                   nrows=nrows_discovery,
                                    as_recarray=True, index_col=False,
+                                   header=0 if header else None,
                                    **reader_dialect).tolist()
                 types = discover(data)
                 rowtype = types.subshape[0]
@@ -390,7 +392,7 @@ class CSV(DataDescriptor):
         # everything must ultimately be a list of tuples
         m = partial(bz.into, list)
 
-        slicerf = lambda x: x.fillna('').convert_objects(convert_numeric=True)
+        slicerf = lambda x: x.replace('', np.nan)
 
         if isinstance(initial, pd.Series):
             streaming_dtype = streaming_dtype[first(streaming_dtype.names)]
