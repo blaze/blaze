@@ -227,7 +227,8 @@ def test_str():
 def test_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
-    r = TableSymbol('r', '{name: int}')
+    r = TableSymbol('r', '{name: string, amount: int}')
+    q = TableSymbol('q', '{name: int}')
 
     j = join(t, s, 'name', 'name')
 
@@ -239,7 +240,10 @@ def test_join():
     assert join(t, s, 'name').on_right == 'name'
 
     assert join(t, r, ('name', 'amount')).on_left == ['name', 'amount']
-    with pytest.raises()
+    with pytest.raises(TypeError):
+        join(t, q, 'name')
+    with pytest.raises(ValueError):
+        join(t, s, how='upside_down')
 
     assert unpack('unpack') == 'unpack'
 
