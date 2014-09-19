@@ -102,11 +102,13 @@ def ndget(ind, data):
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
         f = open(filename, "wt")
-        f.write(text)
         try:
-            f.close()
-        except AttributeError:
-            pass
+            f.write(text)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
         yield filename
 
@@ -120,11 +122,13 @@ def filetexts(d, open=open):
     """
     for filename, text in d.items():
         f = open(filename, 'wt')
-        f.write(text)
         try:
-            f.close()
-        except AttributeError:
-            pass
+            f.write(text)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
     yield list(d)
 
@@ -138,16 +142,18 @@ def tmpfile(extension=''):
     extension = '.' + extension.lstrip('.')
     handle, filename = tempfile.mkstemp(extension)
 
+    yield filename
+
     try:
-        yield filename
-    finally:
-        try:
-            if os.path.exists(filename):
+        if os.path.exists(filename):
+            os.remove(filename)
+    except OSError:  # Sometimes Windows can't close files
+        if os.name == 'nt':
+            os.close(handle)
+            try:
                 os.remove(filename)
-        except OSError:  # Sometimes Windows can't close files
-            if os.name == 'nt':
-                os.close(handle)
-                os.remove(filename)
+            except OSError:  # finally give up
+                pass
 
 
 def raises(err, lamda):

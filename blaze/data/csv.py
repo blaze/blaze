@@ -4,6 +4,7 @@ import sys
 import itertools as it
 import os
 import gzip
+import bz2
 from functools import partial
 
 from multipledispatch import dispatch
@@ -168,6 +169,11 @@ def get_pandas_dtype(typ):
     return typ.to_numpy_dtype()
 
 
+def ext(path):
+    _, e = os.path.splitext(path)
+    return e.lstrip('.')
+
+
 class CSV(DataDescriptor):
     """
     Blaze data descriptor to a CSV file.
@@ -242,7 +248,7 @@ class CSV(DataDescriptor):
 
         self.path = path
         self.mode = mode
-        self.open = open
+        self.open = {'gz': gzip.open, 'bz2': bz2.BZ2File}.get(ext(path), open)
         self.header = header
         self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
@@ -260,8 +266,10 @@ class CSV(DataDescriptor):
         reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
         if not schema and 'w' not in mode:
             if not types:
-                data = self.reader(skiprows=1, nrows=nrows_discovery,
+                data = self.reader(skiprows=1 if header else 0,
+                                   nrows=nrows_discovery,
                                    as_recarray=True, index_col=False,
+                                   header=0 if header else None,
                                    **reader_dialect).tolist()
                 types = discover(data)
                 rowtype = types.subshape[0]
@@ -292,23 +300,60 @@ class CSV(DataDescriptor):
         self._schema = schema
         self.header = header
 
-    def reader(self, header=None, keep_default_na=False,
-               na_values=na_values, chunksize=None, **kwargs):
+    def _clean_params(self, header=None, keep_default_na=False,
+                      na_values=na_values, chunksize=None, **kwargs):
         kwargs.setdefault('skiprows', int(bool(self.header)))
 
         dialect = merge(keyfilter(read_csv_kwargs.__contains__, self.dialect),
                         kwargs)
-        filename, ext = os.path.splitext(self.path)
-        ext = ext.lstrip('.')
         # handle windows
         if dialect['lineterminator'] == '\r\n':
             dialect['lineterminator'] = None
-        reader = pd.read_csv(self.path, compression={'gz': 'gzip',
-                                                     'bz2': 'bz2'}.get(ext),
-                             chunksize=chunksize, na_values=na_values,
-                             keep_default_na=keep_default_na,
-                             encoding=self.encoding, header=header, **dialect)
-        return reader
+        return dialect
+
+    def reader(self, header=None, keep_default_na=False,
+               na_values=na_values, **kwargs):
+        chunksize = kwargs.pop('chunksize', None)
+        assert chunksize is None, ('reader is for in memory only, '
+                                   'use iterreader to read chunks')
+        dialect = self._clean_params(header=header,
+                                     keep_default_na=keep_default_na,
+                                     na_values=na_values, **kwargs)
+        f = self.open(self.path)
+
+        try:
+            return pd.read_csv(f, chunksize=chunksize,
+                               na_values=na_values,
+                               keep_default_na=keep_default_na,
+                               encoding=self.encoding, header=header, **dialect)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
+
+    def iterreader(self, header=None, keep_default_na=False,
+                   na_values=na_values, **kwargs):
+        chunksize = kwargs.pop('chunksize', self.chunksize)
+        dialect = self._clean_params(header=header,
+                                     keep_default_na=keep_default_na,
+                                     na_values=na_values, **kwargs)
+        assert chunksize is not None, ('iterreader is for chunking only, '
+                                       'for in memory reading use reader()')
+
+        f = self.open(self.path)
+        try:
+            for chunk in pd.read_csv(f, chunksize=chunksize,
+                                     na_values=na_values,
+                                     keep_default_na=keep_default_na,
+                                     encoding=self.encoding, header=header,
+                                     **dialect):
+                yield chunk
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
     def get_py(self, key):
         return self._get_py(ordered_index(key, self.dshape))
@@ -364,8 +409,8 @@ class CSV(DataDescriptor):
         if usecols is not None:
             parse_dates = [d for d in parse_dates if d in set(usecols)]
 
-        reader = self.reader(chunksize=self.chunksize, parse_dates=parse_dates,
-                             usecols=usecols, squeeze=True)
+        reader = self.iterreader(parse_dates=parse_dates, usecols=usecols,
+                                 squeeze=True)
 
         # pop one off the iterator
         initial = next(iter(reader))
@@ -390,7 +435,7 @@ class CSV(DataDescriptor):
         # everything must ultimately be a list of tuples
         m = partial(bz.into, list)
 
-        slicerf = lambda x: x.fillna('').convert_objects(convert_numeric=True)
+        slicerf = lambda x: x.replace('', np.nan)
 
         if isinstance(initial, pd.Series):
             streaming_dtype = streaming_dtype[first(streaming_dtype.names)]
