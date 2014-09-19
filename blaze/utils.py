@@ -152,7 +152,7 @@ def tmpfile(extension=''):
             os.close(handle)
             try:
                 os.remove(filename)
-            except OSError:  # pass
+            except OSError:  # finally give up
                 pass
 
 
