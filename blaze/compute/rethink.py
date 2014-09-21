@@ -18,7 +18,7 @@ import rethinkdb as rt
 from rethinkdb.ast import RqlQuery, Group as RqlGroup
 
 
-__all__ = ['compute_one', 'discover', 'RTable', 'create_index', 'drop',
+__all__ = ['compute_up', 'discover', 'RTable', 'create_index', 'drop',
            'compute']
 
 
@@ -57,22 +57,22 @@ def discover(t, n=50):
 
 
 @dispatch(Expr, RTable)
-def compute_one(e, t, **kwargs):
-    return compute_one(e, t.t, **kwargs)
+def compute_up(e, t, **kwargs):
+    return compute_up(e, t.t, **kwargs)
 
 
 @dispatch(TableSymbol, RqlQuery)
-def compute_one(_, t, **kwargs):
+def compute_up(_, t, **kwargs):
     return t
 
 
 @dispatch(Projection, RqlQuery)
-def compute_one(p, t, **kwargs):
+def compute_up(p, t, **kwargs):
     return t.pluck(*p.columns)
 
 
 @dispatch(Head, RqlQuery)
-def compute_one(h, t, **kwargs):
+def compute_up(h, t, **kwargs):
     return t.limit(h.n)
 
 
@@ -88,18 +88,18 @@ def default_sort_order(keys, f=rt.asc):
 
 
 @dispatch(Sort, RqlQuery)
-def compute_one(s, t, **kwargs):
+def compute_up(s, t, **kwargs):
     f = rt.asc if s.ascending else rt.desc
     return t.order_by(*default_sort_order(s.key, f=f))
 
 
 @dispatch(sum, RqlQuery)
-def compute_one(f, t, **kwargs):
+def compute_up(f, t, **kwargs):
     return t.sum(f.child.column)
 
 
 @dispatch(var, RqlQuery)
-def compute_one(v, t, **kwargs):
+def compute_up(v, t, **kwargs):
     column = v.child.column
     tavg = t.avg(column)
     row = rt.row[column]
@@ -109,91 +109,91 @@ def compute_one(v, t, **kwargs):
 
 
 @dispatch(std, RqlQuery)
-def compute_one(s, t, **kwargs):
+def compute_up(s, t, **kwargs):
     # we have to evaluate this immediately because Rql doesn't accept x ** 0.5
     # or math.sqrt
-    result = compute_one(var(*s.args), t)
+    result = compute_up(var(*s.args), t)
     num = post_compute(s, result, kwargs.get('scope', {}))
     return math.sqrt(num)
 
 
 @dispatch((min, max), RqlQuery)
-def compute_one(f, t, **kwargs):
+def compute_up(f, t, **kwargs):
     column = f.child.column
     return getattr(t, type(f).__name__)(column)[column]
 
 
 @dispatch(count, RqlQuery)
-def compute_one(f, t, **kwargs):
+def compute_up(f, t, **kwargs):
     return t.count()
 
 
 @dispatch(mean, RqlQuery)
-def compute_one(f, t, **kwargs):
+def compute_up(f, t, **kwargs):
     return t.avg(f.child.column)
 
 
 @dispatch(nunique, RqlQuery)
-def compute_one(f, t, **kwargs):
+def compute_up(f, t, **kwargs):
     return t.distinct().count()
 
 
 @dispatch(ScalarSymbol, RqlQuery)
-def compute_one(ss, _, **kwargs):
+def compute_up(ss, _, **kwargs):
     return rt.row[ss.name]
 
 
 @dispatch((basestring, numbers.Real), RqlQuery)
-def compute_one(s, _, **kwargs):
+def compute_up(s, _, **kwargs):
     return s
 
 
 @dispatch((BinOp, Relational, Arithmetic), RqlQuery)
-def compute_one(r, t, **kwargs):
-    lhs = compute_one(r.lhs, t, **kwargs)
-    rhs = compute_one(r.rhs, t, **kwargs)
+def compute_up(r, t, **kwargs):
+    lhs = compute_up(r.lhs, t, **kwargs)
+    rhs = compute_up(r.rhs, t, **kwargs)
     return r.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, (RqlQuery, RTable))
-def compute_one(o, t, **kwargs):
+def compute_up(o, t, **kwargs):
     raise NotImplementedError('ReQL does not support unary operations')
 
 
 @dispatch(Selection, RqlQuery)
-def compute_one(s, t, **kwargs):
-    return t.filter(compute_one(s.predicate.expr, t))
+def compute_up(s, t, **kwargs):
+    return t.filter(compute_up(s.predicate.expr, t))
 
 
 @dispatch(Distinct, RqlQuery)
-def compute_one(d, t, **kwargs):
+def compute_up(d, t, **kwargs):
     return t.distinct()
 
 
 @dispatch(ColumnWise, RqlQuery)
-def compute_one(cw, t, **kwargs):
-    return t.map(compute_one(cw.expr, t, **kwargs))
+def compute_up(cw, t, **kwargs):
+    return t.map(compute_up(cw.expr, t, **kwargs))
 
 
 @dispatch(Summary, RqlQuery)
-def compute_one(s, subgroup, **kwargs):
+def compute_up(s, subgroup, **kwargs):
     return dict(('%s_%s' % (op.child.column, name),
-                 compute_one(op, subgroup, **kwargs))
+                 compute_up(op, subgroup, **kwargs))
                 for name, op in zip(s.names, s.values))
 
 
 @dispatch(Summary, RqlGroup)
-def compute_one(s, g, **kwargs):
-    return g.do(lambda x: compute_one(s, x, **kwargs))
+def compute_up(s, g, **kwargs):
+    return g.do(lambda x: compute_up(s, x, **kwargs))
 
 
 @dispatch(By, RqlQuery)
-def compute_one(b, t, **kwargs):
-    return compute_one(b.apply, t.group(*b.grouper.columns), **kwargs)
+def compute_up(b, t, **kwargs):
+    return compute_up(b.apply, t.group(*b.grouper.columns), **kwargs)
 
 
 @dispatch(Map, RqlQuery)
-def compute_one(m, t, **kwargs):
+def compute_up(m, t, **kwargs):
     return t.map(dict((column, m.func(rt.row[column])) for column in m.columns))
 
 
