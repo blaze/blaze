@@ -6,6 +6,7 @@ import os
 import gzip
 import bz2
 from functools import partial
+from contextlib import contextmanager
 
 from multipledispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, compose, first
@@ -22,7 +23,7 @@ from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END
-from ..compatibility import map, zip, PY2, WIN
+from ..compatibility import map, zip, PY2
 from .utils import ordered_index, listpack
 
 import csv
@@ -122,23 +123,27 @@ def discover_dialect(sample, dialect=None, **kwargs):
     return dialect
 
 
+@contextmanager
+def csvopen(csv, **kwargs):
+    try:
+        f = csv.open(csv.path, encoding=csv.encoding, **kwargs)
+    except (TypeError, ValueError):  # TypeError for py2 ValueError for py3
+        f = csv.open(csv.path, **kwargs)
+
+    yield f
+
+    try:
+        f.close()
+    except AttributeError:
+        pass
+
+
 def get_sample(csv, size=16384):
     path = csv.path
 
     if os.path.exists(path) and csv.mode != 'w':
-        mode = 'rt'
-        try:
-            f = csv.open(path, encoding=csv.encoding, mode=mode)
-        except TypeError:
-            f = csv.open(path, mode=mode)
-
-        try:
+        with csvopen(csv, mode='rt') as f:
             return f.read(size)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
     return ''
 
 
@@ -319,18 +324,11 @@ class CSV(DataDescriptor):
         dialect = self._clean_params(header=header,
                                      keep_default_na=keep_default_na,
                                      na_values=na_values, **kwargs)
-        f = self.open(self.path)
-
-        try:
+        with csvopen(self) as f:
             return pd.read_csv(f, chunksize=chunksize,
                                na_values=na_values,
                                keep_default_na=keep_default_na,
                                encoding=self.encoding, header=header, **dialect)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
 
     def iterreader(self, header=None, keep_default_na=False,
                    na_values=na_values, **kwargs):
@@ -341,19 +339,14 @@ class CSV(DataDescriptor):
         assert chunksize is not None, ('iterreader is for chunking only, '
                                        'for in memory reading use reader()')
 
-        f = self.open(self.path)
-        try:
+
+        with csvopen(self) as f:
             for chunk in pd.read_csv(f, chunksize=chunksize,
                                      na_values=na_values,
                                      keep_default_na=keep_default_na,
                                      encoding=self.encoding, header=header,
                                      **dialect):
                 yield chunk
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
 
     def get_py(self, key):
         return self._get_py(ordered_index(key, self.dshape))
@@ -501,36 +494,28 @@ class CSV(DataDescriptor):
         if not os.path.exists(self.path) or not os.path.getsize(self.path):
             return os.linesep
 
-        f = self.open(self.path, mode='rb')
-        offset = 1 + int(WIN)
+        offset = len(os.linesep)
 
-        try:
-
+        # read in binary mode to allow negative seek indices, but return an
+        # encoded string
+        with csvopen(self, mode='rb') as f:
             f.seek(-offset, SEEK_END)
             return f.read(offset).decode(self.encoding)
-        finally:
-            f.close()
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
         newline = dict() if PY2 else dict(newline='')
         dialect = keyfilter(to_csv_kwargs.__contains__, self.dialect)
         should_write_newline = self.last_char() != os.linesep
-        f = self.open(self.path, mode, **newline)
-
-        try:
+        with csvopen(self, mode=mode, **newline) as f:
             # we have data in the file, append a newline
             if should_write_newline:
                 f.write(os.linesep)
 
             for df in map(partial(bz.into, pd.DataFrame),
                           partition_all(self.chunksize, iter(rows))):
-                df.to_csv(f, index=False, header=None, **dialect)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
+                df.to_csv(f, index=False, header=None, encoding=self.encoding,
+                          **dialect)
 
     def remove(self):
         """Remove the persistent storage."""

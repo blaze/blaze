@@ -392,6 +392,23 @@ def into(ser, col, **kwargs):
     ser.name = col.name
     return ser
 
+
+@dispatch(pd.Series, pd.DataFrame)
+def into(a, b, **kwargs):
+    if len(b.columns) != 1:
+        raise TypeError('Cannot transform a multiple column expression to a'
+                        ' Series')
+    s = b.squeeze()
+    if a.name is not None:
+        s.name = a.name
+    return s
+
+
+@dispatch(pd.Series, Projection)
+def into(ser, col, **kwargs):
+    return into(pd.Series, into(pd.DataFrame, col))
+
+
 @dispatch(pd.Series, np.ndarray)
 def into(s, x, **kwargs):
     return pd.Series(numpy_ensure_strings(x), name=s.name)
@@ -446,6 +463,7 @@ def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
+
 
 @dispatch(ColumnDataSource, tb.Table)
 def into(cds, t, **kwargs):
@@ -830,6 +848,11 @@ def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
 
+@dispatch(ColumnDataSource, pd.Series)
+def into(a, b, **kwargs):
+    return ColumnDataSource(data={b.name: b.tolist()})
+
+
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
     dialect = b.dialect.copy()
@@ -858,18 +881,20 @@ def into(a, b, **kwargs):
     if b.open == gzip.open:
         options['compression'] = 'gzip'
 
-    usecols = names = options.pop('names', b.columns)
-
+    names = options.pop('names', b.columns)
+    usecols = options.pop('usecols', [b.columns.index(name) for name in names])
     return pd.read_csv(b.path,
                        header=0 if b.header else None,
                        dtype=dtypes,
                        parse_dates=datenames,
                        names=names,
                        usecols=usecols,
+                       encoding=b.encoding,
                        **options)
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table,
-    list, tuple, set), Projection)
+
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
+           tuple, set), Projection)
 def into(a, b, **kwargs):
     """ Special case on anything <- Table(CSV)[columns]
 
@@ -879,10 +904,12 @@ def into(a, b, **kwargs):
 
     >>> csv = CSV('/path/to/file.csv')              # doctest: +SKIP
     >>> t = Table(csv)                              # doctest: +SKIP
-    >>> into(list, t[['column-1', 'column-2']]      # doctest: +SKIP
+    >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        return into(a, b.child.data, names=b.columns, **kwargs)
+        kwargs.setdefault('names', b.columns)
+        kwargs.setdefault('squeeze', b.iscolumn)
+        return into(a, b.child.data, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once
         # https://github.com/mrocklin/multipledispatch/pull/39 is merged
@@ -891,6 +918,7 @@ def into(a, b, **kwargs):
         return f(a, b, **kwargs)
 
         # TODO: add signature for SQL import
+
 
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):

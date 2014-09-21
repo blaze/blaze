@@ -1,3 +1,5 @@
+# encoding: utf8
+
 import unittest
 
 from dynd import nd
@@ -321,5 +323,72 @@ def test_into_DataFrame_Excel_xlsx_format():
 def test_into_numpy_from_tableexpr_with_option_types():
     t = Table([[1, 'Alice'], [2, 'Bob']],
               schema='{id: ?int32, name: string[5, "ascii"]}')
-    assert into(np.ndarray, t).dtype == \
-            np.dtype([('id', 'i4'), ('name', 'S5')])
+    assert into(np.ndarray, t).dtype == np.dtype([('id', 'i4'), ('name', 'S5')])
+
+
+def test_into_cds_mixed():
+    pytest.importorskip('bokeh')
+    from bokeh.objects import ColumnDataSource
+    n = 25
+    ddict = {'first': np.random.choice(list('abc'), size=n),
+             'second': np.random.choice(['cachaça', 'tres leches', 'pizza'],
+                                        size=n),
+             'third': np.random.rand(n) * 1000}
+    df = pd.DataFrame(ddict)
+    with tmpfile('.csv') as fn:
+        df.to_csv(fn, header=None, index=False, encoding='utf8')
+        csv = CSV(fn, columns=['first', 'second', 'third'], encoding='utf8')
+        t = Table(csv)
+
+        cds = into(ColumnDataSource, t)
+        assert isinstance(cds, ColumnDataSource)
+        assert cds.data == dict((k, into(list, csv[:, k]))
+                                for k in ['first', 'second', 'third'])
+
+        cds = into(ColumnDataSource, t[['first', 'second']])
+        assert isinstance(cds, ColumnDataSource)
+        assert cds.data == dict((k, into(list, csv[:, k]))
+                                for k in ['first', 'second'])
+
+        cds = into(ColumnDataSource, t['first'])
+        assert isinstance(cds, ColumnDataSource)
+        assert cds.data == {'first': into(list, csv[:, 'first'])}
+
+
+def test_series_single_column():
+    data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
+    t = Table(data, '{name: string, amount: float64, id: int64}')
+
+    df = into(pd.Series, t['name'])
+    assert isinstance(df, pd.Series)
+    expected = pd.DataFrame(data, columns=t.schema.measure.names).name
+    assert str(df) == str(expected)
+
+
+def test_series_single_column_projection():
+    data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
+    t = Table(data, '{name: string, amount: float64, id: int64}')
+    df = into(pd.Series, t[['name']])
+    assert isinstance(df, pd.Series)
+    expected = pd.DataFrame(data, columns=t.schema.measure.names).name
+    assert str(df) == str(expected)
+
+
+def test_data_frame_single_column():
+    data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
+    t = Table(data, '{name: string, amount: float64, id: int64}')
+
+    df = into(pd.DataFrame, t['name'])
+    assert isinstance(df, pd.DataFrame)
+    expected = pd.DataFrame(data, columns=t.schema.measure.names)[['name']]
+    assert str(df) == str(expected)
+
+
+def test_data_frame_single_column_projection():
+    data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
+    t = Table(data, '{name: string, amount: float64, id: int64}')
+
+    df = into(pd.DataFrame, t[['name']])
+    assert isinstance(df, pd.DataFrame)
+    expected = pd.DataFrame(data, columns=t.schema.measure.names)[['name']]
+    assert str(df) == str(expected)
