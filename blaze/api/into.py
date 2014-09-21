@@ -904,7 +904,6 @@ def into(a, b, **kwargs):
         # TODO: add signature for SQL import
 
 
-
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
     return pd.DataFrame(list(b), columns=b.columns)
