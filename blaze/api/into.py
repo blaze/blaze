@@ -393,6 +393,23 @@ def into(ser, col, **kwargs):
     ser.name = col.name
     return ser
 
+
+@dispatch(pd.Series, pd.DataFrame)
+def into(a, b, **kwargs):
+    if len(b.columns) != 1:
+        raise TypeError('Cannot transform a multiple column expression to a'
+                        ' Series')
+    s = b.squeeze()
+    if a.name is not None:
+        s.name = a.name
+    return s
+
+
+@dispatch(pd.Series, Projection)
+def into(ser, col, **kwargs):
+    return into(pd.Series, into(pd.DataFrame, col))
+
+
 @dispatch(pd.Series, np.ndarray)
 def into(s, x, **kwargs):
     return pd.Series(numpy_ensure_strings(x), name=s.name)
