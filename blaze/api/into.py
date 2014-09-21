@@ -882,7 +882,7 @@ def into(a, b, **kwargs):
 
     >>> csv = CSV('/path/to/file.csv')              # doctest: +SKIP
     >>> t = Table(csv)                              # doctest: +SKIP
-    >>> into(list, t[['column-1', 'column-2']])      # doctest: +SKIP
+    >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
         names = kwargs.pop('names', b.columns)
