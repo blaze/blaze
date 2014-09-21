@@ -4,7 +4,6 @@ import os
 from dynd import nd
 import datashape
 import sys
-from multipledispatch import MDNotImplementedError
 from functools import partial
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
