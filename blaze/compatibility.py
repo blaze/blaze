@@ -45,7 +45,7 @@ if PY2:
     _inttypes = (int, long)
     unicode = builtins.unicode
     basestring = builtins.basestring
-    _strtypes = (basestring,)
+    _strtypes = (str, unicode)
 else:
     _inttypes = (int,)
     _strtypes = (str,)
