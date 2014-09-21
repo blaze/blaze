@@ -23,7 +23,7 @@ from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END
-from ..compatibility import map, zip, PY2, WIN
+from ..compatibility import map, zip, PY2
 from .utils import ordered_index, listpack
 
 import csv
@@ -123,7 +123,6 @@ def discover_dialect(sample, dialect=None, **kwargs):
     return dialect
 
 
-
 @contextmanager
 def csvopen(csv, **kwargs):
     try:
@@ -137,7 +136,6 @@ def csvopen(csv, **kwargs):
         f.close()
     except AttributeError:
         pass
-
 
 
 def get_sample(csv, size=16384):
@@ -496,17 +494,13 @@ class CSV(DataDescriptor):
         if not os.path.exists(self.path) or not os.path.getsize(self.path):
             return os.linesep
 
-        f = self.open(self.path, mode='rb')
-        offset = 1 + int(WIN)
+        offset = len(os.linesep)
 
-        try:
+        # read in binary mode to allow negative seek indices, but return an
+        # encoded string
+        with csvopen(self, mode='rb') as f:
             f.seek(-offset, SEEK_END)
             return f.read(offset).decode(self.encoding)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
 
     def _extend(self, rows):
         mode = 'ab' if PY2 else 'a'
