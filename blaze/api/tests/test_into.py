@@ -353,3 +353,23 @@ def test_into_cds_mixed():
         cds = into(ColumnDataSource, t['first'])
         assert isinstance(cds, ColumnDataSource)
         assert cds.data == {'first': into(list, csv[:, 'first'])}
+
+
+def test_series_single_column_projection():
+    data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
+    t = Table(data, '{name: string, amount: float64, id: int64}')
+
+    df = into(pd.Series, t['name'])
+    assert isinstance(df, pd.Series)
+    expected = pd.DataFrame(data, columns=t.schema.measure.names).name
+    assert str(df) == str(expected)
+
+
+def test_data_frame_single_column_projection():
+    data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
+    t = Table(data, '{name: string, amount: float64, id: int64}')
+
+    df = into(pd.DataFrame, t['name'])
+    assert isinstance(df, pd.DataFrame)
+    expected = pd.DataFrame(data, columns=t.schema.measure.names)[['name']]
+    assert str(df) == str(expected)
