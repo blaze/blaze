@@ -4,6 +4,7 @@ import os
 from dynd import nd
 import datashape
 import sys
+from multipledispatch import MDNotImplementedError
 from functools import partial
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
@@ -444,7 +445,7 @@ def into(a, b, **kwargs):
 @dispatch(ColumnDataSource, (TableExpr, pd.DataFrame, np.ndarray, ctable))
 def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
-    return ColumnDataSource(data=dict((col, into(list, into(pd.Series, t[col])))
+    return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
 
 
@@ -831,6 +832,11 @@ def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
 
+@dispatch(ColumnDataSource, pd.Series)
+def into(a, b, **kwargs):
+    return ColumnDataSource(data={b.name: b.tolist()})
+
+
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
     dialect = b.dialect.copy()
@@ -885,8 +891,9 @@ def into(a, b, **kwargs):
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        names = kwargs.pop('names', b.columns)
-        return into(a, b.child.data, names=names, **kwargs)
+        kwargs.setdefault('names', b.columns)
+        kwargs.setdefault('squeeze', b.iscolumn)
+        return into(a, b.child.data, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once
         # https://github.com/mrocklin/multipledispatch/pull/39 is merged
@@ -895,6 +902,8 @@ def into(a, b, **kwargs):
         return f(a, b, **kwargs)
 
         # TODO: add signature for SQL import
+
+
 
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
