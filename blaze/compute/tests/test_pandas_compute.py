@@ -11,7 +11,8 @@ from blaze.compute.core import compute
 from blaze import dshape, Table, discover, transform
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
-                        min, max, any, all, Projection, var, std, Like)
+                        min, max, any, all, Projection, var, std,
+                        special_attributes)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -558,3 +559,28 @@ def test_rowwise_by():
     assert expected.index.tolist() == result.index.tolist()
     assert expected.columns.tolist() == result.columns.tolist()
     assert expected.values.tolist() == result.values.tolist()
+
+
+class TestDateAttr(object):
+    @pytest.fixture
+    def df(self):
+        n = 3
+        d = {'name': np.random.choice(['Alice', 'Bob', 'Joe'], size=n),
+             'when': pd.date_range('20100101', periods=n, freq='D').values,
+             'amount': np.random.rand(n) * 1000 * np.random.choice([-1, 1],
+                                                                   size=n),
+             'id': np.arange(n)}
+        return pd.DataFrame(d).sort_index(axis=1)
+
+    @pytest.fixture
+    def t(self, df):
+        return TableSymbol('t', discover(df))
+
+    @pytest.mark.parametrize('attr, dshape', sorted(special_attributes.items()))
+    def test_attrs(self, df, t, attr, dshape):
+        expr = getattr(t.when, attr)
+        result = compute(expr, df)
+        expected = getattr(getattr(df.when, 'dt', pd.DatetimeIndex(df.when)),
+                           attr)
+        assert discover(result) == discover(expected)
+        assert str(result) == str(expected)
