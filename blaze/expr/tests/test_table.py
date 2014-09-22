@@ -916,3 +916,11 @@ def test_count_values():
             by(t.name, count=t.name.count()))
     assert t.name.count_values(sort=True).isidentical(
             by(t.name, count=t.name.count()).sort('count', ascending=False))
+
+
+def test_attribute():
+    t = TableSymbol('t', '{name: string, when: datetime}')
+    expr = t.when.date
+    result = str(expr)
+    expected = "t['when'].date(dshape='var * { when : date }')"
+    assert result == expected
