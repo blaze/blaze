@@ -271,11 +271,10 @@ class CSV(DataDescriptor):
         reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
         if not schema and 'w' not in mode:
             if not types:
-                data = self.reader(skiprows=1 if header else 0,
-                                   nrows=nrows_discovery,
-                                   as_recarray=True, index_col=False,
-                                   header=0 if header else None,
-                                   **reader_dialect).tolist()
+                data = self._reader(skiprows=1 if header else 0,
+                                    nrows=nrows_discovery, as_recarray=True,
+                                    index_col=False, header=0 if header else
+                                    None, **reader_dialect).tolist()
                 types = discover(data)
                 rowtype = types.subshape[0]
                 if isinstance(rowtype[0], Tuple):
@@ -292,9 +291,9 @@ class CSV(DataDescriptor):
                                      "Please specify schema.")
             if not columns:
                 if header:
-                    columns = first(self.reader(skiprows=0, nrows=1,
-                                                header=None, **reader_dialect
-                                                ).itertuples(index=False))
+                    columns = first(self._reader(skiprows=0, nrows=1,
+                                                 header=None, **reader_dialect
+                                                 ).itertuples(index=False))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
             if typehints:
@@ -305,47 +304,58 @@ class CSV(DataDescriptor):
         self._schema = schema
         self.header = header
 
-    def _clean_params(self, header=None, keep_default_na=False,
-                      na_values=na_values, chunksize=None, **kwargs):
+    def _get_reader(self, header=None, keep_default_na=False,
+                    na_values=na_values, chunksize=None, **kwargs):
         kwargs.setdefault('skiprows', int(bool(self.header)))
 
         dialect = merge(keyfilter(read_csv_kwargs.__contains__, self.dialect),
                         kwargs)
+
         # handle windows
         if dialect['lineterminator'] == '\r\n':
             dialect['lineterminator'] = None
-        return dialect
+        return partial(pd.read_csv, chunksize=chunksize, na_values=na_values,
+                       keep_default_na=keep_default_na, encoding=self.encoding,
+                       header=header, **dialect)
 
-    def reader(self, header=None, keep_default_na=False,
-               na_values=na_values, **kwargs):
-        chunksize = kwargs.pop('chunksize', None)
-        assert chunksize is None, ('reader is for in memory only, '
-                                   'use iterreader to read chunks')
-        dialect = self._clean_params(header=header,
-                                     keep_default_na=keep_default_na,
-                                     na_values=na_values, **kwargs)
+    def reader(self, *args, **kwargs):
+        names = kwargs.pop('names', self.columns)
+        usecols = kwargs.pop('usecols', [self.columns.index(name) for name in
+                                         names])
+
+        schema = self.schema
+        if '?' in str(schema):
+            schema = dshape(str(schema).replace('?', ''))
+
+        dtypes = dict((k, v.to_numpy_dtype())
+                      for k, v in schema[0].dict.items())
+
+        datenames = [name for name in dtypes if np.issubdtype(dtypes[name],
+                                                              np.datetime64)]
+
+        dtypes = dict((k, v) for k, v in dtypes.items()
+                      if not np.issubdtype(v, np.datetime64))
+
+        return self._reader(*args, names=names, usecols=usecols, dtype=dtypes,
+                            parse_dates=datenames,
+                            **kwargs)
+
+    def _reader(self, **kwargs):
+        if kwargs.setdefault('chunksize', None) is not None:
+            raise ValueError('reader is for in memory only, use '
+                             'CSV.iterreader() to read chunks')
+        reader = self._get_reader(**kwargs)
         with csvopen(self) as f:
-            return pd.read_csv(f, chunksize=chunksize,
-                               na_values=na_values,
-                               keep_default_na=keep_default_na,
-                               encoding=self.encoding, header=header, **dialect)
+            return reader(f)
 
-    def iterreader(self, header=None, keep_default_na=False,
-                   na_values=na_values, **kwargs):
-        chunksize = kwargs.pop('chunksize', self.chunksize)
-        dialect = self._clean_params(header=header,
-                                     keep_default_na=keep_default_na,
-                                     na_values=na_values, **kwargs)
-        assert chunksize is not None, ('iterreader is for chunking only, '
-                                       'for in memory reading use reader()')
-
+    def iterreader(self, **kwargs):
+        if kwargs.setdefault('chunksize', self.chunksize) is None:
+            raise ValueError('iterreader is for chunking only, for in memory '
+                             'reading use CSV.reader()')
+        reader = self._get_reader(**kwargs)
 
         with csvopen(self) as f:
-            for chunk in pd.read_csv(f, chunksize=chunksize,
-                                     na_values=na_values,
-                                     keep_default_na=keep_default_na,
-                                     encoding=self.encoding, header=header,
-                                     **dialect):
+            for chunk in reader(f):
                 yield chunk
 
     def get_py(self, key):

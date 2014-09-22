@@ -855,42 +855,11 @@ def into(a, b, **kwargs):
 
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
-    dialect = b.dialect.copy()
-    del dialect['lineterminator']
-
-    schema = b.schema
-    if '?' in str(schema):
-        schema = dshape(str(schema).replace('?', ''))
-
-    dtypes = valmap(to_numpy_dtype, schema[0].dict)
-
-    datenames = [name for name in dtypes if np.issubdtype(dtypes[name],
-                                                          np.datetime64)]
-
-    dtypes = dict((k, v) for k, v in dtypes.items()
-                  if not np.issubdtype(v, np.datetime64))
-
-    if 'strict' in dialect:
-        del dialect['strict']
-
     # Pass only keyword arguments appropriate for read_csv
     kws = keywords(pd.read_csv)
-    options = toolz.merge(dialect, kwargs)
-    options = toolz.keyfilter(lambda k: k in kws, options)
-
-    if b.open == gzip.open:
-        options['compression'] = 'gzip'
-
-    names = options.pop('names', b.columns)
-    usecols = options.pop('usecols', [b.columns.index(name) for name in names])
-    return pd.read_csv(b.path,
-                       header=0 if b.header else None,
-                       dtype=dtypes,
-                       parse_dates=datenames,
-                       names=names,
-                       usecols=usecols,
-                       encoding=b.encoding,
-                       **options)
+    options = toolz.merge(b.dialect, kwargs)
+    options = toolz.keyfilter(kws.__contains__, options)
+    return b.reader(**options)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
