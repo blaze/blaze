@@ -213,6 +213,6 @@ def mdb(mconn):
 def test_mongo_Collection(mdb):
     sources = [v for k, v in data if k not in [list]]
     for a in sources:
-        db.test_into.drop()
-        into(db.test_into, a)
-        assert normalize(into([], db.test_into)) == normalize(L)
+        mdb.test_into.drop()
+        into(mdb.test_into, a)
+        assert normalize(into([], mdb.test_into)) == normalize(L)
