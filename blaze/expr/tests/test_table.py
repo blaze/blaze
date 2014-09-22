@@ -513,7 +513,7 @@ def test_relabel():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
     rl = t.relabel({'name': 'NAME', 'id': 'ID'})
-    rlc = t['amount'].relabel({'amount: BALANCE'})
+    rlc = t['amount'].relabel({'amount': 'BALANCE'})
 
     assert eval(str(rl)).isidentical(rl)
 
@@ -535,6 +535,7 @@ def test_relabel_join():
 
 def test_map():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    r = TableSymbol('s', 'int64')
     inc = lambda x: x + 1
     assert t['amount'].map(inc).iscolumn
     assert t['amount'].map(inc, schema='{amount: int}').iscolumn

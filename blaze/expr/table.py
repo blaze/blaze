@@ -1190,7 +1190,7 @@ class Map(RowWise):
 
     @property
     def name(self):
-        if not self.iscolumn:
+        if len(self.columns) != 1:
             raise ValueError("Can only determine name of single-column. "
                     "Use .columns to find all names")
         try:
