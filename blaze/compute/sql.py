@@ -39,7 +39,7 @@ __all__ = ['sqlalchemy', 'select']
 
 @dispatch(Projection, Select)
 def compute_up(t, s, scope=None, **kwargs):
-    cols = list(s._raw_columns)
+    cols = list(s.inner_columns)
     cols = [cols[t.child.columns.index(c)] for c in t.columns]
 
     return s.with_only_columns(cols)
@@ -332,7 +332,7 @@ def compute_up(t, s, **kwargs):
     for g in grouper:
         s2.append_column(g)
 
-    cols = s2._raw_columns
+    cols = list(s2.inner_columns)
     cols = cols[-len(grouper):] + cols[:-len(grouper)]
     return s2.with_only_columns(cols)
 
