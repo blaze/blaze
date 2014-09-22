@@ -87,12 +87,48 @@ def test_join():
 
     result = compute(joined, {L: lhs, R: rhs})
 
-    assert str(result) == str(expected)
+    assert normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name""")
 
     assert str(select(result)) == str(select(expected))
 
     # Schemas match
     assert list(result.c.keys()) == list(joined.columns)
+
+
+def test_clean_complex_join():
+    metadata = sa.MetaData()
+    lhs = sa.Table('amounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
+
+    joined = join(L[L.amount > 0], R, 'name')
+
+    result = compute(joined, {L: lhs, R: rhs})
+
+
+    assert (normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name
+    WHERE amounts.amount > :amount_1""")
+
+    or
+
+    normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts, (SELECT amounts.name AS name, amounts.amount AS amount
+    FROM amounts
+    WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
+
+
 
 
 def test_multi_column_join():
@@ -509,3 +545,5 @@ def test_by_on_count():
     FROM accounts
     GROUP BY accounts.name
     """)
+
+

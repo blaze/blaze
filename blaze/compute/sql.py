@@ -146,8 +146,17 @@ def computefull(t, s):
 
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        ldict = dict((c.name, c) for c in lhs.inner_columns)
+    else:
+        ldict = lhs.c
+    if isinstance(rhs, Select):
+        rdict = dict((c.name, c) for c in rhs.inner_columns)
+    else:
+        rdict = rhs.c
+
     condition = reduce(and_,
-            [lower_column(lhs.c.get(l)) == lower_column(rhs.c.get(r))
+            [ldict.get(l) == rdict.get(r)
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
@@ -163,11 +172,20 @@ def compute_up(t, lhs, rhs, **kwargs):
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
 
-    columns = unique(list(main.columns) + list(other.columns),
+    if isinstance(main, Select):
+        main_cols = main.inner_columns
+    else:
+        main_cols = main.columns
+    if isinstance(other, Select):
+        other_cols = other.inner_columns
+    else:
+        other_cols = other.columns
+
+    columns = unique(list(main_cols) + list(other_cols),
                      key=lambda c: c.name)
     columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
-    return select(list(columns)).select_from(join)
+    return sqlalchemy.sql.select(columns, from_obj=join)
 
 
 
