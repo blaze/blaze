@@ -392,3 +392,20 @@ def test_data_frame_single_column_projection():
     assert isinstance(df, pd.DataFrame)
     expected = pd.DataFrame(data, columns=t.schema.measure.names)[['name']]
     assert str(df) == str(expected)
+
+
+def test_datetime_csv_reader_same_as_into():
+    csv = CSV(os.path.join(os.path.dirname(__file__),
+                           'accounts.csv'))
+    rhs = csv.reader().dtypes
+    df = into(pd.DataFrame, csv)
+    dtypes = df.dtypes
+    expected = pd.Series([np.dtype(x) for x in
+                          ['i8', 'i8', 'O', 'datetime64[ns]']],
+                         index=csv.columns)
+    assert dtypes.index.tolist() == expected.index.tolist()
+    assert dtypes.tolist() == expected.tolist()
+
+    # make sure reader with no args does the same thing as into()
+    assert dtypes.index.tolist() == rhs.index.tolist()
+    assert dtypes.tolist() == rhs.tolist()
