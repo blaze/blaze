@@ -95,7 +95,7 @@ def test_column():
     with pytest.raises(ValueError):
         t['name'].project('balance')
     with pytest.raises(ValueError):
-        getitem(t, set('balance'))
+        getitem(t, '{balance}')
 
 
 def test_symbol_projection_failures():
@@ -141,6 +141,9 @@ def test_selection():
 
     s = selection(t, t['name'] == 'Alice')
     f = selection(t, t['id'] > t['amount'])
+    p = t[t['amount'] > 100]
+    with pytest.raises(ValueError):
+        selection(t, p)
 
     assert s.dshape == t.dshape
 

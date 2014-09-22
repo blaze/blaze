@@ -158,7 +158,7 @@ class TableExpr(Expr):
     def iscolumn(self):
         if len(self.columns) > 1:
             return False
-        raise NotImplementedError("%s.iscolumn not implemented" %
+        raise NotImplementedError("%s.iscolumn not implemented" % # pragma: no cover
                 str(type(self).__name__))
 
     @property
@@ -197,8 +197,8 @@ class TableSymbol(TableExpr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        elif not isdimension(dshape[0]):
-                dshape = datashape.var * dshape
+        if not isdimension(dshape[0]):
+            dshape = datashape.var * dshape
         self.dshape = dshape
         self.iscolumn = iscolumn
 
@@ -941,15 +941,10 @@ class By(TableExpr):
     def schema(self):
         group = self.grouper.schema[0].parameters[0]
         reduction_name = type(self.apply).__name__
-        if isinstance(self.apply.dshape[0], Record):
-            apply = self.apply.dshape[0].parameters[0]
-        else:
-            apply = ((reduction_name, self.apply.dshape),)
-
+        apply = self.apply.dshape[0].parameters[0]
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
-
 
 
 @dispatch(TableExpr, (Summary, Reduction))
@@ -1183,7 +1178,6 @@ class Map(RowWise):
             return self._iscolumn
         if self.child.iscolumn is not None:
             return self.child.iscolumn
-        return self.schema[0].values()
 
     @property
     def name(self):
