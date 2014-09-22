@@ -30,7 +30,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, TableExpr, std, var, Like,
-                    RowWise)
+                    RowWise, Attribute)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -386,3 +386,12 @@ def compute_up(expr, df, **kwargs):
     arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
             for name, pattern in expr.patterns.items()]
     return df[np.logical_and.reduce(arrs)]
+
+
+@dispatch(Attribute, Series)
+def compute_up(expr, s, **kwargs):
+    attr = expr.attr
+    try:
+        return getattr(s.dt, attr)
+    except AttributeError:
+        return getattr(pd.DatetimeIndex(s), attr)
