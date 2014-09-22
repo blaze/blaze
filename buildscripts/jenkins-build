@@ -74,11 +74,11 @@ ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
 py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit 1
 echo `ls`
-echo `git describe --dirty --always --match [0-9]*`
+echo `git describe --tags --dirty --always --match [0-9]*`
 echo `pwd`
 # Retrieve the version number
 # X.X.X.dev builds
-version=`git describe --dirty --always --match [0-9]*`
+version=`git describe --tags --dirty --always --match [0-9]*`
 BLAZE_VERSION=`echo $version | tr "-" _`
 echo BLAZE_VERSION, ${BLAZE_VERSION}
 if [ '${BLAZE_VERSION}' == '' ]; then
