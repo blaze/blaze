@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 import pandas as pd
 from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
-                      gt, le, ge)
+                      gt, le, ge, getitem)
 
 try:
     from operator import div
@@ -45,13 +45,17 @@ def test_length():
     assert len(t.sort('name')) == 10
     assert len(t.head(5)) == 5
     assert len(t.head(50)) == 10
+    assert t.__len__() == 10
     with pytest.raises(ValueError):
         len(s)
 
 def test_table_name():
     t = TableSymbol('t', '10 * {people: string, amount: int}')
+    r = TableSymbol('r', 'int64', iscolumn=True)
     with pytest.raises(ValueError):
         t.name
+    with pytest.raises(ValueError):
+        r.name
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
@@ -90,6 +94,8 @@ def test_column():
     assert str(t['name']) == "t['name']"
     with pytest.raises(ValueError):
         t['name'].project('balance')
+    with pytest.raises(ValueError):
+        getitem(t, {'balance'})
 
 
 def test_symbol_projection_failures():
@@ -553,8 +559,15 @@ def test_map():
 def test_apply():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     s = Apply(sum, t['amount'], dshape='real')
-
+    r = Apply(sum, t['amount'], dshape='3 * real')
+    l = Apply(sum, t['amount'])
     assert s.dshape == dshape('real')
+    assert r.schema == dshape("float64")
+    
+    with pytest.raises(TypeError):
+        s.schema
+    with pytest.raises(NotImplementedError):
+        l.dshape
 
 
 def test_columnwise():
@@ -613,12 +626,16 @@ def test_dtype():
 
 
 def test_merge():
+    t = TableSymbol('t', 'int64')
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
     assert c.columns == ['name', 'balance', 'new']
+
+    with pytest.raises(TypeError):
+        merge(t,t)
 
 
 def test_merge_repeats():

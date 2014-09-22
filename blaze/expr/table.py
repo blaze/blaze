@@ -53,10 +53,10 @@ class TableExpr(Expr):
             raise ValueError('Can not determine length of table with the '
                     'following datashape: %s' % self.dshape)
 
-    def __len__(self):
+    def __len__(self): # pragma: no cover
         return self._len()
 
-    def __nonzero__(self):
+    def __nonzero__(self): # pragma: no cover
         return True
 
     def __bool__(self):
@@ -68,7 +68,7 @@ class TableExpr(Expr):
             return self.schema[0].names
 
     @abstractproperty
-    def schema(self):
+    def schema(self): # pragma: no cover
         pass
 
     @property
@@ -197,11 +197,8 @@ class TableSymbol(TableExpr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        try:
-            if not isdimension(dshape[0]):
+        if not isdimension(dshape[0]):
                 dshape = datashape.var * dshape
-        except TypeError:
-            dshape = datashape.var * dshape
         self.dshape = dshape
         self.iscolumn = iscolumn
 
@@ -1241,14 +1238,14 @@ class Apply(TableExpr):
         if isdimension(self.dshape[0]):
             return self.dshape.subshape[0]
         else:
-            return TypeError("Non-tabular datashape, %s" % self.dshape)
+            raise TypeError("Non-tabular datashape, %s" % self.dshape)
 
     @property
     def dshape(self):
         if self._dshape:
             return dshape(self._dshape)
         else:
-            return NotImplementedError("Datashape of arbitrary Apply not defined")
+            raise NotImplementedError("Datashape of arbitrary Apply not defined")
 
 
 def common_subexpression(*tables):
