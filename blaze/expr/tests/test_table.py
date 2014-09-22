@@ -19,7 +19,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
                         Summary, count, ScalarSymbol, like, Like)
-from blaze.expr.table import _expr_child, unpack
+from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, _strtypes
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
@@ -134,7 +134,7 @@ def test_selection():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     s = selection(t, t['name'] == 'Alice')
-    f = selection(t, t['name'] > t['amount'])
+    f = selection(t, t['id'] > t['amount'])
 
     assert s.dshape == t.dshape
 
@@ -349,6 +349,12 @@ def test_reduction():
     assert 'int' not in str(t['amount'].sum().dshape)
 
 
+def test_max_min_class():
+    t = TableSymbol('t', '{name: string, amount: int32}')
+    assert str(max(t).dtype) == '{ name : string, amount : int32 }'
+    assert str(min(t).dtype) == '{ name : string, amount : int32 }'
+
+
 @pytest.fixture
 def symsum():
     t = TableSymbol('t', '{name: string, amount: int32}')
@@ -484,6 +490,9 @@ def test_label():
 
     assert quantity.columns == ['quantity']
 
+    with pytest.raises(ValueError):
+        quantity.project('balance')
+
 
 def test_map_label():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
@@ -504,11 +513,15 @@ def test_relabel():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
     rl = t.relabel({'name': 'NAME', 'id': 'ID'})
+    rlc = t['amount'].relabel({'amount: BALANCE'})
 
     assert eval(str(rl)).isidentical(rl)
 
     print(rl.columns)
     assert rl.columns == ['NAME', 'amount', 'ID']
+
+    assert not rl.iscolumn
+    assert rlc.iscolumn
 
 
 def test_relabel_join():
@@ -531,6 +544,9 @@ def test_map():
     assert s.dshape == dshape('var * {amount: int}')
 
     assert not t[['name', 'amount']].map(identity).iscolumn
+
+    with pytest.raises(ValueError):
+        t[['name', 'amount']].map(identity, schema='{name:string, amount: int}').name
 
 
 def test_apply():
