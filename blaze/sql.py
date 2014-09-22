@@ -67,7 +67,7 @@ def create_index(s, columns, name=None, unique=False):
     args += tuple(getattr(s.table.c, column) for column in columns)
     sa.Index(*args, unique=unique).create(s.engine)
 
-@resource.register('(sqlite|postgresql|mysql)://.*')
+@resource.register('(sqlite|postgresql|mysql|mysql\+pymysql)://.*')
 def resource_sql(uri, table_name, *args, **kwargs):
     return SQL(uri, table_name, *args, **kwargs)
 
