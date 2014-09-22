@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 from abc import abstractproperty
-from datashape import dshape, DataShape, Record, isdimension, Option
+from datashape import dshape, DataShape, Record, isdimension, Option, Var
 from datashape import coretypes as ct
 import datashape
 from toolz import (concat, partial, first, compose, get, unique, second,
@@ -26,7 +26,8 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary Like like'''.split()
+projection union columnwise Summary summary Like like Attribute
+special_attributes'''.split()
 
 
 class TableExpr(Expr):
@@ -448,6 +449,45 @@ class Column(ColumnSyntaxMixin, Projection):
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)
+
+    def __getattr__(self, key):
+        try:
+            return object.__getattribute__(self, key)
+        except AttributeError:
+            try:
+                return Attribute(self, key, dshape(special_attributes[key]))
+            except KeyError:
+                raise AttributeError(key)
+
+
+special_attributes = dict(
+    (('date', 'date'),
+     ('year', 'int64'),
+     ('month', 'int64'),
+     ('day', 'int64'),
+     ('time', 'time'),
+     ('hour', 'int64'),
+     ('minute', 'int64'),
+     ('second', 'int64'),
+     ('microsecond', 'int64'),)
+)
+
+
+class Attribute(Column):
+    __slots__ = 'child', 'attr', '_dshape'
+
+    def __repr__(self):
+        return "{0.child}.{0.attr}(dshape='{0.dshape}')".format(self)
+
+    __str__ = __repr__
+
+    @property
+    def dshape(self):
+        return Var() * self.schema
+
+    @property
+    def schema(self):
+        return Record([[self.child.column, self._dshape]])
 
 
 class Selection(TableExpr):
@@ -929,6 +969,7 @@ def summary(**kwargs):
 
     return Summary(child, names, values)
 
+
 summary.__doc__ = Summary.__doc__
 
 
@@ -1154,6 +1195,7 @@ class ReLabel(RowWise):
     def iscolumn(self):
         return self.child.iscolumn
 
+
 def relabel(child, labels):
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
@@ -1218,6 +1260,7 @@ class Map(RowWise):
                    Record([[name, self.schema[0].types[0]]]),
                    self.iscolumn)
 
+
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
 
@@ -1277,6 +1320,7 @@ def common_subexpression(*tables):
     sets = [set(t.subterms()) for t in tables]
     return builtins.max(set.intersection(*sets),
                         key=compose(len, str))
+
 
 def merge(*tables):
     # Get common sub expression
