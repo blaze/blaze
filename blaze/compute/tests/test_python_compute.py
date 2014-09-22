@@ -619,7 +619,8 @@ class TestDateAttr(object):
     def test_attrs(self, data, t, attr, dshape):
         expr = getattr(t.when, attr)
         result = list(compute(expr, data))
-        expected = [getattr(x[-1], attr) for x in data]
+        expected = [getattr(x[-1], attr, x[-1].microsecond // 1000)
+                    for x in data]
         if attr == 'date' or attr == 'time':
             expected = [x() for x in expected]
         assert discover(result) == discover(expected)

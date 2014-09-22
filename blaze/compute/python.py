@@ -479,5 +479,8 @@ def compute_up(expr, seq, **kwargs):
 
 @dispatch(Attribute, Sequence)
 def compute_up(expr, seq, **kwargs):
-    for x in map(attrgetter(expr.attr), seq):
-        yield x() if callable(x) else x
+    attr = expr.attr
+    is_milli = attr == 'millisecond'
+    for x in map(attrgetter(attr if not is_milli else 'microsecond'), seq):
+        v = x() if callable(x) else x
+        yield v // 1000 if is_milli else v
