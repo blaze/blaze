@@ -390,8 +390,12 @@ def compute_up(expr, df, **kwargs):
 
 @dispatch(Attribute, Series)
 def compute_up(expr, s, **kwargs):
+    def getter(s, attr):
+        try:
+            return getattr(s.dt, attr)
+        except AttributeError:
+            return getattr(pd.DatetimeIndex(s), attr)
     attr = expr.attr
-    try:
-        return getattr(s.dt, attr)
-    except AttributeError:
-        return getattr(pd.DatetimeIndex(s), attr)
+    if attr == 'millisecond':
+        return getter(s, 'microsecond') // 1000
+    return getter(s, attr)

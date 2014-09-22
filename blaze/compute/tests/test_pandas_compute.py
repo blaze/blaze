@@ -580,7 +580,10 @@ class TestDateAttr(object):
     def test_attrs(self, df, t, attr, dshape):
         expr = getattr(t.when, attr)
         result = compute(expr, df)
-        expected = getattr(getattr(df.when, 'dt', pd.DatetimeIndex(df.when)),
-                           attr)
+        if attr == 'millisecond':
+            expected = pd.DatetimeIndex(df.when).microsecond // 1000
+        else:
+            expected = getattr(getattr(df.when, 'dt',
+                                       pd.DatetimeIndex(df.when)), attr)
         assert discover(result) == discover(expected)
         assert str(result) == str(expected)
