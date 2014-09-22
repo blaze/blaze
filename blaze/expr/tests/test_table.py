@@ -808,3 +808,6 @@ def test_like():
     assert expr.dshape[0] == datashape.var
 
 
+def test_frequencies():
+    t = TableSymbol('t', '{name: string, amount: int, city: string}')
+    assert t.name.frequencies().isidentical(by(t.name, count=t.name.count()))
