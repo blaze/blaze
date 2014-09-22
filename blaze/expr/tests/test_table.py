@@ -95,7 +95,7 @@ def test_column():
     with pytest.raises(ValueError):
         t['name'].project('balance')
     with pytest.raises(ValueError):
-        getitem(t, {'balance'})
+        getitem(t, set('balance'))
 
 
 def test_symbol_projection_failures():

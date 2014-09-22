@@ -197,7 +197,7 @@ class TableSymbol(TableExpr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        if not isdimension(dshape[0]):
+        elif not isdimension(dshape[0]):
                 dshape = datashape.var * dshape
         self.dshape = dshape
         self.iscolumn = iscolumn
