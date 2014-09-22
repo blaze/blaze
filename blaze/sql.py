@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .compute.sql import select
 from .data.sql import SQL, dispatch, first
-from .expr import Expr, TableExpr, Projection, Column, UnaryOp
+from .expr import Expr, TableExpr, Projection, Column, UnaryOp, BinOp, Join
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
 from .api.resource import resource
@@ -16,6 +16,18 @@ __all__ = ['compute_up', 'SQL']
 @dispatch((Column, Projection, Expr, UnaryOp), SQL)
 def compute_up(t, ddesc, **kwargs):
     return compute_up(t, ddesc.table, **kwargs)
+
+@dispatch((BinOp, Join), SQL, sa.sql.Selectable)
+def compute_up(t, lhs, rhs, **kwargs):
+    return compute_up(t, lhs.table, rhs, **kwargs)
+
+@dispatch((BinOp, Join), sa.sql.Selectable, SQL)
+def compute_up(t, lhs, rhs, **kwargs):
+    return compute_up(t, lhs, rhs.table, **kwargs)
+
+@dispatch((BinOp, Join), SQL, SQL)
+def compute_up(t, lhs, rhs, **kwargs):
+    return compute_up(t, lhs.table, rhs.table, **kwargs)
 
 
 @dispatch(Expr, sa.sql.ClauseElement, dict)

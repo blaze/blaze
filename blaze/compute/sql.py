@@ -144,7 +144,6 @@ def select(s):
 def computefull(t, s):
     return select(compute(t, s))
 
-
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
     condition = reduce(and_,
