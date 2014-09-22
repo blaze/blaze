@@ -69,7 +69,7 @@ taskkill /im mongod.exe /f || exit /b 1
 
 if %testerror% NEQ 0 exit /b 1
 
-FOR /F "delims=" %%i IN ('git describe --dirty --always --match [0-9]*') DO set BLAZE_VERSION=%%i
+FOR /F "delims=" %%i IN ('git describe --tags --dirty --always --match [0-9]*') DO set BLAZE_VERSION=%%i
 if "%BLAZE_VERSION%" == "" exit /b 1
 
 REM Create a conda package from the build
