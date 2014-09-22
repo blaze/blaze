@@ -450,6 +450,11 @@ def discover(df):
     return len(df) * schema
 
 
+@dispatch(pd.Series)
+def discover(s):
+    return discover(s.to_frame())
+
+
 @dispatch(np.ndarray, carray)
 def into(a, b, **kwargs):
     return b[:]
