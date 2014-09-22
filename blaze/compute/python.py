@@ -17,6 +17,7 @@ import numbers
 import fnmatch
 import re
 from collections import Iterator
+from operator import attrgetter
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first
@@ -29,7 +30,8 @@ from ..dispatch import dispatch
 from ..expr.table import TableSymbol
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union, Summary, Like)
+                          By, Sort, Head, Apply, Union, Summary, Like,
+                          Attribute)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -473,3 +475,9 @@ def like_regex_predicate(expr):
 def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)
+
+
+@dispatch(Attribute, Sequence)
+def compute_up(expr, seq, **kwargs):
+    for x in map(attrgetter(expr.attr), seq):
+        yield x() if callable(x) else x
