@@ -547,3 +547,29 @@ def test_by_on_count():
     """)
 
 
+def test_join_complex_clean():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    sel = select(name).where(name.c.id > 10)
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    expr = join(tname[tname.id > 0], tcity, 'id')
+    result = compute(expr, ns)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT name.id, name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE name.id > :id_1""")

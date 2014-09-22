@@ -144,6 +144,24 @@ def select(s):
 def computefull(t, s):
     return select(compute(t, s))
 
+
+@dispatch(Select, Selectable)
+def _join_selectables(a, b, condition=None):
+    if len(a.froms) > 1:
+        raise MDNotImplementedError()
+    return a.replace_selectable(a.froms[0],
+                a.froms[0].join(b, condition=condition))
+
+@dispatch(Select, Selectable)
+def _join_selectables(a, b, condition=None):
+    if len(b.froms) > 1:
+        raise MDNotImplementedError()
+    return b.replace_selectable(b.froms[0],
+                a.join(b.froms[0], condition=condition))
+
+@dispatch(Select, Select)
+def _join_selectables(a, b, condition=None):
+
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(lhs, Select):
@@ -156,7 +174,7 @@ def compute_up(t, lhs, rhs, **kwargs):
         rdict = rhs.c
 
     condition = reduce(and_,
-            [ldict.get(l) == rdict.get(r)
+            [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
@@ -185,6 +203,8 @@ def compute_up(t, lhs, rhs, **kwargs):
                      key=lambda c: c.name)
     columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
+
+
     return sqlalchemy.sql.select(columns, from_obj=join)
 
 
