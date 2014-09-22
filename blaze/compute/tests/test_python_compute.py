@@ -2,15 +2,15 @@ from __future__ import absolute_import, division, print_function
 import math
 import itertools
 import operator
-import sys
+import pytest
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc, rowfunc, Sequence, reduce_by_funcs
-from blaze import dshape
+from blaze.compute.python import nunique, mean, rrowfunc, Sequence, reduce_by_funcs
+from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std, head)
+                        count, scalar, std, special_attributes)
 import numpy as np
 
 from blaze import cos, sin
@@ -584,6 +584,7 @@ def test_scalar_arithmetic():
 
     assert compute_up(scalar.numbers.sin(x), 1) == math.sin(1)
 
+
 def test_like():
     t = TableSymbol('t', '{name: string, city: string}')
     data = [('Alice Smith', 'New York'),
@@ -594,3 +595,32 @@ def test_like():
     assert list(compute(t.like(name='lice*'), data)) == []
     assert list(compute(t.like(name='*Smith*'), data)) == [data[0], data[1]]
     assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
+
+
+class TestDateAttr(object):
+    @pytest.fixture
+    def data(self):
+        import pandas as pd
+        n = 3
+        d = {'name': np.random.choice(['Alice', 'Bob', 'Joe'], size=n),
+             'when': pd.date_range('20100101', periods=n, freq='D').values,
+             'amount': np.random.rand(n) * 1000 * np.random.choice([-1, 1],
+                                                                   size=n),
+             'id': np.arange(n)}
+        res = list(pd.DataFrame(d).sort_index(axis=1).itertuples(index=False))
+        return res
+
+    @pytest.fixture
+    def t(self):
+        s = '{amount: float64, id: int64, name: string, when: datetime}'
+        return TableSymbol('t', s)
+
+    @pytest.mark.parametrize('attr, dshape', sorted(special_attributes.items()))
+    def test_attrs(self, data, t, attr, dshape):
+        expr = getattr(t.when, attr)
+        result = list(compute(expr, data))
+        expected = [getattr(x[-1], attr) for x in data]
+        if attr == 'date' or attr == 'time':
+            expected = [x() for x in expected]
+        assert discover(result) == discover(expected)
+        assert result == expected
