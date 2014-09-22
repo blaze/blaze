@@ -469,12 +469,15 @@ special_attributes = dict(
      ('hour', 'int64'),
      ('minute', 'int64'),
      ('second', 'int64'),
+     ('millisecond', 'int64'),
      ('microsecond', 'int64'),)
 )
 
 
 class Attribute(Column):
     __slots__ = 'child', 'attr', '_dshape'
+
+    __hash__ = Expr.__hash__
 
     def __repr__(self):
         return "{0.child}.{0.attr}(dshape='{0.dshape}')".format(self)
@@ -488,6 +491,10 @@ class Attribute(Column):
     @property
     def schema(self):
         return Record([[self.child.column, self._dshape]])
+
+    @property
+    def column(self):
+        return self.attr
 
 
 class Selection(TableExpr):
