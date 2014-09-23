@@ -188,6 +188,11 @@ class TableExpr(Expr):
     def __ge__(self, other):
         return columnwise(Ge, self, other)
 
+    def count_values(self):
+        """ Count occurrences of elements in this column """
+        assert self.iscolumn
+        return by(self, count=self.count())
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data

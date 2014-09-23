@@ -808,3 +808,6 @@ def test_like():
     assert expr.dshape[0] == datashape.var
 
 
+def test_count_values():
+    t = TableSymbol('t', '{name: string, amount: int, city: string}')
+    assert t.name.count_values().isidentical(by(t.name, count=t.name.count()))
