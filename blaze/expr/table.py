@@ -158,7 +158,7 @@ class TableExpr(Expr):
     def iscolumn(self):
         if len(self.columns) > 1:
             return False
-        raise NotImplementedError("%s.iscolumn not implemented" % # pragma: no cover
+        raise NotImplementedError("%s.iscolumn not implemented" %
                 str(type(self).__name__))
 
     @property
@@ -1186,7 +1186,7 @@ class Map(RowWise):
                     "Use .columns to find all names")
         try:
             return self.schema[0].names[0]
-        except AttributeError:  # pragma: no cover
+        except AttributeError:
             raise ValueError("Column is un-named, name with col.label('name')")
 
     def label(self, name):

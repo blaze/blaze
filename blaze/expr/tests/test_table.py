@@ -31,8 +31,6 @@ import numpy as np
 def test_dshape():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.dshape == dshape('var * {name: string, amount: int}')
-    with pytest.raises(TypeError):
-        t.dtype
 
 
 def test_length():
@@ -45,7 +43,6 @@ def test_length():
     assert len(t.sort('name')) == 10
     assert len(t.head(5)) == 5
     assert len(t.head(50)) == 10
-    assert t.__len__() == 10
     with pytest.raises(ValueError):
         len(s)
 
@@ -233,6 +230,10 @@ def test_str():
     assert '*' in repr(expr)
 
 
+def test_unpack():
+    assert unpack('unpack') == 'unpack'
+
+
 def test_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
@@ -253,8 +254,6 @@ def test_join():
         join(t, q, 'name')
     with pytest.raises(ValueError):
         join(t, s, how='upside_down')
-
-    assert unpack('unpack') == 'unpack'
 
 
 def test_join_different_on_right_left_columns():
@@ -556,7 +555,7 @@ def test_map():
     assert not t[['name', 'amount']].map(identity).iscolumn
 
     with pytest.raises(ValueError):
-        t[['name', 'amount']].map(identity, schema='{name:string, amount: int}').name
+        t[['name', 'amount']].map(identity, schema='{name: string, amount: int}').name
 
 
 def test_apply():
@@ -595,9 +594,9 @@ def test_columnwise():
 
     assert str(columnwise(Add, x, 1).expr) == 'x + 1'
 
-    assert str(x.__le__(y)) == "t['x'] <= t['y']"
-    assert str(x.__ge__(y)) == "t['x'] >= t['y']"
-    assert str(x.__or__(y)) == "t['x'] | t['y']"
+    assert str(x <= y) == "t['x'] <= t['y']"
+    assert str(x >= y) == "t['x'] >= t['y']"
+    assert str(x | y) == "t['x'] | t['y']"
     assert str(x.__ror__(y)) == "t['y'] | t['x']"
     assert str(x.__rand__(y)) == "t['y'] & t['x']"
 
