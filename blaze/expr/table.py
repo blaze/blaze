@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 from abc import abstractproperty
-from datashape import dshape, DataShape, Record, isdimension, Option, Var
+from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import (concat, partial, first, compose, get, unique, second,
@@ -28,6 +28,9 @@ min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union columnwise Summary summary Like like Attribute
 special_attributes'''.split()
+
+
+_datelike = frozenset((datashape.date_, datashape.datetime_))
 
 
 class TableExpr(Expr):
@@ -455,36 +458,26 @@ class Column(ColumnSyntaxMixin, Projection):
             return object.__getattribute__(self, key)
         except AttributeError:
             try:
-                return Attribute(self, key, dshape(special_attributes[key]))
+                if self.schema.measure[self.column] not in _datelike:
+                    raise AttributeError(key)
+                return special_attributes[key](self)
             except KeyError:
                 raise AttributeError(key)
 
 
-special_attributes = dict(
-    (('date', 'date'),
-     ('year', 'int64'),
-     ('month', 'int64'),
-     ('day', 'int64'),
-     ('time', 'time'),
-     ('hour', 'int64'),
-     ('minute', 'int64'),
-     ('second', 'int64'),
-     ('millisecond', 'int64'),
-     ('microsecond', 'int64'),)
-)
-
-
 class Attribute(RowWise):
-    __slots__ = 'child', 'attr', '_dshape'
+    __slots__ = 'child',
 
     __hash__ = Expr.__hash__
-
-    iscolumn = True
 
     def __repr__(self):
         return "{0.child}.{0.attr}(dshape='{0.dshape}')".format(self)
 
     __str__ = __repr__
+
+    @abstractproperty
+    def _dshape(self):
+        pass
 
     @property
     def schema(self):
@@ -494,6 +487,59 @@ class Attribute(RowWise):
     def column(self):
         return '%s_%s' % (self.child.column, self.attr)
 
+    @property
+    def iscolumn(self):
+        return self.child.iscolumn
+
+    @property
+    def attr(self):
+        return type(self).__name__.lower()
+
+
+class Date(Attribute):
+    _dshape = datashape.date_
+
+
+class Year(Attribute):
+    _dshape = datashape.int64
+
+
+class Month(Attribute):
+    _dshape = datashape.int64
+
+
+class Day(Attribute):
+    _dshape = datashape.int64
+
+
+class Time(Attribute):
+    _dshape = datashape.time_
+
+
+class Hour(Attribute):
+    _dshape = datashape.int64
+
+
+class Minute(Attribute):
+    _dshape = datashape.int64
+
+
+class Second(Attribute):
+    _dshape = datashape.int64
+
+
+class Millisecond(Attribute):
+    _dshape = datashape.int64
+
+
+class Microsecond(Attribute):
+    _dshape = datashape.int64
+
+
+attribute_classes = Attribute.__subclasses__()
+special_attributes = dict(zip(map(lambda x: x.__name__.lower(),
+                                  attribute_classes),
+                              attribute_classes))
 
 class Selection(TableExpr):
     """ Filter rows of table based on predicate

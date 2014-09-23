@@ -5,11 +5,6 @@ import pandas as pd
 from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
                       gt, le, ge, getitem)
 
-try:
-    from operator import div
-except ImportError:
-    from operator import truediv as div
-
 from functools import partial
 from datetime import datetime
 import datashape
@@ -18,7 +13,8 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol, like, Like)
+                        Summary, count, ScalarSymbol, like, Like,
+                        special_attributes)
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, _strtypes
 from blaze.expr.core import discover
@@ -918,9 +914,18 @@ def test_count_values():
             by(t.name, count=t.name.count()).sort('count', ascending=False))
 
 
-def test_attribute():
+@pytest.mark.parametrize('attr, dshape', sorted(special_attributes.items()))
+def test_attribute(attr, dshape):
     t = TableSymbol('t', '{name: string, when: datetime}')
-    expr = t.when.date
+    expr = getattr(t.when, attr)
     result = str(expr)
-    expected = "t['when'].date(dshape='var * { when_date : date }')"
-    assert result == expected
+    expected = "t['when'].%(attr)s(dshape='var * { when_%(attr)s : %(dshape)s }')"
+    rhs = expected % dict(attr=attr, dshape=dshape._dshape)
+    assert result == rhs
+
+
+@pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
+def test_invalid_attribute(attr):
+    t = TableSymbol('t', '{name: string, when: datetime}')
+    with pytest.raises(AttributeError):
+        getattr(t.name, attr)
