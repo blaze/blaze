@@ -22,21 +22,18 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr import *
-from toolz import map, partition_all, reduce
-import numpy as np
-import math
+from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
 from cytoolz import unique
 from datashape import var, isdimension
 import pandas as pd
 
-from ..compatibility import builtins
 from ..dispatch import dispatch
-from .core import compute
 from ..data.core import DataDescriptor
 
-__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk', 'chunks', 'into']
+__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk',
+           'chunks', 'into']
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -193,6 +190,11 @@ def compute_up(expr, c, **kwargs):
                b(t[apply_cols]))
 
     return compute_up(group, intermediate)
+
+
+@dispatch(Attribute, ChunkIterator)
+def compute_up(expr, c, **kwargs):
+    return concat(into(Iterator, compute_up(expr, chunk)) for chunk in c)
 
 
 @dispatch(object)
