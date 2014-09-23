@@ -17,7 +17,6 @@ import numbers
 import fnmatch
 import re
 from collections import Iterator
-from operator import attrgetter
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first
@@ -129,6 +128,18 @@ def rowfunc(t):
 @dispatch((Label, ReLabel))
 def rowfunc(t):
     return identity
+
+
+@dispatch(Attribute)
+def rowfunc(t):
+    attr = t.attr
+    is_milli = attr == 'millisecond'
+
+    def f(row):
+        x = getattr(row, attr if not is_milli else 'microsecond')
+        v = x() if callable(x) else x
+        return v // 1000 if is_milli else v
+    return f
 
 
 def concat_maybe_tuples(vals):
@@ -475,12 +486,3 @@ def like_regex_predicate(expr):
 def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)
-
-
-@dispatch(Attribute, Sequence)
-def compute_up(expr, seq, **kwargs):
-    attr = expr.attr
-    is_milli = attr == 'millisecond'
-    for x in map(attrgetter(attr if not is_milli else 'microsecond'), seq):
-        v = x() if callable(x) else x
-        yield v // 1000 if is_milli else v
