@@ -4,7 +4,7 @@ import itertools
 import operator
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc
+from blaze.compute.python import nunique, mean, rrowfunc, rowfunc
 from blaze import dshape
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
@@ -15,6 +15,8 @@ import numpy as np
 from blaze import cos, sin
 from blaze.compatibility import builtins
 from blaze.utils import raises
+
+from toolz import identity
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -32,6 +34,13 @@ databig = [['Alice', 'F', 100, 1],
            ['Drew', 'F', 100, 4],
            ['Drew', 'M', 100, 5],
            ['Drew', 'M', 200, 5]]
+
+
+def test_dispatched_rowfunc():
+    cw = t['amount'] + 100
+
+    
+    assert rowfunc(t) == identity
 
 
 def test_table():
