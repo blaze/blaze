@@ -1,15 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import map, pluck
-import math
+import pytest
+import datetime
+
+from toolz import map
 from pandas import DataFrame
 from toolz import concat
-from collections import Iterator
 
-from blaze.expr import *
+from blaze import into
+from blaze.expr import TableSymbol, join, by, special_attributes
 from blaze.compute.core import compute
-from blaze.compute.python import *
-from blaze.compute.chunks import *
+from blaze.compute.chunks import ChunkIterable, get_chunk
 
 
 data = [[1, 'Alice', 100],
@@ -48,6 +49,7 @@ def test_distinct():
     assert sorted(compute(t.name.distinct(), c)) == \
             ['Alice', 'Bob', 'Charlie', 'Edith']
 
+
 def test_nunique():
     assert compute(t.name.nunique(), c) == 4
     assert compute(t.nunique(), c) == 5
@@ -81,11 +83,11 @@ def test_join():
 
     city_data = [[1, 'NYC'], [1, 'Chicago'], [5, 'Paris']]
 
-    assert set(concat(compute(join(cities, t, 'id')[['name', 'city']],
+    assert set(concat(compute(j[['name', 'city']],
                               {t: c, cities: city_data}))) == \
             set((('Alice', 'NYC'), ('Alice', 'Chicago'), ('Edith', 'Paris')))
 
-    assert set(concat(compute(join(t, cities, 'id')[['name', 'city']],
+    assert set(concat(compute(j[['name', 'city']],
                               {t: c, cities: city_data}))) == \
             set((('Alice', 'NYC'), ('Alice', 'Chicago'), ('Edith', 'Paris')))
 
@@ -110,7 +112,30 @@ def test_into_DataFrame_chunks():
                     columns=['name', 'id'])) == \
                 str(DataFrame(data, columns=['name', 'id']))
 
+
 def test_chunk_list():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     assert get_chunk(data, 0, chunksize=2) == [1, 2]
     assert get_chunk(data, 2, chunksize=2) == [5, 6]
+
+
+@pytest.mark.parametrize('attr, dtype', sorted(special_attributes.items()))
+def test_chunk_attribute(attr, dtype):
+    data = [[1, 'Alice', 100],
+            [2, 'Bob', 200],
+            [3, 'Alice', -300],
+            [4, 'Charlie', 400],
+            [5, 'Edith', 200]]
+
+    for i, d in enumerate(data, start=1):
+        d.append(datetime.datetime(2014, 10, i, i, i, i))
+
+    t = TableSymbol('t', '{id: int, name: string, amount: int, when: datetime}')
+
+    c = ChunkIterable(data, chunksize=2)
+    result = compute(getattr(t.when, attr), c)
+    result = list(result)
+    expected = [getattr(d[-1], attr, d[-1].microsecond // 1000) for d in data]
+    if attr == 'date' or attr == 'time':
+        expected = [e() for e in expected]
+    assert result == expected
