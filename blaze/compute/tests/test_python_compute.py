@@ -2,9 +2,10 @@ from __future__ import absolute_import, division, print_function
 import math
 import itertools
 import operator
+import sys
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc, rowfunc
+from blaze.compute.python import nunique, mean, rrowfunc, rowfunc, Sequence
 from blaze import dshape
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
@@ -38,9 +39,11 @@ databig = [['Alice', 'F', 100, 1],
 
 def test_dispatched_rowfunc():
     cw = t['amount'] + 100
-
-    
     assert rowfunc(t) == identity
+    if sys.version_info[0] == 3:
+        assert 'apply' in str(rowfunc(cw)) 
+    elif sys.version_info[0] == 2:
+        assert 'apply' not in str(rowfunc(cw))
 
 
 def test_table():
@@ -261,6 +264,8 @@ def test_column_of_column():
 def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
     assert set(compute(Distinct(t), data)) == set(map(tuple, data))
+    e = Distinct(t)
+    assert compute(e, []) == ()
 
 
 def test_Distinct_count():
