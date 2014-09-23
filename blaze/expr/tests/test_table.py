@@ -929,3 +929,10 @@ def test_invalid_attribute(attr):
     t = TableSymbol('t', '{name: string, when: datetime}')
     with pytest.raises(AttributeError):
         getattr(t.name, attr)
+
+
+@pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
+def test_attribute_completion(attr):
+    t = TableSymbol('t', '{name: string, when: datetime}')
+    assert attr in dir(t.when)
+    assert attr not in dir(t.name)
