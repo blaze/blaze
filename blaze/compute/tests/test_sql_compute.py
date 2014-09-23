@@ -493,10 +493,12 @@ def test_clean_join():
 
     expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
     assert normalize(str(compute(expr, ns))) == normalize("""
-    SELECT a, b, name, place.city, place.country
-    FROM (SELECT friends.a as a, friends.b as b, name.name as name
-          FROM friends JOIN name ON friends.a = name.id)
-    JOIN place on friends.a = place.id""")
+    SELECT friends.a, friends.b, name.name, place.city, place.country
+    FROM friends
+        JOIN name ON friends.a = name.id
+        JOIN place ON friends.a = place.id
+        """)
+
 
 
 def test_like():
@@ -570,6 +572,6 @@ def test_join_complex_clean():
     result = compute(expr, ns)
 
     assert normalize(str(result)) == normalize("""
-    SELECT name.id, name.name
+    SELECT name.id, name.name, place.city, place.country
     FROM name JOIN place ON name.id = place.id
     WHERE name.id > :id_1""")

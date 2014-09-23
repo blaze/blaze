@@ -145,22 +145,30 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
+@dispatch(Select, Select)
+def _join_selectables(a, b, condition=None, **kwargs):
+    return a.join(b, condition, **kwargs)
+
+
 @dispatch(Select, Selectable)
-def _join_selectables(a, b, condition=None):
+def _join_selectables(a, b, condition=None, **kwargs):
     if len(a.froms) > 1:
         raise MDNotImplementedError()
     return a.replace_selectable(a.froms[0],
-                a.froms[0].join(b, condition=condition))
+                a.froms[0].join(b, condition, **kwargs))
 
-@dispatch(Select, Selectable)
-def _join_selectables(a, b, condition=None):
+
+@dispatch(Selectable, Select)
+def _join_selectables(a, b, condition=None, **kwargs):
     if len(b.froms) > 1:
         raise MDNotImplementedError()
     return b.replace_selectable(b.froms[0],
-                a.join(b.froms[0], condition=condition))
+                a.join(b.froms[0], condition, **kwargs))
 
-@dispatch(Select, Select)
-def _join_selectables(a, b, condition=None):
+@dispatch(Selectable, Selectable)
+def _join_selectables(a, b, condition=None, **kwargs):
+    return a.join(b, condition, **kwargs)
+
 
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
@@ -178,13 +186,13 @@ def compute_up(t, lhs, rhs, **kwargs):
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
-        join = lhs.join(rhs, condition)
+        join = _join_selectables(lhs, rhs, condition=condition)
         main, other = lhs, rhs
     elif t.how == 'left':
-        join = lhs.join(rhs, condition, isouter=True)
+        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
         main, other = lhs, rhs
     elif t.how == 'right':
-        join = rhs.join(lhs, condition, isouter=True)
+        join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
         main, other = rhs, lhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
@@ -204,8 +212,10 @@ def compute_up(t, lhs, rhs, **kwargs):
     columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
 
-
-    return sqlalchemy.sql.select(columns, from_obj=join)
+    if isinstance(join, Select):
+        return join.with_only_columns(columns)
+    else:
+        return sqlalchemy.sql.select(columns, from_obj=join)
 
 
 
