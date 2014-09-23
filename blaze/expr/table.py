@@ -1186,7 +1186,7 @@ class Map(RowWise):
                     "Use .columns to find all names")
         try:
             return self.schema[0].names[0]
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             raise ValueError("Column is un-named, name with col.label('name')")
 
     def label(self, name):
@@ -1258,8 +1258,9 @@ def common_subexpression(*tables):
 
 def merge(*tables):
     # Get common sub expression
-    child = common_subexpression(*tables)
-    if not child:
+    try:
+        child = common_subexpression(*tables)
+    except:
         raise ValueError("No common sub expression found for input tables")
 
     result = Merge(child, tables)

@@ -95,7 +95,7 @@ def test_column():
     with pytest.raises(ValueError):
         t['name'].project('balance')
     with pytest.raises(ValueError):
-        getitem(t, '{balance}')
+        getitem(t, set('balance'))
 
 
 def test_symbol_projection_failures():
@@ -630,6 +630,7 @@ def test_dtype():
 
 def test_merge():
     t = TableSymbol('t', 'int64')
+    p = TableSymbol('p', '{amount:int}')
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
@@ -638,7 +639,9 @@ def test_merge():
     assert c.columns == ['name', 'balance', 'new']
 
     with pytest.raises(TypeError):
-        merge(t,t)
+        merge(t, t)
+    with pytest.raises(ValueError):
+        merge(t, p)
 
 
 def test_merge_repeats():
