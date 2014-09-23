@@ -600,3 +600,30 @@ def test_projection_of_join():
     SELECT place.country, name.name
     FROM name JOIN place ON name.id = place.id
     WHERE place.city = :city_1""")
+
+
+def test_lower_column():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+
+    ns = {tname: name, tcity: city}
+
+    assert lower_column(name.c.id) is name.c.id
+    assert lower_column(select(name).c.id) is name.c.id
+
+    j = name.join(city, name.c.id == city.c.id)
+    col = [c for c in j.columns if c.name == 'country'][0]
+
+    assert lower_column(col) is city.c.country
