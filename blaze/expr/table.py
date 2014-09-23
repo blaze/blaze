@@ -474,10 +474,12 @@ special_attributes = dict(
 )
 
 
-class Attribute(Column):
+class Attribute(RowWise):
     __slots__ = 'child', 'attr', '_dshape'
 
     __hash__ = Expr.__hash__
+
+    iscolumn = True
 
     def __repr__(self):
         return "{0.child}.{0.attr}(dshape='{0.dshape}')".format(self)
@@ -485,16 +487,12 @@ class Attribute(Column):
     __str__ = __repr__
 
     @property
-    def dshape(self):
-        return Var() * self.schema
-
-    @property
     def schema(self):
-        return Record([[self.child.column, self._dshape]])
+        return dshape(Record([(self.column, self._dshape)]))
 
     @property
     def column(self):
-        return self.attr
+        return '%s_%s' % (self.child.column, self.attr)
 
 
 class Selection(TableExpr):

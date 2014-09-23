@@ -922,5 +922,5 @@ def test_attribute():
     t = TableSymbol('t', '{name: string, when: datetime}')
     expr = t.when.date
     result = str(expr)
-    expected = "t['when'].date(dshape='var * { when : date }')"
+    expected = "t['when'].date(dshape='var * { when_date : date }')"
     assert result == expected
