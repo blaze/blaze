@@ -22,8 +22,9 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 import itertools
-from blaze.expr import TableSymbol, count, mean, Head, Join, Selection, RowWise
-from blaze.expr import Label, ReLabel, Distinct, nunique, By, by
+from blaze.expr import TableSymbol, Head, Join, Selection, RowWise, By, Label
+from blaze.expr import ReLabel, Distinct, by
+from blaze.expr import min, max, any, all, sum, count, mean, nunique
 from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first

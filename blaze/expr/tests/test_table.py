@@ -16,7 +16,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         Summary, count, ScalarSymbol, like, Like,
                         special_attributes)
 from blaze.expr.table import _expr_child, unpack, max, min
-from blaze.compatibility import PY3, _strtypes
+from blaze.compatibility import PY3
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -42,6 +42,7 @@ def test_length():
     with pytest.raises(ValueError):
         len(s)
 
+
 def test_table_name():
     t = TableSymbol('t', '10 * {people: string, amount: int}')
     r = TableSymbol('r', 'int64', iscolumn=True)
@@ -49,6 +50,7 @@ def test_table_name():
         t.name
     with pytest.raises(ValueError):
         r.name
+
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
@@ -141,7 +143,6 @@ def test_selection():
     assert s.dshape == t.dshape
 
 
-
 def test_selection_typecheck():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -172,6 +173,7 @@ def test_selection_path_check():
     t2 = t[t.name == 'Alice']
     t3 = t2[t2.amount > 0]
     assert t3
+
 
 def test_path_issue():
     from blaze.api.dplyr import transform
@@ -520,7 +522,6 @@ def test_map_label():
     c = t.amount.map(identity, schema='{foo: int32}')
     assert c.label('bar').name == 'bar'
     assert c.label('bar').child.isidentical(c.child)
-
 
 
 def test_columns():
