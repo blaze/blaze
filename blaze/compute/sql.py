@@ -23,6 +23,7 @@ from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
 from datashape import Record
 from copy import copy
+import toolz
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
@@ -105,15 +106,22 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return -s
 
+
 @dispatch(Selection, Select)
-def compute_up(t, s, **kwargs):
-    predicate = compute_up(t.predicate, s)
+def compute_up(t, s, scope=None, **kwargs):
+    ns = {t.child[col.name]: col for col in s.inner_columns}
+    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    if isinstance(predicate, Select):
+        predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
 
 
 @dispatch(Selection, Selectable)
-def compute_up(t, s, **kwargs):
-    predicate = compute(t.predicate, {t.child: s})
+def compute_up(t, s, scope=None, **kwargs):
+    ns = {t.child[col.name]: lower_column(col) for col in s.columns}
+    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    if isinstance(predicate, Select):
+        predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
         return s.where(predicate)
     except AttributeError:
@@ -321,7 +329,6 @@ def compute_up(t, s, **kwargs):
 def lower_column(col):
     """ Return column from lower level tables if possible
 
-    >>>
     >>> metadata = sa.MetaData()
 
     >>> s = sa.Table('accounts', metadata,

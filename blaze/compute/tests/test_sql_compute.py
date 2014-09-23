@@ -617,7 +617,6 @@ def test_lower_column():
     tname = TableSymbol('name', discover(name))
     tcity = TableSymbol('city', discover(city))
 
-
     ns = {tname: name, tcity: city}
 
     assert lower_column(name.c.id) is name.c.id
@@ -627,3 +626,30 @@ def test_lower_column():
     col = [c for c in j.columns if c.name == 'country'][0]
 
     assert lower_column(col) is city.c.country
+
+
+def test_selection_of_join():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    j = join(tname, tcity, 'id')
+    expr = j[j.city == 'NYC'].name
+    result = compute(expr, ns)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE place.city = :city_1""")
