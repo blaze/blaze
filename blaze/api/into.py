@@ -7,18 +7,18 @@ import sys
 from functools import partial
 from datashape import dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all, valmap, first, merge
+from toolz import concat, partition_all, first, merge
 from cytoolz import pluck
 import copy
 from datetime import datetime
 from numbers import Number
 from collections import Iterable, Iterator
-import gzip
 import numpy as np
 import pandas as pd
 import tables as tb
 
 from ..compute.chunks import ChunkIterator, chunks
+from ..data.meta import Concat
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
@@ -892,6 +892,16 @@ def into(a, b, **kwargs):
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
     return pd.DataFrame(list(b), columns=b.columns)
+
+
+@dispatch(pd.DataFrame, Concat)
+def into(a, b, **kwargs):
+    """Convert a sequence of DataDescriptors to a DataFrame by converting each
+    to a DataFrame and then calling pandas.concat on the resulting sequence.
+    """
+    return pd.concat((into(pd.DataFrame, d) for d in b.descriptors),
+                     ignore_index=kwargs.pop('ignore_index', True),
+                     **kwargs)
 
 
 @dispatch(object, Expr)
