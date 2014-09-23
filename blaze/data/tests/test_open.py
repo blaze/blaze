@@ -21,7 +21,7 @@ def rsrc():
         yield filename
 
 
-@xfail(sys.platform not in ['darwin', 'linux'], reason='Invalid opener')
+@xfail(is_py2_win, reason='Invalid opener')
 def test_gzopen_no_gzip_open(rsrc):
     dd = CSV(rsrc, schema='2 * int')
     assert tuplify(list(dd)) == ((1, 1), (2, 2))
