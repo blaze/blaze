@@ -10,8 +10,6 @@ from blaze.compatibility import StringIO
 
 from ..dispatch import dispatch
 
-import datashape
-
 __all__ = ['Expr', 'discover']
 
 
