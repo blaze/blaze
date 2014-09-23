@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.sql import compute, computefull, select
+from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze import SQL
 from blaze.expr import *
 import sqlalchemy
@@ -87,12 +87,48 @@ def test_join():
 
     result = compute(joined, {L: lhs, R: rhs})
 
-    assert str(result) == str(expected)
+    assert normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name""")
 
     assert str(select(result)) == str(select(expected))
 
     # Schemas match
     assert list(result.c.keys()) == list(joined.columns)
+
+
+def test_clean_complex_join():
+    metadata = sa.MetaData()
+    lhs = sa.Table('amounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
+
+    joined = join(L[L.amount > 0], R, 'name')
+
+    result = compute(joined, {L: lhs, R: rhs})
+
+
+    assert (normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name
+    WHERE amounts.amount > :amount_1""")
+
+    or
+
+    normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts, (SELECT amounts.name AS name, amounts.amount AS amount
+    FROM amounts
+    WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
+
+
 
 
 def test_multi_column_join():
@@ -457,10 +493,12 @@ def test_clean_join():
 
     expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
     assert normalize(str(compute(expr, ns))) == normalize("""
-    SELECT a, b, name, place.city, place.country
-    FROM (SELECT friends.a as a, friends.b as b, name.name as name
-          FROM friends JOIN name ON friends.a = name.id)
-    JOIN place on friends.a = place.id""")
+    SELECT friends.a, friends.b, name.name, place.city, place.country
+    FROM friends
+        JOIN name ON friends.a = name.id
+        JOIN place ON friends.a = place.id
+        """)
+
 
 
 def test_like():
@@ -509,3 +547,109 @@ def test_by_on_count():
     FROM accounts
     GROUP BY accounts.name
     """)
+
+
+def test_join_complex_clean():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    sel = select(name).where(name.c.id > 10)
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    expr = join(tname[tname.id > 0], tcity, 'id')
+    result = compute(expr, ns)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT name.id, name.name, place.city, place.country
+    FROM name JOIN place ON name.id = place.id
+    WHERE name.id > :id_1""")
+
+
+def test_projection_of_join():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    expr = join(tname, tcity[tcity.city == 'NYC'], 'id')[['country', 'name']]
+
+    ns = {tname: name, tcity: city}
+
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT place.country, name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE place.city = :city_1""")
+
+
+def test_lower_column():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    assert lower_column(name.c.id) is name.c.id
+    assert lower_column(select(name).c.id) is name.c.id
+
+    j = name.join(city, name.c.id == city.c.id)
+    col = [c for c in j.columns if c.name == 'country'][0]
+
+    assert lower_column(col) is city.c.country
+
+
+def test_selection_of_join():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    j = join(tname, tcity, 'id')
+    expr = j[j.city == 'NYC'].name
+    result = compute(expr, ns)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE place.city = :city_1""")

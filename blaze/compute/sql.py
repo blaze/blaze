@@ -23,6 +23,7 @@ from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
 from datashape import Record
 from copy import copy
+import toolz
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
@@ -35,14 +36,6 @@ from .core import compute_up, compute, base
 from ..data.utils import listpack
 
 __all__ = ['sqlalchemy', 'select']
-
-
-@dispatch(Projection, Select)
-def compute_up(t, s, scope=None, **kwargs):
-    cols = list(s.inner_columns)
-    cols = [cols[t.child.columns.index(c)] for c in t.columns]
-
-    return s.with_only_columns(cols)
 
 
 @dispatch(Projection, Selectable)
@@ -64,7 +57,8 @@ def compute_up(t, s, scope=None, **kwargs):
 
 @dispatch((Column, Projection), Select)
 def compute_up(t, s, **kwargs):
-    cols = [lower_column(s.c.get(col)) for col in t.columns]
+    cols = list(s.inner_columns)
+    cols = [lower_column(cols[t.child.columns.index(c)]) for c in t.columns]
     return s.with_only_columns(cols)
 
 
@@ -112,15 +106,22 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return -s
 
+
 @dispatch(Selection, Select)
-def compute_up(t, s, **kwargs):
-    predicate = compute_up(t.predicate, s)
+def compute_up(t, s, scope=None, **kwargs):
+    ns = dict((t.child[col.name], col) for col in s.inner_columns)
+    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    if isinstance(predicate, Select):
+        predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
 
 
 @dispatch(Selection, Selectable)
-def compute_up(t, s, **kwargs):
-    predicate = compute(t.predicate, {t.child: s})
+def compute_up(t, s, scope=None, **kwargs):
+    ns = dict((t.child[col.name], lower_column(col)) for col in s.columns)
+    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    if isinstance(predicate, Select):
+        predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
         return s.where(predicate)
     except AttributeError:
@@ -145,30 +146,77 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
+@dispatch(Select, Select)
+def _join_selectables(a, b, condition=None, **kwargs):
+    return a.join(b, condition, **kwargs)
+
+
+@dispatch(Select, Selectable)
+def _join_selectables(a, b, condition=None, **kwargs):
+    if len(a.froms) > 1:
+        raise MDNotImplementedError()
+    return a.replace_selectable(a.froms[0],
+                a.froms[0].join(b, condition, **kwargs))
+
+
+@dispatch(Selectable, Select)
+def _join_selectables(a, b, condition=None, **kwargs):
+    if len(b.froms) > 1:
+        raise MDNotImplementedError()
+    return b.replace_selectable(b.froms[0],
+                a.join(b.froms[0], condition, **kwargs))
+
+@dispatch(Selectable, Selectable)
+def _join_selectables(a, b, condition=None, **kwargs):
+    return a.join(b, condition, **kwargs)
+
+
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        ldict = dict((c.name, c) for c in lhs.inner_columns)
+    else:
+        ldict = lhs.c
+    if isinstance(rhs, Select):
+        rdict = dict((c.name, c) for c in rhs.inner_columns)
+    else:
+        rdict = rhs.c
+
     condition = reduce(and_,
-            [lower_column(lhs.c.get(l)) == lower_column(rhs.c.get(r))
+            [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
-        join = lhs.join(rhs, condition)
+        join = _join_selectables(lhs, rhs, condition=condition)
         main, other = lhs, rhs
     elif t.how == 'left':
-        join = lhs.join(rhs, condition, isouter=True)
+        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
         main, other = lhs, rhs
     elif t.how == 'right':
-        join = rhs.join(lhs, condition, isouter=True)
+        join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
         main, other = rhs, lhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
 
-    columns = unique(list(main.columns) + list(other.columns),
+    if isinstance(main, Select):
+        main_cols = main.inner_columns
+    else:
+        main_cols = main.columns
+    if isinstance(other, Select):
+        other_cols = other.inner_columns
+    else:
+        other_cols = other.columns
+
+    columns = unique(list(main_cols) + list(other_cols),
                      key=lambda c: c.name)
     columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
-    return select(list(columns)).select_from(join)
+
+    if isinstance(join, Select):
+        return join.with_only_columns(columns)
+    else:
+        return sqlalchemy.sql.select(columns, from_obj=join)
 
 
 
@@ -281,7 +329,6 @@ def compute_up(t, s, **kwargs):
 def lower_column(col):
     """ Return column from lower level tables if possible
 
-    >>>
     >>> metadata = sa.MetaData()
 
     >>> s = sa.Table('accounts', metadata,
