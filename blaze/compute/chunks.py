@@ -21,7 +21,9 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
+import itertools
+from blaze.expr import TableSymbol, count, mean, Head, Join, Selection, RowWise
+from blaze.expr import Label, ReLabel, Distinct, nunique, By, by
 from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
@@ -190,11 +192,6 @@ def compute_up(expr, c, **kwargs):
                b(t[apply_cols]))
 
     return compute_up(group, intermediate)
-
-
-@dispatch(Attribute, ChunkIterator)
-def compute_up(expr, c, **kwargs):
-    return concat(into(Iterator, compute_up(expr, chunk)) for chunk in c)
 
 
 @dispatch(object)

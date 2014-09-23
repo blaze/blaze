@@ -204,6 +204,10 @@ class TableExpr(Expr):
             result = result.sort('count', ascending=False)
         return result
 
+    @property
+    def isdatelike(self):
+        return self.schema.measure[self.column] in _datelike
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -453,12 +457,18 @@ class Column(ColumnSyntaxMixin, Projection):
         else:
             raise ValueError("Column Mismatch: %s" % key)
 
+    def __dir__(self):
+        cur = dir(super(Column, self))
+        if not self.isdatelike:
+            return cur
+        return cur + sorted(special_attributes.keys())
+
     def __getattr__(self, key):
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
             try:
-                if self.schema.measure[self.column] not in _datelike:
+                if not self.isdatelike:
                     raise AttributeError(key)
                 return special_attributes[key](self)
             except KeyError:
@@ -496,47 +506,51 @@ class Attribute(RowWise):
         return type(self).__name__.lower()
 
 
-class Date(Attribute):
+class DateTime(Attribute):
+    pass
+
+
+class Date(DateTime):
     _dshape = datashape.date_
 
 
-class Year(Attribute):
+class Year(DateTime):
     _dshape = datashape.int64
 
 
-class Month(Attribute):
+class Month(DateTime):
     _dshape = datashape.int64
 
 
-class Day(Attribute):
+class Day(DateTime):
     _dshape = datashape.int64
 
 
-class Time(Attribute):
+class Time(DateTime):
     _dshape = datashape.time_
 
 
-class Hour(Attribute):
+class Hour(DateTime):
     _dshape = datashape.int64
 
 
-class Minute(Attribute):
+class Minute(DateTime):
     _dshape = datashape.int64
 
 
-class Second(Attribute):
+class Second(DateTime):
     _dshape = datashape.int64
 
 
-class Millisecond(Attribute):
+class Millisecond(DateTime):
     _dshape = datashape.int64
 
 
-class Microsecond(Attribute):
+class Microsecond(DateTime):
     _dshape = datashape.int64
 
 
-attribute_classes = Attribute.__subclasses__()
+attribute_classes = DateTime.__subclasses__()
 special_attributes = dict(zip(map(lambda x: x.__name__.lower(),
                                   attribute_classes),
                               attribute_classes))
