@@ -810,4 +810,7 @@ def test_like():
 
 def test_count_values():
     t = TableSymbol('t', '{name: string, amount: int, city: string}')
-    assert t.name.count_values().isidentical(by(t.name, count=t.name.count()))
+    assert t.name.count_values(sort=False).isidentical(
+            by(t.name, count=t.name.count()))
+    assert t.name.count_values(sort=True).isidentical(
+            by(t.name, count=t.name.count()).sort('count', ascending=False))

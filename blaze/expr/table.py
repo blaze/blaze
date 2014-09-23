@@ -188,10 +188,17 @@ class TableExpr(Expr):
     def __ge__(self, other):
         return columnwise(Ge, self, other)
 
-    def count_values(self):
-        """ Count occurrences of elements in this column """
-        assert self.iscolumn
-        return by(self, count=self.count())
+    def count_values(self, sort=True):
+        """ Count occurrences of elements in this column
+
+        Sort by counts by default, add ``sort=False`` keyword to avoid this
+        behavior."""
+        if not self.iscolumn:
+            raise ValueError("Can only count_values on columns")
+        result = by(self, count=self.count())
+        if sort:
+            result = result.sort('count', ascending=False)
+        return result
 
 
 class TableSymbol(TableExpr):
