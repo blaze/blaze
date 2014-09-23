@@ -53,10 +53,10 @@ class TableExpr(Expr):
             raise ValueError('Can not determine length of table with the '
                     'following datashape: %s' % self.dshape)
 
-    def __len__(self):
+    def __len__(self): # pragma: no cover
         return self._len()
 
-    def __nonzero__(self):
+    def __nonzero__(self): # pragma: no cover
         return True
 
     def __bool__(self):
@@ -68,7 +68,7 @@ class TableExpr(Expr):
             return self.schema[0].names
 
     @abstractproperty
-    def schema(self):
+    def schema(self): # pragma: no cover
         pass
 
     @property
@@ -82,6 +82,7 @@ class TableExpr(Expr):
                 return dshape(first(ds.types))
         else:
             return dshape(ds)
+
 
     def __getitem__(self, key):
         if isinstance(key, (list, basestring, unicode)):
@@ -224,10 +225,7 @@ class TableSymbol(TableExpr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        try:
-            if not isdimension(dshape[0]):
-                dshape = datashape.var * dshape
-        except TypeError:
+        if not isdimension(dshape[0]):
             dshape = datashape.var * dshape
         self.dshape = dshape
         self.iscolumn = iscolumn
@@ -968,15 +966,10 @@ class By(TableExpr):
     def schema(self):
         group = self.grouper.schema[0].parameters[0]
         reduction_name = type(self.apply).__name__
-        if isinstance(self.apply.dshape[0], Record):
-            apply = self.apply.dshape[0].parameters[0]
-        else:
-            apply = ((reduction_name, self.apply.dshape),)
-
+        apply = self.apply.dshape[0].parameters[0]
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
-
 
 
 @dispatch(TableExpr, (Summary, Reduction))
@@ -1211,7 +1204,6 @@ class Map(RowWise):
             return self._iscolumn
         if self.child.iscolumn is not None:
             return self.child.iscolumn
-        return self.schema[0].values()
 
     @property
     def name(self):
@@ -1266,14 +1258,14 @@ class Apply(TableExpr):
         if isdimension(self.dshape[0]):
             return self.dshape.subshape[0]
         else:
-            return TypeError("Non-tabular datashape, %s" % self.dshape)
+            raise TypeError("Non-tabular datashape, %s" % self.dshape)
 
     @property
     def dshape(self):
         if self._dshape:
             return dshape(self._dshape)
         else:
-            return NotImplementedError("Datashape of arbitrary Apply not defined")
+            raise NotImplementedError("Datashape of arbitrary Apply not defined")
 
 
 def common_subexpression(*tables):
@@ -1292,8 +1284,9 @@ def common_subexpression(*tables):
 
 def merge(*tables):
     # Get common sub expression
-    child = common_subexpression(*tables)
-    if not child:
+    try:
+        child = common_subexpression(*tables)
+    except:
         raise ValueError("No common sub expression found for input tables")
 
     result = Merge(child, tables)
