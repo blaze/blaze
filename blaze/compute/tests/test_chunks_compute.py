@@ -134,7 +134,7 @@ def test_chunk_attribute(attr, dtype):
 
     c = ChunkIterable(data, chunksize=2)
     result = compute(getattr(t.when, attr), c)
-    result = list(result)
+    result = list(concat(result))
     expected = [getattr(d[-1], attr, d[-1].microsecond // 1000) for d in data]
     if attr == 'date' or attr == 'time':
         expected = [e() for e in expected]
