@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.sql import compute, computefull, select
+from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze import SQL
 from blaze.expr import *
 import sqlalchemy
@@ -575,3 +575,28 @@ def test_join_complex_clean():
     SELECT name.id, name.name, place.city, place.country
     FROM name JOIN place ON name.id = place.id
     WHERE name.id > :id_1""")
+
+
+def test_projection_of_join():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    expr = join(tname, tcity[tcity.city == 'NYC'], 'id')[['country', 'name']]
+
+    ns = {tname: name, tcity: city}
+
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT place.country, name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE place.city = :city_1""")
