@@ -71,6 +71,19 @@ class TableExpr(Expr):
     def schema(self): # pragma: no cover
         pass
 
+    @property
+    def dtype(self):
+        ds = self.schema[-1]
+        if isinstance(ds, Record):
+            if len(ds.fields) > 1:
+                raise TypeError("`.dtype` not defined for multicolumn object. "
+                                "Use `.schema` instead")
+            else:
+                return dshape(first(ds.types))
+        else:
+            return dshape(ds)
+
+
     def __getitem__(self, key):
         if isinstance(key, (list, basestring, unicode)):
             return self.project(key)
