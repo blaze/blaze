@@ -32,8 +32,9 @@ install:
 
   # Install dependencies
   - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy
-  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz xlrd
-  - conda install -n test-environment coverage
+  - conda install -n test-environment pandas h5py pip flask requests pytables
+  - conda install -n test-environment coverage pymongo cython bcolz xlrd pyyaml
+  - conda install -n test-environment cytoolz toolz
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
@@ -43,9 +44,6 @@ install:
 
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
-
-  # Install PyMongo
-  - pip install pymongo
 
   # Install MySQL py2.y/3.x
   - pip install pymysql
@@ -82,7 +80,7 @@ install:
   # - export PYTHONPATH=$PYTHONPATH:$PWD
   # - popd
   #
-  - pip install cytoolz toolz multipledispatch
+  - pip install multipledispatch
 
   # Install coveralls
   - pip install coveralls --use-mirrors
@@ -91,6 +89,8 @@ install:
   - python setup.py install
 
 before_script:
+  - sed -i '/[mysqld]/a tmpdir = /tmp/' /etc/mysql/my.cnf
+  - sudo restart mysql
   - mysql -e 'create database test'
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
