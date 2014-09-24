@@ -1,22 +1,19 @@
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function
 
-from datetime import date, datetime, time
-from decimal import Decimal
+
 import sys
+import os
+import warnings
 from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
-from toolz import first
 
 from ..dispatch import dispatch
 from ..utils import partition_all
-from ..compatibility import basestring
 from .core import DataDescriptor
-from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
 from .csv import CSV
 
@@ -284,6 +281,11 @@ class SQL(DataDescriptor):
         else:
             return result
 
+
+def raw(s):
+    return s.encode('unicode-escape').decode()
+
+
 @dispatch(SQL, CSV)
 def into(sql, csv, if_exists="replace", **kwargs):
     """
@@ -339,13 +341,13 @@ def into(sql, csv, if_exists="replace", **kwargs):
             raise KeyError(k, " not found in dialect mapping")
 
     format_str = retrieve_kwarg('format_str') or 'csv'
-    encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
+    encoding =  retrieve_kwarg('encoding') or 'utf8'
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
     na_value = retrieve_kwarg('na_value') or ""
     quotechar = retrieve_kwarg('quotechar') or '"'
     escapechar = retrieve_kwarg('escapechar') or quotechar
     header = retrieve_kwarg('header') or csv.header
-    lineterminator = retrieve_kwarg('lineterminator') or u'\r\n'
+    lineterminator = retrieve_kwarg('lineterminator') or os.linesep
 
     skiprows = csv.header or 0 # None or 0 returns 0
     skiprows = retrieve_kwarg('skiprows') or int(skiprows) #hack to skip 0 or 1
@@ -360,7 +362,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
                  'na_value': na_value,
                  'quotechar': quotechar,
                  'escapechar': escapechar,
-                 'lineterminator': lineterminator,
+                 'lineterminator': raw(lineterminator),
                  'skiprows': skiprows,
                  'header': header,
                  'encoding': encoding,
@@ -377,7 +379,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
             # create a new one
             sql.table.create(engine)
-
 
     if dbtype == 'postgresql':
         import psycopg2
@@ -423,34 +424,34 @@ def into(sql, csv, if_exists="replace", **kwargs):
             ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
             output = ps.stdout.read()
 
-    elif dbtype == 'mysql':
-        import MySQLdb
+    elif dbtype.startswith('mysql'):
+        import pymysql
+        conn = sql.engine.raw_connection()
+        cursor = conn.cursor()
+
+        # no null handling
+        sql_stmnt = """
+                    LOAD DATA {mysql_local} INFILE '{abspath}'
+                    INTO TABLE {tblname}
+                    CHARACTER SET {encoding}
+                    FIELDS
+                        TERMINATED BY '{delimiter}'
+                        ENCLOSED BY '{quotechar}'
+                        ESCAPED BY '{escapechar}'
+                    LINES TERMINATED by '{lineterminator}'
+                    IGNORE {skiprows} LINES;"""
+        sql_stmnt = sql_stmnt.format(**copy_info)
         try:
-            conn = sql.engine.raw_connection()
-            cursor = conn.cursor()
-
-            #no null handling
-            sql_stmnt = u"""
-                        LOAD DATA {mysql_local} INFILE '{abspath}'
-                        INTO TABLE {tblname}
-                        CHARACTER SET {encoding}
-                        FIELDS
-                            TERMINATED BY '{delimiter}'
-                            ENCLOSED BY '{quotechar}'
-                            ESCAPED BY '{escapechar}'
-                        LINES TERMINATED by '{lineterminator}'
-                        IGNORE {skiprows} LINES;
-                        """
-            sql_stmnt = sql_stmnt.format(**copy_info)
             cursor.execute(sql_stmnt)
-            conn.commit()
-
-        #not sure about failures yet
-        except MySQLdb.OperationalError as e:
-            print("Failed to use MySQL LOAD.\nERR MSG: ", e)
-            print("Defaulting to sql.extend() method")
+        except pymysql.err.InternalError as e:
+            conn.rollback()
+            warnings.warn(str(e))
             sql.extend(csv)
-
+        except:
+            conn.rollback()
+            raise
+        else:
+            conn.commit()
     else:
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")
