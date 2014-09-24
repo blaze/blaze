@@ -135,7 +135,7 @@ def test_failing_argument(sql, csv):
 
 
 def test_no_header_no_columns(csv_no_columns):
-    sql = SQL(url, 'test_table', schema='{x: int, y: int}')
+    sql = resource(url, 'test_table', schema='{x: int, y: int}')
     into(sql, csv_no_columns, if_exists="replace")
 
     assert list(sql[:, 'x']) == [1, 10, 100]
