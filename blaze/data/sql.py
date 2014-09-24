@@ -427,6 +427,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
     elif dbtype.startswith('mysql'):
         import pymysql
+        assert False
 
         # no null handling
         sql_stmnt = """
