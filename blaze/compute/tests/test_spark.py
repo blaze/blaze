@@ -101,6 +101,7 @@ exprs = [
     exp(t['amount']),
     by(t['name'], t['amount'].sum()),
     by(t['name'], (t['amount'] + 1).sum()),
+    by(t.name, t.amount.head(2) ),
     (t['amount'] * 1).label('foo'),
     t.map(lambda _, amt, id: amt + id),
     t.like(name='Alice'),
