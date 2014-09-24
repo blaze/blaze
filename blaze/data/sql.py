@@ -341,7 +341,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
             raise KeyError(k, " not found in dialect mapping")
 
     format_str = retrieve_kwarg('format_str') or 'csv'
-    encoding =  retrieve_kwarg('encoding') or 'utf8'
+    encoding =  retrieve_kwarg('encoding') or ('utf8' if dbtype.startswith('mysql')
+                                               else 'latin1')
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
     na_value = retrieve_kwarg('na_value') or ""
     quotechar = retrieve_kwarg('quotechar') or '"'
