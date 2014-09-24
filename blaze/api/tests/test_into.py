@@ -14,7 +14,7 @@ from blaze.data.python import Python
 from blaze.data import CSV
 
 from blaze.api.into import into, discover
-from blaze import Table
+from blaze import Table, Concat
 from blaze.utils import tmpfile, filetext
 import pytest
 
@@ -409,3 +409,13 @@ def test_datetime_csv_reader_same_as_into():
     # make sure reader with no args does the same thing as into()
     assert dtypes.index.tolist() == rhs.index.tolist()
     assert dtypes.tolist() == rhs.tolist()
+
+
+def test_into_DataFrame_concat():
+    csv = CSV(os.path.join(os.path.dirname(__file__),
+                           'accounts.csv'))
+    df = into(pd.DataFrame, Concat([csv, csv]))
+    assert df.index.tolist() == list(range(len(df)))
+    assert df.values.tolist() == (csv.reader().values.tolist() +
+                                  csv.reader().values.tolist())
+    assert df.columns.tolist() == csv.reader().columns.tolist()
