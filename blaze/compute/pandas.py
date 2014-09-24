@@ -29,7 +29,8 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr, std, var, Like)
+                    Map, Apply, Merge, Union, TableExpr, std, var, Like,
+                    RowWise)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -174,7 +175,7 @@ def unpack(seq):
     return seq
 
 
-Grouper = Column, ColumnWise, Series, list
+Grouper = RowWise, Series, list
 
 
 @dispatch(By, list, DataFrame)
@@ -182,7 +183,7 @@ def get_grouper(c, grouper, df):
     return grouper
 
 
-@dispatch(By, (Column, ColumnWise, Series), NDFrame)
+@dispatch(By, (RowWise, Series), NDFrame)
 def get_grouper(c, grouper, df):
     return compute(grouper, {c.child: df})
 

@@ -533,6 +533,7 @@ def test_nested_transform():
     df['date'] = df.timestamp.map(lambda x: x.date())
     assert str(result) == str(df)
 
+
 def test_like():
     expr = t.like(name='Alice*')
     expected = DataFrame([['Alice', 100, 1],
@@ -541,3 +542,19 @@ def test_like():
 
     result = compute(expr, df).reset_index(drop=True)
     assert (result == expected).all().all()
+
+
+def test_rowwise_by():
+    f = lambda _, id, name: id + len(name)
+    expr = by(t.map(f), t.amount.sum())
+
+    df = pd.DataFrame({'id': [1, 1, 2],
+                       'name': ['alice', 'wendy', 'bob'],
+                       'amount': [100, 200, 300.03]})
+    expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=['index',
+                                                              'amount_sum'])
+
+    result = compute(expr, df)
+    assert expected.index.tolist() == result.index.tolist()
+    assert expected.columns.tolist() == result.columns.tolist()
+    assert expected.values.tolist() == result.values.tolist()
