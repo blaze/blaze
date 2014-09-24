@@ -11,6 +11,7 @@ def normalize(r):
     """
     return '^' + r.lstrip('^').rstrip('$') + '$'
 
+
 class RegexDispatcher(object):
     """
     Regular Expression Dispatcher
@@ -42,7 +43,6 @@ class RegexDispatcher(object):
         self.name = name
         self.funcs = dict()
         self.priorities = dict()
-
 
     def add(self, regex, func, priority=10):
         self.funcs[normalize(regex)] = func

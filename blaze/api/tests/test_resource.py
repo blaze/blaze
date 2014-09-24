@@ -100,7 +100,6 @@ class TestResource(TestCase):
                               HDF5)
 
 
-
 class TestInto(TestCase):
     def test_into(self):
         with filetext('1,1\n2,2', extension='.csv') as a:
