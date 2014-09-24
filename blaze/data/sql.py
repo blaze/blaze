@@ -401,12 +401,8 @@ class MySQL(SQL, SQLIntoMixin):
                     IGNORE {skiprows} LINES;"""
         sql_stmnt = sql_stmnt.format(**kwargs)
 
-        try:
-            with self.engine.begin() as conn:
-                conn.execute(sql_stmnt)
-        except sqlalchemy.exc.InternalError as e:
-            warnings.warn(str(e))
-            self.extend(b)
+        with self.engine.begin() as conn:
+            conn.execute(sql_stmnt)
         return self
 
 
