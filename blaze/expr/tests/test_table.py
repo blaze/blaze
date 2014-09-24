@@ -471,6 +471,11 @@ def test_by():
     assert str(r.schema[0]['name']) == 'string'
 
 
+def test_by_of_non_reductions():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    assert by(t.name, t.head()).dshape == t.dshape
+
+
 def test_by_summary():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     a = by(t['name'], sum=sum(t['amount']))
@@ -582,7 +587,7 @@ def test_apply():
     l = Apply(sum, t['amount'])
     assert s.dshape == dshape('real')
     assert r.schema == dshape("float64")
-    
+
     with pytest.raises(TypeError):
         s.schema
     with pytest.raises(NotImplementedError):
