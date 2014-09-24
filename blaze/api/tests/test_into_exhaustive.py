@@ -9,7 +9,7 @@ from pandas import DataFrame
 from blaze.api.into import into
 from blaze.api.into import degrade_numpy_dtype_to_python, numpy_ensure_bytes
 from blaze.utils import tmpfile
-from blaze import Table
+from blaze import Table, resource
 import bcolz
 from blaze.data import CSV
 from blaze.sql import SQL
@@ -132,8 +132,9 @@ def test_into_empty_sql():
     """ Test all sources into empty SQL database """
     sources = [v for k, v in data if k not in [list]]
     for a in sources:
-            sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
-            assert normalize(into(sql_empty, a)) == normalize(sql)
+        sql_empty = resource('sqlite:///:memory:', 'accounts',
+                             schema=sql_schema)
+        assert normalize(into(sql_empty, a)) == normalize(sql)
 
 
 def test_expressions():
