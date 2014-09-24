@@ -324,7 +324,8 @@ def compute_up(t, seq, **kwargs):
     if isinstance(t.apply, TableExpr):
         grouper = rrowfunc(t.grouper, t.child)
         groups = groupby(grouper, seq)
-        return concat(compute(t.apply, group) for group in groups.values())
+        return concat(compute(t.apply, {t.child: group})
+                        for group in groups.values())
 
     elif ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
