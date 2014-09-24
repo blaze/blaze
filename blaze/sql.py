@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from .compute.sql import select
-from .data.sql import SQL, dispatch
+from .data.sql import SQL, dispatch, SQLite, PostGreSQL, MySQL
 from .expr import Expr, TableExpr, Projection, Column, UnaryOp, BinOp, Join
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
@@ -18,13 +18,16 @@ __all__ = ['compute_up', 'SQL']
 def compute_up(t, ddesc, **kwargs):
     return compute_up(t, ddesc.table, **kwargs)
 
+
 @dispatch((BinOp, Join), SQL, sa.sql.Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
     return compute_up(t, lhs.table, rhs, **kwargs)
 
+
 @dispatch((BinOp, Join), sa.sql.Selectable, SQL)
 def compute_up(t, lhs, rhs, **kwargs):
     return compute_up(t, lhs, rhs.table, **kwargs)
+
 
 @dispatch((BinOp, Join), SQL, SQL)
 def compute_up(t, lhs, rhs, **kwargs):
@@ -80,9 +83,20 @@ def create_index(s, columns, name=None, unique=False):
     args += tuple(getattr(s.table.c, column) for column in columns)
     sa.Index(*args, unique=unique).create(s.engine)
 
-@resource.register('(sqlite|postgresql|mysql|mysql\+pymysql)://.*')
-def resource_sql(uri, table_name, *args, **kwargs):
-    return SQL(uri, table_name, *args, **kwargs)
+
+@resource.register('sqlite://.*')
+def resource_sql(*args, **kwargs):
+    return SQLite(*args, **kwargs)
+
+
+@resource.register('postgresql://.*')
+def resource_sql(*args, **kwargs):
+    return PostGreSQL(*args, **kwargs)
+
+
+@resource.register('(mysql(\+pymysql)?)://.*')
+def resource_sql(*args, **kwargs):
+    return MySQL(*args, **kwargs)
 
 
 @resource.register('impala://.*')
