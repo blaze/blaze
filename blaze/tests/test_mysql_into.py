@@ -6,7 +6,7 @@ pymysql = pytest.importorskip('pymysql')
 
 import sqlalchemy
 
-from blaze import SQL, CSV, drop
+from blaze import SQL, CSV, drop, resource
 from blaze.api.into import into
 from blaze.utils import filetext, assert_allclose
 from blaze.compatibility import xfail
@@ -49,7 +49,7 @@ def complex_csv():
 @pytest.yield_fixture
 def sql(csv):
     name = 'test_table'
-    s = SQL(url, name, schema=csv.schema)
+    s = resource(url, name, schema=csv.schema)
     engine = s.engine
     yield s
     metadata = sqlalchemy.MetaData()
@@ -61,7 +61,7 @@ def sql(csv):
 @pytest.yield_fixture
 def float_sql(float_csv):
     name = 'float_table'
-    s = SQL(url, name, schema=float_csv.schema)
+    s = resource(url, name, schema=float_csv.schema)
     engine = s.engine
     yield s
     metadata = sqlalchemy.MetaData()
@@ -73,7 +73,7 @@ def float_sql(float_csv):
 @pytest.yield_fixture
 def complex_sql(complex_csv):
     name = 'complex_test_table'
-    s = SQL(url, name, schema=complex_csv.schema)
+    s = resource(url, name, schema=complex_csv.schema)
     engine = s.engine
     yield s
     metadata = sqlalchemy.MetaData()
