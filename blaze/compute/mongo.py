@@ -260,9 +260,9 @@ def post_compute(e, q, d):
     dicts = q.coll.aggregate(list(q.query))['result']
 
     if e.iscolumn:
-        return list(pluck(e.columns[0], dicts)) # dicts -> values
+        return list(pluck(e.columns[0], dicts, default=None)) # dicts -> values
     else:
-        return list(pluck(e.columns, dicts))    # dicts -> tuples
+        return list(pluck(e.columns, dicts, default=None))    # dicts -> tuples
 
 
 def name(e):

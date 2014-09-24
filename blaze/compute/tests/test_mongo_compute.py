@@ -6,7 +6,7 @@ pymongo = pytest.importorskip('pymongo')
 from datetime import datetime
 from toolz import pluck
 
-from blaze import into, compute, compute_up
+from blaze import into, compute, compute_up, discover, dshape
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import TableSymbol, by
@@ -53,6 +53,18 @@ def big_bank(db):
 def bank(db, bank_raw):
     coll = db.tmp_collection
     coll = into(coll, bank_raw)
+    yield coll
+    coll.drop()
+
+
+@pytest.yield_fixture
+def missing_vals(db):
+    data = [{'x': 1, 'z': 100},
+            {'x': 2, 'y': 20, 'z': 200},
+            {'x': 3, 'z': 300},
+            {'x': 4, 'y': 40}]
+    coll = db.tmp_collection
+    coll = into(coll, data)
     yield coll
     coll.drop()
 
@@ -240,3 +252,10 @@ def test_like_mulitple_no_match(bigt, big_bank):
     expr = bigt.like(name='*York*', city='*Bob*')
     result = compute(expr, big_bank)
     assert not set(result)
+
+
+def test_missing_values(p, missing_vals):
+    assert discover(missing_vals).subshape[0] == \
+            dshape('{x: int64, y: ?int64, z: ?int64}')
+
+    assert set(compute(p.y, missing_vals)) == set([None, 20, None, 40])
