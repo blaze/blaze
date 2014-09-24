@@ -26,7 +26,7 @@ import sys
 import math
 
 from ..dispatch import dispatch
-from ..expr.table import TableSymbol
+from ..expr.table import TableSymbol, TableExpr
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
                           By, Sort, Head, Apply, Union, Summary, Like)
@@ -321,7 +321,12 @@ def reduce_by_funcs(t):
 
 @dispatch(By, Sequence)
 def compute_up(t, seq, **kwargs):
-    if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
+    if isinstance(t.apply, TableExpr):
+        grouper = rrowfunc(t.grouper, t.child)
+        groups = groupby(grouper, seq)
+        return concat(compute(t.apply, group) for group in groups.values())
+
+    elif ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
