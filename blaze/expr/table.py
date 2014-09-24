@@ -964,15 +964,18 @@ class By(TableExpr):
 
     @property
     def schema(self):
-        group = self.grouper.schema[0].parameters[0]
-        reduction_name = type(self.apply).__name__
-        apply = self.apply.dshape[0].parameters[0]
-        params = unique(group + apply, key=lambda x: x[0])
+        if isinstance(self.apply, (Summary, Reduction)):
+            group = self.grouper.schema[0].parameters[0]
+            reduction_name = type(self.apply).__name__
+            apply = self.apply.dshape[0].parameters[0]
+            params = unique(group + apply, key=lambda x: x[0])
 
-        return dshape(Record(list(params)))
+            return dshape(Record(list(params)))
+        else:
+            return self.child.schema
 
 
-@dispatch(TableExpr, (Summary, Reduction))
+@dispatch(TableExpr, Expr)
 def by(grouper, apply):
     return By(grouper, apply)
 

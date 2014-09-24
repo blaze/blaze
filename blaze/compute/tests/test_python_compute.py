@@ -163,6 +163,29 @@ def test_by_three():
     assert set(result) == set(expected)
 
 
+def test_by_head():
+    result = compute(by(tbig.name, tbig.head(2)), databig)
+    expected = [('Alice', 'F', 100, 1),
+                ('Alice', 'F', 100, 3),
+                ('Drew', 'F', 100, 4),
+                ('Drew', 'M', 100, 5)]
+
+    assert set(map(tuple, result)) == set(expected)
+
+
+def test_by_apply_non_trivial_child():
+    from blaze import transform
+    t2 = tbig[['name', 'amount']]
+    t2 = transform(t2, amount=t2.amount + 1)
+
+    result = compute(by(t2.name, t2.head(2)), databig)
+    expected = [('Alice', 101),
+                ('Alice', 101),
+                ('Drew',  101),
+                ('Drew',  101)]
+
+    assert set(map(tuple, result)) == set(expected)
+
 def test_works_on_generators():
     assert list(compute(t['amount'], iter(data))) == \
             [x[1] for x in data]

@@ -3,9 +3,10 @@ from __future__ import absolute_import, division, print_function
 import sys
 from operator import itemgetter
 import operator
-from toolz import compose, identity
+from toolz import compose, identity, curry
 from collections import Iterator
 
+from blaze.expr import Expr, UnaryOp
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
@@ -25,7 +26,7 @@ __all__ = ['RDD', 'pyspark', 'SparkContext']
 try:
     from pyspark import SparkContext
     import pyspark
-    from pyspark.rdd import RDD
+    from pyspark.rdd import RDD, ResultIterable
 except ImportError:
     #Create a dummy RDD for py 2.6
     class Dummy(object):
@@ -34,6 +35,7 @@ except ImportError:
     pyspark = Dummy()
     pyspark.rdd = Dummy()
     RDD = Dummy
+    ResultIterable = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it
@@ -145,7 +147,7 @@ python_reductions = {
               table.nunique: lambda x: len(set(x))}
 
 @dispatch(By, RDD)
-def compute_up(t, rdd, **kwargs):
+def compute_up(t, rdd, scope=None, **kwargs):
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):
@@ -170,9 +172,24 @@ def compute_up(t, rdd, **kwargs):
 
 
         d = reduceby(grouper, binop, seq, initial)
+    elif isinstance(t.apply, TableExpr):
+        grouper = rrowfunc(t.grouper, t.child)
+        chunk = TableSymbol('chunk', t.child.schema, t.iscolumn)
+        chunk_apply = t.apply.subs({t.child: chunk})
+
+        def f(kv_pair):
+            key, group = kv_pair
+            return compute(chunk_apply, {chunk: group})
+
+        return rdd.groupBy(grouper).flatMap(f)
     else:
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
+
+
+@dispatch((UnaryOp, Expr), ResultIterable)
+def compute_up(expr, ri, **kwargs):
+    return compute_up(expr, list(ri), **kwargs)
 
 
 @dispatch((Label, ReLabel), RDD)
