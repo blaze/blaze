@@ -16,8 +16,6 @@ addons:
 
 services:
     - mongodb
-    - postgres
-    - mysql
 
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
@@ -89,9 +87,10 @@ install:
   - python setup.py install
 
 before_script:
-  - sed -i '/[mysqld]/a tmpdir = /tmp/' /etc/mysql/my.cnf
+  - sudo sed -i '/[mysqld]/a tmpdir = /tmp/' /etc/mysql/my.cnf
   - sudo restart mysql
   - mysql -e 'create database test'
+  - psql -c 'create database test;' -U postgres
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
 

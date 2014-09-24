@@ -94,7 +94,7 @@ def resource_sql(*args, **kwargs):
     return PostGreSQL(*args, **kwargs)
 
 
-@resource.register('(mysql(\+pymysql)?)://.*')
+@resource.register('mysql(\+pymysql)?://.*')
 def resource_sql(*args, **kwargs):
     return MySQL(*args, **kwargs)
 
