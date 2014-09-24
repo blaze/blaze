@@ -426,8 +426,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
     elif dbtype.startswith('mysql'):
         import pymysql
-        conn = sql.engine.raw_connection()
-        cursor = conn.cursor()
 
         # no null handling
         sql_stmnt = """
@@ -442,16 +440,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
                     IGNORE {skiprows} LINES;"""
         sql_stmnt = sql_stmnt.format(**copy_info)
         try:
-            cursor.execute(sql_stmnt)
-        except pymysql.err.InternalError as e:
-            conn.rollback()
+            with sql.engine.begin() as conn:
+                conn.execute(sql_stmnt)
+        except sqlalchemy.exc.InternalError as e:
             warnings.warn(str(e))
             sql.extend(csv)
-        except:
-            conn.rollback()
-            raise
-        else:
-            conn.commit()
     else:
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")

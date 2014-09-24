@@ -83,14 +83,13 @@ def complex_sql(complex_csv):
 
 
 def test_csv_postgres_load(sql, csv):
-    engine = sql.engine
-    conn = engine.raw_connection()
-    cursor = conn.cursor()
     full_path = os.path.abspath(csv.path)
+    assert os.path.exists(csv.path)
+    assert os.path.exists(full_path)
     load = (r"LOAD DATA INFILE '{0}' INTO TABLE {1} FIELDS TERMINATED BY ',' "
             "lines terminated by '\n'").format(full_path, sql.tablename)
-    cursor.execute(load)
-    conn.commit()
+    with sql.engine.begin() as conn:
+        conn.execute(load)
 
 
 def test_simple_into(sql, csv):
