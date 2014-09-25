@@ -2,7 +2,7 @@
 Examples
 ========
 
-Blaze can help solve many common problems that data analysts and scientists encounter. Here are a few examples of common issues that can be solved using blaze.
+Blaze can help solve many common problems that data analysts and scientists encounter. Here are a few examples of common issues that can be solved using  blaze.
 
 --------------------------------------
 Combining separate, gzipped csv files.
