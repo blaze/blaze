@@ -16,7 +16,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         Summary, count, ScalarSymbol, like, Like,
                         special_attributes)
 from blaze.expr.table import _expr_child, unpack, max, min
-from blaze.compatibility import PY3
+from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -935,7 +935,7 @@ def test_invalid_date_attribute(attr):
 @pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
 def test_date_attribute_completion(attr):
     t = TableSymbol('t', '{name: string, when: datetime}')
-    d = dir(t.when)
-    assert len(set(d)) == len(d)
-    assert attr in d
+    assert attr in dir(t.when)
     assert attr not in dir(t.name)
+    assert not builtins.all([x.startswith('__') and x.endswith('__')
+                            for x in dir(t.name)])
