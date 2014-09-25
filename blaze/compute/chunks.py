@@ -302,7 +302,7 @@ def resource_glob(uri, skip=None, **kwargs):
     if skip is None:
         return ChunkList([resource(uri, **kwargs) for uri in uris])
 
-    assert all(isinstance(Exception, s) for s in
+    assert all(isinstance(s, Exception) for s in
                ([skip] if not isinstance(skip, Iterable) else skip)), \
         'skip parameter must consist of subclasses of Exception'
 
