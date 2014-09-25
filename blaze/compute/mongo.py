@@ -61,7 +61,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
                     Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
-                    Like, Arithmetic, ColumnWise)
+                    Like, Arithmetic, ColumnWise, DateTime, Microsecond)
 from ..expr.core import Expr
 from ..compatibility import _strtypes
 
@@ -108,7 +108,7 @@ class MongoQuery(object):
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Apply, Distinct, RowWise, By, Like, Attribute),
+           Head, ReLabel, Apply, Distinct, RowWise, By, Like, DateTime),
           Collection)
 def compute_up(e, coll, **kwargs):
     return compute_up(e, MongoQuery(coll, []))
@@ -278,13 +278,18 @@ def compute_up(t, q, **kwargs):
     return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
 
 
-@dispatch(Attribute, MongoQuery)
+@dispatch(DateTime, MongoQuery)
 def compute_up(expr, q, **kwargs):
     attr = expr.attr
     d = {'$project': {expr.column:
                       {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
                        '$%s' % expr.child.column}}}
     return q.append(d)
+
+
+@dispatch(Microsecond, MongoQuery)
+def compute_up(expr, q, **kwargs):
+    raise NotImplementedError('MongoDB does not support the microsecond field')
 
 
 @dispatch(Expr, Collection, dict)

@@ -916,7 +916,7 @@ def test_count_values():
 
 
 @pytest.mark.parametrize('attr, dshape', sorted(special_attributes.items()))
-def test_attribute(attr, dshape):
+def test_date_attribute(attr, dshape):
     t = TableSymbol('t', '{name: string, when: datetime}')
     expr = getattr(t.when, attr)
     result = str(expr)
@@ -926,14 +926,14 @@ def test_attribute(attr, dshape):
 
 
 @pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
-def test_invalid_attribute(attr):
+def test_invalid_date_attribute(attr):
     t = TableSymbol('t', '{name: string, when: datetime}')
     with pytest.raises(AttributeError):
         getattr(t.name, attr)
 
 
 @pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
-def test_attribute_completion(attr):
+def test_date_attribute_completion(attr):
     t = TableSymbol('t', '{name: string, when: datetime}')
     assert attr in dir(t.when)
     assert attr not in dir(t.name)

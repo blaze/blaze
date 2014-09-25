@@ -30,7 +30,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, TableExpr, std, var, Like,
-                    RowWise, Attribute, Millisecond)
+                    RowWise, DateTime, Millisecond)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -396,7 +396,7 @@ def get_date_attr(s, attr):
         return getattr(pd.DatetimeIndex(s), attr)
 
 
-@dispatch(Attribute, Series)
+@dispatch(DateTime, Series)
 def compute_up(expr, s, **kwargs):
     return get_date_attr(s, expr.attr)
 

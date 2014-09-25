@@ -30,7 +30,7 @@ from ..expr.table import TableSymbol
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
                           By, Sort, Head, Apply, Union, Summary, Like,
-                          Attribute, Date, Time, Millisecond)
+                          DateTime, Date, Time, Millisecond)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -130,7 +130,7 @@ def rowfunc(t):
     return identity
 
 
-@dispatch(Attribute)
+@dispatch(DateTime)
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)
 
