@@ -299,7 +299,7 @@ def post_compute(e, q, d):
     """Compute the result of a columnwise expression.
     """
     columns = dict((col, 1) for qry in q.query
-                   for col in qry.pop('$project', []))
+                   for col in qry.get('$project', []))
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in columns))}
     q = q.append(d)
