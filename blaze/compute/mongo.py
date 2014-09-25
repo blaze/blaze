@@ -62,7 +62,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
                     Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
-                    Like, Relational, Arithmetic, ColumnWise)
+                    Like, Arithmetic, ColumnWise)
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
@@ -124,8 +124,8 @@ def compute_up(t, q, **kwargs):
 
 
 @dispatch(ColumnWise, MongoQuery)
-def compute_one(t, q, **kwargs):
-    return q.append(compute_one(t.expr, q, **kwargs))
+def compute_up(t, q, **kwargs):
+    return q.append(compute_up(t.expr, q, **kwargs))
 
 
 @dispatch((basestring, ScalarSymbol))
@@ -149,7 +149,7 @@ def op_label(t):
 
 
 @dispatch(Arithmetic, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     lhs, rhs = t.lhs, t.rhs
     mexpr = {m('project'): {str(t): {m(binops[t.op]): [m(lhs), m(rhs)]}}}
     return mexpr
