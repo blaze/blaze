@@ -41,6 +41,7 @@ Index
    install
    overview
    quickstart
+   examples
    data
    expressions
    backends
@@ -49,7 +50,6 @@ Index
    api
    dev_workflow
    expr-compute-dev
-   examples
 
 Older Versions
 ~~~~~~~~~~~~~~
