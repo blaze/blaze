@@ -457,10 +457,10 @@ class Column(ColumnSyntaxMixin, Projection):
             raise ValueError("Column Mismatch: %s" % key)
 
     def __dir__(self):
-        cur = dir(super(Column, self))
+        cur = super(Column, self).__dir__()
         if not self.isdatelike:
             return cur
-        return cur + sorted(special_attributes.keys())
+        return sorted(set(cur + list(special_attributes.keys())))
 
     def __getattr__(self, key):
         try:
