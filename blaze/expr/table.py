@@ -26,8 +26,8 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary Like like Attribute
-special_attributes'''.split()
+projection union columnwise Summary summary Like like Attribute Date Time
+Millisecond special_attributes'''.split()
 
 
 _datelike = frozenset((datashape.date_, datashape.datetime_))

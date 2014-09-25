@@ -30,7 +30,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, TableExpr, std, var, Like,
-                    RowWise, Attribute)
+                    RowWise, Attribute, Millisecond)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -388,14 +388,19 @@ def compute_up(expr, df, **kwargs):
     return df[np.logical_and.reduce(arrs)]
 
 
+def get_date_attr(s, attr):
+    try:
+        # new in pandas 0.15
+        return getattr(s.dt, attr)
+    except AttributeError:
+        return getattr(pd.DatetimeIndex(s), attr)
+
+
 @dispatch(Attribute, Series)
 def compute_up(expr, s, **kwargs):
-    def getter(s, attr):
-        try:
-            return getattr(s.dt, attr)
-        except AttributeError:
-            return getattr(pd.DatetimeIndex(s), attr)
-    attr = expr.attr
-    if attr == 'millisecond':
-        return getter(s, 'microsecond') // 1000
-    return getter(s, attr)
+    return get_date_attr(s, expr.attr)
+
+
+@dispatch(Millisecond, Series)
+def compute_up(_, s, **kwargs):
+    return get_date_attr(s, 'microsecond') // 1000

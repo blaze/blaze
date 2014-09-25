@@ -5,19 +5,19 @@ import operator
 import pytest
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc, Sequence, reduce_by_funcs
+from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
+                                  reduce_by_funcs)
 from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std, special_attributes)
+                        count, scalar, std, head, special_attributes)
 import numpy as np
 
 from blaze import cos, sin
 from blaze.compatibility import builtins
 from blaze.utils import raises
 
-from toolz import identity
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 

@@ -30,7 +30,7 @@ from ..expr.table import TableSymbol
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
                           By, Sort, Head, Apply, Union, Summary, Like,
-                          Attribute)
+                          Attribute, Date, Time, Millisecond)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -132,14 +132,17 @@ def rowfunc(t):
 
 @dispatch(Attribute)
 def rowfunc(t):
-    attr = t.attr
-    is_milli = attr == 'millisecond'
+    return lambda row: getattr(row, t.attr)
 
-    def f(row):
-        x = getattr(row, attr if not is_milli else 'microsecond')
-        v = x() if callable(x) else x
-        return v // 1000 if is_milli else v
-    return f
+
+@dispatch((Date, Time))
+def rowfunc(t):
+    return lambda row: getattr(row, t.attr)()
+
+
+@dispatch(Millisecond)
+def rowfunc(_):
+    return lambda row: getattr(row, 'microsecond') // 1000
 
 
 def concat_maybe_tuples(vals):
