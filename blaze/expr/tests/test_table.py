@@ -935,5 +935,7 @@ def test_invalid_date_attribute(attr):
 @pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
 def test_date_attribute_completion(attr):
     t = TableSymbol('t', '{name: string, when: datetime}')
-    assert attr in dir(t.when)
+    d = dir(t.when)
+    assert len(set(d)) == len(d)
+    assert attr in d
     assert attr not in dir(t.name)

@@ -61,7 +61,8 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, TableExpr,
                     Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
-                    Like, Arithmetic, ColumnWise, DateTime, Microsecond)
+                    Like, Arithmetic, ColumnWise, DateTime, Microsecond, Date,
+                    Time)
 from ..expr.core import Expr
 from ..compatibility import _strtypes
 
@@ -287,9 +288,10 @@ def compute_up(expr, q, **kwargs):
     return q.append(d)
 
 
-@dispatch(Microsecond, MongoQuery)
+@dispatch((Date, Time, Microsecond), MongoQuery)
 def compute_up(expr, q, **kwargs):
-    raise NotImplementedError('MongoDB does not support the microsecond field')
+    raise NotImplementedError('MongoDB does not support the %r field' %
+                              type(expr).__name__.lower())
 
 
 @dispatch(Expr, Collection, dict)

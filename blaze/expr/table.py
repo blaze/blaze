@@ -86,7 +86,6 @@ class TableExpr(Expr):
         else:
             return dshape(ds)
 
-
     def __getitem__(self, key):
         if isinstance(key, (list, basestring, unicode)):
             return self.project(key)

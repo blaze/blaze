@@ -338,7 +338,8 @@ class TestDateAttr(object):
 
     # mongo doesn't implement date or time
     @pytest.mark.parametrize('attr, dshape',
-                             [pytest.mark.xfail((k, v))
+                             [pytest.mark.xfail((k, v),
+                                                raises=NotImplementedError)
                               if k in ('date', 'time', 'microsecond') else (k, v)
                               for k, v in sorted(special_attributes.items())])
     def test_attrs(self, attr_data, t, attr, dshape):
