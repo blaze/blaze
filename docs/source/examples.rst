@@ -80,8 +80,8 @@ Split-Apply-Combine
    ...
    >>> by(t.species, max=t.petal_length.max(), min=t.petal_length.min())
               species  max  min
-   0      Iris-setosa  6.9    1
-   1  Iris-versicolor  6.9    1
-   2   Iris-virginica  6.9    1
+   0      Iris-setosa  1.9  1.0
+   1  Iris-versicolor  5.1  3.0
+   2   Iris-virginica  6.9  4.5
 
 
