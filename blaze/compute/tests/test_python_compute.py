@@ -104,7 +104,6 @@ def reduction_runner(funcs):
     from blaze.compatibility import builtins as bts
     exprs = sum, min, max
     for blaze_expr, py_func in itertools.product(exprs, funcs):
-        import pdb; pdb.set_trace
         f = getattr(operator, py_func)
         reduc_f = getattr(bts, blaze_expr.__name__)
         ground_truth = f(reduc_f([100, 200, 50]), 5)
