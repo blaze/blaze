@@ -5,12 +5,12 @@ import operator
 import sys
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc, rowfunc, Sequence
+from blaze.compute.python import nunique, mean, rrowfunc, rowfunc, Sequence, reduce_by_funcs
 from blaze import dshape
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std)
+                        count, scalar, std, head)
 import numpy as np
 
 from blaze import cos, sin
@@ -39,11 +39,14 @@ databig = [['Alice', 'F', 100, 1],
 
 def test_dispatched_rowfunc():
     cw = t['amount'] + 100
-    assert rowfunc(t) == identity
-    if sys.version_info[0] == 3:
-        assert 'apply' in str(rowfunc(cw)) 
-    elif sys.version_info[0] == 2:
-        assert 'apply' not in str(rowfunc(cw))
+    assert rowfunc(t)(t) == t
+    assert rowfunc(cw)(('Alice', 100, 1)) == 200
+
+
+def test_reduce_by_funcs():
+    e = summary(number=t.id.max(), sum=t.amount.sum())
+    b = by(t, e)
+    assert reduce_by_funcs(b)[2]([1,2,3], [4,5,6]) == (1, 7)
 
 
 def test_table():
@@ -101,6 +104,7 @@ def reduction_runner(funcs):
     from blaze.compatibility import builtins as bts
     exprs = sum, min, max
     for blaze_expr, py_func in itertools.product(exprs, funcs):
+        import pdb; pdb.set_trace
         f = getattr(operator, py_func)
         reduc_f = getattr(bts, blaze_expr.__name__)
         ground_truth = f(reduc_f([100, 200, 50]), 5)
@@ -299,6 +303,10 @@ def test_fancy_sort():
 
 def test_head():
     assert list(compute(t.head(1), data)) == [data[0]]
+
+    e = head(t, 101)
+    p = list(range(1000))
+    assert len(list(compute(e, p))) == 101
 
 
 def test_graph_double_join():
@@ -536,6 +544,7 @@ def test_by_then_sort_dict_items_sequence():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert compute(expr, data) == (3, 350)
+    assert compute(expr, iter(data)) == (3, 350)
 
 
 def test_summary_by():
