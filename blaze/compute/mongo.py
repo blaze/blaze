@@ -48,14 +48,13 @@ import operator as op
 import numbers
 
 try:
-    import pymongo
     from pymongo.collection import Collection
 except ImportError:
     Collection = type(None)
 
 import fnmatch
 from datashape import Record
-from toolz import pluck
+from toolz import pluck, first
 import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
@@ -64,6 +63,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
                     Like, Arithmetic, ColumnWise)
 from ..expr.core import Expr
+from ..compatibility import _strtypes
 
 from ..dispatch import dispatch
 
@@ -128,7 +128,7 @@ def compute_up(t, q, **kwargs):
     return q.append(compute_up(t.expr, q, **kwargs))
 
 
-@dispatch((basestring, ScalarSymbol))
+@dispatch((_strtypes, ScalarSymbol))
 def m(s):
     return '$%s' % s
 
@@ -140,19 +140,13 @@ def m(s):
 
 binops = {op.add: 'add',
           op.mul: 'multiply',
-          op.div: 'divide',
+          op.truediv: 'divide',
           op.sub: 'subtract'}
-
-
-def op_label(t):
-    return '%s(%s, %s)' % (t.op.__name__, t.lhs, t.rhs)
 
 
 @dispatch(Arithmetic, MongoQuery)
 def compute_up(t, q, **kwargs):
-    lhs, rhs = t.lhs, t.rhs
-    mexpr = {m('project'): {str(t): {m(binops[t.op]): [m(lhs), m(rhs)]}}}
-    return mexpr
+    return {m('project'): {str(t): {m(binops[t.op]): [m(t.lhs), m(t.rhs)]}}}
 
 
 @dispatch(Projection, MongoQuery)
@@ -289,25 +283,30 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
-    try:
-        columns = e.active_columns()
-    except AttributeError:
-        columns = e.columns
-    expr_columns = dict((col, 1) for qry in q.query
-                        for col in qry.get('$project', []))
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
-                                 dict((col, 1) for col in columns),
-                                 expr_columns)}
+                                 dict((col, 1) for col in e.columns))}
     q = q.append(d)
     dicts = q.coll.aggregate(list(q.query))['result']
 
     if e.iscolumn:
-        try:
-            return list(pluck(columns[0], dicts)) # dicts -> values
-        except KeyError:
-            return list(pluck(columns, dicts))
+        return list(pluck(e.columns[0], dicts, default=None))  # dicts -> values
     else:
-        return list(pluck(columns, dicts))    # dicts -> tuples
+        return list(pluck(e.columns, dicts, default=None))  # dicts -> tuples
+
+
+@dispatch(ColumnWise, MongoQuery, dict)
+def post_compute(e, q, d):
+    """Compute the result of a columnwise expression.
+    """
+    columns = dict((col, 1) for qry in q.query
+                   for col in qry.pop('$project', []))
+    d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
+                                 dict((col, 1) for col in columns))}
+    q = q.append(d)
+    dicts = q.coll.aggregate(list(q.query))['result']
+
+    assert len(columns) == 1
+    return list(pluck(first(columns.keys()), dicts))
 
 
 def name(e):
