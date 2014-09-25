@@ -22,18 +22,19 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr import *
-from toolz import map, partition_all, reduce
-import numpy as np
-import math
-from collections import Iterator
+from toolz import partition_all
+from collections import Iterator, Iterable
 from toolz import concat, first
 from cytoolz import unique
 from datashape import var, isdimension
 import pandas as pd
+from ..api.resource import resource
+from glob import glob
+from pandas import DataFrame
+import pandas
 
-from ..compatibility import builtins
+
 from ..dispatch import dispatch
-from .core import compute
 from ..data.core import DataDescriptor
 from ..expr.split import split
 
@@ -264,9 +265,6 @@ def into(a, b):
     return type(a)(concat((into(a, chunk) for chunk in b)))
 
 
-from pandas import DataFrame
-import pandas
-
 @dispatch(DataFrame, ChunkIterator)
 def into(df, b, **kwargs):
     chunks = [into(df, chunk, **kwargs) for chunk in b]
@@ -291,11 +289,8 @@ class ChunkList(ChunkIndexable):
         return iter(self.data)
 
 
-from ..api.resource import resource
-from glob import glob
-
 @resource.register('.*\*.*', priority=14)
-def resource_glob(uri, **kwargs):
+def resource_glob(uri, skip=None, **kwargs):
     uris = sorted(glob(uri))
 
     first = resource(uris[0], **kwargs)
@@ -304,4 +299,19 @@ def resource_glob(uri, **kwargs):
     if hasattr(first, 'schema'):
         kwargs['schema'] = first.schema
 
-    return ChunkList([resource(uri, **kwargs) for uri in uris])
+    if skip is None:
+        return ChunkList([resource(uri, **kwargs) for uri in uris])
+
+    assert all(isinstance(Exception, s) for s in
+               ([skip] if not isinstance(skip, Iterable) else skip)), \
+        'skip parameter must consist of subclasses of Exception'
+
+    resources = []
+    for uri in uris:
+        try:
+            r = resource(uri, **kwargs)
+        except skip:
+            pass
+        else:
+            resources.append(r)
+    return ChunkList(resources)

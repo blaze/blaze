@@ -1,5 +1,6 @@
 import os
 import pytest
+import pandas as pd
 from blaze.api.resource import resource
 from blaze.data import CSV, Excel, SQL, HDF5
 from blaze.api.into import into
@@ -107,6 +108,39 @@ class TestResource(TestCase):
                                        schema='{a: int, b: int}'),
                               HDF5)
 
+    def test_csv_glob(self):
+        files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b\n5,6\n7,8'}
+        for filename, data in files.items():
+            with open(filename, mode='wb') as f:
+                f.write(data)
+        try:
+            csvs = resource(os.path.join(os.curdir, '*.csv'))
+            result = into(pd.DataFrame, csvs)
+            assert result.values.tolist() == [[1, 2], [3, 4], [5, 6], [7, 8]]
+            assert result.columns.tolist() == list('ab')
+            assert result.index.tolist() == list(range(len(result)))
+        finally:
+            for k in files:
+                os.remove(os.path.join(os.curdir, k))
+
+    def test_csv_glob_bad(self):
+        files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b'}
+        for filename, data in files.items():
+            with open(filename, mode='wb') as f:
+                f.write(data)
+
+        with pytest.raises(pd.io.parsers._parser.CParserError):
+            resource(os.path.join(os.curdir, '*.csv'))
+        try:
+            csvs = resource(os.path.join(os.curdir, '*.csv'),
+                            skip=pd.io.parsers._parser.CParserError)
+            result = into(pd.DataFrame, csvs)
+            assert result.values.tolist() == [[1, 2], [3, 4]]
+            assert result.columns.tolist() == list('ab')
+            assert result.index.tolist() == list(range(len(result)))
+        finally:
+            for k in files:
+                os.remove(os.path.join(os.curdir, k))
 
 class TestInto(TestCase):
     def test_into(self):
