@@ -164,6 +164,24 @@ def test_columnwise(p, points):
     assert set(compute(p.x + p.y, points)) == set([11, 22, 33, 44])
 
 
+def test_columnwise_multiple_operands(p, points):
+    expected = [x['x'] + x['y'] - x['z'] * x['x'] / 2 for x in points.find()]
+    assert set(compute(p.x + p.y - p.z * p.x / 2, points)) == set(expected)
+
+
+def test_columnwise_mod(p, points):
+    expected = [x['x'] % x['y'] - x['z'] * x['x'] / 2 + 1
+                for x in points.find()]
+    assert set(compute(p.x % p.y - p.z * p.x / 2 + 1, points)) == set(expected)
+
+
+@xfail(raises=NotImplementedError,
+       reason='MongoDB does not implement certain ''arith ops')
+def test_columnwise_pow(p, points):
+    expected = [x['x'] ** x['y'] for x in points.find()]
+    assert set(compute(p.x ** p.y, points)) == set(expected)
+
+
 def test_by_one(t, q):
     assert compute_up(by(t.name, t.amount.sum()), q).query == \
             ({'$group': {'_id': {'name': '$name'},
