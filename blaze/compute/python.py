@@ -456,16 +456,6 @@ def compute_up(expr, data, **kwargs):
                         for val in expr.values)
 
 
-@dispatch(BinOp, object, object)
-def compute_up(expr, x, y, **kwargs):
-    return expr.op(x, y)
-
-
-@dispatch(UnaryOp, object)
-def compute_up(expr, x, **kwargs):
-    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
-
-
 def like_regex_predicate(expr):
     regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
                     for name, pattern in expr.patterns.items())
