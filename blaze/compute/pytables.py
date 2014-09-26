@@ -96,7 +96,7 @@ def compute_up(r, c, **kwargs):
     return len(c)
 
 
-@dispatch(Head, tb.Table)
+@dispatch(Head, (tb.Column, tb.Table))
 def compute_up(h, t, **kwargs):
     return t[:h.n]
 
