@@ -8,8 +8,11 @@ import shutil
 import textwrap
 from fnmatch import fnmatchcase
 
-from distutils.core import Command, setup
-from distutils.util import convert_path
+try:
+    from setuptools import Command, setup, convert_path
+except ImportError:
+    from distutils.core import Command, setup
+    from distutils.util import convert_path
 
 
 #------------------------------------------------------------------------
