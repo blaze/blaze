@@ -4,7 +4,7 @@ import pytest
 pymongo = pytest.importorskip('pymongo')
 
 from datetime import datetime
-from toolz import pluck
+from toolz import pluck, reduceby, groupby
 
 from blaze import into, compute, compute_up, discover, dshape
 
@@ -246,6 +246,29 @@ def test_summary_arith(t, bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).sum())
     result = compute(expr, bank)
     assert result == [('Bob', 603), ('Alice', 302)]
+
+
+def test_summary_complex_arith(t, bank):
+    expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum())
+    result = compute(expr, bank)
+    reducer = lambda acc, x: (100 - x['amount'] * 2 / 30.0) + acc
+    expected = reduceby('name', reducer, bank.find(), 0)
+    assert set(result) == set(expected.items())
+
+
+def test_summary_complex_arith_multiple(t, bank):
+    expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum(),
+              other=t.amount.mean())
+    result = compute(expr, bank)
+    reducer = lambda acc, x: (100 - x['amount'] * 2 / 30.0) + acc
+    expected = reduceby('name', reducer, bank.find(), 0)
+
+    mu = reduceby('name', lambda acc, x: acc + x['amount'], bank.find(), 0.0)
+    values = list(mu.values())
+    items = expected.items()
+    counts = groupby('name', bank.find())
+    items = [x + (float(v) / len(counts[x[0]]),) for x, v in zip(items, values)]
+    assert set(result) == set(items)
 
 
 def test_like(t, bank):
