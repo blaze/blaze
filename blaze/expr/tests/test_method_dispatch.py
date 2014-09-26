@@ -1,4 +1,4 @@
-from blaze.expr.method_dispatch import get_methods
+from blaze.expr.method_dispatch import select_functions
 
 
 def iseven(n):
@@ -19,13 +19,19 @@ def upper(x):
 def halve(x):
     return Foo(x.data // 2)
 
+def isnine(x):
+    return True
+
 
 methods = [(int, {inc, dec}),
            (str, {lower, upper}),
-           (iseven, {halve})]
+           (iseven, {halve}),
+           (9, {isnine})]
 
 
-def test_get_methods():
-    assert get_methods(methods, 3) == {'inc': inc, 'dec': dec}
-    assert get_methods(methods, 4) == {'inc': inc, 'dec': dec, 'halve': halve}
-    assert get_methods(methods, 'A') == {'lower': lower, 'upper': upper}
+def test_select_functions():
+    assert select_functions(methods, 3) == {'inc': inc, 'dec': dec}
+    assert select_functions(methods, 4) == {'inc': inc, 'dec': dec, 'halve': halve}
+    assert select_functions(methods, 'A') == {'lower': lower, 'upper': upper}
+    assert select_functions(methods, 9) == {'inc': inc, 'dec': dec, 'isnine':
+        isnine}
