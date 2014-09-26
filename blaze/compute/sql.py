@@ -220,7 +220,6 @@ def compute_up(t, lhs, rhs, **kwargs):
         return sqlalchemy.sql.select(columns, from_obj=join)
 
 
-
 names = {mean: 'avg',
          var: 'variance',
          std: 'stdev'}
