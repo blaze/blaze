@@ -232,10 +232,12 @@ reductions = {mean: 'avg', count: 'sum'}
 def group_apply(expr):
     # TODO: implement columns variable more generally when ColumnWise works
     reducs = expr.values
-    columns = [c.child.column for c in reducs]
-    values = zip(expr.names, reducs, columns)
+    names = expr.names
+    values = [(name, c, getattr(c.child, 'column', None) or name)
+               for name, c in zip(names, reducs)]
     key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
-    query = dict((k, {key_getter(v): int(isinstance(v, count)) or '$%s' % z})
+    query = dict((k, {key_getter(v): int(isinstance(v, count)) or
+                      compute_sub(v.child.expr)})
                  for k, v, z in values)
     return query
 
