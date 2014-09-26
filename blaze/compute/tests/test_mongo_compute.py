@@ -248,6 +248,18 @@ def test_summary_arith(t, bank):
     assert result == [('Bob', 603), ('Alice', 302)]
 
 
+def test_summary_arith_min(t, bank):
+    expr = by(t.name, add_one_and_sum=(t.amount + 1).min())
+    result = compute(expr, bank)
+    assert result == [('Bob', 101), ('Alice', 101)]
+
+
+def test_summary_arith_max(t, bank):
+    expr = by(t.name, add_one_and_sum=(t.amount + 1).max())
+    result = compute(expr, bank)
+    assert result == [('Bob', 301), ('Alice', 201)]
+
+
 def test_summary_complex_arith(t, bank):
     expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum())
     result = compute(expr, bank)

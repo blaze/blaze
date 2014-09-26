@@ -225,7 +225,7 @@ def group_apply(expr):
                               % type(expr).__name__)
 
 
-reductions = {mean: 'avg', count: 'sum'}
+reductions = {mean: 'avg', count: 'sum', max: 'max', min: 'min'}
 
 
 @dispatch(Summary)
