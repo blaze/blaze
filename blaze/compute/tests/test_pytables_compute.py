@@ -208,6 +208,7 @@ class TestIndexSort(object):
 
 def test_head(data):
     assert eq(compute(t.head(2), data), x[:2])
+    assert eq(compute(t.amount.head(2), data), x['amount'][:2])
 
 
 @pytest.yield_fixture
