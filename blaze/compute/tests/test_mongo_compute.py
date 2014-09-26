@@ -172,7 +172,8 @@ def test_columnwise_multiple_operands(p, points):
 def test_columnwise_mod(p, points):
     expected = [x['x'] % x['y'] - x['z'] * x['x'] / 2 + 1
                 for x in points.find()]
-    assert set(compute(p.x % p.y - p.z * p.x / 2 + 1, points)) == set(expected)
+    expr = p.x % p.y - p.z * p.x / 2 + 1
+    assert set(compute(expr, points)) == set(expected)
 
 
 @xfail(raises=NotImplementedError,

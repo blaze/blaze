@@ -125,14 +125,14 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(ColumnWise, MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append(compute_up(t.expr, q, **kwargs))
+    return q.append({'$project': {str(t.expr): compute_sub(t.expr)}})
 
 
-binops = {op.add: 'add',
-          op.mul: 'multiply',
-          op.truediv: 'divide',
-          op.sub: 'subtract',
-          op.mod: 'mod'}
+binops = {'+': 'add',
+          '*': 'multiply',
+          '/': 'divide',
+          '-': 'subtract',
+          '%': 'mod'}
 
 
 @dispatch((_strtypes, ScalarSymbol))
@@ -148,17 +148,11 @@ def compute_sub(s):
 @dispatch(Arithmetic)
 def compute_sub(t):
     try:
-        op = binops[t.op]
+        op = binops[t.symbol]
     except KeyError:
         raise NotImplementedError('Arithmetic operation %r not implemented in '
                                   'MongoDB' % t.symbol)
-    else:
-        return {compute_sub(op): [compute_sub(t.lhs), compute_sub(t.rhs)]}
-
-
-@dispatch(Arithmetic, MongoQuery)
-def compute_up(t, q, **kwargs):
-    return {'$project': {str(t): compute_sub(t)}}
+    return {compute_sub(op): [compute_sub(t.lhs), compute_sub(t.rhs)]}
 
 
 @dispatch(Projection, MongoQuery)
