@@ -1,5 +1,8 @@
+import os
+
 from blaze.api.table import Table, compute, table_repr
 from blaze.data.python import Python
+from blaze.data import CSV
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from datashape import dshape
@@ -11,6 +14,7 @@ data = (('Alice', 100),
         ('Bob', 200))
 
 t = Table(data, columns=['name', 'amount'])
+
 
 def test_resources():
     assert t.resources() == {t: t.data}
@@ -34,7 +38,6 @@ def test_create_with_schema():
     assert t.schema == dshape('{name: string, amount: float32}')
 
 
-
 def test_create_with_raw_data():
     t = Table(data, columns=['name', 'amount'])
     assert t.schema == dshape('{name: string, amount: int64}')
@@ -43,7 +46,7 @@ def test_create_with_raw_data():
 
 
 def test_create_with_data_descriptor():
-    schema='{name: string, amount: int64}'
+    schema = '{name: string, amount: int64}'
     ddesc = Python(data, schema=schema)
     t = Table(ddesc)
     assert t.schema == dshape(schema)
@@ -91,6 +94,7 @@ def test_dataframe_backed_repr_complex():
     t = Table(df)
     repr(t[t['balance'] < 0])
 
+
 def test_table_repr_empty():
     s = repr(t[t.amount > 1e9])
     assert isinstance(s, str)
@@ -119,7 +123,6 @@ def test_serialization():
 
 
 def test_table_resource():
-    from blaze.data import CSV
     with tmpfile('csv') as filename:
         csv = CSV(filename, 'w', schema='{x: int, y: int}')
         csv.extend([[1, 2], [10, 20]])
@@ -127,3 +130,11 @@ def test_table_resource():
         t = Table(filename)
         assert isinstance(t.data, CSV)
         assert list(compute(t)) == list(csv)
+
+
+def test_table_attribute_repr():
+    path = os.path.join(os.path.dirname(__file__), 'accounts.csv')
+    t = Table(CSV(path))
+    result = t.timestamp.day
+    expected = pd.DataFrame({'timestamp_day': [25] * 3})
+    assert repr(result) == repr(expected)
