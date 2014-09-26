@@ -944,5 +944,4 @@ def test_date_attribute_completion(attr):
 @pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
 def test_date_attr_add(attr):
     t = TableSymbol('t', '{name: string, when: datetime}')
-    import ipdb; ipdb.set_trace()
     assert (t.when.year + 1) is not None
