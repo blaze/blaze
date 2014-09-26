@@ -55,7 +55,7 @@ def compute_up(_, s, **kwargs):
 
 @dispatch(ColumnWise, DataFrame)
 def compute_up(t, df, **kwargs):
-    d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
+    d = dict((t.child[c].expr, df[c]) for c in t.child.columns)
     return compute(t.expr, d)
 
 
