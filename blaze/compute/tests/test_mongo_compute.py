@@ -4,7 +4,7 @@ import pytest
 pymongo = pytest.importorskip('pymongo')
 
 from datetime import datetime
-from toolz import pluck
+from toolz import pluck, reduceby, groupby
 
 from blaze import into, compute, compute_up, discover, dshape
 
@@ -160,10 +160,27 @@ def test_selection(t, bank):
                     ('Bob', 300)])
 
 
-@xfail(raises=NotImplementedError,
-       reason='ColumnWise not implemented for MongoDB')
 def test_columnwise(p, points):
-    assert set(compute(p.x + p.y, points)) == set([11, 22, 33])
+    assert set(compute(p.x + p.y, points)) == set([11, 22, 33, 44])
+
+
+def test_columnwise_multiple_operands(p, points):
+    expected = [x['x'] + x['y'] - x['z'] * x['x'] / 2 for x in points.find()]
+    assert set(compute(p.x + p.y - p.z * p.x / 2, points)) == set(expected)
+
+
+def test_columnwise_mod(p, points):
+    expected = [x['x'] % x['y'] - x['z'] * x['x'] / 2 + 1
+                for x in points.find()]
+    expr = p.x % p.y - p.z * p.x / 2 + 1
+    assert set(compute(expr, points)) == set(expected)
+
+
+@xfail(raises=NotImplementedError,
+       reason='MongoDB does not implement certain arith ops')
+def test_columnwise_pow(p, points):
+    expected = [x['x'] ** x['y'] for x in points.find()]
+    assert set(compute(p.x ** p.y, points)) == set(expected)
 
 
 def test_by_one(t, q):
@@ -225,12 +242,45 @@ def test_summary_count(t, bank):
     assert result == [('Bob', 3), ('Alice', 2)]
 
 
-@xfail(raises=AttributeError,
-       reason='ColumnWise not implemented for MongoDB')
 def test_summary_arith(t, bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).sum())
     result = compute(expr, bank)
-    assert result == [('Bob', 601), ('Alice', 301)]
+    assert result == [('Bob', 603), ('Alice', 302)]
+
+
+def test_summary_arith_min(t, bank):
+    expr = by(t.name, add_one_and_sum=(t.amount + 1).min())
+    result = compute(expr, bank)
+    assert result == [('Bob', 101), ('Alice', 101)]
+
+
+def test_summary_arith_max(t, bank):
+    expr = by(t.name, add_one_and_sum=(t.amount + 1).max())
+    result = compute(expr, bank)
+    assert result == [('Bob', 301), ('Alice', 201)]
+
+
+def test_summary_complex_arith(t, bank):
+    expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum())
+    result = compute(expr, bank)
+    reducer = lambda acc, x: (100 - x['amount'] * 2 / 30.0) + acc
+    expected = reduceby('name', reducer, bank.find(), 0)
+    assert set(result) == set(expected.items())
+
+
+def test_summary_complex_arith_multiple(t, bank):
+    expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum(),
+              other=t.amount.mean())
+    result = compute(expr, bank)
+    reducer = lambda acc, x: (100 - x['amount'] * 2 / 30.0) + acc
+    expected = reduceby('name', reducer, bank.find(), 0)
+
+    mu = reduceby('name', lambda acc, x: acc + x['amount'], bank.find(), 0.0)
+    values = list(mu.values())
+    items = expected.items()
+    counts = groupby('name', bank.find())
+    items = [x + (float(v) / len(counts[x[0]]),) for x, v in zip(items, values)]
+    assert set(result) == set(items)
 
 
 def test_like(t, bank):
