@@ -797,10 +797,10 @@ def test_columnwise_naming():
     assert (t.x + 1).name == 'x'
 
 
-def test_scalar_symbol():
+def test_scalar_expr():
     t = TableSymbol('t', '{x: int64, y: int32, z: int64}')
-    x = t.x.scalar_symbol
-    y = t.y.scalar_symbol
+    x = t.x.expr
+    y = t.y.expr
     assert 'int64' in str(x.dshape)
     assert 'int32' in str(y.dshape)
 

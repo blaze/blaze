@@ -14,6 +14,7 @@ SELECT accounts.name
 FROM accounts
 WHERE accounts.amount < :amount_1
 """
+
 from __future__ import absolute_import, division, print_function
 import sqlalchemy as sa
 import sqlalchemy
@@ -24,6 +25,7 @@ from operator import and_
 from datashape import Record
 from copy import copy
 import toolz
+from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
@@ -69,9 +71,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(ColumnWise, Select)
 def compute_up(t, s, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
-    d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
-                    for c in t.child.columns)
+    d = dict((t.child[c].expr, lower_column(s.c.get(c)))
+             for c in t.child.columns)
     result = compute(t.expr, d)
 
     s = copy(s)
@@ -81,9 +82,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(ColumnWise, Selectable)
 def compute_up(t, s, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
-    d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
-                    for c in t.child.columns)
+    d = dict((t.child[c].expr, lower_column(s.c.get(c)))
+             for c in t.child.columns)
     return compute(t.expr, d)
 
 
@@ -155,6 +155,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(a.froms) > 1:
         raise MDNotImplementedError()
+
     return a.replace_selectable(a.froms[0],
                 a.froms[0].join(b, condition, **kwargs))
 
@@ -224,11 +225,10 @@ names = {mean: 'avg',
          var: 'variance',
          std: 'stdev'}
 
+
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
-    d = dict((t.child[c], lower_column(s.c.get(c)))
-                    for c in t.child.columns)
+    d = dict((t.child[c], lower_column(s.c.get(c))) for c in t.child.columns)
     col = compute(t, d)
 
     s = copy(s)
@@ -368,7 +368,6 @@ def compute_up(t, s, **kwargs):
 
     if isinstance(t.apply, Reduction):
         reduction = compute(t.apply, {t.child: s})
-        reductions = [reduction]
 
     elif isinstance(t.apply, Summary):
         reduction = compute(t.apply, {t.child: s})
@@ -433,12 +432,9 @@ def compute_up(t, _, children):
 
 @dispatch(Summary, Select)
 def compute_up(t, s, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
-    d = dict((t.child[c], lower_column(s.c.get(c)))
-                    for c in t.child.columns)
+    d = dict((t.child[c], lower_column(s.c.get(c))) for c in t.child.columns)
 
-    cols = [compute(val, d).label(name)
-                for name, val in zip(t.names, t.values)]
+    cols = [compute(val, d).label(name) for name, val in zip(t.names, t.values)]
 
     s = copy(s)
     for c in cols:

@@ -35,7 +35,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(ColumnWise, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t.child[c].scalar_symbol, x[c]) for c in t.child.columns)
+    d = dict((t.child[c].expr, x[c]) for c in t.child.columns)
     return compute(t.expr, d)
 
 

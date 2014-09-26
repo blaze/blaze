@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 from abc import abstractproperty
-from operator import methodcaller
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
@@ -441,7 +440,7 @@ class Column(ColumnSyntaxMixin, Projection):
         return "%s['%s']" % (self.child, self.columns[0])
 
     @property
-    def scalar_symbol(self):
+    def expr(self):
         return ScalarSymbol(self.column, dtype=self.dtype)
 
     def project(self, key):
@@ -510,11 +509,8 @@ def _expr_child(col):
 
     Helper function for ``columnwise``
     """
-    if isinstance(col, ColumnWise):
+    if isinstance(col, (ColumnWise, Column)):
         return col.expr, col.child
-    elif isinstance(col, Column):
-        # TODO: specify dtype
-        return col.scalar_symbol, col.child
     elif isinstance(col, Label):
         return _expr_child(col.child)
     else:
@@ -585,7 +581,7 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
 
-    >>> expr = Add(accounts['amount'].scalar_symbol, 100)
+    >>> expr = Add(accounts['amount'].expr, 100)
     >>> ColumnWise(accounts, expr)
     accounts['amount'] + 100
 
