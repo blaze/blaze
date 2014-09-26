@@ -291,6 +291,23 @@ class ChunkList(ChunkIndexable):
 
 @resource.register('.*\*.*', priority=14)
 def resource_glob(uri, skip=None, **kwargs):
+    """Get a list of resources that can be computed over.
+
+    Parameters
+    ----------
+    uri : str
+        A glob pattern describing the kind of resource to construct
+    skip : None or Exception, optional
+        An Exception instance indicating which exceptions should be caught when
+        constructing individual resources.
+    kwargs : dict
+        Any keyword arguments to be passed to the data descriptor.
+
+    Returns
+    -------
+    lst : ChunkList
+        A list of resources
+    """
     uris = sorted(glob(uri))
 
     first = resource(uris[0], **kwargs)
@@ -300,7 +317,7 @@ def resource_glob(uri, skip=None, **kwargs):
         kwargs['schema'] = first.schema
 
     if skip is None:
-        return ChunkList([resource(uri, **kwargs) for uri in uris])
+        return ChunkList([resource(u, **kwargs) for u in uris])
 
     assert all(isinstance(s, Exception) for s in
                ([skip] if not isinstance(skip, Iterable) else skip)), \
