@@ -135,18 +135,11 @@ binops = {'+': 'add',
           '%': 'mod'}
 
 
-@dispatch((_strtypes, ScalarSymbol))
-def compute_sub(s):
-    return '$%s' % s
-
-
-@dispatch(numbers.Number)
-def compute_sub(s):
-    return s
-
-
-@dispatch(Arithmetic)
 def compute_sub(t):
+    if isinstance(t, (_strtypes, ScalarSymbol)):
+        return '$%s' % t
+    elif isinstance(t, numbers.Number):
+        return t
     try:
         op = binops[t.symbol]
     except KeyError:
