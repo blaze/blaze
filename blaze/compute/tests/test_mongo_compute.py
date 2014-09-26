@@ -177,7 +177,7 @@ def test_columnwise_mod(p, points):
 
 
 @xfail(raises=NotImplementedError,
-       reason='MongoDB does not implement certain ''arith ops')
+       reason='MongoDB does not implement certain arith ops')
 def test_columnwise_pow(p, points):
     expected = [x['x'] ** x['y'] for x in points.find()]
     assert set(compute(p.x ** p.y, points)) == set(expected)
@@ -242,12 +242,10 @@ def test_summary_count(t, bank):
     assert result == [('Bob', 3), ('Alice', 2)]
 
 
-@xfail(raises=AttributeError,
-       reason='ColumnWise not implemented for MongoDB')
 def test_summary_arith(t, bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).sum())
     result = compute(expr, bank)
-    assert result == [('Bob', 601), ('Alice', 301)]
+    assert result == [('Bob', 603), ('Alice', 302)]
 
 
 def test_like(t, bank):
