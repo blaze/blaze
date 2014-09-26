@@ -44,7 +44,6 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 
 from __future__ import absolute_import, division, print_function
 
-import operator as op
 import numbers
 
 try:
@@ -59,10 +58,9 @@ import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
-                    TableSymbol, Projection, sum, min, max, TableExpr,
-                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
-                    Like, Arithmetic, ColumnWise, DateTime, Microsecond, Date,
-                    Time)
+                    TableSymbol, Projection, sum, min, max, TableExpr, Gt, Lt,
+                    Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary, Like,
+                    ColumnWise, DateTime, Microsecond, Date, Time)
 from ..expr.core import Expr
 from ..compatibility import _strtypes
 
