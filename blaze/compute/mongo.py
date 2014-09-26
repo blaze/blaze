@@ -136,6 +136,28 @@ binops = {'+': 'add',
 
 
 def compute_sub(t):
+    """Build an expression tree in a MongoDB compatible way.
+
+    Parameters
+    ----------
+    t : Arithmetic
+        Scalar arithmetic expression
+
+    Returns
+    -------
+    sub : dict
+        An expression tree
+
+    Examples
+    --------
+    >>> from blaze import ScalarSymbol
+    >>> s = ScalarSymbol('s', 'float64')
+    >>> expr = s * 2 + s - 1
+    >>> expr
+    ((s * 2) + s) - 1
+    >>> compute_sub(expr)
+    {'$subtract': [{'$add': [{'$multiply': ['$s', 2]}, '$s']}, 1]}
+    """
     if isinstance(t, (_strtypes, ScalarSymbol)):
         return '$%s' % t
     elif isinstance(t, numbers.Number):
