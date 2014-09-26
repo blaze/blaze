@@ -30,6 +30,7 @@ sbig = sa.Table('accountsbig', metadata,
 def normalize(s):
     return ' '.join(s.strip().split()).lower()
 
+
 def test_table():
     result = str(computefull(t, s))
     expected = """
@@ -40,7 +41,6 @@ def test_table():
     assert normalize(result) == normalize(expected)
 
 
-
 def test_projection():
     print(compute(t[['name', 'amount']], s))
     assert str(compute(t[['name', 'amount']], s)) == \
@@ -49,6 +49,10 @@ def test_projection():
 
 def test_eq():
     assert str(compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
+
+
+def test_eq_unicode():
+    assert str(compute(t['name'] == u'Alice', s)) == str(s.c.name == u'Alice')
 
 
 def test_selection():
