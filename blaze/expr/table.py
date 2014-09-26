@@ -205,7 +205,8 @@ class TableExpr(Expr):
 
     @property
     def isdatelike(self):
-        return self.schema.measure[self.column] in _datelike
+        measure = self.schema.measure[self.column]
+        return getattr(measure, 'ty', measure) in _datelike
 
 
 class TableSymbol(TableExpr):
@@ -479,10 +480,8 @@ class DateTime(RowWise):
 
     __hash__ = Expr.__hash__
 
-    def __repr__(self):
+    def __str__(self):
         return "{0.child}.{0.attr}(dshape='{0.dshape}')".format(self)
-
-    __str__ = __repr__
 
     @abstractproperty
     def _dshape(self):
