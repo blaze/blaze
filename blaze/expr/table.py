@@ -443,10 +443,6 @@ class Column(ColumnSyntaxMixin, Projection):
     def expr(self):
         return ScalarSymbol(self.column, dtype=self.dtype)
 
-    @property
-    def expr(self):
-        return self.scalar_symbol
-
     def project(self, key):
         if key == self.column:
             return self
