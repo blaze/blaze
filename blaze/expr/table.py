@@ -1296,8 +1296,8 @@ def schema_concat(exprs):
             names.extend(c.schema[0].names)
             values.extend(c.schema[0].types)
         elif isinstance(c.schema[0], Unit):
-            names.extend(c._name)
-            values.extend(c.schema[0])
+            names.append(c._name)
+            values.append(c.schema[0])
         else:
             raise TypeError("All schemas must have Record or Unit shape."
                             "\nGot %s" % c.schema[0])

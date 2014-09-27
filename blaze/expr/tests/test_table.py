@@ -670,7 +670,8 @@ def test_merge():
     new_amount = (accounts['balance'] * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
-    assert c.columns == ['name', 'balance', 'new']
+    assert c.names == ['name', 'balance', 'new']
+    assert c.schema == dshape('{name: string, balance: int32, new: float64}')
 
     with pytest.raises(ValueError):
         merge(t, t)
