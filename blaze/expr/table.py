@@ -104,6 +104,8 @@ class TableExpr(Expr):
     def iscolumn(self):
         if len(self.names) > 1:
             return False
+        if isinstance(self.dshape.measure, Record):
+            return False
         raise NotImplementedError("%s.iscolumn not implemented" %
                 str(type(self).__name__))
 
@@ -222,23 +224,17 @@ class Projection(RowWise):
     __slots__ = 'child', '_columns'
 
     @property
-    def columns(self):
+    def names(self):
         return list(self._columns)
 
     @property
-    def dshape(self):
+    def schema(self):
         d = self.child.schema[0].dict
-        measure = Record([(col, d[col]) for col in self.columns])
-
-        return DataShape(*(self.child.dshape.shape + (measure,)))
+        return DataShape(Record([(col, d[col]) for col in self.names]))
 
     def __str__(self):
         return '%s[[%s]]' % (self.child,
                              ', '.join(["'%s'" % col for col in self.names]))
-
-    @property
-    def iscolumn(self):
-        return False
 
     def project(self, key):
         if isinstance(key, _strtypes) and key in self.names:
@@ -257,6 +253,11 @@ projection.__doc__ = Projection.__doc__
 class ColumnSyntaxMixin(object):
     """ Syntax bits for table expressions of column shape """
     iscolumn = True
+
+    @property
+    def column(self):
+        # For backwards compatibility
+        return self.name
 
     def __eq__(self, other):
         return columnwise(Eq, self, other)
@@ -341,29 +342,32 @@ class Column(ColumnSyntaxMixin, Projection):
 
     blaze.expr.table.Projection
     """
-    __slots__ = 'child', 'column'
+    __slots__ = 'child', '_name'
 
     __hash__ = Expr.__hash__
 
     iscolumn = True
 
     @property
-    def columns(self):
-        return [self.column]
+    def names(self):
+        return [self._name]
+
+    @property
+    def name(self):
+        return self._name
 
     def __str__(self):
         return "%s['%s']" % (self.child, self.names[0])
 
     @property
     def expr(self):
-        return ScalarSymbol(self.column, dtype=self.dtype)
+        return ScalarSymbol(self.name, dtype=self.dtype)
 
     def project(self, key):
-        if key == self.column:
+        if key == self.name:
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)
-
 
 
 class Selection(TableExpr):

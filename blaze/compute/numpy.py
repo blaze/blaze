@@ -17,10 +17,10 @@ __all__ = ['np']
 
 @dispatch(Column, np.ndarray)
 def compute_up(c, x, **kwargs):
-    if x.dtype.names and c.column in x.dtype.names:
-        return x[c.column]
+    if x.dtype.names and c.name in x.dtype.names:
+        return x[c.name]
     if not x.dtype.names and x.shape[1] == len(c.child.names):
-        return x[:, c.child.names.index(c.column)]
+        return x[:, c.child.names.index(c.name)]
     raise NotImplementedError()
 
 

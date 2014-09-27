@@ -98,9 +98,9 @@ def rowfunc(t):
 
 @dispatch(Column)
 def rowfunc(t):
-    if t.child.iscolumn and t.column == t.child.names[0]:
+    if t.child.iscolumn and t.name == t.child.names[0]:
         return identity
-    index = t.child.names.index(t.column)
+    index = t.child.names.index(t.name)
     return lambda x: x[index]
 
 

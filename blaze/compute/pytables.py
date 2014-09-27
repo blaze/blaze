@@ -88,7 +88,7 @@ def compute_up(proj, t, **kwargs):
 
 @dispatch(Column, tb.Table)
 def compute_up(c, t, **kwargs):
-    return getattr(t.cols, c.column)
+    return getattr(t.cols, c.name)
 
 
 @dispatch(count, tb.Column)

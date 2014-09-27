@@ -66,7 +66,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Column, sqlalchemy.Table)
 def compute_up(t, s, **kwargs):
-    return s.c.get(t.column)
+    return s.c.get(t.name)
 
 
 @dispatch(ColumnWise, Select)

@@ -79,10 +79,6 @@ class Expr(object):
         return datashape.to_numpy(self.dshape)[0]
 
     @property
-    def dtype(self):
-        return datashape.to_numpy_dtype(self.schema)
-
-    @property
     def schema(self):
         return datashape.dshape(self.dshape[-1])
 
@@ -242,7 +238,7 @@ def _subs(o, d):
 
     >>> from blaze.expr.table import TableSymbol
     >>> t = TableSymbol('t', '{name: string, balance: int}')
-    >>> subs(t, {'balance': 'amount'}).columns
+    >>> subs(t, {'balance': 'amount'}).names
     ['name', 'amount']
     """
     newargs = [subs(arg, d) for arg in o.args]
