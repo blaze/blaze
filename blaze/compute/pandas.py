@@ -30,7 +30,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like,
-                    RowWise, DateTime, Millisecond, Expr)
+                    RowWise, DateTime, Millisecond, Expr, iscolumn)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -208,7 +208,7 @@ def compute_by(t, r, g, df):
     group_df = concat_nodup(df, preapply)
 
     gb = group_df.groupby(g)
-    groups = gb[names[0] if t.apply.child.iscolumn else names]
+    groups = gb[names[0] if iscolumn(t.apply.child) else names]
 
     return compute_up(r, groups)  # do reduction
 

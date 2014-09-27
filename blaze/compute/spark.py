@@ -5,6 +5,7 @@ from operator import itemgetter
 import operator
 from toolz import compose, identity
 from collections import Iterator
+from datashape import Record, Tuple
 
 from blaze.expr import *
 from blaze.expr import count as Count
@@ -151,10 +152,10 @@ def compute_up(t, rdd, **kwargs):
                                                 for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
 
-        if t.grouper.iscolumn:
-            keyfunc = lambda x: (x,)
-        else:
+        if isinstance(t.grouper.schema[0], (Record, Tuple)):
             keyfunc = identity
+        else:
+            keyfunc = lambda x: (x,)
         if isinstance(t.apply, Reduction):
             valfunc = lambda x: (x,)
         else:

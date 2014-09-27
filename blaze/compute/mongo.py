@@ -52,7 +52,7 @@ except ImportError:
     Collection = type(None)
 
 import fnmatch
-from datashape import Record
+from datashape import Record, Tuple
 from toolz import pluck, first
 import toolz
 
@@ -61,7 +61,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     TableSymbol, Projection, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary, Like,
                     ColumnWise, DateTime, Microsecond, Date, Time, isscalar,
-                    iscolumn)
+                    )
 from ..expr.core import Expr
 from ..compatibility import _strtypes
 
@@ -321,10 +321,10 @@ def post_compute(e, q, d):
     q = q.append(d)
     dicts = q.coll.aggregate(list(q.query))['result']
 
-    if iscolumn(e):
-        return list(pluck(e.names[0], dicts, default=None))  # dicts -> values
-    else:
+    if isinstance(e.schema[0], (Record, Tuple)):
         return list(pluck(e.names, dicts, default=None))  # dicts -> tuples
+    else:
+        return list(pluck(e.names[0], dicts, default=None))  # dicts -> values
 
 
 @dispatch(ColumnWise, MongoQuery, dict)
