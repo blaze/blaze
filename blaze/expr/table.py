@@ -5,13 +5,13 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from functools import partial
 from abc import abstractproperty
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
+import toolz
 from toolz import (concat, partial, first, compose, get, unique, second,
-                   isdistinct, frequencies)
+                   isdistinct, frequencies, memoize)
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol, Number
@@ -19,6 +19,8 @@ from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
+from .method_dispatch import select_functions
+
 
 __all__ = '''
 TableExpr TableSymbol RowWise Projection Column Selection ColumnWise Join
@@ -27,7 +29,7 @@ exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union columnwise Summary summary Like like DateTime Date Time
-Millisecond Microsecond special_attributes'''.split()
+Millisecond Microsecond '''.split()
 
 
 _datelike = frozenset((datashape.date_, datashape.datetime_))
@@ -107,11 +109,21 @@ class TableExpr(Expr):
     def __getattr__(self, key):
         if key in self.columns:
             return self[key]
-        return object.__getattribute__(self, key)
+        try:
+            return object.__getattribute__(self, key)
+        except AttributeError:
+            d = methods(self.schema[0])
+            if key in d:
+                func = d[key]
+                if func in _properties:
+                    return func(self)
+                else:
+                    return partial(func, self)
+            else:
+                raise AttributeError(key)
 
     def __dir__(self):
-        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) +
-                          self.columns))
+        return list(self.columns) + list(methods(self.schema[0]))
 
     def sort(self, key=None, ascending=True):
         """ Sort table
@@ -202,11 +214,6 @@ class TableExpr(Expr):
         if sort:
             result = result.sort('count', ascending=False)
         return result
-
-    @property
-    def isdatelike(self):
-        measure = self.schema.measure[self.column]
-        return getattr(measure, 'ty', measure) in _datelike
 
 
 class TableSymbol(TableExpr):
@@ -457,23 +464,6 @@ class Column(ColumnSyntaxMixin, Projection):
         else:
             raise ValueError("Column Mismatch: %s" % key)
 
-    def __dir__(self):
-        cur = super(Column, self).__dir__()
-        if not self.isdatelike:
-            return cur
-        return sorted(set(cur + list(special_attributes.keys())))
-
-    def __getattr__(self, key):
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError:
-            try:
-                if not self.isdatelike:
-                    raise AttributeError(key)
-                return special_attributes[key](self)
-            except KeyError:
-                raise AttributeError(key)
-
 
 class DateTime(RowWise):
     __slots__ = 'child',
@@ -481,7 +471,7 @@ class DateTime(RowWise):
     __hash__ = Expr.__hash__
 
     def __str__(self):
-        return "{0.child}.{0.attr}(dshape='{0.dshape}')".format(self)
+        return '%s.%s' % (str(self.child), type(self).__name__.lower())
 
     @abstractproperty
     def _dshape(self):
@@ -507,47 +497,63 @@ class DateTime(RowWise):
 class Date(DateTime):
     _dshape = datashape.date_
 
+def date(expr):
+    return Date(expr)
 
 class Year(DateTime):
     _dshape = datashape.int64
 
+def year(expr):
+    return Year(expr)
 
 class Month(DateTime):
     _dshape = datashape.int64
 
+def month(expr):
+    return Month(expr)
 
 class Day(DateTime):
     _dshape = datashape.int64
 
+def day(expr):
+    return Day(expr)
 
 class Time(DateTime):
     _dshape = datashape.time_
 
+def time(expr):
+    return Time(Expr)
 
 class Hour(DateTime):
     _dshape = datashape.int64
 
+def hour(expr):
+    return Hour(expr)
 
 class Minute(DateTime):
     _dshape = datashape.int64
 
+def minute(expr):
+    return Minute(expr)
 
 class Second(DateTime):
     _dshape = datashape.int64
 
+def second(expr):
+    return Second(expr)
 
 class Millisecond(DateTime):
     _dshape = datashape.int64
 
+def millisecond(expr):
+    return Millisecond(expr)
 
 class Microsecond(DateTime):
     _dshape = datashape.int64
 
+def microsecond(expr):
+    return Microsecond(expr)
 
-attribute_classes = DateTime.__subclasses__()
-special_attributes = dict(zip(map(lambda x: x.__name__.lower(),
-                                  attribute_classes),
-                              attribute_classes))
 
 class Selection(TableExpr):
     """ Filter rows of table based on predicate
@@ -1015,7 +1021,7 @@ class Summary(Expr):
 def summary(**kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
-    values = tuple(map(second, items))
+    values = tuple(map(toolz.second, items))
     child = common_subexpression(*values)
 
     if len(kwargs) == 1 and not isinstance(child, TableExpr):
@@ -1525,3 +1531,22 @@ def like(child, **kwargs):
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
     return Like(child, tuple(kwargs.items()))
+
+
+def isnumeric(ds):
+    return (isinstance(ds, datashape.Unit) and
+            np.issubdtype(datashape.to_numpy_dtype(ds), np.number))
+
+def isdatelike(ds):
+    return (isinstance(ds, datashape.Unit) or isinstance(ds, Record) and
+            len(ds.dict) == 1) and 'date' in str(ds)
+
+_methods = [(lambda ds: 'string' in str(ds), {like}),
+           (isnumeric, {mean}),
+           (isdatelike, {year, month, day, hour, minute, date, time,
+                         second, millisecond, microsecond})]
+
+_properties = {year, month, day, hour, minute, second, millisecond,
+        microsecond, date, time}
+
+methods = memoize(partial(select_functions, _methods))

@@ -13,8 +13,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol, like, Like,
-                        special_attributes)
+                        Summary, count, ScalarSymbol, like, Like)
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover
@@ -579,7 +578,7 @@ def test_apply():
     l = Apply(sum, t['amount'])
     assert s.dshape == dshape('real')
     assert r.schema == dshape("float64")
-    
+
     with pytest.raises(TypeError):
         s.schema
     with pytest.raises(NotImplementedError):
@@ -915,27 +914,28 @@ def test_count_values():
             by(t.name, count=t.name.count()).sort('count', ascending=False))
 
 
-@pytest.mark.parametrize('attr, dshape', sorted(special_attributes.items()))
-def test_date_attribute(attr, dshape):
+def test_date_attribute():
     t = TableSymbol('t', '{name: string, when: datetime}')
-    expr = getattr(t.when, attr)
-    result = str(expr)
-    expected = "t['when'].%(attr)s(dshape='var * { when_%(attr)s : %(dshape)s }')"
-    rhs = expected % dict(attr=attr, dshape=dshape._dshape)
-    assert result == rhs
+    expr = t.when.day
+    assert eval(str(expr)).isidentical(expr)
 
 
-@pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
-def test_invalid_date_attribute(attr):
+def test_invalid_date_attribute():
     t = TableSymbol('t', '{name: string, when: datetime}')
     with pytest.raises(AttributeError):
-        getattr(t.name, attr)
+        t.name.day
 
 
-@pytest.mark.parametrize('attr', sorted(special_attributes.keys()))
-def test_date_attribute_completion(attr):
+def test_date_attribute_completion():
     t = TableSymbol('t', '{name: string, when: datetime}')
-    assert attr in dir(t.when)
-    assert attr not in dir(t.name)
+    assert 'day' in dir(t.when)
+    assert 'day' not in dir(t.name)
     assert not builtins.all([x.startswith('__') and x.endswith('__')
                             for x in dir(t.name)])
+
+
+def test_dir():
+    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+    assert 'day' in dir(t.dt)
+    assert 'mean' not in dir(t.dt)
+    assert 'like' not in t[['amount', 'dt']]
