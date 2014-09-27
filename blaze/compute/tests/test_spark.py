@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze import into
-from blaze.compute import compute, compute_one
+from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
 
@@ -337,8 +337,8 @@ def test_SparkSQL_discover():
 
 def test_sparksql_compute():
     srdd = into(sqlContext, data, schema=t.schema)
-    assert compute_one(t, srdd).context == sqlContext
-    assert discover(compute_one(t, srdd).query).subshape[0] == \
+    assert compute_up(t, srdd).context == sqlContext
+    assert discover(compute_up(t, srdd).query).subshape[0] == \
             dshape('{name: string, amount: int64, id: int64}')
 
     assert isinstance(compute(t[['name', 'amount']], srdd),

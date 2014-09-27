@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 from abc import abstractproperty
-from operator import methodcaller
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
@@ -53,10 +52,10 @@ class TableExpr(Expr):
             raise ValueError('Can not determine length of table with the '
                     'following datashape: %s' % self.dshape)
 
-    def __len__(self):
+    def __len__(self): # pragma: no cover
         return self._len()
 
-    def __nonzero__(self):
+    def __nonzero__(self): # pragma: no cover
         return True
 
     def __bool__(self):
@@ -68,7 +67,7 @@ class TableExpr(Expr):
             return self.schema[0].names
 
     @abstractproperty
-    def schema(self):
+    def schema(self): # pragma: no cover
         pass
 
     @property
@@ -82,6 +81,7 @@ class TableExpr(Expr):
                 return dshape(first(ds.types))
         else:
             return dshape(ds)
+
 
     def __getitem__(self, key):
         if isinstance(key, (list, basestring, unicode)):
@@ -173,6 +173,33 @@ class TableExpr(Expr):
         else:
             raise ValueError("Can not compute name of table")
 
+    def __ne__(self, other):
+        return columnwise(Ne, self, other)
+
+    def __lt__(self, other):
+        return columnwise(Lt, self, other)
+
+    def __le__(self, other):
+        return columnwise(Le, self, other)
+
+    def __gt__(self, other):
+        return columnwise(Gt, self, other)
+
+    def __ge__(self, other):
+        return columnwise(Ge, self, other)
+
+    def count_values(self, sort=True):
+        """ Count occurrences of elements in this column
+
+        Sort by counts by default, add ``sort=False`` keyword to avoid this
+        behavior."""
+        if not self.iscolumn:
+            raise ValueError("Can only count_values on columns")
+        result = by(self, count=self.count())
+        if sort:
+            result = result.sort('count', ascending=False)
+        return result
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -197,10 +224,7 @@ class TableSymbol(TableExpr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        try:
-            if not isdimension(dshape[0]):
-                dshape = datashape.var * dshape
-        except TypeError:
+        if not isdimension(dshape[0]):
             dshape = datashape.var * dshape
         self.dshape = dshape
         self.iscolumn = iscolumn
@@ -297,21 +321,6 @@ class ColumnSyntaxMixin(object):
 
     def __eq__(self, other):
         return columnwise(Eq, self, other)
-
-    def __ne__(self, other):
-        return columnwise(Ne, self, other)
-
-    def __lt__(self, other):
-        return columnwise(Lt, self, other)
-
-    def __le__(self, other):
-        return columnwise(Le, self, other)
-
-    def __gt__(self, other):
-        return columnwise(Gt, self, other)
-
-    def __ge__(self, other):
-        return columnwise(Ge, self, other)
 
     def __add__(self, other):
         return columnwise(Add, self, other)
@@ -431,7 +440,7 @@ class Column(ColumnSyntaxMixin, Projection):
         return "%s['%s']" % (self.child, self.columns[0])
 
     @property
-    def scalar_symbol(self):
+    def expr(self):
         return ScalarSymbol(self.column, dtype=self.dtype)
 
     def project(self, key):
@@ -500,11 +509,8 @@ def _expr_child(col):
 
     Helper function for ``columnwise``
     """
-    if isinstance(col, ColumnWise):
+    if isinstance(col, (ColumnWise, Column)):
         return col.expr, col.child
-    elif isinstance(col, Column):
-        # TODO: specify dtype
-        return col.scalar_symbol, col.child
     elif isinstance(col, Label):
         return _expr_child(col.child)
     else:
@@ -575,7 +581,7 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
 
-    >>> expr = Add(accounts['amount'].scalar_symbol, 100)
+    >>> expr = Add(accounts['amount'].expr, 100)
     >>> ColumnWise(accounts, expr)
     accounts['amount'] + 100
 
@@ -902,12 +908,24 @@ class Summary(Expr):
         return dshape(Record(list(zip(self.names,
                                       [v.dtype for v in self.values]))))
 
+    def __str__(self):
+        return 'summary(' + ', '.join('%s=%s' % (name, str(val))
+                for name, val in zip(self.names, self.values)) + ')'
+
 
 def summary(**kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
     values = tuple(map(second, items))
     child = common_subexpression(*values)
+
+    if len(kwargs) == 1 and not isinstance(child, TableExpr):
+        while not isinstance(child, TableExpr):
+            children = [i for i in child.inputs if isinstance(i, Expr)]
+            if len(children) == 1:
+                child = children[0]
+            else:
+                raise ValueError()
 
     return Summary(child, names, values)
 
@@ -944,15 +962,10 @@ class By(TableExpr):
     def schema(self):
         group = self.grouper.schema[0].parameters[0]
         reduction_name = type(self.apply).__name__
-        if isinstance(self.apply.dshape[0], Record):
-            apply = self.apply.dshape[0].parameters[0]
-        else:
-            apply = ((reduction_name, self.apply.dshape),)
-
+        apply = self.apply.dshape[0].parameters[0]
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
-
 
 
 @dispatch(TableExpr, (Summary, Reduction))
@@ -1091,6 +1104,7 @@ class Label(RowWise, ColumnSyntaxMixin):
 
     blaze.expr.table.ReLabel
     """
+    iscolumn = True
     __slots__ = 'child', 'label'
 
     @property
@@ -1186,7 +1200,6 @@ class Map(RowWise):
             return self._iscolumn
         if self.child.iscolumn is not None:
             return self.child.iscolumn
-        return self.schema[0].values()
 
     @property
     def name(self):
@@ -1241,14 +1254,14 @@ class Apply(TableExpr):
         if isdimension(self.dshape[0]):
             return self.dshape.subshape[0]
         else:
-            return TypeError("Non-tabular datashape, %s" % self.dshape)
+            raise TypeError("Non-tabular datashape, %s" % self.dshape)
 
     @property
     def dshape(self):
         if self._dshape:
             return dshape(self._dshape)
         else:
-            return NotImplementedError("Datashape of arbitrary Apply not defined")
+            raise NotImplementedError("Datashape of arbitrary Apply not defined")
 
 
 def common_subexpression(*tables):
@@ -1267,8 +1280,9 @@ def common_subexpression(*tables):
 
 def merge(*tables):
     # Get common sub expression
-    child = common_subexpression(*tables)
-    if not child:
+    try:
+        child = common_subexpression(*tables)
+    except:
         raise ValueError("No common sub expression found for input tables")
 
     result = Merge(child, tables)
@@ -1324,7 +1338,10 @@ class Merge(RowWise):
         if isinstance(key, _strtypes):
             for child in self.children:
                 if key in child.columns:
-                    return child[key]
+                    if child.iscolumn:
+                        return child
+                    else:
+                        return child[key]
         elif isinstance(key, list):
             cols = [self.project(c) for c in key]
             return merge(*cols)

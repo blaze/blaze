@@ -10,7 +10,7 @@ from blaze.compatibility import StringIO
 
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover']
+__all__ = ['Expr', 'discover', 'path']
 
 
 def get_callable_name(o):
@@ -69,6 +69,18 @@ class Expr(object):
     @property
     def inputs(self):
         return tuple(getattr(self, i) for i in self.__inputs__)
+
+    @property
+    def shape(self):
+        return datashape.to_numpy(self.dshape)[0]
+
+    @property
+    def dtype(self):
+        return datashape.to_numpy_dtype(self.schema)
+
+    @property
+    def schema(self):
+        return dshape(self.dshape[-1])
 
     def leaves(self):
         """ Leaves of an expresion tree
@@ -222,5 +234,10 @@ def path(a, b):
     """
     while not a.isidentical(b):
         yield a
-        a = a.child
+        if not a.inputs:
+            break
+        for child in a.inputs:
+            if b in child.traverse():
+                a = child
+                break
     yield a

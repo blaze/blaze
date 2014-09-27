@@ -14,6 +14,7 @@ SELECT accounts.name
 FROM accounts
 WHERE accounts.amount < :amount_1
 """
+
 from __future__ import absolute_import, division, print_function
 import sqlalchemy as sa
 import sqlalchemy
@@ -23,6 +24,8 @@ from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
 from datashape import Record
 from copy import copy
+import toolz
+from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
@@ -31,13 +34,14 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary, Like
 from ..compatibility import reduce
 from ..utils import unique
-from .core import compute_one, compute, base
+from .core import compute_up, compute, base
+from ..data.utils import listpack
 
 __all__ = ['sqlalchemy', 'select']
 
 
 @dispatch(Projection, Selectable)
-def compute_one(t, s, scope=None, **kwargs):
+def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
     if scope is None:
         scope = {}
@@ -54,52 +58,70 @@ def compute_one(t, s, scope=None, **kwargs):
 
 
 @dispatch((Column, Projection), Select)
-def compute_one(t, s, **kwargs):
-    cols = [lower_column(s.c.get(col)) for col in t.columns]
+def compute_up(t, s, **kwargs):
+    cols = list(s.inner_columns)
+    cols = [lower_column(cols[t.child.columns.index(c)]) for c in t.columns]
     return s.with_only_columns(cols)
 
 
 @dispatch(Column, sqlalchemy.Table)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.c.get(t.column)
 
 
+@dispatch(ColumnWise, Select)
+def compute_up(t, s, **kwargs):
+    d = dict((t.child[c].expr, lower_column(s.c.get(c)))
+             for c in t.child.columns)
+    result = compute(t.expr, d)
+
+    s = copy(s)
+    s.append_column(result)
+    return s.with_only_columns([result])
+
+
 @dispatch(ColumnWise, Selectable)
-def compute_one(t, s, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
-    d = dict((t.child[c].scalar_symbol, lower_column(s.c.get(c)))
-                    for c in t.child.columns)
+def compute_up(t, s, **kwargs):
+    d = dict((t.child[c].expr, lower_column(s.c.get(c)))
+             for c in t.child.columns)
     return compute(t.expr, d)
 
 
 @dispatch(BinOp, ClauseElement, (ClauseElement, base))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, (ClauseElement, base), ClauseElement)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
 
 @dispatch(USub, (sa.Column, Selectable))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return -s
 
+
 @dispatch(Selection, Select)
-def compute_one(t, s, **kwargs):
-    predicate = compute_one(t.predicate, s)
+def compute_up(t, s, scope=None, **kwargs):
+    ns = dict((t.child[col.name], col) for col in s.inner_columns)
+    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    if isinstance(predicate, Select):
+        predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
 
 
 @dispatch(Selection, Selectable)
-def compute_one(t, s, **kwargs):
-    predicate = compute(t.predicate, {t.child: s})
+def compute_up(t, s, scope=None, **kwargs):
+    ns = dict((t.child[col.name], lower_column(col)) for col in s.columns)
+    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    if isinstance(predicate, Select):
+        predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
         return s.where(predicate)
     except AttributeError:
@@ -124,54 +146,106 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
-def listpack(x):
-    if isinstance(x, list):
-        return x
-    else:
-        return [x]
+@dispatch(Select, Select)
+def _join_selectables(a, b, condition=None, **kwargs):
+    return a.join(b, condition, **kwargs)
+
+
+@dispatch(Select, Selectable)
+def _join_selectables(a, b, condition=None, **kwargs):
+    if len(a.froms) > 1:
+        raise MDNotImplementedError()
+
+    return a.replace_selectable(a.froms[0],
+                a.froms[0].join(b, condition, **kwargs))
+
+
+@dispatch(Selectable, Select)
+def _join_selectables(a, b, condition=None, **kwargs):
+    if len(b.froms) > 1:
+        raise MDNotImplementedError()
+    return b.replace_selectable(b.froms[0],
+                a.join(b.froms[0], condition, **kwargs))
+
+@dispatch(Selectable, Selectable)
+def _join_selectables(a, b, condition=None, **kwargs):
+    return a.join(b, condition, **kwargs)
 
 
 @dispatch(Join, Selectable, Selectable)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        ldict = dict((c.name, c) for c in lhs.inner_columns)
+    else:
+        ldict = lhs.c
+    if isinstance(rhs, Select):
+        rdict = dict((c.name, c) for c in rhs.inner_columns)
+    else:
+        rdict = rhs.c
+
     condition = reduce(and_,
-            [lower_column(lhs.c.get(l)) == lower_column(rhs.c.get(r))
+            [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     if t.how == 'inner':
-        join = lhs.join(rhs, condition)
+        join = _join_selectables(lhs, rhs, condition=condition)
         main, other = lhs, rhs
     elif t.how == 'left':
-        join = lhs.join(rhs, condition, isouter=True)
+        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
         main, other = lhs, rhs
     elif t.how == 'right':
-        join = rhs.join(lhs, condition, isouter=True)
+        join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
         main, other = rhs, lhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
 
-    columns = unique(list(main.columns) + list(other.columns),
+    if isinstance(main, Select):
+        main_cols = main.inner_columns
+    else:
+        main_cols = main.columns
+    if isinstance(other, Select):
+        other_cols = other.inner_columns
+    else:
+        other_cols = other.columns
+
+    columns = unique(list(main_cols) + list(other_cols),
                      key=lambda c: c.name)
     columns = (c for c in columns if c.name in t.columns)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
-    return select(list(columns)).select_from(join)
 
+    if isinstance(join, Select):
+        return join.with_only_columns(columns)
+    else:
+        return sqlalchemy.sql.select(columns, from_obj=join)
 
 
 names = {mean: 'avg',
          var: 'variance',
          std: 'stdev'}
 
-@dispatch((count, nunique, Reduction, Distinct), Select)
-def compute_one(t, s, **kwargs):
-    return compute_one(t, lower_column(list(s.columns)[0]), **kwargs)
+
+@dispatch((nunique, Reduction), Select)
+def compute_up(t, s, **kwargs):
+    d = dict((t.child[c], lower_column(s.c.get(c))) for c in t.child.columns)
+    col = compute(t, d)
+
     s = copy(s)
     s.append_column(col)
     return s.with_only_columns([col])
 
+@dispatch(Distinct, sqlalchemy.Column)
+def compute_up(t, s, **kwargs):
+    return s.distinct()
+
+
+@dispatch(Distinct, Select)
+def compute_up(t, s, **kwargs):
+    return s.distinct()
+
 
 @dispatch(Reduction, sql.elements.ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except AttributeError:
@@ -186,22 +260,45 @@ def compute_one(t, s, **kwargs):
     return result
 
 
-@dispatch(count, (Selectable, Select))
-def compute_one(t, s, **kwargs):
-    return s.count()
+@dispatch(count, Selectable)
+def compute_up(t, s, **kwargs):
+    return compute_up(t, select(s), **kwargs)
 
 
-@dispatch(nunique, ClauseElement)
-def compute_one(t, s, **kwargs):
-    return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
+@dispatch(count, sqlalchemy.Table)
+def compute_up(t, s, **kwargs):
+    try:
+        c = list(s.primary_key)[0]
+    except IndexError:
+        c = list(s.columns)[0]
+
+    return sqlalchemy.sql.functions.count(c)
+
+@dispatch(count, Select)
+def compute_up(t, s, **kwargs):
+    try:
+        c = lower_column(list(s.primary_key)[0])
+    except IndexError:
+        c = lower_column(list(s.columns)[0])
+
+    col = sqlalchemy.func.count(c)
+
+    s = copy(s)
+    s.append_column(col)
+    return s.with_only_columns([col])
 
 
-@dispatch(Distinct, (sa.Column, Selectable))
-def compute_one(t, s, **kwargs):
-    return sqlalchemy.distinct(s)
+@dispatch(nunique, sqlalchemy.Column)
+def compute_up(t, s, **kwargs):
+    return sqlalchemy.sql.functions.count(s.distinct())
+
+
+@dispatch(Distinct, sqlalchemy.Table)
+def compute_up(t, s, **kwargs):
+    return select(s).distinct()
 
 @dispatch(By, sqlalchemy.Column)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t.child: s})]
@@ -213,7 +310,7 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(By, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
     else:
@@ -231,7 +328,6 @@ def compute_one(t, s, **kwargs):
 def lower_column(col):
     """ Return column from lower level tables if possible
 
-    >>>
     >>> metadata = sa.MetaData()
 
     >>> s = sa.Table('accounts', metadata,
@@ -264,33 +360,30 @@ def lower_column(col):
 
 
 @dispatch(By, Select)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if not isinstance(t.grouper, Projection):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
-    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
+    if isinstance(t.apply, Reduction):
+        reduction = compute(t.apply, {t.child: s})
 
-    s2 = s.group_by(*grouper)
+    elif isinstance(t.apply, Summary):
+        reduction = compute(t.apply, {t.child: s})
+
+    grouper = [lower_column(s.c.get(col)) for col in t.grouper.columns]
+    s2 = reduction.group_by(*grouper)
+
     for g in grouper:
         s2.append_column(g)
 
-    if isinstance(t.apply, Reduction):
-        reduction = compute(t.apply, {t.child: s})
-        s2.append_column(reduction)
-        return s2.with_only_columns(grouper + [reduction])
-
-    elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t.child: s}).label(name)
-                for val, name in zip(t.apply.values, t.apply.names)]
-        for r in reductions:
-            s2.append_column(r)
-
-        return s2.with_only_columns(grouper + reductions)
+    cols = list(s2.inner_columns)
+    cols = cols[-len(grouper):] + cols[:-len(grouper)]
+    return s2.with_only_columns(cols)
 
 
 @dispatch(Sort, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
     col = getattr(s.c, t.key)
@@ -299,21 +392,23 @@ def compute_one(t, s, **kwargs):
     return select(s).order_by(col)
 
 
+@dispatch(Head, Select)
+def compute_up(t, s, **kwargs):
+    return s.limit(t.n)
+
+
 @dispatch(Head, ClauseElement)
-def compute_one(t, s, **kwargs):
-    if hasattr(s, 'limit'):
-        return s.limit(t.n)
-    else:
-        return select(s).limit(t.n)
+def compute_up(t, s, **kwargs):
+    return select(s).limit(t.n)
 
 
 @dispatch(Label, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
 @dispatch(ReLabel, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
@@ -323,30 +418,43 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Merge, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     subexpression = common_subexpression(*t.children)
     children = [compute(child, {subexpression: s}) for child in t.children]
     return select(children)
 
 
 @dispatch(Union, Selectable, tuple)
-def compute_one(t, _, children):
+def compute_up(t, _, children):
     return sqlalchemy.union(*children)
 
 
+@dispatch(Summary, Select)
+def compute_up(t, s, **kwargs):
+    d = dict((t.child[c], lower_column(s.c.get(c))) for c in t.child.columns)
+
+    cols = [compute(val, d).label(name) for name, val in zip(t.names, t.values)]
+
+    s = copy(s)
+    for c in cols:
+        s.append_column(c)
+
+    return s.with_only_columns(cols)
+
+
 @dispatch(Summary, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return select([compute(value, {t.child: s}).label(name)
         for value, name in zip(t.values, t.names)])
 
 
 @dispatch(Like, Selectable)
-def compute_one(t, s, **kwargs):
-    return compute_one(t, select(s), **kwargs)
+def compute_up(t, s, **kwargs):
+    return compute_up(t, select(s), **kwargs)
 
 
 @dispatch(Like, Select)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     d = dict()
     for name, pattern in t.patterns.items():
         for f in s.froms:

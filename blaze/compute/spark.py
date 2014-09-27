@@ -9,13 +9,14 @@ from collections import Iterator
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import (compute, rrowfunc, rowfunc, RowWise, listpack,
-        pair_assemble, reduce_by_funcs, binops, like_regex_predicate)
+from .python import (compute, rrowfunc, rowfunc, RowWise, pair_assemble,
+                     reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
 from ..expr import table
 from ..dispatch import dispatch
+from ..data.utils import listpack
 
-from .core import compute, compute_one
+from .core import compute, compute_up
 
 from toolz.curried import get
 
@@ -45,13 +46,13 @@ except:
 
 
 @dispatch(RowWise, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     func = rowfunc(t)
     return rdd.map(func)
 
 
 @dispatch(Selection, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     predicate = rrowfunc(t.predicate, t.child)
     return rdd.filter(predicate)
 
@@ -68,7 +69,7 @@ rdd_reductions = {
 
 
 @dispatch(tuple(rdd_reductions), RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     return rdd_reductions[type(t)](rdd)
 
 
@@ -77,22 +78,22 @@ def istruthy(x):
 
 
 @dispatch(table.any, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     return istruthy(rdd.filter(identity).take(1))
 
 
 @dispatch(table.all, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     return not rdd.filter(lambda x: not x).take(1)
 
 
 @dispatch(Head, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     return rdd.take(t.n)
 
 
 @dispatch(Sort, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t.child[t.key])
     else:
@@ -103,12 +104,12 @@ def compute_one(t, rdd, **kwargs):
 
 
 @dispatch(Distinct, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     return rdd.distinct()
 
 
 @dispatch(Join, RDD, RDD)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
 
@@ -144,7 +145,7 @@ python_reductions = {
               table.nunique: lambda x: len(set(x))}
 
 @dispatch(By, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):
@@ -175,18 +176,18 @@ def compute_one(t, rdd, **kwargs):
 
 
 @dispatch((Label, ReLabel), RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     return rdd
 
 
 @dispatch(Summary, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     rdd = rdd.cache()
     return tuple(compute(value, {t.child: rdd}) for value in t.values)
 
 
 @dispatch(Like, RDD)
-def compute_one(t, rdd, **kwargs):
+def compute_up(t, rdd, **kwargs):
     predicate = like_regex_predicate(t)
     return rdd.filter(predicate)
 
@@ -212,5 +213,5 @@ def into(seq, rdd):
 
 
 @dispatch(Union, RDD, tuple)
-def compute_one(t, _, children):
+def compute_up(t, _, children):
     return reduce(RDD.union, children)

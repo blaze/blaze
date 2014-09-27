@@ -6,11 +6,14 @@ import datashape
 from datashape.internal_utils import IndexCallable
 from datashape import discover
 from functools import partial
+from ..dispatch import dispatch
+from blaze.expr.table import Projection, Column
+from blaze.expr import Expr, UnaryOp
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
 
-__all__ = ['DataDescriptor', 'discover', 'compute_one']
+__all__ = ['DataDescriptor', 'discover', 'compute_up']
 
 
 def isdimension(ds):
@@ -175,21 +178,18 @@ class DataDescriptor(object):
                             'datashapes of records, got %s' % self.dshape)
 
 
-from ..dispatch import dispatch
-from blaze.expr.table import Join, TableExpr, Projection, Column
-from blaze.expr import Expr, UnaryOp
 @dispatch((Expr, UnaryOp), DataDescriptor)
-def compute_one(t, ddesc, **kwargs):
-    return compute_one(t, iter(ddesc))  # use Python streaming by default
+def compute_up(t, ddesc, **kwargs):
+    return compute_up(t, iter(ddesc))  # use Python streaming by default
 
 
 @dispatch(Projection, DataDescriptor)
-def compute_one(t, ddesc, **kwargs):
+def compute_up(t, ddesc, **kwargs):
     return ddesc[:, t.columns]
 
 
 @dispatch(Column, DataDescriptor)
-def compute_one(t, ddesc, **kwargs):
+def compute_up(t, ddesc, **kwargs):
     return ddesc[:, t.columns[0]]
 
 

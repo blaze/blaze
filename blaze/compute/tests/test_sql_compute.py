@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.sql import compute, computefull, select
-from blaze import SQL
+from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze.expr import *
 import sqlalchemy
 import sqlalchemy as sa
@@ -30,6 +29,7 @@ sbig = sa.Table('accountsbig', metadata,
 def normalize(s):
     return ' '.join(s.strip().split()).lower()
 
+
 def test_table():
     result = str(computefull(t, s))
     expected = """
@@ -40,7 +40,6 @@ def test_table():
     assert normalize(result) == normalize(expected)
 
 
-
 def test_projection():
     print(compute(t[['name', 'amount']], s))
     assert str(compute(t[['name', 'amount']], s)) == \
@@ -49,6 +48,10 @@ def test_projection():
 
 def test_eq():
     assert str(compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
+
+
+def test_eq_unicode():
+    assert str(compute(t['name'] == u'Alice', s)) == str(s.c.name == u'Alice')
 
 
 def test_selection():
@@ -87,12 +90,48 @@ def test_join():
 
     result = compute(joined, {L: lhs, R: rhs})
 
-    assert str(result) == str(expected)
+    assert normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name""")
 
     assert str(select(result)) == str(select(expected))
 
     # Schemas match
     assert list(result.c.keys()) == list(joined.columns)
+
+
+def test_clean_complex_join():
+    metadata = sa.MetaData()
+    lhs = sa.Table('amounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
+
+    joined = join(L[L.amount > 0], R, 'name')
+
+    result = compute(joined, {L: lhs, R: rhs})
+
+
+    assert (normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name
+    WHERE amounts.amount > :amount_1""")
+
+    or
+
+    normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts, (SELECT amounts.name AS name, amounts.amount AS amount
+    FROM amounts
+    WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
+
+
 
 
 def test_multi_column_join():
@@ -148,9 +187,14 @@ def test_reductions():
 
 def test_count_on_table():
     assert normalize(str(select(compute(t.count(), s)))) == normalize("""
-    SELECT count(accounts.id) as tbl_row_count
+    SELECT count(accounts.id) as count_1
     FROM accounts""")
 
+    assert normalize(str(select(compute(t[t.amount > 0].count(), s)))) == \
+    normalize("""
+    SELECT count(accounts.id) as count_1
+    FROM accounts
+    WHERE accounts.amount > :amount_1""")
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -160,6 +204,12 @@ def test_distinct():
 
     print(result)
     assert result == str(sa.distinct(s.c.amount))
+
+
+def test_distinct_multiple_columns():
+    assert normalize(str(compute(t.distinct(), s))) == normalize("""
+    SELECT DISTINCT accounts.name, accounts.amount, accounts.id
+    FROM accounts""")
 
 
 def test_nunique():
@@ -191,7 +241,7 @@ def test_by_head():
     t2 = t.head(100)
     expr = by(t2['name'], t2['amount'].sum())
     result = compute(expr, s)
-    s2 = select(s).limit(100)
+    # s2 = select(s).limit(100)
     # expected = sa.select([s2.c.name,
     #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
     #                      ).group_by(s2.c.name)
@@ -395,6 +445,17 @@ def test_summary():
     assert 'count(accounts.id) as b' in result.lower()
 
 
+def test_summary_clean():
+    t2 = t[t.amount > 0]
+    expr = summary(a=t2.amount.sum(), b=t2.id.count())
+    result = str(compute(expr, s))
+
+    assert normalize(result) == normalize("""
+    SELECT sum(accounts.amount) as a, count(accounts.id) as b
+    FROM accounts
+    WHERE accounts.amount > :amount_1""")
+
+
 def test_summary_by():
     expr = by(t.name, summary(a=t.amount.sum(), b=t.id.count()))
 
@@ -435,10 +496,12 @@ def test_clean_join():
 
     expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
     assert normalize(str(compute(expr, ns))) == normalize("""
-    SELECT a, b, name, place.city, place.country
-    FROM (SELECT friends.a as a, friends.b as b, name.name as name
-          FROM friends JOIN name ON friends.a = name.id)
-    JOIN place on friends.a = place.id""")
+    SELECT friends.a, friends.b, name.name, place.city, place.country
+    FROM friends
+        JOIN name ON friends.a = name.id
+        JOIN place ON friends.a = place.id
+        """)
+
 
 
 def test_like():
@@ -447,3 +510,149 @@ def test_like():
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
+def test_columnwise_on_complex_selection():
+    assert normalize(str(select(compute(t[t.amount > 0].amount + 1, s)))) == \
+            normalize("""
+    SELECT accounts.amount + :amount_1 AS anon_1
+    FROM accounts
+    WHERE accounts.amount > :amount_2
+    """)
+
+def test_reductions_on_complex_selections():
+
+    assert normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) == \
+            normalize("""
+    SELECT sum(accounts.id) as id_sum
+    FROM accounts
+    WHERE accounts.amount > :amount_1 """)
+
+
+def test_clean_summary_by_where():
+    t2 = t[t.id ==1]
+    expr = by(t2.name, sum=t2.amount.sum(), count=t2.amount.count())
+    result = compute(expr, s)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT accounts.name, count(accounts.amount) AS count, sum(accounts.amount) AS sum
+    FROM accounts
+    WHERE accounts.id = :id_1
+    GROUP BY accounts.name
+    """)
+
+
+def test_by_on_count():
+    expr = by(t.name, count=t.count())
+    result = compute(expr, s)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT accounts.name, count(accounts.id) AS count
+    FROM accounts
+    GROUP BY accounts.name
+    """)
+
+
+def test_join_complex_clean():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    sel = select(name).where(name.c.id > 10)
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    expr = join(tname[tname.id > 0], tcity, 'id')
+    result = compute(expr, ns)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT name.id, name.name, place.city, place.country
+    FROM name JOIN place ON name.id = place.id
+    WHERE name.id > :id_1""")
+
+
+def test_projection_of_join():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    expr = join(tname, tcity[tcity.city == 'NYC'], 'id')[['country', 'name']]
+
+    ns = {tname: name, tcity: city}
+
+    assert normalize(str(compute(expr, ns))) == normalize("""
+    SELECT place.country, name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE place.city = :city_1""")
+
+
+def test_lower_column():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    assert lower_column(name.c.id) is name.c.id
+    assert lower_column(select(name).c.id) is name.c.id
+
+    j = name.join(city, name.c.id == city.c.id)
+    col = [c for c in j.columns if c.name == 'country'][0]
+
+    assert lower_column(col) is city.c.country
+
+
+def test_selection_of_join():
+    metadata = sa.MetaData()
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    city = sa.Table('place', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+
+    tname = TableSymbol('name', discover(name))
+    tcity = TableSymbol('city', discover(city))
+
+    ns = {tname: name, tcity: city}
+
+    j = join(tname, tcity, 'id')
+    expr = j[j.city == 'NYC'].name
+    result = compute(expr, ns)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT name.name
+    FROM name JOIN place ON name.id = place.id
+    WHERE place.city = :city_1""")

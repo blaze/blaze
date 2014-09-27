@@ -1,14 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
-from itertools import islice
-from contextlib import contextmanager
 import tempfile
 import os
-from collections import Iterator
 import inspect
+
+from itertools import islice
+from contextlib import contextmanager
+from collections import Iterator
+
+import numpy as np
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
+from blaze.compatibility import map, zip
+
 
 def nth_list(n, seq):
     """
@@ -97,11 +102,13 @@ def ndget(ind, data):
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
         f = open(filename, "wt")
-        f.write(text)
         try:
-            f.close()
-        except AttributeError:
-            pass
+            f.write(text)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
         yield filename
 
@@ -115,11 +122,13 @@ def filetexts(d, open=open):
     """
     for filename, text in d.items():
         f = open(filename, 'wt')
-        f.write(text)
         try:
-            f.close()
-        except AttributeError:
-            pass
+            f.write(text)
+        finally:
+            try:
+                f.close()
+            except AttributeError:
+                pass
 
     yield list(d)
 
@@ -131,16 +140,20 @@ def filetexts(d, open=open):
 @contextmanager
 def tmpfile(extension=''):
     extension = '.' + extension.lstrip('.')
-    filename = tempfile.mktemp(extension)
+    handle, filename = tempfile.mkstemp(extension)
+
+    yield filename
 
     try:
-        yield filename
-    finally:
-        try:
-            if os.path.exists(filename):
+        if os.path.exists(filename):
+            os.remove(filename)
+    except OSError:  # Sometimes Windows can't close files
+        if os.name == 'nt':
+            os.close(handle)
+            try:
                 os.remove(filename)
-        except Exception:  # Sometimes Windows can't close files
-            pass
+            except OSError:  # finally give up
+                pass
 
 
 def raises(err, lamda):
@@ -160,4 +173,22 @@ def keywords(func):
     >>> keywords(f)
     ['x', 'y']
     """
+    if isinstance(func, type):
+        return keywords(func.__init__)
     return inspect.getargspec(func).args
+
+
+def assert_allclose(lhs, rhs):
+    for tb in map(zip, lhs, rhs):
+        for left, right in tb:
+            if isinstance(left, (np.floating, float)):
+                # account for nans
+                assert np.all(np.isclose(left, right, equal_nan=True))
+            else:
+                assert left == right
+
+
+def example(filename, datapath=os.path.join('examples', 'data')):
+    import blaze
+    return os.path.join(os.path.dirname(blaze.__file__), os.pardir, datapath,
+                        filename)

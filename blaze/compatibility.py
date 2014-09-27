@@ -1,21 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-PY3 = sys.version_info[0] > 2
+
+PY3 = sys.version_info[0] == 3
+PY2 = sys.version_info[0] == 2
 
 if PY3:
-    from urllib.request import urlopen
-    import builtins as builtins
-    def apply(f, args):
-        return f(*args)
+    import builtins
 
+    def apply(f, args, **kwargs):
+        return f(*args, **kwargs)
 else:
-    from urllib2 import urlopen
     import __builtin__ as builtins
-    apply = apply
+    apply = builtins.apply
 
-import sys
-import itertools
 
 # Portions of this taken from the six library, licensed as follows.
 #
@@ -40,19 +38,28 @@ import itertools
 # SOFTWARE.
 
 
-PY2 = sys.version_info[0] == 2
 from toolz.compatibility import map, zip, range, reduce
 
+
 if PY2:
-    _strtypes = (str, unicode)
     _inttypes = (int, long)
-    unicode = unicode
-    basestring = basestring
+    unicode = builtins.unicode
+    basestring = builtins.basestring
+    _strtypes = (str, unicode)
 else:
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
     basestring = str
+
+
+import io
+
+
+try:
+    SEEK_END = io.SEEK_END
+except AttributeError:
+    SEEK_END = 2
 
 
 try:

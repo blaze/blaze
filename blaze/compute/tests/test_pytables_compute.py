@@ -7,7 +7,6 @@ tb = pytest.importorskip('tables')
 from blaze.compatibility import xfail
 
 import numpy as np
-import tempfile
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
@@ -209,6 +208,7 @@ class TestIndexSort(object):
 
 def test_head(data):
     assert eq(compute(t.head(2), data), x[:2])
+    assert eq(compute(t.amount.head(2), data), x['amount'][:2])
 
 
 @pytest.yield_fixture

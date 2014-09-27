@@ -2,19 +2,22 @@ from __future__ import absolute_import, division, print_function
 import math
 import itertools
 import operator
+import sys
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc
+from blaze.compute.python import nunique, mean, rrowfunc, rowfunc, Sequence, reduce_by_funcs
 from blaze import dshape
-from blaze.compute.core import compute, compute_one
+from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std)
+                        count, scalar, std, head)
 import numpy as np
 
 from blaze import cos, sin
 from blaze.compatibility import builtins
 from blaze.utils import raises
+
+from toolz import identity
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -32,6 +35,18 @@ databig = [['Alice', 'F', 100, 1],
            ['Drew', 'F', 100, 4],
            ['Drew', 'M', 100, 5],
            ['Drew', 'M', 200, 5]]
+
+
+def test_dispatched_rowfunc():
+    cw = t['amount'] + 100
+    assert rowfunc(t)(t) == t
+    assert rowfunc(cw)(('Alice', 100, 1)) == 200
+
+
+def test_reduce_by_funcs():
+    e = summary(number=t.id.max(), sum=t.amount.sum())
+    b = by(t, e)
+    assert reduce_by_funcs(b)[2]([1,2,3], [4,5,6]) == (1, 7)
 
 
 def test_table():
@@ -252,6 +267,8 @@ def test_column_of_column():
 def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
     assert set(compute(Distinct(t), data)) == set(map(tuple, data))
+    e = Distinct(t)
+    assert compute(e, []) == ()
 
 
 def test_Distinct_count():
@@ -285,6 +302,10 @@ def test_fancy_sort():
 
 def test_head():
     assert list(compute(t.head(1), data)) == [data[0]]
+
+    e = head(t, 101)
+    p = list(range(1000))
+    assert len(list(compute(e, p))) == 101
 
 
 def test_graph_double_join():
@@ -522,6 +543,7 @@ def test_by_then_sort_dict_items_sequence():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert compute(expr, data) == (3, 350)
+    assert compute(expr, iter(data)) == (3, 350)
 
 
 def test_summary_by():
@@ -547,20 +569,20 @@ def test_scalar_arithmetic():
     x = ScalarSymbol('x', 'real')
     y = ScalarSymbol('y', 'real')
     assert compute(x + y, {x: 2, y: 3}) == 5
-    assert compute_one(x + y, 2, 3) == 5
-    assert compute_one(x * y, 2, 3) == 6
-    assert compute_one(x / y, 6, 3) == 2
-    assert compute_one(x % y, 4, 3) == 1
-    assert compute_one(x ** y, 4, 3) == 64
+    assert compute_up(x + y, 2, 3) == 5
+    assert compute_up(x * y, 2, 3) == 6
+    assert compute_up(x / y, 6, 3) == 2
+    assert compute_up(x % y, 4, 3) == 1
+    assert compute_up(x ** y, 4, 3) == 64
 
     assert compute(x + 1, {x: 2}) == 3
     assert compute(x * 2, {x: 2}) == 4
     assert compute(1 + x, {x: 2}) == 3
     assert compute(2 * x, {x: 2}) == 4
 
-    assert compute_one(-x, 1) == -1
+    assert compute_up(-x, 1) == -1
 
-    assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)
+    assert compute_up(scalar.numbers.sin(x), 1) == math.sin(1)
 
 def test_like():
     t = TableSymbol('t', '{name: string, city: string}')
