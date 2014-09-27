@@ -13,14 +13,13 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
 import numpy as np
 from . import scalar
-from .core import Expr, path
+from .core import Expr, path, ElemWise
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from .predicates import isscalar
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
-from .method_dispatch import select_functions
 
 
 __all__ = '''
@@ -101,28 +100,6 @@ class TableExpr(Expr):
             return projection(self, key)
         raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
-    def __getattr__(self, key):
-        if self.names and key in self.names:
-            return self[key]
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError:
-            d = toolz.merge(schema_methods(self.schema),
-                            dshape_methods(self.dshape))
-            if key in d:
-                func = d[key]
-                if func in method_properties:
-                    return func(self)
-                else:
-                    return partial(func, self)
-            else:
-                raise AttributeError(key)
-
-    def __dir__(self):
-        d = toolz.merge(schema_methods(self.schema),
-                        dshape_methods(self.dshape))
-        return list(self.names) + list(d)
-
     @property
     def iscolumn(self):
         if len(self.names) > 1:
@@ -200,7 +177,7 @@ class TableSymbol(TableExpr):
         return self.dshape.subshape[0]
 
 
-class RowWise(TableExpr):
+class RowWise(ElemWise, TableExpr):
     """ Apply an operation equally to each of the rows.  An Interface.
 
     Common rowwise operations include ``Map``, ``ColumnWise``, ``Projection``,
@@ -1409,29 +1386,32 @@ def isboolean(ds):
     return (isinstance(ds, Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'bool' in str(ds)
 
-def isdimensional(ds):
-    return not not ds.shape
-
 def iscolumn(ds):
     return (len(ds.shape) == 1 and
             isinstance(ds.measure, Unit) or
             isinstance(ds.measure, Record) and len(ds.measure.names) == 1)
 
-from datashape.predicates import istabular
-from datashape import Unit, Record, to_numpy_dtype
+def isdimensional(ds):
+    """
 
-schema_method_list = [
+    >>> isdimensional('5 * int')
+    True
+    >>> isdimensional('int')
+    False
+    """
+    return isdimension(dshape(ds)[0])
+
+from datashape.predicates import istabular, isdimension
+from datashape import Unit, Record, to_numpy_dtype
+from .core import schema_method_list, dshape_method_list
+
+schema_method_list.extend([
     (isboolean, {any, all}),
     (isnumeric, {mean, isnan, sum, mean, min, max, std, var}),
-    ]
+    ])
 
-dshape_method_list = [
-    (istabular, {relabel, count_values}),
-    (isdimensional, {distinct, count, nunique, head, sort}),
+dshape_method_list.extend([
+    (istabular, {relabel, count_values, head}),
+    (isdimensional, {distinct, count, nunique, head, sort, count_values}),
     (iscolumn, {label})
-    ]
-
-method_properties = set()
-
-schema_methods = memoize(partial(select_functions, schema_method_list))
-dshape_methods = memoize(partial(select_functions, dshape_method_list))
+    ])

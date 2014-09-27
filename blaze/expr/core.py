@@ -6,13 +6,15 @@ import inspect
 import functools
 import datashape
 
-from toolz import unique, concat
+from toolz import unique, concat, memoize, partial
+import toolz
 from pprint import pprint
 from blaze.compatibility import StringIO
 
+from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover', 'path']
+__all__ = ['Expr', 'discover', 'path', 'ElemWise']
 
 
 def get_callable_name(o):
@@ -88,6 +90,8 @@ class Expr(object):
     def names(self):
         if isinstance(self.dshape.measure, datashape.Record):
             return self.dshape.measure.names
+        if hasattr(self, 'name'):
+            return [self.name]
 
     def leaves(self):
         """ Leaves of an expresion tree
@@ -164,6 +168,39 @@ class Expr(object):
 
     def __setstate__(self, state):
         self.__init__(*state)
+
+    def __dir__(self):
+        d = toolz.merge(schema_methods(self.schema),
+                        dshape_methods(self.dshape))
+        return list(self.names) + list(d)
+
+    def __getattr__(self, key):
+        if self.names and key in self.names:
+            return self[key]
+        try:
+            return object.__getattribute__(self, key)
+        except AttributeError:
+            d = toolz.merge(schema_methods(self.schema),
+                            dshape_methods(self.dshape))
+            if key in d:
+                func = d[key]
+                if func in method_properties:
+                    return func(self)
+                else:
+                    return partial(func, self)
+            else:
+                raise AttributeError(key)
+
+
+
+class ElemWise(Expr):
+    """
+    Elementwise operation
+    """
+    @property
+    def dshape(self):
+        return datashape.DataShape(*(self.child.dshape.shape
+                                  + (self.schema[0],)))
 
 
 @dispatch(Expr)
@@ -245,3 +282,15 @@ def path(a, b):
                 a = child
                 break
     yield a
+
+
+schema_method_list = [
+    ]
+
+dshape_method_list = [
+    ]
+
+method_properties = set()
+
+schema_methods = memoize(partial(select_functions, schema_method_list))
+dshape_methods = memoize(partial(select_functions, dshape_method_list))
