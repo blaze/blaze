@@ -66,6 +66,12 @@ class Expr(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    def __nonzero__(self): # pragma: no cover
+        return True
+
+    def __bool__(self):
+        return True
+
     @property
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
