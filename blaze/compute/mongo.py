@@ -172,7 +172,7 @@ def compute_sub(t):
 
 @dispatch(Projection, MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append({'$project': dict((col, 1) for col in t.columns)})
+    return q.append({'$project': dict((col, 1) for col in t.names)})
 
 
 @dispatch(Selection, MongoQuery)
@@ -196,12 +196,12 @@ def compute_up(t, q, **kwargs):
     return MongoQuery(q.coll, q.query +
     ({
         '$group': toolz.merge(
-                    {'_id': dict((col, '$'+col) for col in t.grouper.columns)},
+                    {'_id': dict((col, '$'+col) for col in t.grouper.names)},
                     group_apply(t.apply)
                     )
      },
      {
-         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.columns),
+         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.names),
                                  dict((name, '$' + name) for name in names))
      }))
 
@@ -209,8 +209,8 @@ def compute_up(t, q, **kwargs):
 @dispatch(Distinct, MongoQuery)
 def compute_up(t, q, **kwargs):
     return MongoQuery(q.coll, q.query +
-    ({'$group': {'_id': dict((col, '$'+col) for col in t.columns)}},
-     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.columns),
+    ({'$group': {'_id': dict((col, '$'+col) for col in t.names)}},
+     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.names),
                               {'_id': 0})}))
 
 
@@ -225,7 +225,7 @@ def group_apply(expr):
     """
     assert isinstance(expr.dshape[0], Record)
     key = expr.dshape[0].names[0]
-    col = '$' + expr.child.columns[0]
+    col = '$' + expr.child.names[0]
     if isinstance(expr, count):
         return {key: {'$sum': 1}}
     if isinstance(expr, sum):
@@ -267,7 +267,7 @@ def compute_up(t, q, **kwargs):
 def compute_up(t, q, **kwargs):
     name = t.dshape[0].names[0]
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
-    column = '$' + t.child.columns[0]
+    column = '$' + t.child.names[0]
     arg = {'$group': {'_id': {}, name: {reduction: column}}}
     return q.append(arg)
 
@@ -317,14 +317,14 @@ def post_compute(e, q, d):
         return result[0][field]
 
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
-                                 dict((col, 1) for col in e.columns))}
+                                 dict((col, 1) for col in e.names))}
     q = q.append(d)
     dicts = q.coll.aggregate(list(q.query))['result']
 
     if e.iscolumn:
-        return list(pluck(e.columns[0], dicts, default=None))  # dicts -> values
+        return list(pluck(e.names[0], dicts, default=None))  # dicts -> values
     else:
-        return list(pluck(e.columns, dicts, default=None))  # dicts -> tuples
+        return list(pluck(e.names, dicts, default=None))  # dicts -> tuples
 
 
 @dispatch(ColumnWise, MongoQuery, dict)

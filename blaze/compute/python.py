@@ -93,15 +93,15 @@ def rowfunc(t):
         compute<Rowwise, Sequence>
     """
     from cytoolz.curried import get
-    indices = [t.child.columns.index(col) for col in t.columns]
+    indices = [t.child.names.index(col) for col in t.names]
     return get(indices)
 
 
 @dispatch(Column)
 def rowfunc(t):
-    if t.child.iscolumn and t.column == t.child.columns[0]:
+    if t.child.iscolumn and t.column == t.child.names[0]:
         return identity
-    index = t.child.columns.index(t.column)
+    index = t.child.names.index(t.column)
     return lambda x: x[index]
 
 
@@ -364,12 +364,12 @@ def pair_assemble(t):
     This is mindful to shared columns as well as missing records
     """
     from cytoolz import get  # not curried version
-    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+    on_left = [t.lhs.names.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.names.index(col) for col in listpack(t.on_right)]
 
-    left_self_columns = [t.lhs.columns.index(c) for c in t.lhs.columns
+    left_self_columns = [t.lhs.names.index(c) for c in t.lhs.names
                                             if c not in listpack(t.on_left)]
-    right_self_columns = [t.rhs.columns.index(c) for c in t.rhs.columns
+    right_self_columns = [t.rhs.names.index(c) for c in t.rhs.names
                                             if c not in listpack(t.on_right)]
     def assemble(pair):
         a, b = pair
@@ -381,12 +381,12 @@ def pair_assemble(t):
         if a is not None:
             left_entries = get(left_self_columns, a)
         else:
-            left_entries = (None,) * (len(t.lhs.columns) - len(on_left))
+            left_entries = (None,) * (len(t.lhs.names) - len(on_left))
 
         if b is not None:
             right_entries = get(right_self_columns, b)
         else:
-            right_entries = (None,) * (len(t.rhs.columns) - len(on_right))
+            right_entries = (None,) * (len(t.rhs.names) - len(on_right))
 
         return joined + left_entries + right_entries
 
@@ -409,8 +409,8 @@ def compute_up(t, lhs, rhs, **kwargs):
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)
 
-    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+    on_left = [t.lhs.names.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.names.index(col) for col in listpack(t.on_right)]
 
     left_default = (None if t.how in ('right', 'outer')
                          else toolz.itertoolz.no_default)
@@ -475,7 +475,7 @@ def compute_up(expr, data, **kwargs):
 def like_regex_predicate(expr):
     regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
                     for name, pattern in expr.patterns.items())
-    regex_tup = [regexes.get(name, None) for name in expr.columns]
+    regex_tup = [regexes.get(name, None) for name in expr.names]
     def predicate(tup):
         for item, regex in zip(tup, regex_tup):
             if regex and not regex.match(item):

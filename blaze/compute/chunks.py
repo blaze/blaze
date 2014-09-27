@@ -111,13 +111,13 @@ def compute_up(expr, c, **kwargs):
 def compute_up(expr, c, **kwargs):
     c = iter(c)
     df = into(DataFrame, compute_up(expr, next(c)),
-              columns=expr.columns)
+              columns=expr.names)
     for chunk in c:
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
                    compute_up(expr.child.head(expr.n - len(df)), chunk),
-                   columns=expr.columns)
+                   columns=expr.names)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
     return df
@@ -189,7 +189,7 @@ def compute_up(expr, c, **kwargs):
     if expr.apply.child.iscolumn:
         apply_cols = apply_cols[0]
 
-    group = by(t[expr.grouper.columns],
+    group = by(t[expr.grouper.names],
                b(t[apply_cols]))
 
     return compute_up(group, intermediate)

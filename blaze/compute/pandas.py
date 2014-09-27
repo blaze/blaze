@@ -40,12 +40,12 @@ __all__ = []
 
 @dispatch(Projection, DataFrame)
 def compute_up(t, df, **kwargs):
-    return df[list(t.columns)]
+    return df[list(t.names)]
 
 
 @dispatch(Column, (DataFrame, DataFrameGroupBy))
 def compute_up(t, df, **kwargs):
-    return df[t.columns[0]]
+    return df[t.names[0]]
 
 
 @dispatch(Column, (Series, SeriesGroupBy))
@@ -55,7 +55,7 @@ def compute_up(_, s, **kwargs):
 
 @dispatch(ColumnWise, DataFrame)
 def compute_up(t, df, **kwargs):
-    d = dict((t.child[c].expr, df[c]) for c in t.child.columns)
+    d = dict((t.child[c].expr, df[c]) for c in t.child.names)
     return compute(t.expr, d)
 
 
@@ -91,7 +91,7 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(TableSymbol, DataFrame)
 def compute_up(t, df, **kwargs):
-    if not list(t.columns) == list(df.columns):
+    if not list(t.names) == list(df.names):
         # TODO also check dtype
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
                          % (t, df))
@@ -111,7 +111,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     result = pd.merge(lhs, rhs,
                       left_on=t.on_left, right_on=t.on_right,
                       how=t.how)
-    return result.reset_index()[t.columns]
+    return result.reset_index()[t.names]
 
 
 @dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
@@ -190,7 +190,7 @@ def get_grouper(c, grouper, df):
 
 @dispatch(By, Projection, NDFrame)
 def get_grouper(c, grouper, df):
-    return grouper.columns
+    return grouper.names
 
 
 @dispatch(By, Reduction, Grouper, NDFrame)
@@ -204,7 +204,7 @@ def compute_by(t, r, g, df):
     if isinstance(preapply, Series):
         preapply.name = names[0]
     else:
-        preapply.columns = names
+        preapply.names = names
     group_df = concat_nodup(df, preapply)
 
     gb = group_df.groupby(g)

@@ -1465,8 +1465,12 @@ def union(*children):
     return Union(children)
 
 
-class Like(TableExpr):
+class Like(Expr):
     __slots__ = 'child', '_patterns'
+
+    @property
+    def iscolumn(self):
+        return self.child.iscolumn
 
     @property
     def patterns(self):
