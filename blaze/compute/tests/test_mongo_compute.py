@@ -329,11 +329,11 @@ def test_missing_values(p, missing_vals):
 
 
 def test_datetime_access(date_data):
-    s = TableSymbol('s',
+    t = TableSymbol('t',
             '{amount: float64, id: int64, name: string, when: datetime}')
 
     py_data = into(list, date_data) # a python version of the collection
 
-    for attr in ['day', 'minute', 'second', 'year', 'microsecond']:
+    for attr in ['day', 'minute', 'second', 'year']:
         assert list(compute(getattr(t.when, attr), date_data)) == \
                 list(compute(getattr(t.when, attr), py_data))
