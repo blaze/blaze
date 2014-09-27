@@ -113,7 +113,7 @@ class TableExpr(Expr):
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
-            d = toolz.merge(schema_methods(self.schema[0]),
+            d = toolz.merge(schema_methods(self.schema),
                             dshape_methods(self.dshape))
             if key in d:
                 func = d[key]
@@ -125,7 +125,7 @@ class TableExpr(Expr):
                 raise AttributeError(key)
 
     def __dir__(self):
-        d = toolz.merge(schema_methods(self.schema[0]),
+        d = toolz.merge(schema_methods(self.schema),
                         dshape_methods(self.dshape))
         return list(self.columns) + list(d)
 
@@ -367,21 +367,6 @@ class ColumnSyntaxMixin(object):
 
     def __invert__(self):
         return columnwise(Not, self)
-
-    def label(self, label):
-        return Label(self, label)
-
-    def sum(self):
-        return sum(self)
-
-    def var(self, unbiased=False):
-        return var(self, unbiased)
-
-    def std(self, unbiased=False):
-        return std(self, unbiased)
-
-    def isnan(self):
-        return columnwise(scalar.isnan, self)
 
 
 class Column(ColumnSyntaxMixin, Projection):
@@ -826,7 +811,8 @@ ceil = partial(columnwise, scalar.ceil)
 floor = partial(columnwise, scalar.floor)
 trunc = partial(columnwise, scalar.trunc)
 
-isnan = partial(columnwise, scalar.isnan)
+def isnan(expr):
+    return columnwise(scalar.isnan, expr)
 
 
 class Reduction(NumberInterface):
@@ -1201,6 +1187,10 @@ class Label(RowWise, ColumnSyntaxMixin):
         else:
             raise ValueError("Column Mismatch: %s" % key)
 
+def label(expr, lab):
+    return Label(expr, lab)
+label.__doc__ = Label.__doc__
+
 
 class ReLabel(RowWise):
     """
@@ -1508,29 +1498,56 @@ def like(child, **kwargs):
 
 
 def isnumeric(ds):
-    return ((isinstance(ds, datashape.Unit) and
-             np.issubdtype(datashape.to_numpy_dtype(ds), np.number)) or
-            (isinstance(ds, datashape.Record)
-                and len(ds.names) == 1
-                and isnumeric(ds.types[0])))
+    """
+
+    >>> isnumeric(dshape('int32'))
+    True
+    >>> isnumeric(dshape('{amount: int32}'))
+    True
+    >>> isnumeric(dshape('{amount: ?int32}'))
+    True
+    """
+    if isinstance(ds, str):
+        ds = dshape(ds)
+    if isinstance(ds, DataShape):
+        ds = ds[0]
+    if isinstance(ds, Option):
+        return isnumeric(ds.ty)
+    if isinstance(ds, Record) and len(ds.names) == 1:
+        return isnumeric(ds.types[0])
+    return isinstance(ds, Unit) and np.issubdtype(to_numpy_dtype(ds), np.number)
 
 def isdatelike(ds):
-    return (isinstance(ds, datashape.Unit) or isinstance(ds, Record) and
+    if isinstance(ds, str):
+        ds = dshape(ds)
+    if isinstance(ds, DataShape):
+        ds = ds[0]
+    return (isinstance(ds, Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'date' in str(ds)
 
 def isboolean(ds):
-    return (isinstance(ds, datashape.Unit) or isinstance(ds, Record) and
+    if isinstance(ds, str):
+        ds = dshape(ds)
+    if isinstance(ds, DataShape):
+        ds = ds[0]
+    return (isinstance(ds, Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'bool' in str(ds)
 
 def isdimensional(ds):
     return not not ds.shape
 
-from datashape import istabular
+def iscolumn(ds):
+    return (len(ds.shape) == 1 and
+            isinstance(ds.measure, Unit) or
+            isinstance(ds.measure, Record) and len(ds.measure.names) == 1)
+
+from datashape.predicates import istabular
+from datashape import Unit, Record, to_numpy_dtype
 
 _schema_methods = [
     (lambda ds: 'string' in str(ds), {like, min, max}),
     (isboolean, {any, all}),
-    (isnumeric, {mean, isnan, sum, mean, min, max}),
+    (isnumeric, {mean, isnan, sum, mean, min, max, std, var}),
     (isdatelike, {year, month, day, hour, minute, date, time,
                   second, millisecond, microsecond})
     ]
@@ -1538,6 +1555,7 @@ _schema_methods = [
 _dshape_methods = [
     (istabular, {relabel, count_values}),
     (isdimensional, {distinct, count, nunique, head}),
+    (iscolumn, {label})
     ]
 
 _properties = {year, month, day, hour, minute, second, millisecond,
