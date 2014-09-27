@@ -100,13 +100,13 @@ class ExprClient(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'name'
+    __slots__ = 'url', 'dataname'
     def __init__(self, url, name):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
-        self.name = name
+        self.dataname = name
 
     @property
     def dshape(self):
@@ -117,7 +117,7 @@ class ExprClient(object):
 
         data = json.loads(content(response))
 
-        return dshape(data[self.name])
+        return dshape(data[self.dataname])
 
 
 @dispatch(ExprClient)
@@ -133,7 +133,7 @@ def compute_down(expr, ec):
     from pandas import DataFrame
     tree = to_tree(expr)
 
-    r = requests.get('%s/compute/%s.json' % (ec.url, ec.name),
+    r = requests.get('%s/compute/%s.json' % (ec.url, ec.dataname),
                      data = json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 

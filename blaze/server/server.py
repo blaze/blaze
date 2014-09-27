@@ -10,7 +10,7 @@ from functools import partial, wraps
 from blaze import into, compute, compute_up
 from ..api import discover, Table
 from ..expr import (Expr, TableSymbol, Selection, ColumnWise, TableSymbol,
-    istabular)
+    istabular, isscalar)
 from ..expr.scalar.parser import exprify
 
 from ..compatibility import map
@@ -387,7 +387,7 @@ def comp(datasets, name):
     expr = from_tree(data['expr'], namespace={name: t})
 
     result = compute(expr, dset)
-    if istabular(expr):
+    if not isscalar(expr):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
