@@ -108,7 +108,7 @@ class TableExpr(Expr):
         raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
     def __getattr__(self, key):
-        if key in self.columns:
+        if self.columns and key in self.columns:
             return self[key]
         try:
             return object.__getattribute__(self, key)

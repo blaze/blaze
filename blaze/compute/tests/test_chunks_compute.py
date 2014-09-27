@@ -8,7 +8,7 @@ from pandas import DataFrame
 from toolz import concat
 
 from blaze import into
-from blaze.expr import TableSymbol, join, by, special_attributes
+from blaze.expr import TableSymbol, join, by
 from blaze.compute.core import compute
 from blaze.compute.chunks import ChunkIterable, get_chunk
 
@@ -119,23 +119,16 @@ def test_chunk_list():
     assert get_chunk(data, 2, chunksize=2) == [5, 6]
 
 
-@pytest.mark.parametrize('attr, dtype', sorted(special_attributes.items()))
-def test_chunk_attribute(attr, dtype):
-    data = [[1, 'Alice', 100],
-            [2, 'Bob', 200],
-            [3, 'Alice', -300],
-            [4, 'Charlie', 400],
-            [5, 'Edith', 200]]
-
-    for i, d in enumerate(data, start=1):
-        d.append(datetime.datetime(2014, 10, i, i, i, i))
+def test_chunk_datetime():
+    data = [[1, 'Alice', 100, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [2, 'Bob', 200, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [3, 'Alice', -300, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [4, 'Charlie', 400, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [5, 'Edith', 200, datetime.datetime(2014, 10, 1, 1, 1, 1)]]
 
     t = TableSymbol('t', '{id: int, name: string, amount: int, when: datetime}')
 
     c = ChunkIterable(data, chunksize=2)
-    result = compute(getattr(t.when, attr), c)
-    result = list(concat(result))
-    expected = [getattr(d[-1], attr, d[-1].microsecond // 1000) for d in data]
-    if attr == 'date' or attr == 'time':
-        expected = [e() for e in expected]
-    assert result == expected
+    assert list(concat(compute(t.when.day, c))) == [1] * 5
+    assert list(concat(compute(t.when.date, c))) == \
+            [datetime.date(2014, 10, 1)] * 5

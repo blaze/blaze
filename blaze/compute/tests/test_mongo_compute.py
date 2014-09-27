@@ -328,7 +328,6 @@ def test_missing_values(p, missing_vals):
     assert set(compute(p.y, missing_vals)) == set([None, 20, None, 40])
 
 
-
 def test_datetime_access(date_data):
     s = TableSymbol('s',
             '{amount: float64, id: int64, name: string, when: datetime}')
