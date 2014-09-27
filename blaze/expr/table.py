@@ -17,6 +17,7 @@ from .core import Expr, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
+from .predicates import isscalar
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 from .method_dispatch import select_functions
@@ -87,7 +88,7 @@ class TableExpr(Expr):
     def __getitem__(self, key):
         if isinstance(key, (list, basestring, unicode)):
             return self.project(key)
-        if isinstance(key, TableExpr):
+        if isinstance(key, Expr):
             return selection(self, key)
         raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
@@ -950,8 +951,8 @@ def summary(**kwargs):
     values = tuple(map(toolz.second, items))
     child = common_subexpression(*values)
 
-    if len(kwargs) == 1 and not isinstance(child, TableExpr):
-        while not isinstance(child, TableExpr):
+    if len(kwargs) == 1 and isscalar(child):
+        while isscalar(child):
             children = [i for i in child.inputs if isinstance(i, Expr)]
             if len(children) == 1:
                 child = children[0]

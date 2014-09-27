@@ -49,7 +49,7 @@ def split(leaf, expr, chunk=None, agg=None):
     """
     center = path_split(leaf, expr)
     chunk = chunk or TableSymbol('chunk', leaf.dshape, leaf.iscolumn)
-    if isinstance(center, TableExpr):
+    if istabular(center):
         agg = agg or TableSymbol('aggregate', center.schema, center.iscolumn)
     else:
         agg = agg or TableSymbol('aggregate',
