@@ -1469,10 +1469,6 @@ class Like(Expr):
     __slots__ = 'child', '_patterns'
 
     @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-    @property
     def patterns(self):
         return dict(self._patterns)
 

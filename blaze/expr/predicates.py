@@ -8,6 +8,12 @@ def isscalar(expr):
     return datashape.isscalar(expr.dshape)
 
 def iscolumn(expr):
-    return (len(expr.dshape.shape) == 1
-            and datashape.isscalar(expr.dshape.measure)
-            and expr.iscolumn)
+    if hasattr(expr, 'iscolumn'):
+        return expr.iscolumn
+    if (len(expr.dshape.shape) != 1
+            or not datashape.isscalar(expr.dshape.measure)):
+        return False
+    if (isinstance(expr.dshape.measure, datashape.Record)
+            and len(expr.dshape.measure.names) > 1):
+        return False
+    # TODO: Still ambiguous about record schemas with len 1
