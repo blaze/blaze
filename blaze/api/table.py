@@ -8,7 +8,7 @@ import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr import TableSymbol, Expr, TableExpr, istabular
+from ..expr import TableSymbol, Expr, TableExpr, isscalar, iscolumn
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -107,7 +107,7 @@ class Table(TableSymbol):
 
     @property
     def args(self):
-        return (id(self.data), self.dshape, self._name, self.iscolumn)
+        return (id(self.data), self.dshape, self._name, iscolumn(self))
 
     def __setstate__(self, state):
         for slot, arg in zip(self.__slots__, state):
@@ -132,7 +132,7 @@ def concrete_head(expr, n=10):
     """ Return head of computed expression """
     if not expr.resources():
         raise ValueError("Expression does not contain data resources")
-    if istabular(expr):
+    if not isscalar(expr):
         head = expr.head(n + 1)
         result = compute(head)
 
@@ -141,13 +141,13 @@ def concrete_head(expr, n=10):
 
         if expr.names:
             return into(DataFrame(columns=expr.names), result)
-        else:
-            return into(DataFrame, result)
+        elif iscolumn(expr) and expr.name:
+            return into(DataFrame(columns=[expr.name]), result)
     else:
         return repr(compute(expr))
 
 
-def table_repr(expr, n=10):
+def expr_repr(expr, n=10):
     if not expr.resources():
         return str(expr)
 
@@ -163,14 +163,7 @@ def table_repr(expr, n=10):
         return repr(result)
 
 
-def expr_repr(expr):
-    if not expr.resources():
-        return str(expr)
-    else:
-        return str(compute(expr))
-
-
-def table_html(expr, n=10):
+def expr_html(expr, n=10):
     return concrete_head(expr).to_html()
 
 
@@ -199,7 +192,7 @@ def into(a, b):
 @dispatch(np.ndarray, Expr)
 def into(a, b):
     schema = dshape(str(b.schema).replace('?', ''))
-    if b.iscolumn:
+    if iscolumn(b):
         return into(np.ndarray(0), compute(b),
                 dtype=to_numpy_dtype(schema[0].types[0]))
     else:
@@ -214,7 +207,6 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-TableExpr.__repr__ = table_repr
-TableExpr.to_html = table_html
-TableExpr._repr_html_ = table_html
+Expr.to_html = expr_html
+Expr._repr_html_ = expr_html
 TableExpr.__len__ = table_length
