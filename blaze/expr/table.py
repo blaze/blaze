@@ -29,7 +29,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary Like like DateTime Date Time
+projection union columnwise Summary summary DateTime Date Time
 Millisecond Microsecond '''.split()
 
 
@@ -1465,34 +1465,6 @@ def union(*children):
     return Union(children)
 
 
-class Like(Expr):
-    __slots__ = 'child', '_patterns'
-
-    @property
-    def patterns(self):
-        return dict(self._patterns)
-
-    @property
-    def dshape(self):
-        return datashape.var * self.child.dshape.subshape[0]
-
-
-def like(child, **kwargs):
-    """ Filter table by string comparison
-
-    >>> from blaze import TableSymbol, like, compute
-    >>> t = TableSymbol('t', '{name: string, city: string}')
-    >>> expr = like(t, name='Alice*')
-
-    >>> data = [('Alice Smith', 'New York'),
-    ...         ('Bob Jones', 'Chicago'),
-    ...         ('Alice Walker', 'LA')]
-    >>> list(compute(expr, data))
-    [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
-    """
-    return Like(child, tuple(kwargs.items()))
-
-
 def isnumeric(ds):
     """
 
@@ -1540,15 +1512,14 @@ def iscolumn(ds):
 from datashape.predicates import istabular
 from datashape import Unit, Record, to_numpy_dtype
 
-_schema_methods = [
-    (lambda ds: 'string' in str(ds), {like, min, max}),
+schema_method_list = [
     (isboolean, {any, all}),
     (isnumeric, {mean, isnan, sum, mean, min, max, std, var}),
     (isdatelike, {year, month, day, hour, minute, date, time,
                   second, millisecond, microsecond})
     ]
 
-_dshape_methods = [
+dshape_method_list = [
     (istabular, {relabel, count_values}),
     (isdimensional, {distinct, count, nunique, head, sort}),
     (iscolumn, {label})
@@ -1557,5 +1528,5 @@ _dshape_methods = [
 _properties = {year, month, day, hour, minute, second, millisecond,
         microsecond, date, time}
 
-schema_methods = memoize(partial(select_functions, _schema_methods))
-dshape_methods = memoize(partial(select_functions, _dshape_methods))
+schema_methods = memoize(partial(select_functions, schema_method_list))
+dshape_methods = memoize(partial(select_functions, dshape_method_list))

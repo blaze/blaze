@@ -13,7 +13,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol, like, Like)
+                        Summary, count, ScalarSymbol, )
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover
@@ -895,15 +895,6 @@ class TestRepr(object):
                      " _schema=None, _iscolumn=None)" %
                      funcname('test_nested_partial', 'myfunc'))
 
-
-def test_like():
-    t = TableSymbol('t', '{name: string, amount: int, city: string}')
-
-    expr = like(t, name='Alice*')
-
-    assert eval(str(expr)).isidentical(expr)
-    assert expr.schema == t.schema
-    assert expr.dshape[0] == datashape.var
 
 
 def test_count_values():
