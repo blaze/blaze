@@ -30,7 +30,8 @@ def like(child, **kwargs):
     """
     return Like(child, tuple(kwargs.items()))
 
-from .table import schema_method_list, min, max
+from .core import schema_method_list
+from .table import min, max
 
 schema_method_list.extend([
     (lambda ds: 'string' in str(ds), {like, min, max}),
