@@ -48,13 +48,13 @@ def split(leaf, expr, chunk=None, agg=None):
     ((chunk, count(child=chunk['id'])), (aggregate, sum(child=aggregate)))
     """
     center = path_split(leaf, expr)
-    chunk = chunk or TableSymbol('chunk', leaf.dshape, leaf.iscolumn)
-    if istabular(center):
-        agg = agg or TableSymbol('aggregate', center.schema, center.iscolumn)
-    else:
+    chunk = chunk or TableSymbol('chunk', leaf.dshape, iscolumn(leaf))
+    if isscalar(center):
         agg = agg or TableSymbol('aggregate',
                                  center.dshape,
                                  isinstance(center, Reduction))
+    else:
+        agg = agg or TableSymbol('aggregate', center.schema, iscolumn(center))
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
             _split(center, leaf=leaf, chunk=chunk, agg=agg)
@@ -97,7 +97,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
             split(leaf, expr.apply, chunk=chunk, agg=agg)
 
     chunk_grouper = expr.grouper.subs({leaf: chunk})
-    if expr.grouper.iscolumn:
+    if iscolumn(expr.grouper):
         agg_grouper = agg[expr.columns[0]]
     else:
         agg_grouper = agg[list(expr.columns[:len(expr.grouper.columns)])]

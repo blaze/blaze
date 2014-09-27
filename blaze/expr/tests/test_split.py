@@ -30,7 +30,7 @@ def test_sum():
     assert chunk.schema == t.schema
     assert chunk_expr.isidentical(chunk.amount.sum())
 
-    assert agg.iscolumn
+    assert iscolumn(agg)
     assert agg_expr.isidentical(sum(agg))
 
 
@@ -40,7 +40,7 @@ def test_distinct():
     assert chunk.schema == t.schema
     assert chunk_expr.isidentical(chunk.amount.distinct())
 
-    assert agg.iscolumn
+    assert iscolumn(agg)
     assert agg_expr.isidentical(count(agg.distinct()))
 
 
@@ -70,7 +70,7 @@ def test_by():
     assert chunk.schema == t.schema
     assert chunk_expr.isidentical(by(chunk.name, total=chunk.amount.sum()))
 
-    assert not agg.iscolumn
+    assert not iscolumn(agg)
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
 
 

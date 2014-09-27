@@ -17,7 +17,7 @@ from .core import Expr, path, ElemWise
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from .predicates import isscalar
+from .predicates import isscalar, iscolumn
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
@@ -90,11 +90,14 @@ class TableExpr(Expr):
         raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
     def project(self, key):
-        if isinstance(key, _strtypes):
+        if iscolumn(self) and key == self._name:
+            return self
+        elif isinstance(key, _strtypes):
             if key not in self.names:
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
-        if isinstance(key, list) and builtins.all(isinstance(k, _strtypes) for k in key):
+        elif (isinstance(key, list) and builtins.all(isinstance(k, _strtypes)
+                                                     for k in key)):
             if not builtins.all(col in self.names for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
             return projection(self, key)
@@ -110,16 +113,16 @@ class TableExpr(Expr):
                 str(type(self).__name__))
 
     @property
-    def name(self):
-        if self.iscolumn:
-            try:
+    def _name(self):
+        if iscolumn(self):
+            if isinstance(self.schema[0], Record):
                 return self.schema[0].names[0]
-            except AttributeError:
-                raise ValueError("Column is un-named, name with col.label('name')")
-        elif 'name' in self.names:
-            return self['name']
+            try:
+                return self.child._name
+            except (AttributeError, ValueError):
+                raise ValueError("Can not compute name of table")
         else:
-            raise ValueError("Can not compute name of table")
+            raise ValueError("Column is un-named, name with col.label('aname')")
 
     def __ne__(self, other):
         return columnwise(Ne, self, other)
@@ -257,7 +260,7 @@ class ColumnSyntaxMixin(object):
     @property
     def column(self):
         # For backwards compatibility
-        return self.name
+        return self._name
 
     def __eq__(self, other):
         return columnwise(Eq, self, other)
@@ -335,7 +338,7 @@ class Column(ColumnSyntaxMixin, Projection):
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts['name'].schema
-    dshape("{ name : string }")
+    dshape("string")
 
     See Also
     --------
@@ -352,22 +355,22 @@ class Column(ColumnSyntaxMixin, Projection):
     def names(self):
         return [self._name]
 
-    @property
-    def name(self):
-        return self._name
-
     def __str__(self):
         return "%s['%s']" % (self.child, self.names[0])
 
     @property
     def expr(self):
-        return ScalarSymbol(self.name, dtype=self.dtype)
+        return ScalarSymbol(self._name, dtype=self.dtype)
 
     def project(self, key):
-        if key == self.name:
+        if key == self._name:
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)
+
+    @property
+    def schema(self):
+        return dshape(self.child.schema[0].dict[self._name])
 
 
 class Selection(TableExpr):
@@ -517,11 +520,14 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     iscolumn = True
 
     @property
-    def schema(self):
+    def _name(self):
         names = [x._name for x in self.expr.traverse()
                          if isinstance(x, ScalarSymbol)]
         if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
-            return DataShape(Record([[names[0], self.expr.dshape[0]]]))
+            return names[0]
+
+    @property
+    def schema(self):
         return self.expr.dshape
 
     def __str__(self):
@@ -712,15 +718,19 @@ class Reduction(NumberInterface):
 
     @property
     def dshape(self):
-        if self.child.names and len(self.child.names) == 1:
-            name = self.child.names[0] + '_' + type(self).__name__
-            return DataShape(Record([[name, self.dtype]]))
-        else:
-            return DataShape(Record([[type(self).__name__, self.dtype]]))
+        return dshape(self.dtype)
 
     @property
     def symbol(self):
         return type(self).__name__
+
+    @property
+    def _name(self):
+        try:
+            return self.child._name + '_' + type(self).__name__
+        except (AttributeError, ValueError):
+            return type(self).__name__
+
 
 
 class any(Reduction):
@@ -889,12 +899,25 @@ class By(TableExpr):
 
     @property
     def schema(self):
-        group = self.grouper.schema[0].parameters[0]
-        reduction_name = type(self.apply).__name__
-        apply = self.apply.dshape[0].parameters[0]
-        params = unique(group + apply, key=lambda x: x[0])
+        if isinstance(self.grouper.schema[0], Record):
+            names = self.grouper.schema[0].names
+            values = self.grouper.schema[0].types
+        elif isinstance(self.grouper.schema[0], Unit):
+            names = [self.grouper._name]
+            values = [self.grouper.schema[0]]
+        else:
+            raise TypeError()
 
-        return dshape(Record(list(params)))
+        if isinstance(self.apply.dshape[0], Record):
+            names.extend(self.apply.dshape[0].names)
+            values.extend(self.apply.dshape[0].types)
+        elif isinstance(self.apply.schema[0], Unit):
+            names.append(self.apply._name)
+            values.append(self.apply.dshape[0])
+        else:
+            raise TypeError()
+
+        return dshape(Record(list(zip(names, values))))
 
 
 @dispatch(TableExpr, (Summary, Reduction))
@@ -1003,6 +1026,10 @@ class Distinct(TableExpr):
     def iscolumn(self):
         return self.child.iscolumn
 
+    @property
+    def names(self):
+        return self.child.names
+
 
 def distinct(expr):
     return Distinct(expr)
@@ -1050,11 +1077,11 @@ class Label(RowWise, ColumnSyntaxMixin):
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
-    >>> (accounts['amount'] * 100).schema
-    dshape("{ amount : float64 }")
+    >>> (accounts['amount'] * 100)._name
+    'amount'
 
-    >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
-    dshape("{ new_amount : float64 }")
+    >>> (accounts['amount'] * 100).label('new_amount')._name
+    'new_amount'
 
     See Also
     --------
@@ -1066,11 +1093,11 @@ class Label(RowWise, ColumnSyntaxMixin):
 
     @property
     def schema(self):
-        if isinstance(self.child.schema[0], Record):
-            dtype = self.child.schema[0].types[0]
-        else:
-            dtype = self.child.schema[0]
-        return DataShape(Record([[self.label, dtype]]))
+        return self.child.schema
+
+    @property
+    def _name(self):
+        return self.label
 
     def project(self, key):
         if key == self.names[0]:
@@ -1164,7 +1191,7 @@ class Map(RowWise):
             return self.child.iscolumn
 
     @property
-    def name(self):
+    def _name(self):
         if len(self.names) != 1:
             raise ValueError("Can only determine name of single-column. "
                     "Use .names to find all names")
@@ -1258,6 +1285,25 @@ def merge(*tables):
     return result
 
 
+def schema_concat(exprs):
+    """ Concatenate schemas together.  Supporting both Records and Units
+
+    In the case of Units, the name is taken from expr.name
+    """
+    names, values = [], []
+    for c in exprs:
+        if isinstance(c.schema[0], Record):
+            names.extend(c.schema[0].names)
+            values.extend(c.schema[0].types)
+        elif isinstance(c.schema[0], Unit):
+            names.extend(c._name)
+            values.extend(c.schema[0])
+        else:
+            raise TypeError("All schemas must have Record or Unit shape."
+                            "\nGot %s" % c.schema[0])
+    return dshape(Record(list(zip(names, values))))
+
+
 class Merge(RowWise):
     """ Merge the columns of many Tables together
 
@@ -1285,12 +1331,11 @@ class Merge(RowWise):
 
     @property
     def schema(self):
-        for c in self.children:
-            if not isinstance(c.schema[0], Record):
-                raise TypeError("All schemas must have Record shape.  Got %s" %
-                                c.schema[0])
-        return dshape(Record(list(concat(c.schema[0].parameters[0] for c in
-            self.children))))
+        return schema_concat(self.children)
+
+    @property
+    def names(self):
+        return list(concat(child.names for child in self.children))
 
     def subterms(self):
         yield self
@@ -1388,7 +1433,7 @@ def isboolean(ds):
     return (isinstance(ds, Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'bool' in str(ds)
 
-def iscolumn(ds):
+def iscolumnds(ds):
     return (len(ds.shape) == 1 and
             isinstance(ds.measure, Unit) or
             isinstance(ds.measure, Record) and len(ds.measure.names) == 1)
@@ -1415,5 +1460,5 @@ schema_method_list.extend([
 dshape_method_list.extend([
     (istabular, {relabel, count_values, head}),
     (isdimensional, {distinct, count, nunique, head, sort, count_values}),
-    (iscolumn, {label})
+    (iscolumnds, {label, relabel})
     ])

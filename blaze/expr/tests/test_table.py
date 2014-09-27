@@ -45,9 +45,9 @@ def test_length():
 def test_table_name():
     t = TableSymbol('t', '10 * {people: string, amount: int}')
     r = TableSymbol('r', 'int64', iscolumn=True)
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         t.name
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         r.name
 
 def test_shape():
@@ -113,7 +113,8 @@ def test_Projection():
     assert p.schema == dshape('{amount: int32, name: string}')
     print(t['amount'].dshape)
     print(dshape('var * int32'))
-    assert t['amount'].dshape == dshape('var * {amount: int32}')
+    assert t['amount'].dshape == dshape('var * int32')
+    assert t['amount']._name == 'amount'
 
     assert eval(str(p)).isidentical(p)
     assert p.project(['amount','name']) == p[['amount','name']]
@@ -139,7 +140,8 @@ def test_relational():
 
     r = (t['name'] == 'Alice')
 
-    assert r.dshape == dshape('var * {name: bool}')
+    assert 'bool' in str(r.dshape)
+    assert r._name
 
 
 def test_selection():
@@ -360,7 +362,7 @@ def test_reduction():
 
     assert 'amount' not in str(t.count().dshape)
 
-    assert first(t.count().dshape[0].types)[0] in (int32, int64)
+    assert t.count().dshape[0] in (int32, int64)
 
     assert 'int' in str(t.count().dshape)
     assert 'int' in str(t.nunique().dshape)
@@ -465,7 +467,8 @@ def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = distinct(t['name'])
     print(r.dshape)
-    assert r.dshape  == dshape('var * {name: string}')
+    assert r.dshape  == dshape('var * string')
+    assert r._name == 'name'
 
     r = t.distinct()
     assert r.dshape  == t.dshape
@@ -531,7 +534,7 @@ def test_label():
 def test_map_label():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     c = t.amount.map(identity, schema='{foo: int32}')
-    assert c.label('bar').name == 'bar'
+    assert c.label('bar')._name == 'bar'
     assert c.label('bar').child.isidentical(c.child)
 
 
@@ -580,7 +583,9 @@ def test_map():
     assert not t[['name', 'amount']].map(identity).iscolumn
 
     with pytest.raises(ValueError):
-        t[['name', 'amount']].map(identity, schema='{name: string, amount: int}').name
+        (t[['name', 'amount']]
+            .map(identity, schema='{name: string, amount: int}')
+            ._name)
 
 
 def test_apply():
@@ -662,7 +667,7 @@ def test_merge():
     c = merge(accounts[['name', 'balance']], new_amount)
     assert c.columns == ['name', 'balance', 'new']
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         merge(t, t)
     with pytest.raises(ValueError):
         merge(t, p)
@@ -801,8 +806,8 @@ def test_isnan():
 def test_columnwise_naming():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
 
-    assert t.x.name == 'x'
-    assert (t.x + 1).name == 'x'
+    assert t.x._name == 'x'
+    assert (t.x + 1)._name == 'x'
 
 
 def test_scalar_expr():
@@ -826,8 +831,8 @@ def test_distinct_name():
 
     assert t.name.isidentical(t['name'])
     assert t.distinct().name.isidentical(t.distinct()['name'])
-    assert t.id.distinct().name == 'id'
-    assert t.name.name == 'name'
+    assert t.id.distinct()._name == 'id'
+    assert t.name._name == 'name'
 
 
 def test_leaves():
@@ -922,9 +927,14 @@ def test_dir():
     assert 'day' in dir(t.dt)
     assert 'mean' not in dir(t.dt)
     assert 'mean' in dir(t.amount)
-    assert 'like' not in t[['amount', 'dt']]
-    assert 'any' not in t.name
+    assert 'like' not in dir(t[['amount', 'dt']])
+    assert 'any' not in dir(t.name)
 
 
 def test_predicates():
     assert isdimensional(dshape('5 * int32'))
+
+
+def test_distinct_column():
+    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+    assert t.name.distinct().name.isidentical(t.name.distinct())

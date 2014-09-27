@@ -93,8 +93,8 @@ class Expr(object):
     def names(self):
         if isinstance(self.dshape.measure, datashape.Record):
             return self.dshape.measure.names
-        if hasattr(self, 'name'):
-            return [self.name]
+        if hasattr(self, '_name'):
+            return [self._name]
 
     def leaves(self):
         """ Leaves of an expresion tree
