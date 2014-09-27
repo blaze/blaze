@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .compute.sql import select
 from .data.sql import SQL, dispatch, first
-from .expr import Expr, TableExpr, Projection, Column, UnaryOp, BinOp, Join
+from .expr import Expr, Projection, Column, UnaryOp, BinOp, Join, iscolumn
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
 from .api.resource import resource
@@ -54,7 +54,7 @@ def post_compute(expr, query, d):
 
     if isinstance(expr, Scalar):
         return result[0][0]
-    if isinstance(expr, TableExpr) and expr.iscolumn:
+    if iscolumn(expr):
         return [x[0] for x in result]
     return result
 
