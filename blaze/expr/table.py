@@ -129,23 +129,6 @@ class TableExpr(Expr):
                         dshape_methods(self.dshape))
         return list(self.columns) + list(d)
 
-    def sort(self, key=None, ascending=True):
-        """ Sort table
-
-        Parameters
-        ----------
-        key: string, list of strings, TableExpr
-            Defines by what you want to sort.  Either:
-                A single column string, ``t.sort('amount')``
-                A list of column strings, ``t.sort(['name', 'amount'])``
-                A Table Expression, ``t.sort(-t['amount'])``
-        ascending: bool
-            Determines order of the sort
-        """
-        if key is None:
-            key = self.columns[0]
-        return sort(self, key, ascending)
-
     @property
     def iscolumn(self):
         if len(self.columns) > 1:
@@ -1078,9 +1061,23 @@ class Sort(TableExpr):
         return self.child._len()
 
 
-def sort(child, key, ascending=True):
+def sort(child, key=None, ascending=True):
+    """ Sort table
+
+    Parameters
+    ----------
+    key: string, list of strings, TableExpr
+        Defines by what you want to sort.  Either:
+            A single column string, ``t.sort('amount')``
+            A list of column strings, ``t.sort(['name', 'amount'])``
+            A Table Expression, ``t.sort(-t['amount'])``
+    ascending: bool
+        Determines order of the sort
+    """
     if isinstance(key, list):
         key = tuple(key)
+    if key is None:
+        key = child.columns[0]
     return Sort(child, key, ascending)
 
 
@@ -1554,7 +1551,7 @@ _schema_methods = [
 
 _dshape_methods = [
     (istabular, {relabel, count_values}),
-    (isdimensional, {distinct, count, nunique, head}),
+    (isdimensional, {distinct, count, nunique, head, sort}),
     (iscolumn, {label})
     ]
 
