@@ -31,9 +31,6 @@ ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union columnwise Summary summary'''.split()
 
 
-_datelike = frozenset((datashape.date_, datashape.datetime_))
-
-
 class TableExpr(Expr):
     """ Super class for all Table Expressions
 
