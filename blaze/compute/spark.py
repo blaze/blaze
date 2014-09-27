@@ -9,7 +9,7 @@ from collections import Iterator
 from blaze.expr import *
 from blaze.expr import count as Count
 from . import core, python
-from .python import (compute, rrowfunc, rowfunc, RowWise, pair_assemble,
+from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
 from ..expr import table
@@ -45,7 +45,7 @@ except:
     pass
 
 
-@dispatch(RowWise, RDD)
+@dispatch(ElemWise, RDD)
 def compute_up(t, rdd, **kwargs):
     func = rowfunc(t)
     return rdd.map(func)

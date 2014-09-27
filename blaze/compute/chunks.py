@@ -22,9 +22,9 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 import itertools
-from blaze.expr import TableSymbol, Head, Join, Selection, RowWise, By, Label
-from blaze.expr import ReLabel, Distinct, by
-from blaze.expr import min, max, any, all, sum, count, mean, nunique
+from blaze.expr import (TableSymbol, Head, Join, Selection, RowWise, By, Label,
+        ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
+        nunique)
 from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
@@ -123,7 +123,7 @@ def compute_up(expr, c, **kwargs):
     return df
 
 
-@dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
+@dispatch((Selection, ElemWise, Label, ReLabel), ChunkIterator)
 def compute_up(expr, c, **kwargs):
     return ChunkIterator(compute_up(expr, chunk) for chunk in c)
 

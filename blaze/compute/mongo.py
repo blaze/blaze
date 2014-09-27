@@ -281,9 +281,9 @@ def compute_up(t, q, **kwargs):
 @dispatch(DateTime, MongoQuery)
 def compute_up(expr, q, **kwargs):
     attr = expr.attr
-    d = {'$project': {expr.column:
+    d = {'$project': {expr.name:
                       {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
-                       '$%s' % expr.child.column}}}
+                       '$%s' % expr.child.name}}}
     return q.append(d)
 
 

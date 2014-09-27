@@ -27,9 +27,9 @@ import math
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, ColumnWise, Map, Label, ReLabel,
-                    Merge, RowWise, Join, Selection, Reduction, Distinct,
+                    Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
-                    DateTime, Date, Time, Millisecond, TableSymbol)
+                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -165,7 +165,7 @@ def rowfunc(t):
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
-@dispatch(RowWise, Sequence)
+@dispatch(ElemWise, Sequence)
 def compute_up(t, seq, **kwargs):
     return map(rowfunc(t), seq)
 
