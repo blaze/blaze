@@ -828,8 +828,10 @@ class Reduction(NumberInterface):
 
 class any(Reduction):
     dtype = ct.bool_
+
 class all(Reduction):
     dtype = ct.bool_
+
 class sum(Reduction, Number):
     @property
     def dtype(self):
@@ -838,6 +840,7 @@ class sum(Reduction, Number):
             return first(schema.types)
         else:
             return schema
+
 class max(Reduction, Number):
     @property
     def dtype(self):
@@ -846,6 +849,7 @@ class max(Reduction, Number):
             return first(schema.types)
         else:
             return schema
+
 class min(Reduction, Number):
     @property
     def dtype(self):
@@ -854,8 +858,10 @@ class min(Reduction, Number):
             return first(schema.types)
         else:
             return schema
+
 class mean(Reduction, Number):
     dtype = ct.real
+
 class var(Reduction, Number):
     """Variance
 
@@ -904,6 +910,7 @@ class std(Reduction, Number):
 
 class count(Reduction, Number):
     dtype = ct.int_
+
 class nunique(Reduction, Number):
     dtype = ct.int_
 
@@ -1016,6 +1023,7 @@ def count_values(expr, sort=True):
     if sort:
         result = result.sort('count', ascending=False)
     return result
+
 
 class Sort(TableExpr):
     """ Table in sorted order
