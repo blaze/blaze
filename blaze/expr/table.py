@@ -249,9 +249,11 @@ class Projection(RowWise):
         return list(self._columns)
 
     @property
-    def schema(self):
+    def dshape(self):
         d = self.child.schema[0].dict
-        return DataShape(Record([(col, d[col]) for col in self.columns]))
+        measure = Record([(col, d[col]) for col in self.columns])
+
+        return DataShape(*(self.child.dshape.shape + (measure,)))
 
     def __str__(self):
         return '%s[[%s]]' % (self.child,

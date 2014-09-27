@@ -116,6 +116,13 @@ def test_Projection():
         p.project('balance')
 
 
+def test_Projection_retains_shape():
+    t = TableSymbol('t', '5 * {name: string, amount: int, id: int32}')
+
+    assert t[['name', 'amount']].dshape == \
+            dshape('5 * {name: string, amount: int}')
+
+
 def test_indexing():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == projection(t, ['amount', 'id'])
