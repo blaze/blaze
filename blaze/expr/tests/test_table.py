@@ -376,6 +376,11 @@ def test_reduction():
     assert 'int' not in str(t['amount'].sum().dshape)
 
 
+def test_reduction_name():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    assert (t.amount + t.id).sum()._name
+
+
 def test_max_min_class():
     t = TableSymbol('t', '{name: string, amount: int32}')
     assert str(max(t).dtype) == '{ name : string, amount : int32 }'

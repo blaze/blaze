@@ -728,7 +728,7 @@ class Reduction(NumberInterface):
     def _name(self):
         try:
             return self.child._name + '_' + type(self).__name__
-        except (AttributeError, ValueError):
+        except (AttributeError, ValueError, TypeError):
             return type(self).__name__
 
 
