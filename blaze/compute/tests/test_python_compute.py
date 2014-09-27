@@ -3,6 +3,7 @@ import math
 import itertools
 import operator
 import pytest
+from datetime import datetime, date
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
@@ -11,7 +12,7 @@ from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std, head, special_attributes)
+                        count, scalar, std, head)
 import numpy as np
 
 from blaze import cos, sin
@@ -597,31 +598,14 @@ def test_like():
     assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
 
 
-class TestDateAttr(object):
-    @pytest.fixture
-    def data(self):
-        import pandas as pd
-        n = 3
-        d = {'name': np.random.choice(['Alice', 'Bob', 'Joe'], size=n),
-             'when': pd.date_range('20100101', periods=n, freq='D').values,
-             'amount': np.random.rand(n) * 1000 * np.random.choice([-1, 1],
-                                                                   size=n),
-             'id': np.arange(n)}
-        res = list(pd.DataFrame(d).sort_index(axis=1).itertuples(index=False))
-        return res
+def test_datetime_access():
+    data = [['Alice', 100, 1, datetime(2000, 1, 1, 1, 1, 1)],
+            ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
+            ['Alice', 50, 3, datetime(2000, 1, 1, 1, 1, 1)]]
 
-    @pytest.fixture
-    def t(self):
-        s = '{amount: float64, id: int64, name: string, when: datetime}'
-        return TableSymbol('t', s)
+    t = TableSymbol('t',
+            '{amount: float64, id: int64, name: string, when: datetime}')
 
-    @pytest.mark.parametrize('attr, dshape', sorted(special_attributes.items()))
-    def test_attrs(self, data, t, attr, dshape):
-        expr = getattr(t.when, attr)
-        result = list(compute(expr, data))
-        expected = [getattr(x[-1], attr, x[-1].microsecond // 1000)
-                    for x in data]
-        if attr == 'date' or attr == 'time':
-            expected = [x() for x in expected]
-        assert discover(result) == discover(expected)
-        assert result == expected
+    assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
+    assert list(compute(t.when.second, data)) == [1, 1, 1]
+    assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
