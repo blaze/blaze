@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from blaze.expr import Reduction, Column, Projection, ColumnWise, Selection
-from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, TableExpr
+from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
 from blaze.expr import std, var, count, nunique
 from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
 
@@ -138,7 +138,7 @@ def compute_up(expr, example, children, **kwargs):
 
 
 
-@dispatch(TableExpr, np.ndarray)
+@dispatch(Expr, np.ndarray)
 def compute_up(t, x, **kwargs):
     if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
         df = DataFrame(columns=t.child.columns)

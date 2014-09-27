@@ -58,7 +58,7 @@ import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
-                    TableSymbol, Projection, sum, min, max, TableExpr, Gt, Lt,
+                    TableSymbol, Projection, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary, Like,
                     ColumnWise, DateTime, Microsecond, Date, Time)
 from ..expr.core import Expr
@@ -303,16 +303,6 @@ def post_compute(e, c, d):
 @dispatch(Expr, MongoQuery, dict)
 def post_compute(e, q, d):
     """
-    Get single result, like a sum or count, from mongodb query
-    """
-    field = e.dshape[0].names[0]
-    result = q.coll.aggregate(list(q.query))['result']
-    return result[0][field]
-
-
-@dispatch(TableExpr, MongoQuery, dict)
-def post_compute(e, q, d):
-    """
     Execute a query using MongoDB's aggregation pipeline
 
     The compute_up functions operate on Mongo Collection / list-of-dict
@@ -321,6 +311,11 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
+    if isscalar(expr):
+        field = e.dshape[0].names[0]
+        result = q.coll.aggregate(list(q.query))['result']
+        return result[0][field]
+
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in e.columns))}
     q = q.append(d)

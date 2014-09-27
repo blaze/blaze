@@ -4,7 +4,7 @@ import numpy as np
 from pandas import DataFrame
 import numpy as np
 import bcolz
-from blaze.expr import TableSymbol, by, TableExpr
+from blaze.expr import TableSymbol, by, istabular
 from blaze.api.into import into
 from blaze.api.table import Table
 from blaze.compute import compute
@@ -103,7 +103,7 @@ def test_base():
             print('%s <- %s' % (typename(model), typename(source)))
             T = Table(source)
             result = into(model, expr.subs({t: T}))
-            if isinstance(expr, TableExpr):
+            if istabular(expr):
                 if expr.iscolumn:
                     assert set(into([], result)) == set(into([], model))
                 else:

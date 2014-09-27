@@ -122,7 +122,7 @@ def sql_string(query):
 @dispatch(Expr, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
     result = query.context.sql(sql_string(query.query))
-    if isinstance(expr, TableExpr) and expr.iscolumn:
+    if istabular(expr) and expr.iscolumn:
         result = result.map(lambda x: x[0])
     return result
 
@@ -130,6 +130,6 @@ def post_compute(expr, query, d):
 @dispatch(Head, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
     result = query.context.sql(sql_string(query.query))
-    if isinstance(expr, TableExpr) and expr.iscolumn:
+    if istabular(expr) and expr.iscolumn:
         result = result.map(lambda x: x[0])
     return result.collect()

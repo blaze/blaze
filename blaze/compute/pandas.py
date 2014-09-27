@@ -29,8 +29,8 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr, std, var, Like,
-                    RowWise, DateTime, Millisecond)
+                    Map, Apply, Merge, Union, std, var, Like,
+                    RowWise, DateTime, Millisecond, Expr)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -236,7 +236,7 @@ def compute_by(t, s, g, df):
     return result
 
 
-@dispatch(TableExpr, DataFrame)
+@dispatch(Expr, DataFrame)
 def post_compute_by(t, df):
     return df.reset_index(drop=True)
 
