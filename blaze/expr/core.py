@@ -76,7 +76,14 @@ class Expr(object):
 
     @property
     def shape(self):
-        return datashape.to_numpy(self.dshape)[0]
+        s = list(self.dshape.shape)
+        for i, elem in enumerate(s):
+            try:
+                s[i] = int(elem)
+            except TypeError:
+                pass
+
+        return tuple(s)
 
     @property
     def schema(self):

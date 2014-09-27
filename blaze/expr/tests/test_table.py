@@ -50,6 +50,11 @@ def test_table_name():
     with pytest.raises(ValueError):
         r.name
 
+def test_shape():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    assert t.shape
+    assert isinstance(t.shape, tuple)
+    assert len(t.shape) == 1
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
