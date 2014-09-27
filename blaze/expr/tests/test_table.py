@@ -938,4 +938,6 @@ def test_dir():
     t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
     assert 'day' in dir(t.dt)
     assert 'mean' not in dir(t.dt)
+    assert 'mean' in dir(t.amount)
     assert 'like' not in t[['amount', 'dt']]
+    assert 'any' not in t.name

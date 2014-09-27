@@ -12,6 +12,7 @@ import datashape
 import toolz
 from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
+import numpy as np
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol, Number
@@ -165,9 +166,6 @@ class TableExpr(Expr):
 
     def max(self):
         return max(self)
-
-    def like(self, **kwargs):
-        return like(self, **kwargs)
 
     @property
     def iscolumn(self):
@@ -405,15 +403,6 @@ class ColumnSyntaxMixin(object):
 
     def sum(self):
         return sum(self)
-
-    def any(self):
-        return any(self)
-
-    def all(self):
-        return all(self)
-
-    def mean(self):
-        return mean(self)
 
     def var(self, unbiased=False):
         return var(self, unbiased)
@@ -1534,15 +1523,23 @@ def like(child, **kwargs):
 
 
 def isnumeric(ds):
-    return (isinstance(ds, datashape.Unit) and
-            np.issubdtype(datashape.to_numpy_dtype(ds), np.number))
+    return ((isinstance(ds, datashape.Unit) and
+             np.issubdtype(datashape.to_numpy_dtype(ds), np.number)) or
+            (isinstance(ds, datashape.Record)
+                and len(ds.names) == 1
+                and isnumeric(ds.types[0])))
 
 def isdatelike(ds):
     return (isinstance(ds, datashape.Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'date' in str(ds)
 
+def isboolean(ds):
+    return (isinstance(ds, datashape.Unit) or isinstance(ds, Record) and
+            len(ds.dict) == 1) and 'bool' in str(ds)
+
 _methods = [(lambda ds: 'string' in str(ds), {like}),
-           (isnumeric, {mean}),
+           (isboolean, {any, all}),
+           (isnumeric, {mean, isnan, sum, mean}),
            (isdatelike, {year, month, day, hour, minute, date, time,
                          second, millisecond, microsecond})]
 
