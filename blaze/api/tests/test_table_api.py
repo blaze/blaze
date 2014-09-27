@@ -1,6 +1,6 @@
 import os
 
-from blaze.api.table import Table, compute, table_repr
+from blaze.api.table import Table, compute, expr_repr
 from blaze.data.python import Python
 from blaze.data import CSV
 from blaze.compute.core import compute
@@ -55,19 +55,19 @@ def test_create_with_data_descriptor():
 
 
 def test_repr():
-    result = table_repr(t['name'])
+    result = expr_repr(t['name'])
     print(result)
     assert isinstance(result, str)
     assert 'Alice' in result
     assert 'Bob' in result
     assert '...' not in result
 
-    result = table_repr(t['amount'] + 1)
+    result = expr_repr(t['amount'] + 1)
     print(result)
     assert '101' in result
 
     t2 = Table(tuple((i, i**2) for i in range(100)), columns=['x', 'y'])
-    result = table_repr(t2)
+    result = expr_repr(t2)
     print(result)
     assert len(result.split('\n')) < 20
     assert '...' in result
@@ -95,7 +95,7 @@ def test_dataframe_backed_repr_complex():
     repr(t[t['balance'] < 0])
 
 
-def test_table_repr_empty():
+def test_expr_repr_empty():
     s = repr(t[t.amount > 1e9])
     assert isinstance(s, str)
     assert 'amount' in s
