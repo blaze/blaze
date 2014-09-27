@@ -20,7 +20,7 @@ import tables as tb
 from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
-from ..expr import TableExpr, Expr, Projection, TableSymbol
+from ..expr import Expr, Projection, TableSymbol
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes, map
@@ -386,7 +386,7 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return pd.Series(b, **kwargs)
 
-@dispatch(pd.Series, TableExpr)
+@dispatch(pd.Series, Expr)
 def into(ser, col, **kwargs):
     ser = into(ser, compute(col))
     ser.name = col.name
@@ -463,7 +463,7 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b))
 
-@dispatch(ColumnDataSource, (TableExpr, pd.DataFrame, np.ndarray, ctable))
+@dispatch(ColumnDataSource, (Expr, pd.DataFrame, np.ndarray, ctable))
 def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
     return ColumnDataSource(data=dict((col, into([], t[col]))
@@ -491,7 +491,7 @@ def into(df, cds, **kwargs):
     return cds.to_df()
 
 
-@dispatch(ctable, TableExpr)
+@dispatch(ctable, Expr)
 def into(a, b, **kwargs):
     c = compute(b)
     if isinstance(c, (list, tuple, Iterator)):
@@ -660,7 +660,7 @@ def into(coll, df, **kwargs):
     return into(coll, into([], df), columns=list(df.columns), **kwargs)
 
 
-@dispatch(Collection, TableExpr)
+@dispatch(Collection, Expr)
 def into(coll, t, **kwargs):
     from blaze import compute
     result = compute(t)
@@ -888,7 +888,7 @@ def into(a, b, **kwargs):
         # TODO, replace with with raise MDNotImplementeError once
         # https://github.com/mrocklin/multipledispatch/pull/39 is merged
         a = a if isinstance(a, type) else type(a)
-        f = into.dispatch(a, TableExpr)
+        f = into.dispatch(a, Expr)
         return f(a, b, **kwargs)
 
         # TODO: add signature for SQL import
@@ -962,3 +962,9 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     a.extend(into(list,b))
     return a
+
+@dispatch(Number, Number)
+def into(a, b, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(b)

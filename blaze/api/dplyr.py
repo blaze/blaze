@@ -83,7 +83,7 @@ class GroupBy(Expr):
 group_by = GroupBy
 
 
-@dispatch(TableExpr)
+@dispatch(Expr)
 def summarize(t, **kwargs):
     return summary(**kwargs)
 

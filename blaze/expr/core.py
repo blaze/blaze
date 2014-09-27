@@ -4,6 +4,8 @@ import numbers
 import toolz
 import inspect
 import functools
+import datashape
+
 from toolz import unique, concat
 from pprint import pprint
 from blaze.compatibility import StringIO
@@ -80,7 +82,7 @@ class Expr(object):
 
     @property
     def schema(self):
-        return dshape(self.dshape[-1])
+        return datashape.dshape(self.dshape[-1])
 
     def leaves(self):
         """ Leaves of an expresion tree

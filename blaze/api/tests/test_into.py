@@ -419,3 +419,7 @@ def test_into_DataFrame_concat():
     assert df.values.tolist() == (csv.reader().values.tolist() +
                                   csv.reader().values.tolist())
     assert df.columns.tolist() == csv.reader().columns.tolist()
+
+
+def test_literal_to_literal():
+    assert into(10, 10) == 10

@@ -8,8 +8,7 @@ import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr.core import Expr
-from ..expr.table import TableSymbol, TableExpr
+from ..expr import TableSymbol, Expr, TableExpr, istabular
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -133,7 +132,7 @@ def concrete_head(expr, n=10):
     """ Return head of computed expression """
     if not expr.resources():
         raise ValueError("Expression does not contain data resources")
-    if isinstance(expr, TableExpr):
+    if istabular(expr):
         head = expr.head(n + 1)
         result = compute(head)
 
@@ -175,29 +174,29 @@ def table_html(expr, n=10):
     return concrete_head(expr).to_html()
 
 
-@dispatch(type, TableExpr)
+@dispatch(type, Expr)
 def into(a, b, **kwargs):
     f = into.dispatch(a, type(b))
     return f(a, b, **kwargs)
 
 
-@dispatch(object, TableExpr)
+@dispatch(object, Expr)
 def into(a, b, **kwargs):
     return into(a, compute(b), dshape=kwargs.pop('dshape', b.dshape),
                 schema=b.schema, **kwargs)
 
 
-@dispatch(DataFrame, TableExpr)
+@dispatch(DataFrame, Expr)
 def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
 
 
-@dispatch(nd.array, TableExpr)
+@dispatch(nd.array, Expr)
 def into(a, b):
     return into(nd.array(), compute(b), dtype=str(b.schema))
 
 
-@dispatch(np.ndarray, TableExpr)
+@dispatch(np.ndarray, Expr)
 def into(a, b):
     schema = dshape(str(b.schema).replace('?', ''))
     if b.iscolumn:
