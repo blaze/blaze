@@ -161,10 +161,7 @@ class Expr(object):
 
 @dispatch(Expr)
 def subterms(expr):
-    yield expr
-    for i in expr.inputs:
-        for node in subterms(i):
-            yield node
+    return concat([[expr], concat(map(subterms, expr.inputs))])
 
 
 @dispatch(numbers.Real)
