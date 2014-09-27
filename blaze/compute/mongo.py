@@ -60,7 +60,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
                     TableSymbol, Projection, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary, Like,
-                    ColumnWise, DateTime, Microsecond, Date, Time)
+                    ColumnWise, DateTime, Microsecond, Date, Time, isscalar)
 from ..expr.core import Expr
 from ..compatibility import _strtypes
 
@@ -311,7 +311,7 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
-    if isscalar(expr):
+    if isscalar(e):
         field = e.dshape[0].names[0]
         result = q.coll.aggregate(list(q.query))['result']
         return result[0][field]
