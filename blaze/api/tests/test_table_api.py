@@ -73,6 +73,12 @@ def test_repr():
     assert '...' in result
 
 
+def test_repr_of_scalar():
+    assert '300' in repr(t.amount.sum())
+    assert '"' not in repr(t.amount.sum())
+    assert "'" not in repr(t.amount.sum())
+
+
 def test_mutable_backed_repr():
     mutable_backed_table = Table([[0]], columns=['col1'])
     repr(mutable_backed_table)
