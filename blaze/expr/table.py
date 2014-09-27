@@ -914,8 +914,6 @@ def count_values(expr, sort=True):
     Sort by counts by default
     Add ``sort=False`` keyword to avoid this behavior.
     """
-    if not expr.iscolumn:
-        raise ValueError("Can only count_values on columns")
     result = by(expr, count=expr.count())
     if sort:
         result = result.sort('count', ascending=False)
