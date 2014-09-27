@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, print_function
-import pytest
 
 import numpy as np
 from scidbpy import connect, SciDBArray
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol, union, by, exp
+from blaze import into
 
 sdb = connect()
 
@@ -20,15 +20,29 @@ x_np = np.array([(1, 'Alice', 100),
 x = sdb.from_array(x_np)
 
 
-def eq(a, b):
+def _coerce_lists(a, b):
+    # cast arrays into lists, which ignores difference
+    # between string and unicode
+
     if isinstance(a, SciDBArray):
         a = a.toarray()
     if isinstance(b, SciDBArray):
         b = b.toarray()
+    a = np.asarray(a).tolist()
+    b = np.asarray(b).tolist()
 
-    # cast arrays into lists, which ignores difference
-    # between string and unicode
-    np.testing.assert_array_equal(a.tolist(), b.tolist())
+    return a, b
+
+
+def eq(a, b):
+    a, b = _coerce_lists(a, b)
+    np.testing.assert_array_equal(a, b)
+    return True
+
+
+def close(a, b):
+    a, b = _coerce_lists(a, b)
+    np.testing.assert_allclose(a, b)
     return True
 
 
@@ -80,7 +94,6 @@ def test_union_1d():
     assert eq(compute(union(t, t), x), np.array([1, 2, 3, 1, 2, 3]))
 
 
-@pytest.mark.xfail  # scidbpy issue to fix
 def test_union():
     result = compute(union(t, t), x)
     assert result.shape == (x.shape[0] * 2,)
@@ -90,20 +103,19 @@ def test_union():
     assert eq(result, np.array([1, 2, 3, 4, 5, 1, 2, 3, 4, 5]))
 
 
-@pytest.mark.xfail
 def test_Reductions():
-    assert compute(t['amount'].mean(), x) == x['amount'].mean()
-    assert compute(t['amount'].count(), x) == len(x['amount'])
-    assert compute(t['amount'].sum(), x) == x['amount'].sum()
-    assert compute(t['amount'].min(), x) == x['amount'].min()
-    assert compute(t['amount'].max(), x) == x['amount'].max()
-    assert compute(t['amount'].nunique(), x) == len(np.unique(x['amount']))
-    assert compute(t['amount'].var(), x) == x['amount'].var()
-    assert compute(t['amount'].std(), x) == x['amount'].std()
-    assert compute(t['amount'].var(unbiased=True), x) == x['amount'].var(ddof=1)
-    assert compute(t['amount'].std(unbiased=True), x) == x['amount'].std(ddof=1)
-    assert compute((t['amount'] > 150).any(), x) == True
-    assert compute((t['amount'] > 250).all(), x) == False
+    assert eq(compute(t['amount'].mean(), x), x_np['amount'].mean())
+    assert eq(compute(t['amount'].count(), x), len(x_np['amount']))
+    assert eq(compute(t['amount'].sum(), x), x_np['amount'].sum())
+    assert eq(compute(t['amount'].min(), x), x_np['amount'].min())
+    assert eq(compute(t['amount'].max(), x), x_np['amount'].max())
+    assert eq(compute(t['amount'].nunique(), x), len(np.unique(x_np['amount'])))
+    assert close(compute(t['amount'].var(), x), x_np['amount'].var())
+    assert close(compute(t['amount'].std(), x), x_np['amount'].std())
+    assert close(compute(t['amount'].var(unbiased=True), x), x_np['amount'].var(ddof=1))
+    assert close(compute(t['amount'].std(unbiased=True), x), x_np['amount'].std(ddof=1))
+    assert eq(compute((t['amount'] > 150).any(), x), True)
+    assert eq(compute((t['amount'] > 250).all(), x), False)
 
 
 def test_Distinct():
@@ -161,8 +173,14 @@ def test_relabel():
 
 
 def test_by():
-    from blaze.api.into import into
     expr = by(t.amount > 0, t.id.count())
     result = compute(expr, x)
 
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
+
+
+def test_by_column():
+    expr = by(t.amount, t.id.count())
+    result = compute(expr, x)
+
+    assert set(map(tuple, into([], result))) == set([(-500, 1), (-200, 1), (100, 1), (300, 1), (400, 1)])

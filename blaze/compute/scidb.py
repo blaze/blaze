@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from ..expr import Reduction, Column, Projection, ColumnWise, Selection
-from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, TableExpr
+from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, TableExpr, By
 from blaze.expr import std, var, count, nunique
 from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
 from blaze.dispatch import dispatch as dispatch
@@ -13,6 +13,8 @@ from blaze.compute.core import base, compute
 from pandas import DataFrame
 
 from scidbpy import SciDBArray
+from scidbpy.aggregation import GroupBy
+from scidbpy.utils import new_attribute_label
 
 
 @dispatch(Column, SciDBArray)
@@ -46,14 +48,9 @@ def compute_up(t, x, **kwargs):
     return getattr(x.interface, t.symbol)(x)
 
 
-@dispatch(Not, SciDBArray)
+@dispatch((USub, Not), SciDBArray)
 def compute_up(t, x, **kwargs):
-    return ~x
-
-
-@dispatch(USub, SciDBArray)
-def compute_up(t, x, **kwargs):
-    return -x
+    return t.op(x)
 
 
 @dispatch(Selection, SciDBArray)
@@ -64,13 +61,12 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, SciDBArray)
 def compute_up(t, x, **kwargs):
-    # XXX shape? rowcount? size? nonnull count? nonempty count? distinct count?
-    return x.size
+    return x.count()
 
 
 @dispatch(nunique, SciDBArray)
 def compute_up(t, x, **kwargs):
-    raise NotImplementedError()
+    return x.approxdc()
 
 
 @dispatch(Reduction, SciDBArray)
@@ -78,15 +74,33 @@ def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)()
 
 
-@dispatch((std, var), SciDBArray)
+@dispatch(var, SciDBArray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)()
+    result = x.var()
+    N = x.size
+
+    # scidb returns unbiased variance
+    if not t.unbiased:
+        result *= (N - 1) / N
+
+    return result
+
+
+@dispatch(std, SciDBArray)
+def compute_up(t, x, **kwargs):
+    result = x.std()
+    N = x.size
+
+    # scidb returns unbiased std
+    if not t.unbiased:
+        result *= np.sqrt((N - 1) / N)
+
+    return result
 
 
 @dispatch(Distinct, SciDBArray)
 def compute_up(t, x, **kwargs):
-    # inefficient
-    return np.unique(x.toarray())
+    return x.uniq()
 
 
 @dispatch(Sort, SciDBArray)
@@ -132,13 +146,7 @@ def compute_up(sel, x, **kwargs):
 
 @dispatch(Union, SciDBArray, tuple)
 def compute_up(expr, example, children, **kwargs):
-    return example.interface.concatenate(list(children), axis=0)
-
-
-@dispatch(TableExpr, SciDBArray)
-def compute_up(t, x, **kwargs):
-    df = DataFrame(columns=t.child.columns)
-    return compute_up(t, into(df, x), **kwargs)
+    return example.interface.concatenate(list(children), axis=1)
 
 
 @dispatch(SciDBArray)
@@ -153,3 +161,44 @@ def chunks(x, chunksize=1024):
 @dispatch(DataFrame, SciDBArray)
 def into(df, arr):
     return arr.todataframe()
+
+
+@dispatch(list, SciDBArray)
+def into(df, arr):
+    return arr.tolist()
+
+
+def _to_scidb_syntax(expr):
+    return expr
+
+
+@dispatch(By, SciDBArray)
+def compute_up(t, x, **kwargs):
+
+    # build the groups
+    grpr = t.grouper
+    if isinstance(grpr, ColumnWise):
+        # apply columnwise operations to table
+        att = new_attribute_label('cond', x)
+        x[att] = _to_scidb_syntax(grpr.expr)
+        grpr = att
+    elif isinstance(grpr, Column):
+        grpr = grpr.column
+    else:
+        raise NotImplementedError()
+
+    groups = x.groupby(grpr)
+
+    return compute(t.apply, groups)
+
+
+@dispatch(Column, GroupBy)
+def compute_up(c, g, **kwargs):
+    return g[c.column]
+
+
+@dispatch(Reduction, GroupBy)
+def compute_up(r, g, **kwargs):
+    mappings = dict((c, "{0}({1})".format(r.symbol, c))
+                    for c in g.columns)
+    return g.aggregate(mappings)
