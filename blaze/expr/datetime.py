@@ -13,8 +13,8 @@ class DateTime(ElemWise):
         return dshape(self._dtype)
 
     @property
-    def name(self):
-        return '%s_%s' % (self.child.name, self.attr)
+    def _name(self):
+        return '%s_%s' % (self.child._name, self.attr)
 
     @property
     def iscolumn(self):

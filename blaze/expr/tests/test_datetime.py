@@ -29,3 +29,6 @@ def test_date_attribute_completion():
     assert not builtins.all([x.startswith('__') and x.endswith('__')
                             for x in dir(t.name)])
 
+def test_datetime_attribute_name():
+    t = TableSymbol('t', '{name: string, when: datetime}')
+    assert 'when' in t.when.day._name

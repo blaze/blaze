@@ -173,9 +173,15 @@ class Expr(object):
         self.__init__(*state)
 
     def __dir__(self):
+        result = dir(type(self))
+        if self.names:
+            result.extend(list(self.names))
+
         d = toolz.merge(schema_methods(self.schema),
                         dshape_methods(self.dshape))
-        return list(self.names) + list(d)
+        result.extend(list(d))
+
+        return sorted(set(result))
 
     def __getattr__(self, key):
         if self.names and key in self.names:
