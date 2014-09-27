@@ -5,7 +5,6 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from abc import abstractproperty
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
@@ -72,10 +71,6 @@ class TableExpr(Expr):
     def columns(self):
         if isinstance(self.schema[0], Record):
             return self.schema[0].names
-
-    @abstractproperty
-    def schema(self): # pragma: no cover
-        pass
 
     @property
     def dtype(self):
@@ -399,10 +394,6 @@ class DateTime(RowWise):
 
     def __str__(self):
         return '%s.%s' % (str(self.child), type(self).__name__.lower())
-
-    @abstractproperty
-    def _dshape(self):
-        pass
 
     @property
     def schema(self):
