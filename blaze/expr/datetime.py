@@ -1,5 +1,5 @@
 from blaze.expr import Expr, ElemWise
-from datashape import dshape, Record, DataShape, Unit
+from datashape import dshape, Record, DataShape, Unit, Option
 import datashape
 
 class DateTime(ElemWise):
@@ -88,10 +88,21 @@ def microsecond(expr):
 
 
 def isdatelike(ds):
+    """
+
+    >>> isdatelike('int32')
+    False
+    >>> isdatelike('datetime')
+    True
+    >>> isdatelike('?datetime')
+    True
+    """
     if isinstance(ds, str):
         ds = dshape(ds)
     if isinstance(ds, DataShape):
         ds = ds[0]
+    if isinstance(ds, Option):
+        return isdatelike(ds.ty)
     return (isinstance(ds, Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'date' in str(ds)
 
