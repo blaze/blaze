@@ -10,7 +10,7 @@ from toolz import pluck, reduceby, groupby
 from blaze import into, compute, compute_up, discover, dshape
 
 from blaze.compute.mongo import MongoQuery
-from blaze.expr import TableSymbol, by, special_attributes
+from blaze.expr import TableSymbol, by
 from blaze.compatibility import xfail
 
 
@@ -51,19 +51,17 @@ def big_bank(db):
 
 
 @pytest.yield_fixture
-def attr_data(db):
+def date_data(db):
     import numpy as np
     import pandas as pd
     n = 3
     d = {'name': ['Alice', 'Bob', 'Joe'],
-         'when': pd.date_range('20100101', periods=n, freq='D').to_pydatetime().tolist(),
-         'amount': (np.random.rand(n) * 1000 * np.random.choice([-1, 1],
-                                                                size=n)).tolist(),
-         'id': list(range(n))}
+         'when': [datetime(2010, 1, 1, i) for i in [1, 2, 3]],
+         'amount': [100, 200, 300],
+         'id': [1, 2, 3]}
     data = [dict(zip(d.keys(), [d[k][i] for k in d.keys()]))
             for i in range(n)]
-    coll = db.attrdata
-    coll = into(coll, data)
+    coll = into(db.date_coll, data)
     yield coll
     coll.drop()
 
@@ -330,24 +328,13 @@ def test_missing_values(p, missing_vals):
     assert set(compute(p.y, missing_vals)) == set([None, 20, None, 40])
 
 
-class TestDateAttr(object):
-    @pytest.fixture
-    def t(self):
-        s = '{amount: float64, id: int64, name: string, when: datetime}'
-        return TableSymbol('t', s)
 
-    # mongo doesn't implement date or time
-    @pytest.mark.parametrize('attr, dshape',
-                             [pytest.mark.xfail((k, v),
-                                                raises=NotImplementedError)
-                              if k in ('date', 'time', 'microsecond') else (k, v)
-                              for k, v in sorted(special_attributes.items())])
-    def test_attrs(self, attr_data, t, attr, dshape):
-        data = attr_data
-        expr = getattr(t.when, attr)
-        result = compute(expr, data)
-        assert isinstance(result, list)
-        expected = [getattr(x, attr, x.microsecond // 1000) for x in
-                    map(itemgetter('when'), data.find())]
-        assert discover(result) == discover(expected)
-        assert result == expected
+def test_datetime_access(date_data):
+    s = TableSymbol('s',
+            '{amount: float64, id: int64, name: string, when: datetime}')
+
+    py_data = into(list, date_data) # a python version of the collection
+
+    for attr in ['day', 'minute', 'second', 'year', 'microsecond']:
+        assert list(compute(getattr(t.when, attr), date_data)) == \
+                list(compute(getattr(t.when, attr), py_data))
