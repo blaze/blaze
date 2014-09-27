@@ -1,7 +1,14 @@
 from blaze.expr import TableSymbol
 from blaze.compatibility import builtins
+from datashape import dshape
 
 import pytest
+
+def test_datetime_dshape():
+    t = TableSymbol('t', '5 * {name: string, when: datetime}')
+    assert t.when.day.dshape == dshape('5 * int32')
+    assert t.when.date.dshape == dshape('5 * date')
+
 
 def test_date_attribute():
     t = TableSymbol('t', '{name: string, when: datetime}')
