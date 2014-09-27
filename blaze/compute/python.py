@@ -26,12 +26,11 @@ import sys
 import math
 
 from ..dispatch import dispatch
-from ..expr.table import TableSymbol
-from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
-                          Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union, Summary, Like,
-                          DateTime, Date, Time, Millisecond)
-from ..expr.table import count, nunique, mean, var, std
+from ..expr import (Projection, Column, ColumnWise, Map, Label, ReLabel,
+                    Merge, RowWise, Join, Selection, Reduction, Distinct,
+                    By, Sort, Head, Apply, Union, Summary, Like,
+                    DateTime, Date, Time, Millisecond, TableSymbol)
+from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply, unicode

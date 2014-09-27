@@ -6,8 +6,8 @@ import operator
 from toolz import compose, identity
 from collections import Iterator
 
-from blaze.expr.table import *
-from blaze.expr.table import count as Count
+from blaze.expr import *
+from blaze.expr import count as Count
 from . import core, python
 from .python import (compute, rrowfunc, rowfunc, RowWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
