@@ -1,3 +1,5 @@
+from functools import partial
+
 
 def match(condition, data):
     """ Does the condition match the data
@@ -25,6 +27,13 @@ def match(condition, data):
             (isinstance(condition, tuple)
                 and any(match(c, data) for c in condition)))
 
+
+def name(func):
+    if isinstance(func, partial):
+        return name(func.func)
+    else:
+        return func.__name__
+
 def select_functions(methods, data):
     """
     Select appropriate functions given types and predicates
@@ -33,4 +42,4 @@ def select_functions(methods, data):
     for condition, funcs in methods:
         if match(condition, data):
             s |= funcs
-    return {func.__name__: func for func in s}
+    return {name(func): func for func in s}

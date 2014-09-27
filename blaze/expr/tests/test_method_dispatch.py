@@ -1,4 +1,4 @@
-from blaze.expr.method_dispatch import select_functions
+from blaze.expr.method_dispatch import select_functions, name, partial
 
 
 def iseven(n):
@@ -35,3 +35,8 @@ def test_select_functions():
     assert select_functions(methods, 'A') == {'lower': lower, 'upper': upper}
     assert select_functions(methods, 9) == {'inc': inc, 'dec': dec, 'isnine':
         isnine}
+
+
+def test_name():
+    assert name(inc) == 'inc'
+    assert name(partial(inc)) == name(inc)
