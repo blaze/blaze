@@ -84,6 +84,11 @@ class Expr(object):
     def schema(self):
         return datashape.dshape(self.dshape[-1])
 
+    @property
+    def names(self):
+        if isinstance(self.dshape.measure, datashape.Record):
+            return self.dshape.measure.names
+
     def leaves(self):
         """ Leaves of an expresion tree
 

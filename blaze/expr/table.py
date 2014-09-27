@@ -70,8 +70,7 @@ class TableExpr(Expr):
 
     @property
     def columns(self):
-        if isinstance(self.schema[0], Record):
-            return self.schema[0].names
+        return self.names
 
     @property
     def dtype(self):
@@ -94,17 +93,17 @@ class TableExpr(Expr):
 
     def project(self, key):
         if isinstance(key, _strtypes):
-            if key not in self.columns:
+            if key not in self.names:
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
         if isinstance(key, list) and builtins.all(isinstance(k, _strtypes) for k in key):
-            if not builtins.all(col in self.columns for col in key):
+            if not builtins.all(col in self.names for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
             return projection(self, key)
         raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
     def __getattr__(self, key):
-        if self.columns and key in self.columns:
+        if self.names and key in self.names:
             return self[key]
         try:
             return object.__getattribute__(self, key)
@@ -123,11 +122,11 @@ class TableExpr(Expr):
     def __dir__(self):
         d = toolz.merge(schema_methods(self.schema),
                         dshape_methods(self.dshape))
-        return list(self.columns) + list(d)
+        return list(self.names) + list(d)
 
     @property
     def iscolumn(self):
-        if len(self.columns) > 1:
+        if len(self.names) > 1:
             return False
         raise NotImplementedError("%s.iscolumn not implemented" %
                 str(type(self).__name__))
@@ -139,7 +138,7 @@ class TableExpr(Expr):
                 return self.schema[0].names[0]
             except AttributeError:
                 raise ValueError("Column is un-named, name with col.label('name')")
-        elif 'name' in self.columns:
+        elif 'name' in self.names:
             return self['name']
         else:
             raise ValueError("Can not compute name of table")
@@ -257,16 +256,16 @@ class Projection(RowWise):
 
     def __str__(self):
         return '%s[[%s]]' % (self.child,
-                             ', '.join(["'%s'" % col for col in self.columns]))
+                             ', '.join(["'%s'" % col for col in self.names]))
 
     @property
     def iscolumn(self):
         return False
 
     def project(self, key):
-        if isinstance(key, _strtypes) and key in self.columns:
+        if isinstance(key, _strtypes) and key in self.names:
             return self.child[key]
-        if isinstance(key, list) and set(key).issubset(set(self.columns)):
+        if isinstance(key, list) and set(key).issubset(set(self.names)):
             return self.child[key]
         raise ValueError("Column Mismatch: %s" % key)
 
@@ -375,7 +374,7 @@ class Column(ColumnSyntaxMixin, Projection):
         return [self.column]
 
     def __str__(self):
-        return "%s['%s']" % (self.child, self.columns[0])
+        return "%s['%s']" % (self.child, self.names[0])
 
     @property
     def expr(self):
@@ -732,8 +731,8 @@ class Join(TableExpr):
 def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
-            set(lhs.columns) & set(rhs.columns),
-            key=lhs.columns.index)))
+            set(lhs.names) & set(rhs.names),
+            key=lhs.names.index)))
     if not on_right:
         on_right = on_left
     if isinstance(on_left, tuple):
@@ -816,8 +815,8 @@ class Reduction(NumberInterface):
 
     @property
     def dshape(self):
-        if self.child.columns and len(self.child.columns) == 1:
-            name = self.child.columns[0] + '_' + type(self).__name__
+        if self.child.names and len(self.child.names) == 1:
+            name = self.child.names[0] + '_' + type(self).__name__
             return DataShape(Record([[name, self.dtype]]))
         else:
             return DataShape(Record([[type(self).__name__, self.dtype]]))
@@ -1077,7 +1076,7 @@ def sort(child, key=None, ascending=True):
     if isinstance(key, list):
         key = tuple(key)
     if key is None:
-        key = child.columns[0]
+        key = child.names[0]
     return Sort(child, key, ascending)
 
 
@@ -1179,7 +1178,7 @@ class Label(RowWise, ColumnSyntaxMixin):
         return DataShape(Record([[self.label, dtype]]))
 
     def project(self, key):
-        if key == self.columns[0]:
+        if key == self.names[0]:
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)
@@ -1271,9 +1270,9 @@ class Map(RowWise):
 
     @property
     def name(self):
-        if len(self.columns) != 1:
+        if len(self.names) != 1:
             raise ValueError("Can only determine name of single-column. "
-                    "Use .columns to find all names")
+                    "Use .names to find all names")
         try:
             return self.schema[0].names[0]
         except AttributeError:
@@ -1357,9 +1356,9 @@ def merge(*tables):
 
     result = Merge(child, tables)
 
-    if not isdistinct(result.columns):
+    if not isdistinct(result.names):
         raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-            frequencies(result.columns).items() if v > 1))
+            frequencies(result.names).items() if v > 1))
 
     return result
 
@@ -1376,7 +1375,7 @@ class Merge(RowWise):
 
     >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
 
-    >>> merge(accounts, newamount).columns
+    >>> merge(accounts, newamount).names
     ['name', 'amount', 'new_amount']
 
     See Also
@@ -1407,7 +1406,7 @@ class Merge(RowWise):
     def project(self, key):
         if isinstance(key, _strtypes):
             for child in self.children:
-                if key in child.columns:
+                if key in child.names:
                     if child.iscolumn:
                         return child
                     else:
@@ -1432,7 +1431,7 @@ class Union(TableExpr):
     >>> euro_accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> all_accounts = union(usa_accounts, euro_accounts)
-    >>> all_accounts.columns
+    >>> all_accounts.names
     ['name', 'amount']
 
     See Also
@@ -1474,8 +1473,8 @@ class Like(TableExpr):
         return dict(self._patterns)
 
     @property
-    def schema(self):
-        return self.child.schema
+    def dshape(self):
+        return datashape.var * self.child.dshape.subshape[0]
 
 
 def like(child, **kwargs):
