@@ -389,7 +389,7 @@ def into(a, b, **kwargs):
 @dispatch(pd.Series, Expr)
 def into(ser, col, **kwargs):
     ser = into(ser, compute(col))
-    ser.name = col.name
+    ser.name = col._name
     return ser
 
 

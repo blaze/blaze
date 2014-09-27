@@ -66,7 +66,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Column, sqlalchemy.Table)
 def compute_up(t, s, **kwargs):
-    return s.c.get(t.name)
+    return s.c.get(t._name)
 
 
 @dispatch(ColumnWise, Select)
@@ -254,11 +254,7 @@ def compute_up(t, s, **kwargs):
         op = getattr(sqlalchemy.sql.func, symbol)
     result = op(s)
 
-    if isinstance(t.child.schema[0], Record):
-        name = list(t.child.schema[0].names)[0]
-        result = result.label(name + '_' + type(t).__name__)
-
-    return result
+    return result.label(t._name)
 
 
 @dispatch(count, Selectable)

@@ -195,7 +195,7 @@ def get_grouper(c, grouper, df):
 
 @dispatch(By, Reduction, Grouper, NDFrame)
 def compute_by(t, r, g, df):
-    names = r.dshape[0].names
+    names = [r._name]
     preapply = compute(r.child, {t.child: df})
 
     # Pandas and Blaze column naming schemes differ
@@ -350,7 +350,7 @@ def compute_up(t, df, **kwargs):
 def compute_up(t, df, **kwargs):
     result = df.map(t.func)
     try:
-        result.name = t.name
+        result.name = t._name
     except NotImplementedError:
         # We don't have a schema, but we should still be able to map
         result.name = df.name

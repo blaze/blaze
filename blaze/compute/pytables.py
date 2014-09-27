@@ -88,7 +88,7 @@ def compute_up(proj, t, **kwargs):
 
 @dispatch(Column, tb.Table)
 def compute_up(c, t, **kwargs):
-    return getattr(t.cols, c.name)
+    return getattr(t.cols, c._name)
 
 
 @dispatch(count, tb.Column)
@@ -111,7 +111,7 @@ def compute_up(c, t, **kwargs):
 @dispatch(Sort, tb.Table)
 def compute_up(s, t, **kwargs):
     if isinstance(s.key, Column) and s.key.child.isidentical(s.child):
-        key = s.key.name
+        key = s.key._name
     else:
         key = s.key
     assert hasattr(t.cols, key), 'Table has no column(s) %s' % s.key

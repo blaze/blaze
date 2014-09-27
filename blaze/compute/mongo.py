@@ -193,7 +193,7 @@ def compute_up(t, q, **kwargs):
     if not isinstance(t.grouper, Projection):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
-    names = t.apply.dshape[0].names
+    names = t.apply.names
     return MongoQuery(q.coll, q.query +
     ({
         '$group': toolz.merge(
@@ -224,9 +224,8 @@ def group_apply(expr):
     >>> group_apply(accounts.amount.sum())
     {'amount_sum': {'$sum': '$amount'}}
     """
-    assert isinstance(expr.dshape[0], Record)
-    key = expr.dshape[0].names[0]
-    col = '$' + expr.child.names[0]
+    key = expr._name
+    col = '$' + expr.child._name
     if isinstance(expr, count):
         return {key: {'$sum': 1}}
     if isinstance(expr, sum):

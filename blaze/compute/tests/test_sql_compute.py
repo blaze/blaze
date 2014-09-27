@@ -266,12 +266,12 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      sbig)
 
-    expected = (sa.select([sbig.c.name,
-                           sbig.c.sex,
-                           sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
-                    .group_by(sbig.c.name, sbig.c.sex))
-
-    assert str(result) == str(expected)
+    assert normalize(str(result)) == normalize("""
+    SELECT accountsbig.name,
+           accountsbig.sex,
+           sum(accountsbig.id + accountsbig.amount) AS sum
+    FROM accountsbig GROUP BY accountsbig.name, accountsbig.sex
+    """)
 
 def test_by_summary_clean():
     expr = by(t.name, min=t.amount.min(), max=t.amount.max())

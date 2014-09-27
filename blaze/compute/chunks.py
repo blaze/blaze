@@ -22,9 +22,9 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 import itertools
-from blaze.expr import (TableSymbol, Head, Join, Selection, RowWise, By, Label,
+from ..expr import (TableSymbol, Head, Join, Selection, RowWise, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
-        nunique)
+        nunique, iscolumn)
 from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
@@ -185,8 +185,8 @@ def compute_up(expr, c, **kwargs):
     # Form computation to do on the concatenated union
     t = TableSymbol('_chunk', perchunk.schema)
 
-    apply_cols = expr.apply.dshape[0].names
-    if expr.apply.child.iscolumn:
+    apply_cols = expr.apply.names
+    if iscolumn(expr.apply.child):
         apply_cols = apply_cols[0]
 
     group = by(t[expr.grouper.names],

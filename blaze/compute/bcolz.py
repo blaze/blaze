@@ -39,7 +39,7 @@ def compute_up(h, t, **kwargs):
 
 @dispatch(Column, bcolz.ctable)
 def compute_up(c, t, **kwargs):
-    return t[c.name]
+    return t[c._name]
 
 
 @dispatch(Projection, bcolz.ctable)
