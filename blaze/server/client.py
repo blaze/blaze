@@ -8,7 +8,7 @@ from datashape import dshape
 
 from ..data.core import DataDescriptor
 from ..data.utils import coerce
-from ..expr import Expr, TableExpr
+from ..expr import Expr
 from ..dispatch import dispatch
 from .index import emit_index
 from ..api.resource import resource

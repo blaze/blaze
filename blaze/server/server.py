@@ -9,8 +9,8 @@ from cytoolz import first
 from functools import partial, wraps
 from blaze import into, compute, compute_up
 from ..api import discover, Table
-from ..expr import Expr, TableSymbol, Selection, ColumnWise, TableSymbol
-from ..expr import TableExpr
+from ..expr import (Expr, TableSymbol, Selection, ColumnWise, TableSymbol,
+    istabular)
 from ..expr.scalar.parser import exprify
 
 from ..compatibility import map
@@ -387,7 +387,7 @@ def comp(datasets, name):
     expr = from_tree(data['expr'], namespace={name: t})
 
     result = compute(expr, dset)
-    if isinstance(expr, TableExpr):
+    if istabular(expr):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
