@@ -29,8 +29,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary DateTime Date Time
-Millisecond Microsecond '''.split()
+projection union columnwise Summary summary'''.split()
 
 
 _datelike = frozenset((datashape.date_, datashape.datetime_))
@@ -112,7 +111,7 @@ class TableExpr(Expr):
                             dshape_methods(self.dshape))
             if key in d:
                 func = d[key]
-                if func in _properties:
+                if func in method_properties:
                     return func(self)
                 else:
                     return partial(func, self)
@@ -386,91 +385,6 @@ class Column(ColumnSyntaxMixin, Projection):
         else:
             raise ValueError("Column Mismatch: %s" % key)
 
-
-class DateTime(RowWise):
-    __slots__ = 'child',
-
-    __hash__ = Expr.__hash__
-
-    def __str__(self):
-        return '%s.%s' % (str(self.child), type(self).__name__.lower())
-
-    @property
-    def schema(self):
-        return dshape(Record([(self.column, self._dshape)]))
-
-    @property
-    def column(self):
-        return '%s_%s' % (self.child.column, self.attr)
-
-    @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-    @property
-    def attr(self):
-        return type(self).__name__.lower()
-
-
-class Date(DateTime):
-    _dshape = datashape.date_
-
-def date(expr):
-    return Date(expr)
-
-class Year(DateTime):
-    _dshape = datashape.int64
-
-def year(expr):
-    return Year(expr)
-
-class Month(DateTime):
-    _dshape = datashape.int64
-
-def month(expr):
-    return Month(expr)
-
-class Day(DateTime):
-    _dshape = datashape.int64
-
-def day(expr):
-    return Day(expr)
-
-class Time(DateTime):
-    _dshape = datashape.time_
-
-def time(expr):
-    return Time(Expr)
-
-class Hour(DateTime):
-    _dshape = datashape.int64
-
-def hour(expr):
-    return Hour(expr)
-
-class Minute(DateTime):
-    _dshape = datashape.int64
-
-def minute(expr):
-    return Minute(expr)
-
-class Second(DateTime):
-    _dshape = datashape.int64
-
-def second(expr):
-    return Second(expr)
-
-class Millisecond(DateTime):
-    _dshape = datashape.int64
-
-def millisecond(expr):
-    return Millisecond(expr)
-
-class Microsecond(DateTime):
-    _dshape = datashape.int64
-
-def microsecond(expr):
-    return Microsecond(expr)
 
 
 class Selection(TableExpr):
@@ -1485,14 +1399,6 @@ def isnumeric(ds):
         return isnumeric(ds.types[0])
     return isinstance(ds, Unit) and np.issubdtype(to_numpy_dtype(ds), np.number)
 
-def isdatelike(ds):
-    if isinstance(ds, str):
-        ds = dshape(ds)
-    if isinstance(ds, DataShape):
-        ds = ds[0]
-    return (isinstance(ds, Unit) or isinstance(ds, Record) and
-            len(ds.dict) == 1) and 'date' in str(ds)
-
 def isboolean(ds):
     if isinstance(ds, str):
         ds = dshape(ds)
@@ -1515,8 +1421,6 @@ from datashape import Unit, Record, to_numpy_dtype
 schema_method_list = [
     (isboolean, {any, all}),
     (isnumeric, {mean, isnan, sum, mean, min, max, std, var}),
-    (isdatelike, {year, month, day, hour, minute, date, time,
-                  second, millisecond, microsecond})
     ]
 
 dshape_method_list = [
@@ -1525,8 +1429,7 @@ dshape_method_list = [
     (iscolumn, {label})
     ]
 
-_properties = {year, month, day, hour, minute, second, millisecond,
-        microsecond, date, time}
+method_properties = set()
 
 schema_methods = memoize(partial(select_functions, schema_method_list))
 dshape_methods = memoize(partial(select_functions, dshape_method_list))
