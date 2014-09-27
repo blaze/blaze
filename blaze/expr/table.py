@@ -113,7 +113,8 @@ class TableExpr(Expr):
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
-            d = methods(self.schema[0])
+            d = toolz.merge(schema_methods(self.schema[0]),
+                            dshape_methods(self.dshape))
             if key in d:
                 func = d[key]
                 if func in _properties:
@@ -124,7 +125,9 @@ class TableExpr(Expr):
                 raise AttributeError(key)
 
     def __dir__(self):
-        return list(self.columns) + list(methods(self.schema[0]))
+        d = toolz.merge(schema_methods(self.schema[0]),
+                        dshape_methods(self.dshape))
+        return list(self.columns) + list(d)
 
     def sort(self, key=None, ascending=True):
         """ Sort table
@@ -142,30 +145,6 @@ class TableExpr(Expr):
         if key is None:
             key = self.columns[0]
         return sort(self, key, ascending)
-
-    def head(self, n=10):
-        return head(self, n)
-
-    def relabel(self, labels):
-        return relabel(self, labels)
-
-    def map(self, func, schema=None, iscolumn=None):
-        return Map(self, func, schema, iscolumn)
-
-    def count(self):
-        return count(self)
-
-    def distinct(self):
-        return distinct(self)
-
-    def nunique(self):
-        return nunique(self)
-
-    def min(self):
-        return min(self)
-
-    def max(self):
-        return max(self)
 
     @property
     def iscolumn(self):
@@ -201,17 +180,8 @@ class TableExpr(Expr):
     def __ge__(self, other):
         return columnwise(Ge, self, other)
 
-    def count_values(self, sort=True):
-        """ Count occurrences of elements in this column
-
-        Sort by counts by default, add ``sort=False`` keyword to avoid this
-        behavior."""
-        if not self.iscolumn:
-            raise ValueError("Can only count_values on columns")
-        result = by(self, count=self.count())
-        if sort:
-            result = result.sort('count', ascending=False)
-        return result
+    def map(self, func, schema=None, iscolumn=None):
+        return Map(self, func, schema, iscolumn)
 
 
 class TableSymbol(TableExpr):
@@ -1073,6 +1043,20 @@ def by(grouper, **kwargs):
     return By(grouper, summary(**kwargs))
 
 
+def count_values(expr, sort=True):
+    """
+    Count occurrences of elements in this column
+
+    Sort by counts by default
+    Add ``sort=False`` keyword to avoid this behavior.
+    """
+    if not expr.iscolumn:
+        raise ValueError("Can only count_values on columns")
+    result = by(expr, count=expr.count())
+    if sort:
+        result = result.sort('count', ascending=False)
+    return result
+
 class Sort(TableExpr):
     """ Table in sorted order
 
@@ -1143,7 +1127,8 @@ class Distinct(TableExpr):
         return self.child.iscolumn
 
 
-distinct = Distinct
+def distinct(expr):
+    return Distinct(expr)
 
 
 class Head(TableExpr):
@@ -1537,13 +1522,26 @@ def isboolean(ds):
     return (isinstance(ds, datashape.Unit) or isinstance(ds, Record) and
             len(ds.dict) == 1) and 'bool' in str(ds)
 
-_methods = [(lambda ds: 'string' in str(ds), {like}),
-           (isboolean, {any, all}),
-           (isnumeric, {mean, isnan, sum, mean}),
-           (isdatelike, {year, month, day, hour, minute, date, time,
-                         second, millisecond, microsecond})]
+def isdimensional(ds):
+    return not not ds.shape
+
+from datashape import istabular
+
+_schema_methods = [
+    (lambda ds: 'string' in str(ds), {like, min, max}),
+    (isboolean, {any, all}),
+    (isnumeric, {mean, isnan, sum, mean, min, max}),
+    (isdatelike, {year, month, day, hour, minute, date, time,
+                  second, millisecond, microsecond})
+    ]
+
+_dshape_methods = [
+    (istabular, {relabel, count_values}),
+    (isdimensional, {distinct, count, nunique, head}),
+    ]
 
 _properties = {year, month, day, hour, minute, second, millisecond,
         microsecond, date, time}
 
-methods = memoize(partial(select_functions, _methods))
+schema_methods = memoize(partial(select_functions, _schema_methods))
+dshape_methods = memoize(partial(select_functions, _dshape_methods))
