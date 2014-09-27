@@ -141,8 +141,8 @@ def concrete_head(expr, n=10):
 
         if expr.names:
             return into(DataFrame(columns=expr.names), result)
-        elif iscolumn(expr) and expr.name:
-            return into(DataFrame(columns=[expr.name]), result)
+        elif iscolumn(expr):
+            return into(DataFrame(columns=[expr._name]), result)
     else:
         return compute(expr)
 

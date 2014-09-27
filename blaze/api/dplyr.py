@@ -40,7 +40,7 @@ def select(t, *columns):
     >>> select(t, t.x, t.z)
     t[['x', 'z']]
     """
-    return t[[c.name for c in columns]]
+    return t[[c._name for c in columns]]
 
 
 def transform(t, replace=True, **kwargs):
