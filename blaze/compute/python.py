@@ -24,12 +24,14 @@ import cytoolz
 import toolz
 import sys
 import math
+from datashape import Record, Tuple
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
-                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise)
+                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
+                    iscolumn)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -98,7 +100,7 @@ def rowfunc(t):
 
 @dispatch(Column)
 def rowfunc(t):
-    if t.child.iscolumn and t._name == t.child.names[0]:
+    if iscolumn(t.child) and t._name == t.child.names[0]:
         return identity
     index = t.child.names.index(t._name)
     return lambda x: x[index]
@@ -118,10 +120,10 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if t.child.iscolumn:
-        return t.func
-    else:
+    if isinstance(t.child.schema[0], (Record, Tuple)):
         return partial(apply, t.func)
+    else:
+        return t.func
 
 
 @dispatch((Label, ReLabel))
@@ -346,10 +348,10 @@ def compute_up(t, seq, **kwargs):
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
-    if t.grouper.iscolumn:
-        keyfunc = lambda x: (x,)
-    else:
+    if isinstance(t.grouper.schema[0], (Tuple, Record)):
         keyfunc = identity
+    else:
+        keyfunc = lambda x: (x,)
     if isinstance(t.apply, Reduction):
         valfunc = lambda x: (x,)
     else:

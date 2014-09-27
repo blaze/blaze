@@ -57,12 +57,6 @@ class TableExpr(Expr):
     def __len__(self): # pragma: no cover
         return self._len()
 
-    def __nonzero__(self): # pragma: no cover
-        return True
-
-    def __bool__(self):
-        return True
-
     @property
     def columns(self):
         return self.names
@@ -101,15 +95,6 @@ class TableExpr(Expr):
         raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
     @property
-    def iscolumn(self):
-        if len(self.names) > 1:
-            return False
-        if isinstance(self.dshape.measure, Record):
-            return False
-        raise NotImplementedError("%s.iscolumn not implemented" %
-                str(type(self).__name__))
-
-    @property
     def _name(self):
         if iscolumn(self):
             if isinstance(self.schema[0], Record):
@@ -137,6 +122,8 @@ class TableExpr(Expr):
         return columnwise(Ge, self, other)
 
     def map(self, func, schema=None, iscolumn=None):
+        if schema and isinstance(schema, Record) and len(schema[0].names) > 1:
+            iscolumn = False
         return Map(self, func, schema, iscolumn)
 
 
@@ -1184,8 +1171,7 @@ class Map(RowWise):
     def iscolumn(self):
         if self._iscolumn is not None:
             return self._iscolumn
-        if self.child.iscolumn is not None:
-            return self.child.iscolumn
+        return iscolumn(self.child)
 
     @property
     def _name(self):
@@ -1344,7 +1330,7 @@ class Merge(RowWise):
         if isinstance(key, _strtypes):
             for child in self.children:
                 if key in child.names:
-                    if child.iscolumn:
+                    if iscolumn(child):
                         return child
                     else:
                         return child[key]

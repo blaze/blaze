@@ -13,7 +13,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol, )
+                        Summary, count, ScalarSymbol, iscolumn)
 from blaze.expr.table import _expr_child, unpack, max, min, isdimensional
 from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover
@@ -207,7 +207,7 @@ def test_different_schema_raises():
 
 def test_getattr_doesnt_override_properties():
     t = TableSymbol('t', '{iscolumn: string, schema: string}')
-    assert isinstance(t.iscolumn, bool)
+    assert iscolumn(t) is False
     assert isinstance(t.schema, DataShape)
 
 
@@ -561,8 +561,8 @@ def test_relabel():
     print(rl.columns)
     assert rl.columns == ['NAME', 'amount', 'ID']
 
-    assert not rl.iscolumn
-    assert rlc.iscolumn
+    assert not iscolumn(rl)
+    assert iscolumn(rlc)
 
 
 def test_relabel_join():
@@ -578,14 +578,14 @@ def test_map():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     r = TableSymbol('s', 'int64')
     inc = lambda x: x + 1
-    assert t['amount'].map(inc).iscolumn
-    assert t['amount'].map(inc, schema='{amount: int}').iscolumn
+    assert iscolumn(t['amount'].map(inc))
+    assert iscolumn(t['amount'].map(inc, schema='{amount: int}'))
     s = t['amount'].map(inc, schema='{amount: int}', iscolumn=False)
-    assert not s.iscolumn
+    assert not iscolumn(s)
 
     assert s.dshape == dshape('var * {amount: int}')
 
-    assert not t[['name', 'amount']].map(identity).iscolumn
+    assert not iscolumn(t[['name', 'amount']].map(identity))
 
     with pytest.raises(ValueError):
         (t[['name', 'amount']]
@@ -730,20 +730,20 @@ def test_schema_of_complex_interaction():
 
 def test_iscolumn():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert not a.iscolumn
-    assert a['x'].iscolumn
-    assert not a[['x', 'y']].iscolumn
-    assert not a[['x']].iscolumn
-    assert (a['x'] + a['y']).iscolumn
-    assert a['x'].distinct().iscolumn
-    assert not a[['x']].distinct().iscolumn
-    assert not by(a['x'], a['y'].sum()).iscolumn
-    assert a['x'][a['x'] > 1].iscolumn
-    assert not a[['x', 'y']][a['x'] > 1].iscolumn
-    assert a['x'].sort().iscolumn
-    assert not a[['x', 'y']].sort().iscolumn
-    assert a['x'].head().iscolumn
-    assert not a[['x', 'y']].head().iscolumn
+    assert not iscolumn(a)
+    assert iscolumn(a['x'])
+    assert not iscolumn(a[['x', 'y']])
+    assert not iscolumn(a[['x']])
+    assert iscolumn((a['x'] + a['y']))
+    assert iscolumn(a['x'].distinct())
+    assert not iscolumn(a[['x']].distinct())
+    assert not iscolumn(by(a['x'], a['y'].sum()))
+    assert iscolumn(a['x'][a['x'] > 1])
+    assert not iscolumn(a[['x', 'y']][a['x'] > 1])
+    assert iscolumn(a['x'].sort())
+    assert not iscolumn(a[['x', 'y']].sort())
+    assert iscolumn(a['x'].head())
+    assert not iscolumn(a[['x', 'y']].head())
 
     assert TableSymbol('b', '{x: int}', iscolumn=True).iscolumn
     assert not TableSymbol('b', '{x: int}', iscolumn=False).iscolumn

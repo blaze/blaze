@@ -17,10 +17,6 @@ class DateTime(ElemWise):
         return '%s_%s' % (self.child._name, self.attr)
 
     @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-    @property
     def attr(self):
         return type(self).__name__.lower()
 
