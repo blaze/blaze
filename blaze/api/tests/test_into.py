@@ -8,6 +8,8 @@ from datashape import dshape
 from datetime import datetime
 import os
 
+from blaze.compute.chunks import ChunkIterator, chunks
+
 import pandas as pd
 from pandas import DataFrame
 from blaze.data.python import Python
@@ -16,6 +18,7 @@ from blaze.data import CSV
 from blaze.api.into import into, discover
 from blaze import Table, Concat
 from blaze.utils import tmpfile, filetext
+from blaze.pytables import PyTables
 import pytest
 
 
@@ -262,6 +265,18 @@ def test_into_tables_path(good_csv, out_hdf5):
     n = len(tble)
     tble._v_file.close()
     assert n == 3
+
+
+def test_into_tables_chunk_iterator():
+    import tables as tb
+    pyt = PyTables("foo.h5", "/table", dshape='{x: int32, y: int32}')
+    x = np.array([(int(i), float(i)) for i in range(100)], dtype=[('x', np.int32), ('y', np.int32)])
+    cs = chunks(x, chunksize=10)
+    tble = into(pyt, ChunkIterator(cs))
+    n = len(tble)
+    tble._v_file.close()
+    assert n == 100
+    os.remove('foo.h5')
 
 
 def test_into_csv_blaze_table(good_csv):

@@ -54,7 +54,7 @@ def into(a, b, **kwargs):
     """
     raise NotImplementedError(
             "Blaze does not know a rule for the following conversion"
-            "\n%s <- %s" % (type(a).__name__, type(b).__name__))
+            "\n%s <- %s" % (type(a).__name__, type(b).__name__)) # pragma: no cover
 
 # Optional imports
 
