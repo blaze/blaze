@@ -299,6 +299,13 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     assert (df_from_csv == df_from_tbl).all().all()
 
 
+def test_into_ctable_pytables():
+    from bcolz import ctable
+    tble = PyTables('examples/data/accounts.h5', datapath='/accounts')
+    ct = into(ctable, tble)
+    assert len(ct) == len(tble)
+
+
 def test_numpy_datetimes():
     L = [datetime(2000, 12, 1), datetime(2000, 1, 1, 1, 1, 1)]
     assert into([], np.array(L, dtype='M8[us]')) == L

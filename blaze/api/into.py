@@ -308,7 +308,7 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 def into(bc, data, **kwargs):
     cs = chunks(data)
     bc = into(bc, next(cs))
-    for chunk in chunks(data):
+    for chunk in chunks(cs):
         bc.append(chunk)
     return bc
 
