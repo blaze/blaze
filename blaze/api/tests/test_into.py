@@ -133,6 +133,12 @@ def out_hdf5():
     with tmpfile(".h5") as filename:
         yield filename
 
+@pytest.yield_fixture
+def out_hdf5_alt():
+    pytest.importorskip('tables')
+    with tmpfile(".h5") as filename:
+        yield filename
+
 
 def test_into_pytables_dataframe(h5):
     samp = h5.root.test.sample
@@ -152,8 +158,16 @@ def test_pandas_dynd(data, schema):
 
     result = into(DataFrame, arr)
     expected = DataFrame(data, columns=['name', 'amount'])
-
     assert str(result) == str(expected)
+
+    nda = nd.array([[1,2,3], [4,5,6], [7,8,9]])
+    csv = CSV('examples/data/accounts.csv')
+    df_csv = into(DataFrame, csv)
+    df_nd = into(df_csv, nda)
+    df_no_names = into(DataFrame, nda)
+
+    assert list(df_nd.columns) == list(df_csv.columns)
+    assert list(df_no_names.columns) == [0,1,2]
 
 
 def test_pandas_numpy(data):
@@ -259,11 +273,15 @@ def test_DataFrame_CSV():
         assert list(df.dtypes) == [np.int64, np.float64]
 
 
-def test_into_tables_path(good_csv, out_hdf5):
+def test_into_tables_path(good_csv, out_hdf5, out_hdf5_alt):
     import tables as tb
     tble = into(tb.Table, good_csv, filename=out_hdf5, datapath='/foo')
+    tble2 = into(tb.Table, good_csv, filename=out_hdf5_alt, datapath='/foo', 
+        output_path=out_hdf5_alt)
     n = len(tble)
+    x = len(tble2)
     tble._v_file.close()
+    assert n == x
     assert n == 3
 
 

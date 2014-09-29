@@ -353,7 +353,7 @@ def into(_, df, **kwargs):
 def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
     if list(a.columns):
-        names = a.columns
+        names = list(a.columns)
     elif isinstance(ds[-1], Record):
         names = ds[-1].names
     else:
