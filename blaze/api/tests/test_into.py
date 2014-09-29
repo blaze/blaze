@@ -302,8 +302,11 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
 def test_into_ctable_pytables():
     from bcolz import ctable
     tble = PyTables('examples/data/accounts.h5', datapath='/accounts')
+    cc = into(ctable, tble, chunksize=1)
     ct = into(ctable, tble)
+    assert len(cc) == len(ct)
     assert len(ct) == len(tble)
+    assert ct[0] == tble[0] and ct[-1] == ct[-1]
 
 
 def test_numpy_datetimes():

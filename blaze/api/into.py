@@ -306,9 +306,12 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 
 @dispatch(ctable, tb.Table)
 def into(bc, data, **kwargs):
-    cs = chunks(data)
+    if 'chunksize' in kwargs:
+        cs = chunks(data, chunksize=kwargs['chunksize'])
+    else:
+        cs = chunks(data)
     bc = into(bc, next(cs))
-    for chunk in chunks(cs):
+    for chunk in cs:
         bc.append(chunk)
     return bc
 
