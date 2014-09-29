@@ -142,7 +142,7 @@ pre {
 }
 
 #nav.affix {
-  top: 0px;
+  position:relative;
 }
 #nav.affix-bottom {
   position: absolute;
