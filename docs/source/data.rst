@@ -137,7 +137,7 @@ and offers various forms of compression for binary data.
 
 .. code-block:: python
 
-   >>> hdf5 = HDF5('examples/data/accounts.h5', 'accounts')
+   >>> hdf5 = PyTables('examples/data/accounts.h5', '/accounts')
 
 Directories
 -----------

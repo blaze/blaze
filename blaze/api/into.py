@@ -306,8 +306,9 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 
 @dispatch(ctable, tb.Table)
 def into(bc, data, **kwargs):
-    if 'chunksize' in kwargs:
-        cs = chunks(data, chunksize=kwargs['chunksize'])
+    kw = dict(kwargs)
+    if 'chunksize' in kw:
+        cs = chunks(data, chunksize=kw['chunksize'])
     else:
         cs = chunks(data)
     bc = into(bc, next(cs))
