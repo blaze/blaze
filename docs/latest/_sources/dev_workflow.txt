@@ -20,9 +20,7 @@ and also because it itself is split among a few projects.
    cd blaze
 
    # Install most of the requirements through conda
-   conda install --yes --file requirements.txt  # Basic requirements
-   conda install --yes -c mwiebe dynd-python    # Development version of DyND
-   conda install --yes unicodecsv               # If on Python 2
+   conda install --yes -c blaze
 
    # Some requirements are kept up-to-date on PyPI
    conda install --yes pip
@@ -64,12 +62,6 @@ installing with some additional Binstar channels.
 If you don't want to use conda that's fine too.  Most of the requirements can
 be installed from PyPI.  A notable exception is `DyND`_ which must be compiled
 from source.
-
-If you use Python 2 you should also include the ``unicodecsv`` module
-
-::
-
-   conda install unicodecsv
 
 .. _DyND: https://github.com/ContinuumIO/dynd-python
 .. _conda: http://conda.pydata.org/

@@ -67,6 +67,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -101,13 +106,20 @@
 <h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="release-0-6-3">
 <h2>Release 0.6.3<a class="headerlink" href="#release-0-6-3" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>by takes only two arguments, the grouper and apply
-child is inferred using common_subexpression</li>
-<li>Better handling of pandas Series object</li>
-<li>Better printing of empty results in interactive mode</li>
-<li>Regex dispatched resource function bound to Table, e.g.
-&gt;&gt;&gt; Table(&#8216;/path/to/file.csv&#8217;)</li>
+<ul>
+<li><p class="first">by takes only two arguments, the grouper and apply
+child is inferred using common_subexpression</p>
+</li>
+<li><p class="first">Better handling of pandas Series object</p>
+</li>
+<li><p class="first">Better printing of empty results in interactive mode</p>
+</li>
+<li><dl class="first docutils">
+<dt>Regex dispatched resource function bound to Table, e.g.</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">Table('/path/to/file.csv')</span></tt></p>
+</dd>
+</dl>
+</li>
 </ul>
 </div>
 <div class="section" id="release-0-6-2">

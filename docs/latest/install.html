@@ -69,6 +69,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -97,6 +102,9 @@
 <h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
 <p>Blaze can be most easily installed from <a class="reference external" href="http://conda.pydata.org/">conda</a></p>
 <div class="highlight-python"><pre>$ conda install blaze</pre>
+</div>
+<p>We also have developer builds hosted on <a class="reference external" href="http://binstar.org/blaze">http://binstar.org/blaze</a></p>
+<div class="highlight-python"><pre>conda install -c blaze blaze</pre>
 </div>
 <p>If you are interested in the development version of Blaze you can
 obtain the source from Github.</p>
@@ -132,7 +140,6 @@ $ make docs</pre>
 <li><a class="reference external" href="http://toolz.readthedocs.org/">toolz</a> &gt;= 0.7.0</li>
 <li><a class="reference external" href="https://github.com/pytoolz/cytoolz/">cytoolz</a></li>
 <li><a class="reference external" href="http://multiple-dispatch.readthedocs.org/">multipledispatch</a> &gt;= 0.4.6</li>
-<li><a class="reference external" href="https://github.com/jdunck/python-unicodecsv">unicodecsv</a></li>
 <li><a class="reference external" href="http://pandas.pydata.org/">pandas</a></li>
 </ul>
 <p><strong>Optional</strong></p>

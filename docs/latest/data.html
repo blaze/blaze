@@ -33,7 +33,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
     <link rel="next" title="Expressions" href="expressions.html" />
-    <link rel="prev" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="Examples" href="examples.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -69,6 +69,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -93,7 +98,6 @@
 <li><a class="reference internal" href="#directories">Directories</a></li>
 <li><a class="reference internal" href="#sql">SQL</a></li>
 <li><a class="reference internal" href="#specifying-datashape">Specifying Datashape</a></li>
-<li><a class="reference internal" href="#interacting-with-open">Interacting with <tt class="docutils literal"><span class="pre">open</span></tt></a></li>
 </ul>
 </li>
 </ul>
@@ -123,7 +127,8 @@ but with some more flexibility.</p>
 <span class="mi">5</span><span class="p">,</span> <span class="n">Edith</span><span class="p">,</span> <span class="mi">500</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;accounts.csv&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.csv&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="interface">
@@ -133,12 +138,8 @@ but with some more flexibility.</p>
 <p>Data descriptors expose the <tt class="docutils literal"><span class="pre">__iter__</span></tt> method, which iterates over the
 outermost dimension of the data.  This iterator yields vanilla Python objects
 by default.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="p">)</span>
-<span class="go">[(1L, u&#39;Alice&#39;, 100L),</span>
-<span class="go"> (2L, u&#39;Bob&#39;, 200L),</span>
-<span class="go"> (3L, u&#39;Charlie&#39;, 300L),</span>
-<span class="go"> (4L, u&#39;Denis&#39;, 400L),</span>
-<span class="go"> (5L, u&#39;Edith&#39;, 500L)]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="p">)</span> 
+<span class="go">[(1, &#39;Alice&#39;, 100), (2, &#39;Bob&#39;, 200), (3, &#39;Charlie&#39;, 300), (4, &#39;Denis&#39;, 400), (5, &#39;Edith&#39;, 500)]</span>
 </pre></div>
 </div>
 <p>Data descriptors also expose a <tt class="docutils literal"><span class="pre">chunks</span></tt> method, which also iterates over the
@@ -148,12 +149,9 @@ DyND arrays which are more efficient for bulk processing and data transfer.
 DyND arrays support the <tt class="docutils literal"><span class="pre">__array__</span></tt> interface and so can be easily converted
 to NumPy arrays.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">next</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">chunks</span><span class="p">())</span>
-<span class="go">nd.array([[1, &quot;Alice&quot;, 100],</span>
-<span class="go">          [2, &quot;Bob&quot;, 200],</span>
-<span class="go">          [3, &quot;Charlie&quot;, 300],</span>
-<span class="go">          [4, &quot;Denis&quot;, 400],</span>
-<span class="go">          [5, &quot;Edith&quot;, 500]],</span>
-<span class="go">         type=&quot;5 * {id : int64, name : string, balance : int64}&quot;)</span>
+<span class="go">nd.array([  [1, &quot;Alice&quot;, 100],     [2, &quot;Bob&quot;, 200], [3, &quot;Charlie&quot;, 300],</span>
+<span class="go">            [4, &quot;Denis&quot;, 400],   [5, &quot;Edith&quot;, 500]],</span>
+<span class="go">         type=&quot;5 * {id : ?int64, name : string, balance : ?int64}&quot;)</span>
 </pre></div>
 </div>
 </div>
@@ -164,8 +162,8 @@ to NumPy arrays.</p>
 methods take iterators of Python objects and DyND arrays respectively.  The
 data is coerced into whatever form is native for the storage medium e.g. text
 for CSV or <tt class="docutils literal"><span class="pre">INSERT</span></tt> statements for SQL.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;accounts.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">extend</span><span class="p">([(</span><span class="mi">6</span><span class="p">,</span> <span class="s">&#39;Frank&#39;</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>    
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">extend</span><span class="p">([(</span><span class="mi">6</span><span class="p">,</span> <span class="s">&#39;Frank&#39;</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>                       
 <span class="gp">... </span>            <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">&#39;Georgina&#39;</span><span class="p">,</span> <span class="mi">700</span><span class="p">)])</span>
 </pre></div>
 </div>
@@ -174,8 +172,8 @@ for CSV or <tt class="docutils literal"><span class="pre">INSERT</span></tt> sta
 <h3>Migration<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h3>
 <p>The combination of uniform iteration and insertion enables trivial data
 migration between storage systems.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;postgres://user:password@hostname/&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">csv</span><span class="p">))</span>  <span class="c"># Migrate csv file to Postgres database</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;sqlite:///:memory:&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">csv</span><span class="p">))</span>  <span class="c"># Migrate csv file to SQLite database</span>
 </pre></div>
 </div>
 </div>
@@ -184,19 +182,13 @@ migration between storage systems.</p>
 <p>Data descriptors also support fancy indexing.  As with iteration this supports
 either Python objects or DyND arrays with the <tt class="docutils literal"><span class="pre">.py[...]</span></tt> and <tt class="docutils literal"><span class="pre">.dynd[...]</span></tt>
 interfaces.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">py</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;balance&#39;</span><span class="p">]])</span>
-<span class="go">[(u&#39;Alice&#39;, 100L),</span>
-<span class="go"> (u&#39;Charlie&#39;, 300L),</span>
-<span class="go"> (u&#39;Edith&#39;, 500L),</span>
-<span class="go"> (u&#39;Georgina&#39;, 700L),</span>
-<span class="go"> (u&#39;Georgina&#39;, 700L)]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;balance&#39;</span><span class="p">]])</span>                  
+<span class="go">[(&#39;Alice&#39;, 100), (&#39;Charlie&#39;, 300), (&#39;Edith&#39;, 500), (&#39;Georgina&#39;, 700)]</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">dynd</span><span class="p">[::</span><span class="mi">10</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;balance&#39;</span><span class="p">]]</span>
-<span class="go">nd.array([[&quot;Alice&quot;, 100],</span>
-<span class="go">          [&quot;Charlie&quot;, 300],</span>
-<span class="go">          [&quot;Edith&quot;, 500],</span>
-<span class="go">          [&quot;Georgina&quot;, 700]],</span>
-<span class="go">         type=&quot;var * {name : string, balance : int64}&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">dynd</span><span class="p">[</span><span class="mi">2</span><span class="p">::,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;balance&#39;</span><span class="p">]]</span>                   
+<span class="go">nd.array([ [&quot;Charlie&quot;, 300],    [&quot;Denis&quot;, 400],    [&quot;Edith&quot;, 500],</span>
+<span class="go">             [&quot;Frank&quot;, 600], [&quot;Georgina&quot;, 700]],</span>
+<span class="go">         type=&quot;var * {name : string, balance : ?int64}&quot;)</span>
 </pre></div>
 </div>
 <p>Performance of this approach varies depending on the underlying storage system.
@@ -215,8 +207,8 @@ with SQL databases.</p>
 like <tt class="docutils literal"><span class="pre">csv</span></tt> to tokenize strings and the fast library DyND to serialize and
 deserialize data elements.  This separation enables a <em>serialize what you need</em>
 approach ideal for subsampling datasets.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">py</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>  <span class="c"># Fast, deserializes a small fraction of dataset</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">selection</span> <span class="o">=</span> <span class="n">csv</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>  <span class="c"># Fast, deserializes a small fraction of dataset</span>
 </pre></div>
 </div>
 </div>
@@ -224,7 +216,7 @@ approach ideal for subsampling datasets.</p>
 <h3>HDF5<a class="headerlink" href="#hdf5" title="Permalink to this headline">¶</a></h3>
 <p>HDF5 support comes via <a class="reference external" href="http://docs.h5py.org/en/latest/">h5py</a>, which loads data in through <tt class="docutils literal"><span class="pre">numpy</span></tt> arrays
 and offers various forms of compression for binary data.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">hdf5</span> <span class="o">=</span> <span class="n">HDF5</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">datapath</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">hdf5</span> <span class="o">=</span> <span class="n">HDF5</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.h5&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -233,14 +225,15 @@ and offers various forms of compression for binary data.</p>
 <p>Directories of files are supported with meta descriptors <tt class="docutils literal"><span class="pre">Stack</span></tt> and
 <tt class="docutils literal"><span class="pre">Concat</span></tt> which allow you to treat directories of files as a single, indexable
 data source.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&#39;*.csv&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&#39;examples/data/accounts*.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">]</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">Stack</span><span class="p">(</span><span class="n">csvs</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span><span class="o">.</span><span class="n">py</span><span class="p">[:,</span> <span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stack_slice</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[:,</span> <span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cat</span> <span class="o">=</span> <span class="n">Concat</span><span class="p">(</span><span class="n">csvs</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cat</span><span class="o">.</span><span class="n">py</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">combined</span> <span class="o">=</span> <span class="n">cat</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -249,7 +242,7 @@ data source.</p>
 <p>Robust SQL interaction is provided by <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> which maps an abstract
 expression system onto a variety of SQL backends including Postgres, MySQL,
 SQLite, etc...</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;postgresql://username:password@hostname/path&#39;</span><span class="p">,</span> <span class="s">&#39;table-name&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;sqlite:///:memory:&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s">&#39;{id:int}&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -259,27 +252,18 @@ SQLite, etc...</p>
 like SQL carry enough meta-data to ensure that this is possible.  Other systems
 like CSV depend on heuristics.  These heurstics can fail or even err.  In that
 case you may be prompted to provide more information</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-<span class="go">TypeError: Could not determine schema</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="ne">TypeError</span><span class="p">:</span> <span class="n">Could</span> <span class="ow">not</span> <span class="n">determine</span> <span class="n">schema</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="c"># Full schema specification as a datashape string</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s">&#39;{id: int, name: string, amount: float32}&#39;</span><span class="p">)</span>
+<span class="c"># Full schema specification as a datashape string</span>
+<span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s">&#39;{id: int, name: string, amount: float32}&#39;</span><span class="p">)</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="c"># Just specify the column names, please discover types</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;amount&#39;</span><span class="p">])</span>
+<span class="c"># Just specify the column names, please discover types</span>
+<span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;amount&#39;</span><span class="p">])</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="c"># Provide corrections where needed</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;amount&#39;</span><span class="p">],</span>
-<span class="gp">... </span>          <span class="n">typehints</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;amount&#39;</span><span class="p">:</span> <span class="s">&#39;float64&#39;</span><span class="p">})</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="interacting-with-open">
-<h3>Interacting with <tt class="docutils literal"><span class="pre">open</span></tt><a class="headerlink" href="#interacting-with-open" title="Permalink to this headline">¶</a></h3>
-<p>Files that are compressed or hosted from the web (via <tt class="docutils literal"><span class="pre">urlopen</span></tt>) can still be
-accessed by specifying a custom <tt class="docutils literal"><span class="pre">open</span></tt> function.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">gzip</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;accounts.csv.gz&#39;</span><span class="p">,</span> <span class="nb">open</span><span class="o">=</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">)</span>
+<span class="c"># Provide corrections where needed</span>
+<span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;amount&#39;</span><span class="p">],</span>
+          <span class="n">typehints</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;amount&#39;</span><span class="p">:</span> <span class="s">&#39;float64&#39;</span><span class="p">})</span>
 </pre></div>
 </div>
 </div>

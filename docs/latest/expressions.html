@@ -69,6 +69,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -110,7 +115,8 @@ Pandas/R DataFrame object.  Operations include projecting columns, filtering, ma
 <h3>TableSymbol<a class="headerlink" href="#tablesymbol" title="Permalink to this headline">¶</a></h3>
 <p>A <tt class="docutils literal"><span class="pre">TableSymbol</span></tt> refers to a single table in storage.  It must be given a name
 and a schema.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{id: int, name: string, balance: int}&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{id: int, name: string, balance: int}&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -131,7 +137,7 @@ a comutation to do in the future.</p>
 <span class="go">accounts[accounts[&#39;balance&#39;] &lt; 0][&#39;name&#39;]</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span><span class="o">.</span><span class="n">schema</span>
-<span class="go">dshape(&quot;{name: string}&quot;)</span>
+<span class="go">dshape(&quot;{ name : string }&quot;)</span>
 </pre></div>
 </div>
 </div>
@@ -141,7 +147,8 @@ a comutation to do in the future.</p>
 operation is a combined <tt class="docutils literal"><span class="pre">groupby</span></tt> and reduction, fulfilling
 split-apply-combine workflows.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>             <span class="c"># Splitting/grouping element</span>
-<span class="gp">... </span>   <span class="n">accounts</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>    <span class="c"># Apply and reduction</span>
+<span class="gp">... </span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>       <span class="c"># Apply and reduction</span>
+<span class="go">By(grouper=accounts[&#39;name&#39;], apply=sum(child=accounts[&#39;balance&#39;]))</span>
 </pre></div>
 </div>
 <p>This operation groups the table by name and then sums the balance of each
@@ -155,15 +162,16 @@ reductions of Pandas like <tt class="docutils literal"><span class="pre">count</
 <h3>Join<a class="headerlink" href="#join" title="Permalink to this headline">¶</a></h3>
 <p>Tables can be joined with the <tt class="docutils literal"><span class="pre">join</span></tt> operation, which allows for advanced
 queries to span multiple tables.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, balance: int}&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{id: int, name: string, balance: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cities</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;cities&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, city: string}&#39;</span><span class="p">)</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">join</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
+<span class="go">Join(lhs=accounts, rhs=cities, _on_left=&#39;name&#39;, _on_right=&#39;name&#39;, how=&#39;inner&#39;)</span>
 </pre></div>
 </div>
 <p>If given no inputs, <tt class="docutils literal"><span class="pre">join</span></tt> will join on all columns with shared names between
 the two tables.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">join</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span> <span class="n">cities</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">shared_names</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span> <span class="n">cities</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

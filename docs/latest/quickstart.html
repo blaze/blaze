@@ -32,7 +32,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
-    <link rel="next" title="Data" href="data.html" />
+    <link rel="next" title="Examples" href="examples.html" />
     <link rel="prev" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -69,6 +69,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -119,8 +124,6 @@ dimensionality and data type to use.</p>
 <span class="go">2   3  Charlie      300</span>
 <span class="go">3   4    Denis      400</span>
 <span class="go">4   5    Edith     -500</span>
-
-<span class="go">[5 rows x 3 columns]</span>
 </pre></div>
 </div>
 </div>
@@ -149,7 +152,7 @@ with familiar Pandas getitem or attribute syntax.</p>
 <h2>Stored Data<a class="headerlink" href="#stored-data" title="Permalink to this headline">¶</a></h2>
 <p>Define Blaze Tables directly from storage like CSV or HDF5 files.  Here we
 operate on a CSV file of the traditional <a class="reference external" href="https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.csv">iris dataset</a>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">CSV</span><span class="p">(</span><span class="s">&#39;iris.csv&#39;</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/iris.csv&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span>
 <span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
 <span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
@@ -162,17 +165,14 @@ operate on a CSV file of the traditional <a class="reference external" href="htt
 <span class="go">7            5.0          3.4           1.5          0.2  Iris-setosa</span>
 <span class="go">8            4.4          2.9           1.4          0.2  Iris-setosa</span>
 <span class="go">9            4.9          3.1           1.5          0.1  Iris-setosa</span>
-<span class="go">10           5.4          3.7           1.5          0.2  Iris-setosa</span>
-
 <span class="gp">...</span>
 </pre></div>
 </div>
 <p>Use remote data like SQL databases or Spark resilient distributed
 data-structures in exactly the same way.  Here we operate on a SQL database
 stored in a <a class="reference external" href="https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db">sqlite file</a>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.sql</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;sqlite:///iris.db&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">SQL</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;sqlite:///examples/data/iris.db&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span>
 <span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
 <span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
@@ -185,8 +185,6 @@ stored in a <a class="reference external" href="https://raw.githubusercontent.co
 <span class="go">7            5.0          3.4           1.5          0.2  Iris-setosa</span>
 <span class="go">8            4.4          2.9           1.4          0.2  Iris-setosa</span>
 <span class="go">9            4.9          3.1           1.5          0.1  Iris-setosa</span>
-<span class="go">10           5.4          3.7           1.5          0.2  Iris-setosa</span>
-
 <span class="gp">...</span>
 </pre></div>
 </div>
@@ -196,11 +194,12 @@ stored in a <a class="reference external" href="https://raw.githubusercontent.co
 <p>Common operations like Joins and split-apply-combine are available on any kind
 of data</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>                <span class="c"># Group by species</span>
-<span class="gp">... </span>   <span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>     <span class="c"># Take the mean of the petal_width column</span>
-<span class="go">           species  petal_width</span>
-<span class="go">0   Iris-virginica        2.026</span>
-<span class="go">1      Iris-setosa        0.246</span>
-<span class="go">2  Iris-versicolor        1.326</span>
+<span class="gp">... </span>   <span class="nb">min</span><span class="o">=</span><span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>  <span class="c"># Minimum of petal_width per group</span>
+<span class="gp">... </span>   <span class="nb">max</span><span class="o">=</span><span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>  <span class="c"># Maximum of petal_width per group</span>
+<span class="go">           species  max  min</span>
+<span class="go">0      Iris-setosa  0.6  0.1</span>
+<span class="go">1  Iris-versicolor  1.8  1.0</span>
+<span class="go">2   Iris-virginica  2.5  1.4</span>
 </pre></div>
 </div>
 </div>
@@ -223,20 +222,16 @@ container type.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
 <span class="gp">... </span>            <span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                     <span class="c"># Push result into a list</span>
-<span class="go">[(u&#39;Iris-virginica&#39;, 2.026),</span>
-<span class="go"> (u&#39;Iris-setosa&#39;, 0.2459999999999999),</span>
-<span class="go"> (u&#39;Iris-versicolor&#39;, 1.3259999999999998)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result_list</span> <span class="o">=</span> <span class="n">into</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                     <span class="c"># Push result into a list</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DataFrame</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                <span class="c"># Push result into a DataFrame</span>
-<span class="go">           species  petal_width</span>
-<span class="go">0   Iris-virginica        2.026</span>
-<span class="go">1      Iris-setosa        0.246</span>
-<span class="go">2  Iris-versicolor        1.326</span>
+<span class="go">           species  petal_width_mean</span>
+<span class="go">0      Iris-setosa             0.246</span>
+<span class="go">1  Iris-versicolor             1.326</span>
+<span class="go">2   Iris-virginica             2.026</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;output.csv&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="n">csv</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                      <span class="c"># Write result to CSV file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/output.csv&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to</span> <span class="o">=</span> <span class="n">into</span><span class="p">(</span><span class="n">csv</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                      <span class="c"># Write result to CSV file</span>
 </pre></div>
 </div>
 </div>

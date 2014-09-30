@@ -68,6 +68,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -100,19 +105,18 @@ is intended for new developers.  It is not necessary to understand this
 document in order to use Blaze.</p>
 <div class="section" id="expressions">
 <h2>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline">¶</a></h2>
-<p>Blaze represents expressions as Python objects.  Classes include:</p>
-<div class="highlight-python"><pre>TableSymbol - leaf expression, t
-Projection - subset of columns, t[['name', 'amount']]
-Selection - subset of rows t[t['amount'] &lt; 0]
-Column - single column t['name']
-ColumnWise - a combination of a table and a scalar expression, -t['amount'] + 1
-Join - join two tables on shared columns, join(t, s, 'id')
-Reduction - perform a sum or min or max on a table, t['amount'].sum()
-By - split-apply-combine operation, by(t['name'], t['amount'].sum())
-
-Also:
-    Sort, Distinct, Head, Label, Map, Apply, Merge</pre>
-</div>
+<p>Blaze represents expressions as Python objects.  Classes include</p>
+<ul class="simple">
+<li><strong>TableSymbol</strong>: leaf expression, <tt class="docutils literal"><span class="pre">t</span></tt></li>
+<li><strong>Projection</strong>: subset of columns, <tt class="docutils literal"><span class="pre">t[['name',</span> <span class="pre">'amount']]</span></tt></li>
+<li><strong>Selection</strong>: subset of rows <tt class="docutils literal"><span class="pre">t[t['amount']</span> <span class="pre">&lt;</span> <span class="pre">0]</span></tt></li>
+<li><strong>Column</strong>: single column t[&#8216;name&#8217;]</li>
+<li><strong>ColumnWise</strong>: a combination of a table and a scalar expression, <tt class="docutils literal"><span class="pre">t['amount']</span> <span class="pre">+</span> <span class="pre">1</span></tt></li>
+<li><strong>Join</strong>: join two tables on shared columns, <tt class="docutils literal"><span class="pre">join(t,</span> <span class="pre">s,</span> <span class="pre">'id')</span></tt></li>
+<li><strong>Reduction</strong>: perform a sum or min or max on a table, <tt class="docutils literal"><span class="pre">t['amount'].sum()</span></tt></li>
+<li><strong>By</strong>: split-apply-combine operation, by(t[&#8216;name&#8217;], <tt class="docutils literal"><span class="pre">t['amount'].sum())</span></tt></li>
+<li><strong>Also</strong>: <tt class="docutils literal"><span class="pre">Sort,</span> <span class="pre">Distinct,</span> <span class="pre">Head,</span> <span class="pre">Label,</span> <span class="pre">Map,</span> <span class="pre">Apply,</span> <span class="pre">Merge</span></tt></li>
+</ul>
 <p>In each case an operation (like <tt class="docutils literal"><span class="pre">Selection</span></tt>) is a Python class.  Each
 expression defines a fixed set of fields in the <tt class="docutils literal"><span class="pre">__slots__</span></tt> attribute</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Column</span><span class="p">(</span><span class="n">ColumnSyntaxMixin</span><span class="p">,</span> <span class="n">Projection</span><span class="p">):</span>
@@ -120,7 +124,9 @@ expression defines a fixed set of fields in the <tt class="docutils literal"><sp
 </pre></div>
 </div>
 <p>To create a node in the tree explicitly we create a Python object of this class</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">names</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{id: int, name: string, amount: int}&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This object contains its information in a .args attribute</p>
@@ -175,65 +181,64 @@ which broadcasts a scalar expression onto a table expression.</p>
 <div class="section" id="computation">
 <h2>Computation<a class="headerlink" href="#computation" title="Permalink to this headline">¶</a></h2>
 <p>Once we have a Blaze expression like the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">deadbeats</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>and some data like the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;Alice&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
-        <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;Bob&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">],</span>
-        <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;Charlie&#39;</span><span class="p">,</span> <span class="mi">300</span><span class="p">]]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;Alice&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+<span class="gp">... </span>        <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;Bob&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">],</span>
+<span class="gp">... </span>        <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;Charlie&#39;</span><span class="p">,</span> <span class="mi">300</span><span class="p">]]</span>
 </pre></div>
 </div>
 <p>and a mapping of TableSymbols to data like the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>then we need to evaluate the intent of the expression on the data.  We do this
 in a step-by-step system outlined by various <tt class="docutils literal"><span class="pre">compute</span></tt> functions.  The user
 experience is as follows</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">compute</span><span class="p">(</span><span class="n">deadbeats</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">compute</span><span class="p">(</span><span class="n">deadbeats</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
 <span class="go">[&#39;Bob&#39;]</span>
 </pre></div>
 </div>
 <p>But internally <tt class="docutils literal"><span class="pre">compute</span></tt> traverses our expression from the leaves (like
 <tt class="docutils literal"><span class="pre">t</span></tt>) on up, transforming <tt class="docutils literal"><span class="pre">data</span></tt> as it goes.  At each step it looks at a
 node in the Blaze expression graph like</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">selection_t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>and transforms the data appropriately, like</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">predicate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="nb">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">amt</span><span class="p">:</span> <span class="n">amt</span> <span class="o">&lt;</span> <span class="mi">0</span>
-<span class="n">data</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">predicate</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">predicate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">amt</span><span class="p">:</span> <span class="n">amt</span> <span class="o">&lt;</span> <span class="mi">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">predicate</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This step-by-step approach is easy to define through dispatched <tt class="docutils literal"><span class="pre">compute_one</span></tt>
+<p>This step-by-step approach is easy to define through dispatched <tt class="docutils literal"><span class="pre">compute_up</span></tt>
 functions.  We create a small recipe for how to compute each expression type
 (e.g. <tt class="docutils literal"><span class="pre">Projection</span></tt>, <tt class="docutils literal"><span class="pre">Selection</span></tt>, <tt class="docutils literal"><span class="pre">By</span></tt>) against each data type (e.g.,
 <tt class="docutils literal"><span class="pre">list</span></tt>, <tt class="docutils literal"><span class="pre">DataFrame</span></tt>, <tt class="docutils literal"><span class="pre">sqlalchemy.Table</span></tt>, ....)  Here is the recipe
 mapping a <tt class="docutils literal"><span class="pre">Selection</span></tt> to a <tt class="docutils literal"><span class="pre">DataFrame</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">predicate</span> <span class="o">=</span> <span class="n">compute</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">predicate</span><span class="p">,</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">child</span><span class="p">:</span> <span class="n">df</span><span class="p">})</span>
-    <span class="nb">apply</span> <span class="o">=</span> <span class="n">compute</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">apply</span><span class="p">,</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">child</span><span class="p">:</span> <span class="n">df</span><span class="p">})</span>
-    <span class="k">return</span> <span class="nb">apply</span><span class="p">[</span><span class="n">predicate</span><span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">compute_up</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">predicate</span> <span class="o">=</span> <span class="n">compute</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">predicate</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="n">predicate</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>This approach is modular and allows interpretation systems to be built up as a
 collection of small pieces.  One can begin the construction of a new backend by
 showing Blaze how to perform each individual operation on a new data type.  For
 example here is a start of a backend for PyTables:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">eval_str</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">predicate</span><span class="p">)</span>  <span class="c"># Produce string like &#39;amount &lt; 0&#39;</span>
-    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">read_where</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>     <span class="c"># Use PyTables read_where method</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">compute_up</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">s</span> <span class="o">=</span> <span class="n">eval_str</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">predicate</span><span class="p">)</span>  <span class="c"># Produce string like &#39;amount &lt; 0&#39;</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">read_where</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>     <span class="c"># Use PyTables read_where method</span>
 
-<span class="nd">@dispatch</span><span class="p">(</span><span class="n">Head</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">data</span><span class="p">[:</span><span class="n">expr</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>          <span class="c"># PyTables supports standard indexing</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Head</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">compute_up</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">data</span><span class="p">[:</span><span class="n">expr</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>          <span class="c"># PyTables supports standard indexing</span>
 
- <span class="nd">@dispatch</span><span class="p">(</span><span class="n">Column</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
- <span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-     <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">column</span><span class="p">)</span> <span class="c"># Use the PyTables .col method</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Column</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">compute_up</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>  <span class="c"># Use the PyTables .col method</span>
 </pre></div>
 </div>
 <p>These small functions are isolated enough from Blaze to be easy for new
@@ -241,16 +246,16 @@ developers to write, even without deep knowledge of Blaze internals.</p>
 </div>
 <div class="section" id="compute-traversal">
 <h2>Compute Traversal<a class="headerlink" href="#compute-traversal" title="Permalink to this headline">¶</a></h2>
-<p>The <tt class="docutils literal"><span class="pre">compute_one</span></tt> functions expect to be given:</p>
+<p>The <tt class="docutils literal"><span class="pre">compute_up</span></tt> functions expect to be given:</p>
 <ol class="arabic simple">
 <li>The expression containing information about the computation to be performed</li>
 <li>The data elements corresponding to the <tt class="docutils literal"><span class="pre">.inputs</span></tt> of that expression</li>
 </ol>
-<p>The <tt class="docutils literal"><span class="pre">compute</span></tt> function orchestrates <tt class="docutils literal"><span class="pre">compute_one</span></tt> functions and performs
+<p>The <tt class="docutils literal"><span class="pre">compute</span></tt> function orchestrates <tt class="docutils literal"><span class="pre">compute_up</span></tt> functions and performs
 the actual traversal, accruing intermediate results from the use of
-<tt class="docutils literal"><span class="pre">compute_one</span></tt>.  By default <tt class="docutils literal"><span class="pre">compute</span></tt> performs a <tt class="docutils literal"><span class="pre">bottom_up</span></tt> traversal.
+<tt class="docutils literal"><span class="pre">compute_up</span></tt>.  By default <tt class="docutils literal"><span class="pre">compute</span></tt> performs a <tt class="docutils literal"><span class="pre">bottom_up</span></tt> traversal.
 First it evaluates the leaves of the computation by swapping out keys for
-values in the input dictionary, <tt class="docutils literal"><span class="pre">{t:</span> <span class="pre">data}</span></tt>.  It then calls <tt class="docutils literal"><span class="pre">compute_one</span></tt>
+values in the input dictionary, <tt class="docutils literal"><span class="pre">{t:</span> <span class="pre">data}</span></tt>.  It then calls <tt class="docutils literal"><span class="pre">compute_up</span></tt>
 functions on these leaves to find intermediate nodes in the tree.  It repeats
 this process, walking up the tree, and at each stage translating a Blaze
 expression into the matching data element given the data elements of the
@@ -259,7 +264,7 @@ node, at which point it can return the result to the user.</p>
 <p>Sometimes we want to perform pre-processing or post-processing on the
 expression or the result.  For example when calling <tt class="docutils literal"><span class="pre">compute</span></tt> on a
 <tt class="docutils literal"><span class="pre">blaze.data.SQL</span></tt> object we actually want to pre-process this input to extract
-out the <tt class="docutils literal"><span class="pre">sqlalchemy.Table</span></tt> object and call <tt class="docutils literal"><span class="pre">compute_one</span></tt> on that.  When
+out the <tt class="docutils literal"><span class="pre">sqlalchemy.Table</span></tt> object and call <tt class="docutils literal"><span class="pre">compute_up</span></tt> on that.  When
 we&#8217;re finished and have successfully translated our Blaze expression to a
 SQLAlchemy expression we want to post-process this result by actually running
 the query in our SQL database and returning the concrete results.</p>

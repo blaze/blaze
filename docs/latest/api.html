@@ -68,6 +68,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -122,49 +127,49 @@ Docstrings should provide sufficient understanding for any individual function.<
 <tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.TableSymbol" title="blaze.expr.table.TableSymbol"><tt class="xref py py-obj docutils literal"><span class="pre">TableSymbol</span></tt></a>(name[,&nbsp;dshape,&nbsp;iscolumn])</td>
 <td>A Symbol for Tabular data</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Projection" title="blaze.expr.table.Projection"><tt class="xref py py-obj docutils literal"><span class="pre">Projection</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Projection" title="blaze.expr.table.Projection"><tt class="xref py py-obj docutils literal"><span class="pre">Projection</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Select columns from table</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Column" title="blaze.expr.table.Column"><tt class="xref py py-obj docutils literal"><span class="pre">Column</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Column" title="blaze.expr.table.Column"><tt class="xref py py-obj docutils literal"><span class="pre">Column</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>A single column from a table</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Selection" title="blaze.expr.table.Selection"><tt class="xref py py-obj docutils literal"><span class="pre">Selection</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Selection" title="blaze.expr.table.Selection"><tt class="xref py py-obj docutils literal"><span class="pre">Selection</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Filter rows of table based on predicate   ..</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.ColumnWise" title="blaze.expr.table.ColumnWise"><tt class="xref py py-obj docutils literal"><span class="pre">ColumnWise</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.ColumnWise" title="blaze.expr.table.ColumnWise"><tt class="xref py py-obj docutils literal"><span class="pre">ColumnWise</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Apply Scalar Expression onto columns of data</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Reduction" title="blaze.expr.table.Reduction"><tt class="xref py py-obj docutils literal"><span class="pre">Reduction</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Reduction" title="blaze.expr.table.Reduction"><tt class="xref py py-obj docutils literal"><span class="pre">Reduction</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>A column-wise reduction</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Sort" title="blaze.expr.table.Sort"><tt class="xref py py-obj docutils literal"><span class="pre">Sort</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Sort" title="blaze.expr.table.Sort"><tt class="xref py py-obj docutils literal"><span class="pre">Sort</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Table in sorted order   ..</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Distinct" title="blaze.expr.table.Distinct"><tt class="xref py py-obj docutils literal"><span class="pre">Distinct</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Distinct" title="blaze.expr.table.Distinct"><tt class="xref py py-obj docutils literal"><span class="pre">Distinct</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Removes duplicate rows from the table, so every row is distinct   ..</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Head" title="blaze.expr.table.Head"><tt class="xref py py-obj docutils literal"><span class="pre">Head</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Head" title="blaze.expr.table.Head"><tt class="xref py py-obj docutils literal"><span class="pre">Head</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>First <tt class="docutils literal"><span class="pre">n</span></tt> elements of table   ..</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Label" title="blaze.expr.table.Label"><tt class="xref py py-obj docutils literal"><span class="pre">Label</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Label" title="blaze.expr.table.Label"><tt class="xref py py-obj docutils literal"><span class="pre">Label</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>A Labeled column</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.ReLabel" title="blaze.expr.table.ReLabel"><tt class="xref py py-obj docutils literal"><span class="pre">ReLabel</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.ReLabel" title="blaze.expr.table.ReLabel"><tt class="xref py py-obj docutils literal"><span class="pre">ReLabel</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Table with same content but with new labels   ..</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Map" title="blaze.expr.table.Map"><tt class="xref py py-obj docutils literal"><span class="pre">Map</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Map" title="blaze.expr.table.Map"><tt class="xref py py-obj docutils literal"><span class="pre">Map</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Map an arbitrary Python function across rows in a Table</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Merge" title="blaze.expr.table.Merge"><tt class="xref py py-obj docutils literal"><span class="pre">Merge</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Merge" title="blaze.expr.table.Merge"><tt class="xref py py-obj docutils literal"><span class="pre">Merge</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Merge the columns of many Tables together</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Union" title="blaze.expr.table.Union"><tt class="xref py py-obj docutils literal"><span class="pre">Union</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Union" title="blaze.expr.table.Union"><tt class="xref py py-obj docutils literal"><span class="pre">Union</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Merge the rows of many Tables together</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.By" title="blaze.expr.table.By"><tt class="xref py py-obj docutils literal"><span class="pre">By</span></tt></a>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.By" title="blaze.expr.table.By"><tt class="xref py py-obj docutils literal"><span class="pre">By</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Split-Apply-Combine Operator</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Join" title="blaze.expr.table.Join"><tt class="xref py py-obj docutils literal"><span class="pre">Join</span></tt></a>(*args)</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Join" title="blaze.expr.table.Join"><tt class="xref py py-obj docutils literal"><span class="pre">Join</span></tt></a>(*args,&nbsp;**kwargs)</td>
 <td>Join two tables on common columns</td>
 </tr>
 </tbody>
@@ -214,19 +219,19 @@ Blaze&#8217;s abstract expressions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>data: anything</strong> :</p>
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>data: anything</strong></p>
 <blockquote>
 <div><p>Any type with <tt class="docutils literal"><span class="pre">discover</span></tt> and <tt class="docutils literal"><span class="pre">compute</span></tt> implementations</p>
 </div></blockquote>
-<p><strong>columns: list of strings - optional</strong> :</p>
+<p><strong>columns: list of strings - optional</strong></p>
 <blockquote>
 <div><p>Column names, will be inferred from datasource if possible</p>
 </div></blockquote>
-<p><strong>schema: string or DataShape - optional</strong> :</p>
+<p><strong>schema: string or DataShape - optional</strong></p>
 <blockquote>
 <div><p>Explicit Record containing datatypes and column names</p>
 </div></blockquote>
-<p><strong>name: string - optional</strong> :</p>
+<p><strong>name: string - optional</strong></p>
 <blockquote class="last">
 <div><p>A name for the table</p>
 </div></blockquote>
@@ -249,6 +254,36 @@ Blaze&#8217;s abstract expressions.</p>
 <span class="go">1  Edith</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -259,17 +294,23 @@ Blaze&#8217;s abstract expressions.</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -318,13 +359,49 @@ Blaze&#8217;s abstract expressions.</p>
 </div>
 <dl class="class">
 <dt id="blaze.expr.table.TableExpr">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">TableExpr</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.TableExpr" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">TableExpr</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.TableExpr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Super class for all Table Expressions</p>
 <p>This is not intended to be constructed by users.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="#blaze.expr.table.TableSymbol" title="blaze.expr.table.TableSymbol"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.TableSymbol</span></tt></a></p>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -335,17 +412,23 @@ Blaze&#8217;s abstract expressions.</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.TableExpr.count_values" title="blaze.expr.table.TableExpr.count_values"><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt></a>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -386,6 +469,14 @@ Blaze&#8217;s abstract expressions.</p>
 </tbody>
 </table>
 <dl class="method">
+<dt id="blaze.expr.table.TableExpr.count_values">
+<tt class="descname">count_values</tt><big>(</big><em>sort=True</em><big>)</big><a class="headerlink" href="#blaze.expr.table.TableExpr.count_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count occurrences of elements in this column</p>
+<p>Sort by counts by default, add <tt class="docutils literal"><span class="pre">sort=False</span></tt> keyword to avoid this
+behavior.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="blaze.expr.table.TableExpr.sort">
 <tt class="descname">sort</tt><big>(</big><em>key=None</em>, <em>ascending=True</em><big>)</big><a class="headerlink" href="#blaze.expr.table.TableExpr.sort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sort table</p>
@@ -393,7 +484,7 @@ Blaze&#8217;s abstract expressions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>key: string, list of strings, TableExpr</strong> :</p>
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>key: string, list of strings, TableExpr</strong></p>
 <blockquote>
 <div><dl class="docutils">
 <dt>Defines by what you want to sort.  Either:</dt>
@@ -403,7 +494,7 @@ A Table Expression, <tt class="docutils literal"><span class="pre">t.sort(-t['am
 </dd>
 </dl>
 </div></blockquote>
-<p><strong>ascending: bool</strong> :</p>
+<p><strong>ascending: bool</strong></p>
 <blockquote class="last">
 <div><p>Determines order of the sort</p>
 </div></blockquote>
@@ -429,6 +520,36 @@ A Table Expression, <tt class="docutils literal"><span class="pre">t.sort(-t['am
 </div>
 <p>We define a TableSymbol with a name like <tt class="docutils literal"><span class="pre">accounts</span></tt> and the datashape of
 a single row, called a schema.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -439,17 +560,23 @@ a single row, called a schema.</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -493,7 +620,7 @@ a single row, called a schema.</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.RowWise">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">RowWise</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.RowWise" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">RowWise</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.RowWise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply an operation equally to each of the rows.  An Interface.</p>
 <p>Common rowwise operations include <tt class="docutils literal"><span class="pre">Map</span></tt>, <tt class="docutils literal"><span class="pre">ColumnWise</span></tt>, <tt class="docutils literal"><span class="pre">Projection</span></tt>,
 and anything else that operates by applying some transformation evenly
@@ -503,6 +630,42 @@ across all rows in a table.</p>
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="#blaze.expr.table.Projection" title="blaze.expr.table.Projection"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Projection</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.Map" title="blaze.expr.table.Map"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Map</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.ColumnWise" title="blaze.expr.table.ColumnWise"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.ColumnWise</span></tt></a>, <tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.</span></tt>, <tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.</span></tt>, <tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.</span></tt></p>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -513,17 +676,23 @@ across all rows in a table.</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -567,7 +736,7 @@ across all rows in a table.</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Projection">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Projection</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Projection" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Projection</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Projection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Select columns from table</p>
 <p>SELECT a, b, c
 FROM table</p>
@@ -582,6 +751,42 @@ FROM table</p>
 <span class="go">dshape(&quot;{ name : string, amount : int32 }&quot;)</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -592,17 +797,23 @@ FROM table</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -646,7 +857,7 @@ FROM table</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Column">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Column</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Column" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Column</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Column" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single column from a table</p>
 <p>SELECT a
 FROM table</p>
@@ -660,6 +871,42 @@ FROM table</p>
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="#blaze.expr.table.Projection" title="blaze.expr.table.Projection"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Projection</span></tt></a></p>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">expr</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -676,23 +923,29 @@ FROM table</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isnan</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isnan</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(label)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(label)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -721,7 +974,7 @@ FROM table</p>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">sort</span></tt>([key,&nbsp;ascending])</td>
 <td>Sort table</td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>([unbiased])</td>
 <td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">subs</span></tt>(d)</td>
@@ -739,7 +992,7 @@ FROM table</p>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">traverse</span></tt>()</td>
 <td>Traverse over tree, yielding all subtrees and leaves</td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>([unbiased])</td>
 <td></td>
 </tr>
 </tbody>
@@ -748,7 +1001,7 @@ FROM table</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Selection">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Selection</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Selection" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Selection</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Selection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Filter rows of table based on predicate</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span>
@@ -756,6 +1009,42 @@ FROM table</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span> <span class="o">=</span> <span class="n">accounts</span><span class="p">[</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -766,17 +1055,23 @@ FROM table</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -820,7 +1115,7 @@ FROM table</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.ColumnWise">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ColumnWise</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.ColumnWise" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ColumnWise</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.ColumnWise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply Scalar Expression onto columns of data</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -846,11 +1141,44 @@ appropriate ScalarSymbol</p>
 <span class="gp">... </span>                       <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">Add</span><span class="p">(</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">scalar_symbol</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">Add</span><span class="p">(</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">expr</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ColumnWise</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
 <span class="go">accounts[&#39;amount&#39;] + 100</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -870,23 +1198,29 @@ appropriate ScalarSymbol</p>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isnan</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isnan</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(label)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(label)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -915,7 +1249,7 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">sort</span></tt>([key,&nbsp;ascending])</td>
 <td>Sort table</td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>([unbiased])</td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">subs</span></tt>(d)</td>
@@ -933,7 +1267,7 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">traverse</span></tt>()</td>
 <td>Traverse over tree, yielding all subtrees and leaves</td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>([unbiased])</td>
 <td></td>
 </tr>
 </tbody>
@@ -942,7 +1276,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Join">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Join</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Join" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Join</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Join" title="Permalink to this definition">¶</a></dt>
 <dd><p>Join two tables on common columns</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -970,6 +1304,46 @@ appropriate ScalarSymbol</p>
 <p>Join based on different column names
 &gt;&gt;&gt; amounts = TableSymbol(&#8216;amounts&#8217;, &#8216;{amount: int, acctNumber: int}&#8217;)
 &gt;&gt;&gt; joined = join(names, amounts, &#8216;id&#8217;, &#8216;acctNumber&#8217;)</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">on_left</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">on_right</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Join.schema" title="blaze.expr.table.Join.schema"><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></a></td>
+<td><p class="rubric">Examples</p>
+</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -980,17 +1354,23 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1052,7 +1432,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Reduction">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Reduction</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Reduction" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Reduction</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Reduction" title="Permalink to this definition">¶</a></dt>
 <dd><p>A column-wise reduction</p>
 <p>Blaze supports the same class of reductions as NumPy and Pandas.</p>
 <blockquote>
@@ -1079,8 +1459,37 @@ appropriate ScalarSymbol</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
 <td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">symbol</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="67%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>dtype</td>
+<td>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -1149,8 +1558,184 @@ appropriate ScalarSymbol</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="blaze.expr.table.var">
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">var</tt><big>(</big><em>child</em>, <em>unbiased=False</em><big>)</big><a class="headerlink" href="#blaze.expr.table.var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Variance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>child</strong> : Expr</p>
+<blockquote>
+<div><p>An expression</p>
+</div></blockquote>
+<p><strong>unbiased</strong> : bool, optional</p>
+<blockquote class="last">
+<div><p>Compute an unbiased estimate of the population variance if this is
+<tt class="docutils literal"><span class="pre">True</span></tt>. In NumPy and pandas, this parameter is called <tt class="docutils literal"><span class="pre">ddof</span></tt> (delta
+degrees of freedom) and is equal to 1 for unbiased and 0 for biased.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">symbol</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">eval_str</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">resources</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">subs</span></tt>(d)</td>
+<td>Substitute terms in the tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">subterms</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">traverse</span></tt>()</td>
+<td>Traverse over tree, yielding all subtrees and leaves</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.table.std">
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">std</tt><big>(</big><em>child</em>, <em>unbiased=False</em><big>)</big><a class="headerlink" href="#blaze.expr.table.std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard Deviation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>child</strong> : Expr</p>
+<blockquote>
+<div><p>An expression</p>
+</div></blockquote>
+<p><strong>unbiased</strong> : bool, optional</p>
+<blockquote class="last">
+<div><p>Compute the square root of an unbiased estimate of the population
+variance if this is <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This does <em>not</em> return an unbiased estimate of the population
+standard deviation.</p>
+</div>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.var" title="blaze.expr.table.var"><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt></a></p>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">symbol</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">eval_str</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">resources</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">subs</span></tt>(d)</td>
+<td>Substitute terms in the tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">subterms</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">traverse</span></tt>()</td>
+<td>Traverse over tree, yielding all subtrees and leaves</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
 <dt id="blaze.expr.table.By">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">By</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.By" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">By</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.By" title="Permalink to this definition">¶</a></dt>
 <dd><p>Split-Apply-Combine Operator</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -1167,6 +1752,42 @@ appropriate ScalarSymbol</p>
 <span class="go">[(&#39;Alice&#39;, 150), (&#39;Bob&#39;, 200)]</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">child</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1177,17 +1798,23 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1231,7 +1858,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Sort">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Sort</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Sort" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Sort</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Sort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Table in sorted order</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
@@ -1243,6 +1870,45 @@ appropriate ScalarSymbol</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">])</span> 
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">key</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1253,17 +1919,23 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1307,7 +1979,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Distinct">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Distinct</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Distinct" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Distinct</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Distinct" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes duplicate rows from the table, so every row is distinct</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -1324,6 +1996,42 @@ appropriate ScalarSymbol</p>
 <span class="go">[(&#39;Alice&#39;, 100, 1), (&#39;Bob&#39;, 200, 2)]</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1334,17 +2042,23 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1394,7 +2108,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Head">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Head</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Head" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Head</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Head" title="Permalink to this definition">¶</a></dt>
 <dd><p>First <tt class="docutils literal"><span class="pre">n</span></tt> elements of table</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
@@ -1402,6 +2116,42 @@ appropriate ScalarSymbol</p>
 <span class="go">dshape(&quot;5 * { name : string, amount : int32 }&quot;)</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1412,17 +2162,23 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1478,7 +2234,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Label">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Label</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Label" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Label</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Label" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Labeled column</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -1496,6 +2252,39 @@ appropriate ScalarSymbol</p>
 <span class="go">dshape(&quot;{ new_amount : float64 }&quot;)</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1512,20 +2301,26 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isnan</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isnan</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1554,7 +2349,7 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">sort</span></tt>([key,&nbsp;ascending])</td>
 <td>Sort table</td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>([unbiased])</td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">subs</span></tt>(d)</td>
@@ -1572,7 +2367,7 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">traverse</span></tt>()</td>
 <td>Traverse over tree, yielding all subtrees and leaves</td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>([unbiased])</td>
 <td></td>
 </tr>
 </tbody>
@@ -1581,7 +2376,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.ReLabel">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ReLabel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.ReLabel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ReLabel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.ReLabel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Table with same content but with new labels</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -1595,6 +2390,42 @@ appropriate ScalarSymbol</p>
 <span class="go">dshape(&quot;{ name : string, balance : int32 }&quot;)</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1605,17 +2436,23 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1677,7 +2514,7 @@ appropriate ScalarSymbol</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Map">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Map</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Map" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Map</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Map an arbitrary Python function across rows in a Table</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -1696,6 +2533,42 @@ appropriate ScalarSymbol</p>
 <span class="gp">... </span>                          <span class="n">schema</span><span class="o">=</span><span class="s">&#39;{time: datetime}&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1706,20 +2579,26 @@ appropriate ScalarSymbol</p>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(name)</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(name)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1782,6 +2661,42 @@ appropriate ScalarSymbol</p>
 The following transformation is often valid</p>
 <p>Before <tt class="docutils literal"><span class="pre">compute(Apply(f,</span> <span class="pre">expr),</span> <span class="pre">...)</span></tt>
 After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <span class="pre">...)</span></tt></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1792,17 +2707,23 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
 <td>Leaves of an expresion tree</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
+<td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
 <td></td>
@@ -1858,7 +2779,7 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 
 <dl class="class">
 <dt id="blaze.expr.table.Merge">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Merge</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Merge" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Merge</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Merge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merge the columns of many Tables together</p>
 <p>Must all descend from same table via RowWise operations</p>
 <div class="admonition-see-also admonition seealso">
@@ -1876,6 +2797,39 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 <span class="go">[&#39;name&#39;, &#39;amount&#39;, &#39;new_amount&#39;]</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1886,16 +2840,22 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
 <td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
@@ -1940,7 +2900,7 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 
 <dl class="class">
 <dt id="blaze.expr.table.Union">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Union</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Union" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Union</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Union" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merge the rows of many Tables together</p>
 <p>Must all have the same schema</p>
 <div class="admonition-see-also admonition seealso">
@@ -1957,6 +2917,42 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 <span class="go">[&#39;name&#39;, &#39;amount&#39;]</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">columns</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">iscolumn</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">name</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1967,16 +2963,22 @@ After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <sp
 <tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">count</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">count_values</span></tt>([sort])</td>
+<td>Count occurrences of elements in this column</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">distinct</span></tt>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">head</span></tt>([n])</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">isidentical</span></tt>(other)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">leaves</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">like</span></tt>(**kwargs)</td>
 <td></td>
 </tr>
 <tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">map</span></tt>(func[,&nbsp;schema,&nbsp;iscolumn])</td>
@@ -2082,7 +3084,7 @@ FROM table</p>
 
 <dl class="class">
 <dt id="blaze.expr.table.Summary">
-<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Summary</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Summary" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Summary</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Summary" title="Permalink to this definition">¶</a></dt>
 <dd><p>A collection of named reductions</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -2099,6 +3101,33 @@ FROM table</p>
 <span class="go">(2, 350)</span>
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">args</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dtype</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">inputs</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">schema</span></tt></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">shape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -2149,6 +3178,24 @@ FROM table</p>
 </div>
 </dd></dl>
 
+<dl class="function">
+<dt id="blaze.expr.table.like">
+<tt class="descclassname">blaze.expr.table.</tt><tt class="descname">like</tt><big>(</big><em>child</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.table.like" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter table by string comparison</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">TableSymbol</span><span class="p">,</span> <span class="n">like</span><span class="p">,</span> <span class="n">compute</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, city: string}&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;Alice*&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&#39;Alice Smith&#39;</span><span class="p">,</span> <span class="s">&#39;New York&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="p">(</span><span class="s">&#39;Bob Jones&#39;</span><span class="p">,</span> <span class="s">&#39;Chicago&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="p">(</span><span class="s">&#39;Alice Walker&#39;</span><span class="p">,</span> <span class="s">&#39;LA&#39;</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">compute</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+<span class="go">[(&#39;Alice Smith&#39;, &#39;New York&#39;), (&#39;Alice Walker&#39;, &#39;LA&#39;)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <span class="target" id="module-blaze.server.server"></span><dl class="class">
 <dt id="blaze.server.server.Server">
 <em class="property">class </em><tt class="descclassname">blaze.server.server.</tt><tt class="descname">Server</tt><big>(</big><em>datasets=None</em><big>)</big><a class="headerlink" href="#blaze.server.server.Server" title="Permalink to this definition">¶</a></dt>
@@ -2164,9 +3211,21 @@ FROM table</p>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">({</span><span class="s">&#39;accounts&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">server</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">server</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> 
 </pre></div>
 </div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">run</span></tt>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -2197,6 +3256,15 @@ POST-data: {&#8216;index&#8217;: [{&#8216;start&#8217;: 0, &#8216;step&#8217;: 3
 </dd></dl>
 
 <dl class="function">
+<dt id="blaze.server.server.expression_from_name">
+<tt class="descclassname">blaze.server.server.</tt><tt class="descname">expression_from_name</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#blaze.server.server.expression_from_name" title="Permalink to this definition">¶</a></dt>
+<dd><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expression_from_name</span><span class="p">(</span><span class="s">&#39;By&#39;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;blaze.expr.table.By&#39;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="blaze.server.server.from_tree">
 <tt class="descclassname">blaze.server.server.</tt><tt class="descname">from_tree</tt><big>(</big><em>expr</em>, <em>namespace=None</em><big>)</big><a class="headerlink" href="#blaze.server.server.from_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert core data structures to Blaze expression</p>
@@ -2206,7 +3274,7 @@ back into Blaze expressions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><strong>expr: dict</strong> :</td>
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><strong>expr: dict</strong></td>
 </tr>
 </tbody>
 </table>
@@ -2242,7 +3310,7 @@ back into Blaze expressions.</p>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">from_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-<span class="go">sum(t[&#39;x&#39;])</span>
+<span class="go">sum(child=t[&#39;x&#39;])</span>
 </pre></div>
 </div>
 <p>Simplify expresion using explicit <tt class="docutils literal"><span class="pre">names</span></tt> dictionary.  In the example
@@ -2277,7 +3345,7 @@ serialization.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><strong>expr: Blaze Expression</strong> :</td>
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><strong>expr: Blaze Expression</strong></td>
 </tr>
 </tbody>
 </table>
@@ -2327,11 +3395,11 @@ below we replace the <tt class="docutils literal"><span class="pre">TableSymbol<
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>url: str</strong> :</p>
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>url: str</strong></p>
 <blockquote>
 <div><p>URL of a Blaze server</p>
 </div></blockquote>
-<p><strong>name: str</strong> :</p>
+<p><strong>name: str</strong></p>
 <blockquote class="last">
 <div><p>Name of dataset on that server</p>
 </div></blockquote>
@@ -2345,10 +3413,22 @@ below we replace the <tt class="docutils literal"><span class="pre">TableSymbol<
 </div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># This example matches with the docstring of ``Server``</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ec</span> <span class="o">=</span> <span class="n">ExprClient</span><span class="p">(</span><span class="s">&#39;localhost:5000&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ec</span> <span class="o">=</span> <span class="n">ExprClient</span><span class="p">(</span><span class="s">&#39;localhost:6363&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">ec</span><span class="p">)</span> 
 </pre></div>
 </div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">dshape</span></tt></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

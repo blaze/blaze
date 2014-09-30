@@ -68,6 +68,11 @@
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
     </ul>
     <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
@@ -106,9 +111,7 @@ git clone https://github.com/ContinuumIO/blaze.git
 cd blaze
 
 # Install most of the requirements through conda
-conda install --yes --file requirements.txt  # Basic requirements
-conda install --yes -c mwiebe dynd-python    # Development version of DyND
-conda install --yes unicodecsv               # If on Python 2
+conda install --yes -c blaze
 
 # Some requirements are kept up-to-date on PyPI
 conda install --yes pip
@@ -139,9 +142,6 @@ installing with some additional Binstar channels.</p>
 <p>If you don&#8217;t want to use conda that&#8217;s fine too.  Most of the requirements can
 be installed from PyPI.  A notable exception is <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">DyND</a> which must be compiled
 from source.</p>
-<p>If you use Python 2 you should also include the <tt class="docutils literal"><span class="pre">unicodecsv</span></tt> module</p>
-<div class="highlight-python"><pre>conda install unicodecsv</pre>
-</div>
 </div>
 <div class="section" id="github-flow">
 <h2>GitHub Flow<a class="headerlink" href="#github-flow" title="Permalink to this headline">¶</a></h2>
