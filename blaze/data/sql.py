@@ -282,24 +282,23 @@ def into(sql, csv, if_exists="replace", **kwargs):
     """
     Parameters
     ----------
-    if_exists : string
-        {replace, append, fail}
-    FORMAT : string
-         Data Format
-         text, csv, binary default: CSV
-    DELIMITER : string
+    if_exists : str, optional, {replace, append, fail}
+        The behavior defining what happens when a table exists.
+    format_str : string, optional, {text, csv}
+         The data format.
+    delimiter : string
         Delimiter character
-    NULL :
-        Null character
-        Default: '' (empty string)
-    HEADER : bool
+    header : bool, optional
         Flag to define file contains a header (only to be used with CSV)
-    QUOTE : string
-        Single byte quote:  Default is double-quote. ex: "1997","Ford","E350")
-    ESCAPE : string
-        A single one-byte character for defining escape characters. Default is the same as the QUOTE
-    ENCODING :
-        An encoding name (POSTGRES): utf8, latin-1, ascii.  Default: UTF8
+    quotechar : str, optional
+        Single byte quote. For example, "1997","Ford","E350".
+    escapechar : str, optional
+        A single one-byte character for defining escape characters.
+    encoding : str, optional
+        An encoding name (POSTGRES): utf8, latin-1, ascii.
+    na_value : str, optional
+        String to use to indicate NULL values
+
 
     ##NOT IMPLEMENTED
     # FORCE_QUOTE { ( column_name [, ...] ) | * }
@@ -317,31 +316,29 @@ def into(sql, csv, if_exists="replace", **kwargs):
     # concepts
     from .dialect_mappings import dialect_terms
 
-    def retrieve_kwarg(term, default=None):
+    def retrieve_kwarg(term):
         terms = [k for k, v in dialect_terms.items() if v == term]
         for t in terms:
-            val = kwargs.get(t, default)
+            val = kwargs.get(t)
             if val:
                 return val
-        return default
 
     for k in kwargs.keys():
         if k not in dialect_terms:
             raise KeyError('%s not found in dialect mapping' % k)
 
-    format_str = retrieve_kwarg('format_str', 'csv')
-    encoding = retrieve_kwarg('encoding',
-                              'utf8' if dbtype == 'mysql' else 'latin1')
-    delimiter = retrieve_kwarg('delimiter', csv.dialect['delimiter'])
-    na_value = retrieve_kwarg('na_value', '')
-    quotechar = retrieve_kwarg('quotechar', '"')
-    escapechar = retrieve_kwarg('escapechar', quotechar)
-    header = retrieve_kwarg('header', csv.header)
-    lineterminator = retrieve_kwarg('lineterminator', os.linesep)
+    format_str = retrieve_kwarg('format_str') or 'csv'
+    encoding = retrieve_kwarg('encoding') or 'utf8' if dbtype == 'mysql' else 'latin1'
+    delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
+    na_value = retrieve_kwarg('na_value') or ''
+    quotechar = retrieve_kwarg('quotechar') or '"'
+    escapechar = retrieve_kwarg('escapechar') or quotechar
+    header = retrieve_kwarg('header') or csv.header
+    lineterminator = retrieve_kwarg('lineterminator') or os.linesep
 
     skiprows = csv.header or 0  # None or 0 returns 0
-    skiprows = retrieve_kwarg('skiprows', int(skiprows))
-    mysql_local = retrieve_kwarg('local', '')
+    skiprows = retrieve_kwarg('skiprows') or int(skiprows)
+    mysql_local = retrieve_kwarg('local') or ''
 
     copy_info = {'abspath': abspath,
                  'tblname': tblname,

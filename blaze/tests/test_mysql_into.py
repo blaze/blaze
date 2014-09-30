@@ -23,8 +23,10 @@ url = 'mysql+pymysql://{0}@localhost:3306/test'.format(username)
 
 @pytest.yield_fixture
 def csv():
-    with filetext('1,2\n10,20\n100,200', '.csv') as f:
-        yield CSV(f, columns=list('ab'))
+    fn = '/tmp/test.csv'
+    with open(fn, mode='wb') as f:
+        f.write(b'1,2\n10,20\n100,200')
+    yield CSV(fn, columns=list('ab'))
 
 
 @pytest.yield_fixture
@@ -87,8 +89,10 @@ def test_csv_postgres_load(sql, csv):
     assert os.path.exists(csv.path)
     assert os.path.exists(full_path)
     load = (r"LOAD DATA INFILE '{0}' INTO TABLE {1} "
-            "FIELDS TERMINATED BY ',' lines terminated by '\n'"
+            "FIELDS TERMINATED BY ',' lines terminated by '\n';"
             ).format(full_path, sql.tablename)
+    with open(csv.path) as f:
+        print(f.read())
     with sql.engine.begin() as conn:
         conn.execute(load)
 
