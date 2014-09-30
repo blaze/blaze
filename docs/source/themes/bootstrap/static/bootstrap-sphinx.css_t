@@ -141,8 +141,16 @@ pre {
   opacity: 1;
 }
 
+@media (max-width: 768px){
 #nav.affix {
-  top: 0px;
+  position:relative;
+  }
+  #nav{
+    width:100%;
+    }
+  #nav ul{
+    width:100%;
+  }
 }
 #nav.affix-bottom {
   position: absolute;
