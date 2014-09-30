@@ -4,6 +4,7 @@ import unittest
 
 from dynd import nd
 import numpy as np
+import bcolz
 from datashape import dshape
 from datetime import datetime
 import os
@@ -325,6 +326,18 @@ def test_into_ctable_pytables():
     assert ct[0] == tble[0] and ct[-1] == ct[-1]
 
 
+def test_into_np_ndarray_carray():
+    cr = bcolz.carray([1,2,3,4,5])
+    npa = into(np.ndarray, cr)
+    assert type(npa) == type(cr[:])
+
+
+def test_into_pd_series_carray():
+    cr = bcolz.carray([1,2,3,4,5])
+    pda = into(pd.Series, cr)
+    assert len(pda) == len(cr[:])
+
+
 def test_numpy_datetimes():
     L = [datetime(2000, 12, 1), datetime(2000, 1, 1, 1, 1, 1)]
     assert into([], np.array(L, dtype='M8[us]')) == L
@@ -396,14 +409,21 @@ def test_into_cds_mixed():
         assert cds.data == {'first': into(list, csv[:, 'first'])}
 
 
-def test_series_single_column():
+def test_series_single_column(data):
     data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
     t = Table(data, '{name: string, amount: float64, id: int64}')
 
     df = into(pd.Series, t['name'])
+    out_df = into(df, into(DataFrame, t['amount']))
     assert isinstance(df, pd.Series)
     expected = pd.DataFrame(data, columns=t.schema.measure.names).name
     assert str(df) == str(expected)
+    assert df.name == out_df.name
+
+
+    failure = into(DataFrame, data)
+    with pytest.raises(TypeError):
+        into(pd.Series, failure)
 
 
 def test_series_single_column_projection():
