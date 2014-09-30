@@ -265,7 +265,7 @@ def compute_up(t, q, **kwargs):
 
 @dispatch((sum, min, max, mean), MongoQuery)
 def compute_up(t, q, **kwargs):
-    name = t.dshape[0].names[0]
+    name = t._name
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
     column = '$' + t.child.names[0]
     arg = {'$group': {'_id': {}, name: {reduction: column}}}
@@ -280,9 +280,9 @@ def compute_up(t, q, **kwargs):
 @dispatch(DateTime, MongoQuery)
 def compute_up(expr, q, **kwargs):
     attr = expr.attr
-    d = {'$project': {expr.name:
+    d = {'$project': {expr._name:
                       {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
-                       '$%s' % expr.child.name}}}
+                       '$%s' % expr.child._name}}}
     return q.append(d)
 
 
@@ -312,7 +312,7 @@ def post_compute(e, q, d):
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
     if isscalar(e):
-        field = e.dshape[0].names[0]
+        field = e._name
         result = q.coll.aggregate(list(q.query))['result']
         return result[0][field]
 
