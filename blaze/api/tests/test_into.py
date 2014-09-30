@@ -141,6 +141,14 @@ def out_hdf5_alt():
         yield filename
 
 
+class A(object): pass
+class B(object): pass
+
+def test_into_fails():
+    with pytest.raises(NotImplementedError):
+        into(A(), B())
+
+
 def test_into_pytables_dataframe(h5):
     samp = h5.root.test.sample
     final = into(pd.DataFrame, samp)
@@ -287,15 +295,20 @@ def test_into_tables_path(good_csv, out_hdf5, out_hdf5_alt):
 
 
 def test_into_tables_chunk_iterator():
-    import tables as tb
-    pyt = PyTables("foo.h5", "/table", dshape='{x: int32, y: int32}')
-    x = np.array([(int(i), float(i)) for i in range(100)], dtype=[('x', np.int32), ('y', np.int32)])
-    cs = chunks(x, chunksize=10)
-    tble = into(pyt, ChunkIterator(cs))
-    n = len(tble)
-    tble._v_file.close()
-    assert n == 100
-    os.remove('foo.h5')
+    try:
+        import tables as tb
+        pyt = PyTables("foo.h5", "/table", dshape='{x: int32, y: int32}')
+        x = np.array([(int(i), int(i)) for i in range(4)], dtype=[('x', np.int32), ('y', np.int32)])
+        cs = chunks(x, chunksize=2)
+        tble = into(pyt, ChunkIterator(cs))
+        n = len(tble)
+        tble._v_file.close()
+        assert n == 4
+    finally:
+        try:
+            os.remove('foo.h5')
+        except OSError:
+            pass
 
 
 def test_into_csv_blaze_table(good_csv):
@@ -322,8 +335,14 @@ def test_into_ctable_pytables():
     from bcolz import ctable
     tble = PyTables('examples/data/accounts.h5', datapath='/accounts')
     ct = into(ctable, tble)
-    assert len(ct) == len(tble)
-    assert ct[0] == tble[0] and ct[-1] == ct[-1]
+    ctn = len(ct)
+    tbn = len(tble)
+    ctf, ctl = ct[0], ct[-1]
+    tbf, tbl = tble[0], tble[-1]
+    tble._v_file.close()
+    assert ctn == tbn
+    assert ctf == tbf
+    assert ctl == tbl
 
 
 def test_into_np_ndarray_carray():
