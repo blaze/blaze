@@ -34,5 +34,5 @@ from .core import schema_method_list
 from .table import min, max
 
 schema_method_list.extend([
-    (lambda ds: 'string' in str(ds), {like, min, max}),
+    (lambda ds: 'string' in str(ds), set([like, min, max])),
     ])

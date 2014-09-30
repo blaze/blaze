@@ -1440,12 +1440,12 @@ from datashape import Unit, Record, to_numpy_dtype
 from .core import schema_method_list, dshape_method_list
 
 schema_method_list.extend([
-    (isboolean, {any, all}),
-    (isnumeric, {mean, isnan, sum, mean, min, max, std, var}),
+    (isboolean, set([any, all])),
+    (isnumeric, set([mean, isnan, sum, mean, min, max, std, var])),
     ])
 
 dshape_method_list.extend([
-    (istabular, {relabel, count_values, head}),
-    (isdimensional, {distinct, count, nunique, head, sort, count_values}),
-    (iscolumnds, {label, relabel})
+    (istabular, set([relabel, count_values, head])),
+    (isdimensional, set([distinct, count, nunique, head, sort, count_values])),
+    (iscolumnds, set([label, relabel]))
     ])
