@@ -43,3 +43,9 @@ def test_Symbol():
     e = ExprSymbol('e', '3 * 5 * {name: string, amount: int}')
     assert e.dshape == dshape('3 * 5 * {name: string, amount: int}')
     assert e.shape == (3, 5)
+
+def test_Field():
+    e = ExprSymbol('e', '3 * 5 * {name: string, amount: int}')
+    assert 'name' in dir(e)
+    assert e.name.dshape == dshape('3 * 5 * string')
+    assert e.amount._name == 'amount'

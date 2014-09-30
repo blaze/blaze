@@ -5,6 +5,7 @@ import toolz
 import inspect
 import functools
 import datashape
+from datashape import dshape
 
 from toolz import unique, concat, memoize, partial
 import toolz
@@ -71,6 +72,11 @@ class Expr(object):
 
     def __bool__(self):
         return True
+
+    def __getitem__(self, key):
+        if isinstance(key, str) and key in self.names:
+            return Field(self, key)
+        raise NotImplementedError("Not understood %s['%s']" % (self, key))
 
     @property
     def args(self):
@@ -229,6 +235,33 @@ class ElemWise(Expr):
     def dshape(self):
         return datashape.DataShape(*(self.child.dshape.shape
                                   + (self.schema[0],)))
+
+class Field(ElemWise):
+    """ A single field from an expression
+
+    SELECT a
+    FROM table
+
+    >>> points = ExprSymbol('points', '5 * 3 * {x: int32, y: int32}')
+    >>> points.x.dshape
+    dshape("5 * 3 * int32")
+    """
+    __slots__ = 'child', '_name'
+
+    @property
+    def names(self):
+        return [self._name]
+
+    def __str__(self):
+        return "%s['%s']" % (self.child, self.names[0])
+
+    @property
+    def expr(self):
+        return ScalarSymbol(self._name, dtype=self.dtype)
+
+    @property
+    def schema(self):
+        return dshape(self.child.schema[0].dict[self._name])
 
 
 @dispatch(Expr)
