@@ -1391,16 +1391,20 @@ def union(*children):
 def isnumeric(ds):
     """
 
-    >>> isnumeric(dshape('int32'))
+    >>> isnumeric('int32')
     True
-    >>> isnumeric(dshape('{amount: int32}'))
+    >>> isnumeric('{amount: int32}')
     True
-    >>> isnumeric(dshape('{amount: ?int32}'))
+    >>> isnumeric('{amount: ?int32}')
     True
+    >>> isnumeric('{amount: ?int32}')
+    True
+    >>> isnumeric('var * {amount: ?int32}')
+    False
     """
     if isinstance(ds, str):
         ds = dshape(ds)
-    if isinstance(ds, DataShape):
+    if isinstance(ds, DataShape) and len(ds) == 1:
         ds = ds[0]
     if isinstance(ds, Option):
         return isnumeric(ds.ty)

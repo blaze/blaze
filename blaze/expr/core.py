@@ -5,7 +5,7 @@ import toolz
 import inspect
 import functools
 import datashape
-from datashape import dshape
+from datashape import dshape, DataShape
 
 from toolz import unique, concat, memoize, partial
 import toolz
@@ -99,7 +99,7 @@ class Expr(object):
 
     @property
     def schema(self):
-        return datashape.dshape(self.dshape[-1])
+        return datashape.dshape(self.dshape.measure)
 
     @property
     def names(self):
@@ -234,7 +234,7 @@ class ElemWise(Expr):
     @property
     def dshape(self):
         return datashape.DataShape(*(self.child.dshape.shape
-                                  + (self.schema[0],)))
+                                  + tuple(self.schema)))
 
 class Field(ElemWise):
     """ A single field from an expression
@@ -248,10 +248,6 @@ class Field(ElemWise):
     """
     __slots__ = 'child', '_name'
 
-    @property
-    def names(self):
-        return [self._name]
-
     def __str__(self):
         return "%s['%s']" % (self.child, self.names[0])
 
@@ -260,8 +256,13 @@ class Field(ElemWise):
         return ScalarSymbol(self._name, dtype=self.dtype)
 
     @property
-    def schema(self):
-        return dshape(self.child.schema[0].dict[self._name])
+    def dshape(self):
+        shape = self.child.dshape.shape
+        schema = self.child.schema[0].dict[self._name]
+
+        shape = shape + schema.shape
+        schema = (schema.measure,)
+        return DataShape(*(shape + schema))
 
 
 @dispatch(Expr)
