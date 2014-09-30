@@ -10,7 +10,7 @@ from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up', 'drop', 'create_index']
 
-base = (numbers.Real, str, date, datetime)
+base = (numbers.Real, basestring, date, datetime)
 
 
 @dispatch(object, object)
