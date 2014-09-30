@@ -74,9 +74,7 @@ def test_repr():
 
 
 def test_repr_of_scalar():
-    assert '300' in repr(t.amount.sum())
-    assert '"' not in repr(t.amount.sum())
-    assert "'" not in repr(t.amount.sum())
+    assert repr(t.amount.sum()) == '300'
 
 
 def test_mutable_backed_repr():
