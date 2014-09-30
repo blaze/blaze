@@ -5,6 +5,7 @@ import unittest
 from dynd import nd
 import numpy as np
 import bcolz
+import tables as tb
 from datashape import dshape
 from datetime import datetime
 import os
@@ -96,6 +97,19 @@ def data():
 def schema():
     return '{name: string, amount: int}'
 
+@pytest.fixture
+def cds():
+    pytest.importorskip('bokeh')
+    from bokeh.objects import ColumnDataSource
+    cds = ColumnDataSource({
+     'id': [1, 2, 3],
+     'name': ['Alice', 'Bob', 'Charlie'],
+     'amount': [100, 200, 300],
+     'timestamp': [datetime(2000, 12, 25, 0, 0, 1),
+                   datetime(2001, 12, 25, 0, 0, 1),
+                   datetime(2002, 12, 25, 0, 0, 1)]
+    })
+    return cds
 
 @pytest.fixture
 def data_table(data, schema):
@@ -139,6 +153,7 @@ def out_hdf5_alt():
     pytest.importorskip('tables')
     with tmpfile(".h5") as filename:
         yield filename
+
 
 
 class A(object): pass
@@ -256,6 +271,16 @@ def test_Column_data_source(data_table):
     assert set(cds.column_names) == set(data_table.columns)
 
 
+def test_into_ColumnDataSource_pytables():
+    pytest.importorskip('bokeh')
+    from bokeh.objects import ColumnDataSource
+
+    pyt = PyTables('examples/data/accounts.h5', '/accounts')
+    cds = into(ColumnDataSource, pyt)
+    assert 'balance' and 'id' and 'name' in cds.column_names
+
+
+
 def test_numpy_list(data):
     dtype = into(np.ndarray, data).dtype
     assert np.issubdtype(dtype[0], object)
@@ -296,7 +321,6 @@ def test_into_tables_path(good_csv, out_hdf5, out_hdf5_alt):
 
 def test_into_tables_chunk_iterator():
     try:
-        import tables as tb
         pyt = PyTables("foo.h5", "/table", dshape='{x: int32, y: int32}')
         x = np.array([(int(i), int(i)) for i in range(4)], dtype=[('x', np.int32), ('y', np.int32)])
         cs = chunks(x, chunksize=2)
@@ -472,6 +496,11 @@ def test_data_frame_single_column_projection():
     assert isinstance(df, pd.DataFrame)
     expected = pd.DataFrame(data, columns=t.schema.measure.names)[['name']]
     assert str(df) == str(expected)
+
+
+def test_df_from_cds(cds):
+    df = into(pd.DataFrame, cds)
+    assert type(df) == type(cds.to_df())
 
 
 def test_datetime_csv_reader_same_as_into():

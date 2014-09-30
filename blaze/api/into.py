@@ -478,12 +478,7 @@ def into(cds, t, **kwargs):
 
 @dispatch(ColumnDataSource, Collection)
 def into(cds, other, **kwargs):
-    return into(cds, into(pd.DataFrame(), other))
-
-
-@dispatch(pd.DataFrame, ColumnDataSource)
-def into(df, cds, **kwargs):
-    return cds.to_df()
+    return into(cds, into(pd.DataFrame, other))
 
 
 @dispatch(ctable, TableExpr)
