@@ -2,6 +2,17 @@
 Release Notes
 ======================
 
+Release 0.6.4
+-------------
+
+* Back CSV with ``pandas.read_csv``.  Better performance and more robust
+  unicode support but less robust missing value support (some regressions)
+* Much improved SQL support
+* Server supports remote execution of computations, not just indexing
+* Better PyTables and datetime support
+* Support SparkSQL
+
+
 Release 0.6.3
 -------------
 
