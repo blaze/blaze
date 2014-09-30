@@ -355,6 +355,7 @@ def test_projection_of_selection():
 
 
 def test_union():
+    metadata = sa.MetaData()
     ts = [TableSymbol('t_%d' % i, '{name: string, amount: int, id: int}')
             for i in [1, 2, 3]]
     ss = [sa.Table('accounts_%d' % i, metadata,
@@ -468,6 +469,7 @@ def test_summary_by():
 
 
 def test_clean_join():
+    metadata = sa.MetaData()
     name = sa.Table('name', metadata,
              sa.Column('id', sa.Integer),
              sa.Column('name', sa.String),
