@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 import datashape
-from datashape import dshape
+from datashape import dshape, Record
 
 from blaze.expr.table import TableSymbol
 from blaze.compute.python import compute
@@ -196,6 +196,17 @@ def test_extend_structured_newline():
         csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
         csv.extend([(3, 3)])
         assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
+
+def test_tuple_types():
+    """
+    CSVs with uniform types still create record types with names
+    """
+    with filetext('1,1\n2,2\n') as fn:
+        csv = CSV(fn, 'r+', delimiter=',')
+        assert csv[0] == (1, 1)
+        assert isinstance(csv.schema[0], Record)
+        assert len(csv.schema[0].types) == 2
+        assert len(set(csv.schema[0].types)) == 1
 
 
 def test_extend_structured_no_newline():
