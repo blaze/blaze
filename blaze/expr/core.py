@@ -196,11 +196,13 @@ class Expr(object):
         return sorted(set(result))
 
     def __getattr__(self, key):
-        if self.names and key in self.names:
-            return self[key]
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
+            if key[0] == '_':
+                raise
+            if self.names and key in self.names:
+                return self[key]
             d = toolz.merge(schema_methods(self.schema),
                             dshape_methods(self.dshape))
             if key in d:

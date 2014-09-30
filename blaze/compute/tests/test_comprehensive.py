@@ -102,10 +102,11 @@ def test_base():
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
             T = Table(source)
-            result = into(model, expr.subs({t: T}))
             if isscalar(expr):
+                result = compute(expr.subs({t: T}))
                 assert result == model
             else:
+                result = into(model, expr.subs({t: T}))
                 if iscolumn(expr):
                     assert set(into([], result)) == set(into([], model))
                 else:
