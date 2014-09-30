@@ -34,6 +34,7 @@ def name(func):
     else:
         return func.__name__
 
+
 def select_functions(methods, data):
     """
     Select appropriate functions given types and predicates
@@ -42,4 +43,4 @@ def select_functions(methods, data):
     for condition, funcs in methods:
         if match(condition, data):
             s |= funcs
-    return {name(func): func for func in s}
+    return dict((name(func), func) for func in s)

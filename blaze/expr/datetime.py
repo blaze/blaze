@@ -105,9 +105,9 @@ def isdatelike(ds):
 from blaze.expr.core import schema_method_list, method_properties
 
 schema_method_list.extend([
-    (isdatelike, {year, month, day, hour, minute, date, time,
-                  second, millisecond, microsecond})
+    (isdatelike, set([year, month, day, hour, minute, date, time, second,
+                      millisecond, microsecond]))
     ])
 
-method_properties |= {year, month, day, hour, minute, second, millisecond,
-        microsecond, date, time}
+method_properties |= set([year, month, day, hour, minute, second, millisecond,
+                          microsecond, date, time])

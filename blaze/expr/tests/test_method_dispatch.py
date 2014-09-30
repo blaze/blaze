@@ -23,10 +23,10 @@ def isnine(x):
     return True
 
 
-methods = [(int, {inc, dec}),
-           (str, {lower, upper}),
-           (iseven, {halve}),
-           (9, {isnine})]
+methods = [(int, set([inc, dec])),
+           (str, set([lower, upper])),
+           (iseven, set([halve])),
+           (9, set([isnine]))]
 
 
 def test_select_functions():
