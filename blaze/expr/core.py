@@ -14,7 +14,7 @@ from blaze.compatibility import StringIO
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover', 'path', 'ElemWise']
+__all__ = ['Expr', 'ExprSymbol', 'discover', 'path', 'ElemWise']
 
 
 def get_callable_name(o):
@@ -206,6 +206,19 @@ class Expr(object):
             else:
                 raise AttributeError(key)
 
+class ExprSymbol(Expr):
+    """
+    Symbolic data
+
+    >>> points = ExprSymbol('points', '5 * 3 * {x: int, y: int}')
+    """
+    __slots__ = '_name', 'dshape'
+
+    def __init__(self, name, dshape):
+        self._name = name
+        if isinstance(dshape, str):
+            dshape = datashape.dshape(dshape)
+        self.dshape = dshape
 
 
 class ElemWise(Expr):

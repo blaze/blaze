@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from datashape import dshape
 from blaze.expr.core import *
 
 
@@ -37,3 +38,8 @@ def test_path():
     expr = join(t, v).amount
     assert list(path(expr, t)) == [join(t, v).amount, join(t, v), t]
     assert list(path(expr, v)) == [join(t, v).amount, join(t, v), v]
+
+def test_Symbol():
+    e = ExprSymbol('e', '3 * 5 * {name: string, amount: int}')
+    assert e.dshape == dshape('3 * 5 * {name: string, amount: int}')
+    assert e.shape == (3, 5)
