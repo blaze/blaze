@@ -1,4 +1,5 @@
 from blaze.expr import TableSymbol
+from blaze.expr.datetime import isdatelike
 from blaze.compatibility import builtins
 from datashape import dshape
 
@@ -32,3 +33,9 @@ def test_date_attribute_completion():
 def test_datetime_attribute_name():
     t = TableSymbol('t', '{name: string, when: datetime}')
     assert 'when' in t.when.day._name
+
+
+def test_isdatelike():
+    assert not isdatelike('int32')
+    assert isdatelike('?date')
+    assert not isdatelike('{is_outdated: bool}')

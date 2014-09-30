@@ -1,5 +1,5 @@
 from blaze.expr import Expr, ElemWise
-from datashape import dshape, Record, DataShape, Unit, Option
+from datashape import dshape, Record, DataShape, Unit, Option, date_, datetime_
 import datashape
 
 class DateTime(ElemWise):
@@ -99,8 +99,10 @@ def isdatelike(ds):
         ds = ds[0]
     if isinstance(ds, Option):
         return isdatelike(ds.ty)
-    return (isinstance(ds, Unit) or isinstance(ds, Record) and
-            len(ds.dict) == 1) and 'date' in str(ds)
+    if isinstance(ds, Record) and len(ds.dict) == 1:
+        return isdatelike(ds.types[0])
+    return ds in (date_, datetime_)
+
 
 from blaze.expr.core import schema_method_list, method_properties
 
