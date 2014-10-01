@@ -23,6 +23,14 @@ def test_table_constructor_error():
         t = Table(data, schema='{name: string, amount: float32}', 
             dshape=dshape("{ name : string, amount : float32 }"))
 
+
+def test_table_column_types_error():
+    with pytest.raises(TypeError):
+        t = Table([1,2,3,4,5])
+    with pytest.raises(TypeError):
+        t = Table([1,2,3,4,5], columns=['numbers'])
+
+
 def test_resources():
     assert t.resources() == {t: t.data}
 
