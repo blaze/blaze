@@ -308,7 +308,7 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 def into(bc, data, **kwargs):
     cs = chunks(data)
     bc = into(bc, next(cs))
-    for chunk in chunks(data):
+    for chunk in cs:
         bc.append(chunk)
     return bc
 
@@ -353,7 +353,7 @@ def into(_, df, **kwargs):
 def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
     if list(a.columns):
-        names = a.columns
+        names = list(a.columns)
     elif isinstance(ds[-1], Record):
         names = ds[-1].names
     else:
@@ -478,12 +478,7 @@ def into(cds, t, **kwargs):
 
 @dispatch(ColumnDataSource, Collection)
 def into(cds, other, **kwargs):
-    return into(cds, into(pd.DataFrame(), other))
-
-
-@dispatch(pd.DataFrame, ColumnDataSource)
-def into(df, cds, **kwargs):
-    return cds.to_df()
+    return into(cds, into(pd.DataFrame, other))
 
 
 @dispatch(ctable, TableExpr)
