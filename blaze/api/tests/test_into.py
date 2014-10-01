@@ -372,13 +372,13 @@ def test_into_ctable_pytables():
 def test_into_np_ndarray_carray():
     cr = bcolz.carray([1,2,3,4,5])
     npa = into(np.ndarray, cr)
-    assert type(npa) == type(cr[:])
+    assert npa.all() == cr[:].all()
 
 
 def test_into_pd_series_carray():
     cr = bcolz.carray([1,2,3,4,5])
     pda = into(pd.Series, cr)
-    assert len(pda) == len(cr[:])
+    assert pda.all() == cr[:].all()
 
 
 def test_numpy_datetimes():
@@ -464,6 +464,7 @@ def test_series_single_column(data):
     assert df.name == out_df.name
 
 
+def test_into_series_failure(data):
     failure = into(DataFrame, data)
     with pytest.raises(TypeError):
         into(pd.Series, failure)
@@ -500,7 +501,8 @@ def test_data_frame_single_column_projection():
 
 def test_df_from_cds(cds):
     df = into(pd.DataFrame, cds)
-    assert type(df) == type(cds.to_df())
+    cdsdf = cds.to_df()
+    assert df['name'].all() == cdsdf['name'].all()
 
 
 def test_datetime_csv_reader_same_as_into():
