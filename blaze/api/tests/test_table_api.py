@@ -4,6 +4,7 @@ from blaze.compute.core import compute
 from blaze.compute.python import compute
 from datashape import dshape
 from blaze.utils import tmpfile
+import pytest
 
 import pandas as pd
 
@@ -11,6 +12,16 @@ data = (('Alice', 100),
         ('Bob', 200))
 
 t = Table(data, columns=['name', 'amount'])
+
+@pytest.fixture
+def sample_table(data):
+    t = Table(data, schema='{name: string, amount: float32}')
+    return t
+
+def test_table_constructor_error():
+    with pytest.raises(ValueError):
+        t = Table(data, schema='{name: string, amount: float32}', 
+            dshape=dshape("{ name : string, amount : float32 }"))
 
 def test_resources():
     assert t.resources() == {t: t.data}
