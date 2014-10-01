@@ -48,7 +48,7 @@ a comutation to do in the future.
    accounts[accounts['balance'] < 0]['name']
 
    >>> deadbeats.schema
-   dshape("{ name : string }")
+   dshape("string")
 
 Split-apply-combine, Reductions
 -------------------------------
