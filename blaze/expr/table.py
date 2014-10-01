@@ -13,7 +13,8 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
 import numpy as np
 from . import scalar
-from .core import Expr, path, ElemWise, Projection, projection
+from .core import (Expr, path, ElemWise, Projection, projection, Selection,
+        selection, common_subexpression, Symbol)
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
@@ -117,7 +118,7 @@ class TableExpr(Expr):
         return Map(self, func, schema, iscolumn)
 
 
-class TableSymbol(TableExpr):
+class TableSymbol(TableExpr, Symbol):
     """ A Symbol for Tabular data
 
     This is a leaf in the expression tree
@@ -154,6 +155,9 @@ class TableSymbol(TableExpr):
     @property
     def schema(self):
         return self.dshape.subshape[0]
+
+    def get_field(self, fieldname):
+        return Field(self, fieldname)
 
 
 class RowWise(ElemWise, TableExpr):
@@ -297,52 +301,6 @@ class Column(ColumnSyntaxMixin, Projection, TableExpr):
     @property
     def schema(self):
         return dshape(self.child.schema[0].dict[self._name])
-
-
-class Selection(TableExpr):
-    """ Filter rows of table based on predicate
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-    >>> deadbeats = accounts[accounts['amount'] < 0]
-    """
-    __slots__ = 'child', 'predicate'
-
-    def __str__(self):
-        return "%s[%s]" % (self.child, self.predicate)
-
-    @property
-    def schema(self):
-        return self.child.schema
-
-    @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-
-def selection(table, predicate):
-    subexpr = common_subexpression(table, predicate)
-
-    if not builtins.all(isinstance(node, (ElemWise, TableSymbol))
-                        or node.isidentical(subexpr)
-           for node in concat([path(predicate, subexpr),
-                               path(table, subexpr)])):
-
-        raise ValueError("Selection not properly matched with table:\n"
-                   "child: %s\n"
-                   "apply: %s\n"
-                   "predicate: %s" % (subexpr, table, predicate))
-
-    if predicate.dtype != dshape('bool'):
-        raise TypeError("Must select over a boolean predicate.  Got:\n"
-                        "%s[%s]" % (table, predicate))
-
-    return table.subs({subexpr: Selection(subexpr, predicate)})
-
-selection.__doc__ = Selection.__doc__
 
 
 def _expr_child(col):
@@ -1176,21 +1134,6 @@ class Apply(TableExpr):
             return dshape(self._dshape)
         else:
             raise NotImplementedError("Datashape of arbitrary Apply not defined")
-
-
-def common_subexpression(*tables):
-    """ Common sub expression between subtables
-
-    Examples
-    --------
-
-    >>> t = TableSymbol('t', '{x: int, y: int}')
-    >>> common_subexpression(t['x'], t['y'])
-    t
-    """
-    sets = [set(t.subterms()) for t in tables]
-    return builtins.max(set.intersection(*sets),
-                        key=compose(len, str))
 
 
 def merge(*tables):

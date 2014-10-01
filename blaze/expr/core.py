@@ -5,9 +5,9 @@ import toolz
 import inspect
 import functools
 import datashape
-from datashape import dshape, DataShape, Record
+from datashape import dshape, DataShape, Record, Var
 
-from toolz import unique, concat, memoize, partial
+from toolz import unique, concat, memoize, partial, compose
 import toolz
 from pprint import pprint
 from blaze.compatibility import StringIO, _strtypes, builtins
@@ -16,7 +16,7 @@ from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
 __all__ = ['Expr', 'Symbol', 'discover', 'path', 'ElemWise', 'Projection',
-    'projection']
+    'projection', 'common_subexpression']
 
 
 def get_callable_name(o):
@@ -90,6 +90,8 @@ class Expr(object):
     def __getitem__(self, key):
         if isinstance(key, str) and key in self.names:
             return self.get_field(key)
+        if isinstance(key, Expr):
+            return selection(self, key)
         if (isinstance(key, list)
                 and builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.names):
@@ -359,6 +361,56 @@ def projection(expr, names):
 projection.__doc__ = Projection.__doc__
 
 
+class Selection(Expr):
+    """ Filter elements of expression based on predicate
+
+    Examples
+    --------
+
+    >>> from blaze import TableSymbol
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> deadbeats = accounts[accounts['amount'] < 0]
+    """
+    __slots__ = 'child', 'predicate'
+
+    def __str__(self):
+        return "%s[%s]" % (self.child, self.predicate)
+
+    @property
+    def dshape(self):
+        shape = list(self.child.dshape.shape)
+        shape[0] = Var()
+        return DataShape(*(shape + [self.child.dshape.measure]))
+
+    @property
+    def iscolumn(self):
+        return self.child.iscolumn
+
+
+def selection(table, predicate):
+    subexpr = common_subexpression(table, predicate)
+
+    if not builtins.all(isinstance(node, (ElemWise, Symbol))
+                        or node.isidentical(subexpr)
+           for node in concat([path(predicate, subexpr),
+                               path(table, subexpr)])):
+
+        raise ValueError("Selection not properly matched with table:\n"
+                   "child: %s\n"
+                   "apply: %s\n"
+                   "predicate: %s" % (subexpr, table, predicate))
+
+    if predicate.dtype != dshape('bool'):
+        raise TypeError("Must select over a boolean predicate.  Got:\n"
+                        "%s[%s]" % (table, predicate))
+
+    return table.subs({subexpr: Selection(subexpr, predicate)})
+
+selection.__doc__ = Selection.__doc__
+
+
+
 @dispatch(Expr)
 def subterms(expr):
     return concat([[expr], concat(map(subterms, expr.inputs))])
@@ -438,6 +490,23 @@ def path(a, b):
                 a = child
                 break
     yield a
+
+
+def common_subexpression(*exprs):
+    """ Common sub expression between subexpressions
+
+    Examples
+    --------
+
+    >>> from blaze import TableSymbol, common_subexpression
+
+    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> common_subexpression(t['x'], t['y'])
+    t
+    """
+    sets = [set(t.subterms()) for t in exprs]
+    return builtins.max(set.intersection(*sets),
+                        key=compose(len, str))
 
 
 schema_method_list = [
