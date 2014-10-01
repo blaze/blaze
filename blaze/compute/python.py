@@ -27,11 +27,11 @@ import math
 from datashape import Record, Tuple
 
 from ..dispatch import dispatch
-from ..expr import (Projection, Column, ColumnWise, Map, Label, ReLabel,
+from ..expr import (Projection, Column, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
-                    iscolumn)
+                    iscolumn, Field)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -98,7 +98,7 @@ def rowfunc(t):
     return get(indices)
 
 
-@dispatch(Column)
+@dispatch(Field)
 def rowfunc(t):
     if iscolumn(t.child) and t._name == t.child.names[0]:
         return identity
@@ -106,7 +106,7 @@ def rowfunc(t):
     return lambda x: x[index]
 
 
-@dispatch(ColumnWise)
+@dispatch(Broadcast)
 def rowfunc(t):
     if sys.version_info[0] == 3:
         # Python3 doesn't allow argument unpacking

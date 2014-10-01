@@ -5,9 +5,9 @@ import toolz
 import inspect
 import functools
 import datashape
-from datashape import dshape, DataShape, Record, Var
+from datashape import dshape, Record, DataShape
 
-from toolz import unique, concat, memoize, partial, compose
+from toolz import unique, concat, compose, memoize, partial
 import toolz
 from pprint import pprint
 from blaze.compatibility import StringIO, _strtypes, builtins
@@ -15,8 +15,7 @@ from blaze.compatibility import StringIO, _strtypes, builtins
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'Symbol', 'discover', 'path', 'ElemWise', 'Projection',
-    'projection', 'common_subexpression']
+__all__ = ['Expr', 'discover', 'path', 'common_subexpression']
 
 
 def get_callable_name(o):
@@ -74,35 +73,9 @@ class Expr(object):
     def __bool__(self):
         return True
 
-    def _len(self):
-        try:
-            return int(self.dshape[0])
-        except TypeError:
-            raise ValueError('Can not determine length of table with the '
-                    'following datashape: %s' % self.dshape)
-
-    def __len__(self): # pragma: no cover
-        return self._len()
-
     def get_field(self, fieldname):
-        return Field(self, fieldname)
-
-    def __getitem__(self, key):
-        if isinstance(key, str) and key in self.names:
-            return self.get_field(key)
-        if isinstance(key, Expr):
-            return selection(self, key)
-        if (isinstance(key, list)
-                and builtins.all(isinstance(k, _strtypes) for k in key)):
-            if set(key).issubset(self.names):
-                return self.project(key)
-            else:
-                raise ValueError('Names %s not consistent with known names %s'
-                        % (key, self.names))
-        raise NotImplementedError("Not understood %s[%s]" % (self, key))
-
-    def project(self, key):
-        return projection(self, key)
+        return ExprField(self, fieldname)
+        raise NotImplementedError()
 
     @property
     def args(self):
@@ -113,38 +86,12 @@ class Expr(object):
         return tuple(getattr(self, i) for i in self.__inputs__)
 
     @property
-    def shape(self):
-        s = list(self.dshape.shape)
-        for i, elem in enumerate(s):
-            try:
-                s[i] = int(elem)
-            except TypeError:
-                pass
-
-        return tuple(s)
-
-    @property
-    def schema(self):
-        return datashape.dshape(self.dshape.measure)
-
-    @property
-    def dtype(self):
-        ds = self.schema[-1]
-        if isinstance(ds, Record):
-            if len(ds.fields) > 1:
-                raise TypeError("`.dtype` not defined for multicolumn object. "
-                                "Use `.schema` instead")
-            else:
-                return dshape(first(ds.types))
-        else:
-            return dshape(ds)
-
-    @property
     def names(self):
-        if isinstance(self.dshape.measure, datashape.Record):
+        if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
         if hasattr(self, '_name'):
             return [self._name]
+        raise ValueError("No names found")
 
     def leaves(self):
         """ Leaves of an expresion tree
@@ -227,8 +174,7 @@ class Expr(object):
         if self.names:
             result.extend(list(self.names))
 
-        d = toolz.merge(schema_methods(self.schema),
-                        dshape_methods(self.dshape))
+        d = dshape_methods(self.dshape)
         result.extend(list(d))
 
         return sorted(set(result))
@@ -240,9 +186,8 @@ class Expr(object):
             if key[0] == '_':
                 raise
             if self.names and key in self.names:
-                return self[key]
-            d = toolz.merge(schema_methods(self.schema),
-                            dshape_methods(self.dshape))
+                return self.get_field(key)
+            d = dshape_methods(self.dshape)
             if key in d:
                 func = d[key]
                 if func in method_properties:
@@ -251,163 +196,6 @@ class Expr(object):
                     return partial(func, self)
             else:
                 raise AttributeError(key)
-
-
-class Symbol(Expr):
-    """
-    Symbolic data
-
-    >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
-    """
-    __slots__ = '_name', 'dshape'
-
-    def __init__(self, name, dshape):
-        self._name = name
-        if isinstance(dshape, str):
-            dshape = datashape.dshape(dshape)
-        self.dshape = dshape
-
-
-class ElemWise(Expr):
-    """
-    Elementwise operation
-    """
-    @property
-    def dshape(self):
-        return datashape.DataShape(*(self.child.dshape.shape
-                                  + tuple(self.schema)))
-
-class Field(ElemWise):
-    """ A single field from an expression
-
-    SELECT a
-    FROM table
-
-    >>> points = Symbol('points', '5 * 3 * {x: int32, y: int32}')
-    >>> points.x.dshape
-    dshape("5 * 3 * int32")
-    """
-    __slots__ = 'child', '_name'
-
-    def __str__(self):
-        return "%s['%s']" % (self.child, self.names[0])
-
-    @property
-    def expr(self):
-        return ScalarSymbol(self._name, dtype=self.dtype)
-
-    @property
-    def dshape(self):
-        shape = self.child.dshape.shape
-        schema = self.child.schema[0].dict[self._name]
-
-        shape = shape + schema.shape
-        schema = (schema.measure,)
-        return DataShape(*(shape + schema))
-
-
-class Projection(ElemWise):
-    """ Select fields from data
-
-    SELECT a, b, c
-    FROM table
-
-    Examples
-    --------
-
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-    >>> accounts[['name', 'amount']].schema
-    dshape("{ name : string, amount : int32 }")
-
-    See Also
-    --------
-
-    blaze.expr.core.Field
-    """
-    __slots__ = 'child', '_names'
-
-    @property
-    def names(self):
-        return list(self._names)
-
-    @property
-    def schema(self):
-        d = self.child.schema[0].dict
-        return DataShape(Record([(name, d[name]) for name in self.names]))
-
-    def __str__(self):
-        return '%s[[%s]]' % (self.child,
-                             ', '.join(["'%s'" % name for name in self.names]))
-
-    def project(self, key):
-        if isinstance(key, _strtypes) and key in self.names:
-            return self.child[key]
-        if isinstance(key, list) and set(key).issubset(set(self.names)):
-            return self.child[key]
-        raise ValueError("Column Mismatch: %s" % key)
-
-    def get_field(self, fieldname):
-        if fieldname in self.names:
-            return Field(self.child, fieldname)
-        raise ValueError("Field %s not found in columns %s" % (fieldname,
-            self.names))
-
-
-def projection(expr, names):
-    return Projection(expr, tuple(names))
-
-projection.__doc__ = Projection.__doc__
-
-
-class Selection(Expr):
-    """ Filter elements of expression based on predicate
-
-    Examples
-    --------
-
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-    >>> deadbeats = accounts[accounts['amount'] < 0]
-    """
-    __slots__ = 'child', 'predicate'
-
-    def __str__(self):
-        return "%s[%s]" % (self.child, self.predicate)
-
-    @property
-    def dshape(self):
-        shape = list(self.child.dshape.shape)
-        shape[0] = Var()
-        return DataShape(*(shape + [self.child.dshape.measure]))
-
-    @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-
-def selection(table, predicate):
-    subexpr = common_subexpression(table, predicate)
-
-    if not builtins.all(isinstance(node, (ElemWise, Symbol))
-                        or node.isidentical(subexpr)
-           for node in concat([path(predicate, subexpr),
-                               path(table, subexpr)])):
-
-        raise ValueError("Selection not properly matched with table:\n"
-                   "child: %s\n"
-                   "apply: %s\n"
-                   "predicate: %s" % (subexpr, table, predicate))
-
-    if predicate.dtype != dshape('bool'):
-        raise TypeError("Must select over a boolean predicate.  Got:\n"
-                        "%s[%s]" % (table, predicate))
-
-    return table.subs({subexpr: Selection(subexpr, predicate)})
-
-selection.__doc__ = Selection.__doc__
 
 
 
@@ -508,14 +296,9 @@ def common_subexpression(*exprs):
     return builtins.max(set.intersection(*sets),
                         key=compose(len, str))
 
-
-schema_method_list = [
-    ]
-
 dshape_method_list = [
     ]
 
 method_properties = set()
 
-schema_methods = memoize(partial(select_functions, schema_method_list))
 dshape_methods = memoize(partial(select_functions, dshape_method_list))

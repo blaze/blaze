@@ -13,26 +13,32 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
 import numpy as np
 from . import scalar
-from .core import (Expr, path, ElemWise, Projection, projection, Selection,
-        selection, common_subexpression, Symbol)
+from .core import (Expr, path, common_subexpression)
+from .expr import (Collection, Projection, projection, Selection, selection, Broadcast,
+        broadcast, Label, label, ElemWise)
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from .predicates import isscalar, iscolumn
+from .predicates import isscalar, iscolumn, isunit
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
+from .expr import _expr_child, Field, Symbol
+
+from .expr import (sqrt, sin, cos, tan, sinh, cosh, tanh, acos, acosh, asin,
+        asinh, atan, atanh, exp, log, expm1, log10, log1p, radians, degrees,
+        ceil, floor, trunc, isnan, Map)
 
 __all__ = '''
-TableExpr TableSymbol RowWise Projection Column Selection ColumnWise Join
+TableExpr TableSymbol RowWise Projection Column Selection Broadcast Join
 Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise Summary summary'''.split()
+projection union broadcast Summary summary'''.split()
 
 
-class TableExpr(Expr):
+class TableExpr(Collection):
     """ Super class for all Table Expressions
 
     This is not intended to be constructed by users.
@@ -53,39 +59,6 @@ class TableExpr(Expr):
         return self.names
 
     @property
-    def dtype(self):
-        ds = self.schema[-1]
-        if isinstance(ds, Record):
-            if len(ds.fields) > 1:
-                raise TypeError("`.dtype` not defined for multicolumn object. "
-                                "Use `.schema` instead")
-            else:
-                return dshape(first(ds.types))
-        else:
-            return dshape(ds)
-
-    def __getitem__(self, key):
-        if isinstance(key, (list, basestring, unicode)):
-            return self.project(key)
-        if isinstance(key, Expr):
-            return selection(self, key)
-        raise ValueError("Did not understand input: %s[%s]" % (self, key))
-
-    def project(self, key):
-        if iscolumn(self) and key == self._name:
-            return self
-        elif isinstance(key, _strtypes):
-            if key not in self.names:
-                raise ValueError("Mismatched Column: %s" % str(key))
-            return Column(self, key)
-        elif (isinstance(key, list) and builtins.all(isinstance(k, _strtypes)
-                                                     for k in key)):
-            if not builtins.all(col in self.names for col in key):
-                raise ValueError("Mismatched Columns: %s" % str(key))
-            return projection(self, key)
-        raise ValueError("Did not understand input: %s[%s]" % (self, key))
-
-    @property
     def _name(self):
         if iscolumn(self):
             if isinstance(self.schema[0], Record):
@@ -96,26 +69,6 @@ class TableExpr(Expr):
                 raise ValueError("Can not compute name of table")
         else:
             raise ValueError("Column is un-named, name with col.label('aname')")
-
-    def __ne__(self, other):
-        return columnwise(Ne, self, other)
-
-    def __lt__(self, other):
-        return columnwise(Lt, self, other)
-
-    def __le__(self, other):
-        return columnwise(Le, self, other)
-
-    def __gt__(self, other):
-        return columnwise(Gt, self, other)
-
-    def __ge__(self, other):
-        return columnwise(Ge, self, other)
-
-    def map(self, func, schema=None, iscolumn=None):
-        if schema and isinstance(schema, Record) and len(schema[0].names) > 1:
-            iscolumn = False
-        return Map(self, func, schema, iscolumn)
 
 
 class TableSymbol(TableExpr, Symbol):
@@ -134,17 +87,16 @@ class TableSymbol(TableExpr, Symbol):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = '_name', 'dshape', 'iscolumn'
+    __slots__ = '_name', 'dshape'
     __inputs__ = ()
 
-    def __init__(self, name, dshape=None, iscolumn=False):
+    def __init__(self, name, dshape=None):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
         if not isdimension(dshape[0]):
             dshape = datashape.var * dshape
         self.dshape = dshape
-        self.iscolumn = iscolumn
 
     def __str__(self):
         return self._name
@@ -163,7 +115,7 @@ class TableSymbol(TableExpr, Symbol):
 class RowWise(ElemWise, TableExpr):
     """ Apply an operation equally to each of the rows.  An Interface.
 
-    Common rowwise operations include ``Map``, ``ColumnWise``, ``Projection``,
+    Common rowwise operations include ``Map``, ``Broadcast``, ``Projection``,
     and anything else that operates by applying some transformation evenly
     across all rows in a table.
 
@@ -173,8 +125,7 @@ class RowWise(ElemWise, TableExpr):
     --------
 
     blaze.expr.table.Projection
-    blaze.expr.table.Map
-    blaze.expr.table.ColumnWise
+    blaze.expr.table.Broadcast
     blaze.expr.table.
     blaze.expr.table.
     blaze.expr.table.
@@ -185,7 +136,6 @@ class RowWise(ElemWise, TableExpr):
 
 class ColumnSyntaxMixin(object):
     """ Syntax bits for table expressions of column shape """
-    iscolumn = True
 
     @property
     def column(self):
@@ -193,73 +143,73 @@ class ColumnSyntaxMixin(object):
         return self._name
 
     def __eq__(self, other):
-        return columnwise(Eq, self, other)
+        return broadcast(Eq, self, other)
 
     def __add__(self, other):
-        return columnwise(Add, self, other)
+        return broadcast(Add, self, other)
 
     def __radd__(self, other):
-        return columnwise(Add, other, self)
+        return broadcast(Add, other, self)
 
     def __mul__(self, other):
-        return columnwise(Mult, self, other)
+        return broadcast(Mult, self, other)
 
     def __rmul__(self, other):
-        return columnwise(Mult, other, self)
+        return broadcast(Mult, other, self)
 
     def __div__(self, other):
-        return columnwise(Div, self, other)
+        return broadcast(Div, self, other)
 
     def __rdiv__(self, other):
-        return columnwise(Div, other, self)
+        return broadcast(Div, other, self)
 
     __truediv__ = __div__
     __rtruediv__ = __rdiv__
 
     def __floordiv__(self, other):
-        return columnwise(FloorDiv, self, other)
+        return broadcast(FloorDiv, self, other)
 
     def __rfloordiv__(self, other):
-        return columnwise(FloorDiv, other, self)
+        return broadcast(FloorDiv, other, self)
 
     def __sub__(self, other):
-        return columnwise(Sub, self, other)
+        return broadcast(Sub, self, other)
 
     def __rsub__(self, other):
-        return columnwise(Sub, other, self)
+        return broadcast(Sub, other, self)
 
     def __pow__(self, other):
-        return columnwise(Pow, self, other)
+        return broadcast(Pow, self, other)
 
     def __rpow__(self, other):
-        return columnwise(Pow, other, self)
+        return broadcast(Pow, other, self)
 
     def __mod__(self, other):
-        return columnwise(Mod, self, other)
+        return broadcast(Mod, self, other)
 
     def __rmod__(self, other):
-        return columnwise(Mod, other, self)
+        return broadcast(Mod, other, self)
 
     def __or__(self, other):
-        return columnwise(Or, self, other)
+        return broadcast(Or, self, other)
 
     def __ror__(self, other):
-        return columnwise(Or, other, self)
+        return broadcast(Or, other, self)
 
     def __and__(self, other):
-        return columnwise(And, self, other)
+        return broadcast(And, self, other)
 
     def __rand__(self, other):
-        return columnwise(And, other, self)
+        return broadcast(And, other, self)
 
     def __neg__(self):
-        return columnwise(USub, self)
+        return broadcast(USub, self)
 
     def __invert__(self):
-        return columnwise(Not, self)
+        return broadcast(Not, self)
 
 
-class Column(ColumnSyntaxMixin, Projection, TableExpr):
+class Column(ColumnSyntaxMixin, Field, TableExpr):
     """ A single column from a table
 
     SELECT a
@@ -279,8 +229,6 @@ class Column(ColumnSyntaxMixin, Projection, TableExpr):
 
     __hash__ = Expr.__hash__
 
-    iscolumn = True
-
     @property
     def names(self):
         return [self._name]
@@ -292,7 +240,7 @@ class Column(ColumnSyntaxMixin, Projection, TableExpr):
     def expr(self):
         return ScalarSymbol(self._name, dtype=self.dtype)
 
-    def project(self, key):
+    def get_field(self, key):
         if key == self._name:
             return self
         else:
@@ -302,127 +250,6 @@ class Column(ColumnSyntaxMixin, Projection, TableExpr):
     def schema(self):
         return dshape(self.child.schema[0].dict[self._name])
 
-
-def _expr_child(col):
-    """ Expr and child of column
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-    >>> _expr_child(accounts['name'])
-    (name, accounts)
-
-    Helper function for ``columnwise``
-    """
-    if isinstance(col, (ColumnWise, Column)):
-        return col.expr, col.child
-    elif isinstance(col, Label):
-        return _expr_child(col.child)
-    else:
-        return col, None
-
-
-def columnwise(op, *column_inputs):
-    """ Merge columns with scalar operation
-
-
-    Parameters
-    ----------
-    op : Scalar Operation like Add, Mult, Sin, Exp
-
-    column_inputs : either Column, ColumnWise or constant (like 1, 1.0, '1')
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-
-    >>> columnwise(Add, accounts['amount'], 100)
-    accounts['amount'] + 100
-
-    Fuses operations down into ScalarExpr level
-
-    >>> columnwise(Mult, 2, (accounts['amount'] + 100))
-    2 * (accounts['amount'] + 100)
-    """
-    expr_inputs = []
-    children = set()
-
-    for col in column_inputs:
-        expr, child = _expr_child(col)
-        expr_inputs.append(expr)
-        if child:
-            children.add(child)
-
-    if not len(children) == 1:
-        raise ValueError("All inputs must be from same Table.\n"
-                         "Saw the following tables: %s"
-                         % ', '.join(map(str, children)))
-
-    if hasattr(op, 'op'):
-        expr = op.op(*expr_inputs)
-    else:
-        expr = op(*expr_inputs)
-
-    return ColumnWise(first(children), expr)
-
-
-class ColumnWise(RowWise, ColumnSyntaxMixin):
-    """ Apply Scalar Expression onto columns of data
-
-    Parameters
-    ----------
-
-    child : TableExpr
-    expr : ScalarExpr
-        The names of the varibles within the scalar expr must match the columns
-        of the child.  Use ``Column.scalar_variable`` to generate the
-        appropriate ScalarSymbol
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-
-    >>> expr = Add(accounts['amount'].expr, 100)
-    >>> ColumnWise(accounts, expr)
-    accounts['amount'] + 100
-
-    See Also
-    --------
-
-    blaze.expr.table.columnwise
-    """
-    __slots__ = 'child', 'expr'
-
-    __hash__ = Expr.__hash__
-
-    iscolumn = True
-
-    @property
-    def _name(self):
-        names = [x._name for x in self.expr.traverse()
-                         if isinstance(x, ScalarSymbol)]
-        if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
-            return names[0]
-
-    @property
-    def schema(self):
-        return self.expr.dshape
-
-    def __str__(self):
-        columns = self.active_columns()
-        newcol = lambda c: "%s['%s']" % (self.child, c)
-        return eval_str(self.expr.subs(dict(zip(columns,
-                                                map(newcol, columns)))))
-
-    def active_columns(self):
-        return sorted(unique(x._name for x in self.traverse()
-                                    if isinstance(x, ScalarSymbol)))
 
 
 def unpack(l):
@@ -463,8 +290,6 @@ class Join(TableExpr):
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
-
-    iscolumn = False
 
     @property
     def on_left(self):
@@ -542,39 +367,6 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 
 
 join.__doc__ = Join.__doc__
-
-
-sqrt = partial(columnwise, scalar.sqrt)
-
-sin = partial(columnwise, scalar.sin)
-cos = partial(columnwise, scalar.cos)
-tan = partial(columnwise, scalar.tan)
-sinh = partial(columnwise, scalar.sinh)
-cosh = partial(columnwise, scalar.cosh)
-tanh = partial(columnwise, scalar.tanh)
-acos = partial(columnwise, scalar.acos)
-acosh = partial(columnwise, scalar.acosh)
-asin = partial(columnwise, scalar.asin)
-asinh = partial(columnwise, scalar.asinh)
-atan = partial(columnwise, scalar.atan)
-atanh = partial(columnwise, scalar.atanh)
-
-exp = partial(columnwise, scalar.exp)
-log = partial(columnwise, scalar.log)
-expm1 = partial(columnwise, scalar.expm1)
-log10 = partial(columnwise, scalar.log10)
-log1p = partial(columnwise, scalar.log1p)
-
-radians = partial(columnwise, scalar.radians)
-degrees = partial(columnwise, scalar.degrees)
-
-ceil = partial(columnwise, scalar.ceil)
-floor = partial(columnwise, scalar.floor)
-trunc = partial(columnwise, scalar.trunc)
-
-def isnan(expr):
-    return columnwise(scalar.isnan, expr)
-
 
 class Reduction(NumberInterface):
     """ A column-wise reduction
@@ -756,13 +548,13 @@ summary.__doc__ = Summary.__doc__
 
 
 def _names_and_types(expr):
-    schema = expr.schema[0]
+    schema = expr.dshape.measure
     if isinstance(schema, Option):
         schema = schema.ty
     if isinstance(schema, Record):
         return schema.names, schema.types
     if isinstance(schema, Unit):
-        return [expr._name], [expr.schema[0]]
+        return [expr._name], [expr.dshape.measure]
     raise ValueError("Unable to determine name and type of %s" % expr)
 
 
@@ -785,8 +577,6 @@ class By(TableExpr):
     """
 
     __slots__ = 'grouper', 'apply'
-
-    iscolumn = False
 
     @property
     def child(self):
@@ -847,10 +637,6 @@ class Sort(TableExpr):
         return self.child.schema
 
     @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-    @property
     def key(self):
         if isinstance(self._key, tuple):
             return list(self._key)
@@ -906,10 +692,6 @@ class Distinct(TableExpr):
         return self.child.schema
 
     @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
-    @property
     def names(self):
         return self.child.names
 
@@ -938,10 +720,6 @@ class Head(TableExpr):
     def dshape(self):
         return self.n * self.schema
 
-    @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
     def _len(self):
         return builtins.min(self.child._len(), self.n)
 
@@ -950,47 +728,6 @@ def head(child, n=10):
     return Head(child, n)
 
 head.__doc__ = Head.__doc__
-
-
-class Label(RowWise, ColumnSyntaxMixin):
-    """ A Labeled column
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
-
-    >>> (accounts['amount'] * 100)._name
-    'amount'
-
-    >>> (accounts['amount'] * 100).label('new_amount')._name
-    'new_amount'
-
-    See Also
-    --------
-
-    blaze.expr.table.ReLabel
-    """
-    iscolumn = True
-    __slots__ = 'child', 'label'
-
-    @property
-    def schema(self):
-        return self.child.schema
-
-    @property
-    def _name(self):
-        return self.label
-
-    def project(self, key):
-        if key == self.names[0]:
-            return self
-        else:
-            raise ValueError("Column Mismatch: %s" % key)
-
-def label(expr, lab):
-    return Label(expr, lab)
-label.__doc__ = Label.__doc__
 
 
 class ReLabel(RowWise):
@@ -1016,78 +753,23 @@ class ReLabel(RowWise):
     @property
     def schema(self):
         subs = dict(self.labels)
-        d = self.child.schema[0].dict
+        d = self.child.dshape.measure.dict
 
         return DataShape(Record([[subs.get(name, name), dtype]
-            for name, dtype in self.child.schema[0].parameters[0]]))
-
-    @property
-    def iscolumn(self):
-        return self.child.iscolumn
+            for name, dtype in self.child.dshape.measure.parameters[0]]))
 
 
 def relabel(child, labels):
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
+    if isunit(child.dshape.measure):
+        if child._name == labels[0][0]:
+            return child.label(labels[0][1])
+        else:
+            return child
     return ReLabel(child, labels)
 
 relabel.__doc__ = ReLabel.__doc__
-
-
-class Map(RowWise):
-    """ Map an arbitrary Python function across rows in a Table
-
-    Examples
-    --------
-
-    >>> from datetime import datetime
-
-    >>> t = TableSymbol('t', '{price: real, time: int64}')  # times as integers
-    >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
-
-    Optionally provide extra schema information
-
-    >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
-    ...                           schema='{time: datetime}')
-
-    See Also
-    --------
-
-    blaze.expr.table.Apply
-    """
-    __slots__ = 'child', 'func', '_schema', '_iscolumn'
-
-    @property
-    def schema(self):
-        if self._schema:
-            return dshape(self._schema)
-        else:
-            raise NotImplementedError("Schema of mapped column not known.\n"
-                    "Please specify schema keyword in .map method.\n"
-                    "t['columnname'].map(function, schema='{col: type}')")
-
-    @property
-    def iscolumn(self):
-        if self._iscolumn is not None:
-            return self._iscolumn
-        return iscolumn(self.child)
-
-    @property
-    def _name(self):
-        if len(self.names) != 1:
-            raise ValueError("Can only determine name of single-column. "
-                    "Use .names to find all names")
-        try:
-            return self.schema[0].names[0]
-        except AttributeError:
-            raise ValueError("Column is un-named, name with col.label('name')")
-
-    def label(self, name):
-        assert self.iscolumn
-        return Map(self.child,
-                   self.func,
-                   Record([[name, self.schema[0].types[0]]]),
-                   self.iscolumn)
 
 
 class Apply(TableExpr):
@@ -1194,8 +876,6 @@ class Merge(RowWise):
     """
     __slots__ = 'child', 'children'
 
-    iscolumn = False
-
     @property
     def schema(self):
         return schema_concat(self.children)
@@ -1210,17 +890,18 @@ class Merge(RowWise):
             for node in i.subterms():
                 yield node
 
+    def get_field(self, key):
+        for child in self.children:
+            if key in child.names:
+                if iscolumn(child):
+                    return child
+                else:
+                    return child[key]
+
     def project(self, key):
-        if isinstance(key, _strtypes):
-            for child in self.children:
-                if key in child.names:
-                    if iscolumn(child):
-                        return child
-                    else:
-                        return child[key]
-        elif isinstance(key, list):
-            cols = [self.project(c) for c in key]
-            return merge(*cols)
+        if not isinstance(key, (tuple, list)):
+            raise TypeError("Expected tuple or list, got %s" % key)
+        return merge(*[self[c] for c in key])
 
     def leaves(self):
         return list(unique(concat(i.leaves() for i in self.children)))
@@ -1321,7 +1002,8 @@ def isdimensional(ds):
 
 from datashape.predicates import istabular, isdimension
 from datashape import Unit, Record, to_numpy_dtype
-from .core import schema_method_list, dshape_method_list
+from .expr import schema_method_list, dshape_method_list
+from .expr import isnan
 
 schema_method_list.extend([
     (isboolean, set([any, all])),

@@ -1,9 +1,9 @@
 import datashape
-from .core import Expr
+from .expr import Collection
 
 __all__ = ['Like', 'like']
 
-class Like(Expr):
+class Like(Collection):
     __slots__ = 'child', '_patterns'
 
     @property
@@ -30,7 +30,7 @@ def like(child, **kwargs):
     """
     return Like(child, tuple(kwargs.items()))
 
-from .core import schema_method_list
+from .expr import schema_method_list
 from .table import min, max
 
 schema_method_list.extend([

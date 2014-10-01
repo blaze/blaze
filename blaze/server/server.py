@@ -9,7 +9,7 @@ from cytoolz import first
 from functools import partial, wraps
 from blaze import into, compute, compute_up
 from ..api import discover, Table
-from ..expr import (Expr, TableSymbol, Selection, ColumnWise, TableSymbol,
+from ..expr import (Expr, TableSymbol, Selection, Broadcast, TableSymbol,
     istabular, isscalar)
 from ..expr.scalar.parser import exprify
 
@@ -199,7 +199,7 @@ def select(datasets, name):
     except (ValueError, KeyError):
         return ("Bad selection", 404)
 
-    expr = Selection(t, ColumnWise(t, select))
+    expr = Selection(t, Broadcast(t, select))
     if columns:
         expr = expr[columns]
     try:

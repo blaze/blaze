@@ -22,6 +22,8 @@ def path_split(leaf, expr):
         elif not isinstance(node, can_split):
             return last
         last = node
+    if not node:
+        raise ValueError()
     return node
 
 
@@ -48,13 +50,8 @@ def split(leaf, expr, chunk=None, agg=None):
     ((chunk, count(child=chunk['id'])), (aggregate, sum(child=aggregate)))
     """
     center = path_split(leaf, expr)
-    chunk = chunk or TableSymbol('chunk', leaf.dshape, iscolumn(leaf))
-    if isscalar(center):
-        agg = agg or TableSymbol('aggregate',
-                                 center.dshape,
-                                 isinstance(center, Reduction))
-    else:
-        agg = agg or TableSymbol('aggregate', center.schema, iscolumn(center))
+    chunk = chunk or TableSymbol('chunk', leaf.dshape)
+    agg = agg or TableSymbol('aggregate', center.dshape)
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
             _split(center, leaf=leaf, chunk=chunk, agg=agg)
@@ -106,7 +103,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
             (agg, by(agg_grouper, agg_apply)))
 
 
-@dispatch((RowWise, Selection))
+@dispatch((ElemWise, Selection))
 def _split(expr, leaf=None, chunk=None, agg=None):
     return ((chunk, expr.subs({leaf: chunk})),
             (agg, agg))

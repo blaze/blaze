@@ -29,7 +29,7 @@ from ..dispatch import dispatch, namespace
 from ..compatibility import builtins
 from . import scalar
 from . import table
-from . import Expr, TableExpr, TableSymbol
+from . import Expr, TableExpr, TableSymbol, Collection
 
 """
 The following code creates functions equivalent to the following:
@@ -61,7 +61,7 @@ __all__ = functions
 
 types = {builtins: object,
          scalar: Expr,
-         table: TableExpr,
+         table: Collection,
          np: (np.ndarray, np.number),
          math: Number}
 

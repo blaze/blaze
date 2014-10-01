@@ -27,7 +27,7 @@ import fnmatch
 
 from ..api.into import into
 from ..dispatch import dispatch
-from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
+from ..expr import (Projection, Column, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like,
                     RowWise, DateTime, Millisecond, Expr, iscolumn)
@@ -53,13 +53,13 @@ def compute_up(_, s, **kwargs):
     return s
 
 
-@dispatch(ColumnWise, DataFrame)
+@dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
     d = dict((t.child[c].expr, df[c]) for c in t.child.names)
     return compute(t.expr, d)
 
 
-@dispatch(ColumnWise, Series)
+@dispatch(Broadcast, Series)
 def compute_up(t, s, **kwargs):
     return compute_up(t, s.to_frame(), **kwargs)
 

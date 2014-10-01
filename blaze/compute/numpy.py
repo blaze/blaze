@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from blaze.expr import Reduction, Column, Projection, ColumnWise, Selection
+from blaze.expr import Reduction, Column, Projection, Broadcast, Selection
 from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
 from blaze.expr import std, var, count, nunique
 from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
@@ -33,7 +33,7 @@ def compute_up(t, x, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch(ColumnWise, np.ndarray)
+@dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
     d = dict((t.child[c].expr, x[c]) for c in t.child.names)
     return compute(t.expr, d)

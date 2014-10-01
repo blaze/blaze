@@ -28,7 +28,7 @@ import toolz
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Column, ColumnWise
+from ..expr import Projection, Selection, Column, Broadcast
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary, Like
@@ -69,7 +69,7 @@ def compute_up(t, s, **kwargs):
     return s.c.get(t._name)
 
 
-@dispatch(ColumnWise, Select)
+@dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
     d = dict((t.child[c].expr, lower_column(s.c.get(c)))
              for c in t.child.names)
@@ -80,7 +80,7 @@ def compute_up(t, s, **kwargs):
     return s.with_only_columns([result])
 
 
-@dispatch(ColumnWise, Selectable)
+@dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
     d = dict((t.child[c].expr, lower_column(s.c.get(c)))
              for c in t.child.names)
