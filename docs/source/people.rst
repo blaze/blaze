@@ -7,10 +7,10 @@ Contributors
 Current Core Developers
 ```````````````````````
 
-*   Tyler Alumbaugh
-*   Matt Rocklin
-*   Andy R. Terrel
-*   Mark Wiebe
+*  Phillip Cloud
+*  Matt Rocklin
+*  Andy R. Terrel
+*  Mark Wiebe
 
 
 Contributors
@@ -18,8 +18,8 @@ Contributors
 
 *  Majid alDosari
 *  Francesc Alted
+*  Tyler Alumbaugh
 *  Dav Clark
-*  Phillip Cloud
 *  Stephen Diehl
 *  Christine Doig
 *  Mark Florisson

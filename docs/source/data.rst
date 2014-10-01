@@ -2,6 +2,10 @@
 Data
 ====
 
+*The data descriptor interface may be phased out in the near future.  We
+recommend the use of expressions and ``into`` rather than data descriptor
+indexing.  See quickstart for suggested usage.*
+
 Blaze Data Descriptors provide uniform access to a variety of common data
 formats.  They provide standard iteration, insertion, and numpy-like fancy
 indexing over on-disk files in common formats like csv, json, and hdf5 in
