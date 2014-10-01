@@ -59,7 +59,7 @@ logger.setLevel(logging.WARNING)
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.6.3'
+__version__ = '0.6.4'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog
