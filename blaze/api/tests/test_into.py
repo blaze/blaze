@@ -4,9 +4,13 @@ import unittest
 
 from dynd import nd
 import numpy as np
+import bcolz
+import tables as tb
 from datashape import dshape
 from datetime import datetime
 import os
+
+from blaze.compute.chunks import ChunkIterator, chunks
 
 import pandas as pd
 from pandas import DataFrame
@@ -16,6 +20,7 @@ from blaze.data import CSV
 from blaze.api.into import into, discover
 from blaze import Table, Concat
 from blaze.utils import tmpfile, filetext
+from blaze.pytables import PyTables
 import pytest
 
 
@@ -92,6 +97,19 @@ def data():
 def schema():
     return '{name: string, amount: int}'
 
+@pytest.fixture
+def cds():
+    pytest.importorskip('bokeh')
+    from bokeh.objects import ColumnDataSource
+    cds = ColumnDataSource({
+     'id': [1, 2, 3],
+     'name': ['Alice', 'Bob', 'Charlie'],
+     'amount': [100, 200, 300],
+     'timestamp': [datetime(2000, 12, 25, 0, 0, 1),
+                   datetime(2001, 12, 25, 0, 0, 1),
+                   datetime(2002, 12, 25, 0, 0, 1)]
+    })
+    return cds
 
 @pytest.fixture
 def data_table(data, schema):
@@ -130,6 +148,21 @@ def out_hdf5():
     with tmpfile(".h5") as filename:
         yield filename
 
+@pytest.yield_fixture
+def out_hdf5_alt():
+    pytest.importorskip('tables')
+    with tmpfile(".h5") as filename:
+        yield filename
+
+
+
+class A(object): pass
+class B(object): pass
+
+def test_into_fails():
+    with pytest.raises(NotImplementedError):
+        into(A(), B())
+
 
 def test_into_pytables_dataframe(h5):
     samp = h5.root.test.sample
@@ -149,8 +182,16 @@ def test_pandas_dynd(data, schema):
 
     result = into(DataFrame, arr)
     expected = DataFrame(data, columns=['name', 'amount'])
-
     assert str(result) == str(expected)
+
+    nda = nd.array([[1,2,3], [4,5,6], [7,8,9]])
+    csv = CSV('examples/data/accounts.csv')
+    df_csv = into(DataFrame, csv)
+    df_nd = into(df_csv, nda)
+    df_no_names = into(DataFrame, nda)
+
+    assert list(df_nd.columns) == list(df_csv.columns)
+    assert list(df_no_names.columns) == [0,1,2]
 
 
 def test_pandas_numpy(data):
@@ -230,6 +271,16 @@ def test_Column_data_source(data_table):
     assert set(cds.column_names) == set(data_table.columns)
 
 
+def test_into_ColumnDataSource_pytables():
+    pytest.importorskip('bokeh')
+    from bokeh.objects import ColumnDataSource
+
+    pyt = PyTables('examples/data/accounts.h5', '/accounts')
+    cds = into(ColumnDataSource, pyt)
+    assert 'balance' and 'id' and 'name' in cds.column_names
+
+
+
 def test_numpy_list(data):
     dtype = into(np.ndarray, data).dtype
     assert np.issubdtype(dtype[0], object)
@@ -256,12 +307,32 @@ def test_DataFrame_CSV():
         assert list(df.dtypes) == [np.int64, np.float64]
 
 
-def test_into_tables_path(good_csv, out_hdf5):
+def test_into_tables_path(good_csv, out_hdf5, out_hdf5_alt):
     import tables as tb
     tble = into(tb.Table, good_csv, filename=out_hdf5, datapath='/foo')
+    tble2 = into(tb.Table, good_csv, filename=out_hdf5_alt, datapath='/foo', 
+        output_path=out_hdf5_alt)
     n = len(tble)
+    x = len(tble2)
     tble._v_file.close()
+    assert n == x
     assert n == 3
+
+
+def test_into_tables_chunk_iterator():
+    try:
+        pyt = PyTables("foo.h5", "/table", dshape='{x: int32, y: int32}')
+        x = np.array([(int(i), int(i)) for i in range(4)], dtype=[('x', np.int32), ('y', np.int32)])
+        cs = chunks(x, chunksize=2)
+        tble = into(pyt, ChunkIterator(cs))
+        n = len(tble)
+        tble._v_file.close()
+        assert n == 4
+    finally:
+        try:
+            os.remove('foo.h5')
+        except OSError:
+            pass
 
 
 def test_into_csv_blaze_table(good_csv):
@@ -282,6 +353,32 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     assert len(df_from_csv) == len(df_from_tbl)
     assert list(df_from_csv.columns) == list(df_from_tbl.columns)
     assert (df_from_csv == df_from_tbl).all().all()
+
+
+def test_into_ctable_pytables():
+    from bcolz import ctable
+    tble = PyTables('examples/data/accounts.h5', datapath='/accounts')
+    ct = into(ctable, tble)
+    ctn = len(ct)
+    tbn = len(tble)
+    ctf, ctl = ct[0], ct[-1]
+    tbf, tbl = tble[0], tble[-1]
+    tble._v_file.close()
+    assert ctn == tbn
+    assert ctf == tbf
+    assert ctl == tbl
+
+
+def test_into_np_ndarray_carray():
+    cr = bcolz.carray([1,2,3,4,5])
+    npa = into(np.ndarray, cr)
+    assert (npa == cr[:]).all()
+
+
+def test_into_pd_series_carray():
+    cr = bcolz.carray([1,2,3,4,5])
+    pda = into(pd.Series, cr)
+    assert (pda == cr[:]).all()
 
 
 def test_numpy_datetimes():
@@ -355,14 +452,22 @@ def test_into_cds_mixed():
         assert cds.data == {'first': into(list, csv[:, 'first'])}
 
 
-def test_series_single_column():
+def test_series_single_column(data):
     data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
     t = Table(data, '{name: string, amount: float64, id: int64}')
 
     df = into(pd.Series, t['name'])
+    out_df = into(df, into(DataFrame, t['amount']))
     assert isinstance(df, pd.Series)
     expected = pd.DataFrame(data, columns=t.schema.measure.names).name
     assert str(df) == str(expected)
+    assert df.name == out_df.name
+
+
+def test_into_series_failure(data):
+    failure = into(DataFrame, data)
+    with pytest.raises(TypeError):
+        into(pd.Series, failure)
 
 
 def test_series_single_column_projection():
@@ -392,6 +497,12 @@ def test_data_frame_single_column_projection():
     assert isinstance(df, pd.DataFrame)
     expected = pd.DataFrame(data, columns=t.schema.measure.names)[['name']]
     assert str(df) == str(expected)
+
+
+def test_df_from_cds(cds):
+    df = into(pd.DataFrame, cds)
+    cdsdf = cds.to_df()
+    assert (df['name'] == cdsdf['name']).all()
 
 
 def test_datetime_csv_reader_same_as_into():
