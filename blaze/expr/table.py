@@ -855,6 +855,17 @@ def summary(**kwargs):
 summary.__doc__ = Summary.__doc__
 
 
+def _names_and_types(expr):
+    schema = expr.schema[0]
+    if isinstance(schema, Option):
+        schema = schema.ty
+    if isinstance(schema, Record):
+        return schema.names, schema.types
+    if isinstance(schema, Unit):
+        return [expr._name], [expr.schema[0]]
+    raise ValueError("Unable to determine name and type of %s" % expr)
+
+
 class By(TableExpr):
     """ Split-Apply-Combine Operator
 
@@ -883,25 +894,13 @@ class By(TableExpr):
 
     @property
     def schema(self):
-        if isinstance(self.grouper.schema[0], Record):
-            names = self.grouper.schema[0].names
-            values = self.grouper.schema[0].types
-        elif isinstance(self.grouper.schema[0], Unit):
-            names = [self.grouper._name]
-            values = [self.grouper.schema[0]]
-        else:
-            raise TypeError()
+        grouper_names, grouper_types = _names_and_types(self.grouper)
+        apply_names, apply_types = _names_and_types(self.apply)
 
-        if isinstance(self.apply.dshape[0], Record):
-            names.extend(self.apply.dshape[0].names)
-            values.extend(self.apply.dshape[0].types)
-        elif isinstance(self.apply.schema[0], Unit):
-            names.append(self.apply._name)
-            values.append(self.apply.dshape[0])
-        else:
-            raise TypeError()
+        names = grouper_names + apply_names
+        types = grouper_types + apply_types
 
-        return dshape(Record(list(zip(names, values))))
+        return dshape(Record(list(zip(names, types))))
 
 
 @dispatch(TableExpr, (Summary, Reduction))
