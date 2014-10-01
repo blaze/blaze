@@ -13,7 +13,7 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
 import numpy as np
 from . import scalar
-from .core import Expr, path, ElemWise
+from .core import Expr, path, ElemWise, Projection, projection
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
@@ -46,16 +46,6 @@ class TableExpr(Expr):
     @property
     def dshape(self):
         return datashape.var * self.schema
-
-    def _len(self):
-        try:
-            return int(self.dshape[0])
-        except TypeError:
-            raise ValueError('Can not determine length of table with the '
-                    'following datashape: %s' % self.dshape)
-
-    def __len__(self): # pragma: no cover
-        return self._len()
 
     @property
     def columns(self):
@@ -189,54 +179,6 @@ class RowWise(ElemWise, TableExpr):
         return self.child._len()
 
 
-class Projection(RowWise):
-    """ Select columns from table
-
-    SELECT a, b, c
-    FROM table
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-    >>> accounts[['name', 'amount']].schema
-    dshape("{ name : string, amount : int32 }")
-
-    See Also
-    --------
-
-    blaze.expr.table.Column
-    """
-    __slots__ = 'child', '_columns'
-
-    @property
-    def names(self):
-        return list(self._columns)
-
-    @property
-    def schema(self):
-        d = self.child.schema[0].dict
-        return DataShape(Record([(col, d[col]) for col in self.names]))
-
-    def __str__(self):
-        return '%s[[%s]]' % (self.child,
-                             ', '.join(["'%s'" % col for col in self.names]))
-
-    def project(self, key):
-        if isinstance(key, _strtypes) and key in self.names:
-            return self.child[key]
-        if isinstance(key, list) and set(key).issubset(set(self.names)):
-            return self.child[key]
-        raise ValueError("Column Mismatch: %s" % key)
-
-
-def projection(table, columns):
-    return Projection(table, tuple(columns))
-
-projection.__doc__ = Projection.__doc__
-
-
 class ColumnSyntaxMixin(object):
     """ Syntax bits for table expressions of column shape """
     iscolumn = True
@@ -313,7 +255,7 @@ class ColumnSyntaxMixin(object):
         return columnwise(Not, self)
 
 
-class Column(ColumnSyntaxMixin, Projection):
+class Column(ColumnSyntaxMixin, Projection, TableExpr):
     """ A single column from a table
 
     SELECT a
@@ -384,7 +326,7 @@ class Selection(TableExpr):
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
-    if not builtins.all(isinstance(node, (RowWise, TableSymbol))
+    if not builtins.all(isinstance(node, (ElemWise, TableSymbol))
                         or node.isidentical(subexpr)
            for node in concat([path(predicate, subexpr),
                                path(table, subexpr)])):
@@ -903,12 +845,12 @@ class By(TableExpr):
         return dshape(Record(list(zip(names, types))))
 
 
-@dispatch(TableExpr, (Summary, Reduction))
+@dispatch(Expr, (Summary, Reduction))
 def by(grouper, apply):
     return By(grouper, apply)
 
 
-@dispatch(TableExpr)
+@dispatch(Expr)
 def by(grouper, **kwargs):
     return By(grouper, summary(**kwargs))
 

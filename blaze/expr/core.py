@@ -5,17 +5,18 @@ import toolz
 import inspect
 import functools
 import datashape
-from datashape import dshape, DataShape
+from datashape import dshape, DataShape, Record
 
 from toolz import unique, concat, memoize, partial
 import toolz
 from pprint import pprint
-from blaze.compatibility import StringIO
+from blaze.compatibility import StringIO, _strtypes, builtins
 
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'Symbol', 'discover', 'path', 'ElemWise']
+__all__ = ['Expr', 'Symbol', 'discover', 'path', 'ElemWise', 'Projection',
+    'projection']
 
 
 def get_callable_name(o):
@@ -73,10 +74,33 @@ class Expr(object):
     def __bool__(self):
         return True
 
+    def _len(self):
+        try:
+            return int(self.dshape[0])
+        except TypeError:
+            raise ValueError('Can not determine length of table with the '
+                    'following datashape: %s' % self.dshape)
+
+    def __len__(self): # pragma: no cover
+        return self._len()
+
+    def get_field(self, fieldname):
+        return Field(self, fieldname)
+
     def __getitem__(self, key):
         if isinstance(key, str) and key in self.names:
-            return Field(self, key)
-        raise NotImplementedError("Not understood %s['%s']" % (self, key))
+            return self.get_field(key)
+        if (isinstance(key, list)
+                and builtins.all(isinstance(k, _strtypes) for k in key)):
+            if set(key).issubset(self.names):
+                return self.project(key)
+            else:
+                raise ValueError('Names %s not consistent with known names %s'
+                        % (key, self.names))
+        raise NotImplementedError("Not understood %s[%s]" % (self, key))
+
+    def project(self, key):
+        return projection(self, key)
 
     @property
     def args(self):
@@ -100,6 +124,18 @@ class Expr(object):
     @property
     def schema(self):
         return datashape.dshape(self.dshape.measure)
+
+    @property
+    def dtype(self):
+        ds = self.schema[-1]
+        if isinstance(ds, Record):
+            if len(ds.fields) > 1:
+                raise TypeError("`.dtype` not defined for multicolumn object. "
+                                "Use `.schema` instead")
+            else:
+                return dshape(first(ds.types))
+        else:
+            return dshape(ds)
 
     @property
     def names(self):
@@ -214,6 +250,7 @@ class Expr(object):
             else:
                 raise AttributeError(key)
 
+
 class Symbol(Expr):
     """
     Symbolic data
@@ -265,6 +302,61 @@ class Field(ElemWise):
         shape = shape + schema.shape
         schema = (schema.measure,)
         return DataShape(*(shape + schema))
+
+
+class Projection(ElemWise):
+    """ Select fields from data
+
+    SELECT a, b, c
+    FROM table
+
+    Examples
+    --------
+
+    >>> from blaze import TableSymbol
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts[['name', 'amount']].schema
+    dshape("{ name : string, amount : int32 }")
+
+    See Also
+    --------
+
+    blaze.expr.core.Field
+    """
+    __slots__ = 'child', '_names'
+
+    @property
+    def names(self):
+        return list(self._names)
+
+    @property
+    def schema(self):
+        d = self.child.schema[0].dict
+        return DataShape(Record([(name, d[name]) for name in self.names]))
+
+    def __str__(self):
+        return '%s[[%s]]' % (self.child,
+                             ', '.join(["'%s'" % name for name in self.names]))
+
+    def project(self, key):
+        if isinstance(key, _strtypes) and key in self.names:
+            return self.child[key]
+        if isinstance(key, list) and set(key).issubset(set(self.names)):
+            return self.child[key]
+        raise ValueError("Column Mismatch: %s" % key)
+
+    def get_field(self, fieldname):
+        if fieldname in self.names:
+            return Field(self.child, fieldname)
+        raise ValueError("Field %s not found in columns %s" % (fieldname,
+            self.names))
+
+
+def projection(expr, names):
+    return Projection(expr, tuple(names))
+
+projection.__doc__ = Projection.__doc__
 
 
 @dispatch(Expr)

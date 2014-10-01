@@ -2,7 +2,7 @@ from blaze.expr import *
 import datashape
 
 good_to_split = (Reduction, Summary, By, Distinct)
-can_split = good_to_split + (Selection, RowWise)
+can_split = good_to_split + (Selection, ElemWise)
 
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
