@@ -19,23 +19,23 @@ __all__ = ['np']
 def compute_up(c, x, **kwargs):
     if x.dtype.names and c._name in x.dtype.names:
         return x[c._name]
-    if not x.dtype.names and x.shape[1] == len(c.child.names):
-        return x[:, c.child.names.index(c._name)]
+    if not x.dtype.names and x.shape[1] == len(c.child.fields):
+        return x[:, c.child.fields.index(c._name)]
     raise NotImplementedError()
 
 
 @dispatch(Projection, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if all(col in x.dtype.names for col in t.names):
-        return x[t.names]
-    if not x.dtype.names and x.shape[1] == len(t.child.names):
-        return x[:, [t.child.names.index(col) for col in t.names]]
+    if all(col in x.dtype.names for col in t.fields):
+        return x[t.fields]
+    if not x.dtype.names and x.shape[1] == len(t.child.fields):
+        return x[:, [t.child.fields.index(col) for col in t.fields]]
     raise NotImplementedError()
 
 
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t.child[c].expr, x[c]) for c in t.child.names)
+    d = dict((t.child[c].expr, x[c]) for c in t.child.fields)
     return compute(t.expr, d)
 
 
@@ -124,7 +124,7 @@ def compute_up(t, x, **kwargs):
 @dispatch(ReLabel, np.ndarray)
 def compute_up(t, x, **kwargs):
     types = [x.dtype[i] for i in range(len(x.dtype))]
-    return np.array(x, dtype=list(zip(t.names, types)))
+    return np.array(x, dtype=list(zip(t.fields, types)))
 
 
 @dispatch(Selection, np.ndarray)
@@ -141,9 +141,9 @@ def compute_up(expr, example, children, **kwargs):
 @dispatch(Expr, np.ndarray)
 def compute_up(t, x, **kwargs):
     if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
-        df = DataFrame(columns=t.child.names)
+        df = DataFrame(columns=t.child.fields)
     else:
-        df = Series(name=t.child.names[0])
+        df = Series(name=t.child.fields[0])
     return compute_up(t, into(df, x), **kwargs)
 
 

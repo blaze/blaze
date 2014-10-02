@@ -78,7 +78,7 @@ def compute_up(proj, t, **kwargs):
     #
     # TODO: benchmark on big tables because i'm not sure exactly what the
     # implications here are for memory usage
-    columns = proj.names
+    columns = proj.fields
     dtype = np.dtype([(col, t.dtype[col]) for col in columns])
     out = np.empty(t.shape, dtype=dtype)
     for c in columns:

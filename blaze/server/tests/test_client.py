@@ -62,7 +62,7 @@ def test_expr_client():
     expr = t.amount.sum()
 
     assert compute(expr, ec) == 300
-    assert 'name' in t.names
+    assert 'name' in t.fields
     assert isinstance(t.name, Field)
     assert compute(t.name, ec) == ['Alice', 'Bob']
 

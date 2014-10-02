@@ -185,12 +185,12 @@ def compute_up(t, ddesc, **kwargs):
 
 @dispatch(Projection, DataDescriptor)
 def compute_up(t, ddesc, **kwargs):
-    return ddesc[:, t.names]
+    return ddesc[:, t.fields]
 
 
 @dispatch(Field, DataDescriptor)
 def compute_up(t, ddesc, **kwargs):
-    return ddesc[:, t.names[0]]
+    return ddesc[:, t.fields[0]]
 
 
 @dispatch(DataDescriptor)

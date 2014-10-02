@@ -176,7 +176,7 @@ def compute_sub(t):
 
 @dispatch((Projection, Field), MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append({'$project': dict((col, 1) for col in t.names)})
+    return q.append({'$project': dict((col, 1) for col in t.fields)})
 
 
 @dispatch(Selection, MongoQuery)
@@ -196,16 +196,16 @@ def compute_up(t, q, **kwargs):
     if not isinstance(t.grouper, (Field, Projection)):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
-    names = t.apply.names
+    names = t.apply.fields
     return MongoQuery(q.coll, q.query +
     ({
         '$group': toolz.merge(
-                    {'_id': dict((col, '$'+col) for col in t.grouper.names)},
+                    {'_id': dict((col, '$'+col) for col in t.grouper.fields)},
                     group_apply(t.apply)
                     )
      },
      {
-         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.names),
+         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.fields),
                                  dict((name, '$' + name) for name in names))
      }))
 
@@ -213,8 +213,8 @@ def compute_up(t, q, **kwargs):
 @dispatch(Distinct, MongoQuery)
 def compute_up(t, q, **kwargs):
     return MongoQuery(q.coll, q.query +
-    ({'$group': {'_id': dict((col, '$'+col) for col in t.names)}},
-     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.names),
+    ({'$group': {'_id': dict((col, '$'+col) for col in t.fields)}},
+     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.fields),
                               {'_id': 0})}))
 
 
@@ -250,7 +250,7 @@ reductions = {mean: 'avg', count: 'sum', max: 'max', min: 'min'}
 def group_apply(expr):
     # TODO: implement columns variable more generally when Broadcast works
     reducs = expr.values
-    names = expr.names
+    names = expr.fields
     values = [(name, c, getattr(c.child, 'column', None) or name)
                for name, c in zip(names, reducs)]
     key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
@@ -262,7 +262,7 @@ def group_apply(expr):
 
 @dispatch(count, MongoQuery)
 def compute_up(t, q, **kwargs):
-    name = t.dshape[0].names[0]
+    name = t._name
     return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
 
 
@@ -270,7 +270,7 @@ def compute_up(t, q, **kwargs):
 def compute_up(t, q, **kwargs):
     name = t._name
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
-    column = '$' + t.child.names[0]
+    column = '$' + t.child._name
     arg = {'$group': {'_id': {}, name: {reduction: column}}}
     return q.append(arg)
 
@@ -315,7 +315,7 @@ def post_compute(e, q, d):
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
-                                 dict((col, 1) for col in e.names))}
+                                 dict((col, 1) for col in e.fields))}
     q = q.append(d)
 
     if not e.dshape.shape:  # not a collection
@@ -323,14 +323,14 @@ def post_compute(e, q, d):
         if isunit(e.dshape.measure):
             return result[e._name]
         else:
-            return get(e.names, result)
+            return get(e.fields, result)
 
     dicts = q.coll.aggregate(list(q.query))['result']
 
     if isunit(e.dshape.measure):
-        return list(pluck(e.names[0], dicts, default=None))  # dicts -> values
+        return list(pluck(e.fields[0], dicts, default=None))  # dicts -> values
     else:
-        return list(pluck(e.names, dicts, default=None))  # dicts -> tuples
+        return list(pluck(e.fields, dicts, default=None))  # dicts -> tuples
 
 
 @dispatch(Broadcast, MongoQuery, dict)

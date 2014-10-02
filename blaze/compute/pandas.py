@@ -41,17 +41,17 @@ __all__ = []
 
 @dispatch(Projection, DataFrame)
 def compute_up(t, df, **kwargs):
-    return df[list(t.names)]
+    return df[list(t.fields)]
 
 
 @dispatch(Field, (DataFrame, DataFrameGroupBy))
 def compute_up(t, df, **kwargs):
-    return df[t.names[0]]
+    return df[t.fields[0]]
 
 
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
-    d = dict((t.child[c].expr, df[c]) for c in t.child.names)
+    d = dict((t.child[c].expr, df[c]) for c in t.child.fields)
     return compute(t.expr, d)
 
 
@@ -87,7 +87,7 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(TableSymbol, DataFrame)
 def compute_up(t, df, **kwargs):
-    if not list(t.names) == list(df.names):
+    if not list(t.fields) == list(df.names):
         # TODO also check dtype
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
                          % (t, df))
@@ -107,7 +107,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     result = pd.merge(lhs, rhs,
                       left_on=t.on_left, right_on=t.on_right,
                       how=t.how)
-    return result.reset_index()[t.names]
+    return result.reset_index()[t.fields]
 
 
 @dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
@@ -186,7 +186,7 @@ def get_grouper(c, grouper, df):
 
 @dispatch(By, (Field, Projection), NDFrame)
 def get_grouper(c, grouper, df):
-    return grouper.names
+    return grouper.fields
 
 
 @dispatch(By, Reduction, Grouper, NDFrame)
@@ -211,7 +211,7 @@ def compute_by(t, r, g, df):
 
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
-    names = s.names
+    names = s.fields
     preapply = DataFrame(dict(zip(names,
                                   (compute(v.child, {t.child: df})
                                    for v in s.values))))
@@ -228,7 +228,7 @@ def compute_by(t, s, g, df):
 
     # Rearrange columns to match names order
     result = result[sorted(result.columns, key=lambda t: names.index(t[0]))]
-    result.columns = t.apply.names  # flatten down multiindex
+    result.columns = t.apply.fields  # flatten down multiindex
     return result
 
 
@@ -373,7 +373,7 @@ def compute_up(t, example, children, **kwargs):
 
 @dispatch(Summary, DataFrame)
 def compute_up(expr, data, **kwargs):
-    return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
+    return Series(dict(zip(expr.fields, [compute(val, {expr.child: data})
                                         for val in expr.values])))
 
 

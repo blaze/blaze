@@ -44,7 +44,7 @@ def compute_up(c, t, **kwargs):
 
 @dispatch(Projection, bcolz.ctable)
 def compute_up(p, t, **kwargs):
-    return t[p.names]
+    return t[p.fields]
 
 
 @dispatch(sum, (bcolz.carray, bcolz.ctable))

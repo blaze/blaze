@@ -112,13 +112,13 @@ def compute_up(expr, c, **kwargs):
 def compute_up(expr, c, **kwargs):
     c = iter(c)
     df = into(DataFrame, compute_up(expr, next(c)),
-              columns=expr.names)
+              columns=expr.fields)
     for chunk in c:
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
                    compute_up(expr.child.head(expr.n - len(df)), chunk),
-                   columns=expr.names)
+                   columns=expr.fields)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
     return df
@@ -186,11 +186,11 @@ def compute_up(expr, c, **kwargs):
     # Form computation to do on the concatenated union
     t = TableSymbol('_chunk', perchunk.schema)
 
-    apply_cols = expr.apply.names
+    apply_cols = expr.apply.fields
     if isunit(expr.apply.child.dshape.measure):
         apply_cols = apply_cols[0]
 
-    group = by(t[expr.grouper.names],
+    group = by(t[expr.grouper.fields],
                b(t[apply_cols]))
 
     return compute_up(group, intermediate)

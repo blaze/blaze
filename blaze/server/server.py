@@ -208,7 +208,7 @@ def select(datasets, name):
         return ("Bad selection", 404)
 
     return jsonify({'name': name,
-                    'columns': expr.names,
+                    'columns': expr.fields,
                     'selection': str(select),
                     'datashape': str(expr.dshape),
                     'data': rv})

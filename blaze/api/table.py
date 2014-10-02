@@ -137,10 +137,10 @@ def concrete_head(expr, n=10):
         result = compute(head)
 
         if not len(result):
-            return DataFrame(columns=expr.names)
+            return DataFrame(columns=expr.fields)
 
-        if expr.names:
-            return into(DataFrame(columns=expr.names), result)
+        if expr.fields:
+            return into(DataFrame(columns=expr.fields), result)
         elif iscollection(expr.dshape) and isunit(expr.dshape.measure):
             return into(DataFrame(columns=[expr._name]), result)
     else:
@@ -181,7 +181,7 @@ def into(a, b, **kwargs):
 
 @dispatch(DataFrame, Expr)
 def into(a, b):
-    return into(DataFrame(columns=b.names), compute(b))
+    return into(DataFrame(columns=b.fields), compute(b))
 
 
 @dispatch(nd.array, Expr)

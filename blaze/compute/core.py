@@ -178,7 +178,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
     'lambda (x, y, z): x + z'
     """
     if full:
-        columns = t.child.names
+        columns = t.child.fields
     else:
         columns = t.active_columns()
     if variadic:

@@ -472,7 +472,7 @@ def into(cds, t, **kwargs):
 
 @dispatch(ColumnDataSource, expr.Collection)
 def into(cds, t, **kwargs):
-    columns = t.names
+    columns = t.fields
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
 
@@ -504,7 +504,7 @@ def into(a, b, **kwargs):
     if isinstance(c, (list, tuple, Iterator)):
         kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
                 b.schema[0].types]
-        kwargs['names'] = b.names
+        kwargs['names'] = b.fields
     return into(a, c, **kwargs)
 
 
@@ -888,7 +888,7 @@ def into(a, b, **kwargs):
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.names)
+        kwargs.setdefault('names', b.fields)
         kwargs.setdefault('squeeze', False)
         return into(a, b.child.data, **kwargs)
     else:
