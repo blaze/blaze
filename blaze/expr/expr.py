@@ -211,6 +211,7 @@ class Symbol(Collection):
     >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
     """
     __slots__ = '_name', 'dshape'
+    __inputs__ = ()
 
     def __init__(self, name, dshape):
         self._name = name
@@ -610,6 +611,11 @@ class Map(ElemWise):
 
 
 def shape(expr):
+    """ Shape of expression
+
+    >>> Symbol('s', '3 * 5 * int32').shape
+    (3, 5)
+    """
     s = list(expr.dshape.shape)
     for i, elem in enumerate(s):
         try:
@@ -619,6 +625,15 @@ def shape(expr):
 
     return tuple(s)
 
+
+def ndim(expr):
+    """ Number of dimensions of expression
+
+    >>> Symbol('s', '3 * var * int32').ndim
+    2
+    """
+    return len(expr.shape)
+
 from .core import dshape_method_list, dshape_methods, method_properties
 
 schema_method_list = [
@@ -627,7 +642,7 @@ schema_method_list = [
 schema_methods = memoize(partial(select_functions, schema_method_list))
 
 dshape_method_list.extend([
-    (lambda ds: len(ds.shape), {shape})
+    (lambda ds: len(ds.shape), {shape, ndim})
     ])
 
-method_properties.add(shape)
+method_properties.update([shape, ndim])
