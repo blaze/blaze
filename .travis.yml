@@ -89,10 +89,6 @@ install:
 before_script:
   - sudo chmod a+r /tmp
   - mysql -e 'create database test;'
-  - mysql -e "show variables like 'secure_file_priv';"
-  - mysql -e "select User, File_priv from mysql.user;"
-  - mysql -e "grant all on *.* to 'travis'@'localhost';" -u root;
-  - mysql -e "select User, File_priv from mysql.user;"
   - psql -c 'create database test;' -U postgres
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
