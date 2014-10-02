@@ -19,7 +19,8 @@ from .expr import (Collection, Projection, projection, Selection, selection, Bro
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from .predicates import isscalar, iscolumn, isunit
+from .predicates import isscalar, iscolumn
+from datashape.predicates import isunit
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 

@@ -16,7 +16,8 @@ from .core import Expr, common_subexpression, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from .predicates import iscolumn, isunit
+from .predicates import iscolumn
+from datashape.predicates import isunit
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
@@ -38,10 +39,15 @@ class Collection(Expr):
         return self._len()
 
     def get_field(self, fieldname):
+        if not isinstance(self.dshape.measure, Record):
+            if fieldname == self._name:
+                return self
+            raise ValueError("Can not get field '%s' of non-record expression %s"
+                    % (fieldname, self))
         return Field(self, fieldname)
 
     def __getitem__(self, key):
-        if isinstance(key, str) and key in self.names:
+        if isinstance(key, _strtypes) and key in self.names:
             return self.get_field(key)
         if isinstance(key, Collection):
             return selection(self, key)
@@ -208,7 +214,7 @@ class Symbol(Collection):
 
     def __init__(self, name, dshape):
         self._name = name
-        if isinstance(dshape, str):
+        if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
         self.dshape = dshape
 

@@ -91,7 +91,6 @@ class Expr(object):
             return self.dshape.measure.names
         if hasattr(self, '_name'):
             return [self._name]
-        raise ValueError("No names found")
 
     def leaves(self):
         """ Leaves of an expresion tree
