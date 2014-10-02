@@ -17,7 +17,7 @@ from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from .predicates import iscolumn
-from datashape.predicates import isunit
+from datashape.predicates import isunit, iscollection
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
@@ -656,7 +656,7 @@ schema_method_list = [
 schema_methods = memoize(partial(select_functions, schema_method_list))
 
 dshape_method_list.extend([
-    (lambda ds: len(ds.shape), {shape, ndim})
+    (iscollection, {shape, ndim})
     ])
 
 method_properties.update([shape, ndim])
