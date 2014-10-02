@@ -6,11 +6,12 @@ pymysql = pytest.importorskip('pymysql')
 
 import sqlalchemy
 
-from blaze import SQL, CSV, drop, resource
+from blaze import CSV, resource
 from blaze.api.into import into
-from blaze.utils import filetext, assert_allclose
+from blaze.utils import filetext, assert_allclose, chmod
 from blaze.compatibility import xfail
 import os
+import stat
 import pandas as pd
 import datetime as dt
 import numpy as np
@@ -21,31 +22,36 @@ username = getpass.getuser()
 url = 'mysql+pymysql://{0}@localhost:3306/test'.format(username)
 
 
+WORLD_READABLE = stat.S_IWRITE | stat.S_IREAD | stat.S_IROTH | stat.S_IRGRP
+
+
 @pytest.yield_fixture
 def csv():
-    fn = '/tmp/test.csv'
-    with open(fn, mode='wb') as f:
-        f.write(b'1,2\n10,20\n100,200')
-    yield CSV(fn, columns=list('ab'))
+    with filetext('1,2\n10,20\n100,200', '.csv') as f:
+        with chmod(f, flags=WORLD_READABLE) as g:
+            yield CSV(g, columns=list('ab'))
 
 
 @pytest.yield_fixture
 def csv_no_columns():
     with filetext('1,2\n10,20\n100,200', '.csv') as f:
-        yield CSV(f)
+        with chmod(f, flags=WORLD_READABLE) as g:
+            yield CSV(g)
 
 
 @pytest.yield_fixture
 def float_csv():
     with filetext('1.02,2.02\n102.02,202.02\n1002.02,2002.02', '.csv') as f:
-        yield CSV(f, columns=list('ab'))
+        with chmod(f, flags=WORLD_READABLE) as g:
+            yield CSV(g, columns=list('ab'))
 
 
-@pytest.fixture
+@pytest.yield_fixture
 def complex_csv():
     this_dir = os.path.dirname(__file__)
     file_name = os.path.join(this_dir, 'dummydata.csv')
-    return CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int64, Consts: float64}')
+    with chmod(file_name, flags=WORLD_READABLE) as g:
+        yield CSV(g, schema='{Name: string, RegistrationDate: date, ZipCode: int64, Consts: float64}')
 
 
 @pytest.yield_fixture
