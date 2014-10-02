@@ -44,18 +44,6 @@ def complex_csv():
 
 
 @pytest.yield_fixture
-def sql(csv):
-    name = 'test_table'
-    s = resource(url, name, schema=csv.schema)
-    engine = s.engine
-    yield s
-    metadata = sqlalchemy.MetaData()
-    metadata.reflect(engine, only=[s.tablename])
-    t = metadata.tables[s.tablename]
-    t.drop(engine)
-
-
-@pytest.yield_fixture
 def float_sql(float_csv):
     name = 'float_table'
     s = resource(url, name, schema=float_csv.schema)
