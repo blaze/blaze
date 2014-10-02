@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import stat
 import tempfile
 import os
 import inspect
@@ -13,6 +14,9 @@ import numpy as np
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
 from blaze.compatibility import map, zip
+
+
+WORLD_READABLE = stat.S_IWRITE | stat.S_IREAD | stat.S_IROTH | stat.S_IRGRP
 
 
 def nth_list(n, seq):
