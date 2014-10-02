@@ -24,13 +24,14 @@ import numpy as np
 from collections import defaultdict
 from toolz import merge as merge_dicts
 import fnmatch
+from datashape.predicates import isunit
 
 from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like,
-                    ElemWise, DateTime, Millisecond, Expr, iscolumn)
+                    ElemWise, DateTime, Millisecond, Expr)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -203,7 +204,7 @@ def compute_by(t, r, g, df):
     group_df = concat_nodup(df, preapply)
 
     gb = group_df.groupby(g)
-    groups = gb[names[0] if iscolumn(t.apply.child) else names]
+    groups = gb[names[0] if isunit(t.apply.child.dshape.measure) else names]
 
     return compute_up(r, groups)  # do reduction
 

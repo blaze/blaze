@@ -24,12 +24,13 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from ..expr import (TableSymbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
-        nunique, iscolumn)
+        nunique)
 from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
 from cytoolz import unique
 from datashape import var, isdimension
+from datashape.predicates import isunit
 import pandas as pd
 
 from ..dispatch import dispatch
@@ -186,7 +187,7 @@ def compute_up(expr, c, **kwargs):
     t = TableSymbol('_chunk', perchunk.schema)
 
     apply_cols = expr.apply.names
-    if iscolumn(expr.apply.child):
+    if isunit(expr.apply.child.dshape.measure):
         apply_cols = apply_cols[0]
 
     group = by(t[expr.grouper.names],

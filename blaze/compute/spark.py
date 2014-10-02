@@ -152,16 +152,15 @@ def compute_up(t, rdd, **kwargs):
                                                 for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
 
-        if isinstance(t.grouper.schema[0], (Record, Tuple)):
-            keyfunc = identity
-        else:
+        if isunit(t.grouper.dshape.measure):
             keyfunc = lambda x: (x,)
-        if isinstance(t.apply, Reduction):
+        else:
+            keyfunc = identity
+        if isunit(t.apply.dshape.measure):
             valfunc = lambda x: (x,)
         else:
             valfunc = identity
         unpack = lambda kv: keyfunc(kv[0]) + valfunc(kv[1])
-
 
         create = lambda v: binop(initial, v)
 

@@ -15,7 +15,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
                         Summary, count, ScalarSymbol, iscolumn, Field,
                         Collection)
-from blaze.expr.table import _expr_child, unpack, max, min, isdimensional
+from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
@@ -938,10 +938,6 @@ def test_dir():
     assert 'mean' in dir(t.amount)
     assert 'like' not in dir(t[['amount', 'dt']])
     assert 'any' not in dir(t.name)
-
-
-def test_predicates():
-    assert isdimensional(dshape('5 * int32'))
 
 
 def test_distinct_column():

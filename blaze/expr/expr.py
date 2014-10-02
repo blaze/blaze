@@ -16,7 +16,6 @@ from .core import Expr, common_subexpression, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from .predicates import iscolumn
 from datashape.predicates import isunit, iscollection
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
@@ -345,10 +344,6 @@ class Selection(Collection):
         shape[0] = Var()
         return DataShape(*(shape + [self.child.dshape.measure]))
 
-    @property
-    def iscolumn(self):
-        return self.child.iscolumn
-
 
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
@@ -392,7 +387,6 @@ class Label(ElemWise):
 
     blaze.expr.table.ReLabel
     """
-    iscolumn = True
     __slots__ = 'child', 'label'
 
     @property
@@ -512,8 +506,6 @@ class Broadcast(ElemWise):
     """
     __slots__ = 'child', 'expr'
 
-    iscolumn = True
-
     @property
     def _name(self):
         names = [x._name for x in self.expr.traverse()
@@ -602,7 +594,7 @@ class Map(ElemWise):
                     "t['columnname'].map(function, schema='{col: type}')")
 
     def label(self, name):
-        assert iscolumn(self)
+        assert isunit(self.dshape.measure)
         return Map(self.child,
                    self.func,
                    self.schema,

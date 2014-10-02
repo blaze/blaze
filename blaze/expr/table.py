@@ -11,6 +11,7 @@ import datashape
 import toolz
 from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
+from datashape.predicates import isunit, iscollection
 import numpy as np
 from . import scalar
 from .core import (Expr, path, common_subexpression)
@@ -19,8 +20,6 @@ from .expr import (Collection, Projection, projection, Selection, selection, Bro
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from .predicates import isscalar, iscolumn
-from datashape.predicates import isunit
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
@@ -444,8 +443,8 @@ def summary(**kwargs):
     values = tuple(map(toolz.second, items))
     child = common_subexpression(*values)
 
-    if len(kwargs) == 1 and isscalar(child):
-        while isscalar(child):
+    if len(kwargs) == 1 and not iscollection(child.dshape):
+        while not iscollection(child.dshape):
             children = [i for i in child.inputs if isinstance(i, Expr)]
             if len(children) == 1:
                 child = children[0]
@@ -728,7 +727,7 @@ class Apply(TableExpr):
 
     @property
     def schema(self):
-        if isdimension(self.dshape[0]):
+        if iscollection(self.dshape):
             return self.dshape.subshape[0]
         else:
             raise TypeError("Non-tabular datashape, %s" % self.dshape)
@@ -764,12 +763,15 @@ def schema_concat(exprs):
     """
     names, values = [], []
     for c in exprs:
-        if isinstance(c.schema[0], Record):
-            names.extend(c.schema[0].names)
-            values.extend(c.schema[0].types)
-        elif isinstance(c.schema[0], Unit):
+        schema = c.schema[0]
+        if isinstance(schema, Option):
+            schema = schema.ty
+        if isinstance(schema, Record):
+            names.extend(schema.names)
+            values.extend(schema.types)
+        elif isinstance(schema, Unit):
             names.append(c._name)
-            values.append(c.schema[0])
+            values.append(schema)
         else:
             raise TypeError("All schemas must have Record or Unit shape."
                             "\nGot %s" % c.schema[0])
@@ -816,7 +818,7 @@ class Merge(ElemWise):
     def get_field(self, key):
         for child in self.children:
             if key in child.names:
-                if iscolumn(child):
+                if isunit(child.dshape.measure):
                     return child
                 else:
                     return child[key]
@@ -877,16 +879,12 @@ def union(*children):
 
 
 def isnumeric(ds):
-    """
+    """ Is a numeric datashape
 
     >>> isnumeric('int32')
     True
-    >>> isnumeric('{amount: int32}')
-    True
-    >>> isnumeric('{amount: ?int32}')
-    True
-    >>> isnumeric('{amount: ?int32}')
-    True
+    >>> isnumeric('string')
+    False
     >>> isnumeric('var * {amount: ?int32}')
     False
     """
@@ -896,35 +894,30 @@ def isnumeric(ds):
         ds = ds[0]
     if isinstance(ds, Option):
         return isnumeric(ds.ty)
-    if isinstance(ds, Record) and len(ds.names) == 1:
-        return isnumeric(ds.types[0])
     return isinstance(ds, Unit) and np.issubdtype(to_numpy_dtype(ds), np.number)
 
+
 def isboolean(ds):
+    """ Is of boolean datashape
+
+    >>> isboolean('bool')
+    True
+    >>> isboolean('?bool')
+    True
+    >>> isboolean('int')
+    False
+    """
     if isinstance(ds, str):
         ds = dshape(ds)
     if isinstance(ds, DataShape):
         ds = ds[0]
-    return (isinstance(ds, Unit) or isinstance(ds, Record) and
-            len(ds.dict) == 1) and 'bool' in str(ds)
+    if isinstance(ds, Option):
+        return isboolean(ds.ty)
+    return ds == bool_
 
-def iscolumnds(ds):
-    return (len(ds.shape) == 1 and
-            isinstance(ds.measure, Unit) or
-            isinstance(ds.measure, Record) and len(ds.measure.names) == 1)
 
-def isdimensional(ds):
-    """
-
-    >>> isdimensional('5 * int')
-    True
-    >>> isdimensional('int')
-    False
-    """
-    return isdimension(dshape(ds)[0])
-
-from datashape.predicates import istabular, isdimension, isunit, isrecord
-from datashape import Unit, Record, to_numpy_dtype
+from datashape.predicates import iscollection, isunit, isrecord
+from datashape import Unit, Record, to_numpy_dtype, bool_
 from .expr import schema_method_list, dshape_method_list
 from .expr import isnan
 
@@ -936,5 +929,5 @@ schema_method_list.extend([
     ])
 
 dshape_method_list.extend([
-    (isdimensional, set([distinct, count, nunique, head, sort, count_values, head])),
+    (iscollection, set([distinct, count, nunique, head, sort, count_values, head])),
     ])

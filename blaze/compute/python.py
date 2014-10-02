@@ -25,13 +25,13 @@ import toolz
 import sys
 import math
 from datashape import Record, Tuple
+from datashape.predicates import isunit
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
-                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
-                    iscolumn)
+                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -118,10 +118,10 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if isinstance(t.child.schema[0], (Record, Tuple)):
-        return partial(apply, t.func)
-    else:
+    if isunit(t.child.dshape.measure):
         return t.func
+    else:
+        return partial(apply, t.func)
 
 
 @dispatch((Label, ReLabel))
@@ -361,11 +361,11 @@ def compute_up(t, seq, **kwargs):
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
-    if isinstance(t.grouper.schema[0], (Tuple, Record)):
-        keyfunc = identity
-    else:
+    if isunit(t.grouper.dshape.measure):
         keyfunc = lambda x: (x,)
-    if isinstance(t.apply, Reduction):
+    else:
+        keyfunc = identity
+    if isunit(t.apply.dshape.measure):
         valfunc = lambda x: (x,)
     else:
         valfunc = identity
