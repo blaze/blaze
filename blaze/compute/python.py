@@ -31,7 +31,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
-                    iscolumn, Field)
+                    iscolumn)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
@@ -100,8 +100,6 @@ def rowfunc(t):
 
 @dispatch(Field)
 def rowfunc(t):
-    if iscolumn(t.child) and t._name == t.child.names[0]:
-        return identity
     index = t.child.names.index(t._name)
     return lambda x: x[index]
 
@@ -161,6 +159,20 @@ def concat_maybe_tuples(vals):
     return tuple(result)
 
 
+def deepmap(func, data, n=1):
+    """
+
+    >>> inc = lambda x: x + 1
+    >>> list(deepmap(inc, [1, 2], n=1))
+    [2, 3]
+    >>> list(deepmap(inc, [(1, 2), (3, 4)], n=2))
+    [(2, 3), (4, 5)]
+    """
+    if n == 1:
+        return map(func, data)
+    else:
+        return map(compose(tuple, partial(deepmap, func, n=n-1)), data)
+
 @dispatch(Merge)
 def rowfunc(t):
     funcs = [rrowfunc(child, t.child) for child in t.children]
@@ -169,7 +181,8 @@ def rowfunc(t):
 
 @dispatch(ElemWise, Sequence)
 def compute_up(t, seq, **kwargs):
-    return map(rowfunc(t), seq)
+    func = rowfunc(t)
+    return deepmap(func, seq, n=t.child.ndim)
 
 
 @dispatch(Selection, Sequence)

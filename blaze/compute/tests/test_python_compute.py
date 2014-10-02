@@ -12,7 +12,7 @@ from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std, head)
+                        count, scalar, std, head, Symbol)
 import numpy as np
 
 from blaze import cos, sin
@@ -610,3 +610,31 @@ def test_datetime_access():
     assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
     assert list(compute(t.when.second, data)) == [1, 1, 1]
     assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
+
+
+payments = [{'name': 'Alice', 'payments': [
+                {'amount':  100, 'when': datetime(2000, 1, 1, 1, 1 ,1)},
+                {'amount':  200, 'when': datetime(2000, 2, 2, 2, 2, 2)}
+                ]},
+            {'name': 'Bob', 'payments': [
+                {'amount':  300, 'when': datetime(2000, 3, 3, 3, 3 ,3)},
+                {'amount': -400, 'when': datetime(2000, 4, 4, 4, 4, 4)},
+                {'amount':  500, 'when': datetime(2000, 5, 5, 5, 5, 5)}
+                ]},
+            ]
+
+payments_ordered = [('Alice', [( 100, datetime(2000, 1, 1, 1, 1 ,1)),
+                               ( 200, datetime(2000, 2, 2, 2, 2, 2))]),
+                    ('Bob',   [( 300, datetime(2000, 3, 3, 3, 3 ,3)),
+                               (-400, datetime(2000, 4, 4, 4, 4, 4)),
+                               ( 500, datetime(2000, 5, 5, 5, 5, 5))])]
+
+payment_dshape = 'var * {name: string, payments: var * {amount: int32, when: datetime}}'
+
+def test_nested():
+    t = Symbol('t', payment_dshape)
+    assert list(compute(t.name, payments_ordered)) == ['Alice', 'Bob']
+
+    assert list(compute(t.payments, payments_ordered)) == \
+                [p[1] for p in payments_ordered]
+    assert list(compute(t.payments.amount, payments_ordered)) == [(100, 200), (300, -400, 500)]

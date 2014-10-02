@@ -603,6 +603,14 @@ class Map(ElemWise):
                    name)
 
     @property
+    def shape(self):
+        return self.child.shape
+
+    @property
+    def ndim(self):
+        return self.child.ndim
+
+    @property
     def _name(self):
         if self._name0:
             return self._name0
