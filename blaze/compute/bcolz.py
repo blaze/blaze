@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import Selection, Head, Column, Projection, ReLabel, RowWise
+from blaze.expr import Selection, Head, Field, Projection, ReLabel, ElemWise
 from blaze.expr import Label, Distinct, By, Reduction, Like
 from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str
@@ -37,7 +37,7 @@ def compute_up(h, t, **kwargs):
     return t[:h.n]
 
 
-@dispatch(Column, bcolz.ctable)
+@dispatch(Field, bcolz.ctable)
 def compute_up(c, t, **kwargs):
     return t[c._name]
 
@@ -81,7 +81,7 @@ def compute_up(expr, b, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch((RowWise, Distinct, By, nunique, Like), bcolz.ctable)
+@dispatch((ElemWise, Distinct, By, nunique, Like), bcolz.ctable)
 def compute_up(c, t, **kwargs):
     return compute_up(c, iter(t), **kwargs)
 

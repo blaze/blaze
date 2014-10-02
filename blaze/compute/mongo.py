@@ -53,16 +53,18 @@ except ImportError:
 
 import fnmatch
 from datashape import Record, Tuple
-from toolz import pluck, first
+from datashape.predicates import isunit
+from toolz import pluck, first, get
 import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
-                    Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
-                    TableSymbol, Projection, sum, min, max, Gt, Lt,
+                    Reduction, Head, ReLabel, Apply, Distinct, ElemWise, By,
+                    TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary, Like,
-                    ColumnWise, DateTime, Microsecond, Date, Time, isscalar,
+                    Broadcast, DateTime, Microsecond, Date, Time, isscalar,
                     )
 from ..expr.core import Expr
+from .. import expr
 from ..compatibility import _strtypes
 
 from ..dispatch import dispatch
@@ -108,7 +110,7 @@ class MongoQuery(object):
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Apply, Distinct, RowWise, By, Like, DateTime),
+           Head, ReLabel, Apply, Distinct, ElemWise, By, Like, DateTime, Field),
           Collection)
 def compute_up(e, coll, **kwargs):
     return compute_up(e, MongoQuery(coll, []))
@@ -124,7 +126,7 @@ def compute_up(t, q, **kwargs):
     return q.append({'$limit': t.n})
 
 
-@dispatch(ColumnWise, MongoQuery)
+@dispatch(Broadcast, MongoQuery)
 def compute_up(t, q, **kwargs):
     return q.append({'$project': {str(t.expr): compute_sub(t.expr)}})
 
@@ -137,7 +139,8 @@ binops = {'+': 'add',
 
 
 def compute_sub(t):
-    """Build an expression tree in a MongoDB compatible way.
+    """
+    Build an expression tree in a MongoDB compatible way.
 
     Parameters
     ----------
@@ -171,7 +174,7 @@ def compute_sub(t):
     return {compute_sub(op): [compute_sub(t.lhs), compute_sub(t.rhs)]}
 
 
-@dispatch(Projection, MongoQuery)
+@dispatch((Projection, Field), MongoQuery)
 def compute_up(t, q, **kwargs):
     return q.append({'$project': dict((col, 1) for col in t.names)})
 
@@ -190,7 +193,7 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(By, MongoQuery)
 def compute_up(t, q, **kwargs):
-    if not isinstance(t.grouper, Projection):
+    if not isinstance(t.grouper, (Field, Projection)):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
     names = t.apply.names
@@ -245,7 +248,7 @@ reductions = {mean: 'avg', count: 'sum', max: 'max', min: 'min'}
 
 @dispatch(Summary)
 def group_apply(expr):
-    # TODO: implement columns variable more generally when ColumnWise works
+    # TODO: implement columns variable more generally when Broadcast works
     reducs = expr.values
     names = expr.names
     values = [(name, c, getattr(c.child, 'column', None) or name)
@@ -311,25 +314,28 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
-    if isscalar(e):
-        field = e._name
-        result = q.coll.aggregate(list(q.query))['result']
-        return result[0][field]
-
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in e.names))}
     q = q.append(d)
+
+    if not e.dshape.shape:  # not a collection
+        result = q.coll.aggregate(list(q.query))['result'][0]
+        if isunit(e.dshape.measure):
+            return result[e._name]
+        else:
+            return get(e.names, result)
+
     dicts = q.coll.aggregate(list(q.query))['result']
 
-    if isinstance(e.schema[0], (Record, Tuple)):
-        return list(pluck(e.names, dicts, default=None))  # dicts -> tuples
-    else:
+    if isunit(e.dshape.measure):
         return list(pluck(e.names[0], dicts, default=None))  # dicts -> values
+    else:
+        return list(pluck(e.names, dicts, default=None))  # dicts -> tuples
 
 
-@dispatch(ColumnWise, MongoQuery, dict)
+@dispatch(Broadcast, MongoQuery, dict)
 def post_compute(e, q, d):
-    """Compute the result of a columnwise expression.
+    """Compute the result of a Broadcast expression.
     """
     columns = dict((col, 1) for qry in q.query
                    for col in qry.get('$project', []))

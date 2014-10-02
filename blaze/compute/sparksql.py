@@ -77,7 +77,7 @@ def compute_up(ts, rdd, **kwargs):
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean,
            Head, ReLabel, Apply, Distinct, RowWise, By, any, all, sum, max,
-           min, Reduction, Projection, Column), SchemaRDD)
+           min, Reduction, Projection, Field), SchemaRDD)
 def compute_up(e, rdd, **kwargs):
     return compute_up(e, make_query(rdd), **kwargs)
 

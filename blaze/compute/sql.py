@@ -28,7 +28,7 @@ import toolz
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Column, Broadcast
+from ..expr import Projection, Selection, Field, Broadcast
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary, Like
@@ -57,14 +57,14 @@ def compute_up(t, s, scope=None, **kwargs):
     return select(s).with_only_columns(columns)
 
 
-@dispatch((Column, Projection), Select)
+@dispatch((Field, Projection), Select)
 def compute_up(t, s, **kwargs):
     cols = list(s.inner_columns)
     cols = [lower_column(cols[t.child.names.index(c)]) for c in t.names]
     return s.with_only_columns(cols)
 
 
-@dispatch(Column, sqlalchemy.Table)
+@dispatch(Field, sqlalchemy.Table)
 def compute_up(t, s, **kwargs):
     return s.c.get(t._name)
 
@@ -307,7 +307,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(By, ClauseElement)
 def compute_up(t, s, **kwargs):
-    if isinstance(t.grouper, Projection):
+    if isinstance(t.grouper, (Field, Projection)):
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.names]
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
@@ -357,7 +357,7 @@ def lower_column(col):
 
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not isinstance(t.grouper, Projection):
+    if not isinstance(t.grouper, (Field, Projection)):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
 

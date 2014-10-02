@@ -27,7 +27,7 @@ import math
 from datashape import Record, Tuple
 
 from ..dispatch import dispatch
-from ..expr import (Projection, Column, Broadcast, Map, Label, ReLabel,
+from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,

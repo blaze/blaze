@@ -27,10 +27,10 @@ import fnmatch
 
 from ..api.into import into
 from ..dispatch import dispatch
-from ..expr import (Projection, Column, Sort, Head, Broadcast, Selection,
+from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like,
-                    RowWise, DateTime, Millisecond, Expr, iscolumn)
+                    ElemWise, DateTime, Millisecond, Expr, iscolumn)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -43,14 +43,9 @@ def compute_up(t, df, **kwargs):
     return df[list(t.names)]
 
 
-@dispatch(Column, (DataFrame, DataFrameGroupBy))
+@dispatch(Field, (DataFrame, DataFrameGroupBy))
 def compute_up(t, df, **kwargs):
     return df[t.names[0]]
-
-
-@dispatch(Column, (Series, SeriesGroupBy))
-def compute_up(_, s, **kwargs):
-    return s
 
 
 @dispatch(Broadcast, DataFrame)
@@ -175,7 +170,7 @@ def unpack(seq):
     return seq
 
 
-Grouper = RowWise, Series, list
+Grouper = ElemWise, Series, list
 
 
 @dispatch(By, list, DataFrame)
@@ -183,12 +178,12 @@ def get_grouper(c, grouper, df):
     return grouper
 
 
-@dispatch(By, (RowWise, Series), NDFrame)
+@dispatch(By, (ElemWise, Series), NDFrame)
 def get_grouper(c, grouper, df):
     return compute(grouper, {c.child: df})
 
 
-@dispatch(By, Projection, NDFrame)
+@dispatch(By, (Field, Projection), NDFrame)
 def get_grouper(c, grouper, df):
     return grouper.names
 
@@ -370,7 +365,7 @@ def compute_up(t, df, scope=None, **kwargs):
     return pd.concat(children, axis=1)
 
 
-@dispatch(Union, DataFrame, tuple)
+@dispatch(Union, (Series, DataFrame), tuple)
 def compute_up(t, example, children, **kwargs):
     return pd.concat(children, axis=0)
 

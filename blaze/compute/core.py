@@ -141,19 +141,19 @@ def columnwise_funcstr(t, variadic=True, full=False):
 
     Parameters
     ----------
-    t : ColumnWise
+    t : Broadcast
         An expression whose leaves (at each application of the returned
         expression) are all instances of ``ScalarExpression``.
         For example ::
 
             t.petal_length / max(t.petal_length)
 
-        is **not** a valid ``ColumnWise``, since the expression ::
+        is **not** a valid ``Broadcast``, since the expression ::
 
             max(t.petal_length)
 
         has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
-        valid ``ColumnWise`` expression is ::
+        valid ``Broadcast`` expression is ::
 
             t.petal_length / 4
 
