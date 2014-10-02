@@ -5,7 +5,7 @@ import pytest
 psycopg2 = pytest.importorskip('psycopg2')
 
 
-from blaze import SQL, CSV, into, resource
+from blaze import CSV, into, resource
 from blaze.api.into import into
 from blaze.utils import assert_allclose, filetext, chmod, WORLD_READABLE
 import os
@@ -80,8 +80,8 @@ def test_complex_into():
 
     tbl = 'testtable_into_complex'
 
-    csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
-    sql = SQL(url, tbl, schema=csv.schema)
+    csv = resource(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
+    sql = resource(url, tbl, schema=csv.schema)
 
     into(sql, csv, if_exists="replace")
 
