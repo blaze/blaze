@@ -74,7 +74,6 @@ class Expr(object):
         return True
 
     def get_field(self, fieldname):
-        return ExprField(self, fieldname)
         raise NotImplementedError()
 
     @property
