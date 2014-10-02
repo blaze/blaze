@@ -59,18 +59,6 @@ class TableExpr(Collection):
     def columns(self):
         return self.names
 
-    @property
-    def _name(self):
-        if iscolumn(self):
-            if isinstance(self.schema[0], Record):
-                return self.schema[0].names[0]
-            try:
-                return self.child._name
-            except (AttributeError, ValueError):
-                raise ValueError("Can not compute name of table")
-        else:
-            raise ValueError("Column is un-named, name with col.label('aname')")
-
 
 class TableSymbol(TableExpr, Symbol):
     """ A Symbol for Tabular data
@@ -569,6 +557,10 @@ class Sort(TableExpr):
     def _len(self):
         return self.child._len()
 
+    @property
+    def _name(self):
+        return self.child._name
+
 
 def sort(child, key=None, ascending=True):
     """ Sort table
@@ -618,6 +610,10 @@ class Distinct(TableExpr):
     def names(self):
         return self.child.names
 
+    @property
+    def _name(self):
+        return self.child._name
+
 
 def distinct(expr):
     return Distinct(expr)
@@ -645,6 +641,10 @@ class Head(TableExpr):
 
     def _len(self):
         return builtins.min(self.child._len(), self.n)
+
+    @property
+    def _name(self):
+        return self.child._name
 
 
 def head(child, n=10):
