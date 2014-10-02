@@ -397,7 +397,13 @@ def test_getitem_start_step_kv(kv_dd, kv_data):
 
 
 def test_repr_hdma():
-    assert repr(Table(CSV(example('hmda-small.csv'))))
+    csv = CSV(example('hmda-small.csv'))
+    t = TableSymbol('hmda', csv.schema)
+
+    assert compute(t.head(), csv)
+
+    columns = ['action_taken_name', 'agency_abbr', 'applicant_ethnicity_name']
+    assert compute(t[columns].head(), csv)
 
 
 @pytest.yield_fixture

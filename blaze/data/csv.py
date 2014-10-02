@@ -424,11 +424,12 @@ class CSV(DataDescriptor):
             formats = [initial.dtype]
         else:
             if usecols is None:
-                index = slice(None)
+                names = list(map(str, initial.columns[:]))
+                formats = initial.dtypes.tolist()
             else:
                 index = initial.columns.get_indexer(usecols)
-            names = list(map(str, initial.columns[index]))
-            formats = initial.dtypes[index].tolist()
+                names = list(map(str, initial.columns[index]))
+                formats = initial.dtypes[usecols].tolist()
 
         initial_dtype = np.dtype({'names': names, 'formats': formats})
 
