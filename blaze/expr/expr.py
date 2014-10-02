@@ -46,17 +46,17 @@ class Collection(Expr):
         return Field(self, fieldname)
 
     def __getitem__(self, key):
-        if isinstance(key, _strtypes) and key in self.names:
+        if isinstance(key, _strtypes) and key in self.fields:
             return self.get_field(key)
         if isinstance(key, Collection):
             return selection(self, key)
         if (isinstance(key, list)
                 and builtins.all(isinstance(k, _strtypes) for k in key)):
-            if set(key).issubset(self.names):
+            if set(key).issubset(self.fields):
                 return self.project(key)
             else:
                 raise ValueError('Names %s not consistent with known names %s'
-                        % (key, self.names))
+                        % (key, self.fields))
         raise ValueError("Not understood %s[%s]" % (self, key))
 
     def project(self, key):
@@ -80,8 +80,8 @@ class Collection(Expr):
 
     def __dir__(self):
         result = dir(type(self))
-        if self.names:
-            result.extend(list(self.names))
+        if self.fields:
+            result.extend(list(self.fields))
 
         d = toolz.merge(schema_methods(self.schema),
                         dshape_methods(self.dshape))
@@ -95,7 +95,7 @@ class Collection(Expr):
         except AttributeError:
             if key[0] == '_':
                 raise
-            if self.names and key in self.names:
+            if self.fields and key in self.fields:
                 if isunit(self.dshape.measure): # t.foo.foo is t.foo
                     return self
                 else:
@@ -285,39 +285,39 @@ class Projection(ElemWise):
 
     blaze.expr.core.Field
     """
-    __slots__ = 'child', '_names'
+    __slots__ = 'child', '_fields'
 
     @property
-    def names(self):
-        return list(self._names)
+    def fields(self):
+        return list(self._fields)
 
     @property
     def schema(self):
         d = self.child.schema[0].dict
-        return DataShape(Record([(name, d[name]) for name in self.names]))
+        return DataShape(Record([(name, d[name]) for name in self.fields]))
 
     def __str__(self):
         return '%s[[%s]]' % (self.child,
-                             ', '.join(["'%s'" % name for name in self.names]))
+                             ', '.join(["'%s'" % name for name in self.fields]))
 
     def project(self, key):
-        if isinstance(key, list) and set(key).issubset(set(self.names)):
+        if isinstance(key, list) and set(key).issubset(set(self.fields)):
             return self.child[key]
         raise ValueError("Column Mismatch: %s" % key)
 
     def get_field(self, fieldname):
-        if fieldname in self.names:
+        if fieldname in self.fields:
             return Field(self.child, fieldname)
         raise ValueError("Field %s not found in columns %s" % (fieldname,
-            self.names))
+            self.fields))
 
 
 def projection(expr, names):
     if not isinstance(names, (tuple, list)):
         raise TypeError("Wanted list of strings, got %s" % names)
-    if not set(names).issubset(expr.names):
+    if not set(names).issubset(expr.fields):
         raise ValueError("Mismatched names.  Asking for names %s "
-                "where expression has names %s" % (names, expr.names))
+                "where expression has names %s" % (names, expr.fields))
     return Projection(expr, tuple(names))
 projection.__doc__ = Projection.__doc__
 
@@ -398,7 +398,7 @@ class Label(ElemWise):
         return self.label
 
     def get_field(self, key):
-        if key[0] == self.names[0]:
+        if key[0] == self.fields[0]:
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)

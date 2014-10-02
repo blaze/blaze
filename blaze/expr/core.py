@@ -85,7 +85,7 @@ class Expr(object):
         return tuple(getattr(self, i) for i in self.__inputs__)
 
     @property
-    def names(self):
+    def fields(self):
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
         if hasattr(self, '_name'):
@@ -169,8 +169,8 @@ class Expr(object):
 
     def __dir__(self):
         result = dir(type(self))
-        if self.names:
-            result.extend(list(self.names))
+        if self.fields:
+            result.extend(list(self.fields))
 
         d = dshape_methods(self.dshape)
         result.extend(list(d))
@@ -183,7 +183,7 @@ class Expr(object):
         except AttributeError:
             if key[0] == '_':
                 raise
-            if self.names and key in self.names:
+            if self.fields and key in self.fields:
                 return self.get_field(key)
             d = dshape_methods(self.dshape)
             if key in d:
@@ -236,7 +236,7 @@ def _subs(o, d):
 
     >>> from blaze.expr.table import TableSymbol
     >>> t = TableSymbol('t', '{name: string, balance: int}')
-    >>> subs(t, {'balance': 'amount'}).names
+    >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
     newargs = [subs(arg, d) for arg in o.args]

@@ -88,7 +88,7 @@ def test_arithmetic():
 
 def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
-    assert t.names== ['name', 'amount']
+    assert t.fields== ['name', 'amount']
 
     assert eval(str(t['name'])) == t['name']
     assert str(t['name']) == "t['name']"
@@ -215,7 +215,7 @@ def test_getattr_doesnt_override_properties():
 def test_dir_contains_columns():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     result = dir(t)
-    columns_set = set(t.names)
+    columns_set = set(t.fields)
     assert set(result) & columns_set == columns_set
 
 
@@ -224,7 +224,7 @@ def test_selection_consistent_children():
 
     expr = t['name'][t['amount'] < 0]
 
-    assert list(expr.names) == ['name']
+    assert list(expr.fields) == ['name']
 
 
 def test_broadcast_syntax():
@@ -325,12 +325,12 @@ def test_multi_column_join():
     b = TableSymbol('b', '{w: int, x: int, y: int}')
     j = join(a, b, ['x', 'y'])
 
-    assert set(j.names) == set('wxyz')
+    assert set(j.fields) == set('wxyz')
 
     assert j.on_left == j.on_right == ['x', 'y']
     assert hash(j)
 
-    assert j.names == ['x', 'y', 'z', 'w']
+    assert j.fields == ['x', 'y', 'z', 'w']
 
 
 def test_traverse():
@@ -407,10 +407,10 @@ def ds():
 
 def test_discover_dshape_symbol(ds):
     t_ds = TableSymbol('t', dshape=ds)
-    assert t_ds.names is not None
+    assert t_ds.fields is not None
 
     t_sch = TableSymbol('t', dshape=ds.subshape[0])
-    assert t_sch.names is not None
+    assert t_sch.fields is not None
 
     assert t_ds.isidentical(t_sch)
 
@@ -500,10 +500,10 @@ def test_by_summary():
 def test_by_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
-    assert len(by(t['id'], t['amount'].sum()).names) == 2
-    assert len(by(t['id'], t['id'].count()).names) == 2
-    print(by(t, t.count()).names)
-    assert len(by(t, t.count()).names) == 4
+    assert len(by(t['id'], t['amount'].sum()).fields) == 2
+    assert len(by(t['id'], t['id'].count()).fields) == 2
+    print(by(t, t.count()).fields)
+    assert len(by(t, t.count()).fields) == 4
 
 
 def test_sort():
@@ -531,7 +531,7 @@ def test_label():
 
     assert eval(str(quantity)).isidentical(quantity)
 
-    assert quantity.names == ['quantity']
+    assert quantity.fields == ['quantity']
 
     with pytest.raises(ValueError):
         quantity['balance']
@@ -546,9 +546,9 @@ def test_map_label():
 
 def test_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    assert list(t.names) == ['name', 'amount', 'id']
-    assert list(t['name'].names) == ['name']
-    (t['amount'] + 1).names
+    assert list(t.fields) == ['name', 'amount', 'id']
+    assert list(t['name'].fields) == ['name']
+    (t['amount'] + 1).fields
 
 
 def test_relabel():
@@ -559,8 +559,8 @@ def test_relabel():
 
     assert eval(str(rl)).isidentical(rl)
 
-    print(rl.names)
-    assert rl.names == ['NAME', 'amount', 'ID']
+    print(rl.fields)
+    assert rl.fields == ['NAME', 'amount', 'ID']
 
     assert not iscolumn(rl)
     assert iscolumn(rlc)
@@ -572,7 +572,7 @@ def test_relabel_join():
     siblings = join(names.relabel({'last': 'left'}),
                     names.relabel({'last': 'right'}), 'first')
 
-    assert siblings.names == ['first', 'left', 'right']
+    assert siblings.fields == ['first', 'left', 'right']
 
 
 def test_map():
@@ -675,7 +675,7 @@ def test_merge():
     new_amount = (accounts['balance'] * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
-    assert c.names == ['name', 'balance', 'new']
+    assert c.fields == ['name', 'balance', 'new']
     assert c.schema == dshape('{name: string, balance: int32, new: float64}')
 
     with pytest.raises(ValueError):

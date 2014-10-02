@@ -81,10 +81,10 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 @dispatch(Summary)
 def _split(expr, leaf=None, chunk=None, agg=None):
     chunk_expr = summary(**dict((name, split(leaf, val, chunk=chunk)[0][1])
-                            for name, val in zip(expr.names, expr.values)))
+                            for name, val in zip(expr.fields, expr.values)))
     agg_expr = summary(**dict((name, split(leaf, val, agg=agg)[1][1].subs(
                                                         {agg: agg[name]}))
-                            for name, val in zip(expr.names, expr.values)))
+                            for name, val in zip(expr.fields, expr.values)))
     return ((chunk, chunk_expr), (agg, agg_expr))
 
 

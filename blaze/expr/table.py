@@ -56,7 +56,7 @@ class TableExpr(Collection):
 
     @property
     def columns(self):
-        return self.names
+        return self.fields
 
 
 class TableSymbol(TableExpr, Symbol):
@@ -253,8 +253,8 @@ class Join(TableExpr):
 def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
-            set(lhs.names) & set(rhs.names),
-            key=lhs.names.index)))
+            set(lhs.fields) & set(rhs.fields),
+            key=lhs.fields.index)))
     if not on_right:
         on_right = on_left
     if isinstance(on_left, tuple):
@@ -434,7 +434,7 @@ class Summary(Expr):
 
     def __str__(self):
         return 'summary(' + ', '.join('%s=%s' % (name, str(val))
-                for name, val in zip(self.names, self.values)) + ')'
+                for name, val in zip(self.fields, self.values)) + ')'
 
 
 def summary(**kwargs):
@@ -577,7 +577,7 @@ def sort(child, key=None, ascending=True):
     if isinstance(key, list):
         key = tuple(key)
     if key is None:
-        key = child.names[0]
+        key = child.fields[0]
     return Sort(child, key, ascending)
 
 
@@ -606,8 +606,8 @@ class Distinct(TableExpr):
         return self.child.schema
 
     @property
-    def names(self):
-        return self.child.names
+    def fields(self):
+        return self.child.fields
 
     @property
     def _name(self):
@@ -749,9 +749,9 @@ def merge(*tables):
 
     result = Merge(child, tables)
 
-    if not isdistinct(result.names):
+    if not isdistinct(result.fields):
         raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-            frequencies(result.names).items() if v > 1))
+            frequencies(result.fields).items() if v > 1))
 
     return result
 
@@ -790,7 +790,7 @@ class Merge(ElemWise):
 
     >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
 
-    >>> merge(accounts, newamount).names
+    >>> merge(accounts, newamount).fields
     ['name', 'amount', 'new_amount']
 
     See Also
@@ -806,8 +806,8 @@ class Merge(ElemWise):
         return schema_concat(self.children)
 
     @property
-    def names(self):
-        return list(concat(child.names for child in self.children))
+    def fields(self):
+        return list(concat(child.fields for child in self.children))
 
     def subterms(self):
         yield self
@@ -817,7 +817,7 @@ class Merge(ElemWise):
 
     def get_field(self, key):
         for child in self.children:
-            if key in child.names:
+            if key in child.fields:
                 if isunit(child.dshape.measure):
                     return child
                 else:
@@ -844,7 +844,7 @@ class Union(TableExpr):
     >>> euro_accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> all_accounts = union(usa_accounts, euro_accounts)
-    >>> all_accounts.names
+    >>> all_accounts.fields
     ['name', 'amount']
 
     See Also
