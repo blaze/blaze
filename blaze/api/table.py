@@ -79,13 +79,12 @@ class Table(TableSymbol):
                 types = dshape[1].types
             if isinstance(dshape[1], Fixed):
                 types = (dshape[2],) * int(dshape[1])
+            if not types:
+                types = datashape.dshape(dshape[-1])
             if not columns:
                 raise TypeError("Could not infer column names from data. "
                                 "Please specify column names with `columns=` "
                                 "keyword")
-            if not types:
-                raise TypeError("Could not infer data types from data. "
-                                "Please specify schema with `schema=` keyword")
 
             dshape = dshape[0] * datashape.dshape(Record(list(zip(columns, types))))
 

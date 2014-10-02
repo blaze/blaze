@@ -27,8 +27,6 @@ def test_table_constructor_error():
 def test_table_column_types_error():
     with pytest.raises(TypeError):
         t = Table([1,2,3,4,5])
-    with pytest.raises(TypeError):
-        t = Table([1,2,3,4,5], columns=['numbers'])
 
 
 def test_resources():
