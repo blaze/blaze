@@ -4,6 +4,7 @@ from blaze import into
 from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
+from datashape.predicates import iscollection
 
 import pytest
 
@@ -434,12 +435,12 @@ def test_comprehensive():
 
     for e, exclusions in expressions.items():
         if rdd not in exclusions:
-            if istabular(e):
+            if iscollection(e.dshape):
                 assert into(set, compute(e, rdd)) == into(set, compute(e, df))
             else:
                 assert compute(e, rdd) == compute(e, df)
         if srdd not in exclusions:
-            if istabular(e):
+            if iscollection(e.dshape):
                 assert into(set, compute(e, srdd)) == into(set, compute(e, df))
             else:
                 assert compute(e, rdd) == compute(e, df)

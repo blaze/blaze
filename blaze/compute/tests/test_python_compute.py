@@ -640,5 +640,5 @@ def test_nested():
                 [p[1] for p in payments_ordered]
     assert list(compute(t.payments.amount, payments_ordered)) == \
             [(100, 200), (300, -400, 500)]
-    assert list(compute(t.payments.amount + 1, payments_ordered)) ==
+    assert list(compute(t.payments.amount + 1, payments_ordered)) ==\
             [(101, 201), (301, -399, 501)]
