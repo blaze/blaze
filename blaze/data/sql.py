@@ -307,7 +307,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #     Specifies copying the OID for each row
 
     """
-    dbtype = sql.dbtype
+    dbtype = getattr(sql, 'dbtype', sql.engine.name)
     db = sql.engine.url.database
     abspath = csv._abspath
     tblname = sql.tablename
@@ -381,6 +381,10 @@ class SQLIntoMixin(object):
         return self._into(b, **kwargs)
 
 
+EXTEND_CODES = set([1083,  # field separator argument is not what is expected
+                    ])
+
+
 class MySQL(SQL, SQLIntoMixin):
     dbtype = 'mysql'
 
@@ -398,8 +402,16 @@ class MySQL(SQL, SQLIntoMixin):
                     IGNORE {skiprows} LINES;"""
         sql_stmnt = sql_stmnt.format(**kwargs)
 
-        with self.engine.begin() as conn:
-            conn.execute(sql_stmnt)
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(sql_stmnt)
+        except sa.exc.InternalError as e:
+            code, _ = e.orig.args
+            if code in EXTEND_CODES:
+                self.extend(b)
+            else:
+                raise e
+
         return self
 
 
@@ -413,8 +425,11 @@ class PostGreSQL(SQL, SQLIntoMixin):
                     NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
                     HEADER {header}, ENCODING '{encoding}');"""
         sql_stmnt = sql_stmnt.format(**kwargs)
-        with self.engine.begin() as conn:
-            conn.execute(sql_stmnt)
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(sql_stmnt)
+        except sa.exc.NotSupportedError:
+            self.extend(b)
         return self
 
 
