@@ -7,6 +7,7 @@ def test_Symbol():
     e = Symbol('e', '3 * 5 * {name: string, amount: int}')
     assert e.dshape == dshape('3 * 5 * {name: string, amount: int}')
     assert e.shape == (3, 5)
+    assert str(e) == 'e'
 
 def test_Field():
     e = Symbol('e', '3 * 5 * {name: string, amount: int}')

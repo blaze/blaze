@@ -219,6 +219,12 @@ class Symbol(Collection):
             dshape = datashape.dshape(dshape)
         self.dshape = dshape
 
+    def __str__(self):
+        return self._name
+
+    def resources(self):
+        return dict()
+
 
 class ElemWise(Collection):
     """

@@ -99,12 +99,6 @@ class TableSymbol(TableExpr, Symbol):
             dshape = datashape.var * dshape
         self.dshape = dshape
 
-    def __str__(self):
-        return self._name
-
-    def resources(self):
-        return dict()
-
     @property
     def schema(self):
         return self.dshape.subshape[0]
