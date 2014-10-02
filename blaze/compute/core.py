@@ -5,7 +5,7 @@ from toolz import first
 
 from ..compatibility import basestring
 from ..expr.core import Expr
-from ..expr import TableSymbol, eval_str, Union
+from ..expr import Symbol, TableSymbol, eval_str, Union
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up', 'drop', 'create_index']
@@ -44,7 +44,7 @@ def compute(expr, o, **kwargs):
     >>> list(compute(deadbeats, data))
     ['Bob', 'Charlie']
     """
-    ts = set([x for x in expr.subterms() if isinstance(x, TableSymbol)])
+    ts = set([x for x in expr.subterms() if isinstance(x, Symbol)])
     if len(ts) == 1:
         return compute(expr, {first(ts): o}, **kwargs)
     else:
