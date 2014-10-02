@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import toolz
 from toolz import pipe
 import itertools
-from datashape import discover, Unit, Tuple, Record
+from datashape import discover, Unit, Tuple, Record, iscollection, isunit
 import sqlalchemy as sa
 
 from ..data.sql import dshape_to_alchemy
@@ -47,7 +47,6 @@ class SparkSQLQuery(object):
         self.mapping = mapping
 
 
-
 def make_query(rdd, primary_key='', name=None):
     # SparkSQL
     name = name or next(names)
@@ -70,7 +69,7 @@ def make_query(rdd, primary_key='', name=None):
     return SparkSQLQuery(context, query, mapping)
 
 
-@dispatch(TableSymbol, SchemaRDD)
+@dispatch(Symbol, SchemaRDD)
 def compute_up(ts, rdd, **kwargs):
     return make_query(rdd)
 
