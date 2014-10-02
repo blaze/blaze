@@ -1001,7 +1001,7 @@ def isdimensional(ds):
     """
     return isdimension(dshape(ds)[0])
 
-from datashape.predicates import istabular, isdimension
+from datashape.predicates import istabular, isdimension, isunit, isrecord
 from datashape import Unit, Record, to_numpy_dtype
 from .expr import schema_method_list, dshape_method_list
 from .expr import isnan
@@ -1009,10 +1009,10 @@ from .expr import isnan
 schema_method_list.extend([
     (isboolean, set([any, all])),
     (isnumeric, set([mean, isnan, sum, mean, min, max, std, var])),
+    (isunit, set([label, relabel])),
+    (isrecord, set([relabel])),
     ])
 
 dshape_method_list.extend([
-    (istabular, set([relabel, count_values, head])),
-    (isdimensional, set([distinct, count, nunique, head, sort, count_values])),
-    (iscolumnds, set([label, relabel]))
+    (isdimensional, set([distinct, count, nunique, head, sort, count_values, head])),
     ])
