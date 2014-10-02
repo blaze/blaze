@@ -146,14 +146,13 @@ def test_to_tree():
     t = TableSymbol('t', '{name: string, amount: int32}')
     expr = t.amount.sum()
     expected = {'op': 'sum',
-                'args': [{'op': 'Column',
+                'args': [{'op': 'Field',
                           'args':
                             [
                               {'op': 'TableSymbol',
                                'args': [
                                     't',
                                     'var * { name : string, amount : int32 }',
-                                    False
                                     ]
                                },
                               'amount'
@@ -168,7 +167,7 @@ def test_to_from_tree_namespace():
     expr = t.name
 
     tree = to_tree(expr, names={t: 't'})
-    assert tree == {'op': 'Column', 'args': ['t', 'name']}
+    assert tree == {'op': 'Field', 'args': ['t', 'name']}
 
     new = from_tree(tree, namespace={'t': t})
     assert new.isidentical(expr)
@@ -190,7 +189,7 @@ def test_compute():
 
 def test_compute_with_namespace():
     t = TableSymbol('t', '{name: string, amount: int}')
-    query = {'expr': {'op': 'Column',
+    query = {'expr': {'op': 'Field',
                       'args': ['accounts_df', 'name']}}
     expected = ['Alice', 'Bob']
 

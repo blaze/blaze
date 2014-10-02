@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import TableSymbol, compute, Table, by, into, TableExpr, Column
+from blaze import TableSymbol, compute, Table, by, into, TableExpr, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.data.python import Python
@@ -63,7 +63,7 @@ def test_expr_client():
 
     assert compute(expr, ec) == 300
     assert 'name' in t.names
-    assert isinstance(t.name, Column)
+    assert isinstance(t.name, Field)
     assert compute(t.name, ec) == ['Alice', 'Bob']
 
 

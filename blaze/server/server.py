@@ -208,7 +208,7 @@ def select(datasets, name):
         return ("Bad selection", 404)
 
     return jsonify({'name': name,
-                    'columns': expr.columns,
+                    'columns': expr.names,
                     'selection': str(select),
                     'datashape': str(expr.dshape),
                     'data': rv})
@@ -320,7 +320,7 @@ def from_tree(expr, namespace=None):
     >>> tree # doctest: +SKIP
     {'op': 'sum',
      'args': [
-         {'op': 'Column',
+         {'op': 'Field',
          'args': [
              {
               'op': 'TableSymbol'
@@ -338,7 +338,7 @@ def from_tree(expr, namespace=None):
 
     >>> tree = to_tree(t.x, names={t: 't'})
     >>> tree # doctest: +SKIP
-    {'op': 'Column', 'args': ['t', 'x']}
+    {'op': 'Field', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
     t['x']

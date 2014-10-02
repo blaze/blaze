@@ -20,6 +20,7 @@ import tables as tb
 from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
+from .. import expr
 from ..expr import Expr, Projection, TableSymbol, iscolumn
 from ..compute.core import compute
 from .resource import resource
@@ -463,9 +464,15 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b))
 
-@dispatch(ColumnDataSource, (Expr, pd.DataFrame, np.ndarray, ctable))
+@dispatch(ColumnDataSource, (pd.DataFrame, np.ndarray, ctable))
 def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
+    return ColumnDataSource(data=dict((col, into([], t[col]))
+                                      for col in columns))
+
+@dispatch(ColumnDataSource, expr.Collection)
+def into(cds, t, **kwargs):
+    columns = t.names
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
 
@@ -497,7 +504,7 @@ def into(a, b, **kwargs):
     if isinstance(c, (list, tuple, Iterator)):
         kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
                 b.schema[0].types]
-        kwargs['names'] = b.columns
+        kwargs['names'] = b.names
     return into(a, c, **kwargs)
 
 
@@ -881,7 +888,7 @@ def into(a, b, **kwargs):
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.columns)
+        kwargs.setdefault('names', b.names)
         kwargs.setdefault('squeeze', iscolumn(b))
         return into(a, b.child.data, **kwargs)
     else:
