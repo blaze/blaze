@@ -3,135 +3,74 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 psycopg2 = pytest.importorskip('psycopg2')
-import subprocess
-ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
-output = ps.stdout.read()
-num_processes = len(output.splitlines())
-pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
 
 
-from blaze import SQL
-from blaze import CSV
+from blaze import CSV, into, resource
 from blaze.api.into import into
-from blaze.utils import assert_allclose
-import sqlalchemy
+from blaze.utils import assert_allclose, filetext, chmod, WORLD_READABLE
 import os
-import csv as csv_module
 import pandas as pd
-import datetime as dt
 import numpy as np
 
+
 url = 'postgresql://localhost/postgres'
-file_name = 'test.csv'
-
-def setup_function(function):
-    data = [(1, 2), (10, 20), (100, 200)]
-
-    with open(file_name, 'w') as f:
-        csv_writer = csv_module.writer(f)
-        for row in data:
-            csv_writer.writerow(row)
-
-def teardown_function(function):
-    os.remove(file_name)
-    engine = sqlalchemy.create_engine(url)
-    metadata = sqlalchemy.MetaData()
-    metadata.reflect(engine)
-
-    for t in metadata.tables:
-        if 'testtable' in t:
-            metadata.tables[t].drop(engine)
-
-def test_csv_postgres_load():
-
-    tbl = 'testtable'
-
-    engine = sqlalchemy.create_engine(url)
-
-    if engine.has_table(tbl):
-        metadata = sqlalchemy.MetaData()
-        metadata.reflect(engine)
-        t = metadata.tables[tbl]
-        t.drop(engine)
-
-    csv = CSV(file_name)
-
-    sql = SQL(url,tbl, schema=csv.schema)
-    engine = sql.engine
-    conn = engine.raw_connection()
-
-    cursor = conn.cursor()
-    full_path = os.path.abspath(file_name)
-    load = '''copy {0} from '{1}'(FORMAT CSV, DELIMITER ',', NULL '');'''.format(tbl, full_path)
-    cursor.execute(load)
-    conn.commit()
 
 
-def test_simple_into():
+@pytest.yield_fixture
+def csv_no_header():
+    with filetext('1,2\n10,20\n100,200', '.csv') as f:
+        with chmod(f, flags=WORLD_READABLE) as g:
+            yield CSV(g, columns=list('ab'))
 
-    tbl = 'testtable_into_2'
 
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+@pytest.yield_fixture
+def sql_no_header():
+    yield resource(url, 'test_table', schema='{x: int, y: int}')
 
-    into(sql,csv, if_exists="replace")
+
+def test_csv_postgres_load(sql, csv):
+    full_path = os.path.abspath(csv.path)
+    load = '''copy {0} from '{1}'(FORMAT CSV, DELIMITER ',', NULL '');'''.format(sql.tablename, full_path)
+    with sql.engine.begin() as conn:
+        conn.execute(load)
+
+
+def test_simple_into(sql, csv):
+    into(sql, csv, if_exists="replace")
 
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
 
-def test_append():
 
-    tbl = 'testtable_into_append'
-
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
-
-    into(sql,csv, if_exists="replace")
+def test_append(sql, csv):
+    into(sql, csv, if_exists="replace")
 
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
 
-    into(sql,csv, if_exists="append")
+    into(sql, csv, if_exists="append")
     assert list(sql[:, 'a']) == [1, 10, 100, 1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200, 2, 20, 200]
 
 
-def test_tryexcept_into():
-
-    tbl = 'testtable_into_2'
-
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
-
-    into(sql,csv, if_exists="replace", QUOTE="alpha", FORMAT="csv") # uses multi-byte character and
-                                                      # fails over to using sql.extend()
-
+def test_tryexcept_into(sql, csv):
+    # should use extend here
+    into(sql, csv, if_exists="replace", QUOTE="alpha", FORMAT="csv")
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
 
 
 @pytest.mark.xfail(raises=KeyError)
-def test_failing_argument():
+def test_failing_argument(sql, csv):
+    into(sql, csv, if_exists="replace", skipinitialspace="alpha") # failing call
 
-    tbl = 'testtable_into_2'
 
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+def test_no_header_no_columns(sql_no_header, csv_no_header):
+    into(sql_no_header, csv_no_header, if_exists="replace")
 
-    into(sql,csv, if_exists="replace", skipinitialspace="alpha") # failing call
+    assert list(sql_no_header[:, 'x']) == [1, 10, 100]
+    assert list(sql_no_header[:, 'y']) == [2, 20, 200]
 
-def test_no_header_no_columns():
-
-    tbl = 'testtable_into_2'
-
-    csv = CSV(file_name)
-    sql = SQL(url,tbl, schema= '{x: int, y: int}')
-    # import pdb
-    # pdb.set_trace()
-    into(sql,csv, if_exists="replace")
-
-    assert list(sql[:, 'x']) == [1, 10, 100]
-    assert list(sql[:, 'y']) == [2, 20, 200]
 
 def test_complex_into():
     # data from: http://dummydata.me/generate
@@ -141,8 +80,8 @@ def test_complex_into():
 
     tbl = 'testtable_into_complex'
 
-    csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
-    sql = SQL(url, tbl, schema=csv.schema)
+    csv = resource(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
+    sql = resource(url, tbl, schema=csv.schema)
 
     into(sql, csv, if_exists="replace")
 

@@ -175,3 +175,7 @@ def listpack(x):
 
 def sort_dtype_items(items, names):
     return sorted(items, key=compose(names.index, first))
+
+
+def raw(s):
+    return s.encode('unicode-escape').decode()

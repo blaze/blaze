@@ -7,9 +7,7 @@ from .core import DataDescriptor
 
 class DyND(DataDescriptor):
     deferred = False
-    persistent = False
     appendable = False
-    remote = False
 
     def __init__(self, arr):
         self.arr = arr

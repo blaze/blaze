@@ -1,63 +1,64 @@
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function
 
-from datetime import date, datetime, time
-from decimal import Decimal
+
 import sys
+import os
+import warnings
+import subprocess
+
 from dynd import nd
-import sqlalchemy as sql
+import sqlalchemy as sa
 import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
-from toolz import first
+from toolz import merge
 
+from ..data.utils import raw
 from ..dispatch import dispatch
 from ..utils import partition_all
-from ..compatibility import basestring
 from .core import DataDescriptor
-from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
 from .csv import CSV
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
 
-types = {'int64': sql.types.BigInteger,
-         'int32': sql.types.Integer,
-         'int': sql.types.Integer,
-         'int16': sql.types.SmallInteger,
-         'float32': sql.types.Float(precision=24), # sqlalchemy uses mantissa
-         'float64': sql.types.Float(precision=53), # for precision
-         'float': sql.types.Float(precision=53),
-         'real': sql.types.Float(precision=53),
-         'string': sql.types.Text,
-         'date': sql.types.Date,
-         'time': sql.types.Time,
-         'datetime': sql.types.DateTime,
-         'bool': sql.types.Boolean,
-#         ??: sql.types.LargeBinary,
-#         Decimal: sql.types.Numeric,
-#         ??: sql.types.PickleType,
-#         unicode: sql.types.Unicode,
-#         unicode: sql.types.UnicodeText,
-#         str: sql.types.Text,  # ??
+types = {'int64': sa.types.BigInteger,
+         'int32': sa.types.Integer,
+         'int': sa.types.Integer,
+         'int16': sa.types.SmallInteger,
+         'float32': sa.types.Float(precision=24),  # sqlalchemy uses mantissa
+         'float64': sa.types.Float(precision=53),  # for precision
+         'float': sa.types.Float(precision=53),
+         'real': sa.types.Float(precision=53),
+         'string': sa.types.Text,
+         'date': sa.types.Date,
+         'time': sa.types.Time,
+         'datetime': sa.types.DateTime,
+         'bool': sa.types.Boolean,
+         #         ??: sa.types.LargeBinary,
+         #         Decimal: sa.types.Numeric,
+         #         ??: sa.types.PickleType,
+         #         unicode: sa.types.Unicode,
+         #         unicode: sa.types.UnicodeText,
+         # str: sa.types.Text,  # ??
          }
 
 revtypes = dict(map(reversed, types.items()))
 
-revtypes.update({sql.types.VARCHAR: 'string',
-                 sql.types.String: 'string',
-                 sql.types.Unicode: 'string',
-                 sql.types.DATETIME: 'datetime',
-                 sql.types.TIMESTAMP: 'datetime',
-                 sql.types.FLOAT: 'float64',
-                 sql.types.DATE: 'date',
-                 sql.types.BIGINT: 'int64',
-                 sql.types.INTEGER: 'int',
-                 sql.types.Float: 'float64'})
+revtypes.update({sa.types.VARCHAR: 'string',
+                 sa.types.String: 'string',
+                 sa.types.Unicode: 'string',
+                 sa.types.DATETIME: 'datetime',
+                 sa.types.TIMESTAMP: 'datetime',
+                 sa.types.FLOAT: 'float64',
+                 sa.types.DATE: 'date',
+                 sa.types.BIGINT: 'int64',
+                 sa.types.INTEGER: 'int',
+                 sa.types.Float: 'float64'})
 
 
-@dispatch(sql.sql.type_api.TypeEngine)
+@dispatch(sa.sql.type_api.TypeEngine)
 def discover(typ):
     if typ in revtypes:
         return dshape(revtypes[typ])[0]
@@ -72,7 +73,7 @@ def discover(typ):
     raise NotImplementedError("No SQL-datashape match for type %s" % typ)
 
 
-@dispatch(sql.Column)
+@dispatch(sa.Column)
 def discover(col):
     if col.nullable:
         return Record([[col.name, Option(discover(col.type))]])
@@ -80,14 +81,15 @@ def discover(col):
         return Record([[col.name, discover(col.type)]])
 
 
-@dispatch(sql.Table)
+@dispatch(sa.Table)
 def discover(t):
-    return var * Record(list(sum([discover(c).parameters[0] for c in t.columns], ())))
+    return var * Record(list(sum([discover(c).parameters[0]
+                                  for c in t.columns], ())))
 
 
-@dispatch(sql.engine.base.Engine, str)
+@dispatch(sa.engine.base.Engine, _strtypes)
 def discover(engine, tablename):
-    metadata = sql.MetaData()
+    metadata = sa.MetaData()
     metadata.reflect(engine)
     table = metadata.tables[tablename]
     return discover(table)
@@ -115,10 +117,10 @@ def dshape_to_alchemy(dshape):
     if str(dshape) in types:
         return types[str(dshape)]
     if isinstance(dshape, datashape.Record):
-        return [sql.Column(name,
-                           dshape_to_alchemy(typ),
-                           nullable=isinstance(typ[0], Option))
-                    for name, typ in dshape.parameters[0]]
+        return [sa.Column(name,
+                          dshape_to_alchemy(typ),
+                          nullable=isinstance(typ[0], Option))
+                for name, typ in dshape.parameters[0]]
     if isinstance(dshape, datashape.DataShape):
         if isdimension(dshape[0]):
             return dshape_to_alchemy(dshape[1])
@@ -126,21 +128,22 @@ def dshape_to_alchemy(dshape):
             return dshape_to_alchemy(dshape[0])
     if isinstance(dshape, datashape.String):
         if dshape[0].fixlen is None:
-            return sql.types.Text
+            return sa.types.Text
         if 'U' in dshape.encoding:
-            return sql.types.Unicode(length=dshape[0].fixlen)
+            return sa.types.Unicode(length=dshape[0].fixlen)
         if 'A' in dshape.encoding:
-            return sql.types.String(length=dshape[0].fixlen)
+            return sa.types.String(length=dshape[0].fixlen)
     if isinstance(dshape, datashape.DateTime):
         if dshape.tz:
-            return sql.types.DateTime(timezone=True)
+            return sa.types.DateTime(timezone=True)
         else:
-            return sql.types.DateTime(timezone=False)
+            return sa.types.DateTime(timezone=False)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
-            % dshape)
+                              % dshape)
 
 
 class SQL(DataDescriptor):
+
     """
     A Blaze data descriptor to expose a SQL database.
 
@@ -173,38 +176,27 @@ class SQL(DataDescriptor):
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
     """
-    @property
-    def remote(self):
-        return self.engine.dialect.name != 'sqlite'
-
-    @property
-    def persistent(self):
-        return self.engine.url != 'sqlite:///:memory:'
-
     def __init__(self, engine, tablename, primary_key='', schema=None):
         if isinstance(engine, _strtypes):
-            engine = sql.create_engine(engine)
+            engine = sa.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
-        self.dbtype = engine.url.drivername
-        metadata = sql.MetaData()
+        metadata = sa.MetaData()
 
         if engine.has_table(tablename):
             metadata.reflect(engine)
             table = metadata.tables[tablename]
             engine_schema = discover(table).subshape[0]
-            # if schema and dshape(schema) != engine_schema:
-                # raise ValueError("Mismatched schemas:\n"
-                #                 "\tIn database: %s\n"
-                #                 "\nGiven: %s" % (engine_schema, schema))
+
             if not schema:
                 schema = engine_schema
+
         elif isinstance(schema, (_strtypes, datashape.DataShape)):
             columns = dshape_to_alchemy(schema)
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-            table = sql.Table(tablename, metadata, *columns)
+            table = sa.Table(tablename, metadata, *columns)
         else:
             raise ValueError('Must provide schema or point to valid table. '
                              'Table %s does not exist' % tablename)
@@ -215,7 +207,7 @@ class SQL(DataDescriptor):
 
     def _iter(self):
         with self.engine.connect() as conn:
-            result = conn.execute(sql.sql.select([self.table]))
+            result = conn.execute(sa.sql.select([self.table]))
             for item in result:
                 yield item
 
@@ -253,7 +245,7 @@ class SQL(DataDescriptor):
         if not isinstance(key, tuple):
             key = (key, slice(0, None))
         if ((len(key) != 2 and not isinstance(key[0], (_inttypes, slice, _strtypes)))
-            or (isinstance(key[0], _inttypes) and key[0] != 0)):
+                or (isinstance(key[0], _inttypes) and key[0] != 0)):
             raise ValueError("Limited indexing supported for SQL")
         rows, cols = key
         transform = lambda x: x
@@ -276,7 +268,7 @@ class SQL(DataDescriptor):
                        else getattr(self.table.c, self.schema[0].names[x])
                        for x in cols]
 
-        query = sql.sql.select(columns).limit(rows.stop)
+        query = sa.sql.select(columns).limit(rows.stop)
         result = self._query(query, transform)
 
         if single_item:
@@ -284,29 +276,29 @@ class SQL(DataDescriptor):
         else:
             return result
 
+
 @dispatch(SQL, CSV)
 def into(sql, csv, if_exists="replace", **kwargs):
     """
     Parameters
     ----------
-    if_exists : string
-        {replace, append, fail}
-    FORMAT : string
-         Data Format
-         text, csv, binary default: CSV
-    DELIMITER : string
+    if_exists : str, optional, {replace, append, fail}
+        The behavior defining what happens when a table exists.
+    format_str : string, optional, {text, csv}
+         The data format.
+    delimiter : string
         Delimiter character
-    NULL :
-        Null character
-        Default: '' (empty string)
-    HEADER : bool
+    header : bool, optional
         Flag to define file contains a header (only to be used with CSV)
-    QUOTE : string
-        Single byte quote:  Default is double-quote. ex: "1997","Ford","E350")
-    ESCAPE : string
-        A single one-byte character for defining escape characters. Default is the same as the QUOTE
-    ENCODING :
-        An encoding name (POSTGRES): utf8, latin-1, ascii.  Default: UTF8
+    quotechar : str, optional
+        Single byte quote. For example, "1997","Ford","E350".
+    escapechar : str, optional
+        A single one-byte character for defining escape characters.
+    encoding : str, optional
+        An encoding name (POSTGRES): utf8, latin-1, ascii.
+    na_value : str, optional
+        String to use to indicate NULL values
+
 
     ##NOT IMPLEMENTED
     # FORCE_QUOTE { ( column_name [, ...] ) | * }
@@ -315,145 +307,147 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #     Specifies copying the OID for each row
 
     """
-    dbtype = sql.engine.url.drivername
+    dbtype = getattr(sql, 'dbtype', sql.engine.name)
     db = sql.engine.url.database
-    engine = sql.engine
     abspath = csv._abspath
     tblname = sql.tablename
 
-    # using dialect mappings to support multiple term mapping for similar concepts
+    # using dialect mappings to support multiple term mapping for similar
+    # concepts
     from .dialect_mappings import dialect_terms
 
     def retrieve_kwarg(term):
         terms = [k for k, v in dialect_terms.items() if v == term]
         for t in terms:
-            val = kwargs.get(t, None)
+            val = kwargs.get(t)
             if val:
                 return val
-        return val
 
     for k in kwargs.keys():
-        try:
-            dialect_terms[k]
-        except KeyError:
-            raise KeyError(k, " not found in dialect mapping")
+        if k not in dialect_terms:
+            raise KeyError('%s not found in dialect mapping' % k)
 
     format_str = retrieve_kwarg('format_str') or 'csv'
-    encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
+    encoding = retrieve_kwarg('encoding') or 'utf8' if dbtype == 'mysql' else 'latin1'
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
-    na_value = retrieve_kwarg('na_value') or ""
+    na_value = retrieve_kwarg('na_value') or ''
     quotechar = retrieve_kwarg('quotechar') or '"'
     escapechar = retrieve_kwarg('escapechar') or quotechar
     header = retrieve_kwarg('header') or csv.header
-    lineterminator = retrieve_kwarg('lineterminator') or u'\r\n'
+    lineterminator = retrieve_kwarg('lineterminator') or os.linesep
 
-    skiprows = csv.header or 0 # None or 0 returns 0
-    skiprows = retrieve_kwarg('skiprows') or int(skiprows) #hack to skip 0 or 1
-
+    skiprows = csv.header or 0  # None or 0 returns 0
+    skiprows = retrieve_kwarg('skiprows') or int(skiprows)
     mysql_local = retrieve_kwarg('local') or ''
 
     copy_info = {'abspath': abspath,
                  'tblname': tblname,
                  'db': db,
                  'format_str': format_str,
-                 'delimiter':delimiter,
+                 'delimiter': delimiter,
                  'na_value': na_value,
                  'quotechar': quotechar,
                  'escapechar': escapechar,
-                 'lineterminator': lineterminator,
+                 'lineterminator': raw(lineterminator),
                  'skiprows': skiprows,
                  'header': header,
                  'encoding': encoding,
                  'mysql_local': mysql_local}
 
-    if if_exists == 'replace':
-        if engine.has_table(tblname):
-
-            # drop old table
-            metadata = sqlalchemy.MetaData()
-            metadata.reflect(engine, only=[tblname])
-            t = metadata.tables[tblname]
-            t.drop(engine)
-
-            # create a new one
-            sql.table.create(engine)
+    return sql.into(csv, **merge(kwargs, copy_info, dict(if_exists=if_exists)))
 
 
-    if dbtype == 'postgresql':
-        import psycopg2
+class SQLIntoMixin(object):
+
+    def pre_into(self, if_exists='replace', **kwargs):
+        engine = self.engine
+        tblname = self.tablename
+
+        if if_exists == 'replace':
+            if engine.has_table(tblname):
+
+                # drop old table
+                metadata = sqlalchemy.MetaData()
+                metadata.reflect(engine, only=[tblname])
+                t = metadata.tables[tblname]
+                t.drop(engine)
+
+                # create a new one
+                self.table.create(engine)
+        return kwargs
+
+    def into(self, b, **kwargs):
+        self.pre_into(**kwargs)
+        return self._into(b, **kwargs)
+
+
+EXTEND_CODES = set([1083,  # field separator argument is not what is expected
+                    ])
+
+
+class MySQL(SQL, SQLIntoMixin):
+    dbtype = 'mysql'
+
+    def _into(self, b, **kwargs):
+        # no null handling
+        sql_stmnt = """
+                    LOAD DATA {mysql_local} INFILE '{abspath}'
+                    INTO TABLE {tblname}
+                    CHARACTER SET {encoding}
+                    FIELDS
+                        TERMINATED BY '{delimiter}'
+                        ENCLOSED BY '{quotechar}'
+                        ESCAPED BY '{escapechar}'
+                    LINES TERMINATED by '{lineterminator}'
+                    IGNORE {skiprows} LINES;"""
+        sql_stmnt = sql_stmnt.format(**kwargs)
+
         try:
-            conn = sql.engine.raw_connection()
-            cursor = conn.cursor()
+            with self.engine.begin() as conn:
+                conn.execute(sql_stmnt)
+        except sa.exc.InternalError as e:
+            code, _ = e.orig.args
+            if code in EXTEND_CODES:
+                self.extend(b)
+            else:
+                raise e
 
-            #lots of options here to handle formatting
+        return self
 
-            sql_stmnt = """
-                        COPY {tblname} FROM '{abspath}'
-                        (FORMAT {format_str}, DELIMITER E'{delimiter}',
-                        NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
-                        HEADER {header}, ENCODING '{encoding}');
-                        """
-            sql_stmnt = sql_stmnt.format(**copy_info)
-            cursor.execute(sql_stmnt)
-            conn.commit()
 
-        #not sure about failures yet
-        except psycopg2.NotSupportedError as e:
-            print("Failed to use POSTGRESQL COPY.\nERR MSG: ", e)
-            print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+class PostGreSQL(SQL, SQLIntoMixin):
+    dbtype = 'postgresql'
 
-    #only works on OSX/Unix
-    elif dbtype == 'sqlite':
-        import subprocess
-        if sys.platform == 'win32' or db == ":memory:":
-            print("Windows native sqlite copy is not supported")
-            print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+    def _into(self, b, **kwargs):
+        sql_stmnt = """
+                    COPY {tblname} FROM '{abspath}'
+                    (FORMAT {format_str}, DELIMITER E'{delimiter}',
+                    NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
+                    HEADER {header}, ENCODING '{encoding}');"""
+        sql_stmnt = sql_stmnt.format(**kwargs)
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(sql_stmnt)
+        except sa.exc.NotSupportedError:
+            self.extend(b)
+        return self
+
+
+class SQLite(SQL, SQLIntoMixin):
+    dbtype = 'sqlite'
+
+    def _into(self, b, **kwargs):
+        if sys.platform == 'win32' or kwargs.get('db') == ':memory:':
+            self.extend(b)
         else:
-            #only to be used when table isn't already created?
+            # only to be used when table isn't already created?
             # cmd = """
             #     echo 'create table {tblname}
             #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
             #     """
 
-            copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
-            copy_cmd = copy_cmd.format(**copy_info)
-
-            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-            output = ps.stdout.read()
-
-    elif dbtype == 'mysql':
-        import MySQLdb
-        try:
-            conn = sql.engine.raw_connection()
-            cursor = conn.cursor()
-
-            #no null handling
-            sql_stmnt = u"""
-                        LOAD DATA {mysql_local} INFILE '{abspath}'
-                        INTO TABLE {tblname}
-                        CHARACTER SET {encoding}
-                        FIELDS
-                            TERMINATED BY '{delimiter}'
-                            ENCLOSED BY '{quotechar}'
-                            ESCAPED BY '{escapechar}'
-                        LINES TERMINATED by '{lineterminator}'
-                        IGNORE {skiprows} LINES;
-                        """
-            sql_stmnt = sql_stmnt.format(**copy_info)
-            cursor.execute(sql_stmnt)
-            conn.commit()
-
-        #not sure about failures yet
-        except MySQLdb.OperationalError as e:
-            print("Failed to use MySQL LOAD.\nERR MSG: ", e)
-            print("Defaulting to sql.extend() method")
-            sql.extend(csv)
-
-    else:
-        print("Warning! Could not find native copy call")
-        print("Defaulting to sql.extend() method")
-        sql.extend(csv)
-
-    return sql
+            cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
+            cmd = cmd.format(**kwargs)
+            subprocess.Popen(cmd, shell=os.name != 'nt',
+                             stdout=subprocess.PIPE).wait()
+        return self
