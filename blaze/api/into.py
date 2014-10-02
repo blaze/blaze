@@ -21,7 +21,7 @@ from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
 from .. import expr
-from ..expr import Expr, Projection, TableSymbol, iscolumn
+from ..expr import Expr, Projection, TableSymbol
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes, map
@@ -889,7 +889,7 @@ def into(a, b, **kwargs):
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
         kwargs.setdefault('names', b.names)
-        kwargs.setdefault('squeeze', iscolumn(b))
+        kwargs.setdefault('squeeze', False)
         return into(a, b.child.data, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once

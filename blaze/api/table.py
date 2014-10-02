@@ -3,12 +3,13 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
     to_numpy_dtype, isdimension, var)
+from datashape.predicates import iscollection, isunit
 from pandas import DataFrame, Series
 import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr import TableSymbol, Expr, TableExpr, isscalar, iscolumn
+from ..expr import TableSymbol, Expr, TableExpr, isscalar
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -52,10 +53,10 @@ class Table(TableSymbol):
     0    Bob
     1  Edith
     """
-    __slots__ = 'data', 'dshape', '_name', 'iscolumn'
+    __slots__ = 'data', 'dshape', '_name'
 
     def __init__(self, data, dshape=None, name=None, columns=None,
-            iscolumn=False, schema=None):
+            schema=None):
         if isinstance(data, str):
             data = resource(data)
         if schema and dshape:
@@ -100,14 +101,13 @@ class Table(TableSymbol):
                              type(self).__name__, self.schema))
 
         self._name = name or next(names)
-        self.iscolumn = iscolumn
 
     def resources(self):
         return {self: self.data}
 
     @property
     def args(self):
-        return (id(self.data), self.dshape, self._name, iscolumn(self))
+        return (id(self.data), self.dshape, self._name)
 
     def __setstate__(self, state):
         for slot, arg in zip(self.__slots__, state):
@@ -141,7 +141,7 @@ def concrete_head(expr, n=10):
 
         if expr.names:
             return into(DataFrame(columns=expr.names), result)
-        elif iscolumn(expr):
+        elif iscollection(expr.dshape) and isunit(expr.dshape.measure):
             return into(DataFrame(columns=[expr._name]), result)
     else:
         return compute(expr)
@@ -192,7 +192,7 @@ def into(a, b):
 @dispatch(np.ndarray, Expr)
 def into(a, b):
     schema = dshape(str(b.schema).replace('?', ''))
-    if iscolumn(b):
+    if iscollection(b.dshape) and isunit(b.dshape.measure):
         return into(np.ndarray(0), compute(b),
                 dtype=to_numpy_dtype(schema[0].types[0]))
     else:

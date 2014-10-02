@@ -123,7 +123,6 @@ def test_serialization():
 
     assert t.schema == t2.schema
     assert t._name == t2._name
-    assert t.iscolumn == t2.iscolumn
 
 
 def test_table_resource():
