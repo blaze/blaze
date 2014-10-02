@@ -53,7 +53,7 @@ except ImportError:
 
 import fnmatch
 from datashape import Record, Tuple
-from datashape.predicates import isunit
+from datashape.predicates import isscalar
 from toolz import pluck, first, get
 import toolz
 
@@ -320,14 +320,14 @@ def post_compute(e, q, d):
 
     if not e.dshape.shape:  # not a collection
         result = q.coll.aggregate(list(q.query))['result'][0]
-        if isunit(e.dshape.measure):
+        if isscalar(e.dshape.measure):
             return result[e._name]
         else:
             return get(e.fields, result)
 
     dicts = q.coll.aggregate(list(q.query))['result']
 
-    if isunit(e.dshape.measure):
+    if isscalar(e.dshape.measure):
         return list(pluck(e.fields[0], dicts, default=None))  # dicts -> values
     else:
         return list(pluck(e.fields, dicts, default=None))  # dicts -> tuples

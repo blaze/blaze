@@ -1,13 +1,10 @@
 import datashape
 from datashape import dshape, DataShape, Option, Unit
-from datashape.predicates import isunit
+from datashape.predicates import isscalar
 
 
 def istabular(expr):
     return datashape.istabular(expr.dshape)
 
-def isscalar(expr):
-    return datashape.isscalar(expr.dshape)
-
 def iscolumn(expr):
-    return len(expr.dshape.shape) == 1 and isunit(expr.dshape.measure)
+    return len(expr.dshape.shape) == 1 and isscalar(expr.dshape.measure)

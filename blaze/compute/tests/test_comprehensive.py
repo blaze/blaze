@@ -4,7 +4,8 @@ import numpy as np
 from pandas import DataFrame
 import numpy as np
 import bcolz
-from blaze.expr import TableSymbol, by, istabular, iscolumn, isscalar
+from datashape.predicates import isscalar, iscollection
+from blaze.expr import TableSymbol, by, istabular, iscolumn
 from blaze.api.into import into
 from blaze.api.table import Table
 from blaze.compute import compute
@@ -17,10 +18,10 @@ sources = []
 t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
-     [200, 2, 'Bob'],
-     [300, 3, 'Charlie'],
-     [400, 4, 'Dan'],
-     [500, 5, 'Edith']]
+        [200, 2, 'Bob'],
+        [300, 3, 'Charlie'],
+        [400, 4, 'Dan'],
+        [500, 5, 'Edith']]
 
 df = DataFrame(L, columns=['amount', 'id', 'name'])
 
@@ -102,12 +103,12 @@ def test_base():
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
             T = Table(source)
-            if isscalar(expr):
-                result = compute(expr.subs({t: T}))
-                assert result == model
-            else:
+            if iscollection(expr.dshape):
                 result = into(model, expr.subs({t: T}))
-                if iscolumn(expr):
+                if isscalar(expr.dshape.measure):
                     assert set(into([], result)) == set(into([], model))
                 else:
                     assert df_eq(result, model)
+            else:
+                result = compute(expr.subs({t: T}))
+                assert result == model

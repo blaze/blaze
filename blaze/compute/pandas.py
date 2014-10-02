@@ -24,7 +24,7 @@ import numpy as np
 from collections import defaultdict
 from toolz import merge as merge_dicts
 import fnmatch
-from datashape.predicates import isunit
+from datashape.predicates import isscalar
 
 from ..api.into import into
 from ..dispatch import dispatch
@@ -204,7 +204,7 @@ def compute_by(t, r, g, df):
     group_df = concat_nodup(df, preapply)
 
     gb = group_df.groupby(g)
-    groups = gb[names[0] if isunit(t.apply.child.dshape.measure) else names]
+    groups = gb[names[0] if isscalar(t.apply.child.dshape.measure) else names]
 
     return compute_up(r, groups)  # do reduction
 

@@ -25,7 +25,7 @@ import toolz
 import sys
 import math
 from datashape import Record, Tuple
-from datashape.predicates import isunit
+from datashape.predicates import isscalar
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
@@ -118,7 +118,7 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if isunit(t.child.dshape.measure):
+    if isscalar(t.child.dshape.measure):
         return t.func
     else:
         return partial(apply, t.func)
@@ -361,11 +361,11 @@ def compute_up(t, seq, **kwargs):
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
-    if isunit(t.grouper.dshape.measure):
+    if isscalar(t.grouper.dshape.measure):
         keyfunc = lambda x: (x,)
     else:
         keyfunc = identity
-    if isunit(t.apply.dshape.measure):
+    if isscalar(t.apply.dshape.measure):
         valfunc = lambda x: (x,)
     else:
         valfunc = identity

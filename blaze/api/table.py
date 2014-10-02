@@ -3,13 +3,13 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
     to_numpy_dtype, isdimension, var)
-from datashape.predicates import iscollection, isunit
+from datashape.predicates import iscollection, isscalar
 from pandas import DataFrame, Series
 import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr import TableSymbol, Expr, TableExpr, isscalar
+from ..expr import TableSymbol, Expr, TableExpr
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -132,7 +132,7 @@ def concrete_head(expr, n=10):
     """ Return head of computed expression """
     if not expr.resources():
         raise ValueError("Expression does not contain data resources")
-    if not isscalar(expr):
+    if iscollection(expr.dshape):
         head = expr.head(n + 1)
         result = compute(head)
 
@@ -141,7 +141,7 @@ def concrete_head(expr, n=10):
 
         if expr.fields:
             return into(DataFrame(columns=expr.fields), result)
-        elif iscollection(expr.dshape) and isunit(expr.dshape.measure):
+        elif isscalar(expr.dshape.measure):
             return into(DataFrame(columns=[expr._name]), result)
     else:
         return compute(expr)
@@ -192,7 +192,7 @@ def into(a, b):
 @dispatch(np.ndarray, Expr)
 def into(a, b):
     schema = dshape(str(b.schema).replace('?', ''))
-    if iscollection(b.dshape) and isunit(b.dshape.measure):
+    if iscollection(b.dshape) and isscalar(b.dshape.measure):
         return into(np.ndarray(0), compute(b),
                 dtype=to_numpy_dtype(schema[0].types[0]))
     else:

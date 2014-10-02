@@ -11,7 +11,7 @@ import datashape
 import toolz
 from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
-from datashape.predicates import isunit, iscollection
+from datashape.predicates import isscalar, iscollection
 import numpy as np
 from . import scalar
 from .core import (Expr, path, common_subexpression)
@@ -684,7 +684,7 @@ class ReLabel(ElemWise):
 def relabel(child, labels):
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
-    if isunit(child.dshape.measure):
+    if isscalar(child.dshape.measure):
         if child._name == labels[0][0]:
             return child.label(labels[0][1])
         else:
@@ -818,7 +818,7 @@ class Merge(ElemWise):
     def get_field(self, key):
         for child in self.children:
             if key in child.fields:
-                if isunit(child.dshape.measure):
+                if isscalar(child.dshape.measure):
                     return child
                 else:
                     return child[key]
@@ -916,7 +916,7 @@ def isboolean(ds):
     return ds == bool_
 
 
-from datashape.predicates import iscollection, isunit, isrecord
+from datashape.predicates import iscollection, isscalar, isrecord
 from datashape import Unit, Record, to_numpy_dtype, bool_
 from .expr import schema_method_list, dshape_method_list
 from .expr import isnan
@@ -924,7 +924,7 @@ from .expr import isnan
 schema_method_list.extend([
     (isboolean, set([any, all])),
     (isnumeric, set([mean, isnan, sum, mean, min, max, std, var])),
-    (isunit, set([label, relabel])),
+    (isscalar, set([label, relabel])),
     (isrecord, set([relabel])),
     ])
 

@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import toolz
 from toolz import pipe
 import itertools
-from datashape import discover, Unit, Tuple, Record, iscollection, isunit
+from datashape import discover, Unit, Tuple, Record, iscollection, isscalar
 import sqlalchemy as sa
 
 from ..data.sql import dshape_to_alchemy
@@ -121,7 +121,7 @@ def sql_string(query):
 @dispatch(Expr, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
     result = query.context.sql(sql_string(query.query))
-    if iscollection(expr.dshape) and not isunit(expr.dshape.measure):
+    if iscollection(expr.dshape) and not isscalar(expr.dshape.measure):
         result = result.map(lambda x: x[0])
     return result
 
@@ -129,6 +129,6 @@ def post_compute(expr, query, d):
 @dispatch(Head, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
     result = query.context.sql(sql_string(query.query))
-    if iscollection(expr.dshape) and not isunit(expr.dshape.measure):
+    if iscollection(expr.dshape) and not isscalar(expr.dshape.measure):
         result = result.map(lambda x: x[0])
     return result.collect()

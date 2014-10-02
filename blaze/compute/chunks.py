@@ -30,7 +30,7 @@ from collections import Iterator
 from toolz import concat, first
 from cytoolz import unique
 from datashape import var, isdimension
-from datashape.predicates import isunit
+from datashape.predicates import isscalar
 import pandas as pd
 
 from ..dispatch import dispatch
@@ -187,7 +187,7 @@ def compute_up(expr, c, **kwargs):
     t = TableSymbol('_chunk', perchunk.schema)
 
     apply_cols = expr.apply.fields
-    if isunit(expr.apply.child.dshape.measure):
+    if isscalar(expr.apply.child.dshape.measure):
         apply_cols = apply_cols[0]
 
     group = by(t[expr.grouper.fields],

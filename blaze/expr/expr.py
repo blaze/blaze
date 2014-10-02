@@ -16,7 +16,7 @@ from .core import Expr, common_subexpression, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from datashape.predicates import isunit, iscollection
+from datashape.predicates import isscalar, iscollection
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
@@ -96,7 +96,7 @@ class Collection(Expr):
             if key[0] == '_':
                 raise
             if self.fields and key in self.fields:
-                if isunit(self.dshape.measure): # t.foo.foo is t.foo
+                if isscalar(self.dshape.measure): # t.foo.foo is t.foo
                     return self
                 else:
                     return self[key]
@@ -114,9 +114,9 @@ class Collection(Expr):
     def __eq__(self, other):
         if self.isidentical(other) is True:
             return True
-        if (isunit(self.dshape.measure) and
+        if (isscalar(self.dshape.measure) and
                 (not isinstance(other, Expr)
-                     or isunit(other.dshape.measure))):
+                     or isscalar(other.dshape.measure))):
             return broadcast(Eq, self, other)
         else:
             return self.isidentical(other)
@@ -594,7 +594,7 @@ class Map(ElemWise):
                     "t['columnname'].map(function, schema='{col: type}')")
 
     def label(self, name):
-        assert isunit(self.dshape.measure)
+        assert isscalar(self.dshape.measure)
         return Map(self.child,
                    self.func,
                    self.schema,

@@ -152,11 +152,11 @@ def compute_up(t, rdd, **kwargs):
                                                 for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
 
-        if isunit(t.grouper.dshape.measure):
+        if isscalar(t.grouper.dshape.measure):
             keyfunc = lambda x: (x,)
         else:
             keyfunc = identity
-        if isunit(t.apply.dshape.measure):
+        if isscalar(t.apply.dshape.measure):
             valfunc = lambda x: (x,)
         else:
             valfunc = identity
