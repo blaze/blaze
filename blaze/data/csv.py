@@ -41,8 +41,9 @@ assert read_csv_kwargs
 to_csv_kwargs = set(keywords(pd.core.format.CSVFormatter.__init__))
 assert to_csv_kwargs
 
+DEFAULT_ENCODING = 'utf-8'
 
-def has_header(sample, encoding=sys.getdefaultencoding()):
+def has_header(sample, encoding=DEFAULT_ENCODING):
     """Check whether a piece of sample text from a file has a header
 
     Parameters
@@ -244,7 +245,7 @@ class CSV(DataDescriptor):
     def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
                  typehints=None, dialect=None, header=None, open=open,
                  nrows_discovery=50, chunksize=1024,
-                 encoding=sys.getdefaultencoding(), **kwargs):
+                 encoding=DEFAULT_ENCODING, **kwargs):
         if 'r' in mode and not os.path.isfile(path):
             raise ValueError('CSV file "%s" does not exist' % path)
 
