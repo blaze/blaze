@@ -192,3 +192,11 @@ def example(filename, datapath=os.path.join('examples', 'data')):
     import blaze
     return os.path.join(os.path.dirname(blaze.__file__), os.pardir, datapath,
                         filename)
+
+
+@contextmanager
+def chmod(f, flags):
+    mode = os.stat(f).st_mode
+    os.chmod(f, flags)
+    yield f
+    os.chmod(f, mode)
