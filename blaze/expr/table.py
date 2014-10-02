@@ -31,7 +31,7 @@ from .expr import (sqrt, sin, cos, tan, sinh, cosh, tanh, acos, acosh, asin,
         ceil, floor, trunc, isnan, Map)
 
 __all__ = '''
-TableExpr TableSymbol RowWise Projection Column Selection Broadcast Join
+TableExpr TableSymbol RowWise Projection Selection Broadcast Join
 Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
@@ -208,49 +208,6 @@ class ColumnSyntaxMixin(object):
 
     def __invert__(self):
         return broadcast(Not, self)
-
-
-class Column(ColumnSyntaxMixin, Field, TableExpr):
-    """ A single column from a table
-
-    SELECT a
-    FROM table
-
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
-    >>> accounts['name'].schema
-    dshape("string")
-
-    See Also
-    --------
-
-    blaze.expr.table.Projection
-    """
-    __slots__ = 'child', '_name'
-
-    __hash__ = Expr.__hash__
-
-    @property
-    def names(self):
-        return [self._name]
-
-    def __str__(self):
-        return "%s['%s']" % (self.child, self.names[0])
-
-    @property
-    def expr(self):
-        return ScalarSymbol(self._name, dtype=self.dtype)
-
-    def get_field(self, key):
-        if key == self._name:
-            return self
-        else:
-            raise ValueError("Column Mismatch: %s" % key)
-
-    @property
-    def schema(self):
-        return dshape(self.child.schema[0].dict[self._name])
-
 
 
 def unpack(l):

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from blaze.expr import Reduction, Column, Projection, Broadcast, Selection
+from blaze.expr import Reduction, Field, Projection, Broadcast, Selection
 from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
 from blaze.expr import std, var, count, nunique
 from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
@@ -15,7 +15,7 @@ from pandas import DataFrame, Series
 __all__ = ['np']
 
 
-@dispatch(Column, np.ndarray)
+@dispatch(Field, np.ndarray)
 def compute_up(c, x, **kwargs):
     if x.dtype.names and c._name in x.dtype.names:
         return x[c._name]

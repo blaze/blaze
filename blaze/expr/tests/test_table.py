@@ -9,7 +9,7 @@ from functools import partial
 from datetime import datetime
 import datashape
 from blaze import CSV, Table
-from blaze.expr import (TableSymbol, projection, Column, selection, Broadcast,
+from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, union, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,

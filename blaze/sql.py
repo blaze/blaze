@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .compute.sql import select
 from .data.sql import SQL, dispatch, first
-from .expr import Expr, Projection, Column, UnaryOp, BinOp, Join, iscolumn
+from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join, iscolumn
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
 from .api.resource import resource
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 __all__ = ['compute_up', 'SQL']
 
 
-@dispatch((Column, Projection, Expr, UnaryOp), SQL)
+@dispatch((Field, Projection, Expr, UnaryOp), SQL)
 def compute_up(t, ddesc, **kwargs):
     return compute_up(t, ddesc.table, **kwargs)
 
