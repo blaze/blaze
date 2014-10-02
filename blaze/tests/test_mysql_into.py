@@ -8,10 +8,9 @@ import sqlalchemy
 
 from blaze import CSV, resource
 from blaze.api.into import into
-from blaze.utils import filetext, assert_allclose, chmod
+from blaze.utils import filetext, assert_allclose, chmod, WORLD_READABLE
 from blaze.compatibility import xfail
 import os
-import stat
 import pandas as pd
 import datetime as dt
 import numpy as np
@@ -20,16 +19,6 @@ import getpass
 
 username = getpass.getuser()
 url = 'mysql+pymysql://{0}@localhost:3306/test'.format(username)
-
-
-WORLD_READABLE = stat.S_IWRITE | stat.S_IREAD | stat.S_IROTH | stat.S_IRGRP
-
-
-@pytest.yield_fixture
-def csv():
-    with filetext('1,2\n10,20\n100,200', '.csv') as f:
-        with chmod(f, flags=WORLD_READABLE) as g:
-            yield CSV(g, columns=list('ab'))
 
 
 @pytest.yield_fixture
