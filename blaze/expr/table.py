@@ -99,13 +99,6 @@ class TableSymbol(TableExpr, Symbol):
             dshape = datashape.var * dshape
         self.dshape = dshape
 
-    @property
-    def schema(self):
-        return self.dshape.subshape[0]
-
-    def get_field(self, fieldname):
-        return Field(self, fieldname)
-
 
 class ColumnSyntaxMixin(object):
     """ Syntax bits for table expressions of column shape """
