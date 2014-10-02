@@ -31,7 +31,7 @@ from .expr import (sqrt, sin, cos, tan, sinh, cosh, tanh, acos, acosh, asin,
         ceil, floor, trunc, isnan, Map)
 
 __all__ = '''
-TableExpr TableSymbol RowWise Projection Selection Broadcast Join
+TableExpr TableSymbol Projection Selection Broadcast Join
 Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
@@ -111,28 +111,6 @@ class TableSymbol(TableExpr, Symbol):
 
     def get_field(self, fieldname):
         return Field(self, fieldname)
-
-
-class RowWise(ElemWise, TableExpr):
-    """ Apply an operation equally to each of the rows.  An Interface.
-
-    Common rowwise operations include ``Map``, ``Broadcast``, ``Projection``,
-    and anything else that operates by applying some transformation evenly
-    across all rows in a table.
-
-    RowWise operations have the same number of rows as their children
-
-    See Also
-    --------
-
-    blaze.expr.table.Projection
-    blaze.expr.table.Broadcast
-    blaze.expr.table.
-    blaze.expr.table.
-    blaze.expr.table.
-    """
-    def _len(self):
-        return self.child._len()
 
 
 class ColumnSyntaxMixin(object):
@@ -688,7 +666,7 @@ def head(child, n=10):
 head.__doc__ = Head.__doc__
 
 
-class ReLabel(RowWise):
+class ReLabel(ElemWise):
     """
     Table with same content but with new labels
 
@@ -811,10 +789,10 @@ def schema_concat(exprs):
     return dshape(Record(list(zip(names, values))))
 
 
-class Merge(RowWise):
+class Merge(ElemWise):
     """ Merge the columns of many Tables together
 
-    Must all descend from same table via RowWise operations
+    Must all descend from same table via ElemWise operations
 
     Examples
     --------

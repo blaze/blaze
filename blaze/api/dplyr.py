@@ -17,7 +17,7 @@ def inject(t, ns=None):
     """
     if not ns:
         ns = inspect.currentframe().f_back.f_locals
-    for c in t.columns:
+    for c in t.names:
         ns[c] = t[c]
 
 
@@ -47,11 +47,11 @@ def transform(t, replace=True, **kwargs):
     """ Add named columns to table
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
-    >>> transform(t, xy=t.x + t.y).columns
+    >>> transform(t, xy=t.x + t.y).names
     ['x', 'y', 'xy']
     """
-    if replace and set(t.columns).intersection(set(kwargs)):
-        t = t[[c for c in t.columns if c not in kwargs]]
+    if replace and set(t.names).intersection(set(kwargs)):
+        t = t[[c for c in t.names if c not in kwargs]]
 
     args = [t] + [v.label(k) for k, v in kwargs.items()]
     return merge(*args)
@@ -67,7 +67,7 @@ class GroupBy(Expr):
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
     >>> g = group_by(t, t.x)
-    >>> summarize(g, total=t.y.sum()).columns
+    >>> summarize(g, total=t.y.sum()).names
     ['x', 'total']
     """
     __slots__ = ['child', 'grouper']

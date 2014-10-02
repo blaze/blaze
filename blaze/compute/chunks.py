@@ -22,7 +22,7 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 import itertools
-from ..expr import (TableSymbol, Head, Join, Selection, RowWise, By, Label,
+from ..expr import (TableSymbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
         nunique, iscolumn)
 from toolz import partition_all

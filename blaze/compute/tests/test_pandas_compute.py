@@ -324,7 +324,7 @@ def test_map_with_rename(tframe):
     t = Table(tframe)
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
-    assert renamed.columns == ['date']
+    assert renamed.names == ['date']
 
 
 @pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")

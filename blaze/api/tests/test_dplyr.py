@@ -22,16 +22,16 @@ def test_select():
 
 def test_mutate():
     expr = mutate(t, x = amount + id)
-    assert expr.columns == ['id', 'name', 'amount', 'x']
+    assert expr.names == ['id', 'name', 'amount', 'x']
 #     assert expr.x.isidentical(t.amount + t.id)
 
 
 def test_transform():
     expr = transform(t, x=amount + id)
-    assert expr.columns == ['id', 'name', 'amount', 'x']
+    assert expr.names == ['id', 'name', 'amount', 'x']
 
     expr = transform(t, amount=amount + 1)
-    assert expr.columns == ['id', 'name', 'amount']
+    assert expr.names == ['id', 'name', 'amount']
     assert (t['amount'] + 1) in expr.subterms()
     assert t[['id', 'name']] in expr.subterms()
 
@@ -40,11 +40,11 @@ def test_groupby():
     g = group_by(t, name)
     result = summarize(g, sum=amount.sum())
     assert isinstance(result, By)
-    assert result.columns == ['name', 'sum']
+    assert result.names == ['name', 'sum']
 
 
 def test_groupby_multicolumn():
     g = group_by(t, name, id)
     result = summarize(g, count=amount.count())
     assert isinstance(result, By)
-    assert result.columns == ['name', 'id', 'count']
+    assert result.names == ['name', 'id', 'count']
