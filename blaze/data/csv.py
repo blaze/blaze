@@ -383,9 +383,10 @@ class CSV(DataDescriptor):
 
     def _iter(self, usecols=None):
         from blaze.api.into import into
-        return concat(map(partial(into, list),
-                          self.pandas_read_csv(usecols=usecols,
-                                               chunksize=self.chunksize)))
+        dfs = self.pandas_read_csv(usecols=usecols,
+                                   chunksize=self.chunksize)
+        return concat(map(partial(into, list), dfs))
+
 
     __iter__ = _iter
 
