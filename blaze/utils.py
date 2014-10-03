@@ -105,10 +105,8 @@ def filetext(text, extension='', open=open, mode='wt'):
         try:
             f.write(text)
         finally:
-            try:
+            with suppress(AttributeError):
                 f.close()
-            except AttributeError:
-                pass
 
         yield filename
 
@@ -125,16 +123,15 @@ def filetexts(d, open=open, mode='wt'):
         try:
             f.write(text)
         finally:
-            try:
+            with suppress(AttributeError):
                 f.close()
-            except AttributeError:
-                pass
 
     yield list(d)
 
     for filename in d:
         if os.path.exists(filename):
-            os.remove(filename)
+            with suppress(OSError):
+                os.remove(filename)
 
 
 @contextmanager
@@ -150,10 +147,8 @@ def tmpfile(extension=''):
     except OSError:  # Sometimes Windows can't close files
         if os.name == 'nt':
             os.close(handle)
-            try:
+            with suppress(OSError):  # finally give up
                 os.remove(filename)
-            except OSError:  # finally give up
-                pass
 
 
 def raises(err, lamda):
@@ -192,3 +187,11 @@ def example(filename, datapath=os.path.join('examples', 'data')):
     import blaze
     return os.path.join(os.path.dirname(blaze.__file__), os.pardir, datapath,
                         filename)
+
+
+@contextmanager
+def suppress(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
