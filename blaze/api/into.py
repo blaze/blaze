@@ -5,7 +5,7 @@ from dynd import nd
 import datashape
 import sys
 from functools import partial
-from datashape import dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype, Option
 import toolz
 from toolz import concat, partition_all, first, merge
 from cytoolz import pluck
@@ -764,9 +764,10 @@ def into(coll, d, if_exists="replace", **kwargs):
     date_cols = []
     dshape = csv_dd.dshape
     for t, c in zip(dshape[1].types, dshape[1].names):
-        if hasattr(t, "ty"):
-            if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
-                date_cols.append((c, t.ty))
+        if isinstance(t, Option):
+            t = t.ty
+        if isinstance(t, (datashape.Date, datashape.DateTime)):
+            date_cols.append((c, t))
 
     for d_col, ty in date_cols:
         mongo_data = list(coll.find({}, {d_col: 1}))
