@@ -59,7 +59,7 @@ to NumPy arrays.
    >>> next(csv.chunks())
    nd.array([  [1, "Alice", 100],     [2, "Bob", 200], [3, "Charlie", 300],
                [4, "Denis", 400],   [5, "Edith", 500]],
-            type="5 * {id : ?int64, name : string, balance : ?int64}")
+            type="5 * {id : int64, name : string, balance : int64}")
 
 Insertion
 ---------
@@ -105,7 +105,7 @@ interfaces.
    >>> csv.dynd[2::, ['name', 'balance']]                   # doctest: +SKIP
    nd.array([ ["Charlie", 300],    ["Denis", 400],    ["Edith", 500],
                 ["Frank", 600], ["Georgina", 700]],
-            type="var * {name : string, balance : ?int64}")
+            type="var * {name : string, balance : int64}")
 
 Performance of this approach varies depending on the underlying storage system.
 For file-based storage systems like CSV and JSON we must seek through the file

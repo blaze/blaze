@@ -18,7 +18,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> from blaze import *
    >>> csv = CSV('examples/data/iris.csv')
    >>> csv.schema
-   dshape("{ sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }")
+   dshape("{ sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }")
    >>> Table(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -90,7 +90,7 @@ We can use standard command line tools to interact with this web service::
 
    {
      "data": 563.8000000000004,
-     "datashape": "{ petal_length_sum : ?float64 }",
+     "datashape": "{ petal_length_sum : float64 }",
      "name": "iris"
    }
 
@@ -122,7 +122,7 @@ First we repeat the same experiment as before, this time using the Python
 
    json.loads(r.content)
       {u'data': 563.8000000000004,
-       u'datashape': u'{ petal_length_sum : ?float64 }',
+       u'datashape': u'{ petal_length_sum : float64 }',
        u'name': u'iris'}
 
 Now we use Blaze to generate the query programmatically
@@ -132,7 +132,7 @@ Now we use Blaze to generate the query programmatically
    >>> from blaze import *
 
    >>> # Build a TableSymbol like our served iris data
-   >>> schema = "{ sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }"  # matching schema to csv file
+   >>> schema = "{ sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }"  # matching schema to csv file
    >>> t = TableSymbol('t', schema)
    >>> expr = t.petal_length.sum()
 
