@@ -508,7 +508,7 @@ def test_df_from_cds(cds):
 def test_datetime_csv_reader_same_as_into():
     csv = CSV(os.path.join(os.path.dirname(__file__),
                            'accounts.csv'))
-    rhs = csv.reader().dtypes
+    rhs = csv.pandas_read_csv().dtypes
     df = into(pd.DataFrame, csv)
     dtypes = df.dtypes
     expected = pd.Series([np.dtype(x) for x in
@@ -526,7 +526,8 @@ def test_into_DataFrame_concat():
     csv = CSV(os.path.join(os.path.dirname(__file__),
                            'accounts.csv'))
     df = into(pd.DataFrame, Concat([csv, csv]))
+    csv_df = csv.pandas_read_csv()
     assert df.index.tolist() == list(range(len(df)))
-    assert df.values.tolist() == (csv.reader().values.tolist() +
-                                  csv.reader().values.tolist())
-    assert df.columns.tolist() == csv.reader().columns.tolist()
+    assert df.values.tolist() == (csv_df.values.tolist() +
+                                  csv_df.values.tolist())
+    assert df.columns.tolist() == csv_df.columns.tolist()
