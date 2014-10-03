@@ -110,7 +110,7 @@ class TestResource(TestCase):
 
     def test_csv_glob(self):
         files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b\n5,6\n7,8'}
-        with filetexts(files):
+        with filetexts(files, mode='wb'):
             result = into(pd.DataFrame, resource('*.csv'))
             assert result.values.tolist() == [[1, 2], [3, 4], [5, 6], [7, 8]]
             assert result.columns.tolist() == list('ab')
@@ -119,12 +119,12 @@ class TestResource(TestCase):
     def test_csv_glob_bad(self):
         files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b'}
 
-        with filetexts(files):
-            with pytest.raises(pd.io.parsers._parser.CParserError):
+        with filetexts(files, mode='wb'):
+            with pytest.raises(StopIteration):
                 resource('*.csv')
 
-        with filetexts(files):
-            csvs = resource('*.csv', skip=pd.io.parsers._parser.CParserError)
+        with filetexts(files, mode='wb'):
+            csvs = resource('*.csv', skip_excs=StopIteration)
             result = into(pd.DataFrame, csvs)
             assert result.values.tolist() == [[1, 2], [3, 4]]
             assert result.columns.tolist() == list('ab')
