@@ -21,7 +21,9 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
+from blaze.expr import (TableSymbol, Head, Selection, Join, RowWise, Label,
+                        ReLabel, Distinct, By, nunique)
+from blaze.expr import count, mean, min, max, any, all, sum
 from toolz import partition_all
 from collections import Iterator, Iterable
 from toolz import concat, first
@@ -29,8 +31,10 @@ from cytoolz import unique
 from datashape import var, isdimension
 import pandas as pd
 from ..api.resource import resource
+from .core import compute
 from glob import glob
 from pandas import DataFrame
+import itertools
 import pandas
 
 
@@ -290,14 +294,14 @@ class ChunkList(ChunkIndexable):
 
 
 @resource.register('.*\*.*', priority=14)
-def resource_glob(uri, skip=None, **kwargs):
+def resource_glob(uri, skip_excs=None, **kwargs):
     """Get a list of resources that can be computed over.
 
     Parameters
     ----------
     uri : str
         A glob pattern describing the kind of resource to construct
-    skip : None or Exception, optional
+    skip_excs : None or Exception, optional
         An Exception instance indicating which exceptions should be caught when
         constructing individual resources.
     kwargs : dict
@@ -305,7 +309,7 @@ def resource_glob(uri, skip=None, **kwargs):
 
     Returns
     -------
-    lst : ChunkList
+    resources : ChunkList
         A list of resources
     """
     uris = sorted(glob(uri))
@@ -316,18 +320,20 @@ def resource_glob(uri, skip=None, **kwargs):
     if hasattr(first, 'schema'):
         kwargs['schema'] = first.schema
 
-    if skip is None:
+    if skip_excs is None:
         return ChunkList([resource(u, **kwargs) for u in uris])
 
-    assert all(isinstance(s, Exception) for s in
-               ([skip] if not isinstance(skip, Iterable) else skip)), \
-        'skip parameter must consist of subclasses of Exception'
+    if not all(isinstance(s, Exception)
+               for s in ([skip_excs]
+                         if not isinstance(skip_excs, Iterable) else skip_excs)):
+        raise TypeError('skip_excs parameter must consist of subclasses of '
+                        'Exception')
 
     resources = []
     for uri in uris:
         try:
             r = resource(uri, **kwargs)
-        except skip:
+        except skip_excs:
             pass
         else:
             resources.append(r)
