@@ -346,11 +346,10 @@ class CSV(DataDescriptor):
         """
         dtypes, dates = dshape_to_pandas(self.schema)
 
-        if usecols and builtins.all(isinstance(c, int) for c in usecols):
-            usecols = get(usecols, self.columns)
-
-        dates = [name for name in dates if name in usecols]
-
+        if usecols:
+            if builtins.all(isinstance(c, int) for c in usecols):
+                usecols = get(usecols, self.columns)
+            dates = [name for name in dates if name in usecols]
         result = pd.read_csv(self.path,
                              names=self.columns,
                              usecols=usecols,
@@ -359,8 +358,9 @@ class CSV(DataDescriptor):
                              encoding=self.encoding,
                              keep_default_na=False,
                              header=0 if self.header else None,
-                             **merge(clean_dialect(self.dialect),
-                                     kwargs))
+                             **keyfilter(lambda x: x != 'names',
+                                         merge(kwargs,
+                                               clean_dialect(self.dialect))))
 
         reorder = get(list(usecols)) if usecols and len(usecols) > 1 else identity
 

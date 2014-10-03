@@ -1,6 +1,6 @@
 import json
+import numpy as np
 import unittest
-from sqlalchemy import create_engine
 
 from blaze.data import CSV, JSON_Streaming, HDF5, SQL
 from blaze.api.into import into
@@ -11,7 +11,7 @@ class SingleTestClass(unittest.TestCase):
     def test_csv_json(self):
         with filetext('1,1\n2,2\n') as csv_fn:
             with filetext('') as json_fn:
-                schema = '2 * int'
+                schema = '{a: int32, b: int32}'
                 csv = CSV(csv_fn, schema=schema)
                 json = JSON_Streaming(json_fn, mode='r+', schema=schema)
 
@@ -39,7 +39,7 @@ class SingleTestClass(unittest.TestCase):
     def test_csv_json_chunked(self):
         with filetext('1,1\n2,2\n') as csv_fn:
             with filetext('') as json_fn:
-                schema = '2 * int'
+                schema = '{a: int32, b: int32}'
                 csv = CSV(csv_fn, schema=schema)
                 json = JSON_Streaming(json_fn, mode='r+', schema=schema)
 
@@ -68,11 +68,13 @@ class SingleTestClass(unittest.TestCase):
         with tmpfile('hdf5') as hdf5_fn:
             with filetext('') as csv_fn:
                 with h5py.File(hdf5_fn, 'w') as f:
-                    d = f.create_dataset('data', (3, 3), dtype='i8')
-                    d[:] = 1
+                    d = f.create_dataset('data', (3,),
+                                         dtype=np.dtype([(c, 'i4')
+                                                         for c in 'abc']))
+                    d[:] = np.array(1)
 
-                csv = CSV(csv_fn, mode='r+', schema='3 * int')
-                hdf5 = HDF5(hdf5_fn, '/data')
+                csv = CSV(csv_fn, mode='r+', schema='{a: int32, b: int32, c: int32}')
+                hdf5 = HDF5(hdf5_fn, '/data', schema=csv.schema)
 
                 into(csv, hdf5)
 
@@ -101,14 +103,14 @@ class SingleTestClass(unittest.TestCase):
                         assert 'Alice' in f.read()
 
     def test_csv_hdf5(self):
-        import h5py
         from dynd import nd
         with tmpfile('hdf5') as hdf5_fn:
             with filetext('1,1\n2,2\n') as csv_fn:
-                csv = CSV(csv_fn, schema='2 * int')
-                hdf5 = HDF5(hdf5_fn, '/data', schema='2 * int')
+                csv = CSV(csv_fn, schema='{a: int32, b: int32}')
+                hdf5 = HDF5(hdf5_fn, '/data', schema='{a: int32, b: int32}')
 
                 into(hdf5, csv)
 
                 self.assertEquals(nd.as_py(hdf5.as_dynd()),
-                                  [[1, 1], [2, 2]])
+                                  [{'a': 1, 'b': 1},
+                                   {'a': 2, 'b': 2}])

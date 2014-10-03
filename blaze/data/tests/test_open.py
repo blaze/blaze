@@ -15,7 +15,7 @@ is_py2_win = sys.platform == 'win32' and PY2
 @pytest.yield_fixture
 def rsrc():
     with tmpfile('.csv.gz') as filename:
-        f = gzip.open(filename, 'wt')
+        f = gzip.open(filename, 'wb')
         f.write('1,1\n2,2')
         f.close()
         yield filename
@@ -29,7 +29,7 @@ def test_gzopen_no_gzip_open(rsrc):
 
 @xfail(is_py2_win, reason='Win32 py2.7 unicode/gzip/eol needs sorting out')
 def test_gzopen_csv(rsrc):
-    dd = CSV(rsrc, schema='2 * int', open=partial(gzip.open, mode='rt'))
+    dd = CSV(rsrc, schema='{a: int32, b: int32}', open=partial(gzip.open, mode='rt'))
     assert tuplify(list(dd)) == ((1, 1), (2, 2))
 
 
