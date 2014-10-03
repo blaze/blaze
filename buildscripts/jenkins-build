@@ -61,6 +61,11 @@ pushd datashape
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
+# BColz needs unittest2 for Python 2.6
+if [ "${PYTHON_VERSION}" == "2.6" ]; then
+  pip install unittest2
+fi
+
 pip install multipledispatch || exit 1
 
 # Build/install Blaze

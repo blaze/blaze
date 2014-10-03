@@ -36,6 +36,9 @@ install:
   - conda install -n test-environment coverage
   - source activate test-environment
 
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
+
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 

@@ -41,6 +41,9 @@ pushd datashape
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
 
+REM bcolz needs unittest2
+IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2
+
 call pip install multipledispatch
 
 IF %ERRORLEVEL% NEQ 0 exit /b 1
