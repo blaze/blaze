@@ -16,7 +16,7 @@ is_py2_win = sys.platform == 'win32' and PY2
 def rsrc():
     with tmpfile('.csv.gz') as filename:
         f = gzip.open(filename, 'wb')
-        f.write('1,1\n2,2')
+        f.write(b'1,1\n2,2')
         f.close()
         yield filename
 
