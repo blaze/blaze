@@ -72,7 +72,8 @@ class TestResource(TestCase):
     @xfail(os.name.lower() not in ['posix'],
            reason='Windows is hard to please')
     def test_resource_gz(self):
-        with filetext('1,1\n2,2', extension='.csv.gz', open=gzip.open) as fn:
+        with filetext(b'1,1\n2,2\n', extension='.csv.gz', open=gzip.open,
+                      mode='wb') as fn:
             dd = resource(fn, schema='{x: int, y: int}')
             assert isinstance(dd, CSV)
             assert dd.open == gzip.open
@@ -96,9 +97,8 @@ class TestResource(TestCase):
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
             assert isinstance(resource(filename + '::/path/to/data/',
-                                       schema='2 * int'),
+                                       schema='{a: int, b: int}'),
                               HDF5)
-
 
 
 class TestInto(TestCase):
@@ -112,7 +112,7 @@ class TestInto(TestCase):
 
     def test_into_iterable(self):
         with tmpfile(extension='.csv') as fn:
-            A = CSV(fn, 'a', schema='2 * int')
+            A = CSV(fn, 'a', schema='{a: int, b: int}')
             data = [(1, 2), (3, 4)]
             A = into(A, data)
             assert list(map(tuple, A)) == list(data)

@@ -153,7 +153,7 @@ mapping a ``Selection`` to a ``DataFrame``:
 
 .. code-block:: python
 
-   >>> @dispatch(Selection, DataFrame)
+   >>> @dispatch(Selection, DataFrame)   # doctest: +SKIP
    ... def compute_up(t, df, **kwargs):
    ...     predicate = compute(t.predicate, df)
    ...     return df[predicate]
@@ -165,16 +165,16 @@ example here is a start of a backend for PyTables:
 
 .. code-block:: python
 
-   >>> @dispatch(Selection, tb.Table)
+   >>> @dispatch(Selection, tb.Table)    # doctest: +SKIP
    ... def compute_up(expr, data):
    ...     s = eval_str(expr.predicate)  # Produce string like 'amount < 0'
    ...     return data.read_where(s)     # Use PyTables read_where method
 
-   >>> @dispatch(Head, tb.Table)
+   >>> @dispatch(Head, tb.Table)         # doctest: +SKIP
    ... def compute_up(expr, data):
    ...     return data[:expr.n]          # PyTables supports standard indexing
 
-   >>> @dispatch(Column, tb.Table)
+   >>> @dispatch(Column, tb.Table)       # doctest: +SKIP
    ... def compute_up(expr, data):
    ...     return data.col(expr.column)  # Use the PyTables .col method
 

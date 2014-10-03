@@ -99,9 +99,9 @@ def ndget(ind, data):
 
 
 @contextmanager
-def filetext(text, extension='', open=open):
+def filetext(text, extension='', open=open, mode='wt'):
     with tmpfile(extension=extension) as filename:
-        f = open(filename, "wt")
+        f = open(filename, mode=mode)
         try:
             f.write(text)
         finally:

@@ -310,7 +310,7 @@ def test_DataFrame_CSV():
 def test_into_tables_path(good_csv, out_hdf5, out_hdf5_alt):
     import tables as tb
     tble = into(tb.Table, good_csv, filename=out_hdf5, datapath='/foo')
-    tble2 = into(tb.Table, good_csv, filename=out_hdf5_alt, datapath='/foo', 
+    tble2 = into(tb.Table, good_csv, filename=out_hdf5_alt, datapath='/foo',
         output_path=out_hdf5_alt)
     n = len(tble)
     x = len(tble2)
@@ -430,7 +430,7 @@ def test_into_cds_mixed():
     ddict = {'first': np.random.choice(list('abc'), size=n),
              'second': np.random.choice(['cachaça', 'tres leches', 'pizza'],
                                         size=n),
-             'third': np.random.rand(n) * 1000}
+             'third': list(range(n))}
     df = pd.DataFrame(ddict)
     with tmpfile('.csv') as fn:
         df.to_csv(fn, header=None, index=False, encoding='utf8')
@@ -439,13 +439,15 @@ def test_into_cds_mixed():
 
         cds = into(ColumnDataSource, t)
         assert isinstance(cds, ColumnDataSource)
-        assert cds.data == dict((k, into(list, csv[:, k]))
-                                for k in ['first', 'second', 'third'])
+        expected = dict((k, into(list, csv[:, k]))
+                        for k in ['first', 'second', 'third'])
+        assert cds.data == expected
 
         cds = into(ColumnDataSource, t[['first', 'second']])
         assert isinstance(cds, ColumnDataSource)
-        assert cds.data == dict((k, into(list, csv[:, k]))
-                                for k in ['first', 'second'])
+        expected = dict((k, into(list, csv[:, k]))
+                        for k in ['first', 'second'])
+        assert cds.data == expected
 
         cds = into(ColumnDataSource, t['first'])
         assert isinstance(cds, ColumnDataSource)
@@ -508,7 +510,22 @@ def test_df_from_cds(cds):
 def test_datetime_csv_reader_same_as_into():
     csv = CSV(os.path.join(os.path.dirname(__file__),
                            'accounts.csv'))
-    rhs = csv.reader().dtypes
+    rhs = csv.pandas_read_csv().dtypes
+    df = into(pd.DataFrame, csv)
+    dtypes = df.dtypes
+    expected = pd.Series([np.dtype(x) for x in
+                          ['i8', 'i8', 'O', 'datetime64[ns]']],
+                         index=csv.columns)
+    # make sure reader with no args does the same thing as into()
+    # Values the same
+    assert dtypes.index.tolist() == rhs.index.tolist()
+    assert dtypes.tolist() == rhs.tolist()
+
+@pytest.mark.xfail(reason="pandas reader uses float64 for ?int64")
+def test_datetime_csv_reader_same_as_into_types():
+    csv = CSV(os.path.join(os.path.dirname(__file__),
+                           'accounts.csv'))
+    rhs = csv.pandas_read_csv().dtypes
     df = into(pd.DataFrame, csv)
     dtypes = df.dtypes
     expected = pd.Series([np.dtype(x) for x in
@@ -517,16 +534,21 @@ def test_datetime_csv_reader_same_as_into():
     assert dtypes.index.tolist() == expected.index.tolist()
     assert dtypes.tolist() == expected.tolist()
 
-    # make sure reader with no args does the same thing as into()
-    assert dtypes.index.tolist() == rhs.index.tolist()
-    assert dtypes.tolist() == rhs.tolist()
 
 
 def test_into_DataFrame_concat():
     csv = CSV(os.path.join(os.path.dirname(__file__),
                            'accounts.csv'))
     df = into(pd.DataFrame, Concat([csv, csv]))
+    csv_df = csv.pandas_read_csv()
     assert df.index.tolist() == list(range(len(df)))
-    assert df.values.tolist() == (csv.reader().values.tolist() +
-                                  csv.reader().values.tolist())
-    assert df.columns.tolist() == csv.reader().columns.tolist()
+    assert df.values.tolist() == (csv_df.values.tolist() +
+                                  csv_df.values.tolist())
+    assert df.columns.tolist() == csv_df.columns.tolist()
+
+
+def test_into_list_Column():
+    with filetext('Alice,1\nBob,2') as fn:
+        csv = CSV(fn, columns=['name', 'id'])
+        t = Table(csv)
+        assert into(list, t.name) == ['Alice', 'Bob']

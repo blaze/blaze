@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from itertools import chain
 from dynd import nd
 from collections import Iterator
-from datashape import dshape, Record, DataShape
+from datashape import dshape, Record, DataShape, Mono
 from datashape.predicates import isdimension
 from toolz import partition_all, partial, map, compose, first
 from ..dispatch import dispatch
@@ -19,7 +19,7 @@ def validate(schema, item):
         return False
 
 
-@dispatch(DataShape, object)
+@dispatch((DataShape, Mono), object)
 def coerce(dshape, item):
     return coerce(str(dshape), item)
 

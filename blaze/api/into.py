@@ -5,7 +5,7 @@ from dynd import nd
 import datashape
 import sys
 from functools import partial
-from datashape import dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype, Option
 import toolz
 from toolz import concat, partition_all, first, merge
 from cytoolz import pluck
@@ -764,9 +764,10 @@ def into(coll, d, if_exists="replace", **kwargs):
     date_cols = []
     dshape = csv_dd.dshape
     for t, c in zip(dshape[1].types, dshape[1].names):
-        if hasattr(t, "ty"):
-            if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
-                date_cols.append((c, t.ty))
+        if isinstance(t, Option):
+            t = t.ty
+        if isinstance(t, (datashape.Date, datashape.DateTime)):
+            date_cols.append((c, t))
 
     for d_col, ty in date_cols:
         mongo_data = list(coll.find({}, {d_col: 1}))
@@ -842,11 +843,16 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
-
 @dispatch(ColumnDataSource, pd.Series)
 def into(a, b, **kwargs):
     return ColumnDataSource(data={b.name: b.tolist()})
 
+
+@dispatch((list, tuple, set), ColumnDataSource)
+def into(a, cds, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(zip(*cds.data.values()))
 
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
@@ -854,7 +860,7 @@ def into(a, b, **kwargs):
     kws = keywords(pd.read_csv)
     options = toolz.merge(b.dialect, kwargs)
     options = toolz.keyfilter(kws.__contains__, options)
-    return b.reader(**options)
+    return b.pandas_read_csv(chunksize=None, **options)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
@@ -871,7 +877,8 @@ def into(a, b, **kwargs):
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.columns)
+        kwargs.setdefault('names', b.child.columns)
+        kwargs.setdefault('usecols', b.columns)
         kwargs.setdefault('squeeze', b.iscolumn)
         return into(a, b.child.data, **kwargs)
     else:
@@ -943,7 +950,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
+@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor, Iterator))
 def into(a, b, **kwargs):
     a.extend(b)
     return a
