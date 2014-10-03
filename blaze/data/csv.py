@@ -9,21 +9,25 @@ from functools import partial
 from contextlib import contextmanager
 
 from multipledispatch import dispatch
-from cytoolz import partition_all, merge, keyfilter, compose, first
+from cytoolz import partition_all, merge, keyfilter, first, pluck
+from toolz import concat, get, compose, pipe, identity
+from toolz.curried import map, get
 
 import numpy as np
 import pandas as pd
 from datashape.discovery import discover, null, unpack
-from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
+from datashape import (dshape, Record, Option, Fixed, Unit, Tuple, string,
+        date_, datetime_)
 import datashape as ds
 
 import blaze as bz
+from .pandas_dtype import dshape_to_pandas
 from .core import DataDescriptor
 from ..api.resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
-from ..compatibility import SEEK_END
-from ..compatibility import map, zip, PY2
+from ..compatibility import SEEK_END, builtins, _strtypes, _inttypes
+from ..compatibility import zip, PY2
 from .utils import ordered_index, listpack
 
 import csv
@@ -32,11 +36,20 @@ __all__ = ['CSV', 'drop']
 
 
 numtypes = frozenset(ds.integral.types) | frozenset(ds.floating.types)
-na_values = frozenset(filter(None, pd.io.parsers._NA_VALUES))
+na_values = frozenset(pd.io.parsers._NA_VALUES)
 
 
 read_csv_kwargs = set(keywords(pd.read_csv))
 assert read_csv_kwargs
+
+def clean_dialect(dialect):
+    dialect = keyfilter(read_csv_kwargs.__contains__,
+                        dialect)
+    # handle windows
+    if dialect['lineterminator'] == '\r\n':
+        dialect['lineterminator'] = None
+
+    return dialect
 
 to_csv_kwargs = set(keywords(pd.core.format.CSVFormatter.__init__))
 assert to_csv_kwargs
@@ -255,7 +268,6 @@ class CSV(DataDescriptor):
         self.path = path
         self.mode = mode
         self.open = {'gz': gzip.open, 'bz2': bz2.BZ2File}.get(ext(path), open)
-        self.header = header
         self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
         self.encoding = encoding
@@ -268,33 +280,37 @@ class CSV(DataDescriptor):
         elif isinstance(header, int):
             dialect['header'] = header
             header = True
+        self.header = header
 
-        reader_dialect = keyfilter(read_csv_kwargs.__contains__, dialect)
         if not schema and 'w' not in mode:
+            df = pd.read_csv(path,
+                             dtype='O',
+                             encoding=encoding,
+                             chunksize=nrows_discovery,
+                             header=0 if self.header else None,
+                             **clean_dialect(dialect)).get_chunk()
             if not types:
-                data = self._reader(skiprows=1 if header else 0,
-                                    nrows=nrows_discovery, as_recarray=True,
-                                    index_col=False, header=0 if header else
-                                    None, **reader_dialect).tolist()
-                types = discover(data)
-                rowtype = types.subshape[0]
+                L = (df.fillna('')
+                        .to_records(index=False)
+                        .tolist())
+                rowtype = discover(L).subshape[0]
                 if isinstance(rowtype[0], Tuple):
-                    types = types.subshape[0][0].dshapes
+                    types = rowtype[0].dshapes
                     types = [unpack(t) for t in types]
                     types = [string if t == null else t for t in types]
-                    types = [t if isinstance(t, Option) or t == string
+                    types = [t
+                             if isinstance(t, Option)
+                                or t in (string, date_, datetime_)
                              else Option(t) for t in types]
                 elif (isinstance(rowtype[0], Fixed) and
-                        isinstance(rowtype[1], CType)):
+                        isinstance(rowtype[1], Unit)):
                     types = int(rowtype[0]) * [rowtype[1]]
                 else:
                     raise ValueError("Could not discover schema from data.\n"
                                      "Please specify schema.")
             if not columns:
                 if header:
-                    columns = first(self._reader(skiprows=0, nrows=1,
-                                                 header=None, **reader_dialect
-                                                 ).itertuples(index=False))
+                    columns = list(df.columns)
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
             if typehints:
@@ -305,60 +321,6 @@ class CSV(DataDescriptor):
         self._schema = schema
         self.header = header
 
-    def _get_reader(self, header=None, keep_default_na=False,
-                    na_values=na_values, chunksize=None, **kwargs):
-        kwargs.setdefault('skiprows', int(bool(self.header)))
-
-        dialect = merge(keyfilter(read_csv_kwargs.__contains__, self.dialect),
-                        kwargs)
-
-        # handle windows
-        if dialect['lineterminator'] == '\r\n':
-            dialect['lineterminator'] = None
-        return partial(pd.read_csv, chunksize=chunksize, na_values=na_values,
-                       keep_default_na=keep_default_na, encoding=self.encoding,
-                       header=header, **dialect)
-
-    def reader(self, *args, **kwargs):
-        names = kwargs.pop('names', self.columns)
-        usecols = kwargs.pop('usecols', [self.columns.index(name) for name in
-                                         names])
-
-        schema = self.schema
-        if '?' in str(schema):
-            schema = dshape(str(schema).replace('?', ''))
-
-        dtypes = dict((k, v.to_numpy_dtype())
-                      for k, v in schema[0].dict.items())
-
-        datenames = [name for name in dtypes if np.issubdtype(dtypes[name],
-                                                              np.datetime64)]
-
-        dtypes = dict((k, v) for k, v in dtypes.items()
-                      if not np.issubdtype(v, np.datetime64))
-
-        return self._reader(*args, names=names, usecols=usecols, dtype=dtypes,
-                            parse_dates=datenames,
-                            **kwargs)
-
-    def _reader(self, **kwargs):
-        if kwargs.setdefault('chunksize', None) is not None:
-            raise ValueError('reader is for in memory only, use '
-                             'CSV.iterreader() to read chunks')
-        reader = self._get_reader(**kwargs)
-        with csvopen(self) as f:
-            return reader(f)
-
-    def iterreader(self, **kwargs):
-        if kwargs.setdefault('chunksize', self.chunksize) is None:
-            raise ValueError('iterreader is for chunking only, for in memory '
-                             'reading use CSV.reader()')
-        reader = self._get_reader(**kwargs)
-
-        with csvopen(self) as f:
-            for chunk in reader(f):
-                yield chunk
-
     def get_py(self, key):
         return self._get_py(ordered_index(key, self.dshape))
 
@@ -366,15 +328,17 @@ class CSV(DataDescriptor):
         if isinstance(key, tuple):
             assert len(key) == 2
             rows, cols = key
-            usecols = ordered_index(cols, self.schema)
+            usecols = cols
             usecols = None if isinstance(usecols, slice) else listpack(usecols)
         else:
             rows = key
             usecols = None
 
-        reader = self._iter(usecols=usecols)
+        seq = self._iter(usecols=usecols)
+        if isinstance(key, tuple) and isinstance(cols, _strtypes + _inttypes):
+            seq = pluck(0, seq)
         if isinstance(rows, compatibility._inttypes):
-            line = nth(rows, reader)
+            line = nth(rows, seq)
             try:
                 return next(line).item()
             except TypeError:
@@ -383,86 +347,45 @@ class CSV(DataDescriptor):
                 except AttributeError:
                     return line
         elif isinstance(rows, list):
-            return nth_list(rows, reader)
+            return nth_list(rows, seq)
         elif isinstance(rows, slice):
-            return it.islice(reader, rows.start, rows.stop, rows.step)
+            return it.islice(seq, rows.start, rows.stop, rows.step)
         else:
             raise IndexError("key %r is not valid" % rows)
 
-    def get_streaming_dtype(self, dtype):
-        if not isinstance(self.schema.measure, Record):
-            return dtype
+    def pandas_read_csv(self, usecols=None, **kwargs):
+        dtypes, dates = dshape_to_pandas(self.schema)
 
-        names = dtype.names
-        types_names = ((i, t) for i, t in enumerate(self.schema.measure.types)
-                       if str(i) in names)
-        newtypes = [(str(i), get_pandas_dtype(typ)) for i, typ in types_names]
+        if usecols and builtins.all(isinstance(c, int) for c in usecols):
+            usecols = get(usecols, self.columns)
 
-        # we only keep those fields that are in dtype
-        formats = [t for _, t in sorted(newtypes,
-                                        key=lambda x: names.index(x[0]))]
-        return np.dtype({'names': names, 'formats': formats})
+        dates = [name for name in dates if name in usecols]
+
+        result = pd.read_csv(self.path,
+                             names=self.columns,
+                             usecols=usecols,
+                             dtype=dtypes,
+                             parse_dates=dates,
+                             encoding=self.encoding,
+                             keep_default_na=False,
+                             header=0 if self.header else None,
+                             **merge(clean_dialect(self.dialect),
+                                     kwargs))
+
+        reorder = get(list(usecols)) if usecols and len(usecols) > 1 else identity
+
+        if isinstance(result, pd.DataFrame):
+            return reorder(result)
+        else:
+            return map(reorder, result)
+
+
 
     def _iter(self, usecols=None):
-
-        # get the date column [(name, type)] pairs
-        datecols = list(map(first, get_date_columns(self.schema)))
-
-        # figure out which ones pandas needs to parse
-        parse_dates = ordered_index(datecols, self.schema)
-        if usecols is not None:
-            parse_dates = [d for d in parse_dates if d in set(usecols)]
-
-        reader = self.iterreader(parse_dates=parse_dates, usecols=usecols,
-                                 squeeze=True)
-
-        # pop one off the iterator
-        initial = next(iter(reader))
-
-        # get our names and initial dtypes for later inference
-        if isinstance(initial, pd.Series):
-            names = [str(initial.name)]
-            formats = [initial.dtype]
-        else:
-            if usecols is None:
-                names = list(map(str, initial.columns[:]))
-                formats = initial.dtypes.tolist()
-            else:
-                index = initial.columns.get_indexer(usecols)
-                names = list(map(str, initial.columns[index]))
-                formats = initial.dtypes[usecols].tolist()
-
-        initial_dtype = np.dtype({'names': names, 'formats': formats})
-
-        # what dtype do we actually want to see when we read
-        streaming_dtype = self.get_streaming_dtype(initial_dtype)
-
-        # everything must ultimately be a list of tuples
-        m = partial(bz.into, list)
-
-        slicerf = lambda x: x.replace('', np.nan)
-
-        if isinstance(initial, pd.Series):
-            streaming_dtype = streaming_dtype[first(streaming_dtype.names)]
-
-        if streaming_dtype != initial_dtype:
-            # we don't have the desired type so jump through hoops with
-            # to_records -> astype(desired dtype) -> listify
-            def mapper(x, dtype=streaming_dtype):
-                r = slicerf(x)
-
-                try:
-                    r = r.to_records(index=False)
-                except AttributeError:
-                    # We have a series
-                    r = r.values
-                return m(r.astype(dtype))
-        else:
-            mapper = compose(m, slicerf)
-
-        # convert our initial NDFrame to a list
-        return it.chain(mapper(initial),
-                        it.chain.from_iterable(map(mapper, reader)))
+        from blaze.api.into import into
+        return concat(map(partial(into, list),
+                          self.pandas_read_csv(usecols=usecols,
+                                               chunksize=self.chunksize)))
 
     __iter__ = _iter
 

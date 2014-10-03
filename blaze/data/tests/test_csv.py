@@ -52,8 +52,8 @@ def test_a_mode():
         csv.extend([(6, 'Frank', 600),
                     (7, 'Georgina', 700)])
 
-        expected = set(csv[:, 'name'])
-        assert 'Georgina' in expected
+        result = set(csv[:, 'name'])
+        assert 'Georgina' in result
 
 
 def test_sep_kwarg():
@@ -294,7 +294,7 @@ def test_re_dialect():
 
     text = '1,1\n2,2\n'
 
-    schema = '2 * int32'
+    schema = '{a: int32, b: int32}'
 
     with filetext(text) as source_fn:
         with filetext('') as dest_fn:
@@ -311,13 +311,13 @@ def test_re_dialect():
 
 def test_iter():
     with filetext('1,1\n2,2\n') as fn:
-        dd = CSV(fn, schema='2 * int32')
+        dd = CSV(fn, schema='{a: int32, b: int32}')
         assert tuplify(list(dd)) == ((1, 1), (2, 2))
 
 
 def test_chunks():
     with filetext('1,1\n2,2\n3,3\n4,4\n') as fn:
-        dd = CSV(fn, schema='2 * int32')
+        dd = CSV(fn, schema='{a: int32, b: int32}')
         assert all(isinstance(chunk, nd.array) for chunk in dd.chunks())
         assert len(list(dd.chunks(blen=2))) == 2
         assert len(list(dd.chunks(blen=3))) == 2
@@ -428,11 +428,10 @@ def test_subset_with_date(date_data):
 
 def test_subset_no_date(date_data):
     csv = date_data
-    sub = csv[:, ['amount', 'name']]
     expected = [(100.0, 'Alice'),
                 (-200.0, 'Alice'),
                 (300.0, 'Bob')]
-    result = into(list, sub)
+    result = into(list, csv[:, ['amount', 'name']])
     assert result == expected
 
 

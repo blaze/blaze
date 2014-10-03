@@ -854,7 +854,7 @@ def into(a, b, **kwargs):
     kws = keywords(pd.read_csv)
     options = toolz.merge(b.dialect, kwargs)
     options = toolz.keyfilter(kws.__contains__, options)
-    return b.reader(**options)
+    return b.pandas_read_csv(**options)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
@@ -943,7 +943,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
+@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor, Iterator))
 def into(a, b, **kwargs):
     a.extend(b)
     return a
