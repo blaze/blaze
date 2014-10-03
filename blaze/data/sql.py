@@ -10,6 +10,8 @@ import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
 import subprocess
+from multipledispatch import MDNotImplementedError
+import gzip
 
 from ..dispatch import dispatch
 from ..utils import partition_all
@@ -312,6 +314,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #     Specifies copying the OID for each row
 
     """
+    if csv.open == gzip.open:
+        raise MDNotImplementedError()
     dbtype = sql.engine.url.drivername
     db = sql.engine.url.database
     engine = sql.engine
@@ -447,11 +451,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
         except MySQLdb.OperationalError as e:
             print("Failed to use MySQL LOAD.\nERR MSG: ", e)
             print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+            raise MDNotImplementedError()
 
     else:
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")
-        sql.extend(csv)
+        raise MDNotImplementedError()
 
     return sql
