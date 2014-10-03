@@ -59,7 +59,7 @@ to NumPy arrays.
    >>> next(csv.chunks())
    nd.array([  [1, "Alice", 100],     [2, "Bob", 200], [3, "Charlie", 300],
                [4, "Denis", 400],   [5, "Edith", 500]],
-            type="5 * {id : int64, name : string, balance : int64}")
+            type="5 * {id : ?int64, name : string, balance : ?int64}")
 
 Insertion
 ---------
@@ -141,7 +141,7 @@ and offers various forms of compression for binary data.
 
 .. code-block:: python
 
-   >>> hdf5 = HDF5('examples/data/accounts.h5', '/accounts')
+   >>> hdf5 = HDF5('examples/data/accounts.h5', '/accounts')  # doctest: +SKIP
 
 Directories
 -----------
