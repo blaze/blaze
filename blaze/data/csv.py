@@ -350,6 +350,8 @@ class CSV(DataDescriptor):
         result = pd.read_csv(self.path,
                              names=kwargs.pop('names', self.columns),
                              usecols=usecols,
+                             compression={'gz': 'gzip',
+                                          'bz2': 'bz2'}.get(ext(self.path)),
                              dtype=dtypes,
                              parse_dates=dates,
                              encoding=kwargs.pop('encoding', self.encoding),
