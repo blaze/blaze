@@ -22,14 +22,14 @@ from toolz.curried import get
 
 __all__ = ['RDD', 'pyspark', 'SparkContext']
 
+class Dummy(object):
+    sum = max = min = count = distinct = mean = variance = stdev = None
+
 try:
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
 except ImportError:
-    #Create a dummy RDD for py 2.6
-    class Dummy(object):
-        sum = max = min = count = distinct = mean = variance = stdev = None
     SparkContext = Dummy
     pyspark = Dummy()
     pyspark.rdd = Dummy()

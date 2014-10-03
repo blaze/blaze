@@ -27,6 +27,7 @@ from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
+from ..compute.spark import Dummy
 
 
 __all__ = ['into', 'discover']
@@ -129,7 +130,7 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
-@dispatch(nd.array, (Iterable, Number, str))
+@dispatch(nd.array, (Iterable, Number) + _strtypes)
 def into(a, b, **kwargs):
     return nd.array(b, **kwargs)
 
@@ -911,8 +912,7 @@ def into(a, b):
     return compute(b)
 
 
-@dispatch((tuple, list, Iterator, np.ndarray, pd.DataFrame, Collection, set,
-    ctable), _strtypes)
+@dispatch((type, Dummy, set, np.ndarray, object), _strtypes)
 def into(a, b, **kwargs):
     return into(a, resource(b, **kwargs), **kwargs)
 
