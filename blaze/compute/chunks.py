@@ -312,4 +312,11 @@ from glob import glob
 @resource.register('.*\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
+
+    first = resource(uris[0], **kwargs)
+    if hasattr(first, 'dshape'):
+        kwargs['dshape'] = first.dshape
+    if hasattr(first, 'schema'):
+        kwargs['schema'] = first.schema
+
     return ChunkList([resource(uri, **kwargs) for uri in uris])

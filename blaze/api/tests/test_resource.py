@@ -32,6 +32,13 @@ def test_into_directory_of_csv_files():
                                (4, 'Dan', 400),
                                (5, 'Edith', 500)]
 
+def test_resource_different_csv_schemas():
+    files = {'foobar_a.csv': '1.0,1\n2.0,2',
+             'foobar_b.csv': '3,3\n4,4'}
+    with filetexts(files):
+        r = resource('foobar_*.csv')
+        assert r.data[0].schema == r.data[1].schema
+
 
 def test_into_xls_file():
     pytest.importorskip('xlrd')
