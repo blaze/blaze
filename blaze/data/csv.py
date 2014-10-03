@@ -175,6 +175,8 @@ def discover_csv(path, encoding=DEFAULT_ENCODING, nrows_discovery=50,
             dtype='O',
             encoding=encoding,
             chunksize=nrows_discovery,
+            compression={'gz': 'gzip',
+                         'bz2': 'bz2'}.get(ext(path)),
             header=0 if header else None,
             **clean_dialect(dialect)).get_chunk()
     if not types:
