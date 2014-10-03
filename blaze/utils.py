@@ -189,9 +189,12 @@ def example(filename, datapath=os.path.join('examples', 'data')):
                         filename)
 
 
-@contextmanager
-def suppress(*exceptions):
-    try:
-        yield
-    except exceptions:
-        pass
+try:
+    from contextlib import suppress  # this is in python >= 3.4
+except ImportError:
+    @contextmanager
+    def suppress(*exceptions):
+        try:
+            yield
+        except exceptions:
+            pass
