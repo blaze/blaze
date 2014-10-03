@@ -216,8 +216,7 @@ def test_extend_structured_no_newline():
         assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
 
 
-@xfail(PY3, raises=ValueError, reason="No float nan conversion to integer "
-        "allowed in Python 3")
+@xfail(reason="\n perceived as missing value.  Not allowed in int types")
 def test_extend_structured_many_newlines():
     with filetext('1,1.0\n2,2.0\n\n\n\n') as fn:
         csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')

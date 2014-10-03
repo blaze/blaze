@@ -357,7 +357,6 @@ class CSV(DataDescriptor):
                              dtype=dtypes,
                              parse_dates=dates,
                              encoding=kwargs.pop('encoding', self.encoding),
-                             keep_default_na=False,
                              header=0 if self.header else None,
                              **merge(kwargs, clean_dialect(self.dialect)))
 
