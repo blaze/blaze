@@ -114,14 +114,14 @@ def filetext(text, extension='', open=open, mode='wt'):
 
 
 @contextmanager
-def filetexts(d, open=open):
+def filetexts(d, open=open, mode='wt'):
     """ Dumps a number of textfiles to disk
 
     d - dict
         a mapping from filename to text like {'a.csv': '1,1\n2,2'}
     """
     for filename, text in d.items():
-        f = open(filename, 'wt')
+        f = open(filename, mode=mode)
         try:
             f.write(text)
         finally:
