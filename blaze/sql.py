@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
 from .compute.sql import select
-from .data.sql import SQL, dispatch, first
+from .data.sql import SQL, dispatch
 from .expr import Expr, TableExpr, Projection, Column, UnaryOp, BinOp, Join
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
 from .api.resource import resource
+from toolz import first
 
 
 import sqlalchemy as sa
