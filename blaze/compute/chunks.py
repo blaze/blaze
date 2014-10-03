@@ -35,6 +35,7 @@ from ..compatibility import builtins
 from ..dispatch import dispatch
 from .core import compute
 from ..data.core import DataDescriptor
+from ..expr.split import split
 
 __all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk', 'chunks', 'into']
 
@@ -170,29 +171,13 @@ def compute_up(expr, c, **kwargs):
 
 @dispatch(By, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    if not isinstance(expr.apply, tuple(reductions)):
-        raise NotImplementedError("Chunked split-apply-combine only "
-                "implemented for simple reductions")
-
-    a, b = reductions[type(expr.apply)]
-
-    perchunk = by(expr.grouper, a(expr.apply.child))
+    (chunkleaf, chunkexpr), (aggleaf, aggexpr) = split(expr.child, expr)
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_up(perchunk, chunk))
-                          for chunk in c)
+    intermediate = list(concat(into([], compute(chunkexpr, {chunkleaf: chunk}))
+                          for chunk in c))
 
-    # Form computation to do on the concatenated union
-    t = TableSymbol('_chunk', perchunk.schema)
-
-    apply_cols = expr.apply.dshape[0].names
-    if expr.apply.child.iscolumn:
-        apply_cols = apply_cols[0]
-
-    group = by(t[expr.grouper.columns],
-               b(t[apply_cols]))
-
-    return compute_up(group, intermediate)
+    return compute(aggexpr, {aggleaf: intermediate})
 
 
 @dispatch(object)
