@@ -39,8 +39,9 @@ def dshape_to_pandas(ds):
     if isinstance(ds, DataShape) and len(ds) == 1:
         ds = ds[0]
 
-    dtypes = {name: unit_to_dtype(typ) for name, typ in ds.measure.dict.items()
-                if not 'date' in str(typ)}
+    dtypes = dict((name, unit_to_dtype(typ))
+                  for name, typ in ds.measure.dict.items()
+                  if not 'date' in str(typ))
 
     datetimes = [name for name, typ in ds.measure.dict.items()
                     if 'date' in str(typ)]
