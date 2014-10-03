@@ -17,8 +17,9 @@ import numpy as np
 import pandas as pd
 from datashape.discovery import discover, null, unpack
 from datashape import (dshape, Record, Option, Fixed, Unit, Tuple, string,
-        date_, datetime_)
+        date_, datetime_, DataShape)
 import datashape as ds
+from datashape.predicates import isdimension
 
 import blaze as bz
 from .pandas_dtype import dshape_to_pandas
@@ -28,7 +29,7 @@ from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END, builtins, _strtypes, _inttypes
 from ..compatibility import zip, PY2
-from .utils import ordered_index, listpack
+from .utils import ordered_index, listpack, coerce
 
 import csv
 
@@ -167,6 +168,25 @@ def ext(path):
     return e.lstrip('.')
 
 
+def safely_option(ds):
+    """ Wrap certain types in an option type
+
+    >>> safely_option('int32')
+    ?int32
+    >>> safely_option('?int32')
+    ?int32
+    >>> safely_option('float64')
+    ctype("float64")
+    """
+    if isinstance(ds, _strtypes):
+        ds = dshape(ds)
+    if isinstance(ds, DataShape) and len(ds) == 1:
+        ds = ds[0]
+    if isinstance(ds, Unit) and 'int' in str(ds) or 'date' in str(ds):
+        return Option(ds)
+    return ds
+
+
 def discover_csv(path, encoding=DEFAULT_ENCODING, nrows_discovery=50,
         header=None, dialect=None, types=None, columns=None,
         typehints=None):
@@ -188,6 +208,7 @@ def discover_csv(path, encoding=DEFAULT_ENCODING, nrows_discovery=50,
             types = rowtype[0].dshapes
             types = [unpack(t) for t in types]
             types = [string if t == null else t for t in types]
+            types = [safely_option(t) for t in types]
         elif (isinstance(rowtype[0], Fixed) and
                 isinstance(rowtype[1], Unit)):
             types = int(rowtype[0]) * [rowtype[1]]
@@ -312,14 +333,21 @@ class CSV(DataDescriptor):
             assert len(key) == 2
             rows, cols = key
             usecols = cols
+            ds = self.dshape.subshape[rows, cols]
             usecols = None if isinstance(usecols, slice) else listpack(usecols)
         else:
             rows = key
+            ds = self.dshape.subshape[rows]
             usecols = None
+
+        if isinstance(ds, DataShape) and isdimension(ds[0]):
+            ds = ds.subshape[0]
 
         seq = self._iter(usecols=usecols)
         if isinstance(key, tuple) and isinstance(cols, _strtypes + _inttypes):
             seq = pluck(0, seq)
+        seq = coerce(ds, seq)
+
         if isinstance(rows, compatibility._inttypes):
             line = nth(rows, seq)
             try:
@@ -354,8 +382,8 @@ class CSV(DataDescriptor):
                              usecols=usecols,
                              compression={'gz': 'gzip',
                                           'bz2': 'bz2'}.get(ext(self.path)),
-                             dtype=dtypes,
-                             parse_dates=dates,
+                             dtype=kwargs.pop('dtype', dtypes),
+                             parse_dates=kwargs.pop('parse_dates', dates),
                              encoding=kwargs.pop('encoding', self.encoding),
                              header=0 if self.header else None,
                              **merge(kwargs, clean_dialect(self.dialect)))
@@ -370,10 +398,12 @@ class CSV(DataDescriptor):
     def _iter(self, usecols=None):
         from blaze.api.into import into
         dfs = self.pandas_read_csv(usecols=usecols,
-                                   chunksize=self.chunksize)
-        return concat(map(partial(into, list), dfs))
-
-    __iter__ = _iter
+                                   chunksize=self.chunksize,
+                                   dtype='O',
+                                   parse_dates=[])
+        return pipe(dfs, map(partial(pd.DataFrame.fillna, value='')),
+                         map(partial(into, list)),
+                         concat)
 
     def last_char(self):
         r"""Get the last character of the file.
