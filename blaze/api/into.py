@@ -843,11 +843,16 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
-
 @dispatch(ColumnDataSource, pd.Series)
 def into(a, b, **kwargs):
     return ColumnDataSource(data={b.name: b.tolist()})
 
+
+@dispatch((list, tuple, set), ColumnDataSource)
+def into(a, cds, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(zip(*cds.data.values()))
 
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
