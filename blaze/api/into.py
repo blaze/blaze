@@ -936,7 +936,7 @@ def into(x, chunks, **kwargs):
     arrs = [into(x, chunk, **kwargs) for chunk in chunks]
     return np.vstack(arrs)
 
-@dispatch(Collection, ChunkIterator)
+@dispatch((DataDescriptor, Collection), ChunkIterator)
 def into(coll, chunks, **kwargs):
     for chunk in chunks:
         into(coll, chunk, **kwargs)
