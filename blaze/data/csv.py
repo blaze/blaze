@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
 import itertools as it
 import os
 import gzip
@@ -9,15 +8,15 @@ from functools import partial
 from contextlib import contextmanager
 
 from multipledispatch import dispatch
-from cytoolz import partition_all, merge, keyfilter, first, pluck
-from toolz import concat, get, compose, pipe, identity
+from cytoolz import partition_all, merge, keyfilter, pluck
+from toolz import concat, get, pipe, identity
 from toolz.curried import map, get
 
-import numpy as np
 import pandas as pd
+
 from datashape.discovery import discover, null, unpack
 from datashape import (dshape, Record, Option, Fixed, Unit, Tuple, string,
-        date_, datetime_, DataShape)
+                       DataShape)
 import datashape as ds
 from datashape.predicates import isdimension
 
