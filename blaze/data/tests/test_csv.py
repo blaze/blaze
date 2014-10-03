@@ -27,14 +27,14 @@ def test_schema_detection_modifiers():
     text = "name amount date\nAlice 100 20120101\nBob 200 20120102"
     with filetext(text) as fn:
         assert (CSV(fn).schema ==
-                dshape('{name: string, amount: ?int64, date: ?int64}'))
+                dshape('{name: string, amount: int64, date: int64}'))
         assert (CSV(fn, columns=['NAME', 'AMOUNT', 'DATE']).schema ==
-                dshape('{NAME: string, AMOUNT: ?int64, DATE: ?int64}'))
+                dshape('{NAME: string, AMOUNT: int64, DATE: int64}'))
         assert (str(CSV(fn, types=['string', 'int32', 'date']).schema) ==
                 str(dshape('{name: string, amount: int32, date: date}')))
 
         a = CSV(fn, typehints={'date': 'date'}).schema
-        b = dshape('{name: string, amount: ?int64, date: date}')
+        b = dshape('{name: string, amount: int64, date: date}')
         assert str(a) == str(b)
 
 
@@ -71,7 +71,7 @@ def test_unicode():
     this_dir = os.path.dirname(__file__)
     filename = os.path.join(this_dir, 'unicode.csv')
     dd = CSV(filename, columns=['a', 'b'], encoding='utf8')
-    assert dd.schema == dshape('{a: string, b: ?int64}')
+    assert dd.schema == dshape('{a: string, b: int64}')
     assert dd[0]
 
 
@@ -156,10 +156,10 @@ def test_laziness(dd):
 
 def test_schema_detection(csv_file):
     dd = CSV(csv_file)
-    assert dd.schema == dshape('{Name: string, Amount: ?int64}')
+    assert dd.schema == dshape('{Name: string, Amount: int64}')
 
     dd = CSV(csv_file, columns=['foo', 'bar'])
-    assert dd.schema == dshape('{foo: string, bar: ?int64}')
+    assert dd.schema == dshape('{foo: string, bar: int64}')
 
 
 @min_python_version
