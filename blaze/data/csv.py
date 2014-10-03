@@ -43,6 +43,7 @@ read_csv_kwargs = set(keywords(pd.read_csv))
 assert read_csv_kwargs
 
 def clean_dialect(dialect):
+    """ Make a csv dialect apprpriate for pandas.read_csv """
     dialect = keyfilter(read_csv_kwargs.__contains__,
                         dialect)
     # handle windows
@@ -159,33 +160,6 @@ def get_sample(csv, size=16384):
         with csvopen(csv, mode='rt') as f:
             return f.read(size)
     return ''
-
-
-def isdatelike(typ):
-    return (typ == ds.date_ or typ == ds.datetime_ or
-            (isinstance(typ, Option) and
-             (typ.ty == ds.date_ or typ.ty == ds.datetime_)))
-
-
-def get_date_columns(schema):
-    try:
-        names = schema.measure.names
-        types = schema.measure.types
-    except AttributeError:
-        return []
-    else:
-        return [(name, typ) for name, typ in zip(names, types)
-                if isdatelike(typ)]
-
-
-def get_pandas_dtype(typ):
-    # ugh conform to pandas "everything empty is a float or object",
-    # otherwise we get '' trying to be an integer
-    if isinstance(typ, Option):
-        if typ.ty in numtypes:
-            return np.dtype('f8')
-        return typ.ty.to_numpy_dtype()
-    return typ.to_numpy_dtype()
 
 
 def ext(path):
@@ -354,6 +328,11 @@ class CSV(DataDescriptor):
             raise IndexError("key %r is not valid" % rows)
 
     def pandas_read_csv(self, usecols=None, **kwargs):
+        """ Use pandas.read_csv with the right keyword arguments
+
+        In particular we know what dtypes should be, which columns are dates,
+        etc...
+        """
         dtypes, dates = dshape_to_pandas(self.schema)
 
         if usecols and builtins.all(isinstance(c, int) for c in usecols):
@@ -378,8 +357,6 @@ class CSV(DataDescriptor):
             return reorder(result)
         else:
             return map(reorder, result)
-
-
 
     def _iter(self, usecols=None):
         from blaze.api.into import into
