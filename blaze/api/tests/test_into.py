@@ -19,7 +19,7 @@ from blaze.data import CSV
 
 from blaze.api.into import into, discover
 from blaze import Table, Concat
-from blaze.utils import tmpfile, filetext
+from blaze.utils import tmpfile, filetext, example
 from blaze.pytables import PyTables
 import pytest
 
@@ -185,7 +185,7 @@ def test_pandas_dynd(data, schema):
     assert str(result) == str(expected)
 
     nda = nd.array([[1,2,3], [4,5,6], [7,8,9]])
-    csv = CSV('examples/data/accounts.csv')
+    csv = CSV(example('accounts.csv'))
     df_csv = into(DataFrame, csv)
     df_nd = into(df_csv, nda)
     df_no_names = into(DataFrame, nda)
@@ -275,7 +275,7 @@ def test_into_ColumnDataSource_pytables():
     pytest.importorskip('bokeh')
     from bokeh.objects import ColumnDataSource
 
-    pyt = PyTables('examples/data/accounts.h5', '/accounts')
+    pyt = PyTables(example('accounts.h5'), '/accounts')
     cds = into(ColumnDataSource, pyt)
     assert 'balance' and 'id' and 'name' in cds.column_names
 
@@ -357,7 +357,7 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
 
 def test_into_ctable_pytables():
     from bcolz import ctable
-    tble = PyTables('examples/data/accounts.h5', datapath='/accounts')
+    tble = PyTables(example('accounts.h5'), datapath='/accounts')
     ct = into(ctable, tble)
     ctn = len(ct)
     tbn = len(tble)
