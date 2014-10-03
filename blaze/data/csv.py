@@ -167,6 +167,47 @@ def ext(path):
     return e.lstrip('.')
 
 
+def discover_csv(path, encoding=DEFAULT_ENCODING, nrows_discovery=50,
+                 header=None, dialect=None, types=None, columns=None,
+                 typehints=None):
+    """ Discover datashape of CSV file """
+    df = pd.read_csv(path,
+                     dtype='O',
+                     encoding=encoding,
+                     chunksize=nrows_discovery,
+                     header=0 if header else None,
+                     **clean_dialect(dialect)).get_chunk()
+    if not types:
+        L = (df.fillna('')
+                .to_records(index=False)
+                .tolist())
+        rowtype = discover(L).subshape[0]
+        if isinstance(rowtype[0], Tuple):
+            types = rowtype[0].dshapes
+            types = [unpack(t) for t in types]
+            types = [string if t == null else t for t in types]
+            types = [t
+                     if isinstance(t, Option)
+                        or t in (string, date_, datetime_)
+                     else Option(t) for t in types]
+        elif (isinstance(rowtype[0], Fixed) and
+                isinstance(rowtype[1], Unit)):
+            types = int(rowtype[0]) * [rowtype[1]]
+        else:
+            raise ValueError("Could not discover schema from data.\n"
+                             "Please specify schema.")
+    if not columns:
+        if header:
+            columns = list(df.columns)
+        else:
+            columns = ['_%d' % i for i in range(len(types))]
+    if typehints:
+        types = [typehints.get(c, t) for c, t in zip(columns, types)]
+
+    return dshape(Record(list(zip(columns, types))))
+
+
+
 class CSV(DataDescriptor):
     """
     Blaze data descriptor to a CSV file.
@@ -257,40 +298,10 @@ class CSV(DataDescriptor):
         self.header = header
 
         if not schema and 'w' not in mode:
-            df = pd.read_csv(path,
-                             dtype='O',
-                             encoding=encoding,
-                             chunksize=nrows_discovery,
-                             header=0 if self.header else None,
-                             **clean_dialect(dialect)).get_chunk()
-            if not types:
-                L = (df.fillna('')
-                        .to_records(index=False)
-                        .tolist())
-                rowtype = discover(L).subshape[0]
-                if isinstance(rowtype[0], Tuple):
-                    types = rowtype[0].dshapes
-                    types = [unpack(t) for t in types]
-                    types = [string if t == null else t for t in types]
-                    types = [t
-                             if isinstance(t, Option)
-                                or t in (string, date_, datetime_)
-                             else Option(t) for t in types]
-                elif (isinstance(rowtype[0], Fixed) and
-                        isinstance(rowtype[1], Unit)):
-                    types = int(rowtype[0]) * [rowtype[1]]
-                else:
-                    raise ValueError("Could not discover schema from data.\n"
-                                     "Please specify schema.")
-            if not columns:
-                if header:
-                    columns = list(df.columns)
-                else:
-                    columns = ['_%d' % i for i in range(len(types))]
-            if typehints:
-                types = [typehints.get(c, t) for c, t in zip(columns, types)]
-
-            schema = dshape(Record(list(zip(columns, types))))
+            schema = discover_csv(path, encoding=encoding, dialect=dialect,
+                                  header=self.header, typehints=typehints,
+                                  types=types, columns=columns,
+                                  nrows_discovery=nrows_discovery)
 
         self._schema = schema
         self.header = header
@@ -363,7 +374,6 @@ class CSV(DataDescriptor):
         dfs = self.pandas_read_csv(usecols=usecols,
                                    chunksize=self.chunksize)
         return concat(map(partial(into, list), dfs))
-
 
     __iter__ = _iter
 
