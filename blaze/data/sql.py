@@ -333,12 +333,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
                 return val
         return val
 
-    for k in kwargs.keys():
-        try:
-            dialect_terms[k]
-        except KeyError:
-            raise KeyError(k, " not found in dialect mapping")
-
     format_str = retrieve_kwarg('format_str') or 'csv'
     encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
