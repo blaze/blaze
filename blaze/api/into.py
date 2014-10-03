@@ -872,6 +872,7 @@ def into(a, b, **kwargs):
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
         kwargs.setdefault('names', b.columns)
+        kwargs.setdefault('usecols', kwargs['names'])
         kwargs.setdefault('squeeze', b.iscolumn)
         return into(a, b.child.data, **kwargs)
     else:
