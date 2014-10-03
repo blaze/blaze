@@ -1,22 +1,18 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from datetime import date, datetime, time
-from decimal import Decimal
 import sys
+import warnings
 from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
-from toolz import first
 
 from ..dispatch import dispatch
 from ..utils import partition_all
-from ..compatibility import basestring
 from .core import DataDescriptor
-from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
 from .csv import CSV
 
@@ -406,9 +402,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #only works on OSX/Unix
     elif dbtype == 'sqlite':
         import subprocess
-        if sys.platform == 'win32' or db == ":memory:":
-            print("Windows native sqlite copy is not supported")
-            print("Defaulting to sql.extend() method")
+        if sys.platform == 'win32':
+            warnings.warn("Windows native sqlite copy is not supported\n"
+                          "Defaulting to sql.extend() method")
+            sql.extend(csv)
+        elif db == ':memory:':
             sql.extend(csv)
         else:
             #only to be used when table isn't already created?
