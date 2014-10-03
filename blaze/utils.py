@@ -198,3 +198,13 @@ except ImportError:
             yield
         except exceptions:
             pass
+
+
+def mapsafe(func, seq, skip_excs=()):
+    for item in seq:
+        try:
+            # can't use suppress because generators can raise stop iteration to
+            # exit
+            yield func(item)
+        except skip_excs:
+            pass

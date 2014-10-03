@@ -24,10 +24,11 @@ from __future__ import absolute_import, division, print_function
 from blaze.expr import (TableSymbol, Head, Selection, Join, RowWise, Label,
                         ReLabel, Distinct, By, nunique)
 from blaze.expr import count, mean, min, max, any, all, sum
+from blaze.utils import mapsafe
 from toolz import partition_all
-from collections import Iterator, Iterable
+from collections import Iterator
 from toolz import concat, first
-from cytoolz import unique
+from cytoolz import unique, partial
 from datashape import var, isdimension
 import pandas as pd
 from ..api.resource import resource
@@ -294,7 +295,7 @@ class ChunkList(ChunkIndexable):
 
 
 @resource.register('.*\*.*', priority=14)
-def resource_glob(uri, skip_excs=None, **kwargs):
+def resource_glob(uri, skip_excs=(), **kwargs):
     """Get a list of resources that can be computed over.
 
     Parameters
@@ -320,21 +321,5 @@ def resource_glob(uri, skip_excs=None, **kwargs):
     if hasattr(first, 'schema'):
         kwargs['schema'] = first.schema
 
-    if skip_excs is None:
-        return ChunkList([resource(u, **kwargs) for u in uris])
-
-    if not all(isinstance(s, Exception)
-               for s in ([skip_excs]
-                         if not isinstance(skip_excs, Iterable) else skip_excs)):
-        raise TypeError('skip_excs parameter must consist of subclasses of '
-                        'Exception')
-
-    resources = []
-    for uri in uris:
-        try:
-            r = resource(uri, **kwargs)
-        except skip_excs:
-            pass
-        else:
-            resources.append(r)
-    return ChunkList(resources)
+    f = partial(resource, **kwargs)
+    return ChunkList([first] + mapsafe(f, uris[1:], skip_excs=skip_excs))

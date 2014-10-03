@@ -130,6 +130,7 @@ class TestResource(TestCase):
             assert result.columns.tolist() == list('ab')
             assert result.index.tolist() == list(range(len(result)))
 
+
 class TestInto(TestCase):
     def test_into(self):
         with filetext('1,1\n2,2', extension='.csv') as a:
