@@ -193,8 +193,6 @@ class TableExpr(Expr):
 
         Sort by counts by default, add ``sort=False`` keyword to avoid this
         behavior."""
-        if not self.iscolumn:
-            raise ValueError("Can only count_values on columns")
         result = by(self, count=self.count())
         if sort:
             result = result.sort('count', ascending=False)
