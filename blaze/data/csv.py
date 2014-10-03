@@ -43,8 +43,9 @@ read_csv_kwargs = set(keywords(pd.read_csv))
 assert read_csv_kwargs
 
 def clean_dialect(dialect):
+    """ Make a csv dialect apprpriate for pandas.read_csv """
     dialect = keyfilter(read_csv_kwargs.__contains__,
-                        dialect)
+            dialect)
     # handle windows
     if dialect['lineterminator'] == '\r\n':
         dialect['lineterminator'] = None
@@ -95,7 +96,7 @@ def get_dialect(sample, dialect=None, **kwargs):
 
     # Convert dialect to dictionary
     dialect = dict((key, getattr(dialect, key))
-                   for key in dir(dialect) if not key.startswith('_'))
+            for key in dir(dialect) if not key.startswith('_'))
 
     # Update dialect with any keyword arguments passed in
     # E.g. allow user to override with delimiter=','
@@ -133,7 +134,7 @@ def discover_dialect(sample, dialect=None, **kwargs):
 
     # line_terminator is for to_csv
     dialect['lineterminator'] = dialect['line_terminator'] = \
-        dialect.get('line_terminator', dialect.get('lineterminator', os.linesep))
+            dialect.get('line_terminator', dialect.get('lineterminator', os.linesep))
     return dialect
 
 
@@ -161,36 +162,50 @@ def get_sample(csv, size=16384):
     return ''
 
 
-def isdatelike(typ):
-    return (typ == ds.date_ or typ == ds.datetime_ or
-            (isinstance(typ, Option) and
-             (typ.ty == ds.date_ or typ.ty == ds.datetime_)))
-
-
-def get_date_columns(schema):
-    try:
-        names = schema.measure.names
-        types = schema.measure.types
-    except AttributeError:
-        return []
-    else:
-        return [(name, typ) for name, typ in zip(names, types)
-                if isdatelike(typ)]
-
-
-def get_pandas_dtype(typ):
-    # ugh conform to pandas "everything empty is a float or object",
-    # otherwise we get '' trying to be an integer
-    if isinstance(typ, Option):
-        if typ.ty in numtypes:
-            return np.dtype('f8')
-        return typ.ty.to_numpy_dtype()
-    return typ.to_numpy_dtype()
-
-
 def ext(path):
     _, e = os.path.splitext(path)
     return e.lstrip('.')
+
+
+def discover_csv(path, encoding=DEFAULT_ENCODING, nrows_discovery=50,
+        header=None, dialect=None, types=None, columns=None,
+        typehints=None):
+    """ Discover datashape of CSV file """
+    df = pd.read_csv(path,
+            dtype='O',
+            encoding=encoding,
+            chunksize=nrows_discovery,
+            header=0 if header else None,
+            **clean_dialect(dialect)).get_chunk()
+    if not types:
+        L = (df.fillna('')
+                .to_records(index=False)
+                .tolist())
+        rowtype = discover(L).subshape[0]
+        if isinstance(rowtype[0], Tuple):
+            types = rowtype[0].dshapes
+            types = [unpack(t) for t in types]
+            types = [string if t == null else t for t in types]
+            types = [t
+                    if isinstance(t, Option)
+                    or t in (string, date_, datetime_)
+                    else Option(t) for t in types]
+        elif (isinstance(rowtype[0], Fixed) and
+                isinstance(rowtype[1], Unit)):
+            types = int(rowtype[0]) * [rowtype[1]]
+        else:
+            raise ValueError("Could not discover schema from data.\n"
+                    "Please specify schema.")
+    if not columns:
+        if header:
+            columns = list(df.columns)
+        else:
+            columns = ['_%d' % i for i in range(len(types))]
+    if typehints:
+        types = [typehints.get(c, t) for c, t in zip(columns, types)]
+
+    return dshape(Record(list(zip(columns, types))))
+
 
 
 class CSV(DataDescriptor):
@@ -256,9 +271,9 @@ class CSV(DataDescriptor):
         Number of rows to read when determining datashape
     """
     def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
-                 typehints=None, dialect=None, header=None, open=open,
-                 nrows_discovery=50, chunksize=1024,
-                 encoding=DEFAULT_ENCODING, **kwargs):
+            typehints=None, dialect=None, header=None, open=open,
+            nrows_discovery=50, chunksize=1024,
+            encoding=DEFAULT_ENCODING, **kwargs):
         if 'r' in mode and not os.path.isfile(path):
             raise ValueError('CSV file "%s" does not exist' % path)
 
@@ -283,40 +298,10 @@ class CSV(DataDescriptor):
         self.header = header
 
         if not schema and 'w' not in mode:
-            df = pd.read_csv(path,
-                             dtype='O',
-                             encoding=encoding,
-                             chunksize=nrows_discovery,
-                             header=0 if self.header else None,
-                             **clean_dialect(dialect)).get_chunk()
-            if not types:
-                L = (df.fillna('')
-                        .to_records(index=False)
-                        .tolist())
-                rowtype = discover(L).subshape[0]
-                if isinstance(rowtype[0], Tuple):
-                    types = rowtype[0].dshapes
-                    types = [unpack(t) for t in types]
-                    types = [string if t == null else t for t in types]
-                    types = [t
-                             if isinstance(t, Option)
-                                or t in (string, date_, datetime_)
-                             else Option(t) for t in types]
-                elif (isinstance(rowtype[0], Fixed) and
-                        isinstance(rowtype[1], Unit)):
-                    types = int(rowtype[0]) * [rowtype[1]]
-                else:
-                    raise ValueError("Could not discover schema from data.\n"
-                                     "Please specify schema.")
-            if not columns:
-                if header:
-                    columns = list(df.columns)
-                else:
-                    columns = ['_%d' % i for i in range(len(types))]
-            if typehints:
-                types = [typehints.get(c, t) for c, t in zip(columns, types)]
-
-            schema = dshape(Record(list(zip(columns, types))))
+            schema = discover_csv(path, encoding=encoding, dialect=dialect,
+                    header=self.header, typehints=typehints,
+                    types=types, columns=columns,
+                    nrows_discovery=nrows_discovery)
 
         self._schema = schema
         self.header = header
@@ -354,39 +339,40 @@ class CSV(DataDescriptor):
             raise IndexError("key %r is not valid" % rows)
 
     def pandas_read_csv(self, usecols=None, **kwargs):
+        """ Use pandas.read_csv with the right keyword arguments
+
+        In particular we know what dtypes should be, which columns are dates,
+        etc...
+        """
         dtypes, dates = dshape_to_pandas(self.schema)
 
         if usecols:
             if builtins.all(isinstance(c, int) for c in usecols):
                 usecols = get(usecols, self.columns)
             dates = [name for name in dates if name in usecols]
+
         result = pd.read_csv(self.path,
-                             names=self.columns,
+                             names=kwargs.pop('names', self.columns),
                              usecols=usecols,
                              dtype=dtypes,
                              parse_dates=dates,
-                             encoding=self.encoding,
+                             encoding=kwargs.pop('encoding', self.encoding),
                              keep_default_na=False,
                              header=0 if self.header else None,
-                             **keyfilter(lambda x: x != 'names',
-                                         merge(kwargs,
-                                               clean_dialect(self.dialect))))
+                             **merge(kwargs, clean_dialect(self.dialect)))
 
         reorder = get(list(usecols)) if usecols and len(usecols) > 1 else identity
 
-        if isinstance(result, pd.DataFrame):
+        if isinstance(result, (pd.Series, pd.DataFrame)):
             return reorder(result)
         else:
             return map(reorder, result)
-
-
 
     def _iter(self, usecols=None):
         from blaze.api.into import into
         dfs = self.pandas_read_csv(usecols=usecols,
                                    chunksize=self.chunksize)
         return concat(map(partial(into, list), dfs))
-
 
     __iter__ = _iter
 

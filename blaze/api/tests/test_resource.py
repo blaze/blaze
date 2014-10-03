@@ -96,7 +96,7 @@ class TestResource(TestCase):
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
             assert isinstance(resource(filename + '::/path/to/data/',
-                                       schema='2 * int'),
+                                       schema='{a: int, b: int}'),
                               HDF5)
 
 
@@ -112,7 +112,7 @@ class TestInto(TestCase):
 
     def test_into_iterable(self):
         with tmpfile(extension='.csv') as fn:
-            A = CSV(fn, 'a', schema='2 * int')
+            A = CSV(fn, 'a', schema='{a: int, b: int}')
             data = [(1, 2), (3, 4)]
             A = into(A, data)
             assert list(map(tuple, A)) == list(data)

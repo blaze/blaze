@@ -854,7 +854,7 @@ def into(a, b, **kwargs):
     kws = keywords(pd.read_csv)
     options = toolz.merge(b.dialect, kwargs)
     options = toolz.keyfilter(kws.__contains__, options)
-    return b.pandas_read_csv(**options)
+    return b.pandas_read_csv(chunksize=None, **options)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
@@ -871,8 +871,8 @@ def into(a, b, **kwargs):
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.columns)
-        kwargs.setdefault('usecols', kwargs['names'])
+        kwargs.setdefault('names', b.child.columns)
+        kwargs.setdefault('usecols', b.columns)
         kwargs.setdefault('squeeze', b.iscolumn)
         return into(a, b.child.data, **kwargs)
     else:
