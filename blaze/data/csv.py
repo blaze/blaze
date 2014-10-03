@@ -186,10 +186,6 @@ def discover_csv(path, encoding=DEFAULT_ENCODING, nrows_discovery=50,
             types = rowtype[0].dshapes
             types = [unpack(t) for t in types]
             types = [string if t == null else t for t in types]
-            types = [t
-                    if isinstance(t, Option)
-                    or t in (string, date_, datetime_)
-                    else Option(t) for t in types]
         elif (isinstance(rowtype[0], Fixed) and
                 isinstance(rowtype[1], Unit)):
             types = int(rowtype[0]) * [rowtype[1]]
