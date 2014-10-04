@@ -190,30 +190,29 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 
 try:
-    from contextlib import suppress  # this is in python >= 3.4
+    from contextlib import suppress  # in the stdlib after python 3.4
 except ImportError:
-    @contextmanager
-    def suppress(*exceptions):
-        try:
-            yield
-        except exceptions:
+    class suppress(object):
+        """Suppress supplied exceptions.
+
+        Examples
+        --------
+        >>> import os
+        >>> with suppress(OSError):
+        ...     os.remove('does_not_exist.txt')  # does not raise
+        """
+        def __init__(self, *excs):
+            super(suppress, self).__init__()
+            self._excs = excs
+
+        def __enter__(self):
             pass
+
+        def __exit__(self, typ, inst, tb):
+            return typ is not None and issubclass(typ, self._excs)
 
 
 def mapsafe(func, seq, skip_excs=()):
-    # can't use suppress because generators can raise stop iteration
-    # to exit
-    if not skip_excs:
-        return [func(item) for item in seq]
-
-    results = []
-
     for item in seq:
-        try:
-            g = func(item)
-        except skip_excs:
-            pass
-        else:
-            results.append(g)
-
-    return results
+        with suppress(*skip_excs):
+            yield func(item)

@@ -259,11 +259,13 @@ def get_chunk(data, i, chunksize=None):
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
 
+
 @dispatch((list, tuple), int)
 def get_chunk(seq, i, chunksize=1024):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return seq[start:stop]
+
 
 @dispatch((list, tuple), ChunkIterator)
 def into(a, b):
@@ -322,4 +324,4 @@ def resource_glob(uri, skip_excs=(), **kwargs):
         kwargs['schema'] = first.schema
 
     f = partial(resource, **kwargs)
-    return ChunkList([first] + mapsafe(f, uris[1:], skip_excs=skip_excs))
+    return ChunkList([first] + list(mapsafe(f, uris[1:], skip_excs=skip_excs)))
