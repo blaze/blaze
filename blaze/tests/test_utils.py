@@ -21,20 +21,14 @@ def test_suppress():
     class MyExc(Exception):
         pass
 
-    def raiser():
+    with pytest.raises(MyExc):
         raise MyExc('asdf')
 
-    def te_raiser():
-        raise MyTypeError('asdf')
-
-    with pytest.raises(MyExc):
-        raiser()
-
     with suppress(MyExc):
-        raiser()
+        raise MyExc('asdf')
 
     with pytest.raises(TypeError):
-        te_raiser()
+        raise MyTypeError('asdf')
 
     with suppress(TypeError):
-        te_raiser()
+        raise MyTypeError('asdf')
