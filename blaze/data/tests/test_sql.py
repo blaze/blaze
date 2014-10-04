@@ -185,7 +185,8 @@ def test_csv_gzip_into_sql():
     sql = SQL(engine,
               'accounts',
               schema='{name: string, amount: int32}')
-    with filetext('Alice,2\nBob,4', extension='csv.gz', open=gzip.open) as fn:
+    with filetext(b'Alice,2\nBob,4', extension='csv.gz',
+                  open=gzip.open, mode='wb') as fn:
         csv = CSV(fn, schema=sql.schema)
         into(sql, csv)
         assert list(sql) == list(csv)
