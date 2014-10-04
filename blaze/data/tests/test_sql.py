@@ -1,4 +1,5 @@
 import os
+import sys
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 from dynd import nd
@@ -9,6 +10,8 @@ from blaze.data.sql import SQL, discover, dshape_to_alchemy
 from blaze.utils import raises, filetext
 from datashape import dshape
 import datashape
+from blaze.compatibility import PY2
+
 
 
 class SingleTestClass(unittest.TestCase):
@@ -178,6 +181,8 @@ def test_dshape_to_alchemy():
     assert dshape_to_alchemy('float64').precision == 53
 
 
+@pytest.mark.xfail(sys.platform == 'win32' and PY2,
+                   reason='Win32 py2.7 unicode/gzip/eol needs sorting out')
 def test_csv_gzip_into_sql():
     from blaze.data.csv import CSV
     from blaze.data.sql import into
