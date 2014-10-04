@@ -33,6 +33,7 @@ def test_into_directory_of_csv_files():
                                (4, 'Dan', 400),
                                (5, 'Edith', 500)]
 
+
 def test_resource_different_csv_schemas():
     files = {'foobar_a.csv': '1.0,1\n2.0,2',
              'foobar_b.csv': '3,3\n4,4'}
@@ -120,11 +121,12 @@ class TestResource(TestCase):
         files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b'}
 
         with filetexts(files, mode='wb'):
-            with pytest.raises(StopIteration):
-                resource('*.csv')
+            result = resource('*.csv')
+            assert list(result[0][:]) == [(1, 2), (3, 4)]
+            assert list(result[1][:]) == []
 
         with filetexts(files, mode='wb'):
-            csvs = resource('*.csv', skip_excs=StopIteration)
+            csvs = resource('*.csv', skip_excs=(StopIteration,))
             result = into(pd.DataFrame, csvs)
             assert result.values.tolist() == [[1, 2], [3, 4]]
             assert result.columns.tolist() == list('ab')
