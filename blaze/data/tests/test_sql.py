@@ -12,6 +12,7 @@ from datashape import dshape
 import datashape
 from blaze.compatibility import PY2
 
+import pytest
 
 
 class SingleTestClass(unittest.TestCase):
