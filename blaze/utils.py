@@ -200,19 +200,20 @@ except ImportError:
             pass
 
 
-def _mapsafe(func, seq, skip_excs):
+def mapsafe(func, seq, skip_excs=()):
+    # can't use suppress because generators can raise stop iteration
+    # to exit
+    if not skip_excs:
+        return [func(item) for item in seq]
+
+    results = []
+
     for item in seq:
         try:
             g = func(item)
         except skip_excs:
             pass
         else:
-            yield g
+            results.append(g)
 
-
-def mapsafe(func, seq, skip_excs=()):
-    # can't use suppress because generators can raise stop iteration
-    # to exit
-    if not skip_excs:
-        return [func(item) for item in seq]
-    return list(_mapsafe(func, seq, skip_excs))
+    return results
