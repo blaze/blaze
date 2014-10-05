@@ -16,15 +16,15 @@ def file_data():
             'b.csv': '3,3\n4,4\n5,5',
             'c.csv': '6,6\n7,7'}
     with filetexts(data) as filenames:
-        descriptors = [CSV(fn, schema='2 * int32')
+        descriptors = [CSV(fn, schema='{a: int32, b: int32}')
                        for fn in sorted(filenames)]
         yield Concat(descriptors)
 
 
 def test_concat(file_data):
     dd = file_data
-    assert str(dd.schema) == '2 * int32'
-    assert str(dd.dshape) == 'var * 2 * int32'
+    assert str(dd.schema) == '{ a : int32, b : int32 }'
+    assert str(dd.dshape) == 'var * { a : int32, b : int32 }'
 
     expected = ((1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7))
 

@@ -5,7 +5,8 @@ from dynd import nd
 import datashape
 import sys
 from functools import partial
-from datashape import dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype, Option
+from datashape.predicates import isscalar
 import toolz
 from toolz import concat, partition_all, first, merge
 from cytoolz import pluck
@@ -21,13 +22,14 @@ from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
 from .. import expr
-from ..expr import Expr, Projection, TableSymbol
+from ..expr import Expr, Projection, TableSymbol, Field
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
+from ..compute.spark import Dummy
 
 
 __all__ = ['into', 'discover']
@@ -130,7 +132,7 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
-@dispatch(nd.array, (Iterable, Number, str))
+@dispatch(nd.array, (Iterable, Number) + _strtypes)
 def into(a, b, **kwargs):
     return nd.array(b, **kwargs)
 
@@ -309,7 +311,7 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 def into(bc, data, **kwargs):
     cs = chunks(data)
     bc = into(bc, next(cs))
-    for chunk in chunks(data):
+    for chunk in cs:
         bc.append(chunk)
     return bc
 
@@ -354,7 +356,7 @@ def into(_, df, **kwargs):
 def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
     if list(a.columns):
-        names = a.columns
+        names = list(a.columns)
     elif isinstance(ds[-1], Record):
         names = ds[-1].names
     else:
@@ -490,12 +492,7 @@ def into(cds, t, **kwargs):
 
 @dispatch(ColumnDataSource, Collection)
 def into(cds, other, **kwargs):
-    return into(cds, into(pd.DataFrame(), other))
-
-
-@dispatch(pd.DataFrame, ColumnDataSource)
-def into(df, cds, **kwargs):
-    return cds.to_df()
+    return into(cds, into(pd.DataFrame, other))
 
 
 @dispatch(ctable, Expr)
@@ -781,9 +778,10 @@ def into(coll, d, if_exists="replace", **kwargs):
     date_cols = []
     dshape = csv_dd.dshape
     for t, c in zip(dshape[1].types, dshape[1].names):
-        if hasattr(t, "ty"):
-            if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
-                date_cols.append((c, t.ty))
+        if isinstance(t, Option):
+            t = t.ty
+        if isinstance(t, (datashape.Date, datashape.DateTime)):
+            date_cols.append((c, t))
 
     for d_col, ty in date_cols:
         mongo_data = list(coll.find({}, {d_col: 1}))
@@ -859,11 +857,16 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
-
 @dispatch(ColumnDataSource, pd.Series)
 def into(a, b, **kwargs):
     return ColumnDataSource(data={b.name: b.tolist()})
 
+
+@dispatch((list, tuple, set), ColumnDataSource)
+def into(a, cds, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(zip(*cds.data.values()))
 
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
@@ -871,11 +874,11 @@ def into(a, b, **kwargs):
     kws = keywords(pd.read_csv)
     options = toolz.merge(b.dialect, kwargs)
     options = toolz.keyfilter(kws.__contains__, options)
-    return b.reader(**options)
+    return b.pandas_read_csv(chunksize=None, **options)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
-           tuple, set), Projection)
+           tuple, set), (Projection, Field))
 def into(a, b, **kwargs):
     """ Special case on anything <- Table(CSV)[columns]
 
@@ -888,8 +891,9 @@ def into(a, b, **kwargs):
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.fields)
-        kwargs.setdefault('squeeze', False)
+        kwargs.setdefault('names', b.child.fields)
+        kwargs.setdefault('usecols', b.fields)
+        kwargs.setdefault('squeeze', isscalar(b.dshape.measure))
         return into(a, b.child.data, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once
@@ -898,7 +902,11 @@ def into(a, b, **kwargs):
         f = into.dispatch(a, Expr)
         return f(a, b, **kwargs)
 
-        # TODO: add signature for SQL import
+    # TODO: add signature for SQL import
+
+    # TODO: CSV of Field
+
+
 
 
 @dispatch(pd.DataFrame, DataDescriptor)
@@ -921,8 +929,7 @@ def into(a, b):
     return compute(b)
 
 
-@dispatch((tuple, list, Iterator, np.ndarray, pd.DataFrame, Collection, set,
-    ctable), _strtypes)
+@dispatch((type, Dummy, set, np.ndarray, object), _strtypes)
 def into(a, b, **kwargs):
     return into(a, resource(b, **kwargs), **kwargs)
 
@@ -946,7 +953,7 @@ def into(x, chunks, **kwargs):
     arrs = [into(x, chunk, **kwargs) for chunk in chunks]
     return np.vstack(arrs)
 
-@dispatch(Collection, ChunkIterator)
+@dispatch((DataDescriptor, Collection), ChunkIterator)
 def into(coll, chunks, **kwargs):
     for chunk in chunks:
         into(coll, chunk, **kwargs)
@@ -960,7 +967,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
+@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor, Iterator))
 def into(a, b, **kwargs):
     a.extend(b)
     return a

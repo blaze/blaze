@@ -1,11 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
+from datashape.predicates import isscalar
 from .compute.sql import select
-from .data.sql import SQL, dispatch, first
-from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join, iscolumn
+from .data.sql import SQL, dispatch
+from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
+from .data.sql import SQL, dispatch
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
 from .api.resource import resource
+from toolz import first
 
 
 import sqlalchemy as sa
@@ -54,7 +57,7 @@ def post_compute(expr, query, d):
 
     if isinstance(expr, Scalar):
         return result[0][0]
-    if iscolumn(expr):
+    if isscalar(expr.dshape.measure):
         return [x[0] for x in result]
     return result
 

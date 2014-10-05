@@ -2,6 +2,10 @@
 Data
 ====
 
+*The data descriptor interface may be phased out in the near future.  We
+recommend the use of expressions and ``into`` rather than data descriptor
+indexing.  See quickstart for suggested usage.*
+
 Blaze Data Descriptors provide uniform access to a variety of common data
 formats.  They provide standard iteration, insertion, and numpy-like fancy
 indexing over on-disk files in common formats like csv, json, and hdf5 in
@@ -101,7 +105,7 @@ interfaces.
    >>> csv.dynd[2::, ['name', 'balance']]                   # doctest: +SKIP
    nd.array([ ["Charlie", 300],    ["Denis", 400],    ["Edith", 500],
                 ["Frank", 600], ["Georgina", 700]],
-            type="var * {name : string, balance : ?int64}")
+            type="var * {name : string, balance : int64}")
 
 Performance of this approach varies depending on the underlying storage system.
 For file-based storage systems like CSV and JSON we must seek through the file
@@ -137,7 +141,7 @@ and offers various forms of compression for binary data.
 
 .. code-block:: python
 
-   >>> hdf5 = HDF5('examples/data/accounts.h5', 'accounts')
+   >>> hdf5 = HDF5('examples/data/accounts.h5', '/accounts')  # doctest: +SKIP
 
 Directories
 -----------

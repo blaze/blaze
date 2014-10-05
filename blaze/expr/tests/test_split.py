@@ -63,7 +63,7 @@ def test_summary():
     assert agg_expr.isidentical(summary(total=agg.total.sum()))
 
 
-def test_by():
+def test_by_sum():
     (chunk, chunk_expr), (agg, agg_expr) = \
             split(t, by(t.name, total=t.amount.sum()))
 
@@ -71,6 +71,14 @@ def test_by():
     assert chunk_expr.isidentical(by(chunk.name, total=chunk.amount.sum()))
 
     assert not iscolumn(agg)
+    assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
+
+def test_by_count():
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, by(t.name, total=t.amount.count()))
+
+    assert chunk_expr.isidentical(by(chunk.name, total=chunk.amount.count()))
+
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
 
 

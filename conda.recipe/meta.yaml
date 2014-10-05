@@ -1,6 +1,6 @@
 package:
   name: blaze
-  version: "0.6.3"
+  version: "0.6.4"
 
 build:
     number: {{environ.get('BINSTAR_BUILD', 1)}}
@@ -31,7 +31,7 @@ test:
     - coverage
 
   commands:
-    - py.test -r sxX --doctest-modules --verbose --pyargs blaze
+    - py.test -r sxX --doctest-modules --verbose --pyargs blaze docs
 
 about:
   home: http://blaze.pydata.org

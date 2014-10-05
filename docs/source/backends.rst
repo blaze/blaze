@@ -42,8 +42,13 @@ Blaze levarages the SQLAlchemy project, which provides a uniform interface over
 the varied landscape of SQL systems.  Blaze manipulates SQLAlchemy expressions
 which are then compiled down to SQL query strings of the appropriate backend.
 
+The prevalance of SQL among data technologies makes this backend particularly
+useful.  Databases like Impala and Hive have SQLAlchemy dialects, enabling
+easy Blaze interoperation.
+
 `MongoDB <http://www.mongodb.org/>`_
 -------------------------------------
+
 Blaze drives MongoDB through the `pymongo
 <http://api.mongodb.org/python/current/api/pymongo/index.html>`_ interface and
 is able to use many of the built in operations such as aggregration and group
@@ -51,6 +56,7 @@ by.
 
 `PyTables <http://www.pytables.org>`_
 -------------------------------------
+
 PyTables provides compressed Table objects backed by the popular HDF5 library.
 Blaze can compute simple expressions using PyTables, such as elementwise
 operations and row-wise selections.

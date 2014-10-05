@@ -1,22 +1,21 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from datetime import date, datetime, time
-from decimal import Decimal
 import sys
+import warnings
 from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
-from toolz import first
+import subprocess
+from multipledispatch import MDNotImplementedError
+import gzip
 
 from ..dispatch import dispatch
 from ..utils import partition_all
-from ..compatibility import basestring
 from .core import DataDescriptor
-from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
 from .csv import CSV
 
@@ -315,6 +314,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #     Specifies copying the OID for each row
 
     """
+    if csv.open == gzip.open:
+        raise MDNotImplementedError()
     dbtype = sql.engine.url.drivername
     db = sql.engine.url.database
     engine = sql.engine
@@ -331,12 +332,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
             if val:
                 return val
         return val
-
-    for k in kwargs.keys():
-        try:
-            dialect_terms[k]
-        except KeyError:
-            raise KeyError(k, " not found in dialect mapping")
 
     format_str = retrieve_kwarg('format_str') or 'csv'
     encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
@@ -405,10 +400,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
     #only works on OSX/Unix
     elif dbtype == 'sqlite':
-        import subprocess
-        if sys.platform == 'win32' or db == ":memory:":
-            print("Windows native sqlite copy is not supported")
-            print("Defaulting to sql.extend() method")
+        if db == ':memory:':
+            sql.extend(csv)
+        elif sys.platform == 'win32':
+            warnings.warn("Windows native sqlite copy is not supported\n"
+                          "Defaulting to sql.extend() method")
             sql.extend(csv)
         else:
             #only to be used when table isn't already created?
@@ -420,7 +416,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
             copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
             copy_cmd = copy_cmd.format(**copy_info)
 
-            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+            ps = subprocess.Popen(copy_cmd, shell=True, stdout=subprocess.PIPE)
             output = ps.stdout.read()
 
     elif dbtype == 'mysql':
@@ -449,11 +445,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
         except MySQLdb.OperationalError as e:
             print("Failed to use MySQL LOAD.\nERR MSG: ", e)
             print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+            raise MDNotImplementedError()
 
     else:
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")
-        sql.extend(csv)
+        raise MDNotImplementedError()
 
     return sql

@@ -25,6 +25,7 @@ import itertools
 from ..expr import (TableSymbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
         nunique)
+from .core import compute
 from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
@@ -35,6 +36,7 @@ import pandas as pd
 
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor
+from ..expr.split import split
 
 __all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk',
            'chunks', 'into']
@@ -171,29 +173,13 @@ def compute_up(expr, c, **kwargs):
 
 @dispatch(By, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    if not isinstance(expr.apply, tuple(reductions)):
-        raise NotImplementedError("Chunked split-apply-combine only "
-                "implemented for simple reductions")
-
-    a, b = reductions[type(expr.apply)]
-
-    perchunk = by(expr.grouper, a(expr.apply.child))
+    (chunkleaf, chunkexpr), (aggleaf, aggexpr) = split(expr.child, expr)
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_up(perchunk, chunk))
-                          for chunk in c)
+    intermediate = list(concat(into([], compute(chunkexpr, {chunkleaf: chunk}))
+                          for chunk in c))
 
-    # Form computation to do on the concatenated union
-    t = TableSymbol('_chunk', perchunk.schema)
-
-    apply_cols = expr.apply.fields
-    if isscalar(expr.apply.child.dshape.measure):
-        apply_cols = apply_cols[0]
-
-    group = by(t[expr.grouper.fields],
-               b(t[apply_cols]))
-
-    return compute_up(group, intermediate)
+    return compute(aggexpr, {aggleaf: intermediate})
 
 
 @dispatch(object)
@@ -313,4 +299,11 @@ from glob import glob
 @resource.register('.*\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
+
+    first = resource(uris[0], **kwargs)
+    if hasattr(first, 'dshape'):
+        kwargs['dshape'] = first.dshape
+    if hasattr(first, 'schema'):
+        kwargs['schema'] = first.schema
+
     return ChunkList([resource(uri, **kwargs) for uri in uris])
