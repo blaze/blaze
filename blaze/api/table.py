@@ -162,6 +162,13 @@ def table_repr(expr, n=10):
         return repr(result) # pragma: no cover
 
 
+def table_length(expr):
+    try:
+        return int(expr.dshape[0])
+    except TypeError:
+        return compute(expr.count())
+
+
 def table_html(expr, n=10):
     return concrete_head(expr).to_html()
 
@@ -201,3 +208,4 @@ def into(a, b):
 TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
 TableExpr._repr_html_ = table_html
+TableExpr._len = table_length

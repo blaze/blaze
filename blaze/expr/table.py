@@ -45,12 +45,12 @@ class TableExpr(Expr):
     def dshape(self):
         return datashape.var * self.schema
 
-    def _len(self):
+    """def _len(self):
         try:
             return int(self.dshape[0])
         except TypeError:
             raise ValueError('Can not determine length of table with the '
-                    'following datashape: %s' % self.dshape)
+                    'following datashape: %s' % self.dshape)"""
 
     def __len__(self): # pragma: no cover
         return self._len()
