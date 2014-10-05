@@ -652,7 +652,7 @@ def test_scalar():
                          (200, datetime(2000, 2, 2, 2, 2, 2)),
                          (300, datetime(2000, 3, 3, 3, 3, 3))))
 
-    compute(s.name, data) == 'Alice'
-    compute(s.id + 1, data) == 2
-    compute(s.payments.amount + 1, data) == (100, 200, 300)
-    compute(s.payments.amount + 1, data) == (101, 201, 301)
+    assert compute(s.name, data) == 'Alice'
+    assert compute(s.id + 1, data) == 2
+    assert tuple(compute(s.payments.amount, data)) == (100, 200, 300)
+    assert tuple(compute(s.payments.amount + 1, data)) == (101, 201, 301)
