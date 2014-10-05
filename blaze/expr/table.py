@@ -15,19 +15,20 @@ from datashape.predicates import isscalar, iscollection
 import numpy as np
 from . import scalar
 from .core import (Expr, path, common_subexpression)
-from .expr import (Collection, Projection, projection, Selection, selection, Broadcast,
-        broadcast, Label, label, ElemWise)
+from .expr import (Collection, Projection, projection, Selection, selection,
+        Label, label, ElemWise, Map)
+from .broadcast import broadcast, Broadcast
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
-from .expr import _expr_child, Field, Symbol
+from .expr import Field, Symbol
 
-from .expr import (sqrt, sin, cos, tan, sinh, cosh, tanh, acos, acosh, asin,
+from .broadcast import (sqrt, sin, cos, tan, sinh, cosh, tanh, acos, acosh, asin,
         asinh, atan, atanh, exp, log, expm1, log10, log1p, radians, degrees,
-        ceil, floor, trunc, isnan, Map)
+        ceil, floor, trunc, isnan, _expr_child)
 
 __all__ = '''
 TableExpr TableSymbol Projection Selection Broadcast Join
@@ -85,81 +86,6 @@ class TableSymbol(TableExpr, Symbol):
         if not isdimension(dshape[0]):
             dshape = datashape.var * dshape
         self.dshape = dshape
-
-
-class ColumnSyntaxMixin(object):
-    """ Syntax bits for table expressions of column shape """
-
-    @property
-    def column(self):
-        # For backwards compatibility
-        return self._name
-
-    def __eq__(self, other):
-        return broadcast(Eq, self, other)
-
-    def __add__(self, other):
-        return broadcast(Add, self, other)
-
-    def __radd__(self, other):
-        return broadcast(Add, other, self)
-
-    def __mul__(self, other):
-        return broadcast(Mult, self, other)
-
-    def __rmul__(self, other):
-        return broadcast(Mult, other, self)
-
-    def __div__(self, other):
-        return broadcast(Div, self, other)
-
-    def __rdiv__(self, other):
-        return broadcast(Div, other, self)
-
-    __truediv__ = __div__
-    __rtruediv__ = __rdiv__
-
-    def __floordiv__(self, other):
-        return broadcast(FloorDiv, self, other)
-
-    def __rfloordiv__(self, other):
-        return broadcast(FloorDiv, other, self)
-
-    def __sub__(self, other):
-        return broadcast(Sub, self, other)
-
-    def __rsub__(self, other):
-        return broadcast(Sub, other, self)
-
-    def __pow__(self, other):
-        return broadcast(Pow, self, other)
-
-    def __rpow__(self, other):
-        return broadcast(Pow, other, self)
-
-    def __mod__(self, other):
-        return broadcast(Mod, self, other)
-
-    def __rmod__(self, other):
-        return broadcast(Mod, other, self)
-
-    def __or__(self, other):
-        return broadcast(Or, self, other)
-
-    def __ror__(self, other):
-        return broadcast(Or, other, self)
-
-    def __and__(self, other):
-        return broadcast(And, self, other)
-
-    def __rand__(self, other):
-        return broadcast(And, other, self)
-
-    def __neg__(self):
-        return broadcast(USub, self)
-
-    def __invert__(self):
-        return broadcast(Not, self)
 
 
 def unpack(l):
@@ -919,7 +845,6 @@ def isboolean(ds):
 from datashape.predicates import iscollection, isscalar, isrecord
 from datashape import Unit, Record, to_numpy_dtype, bool_
 from .expr import schema_method_list, dshape_method_list
-from .expr import isnan
 
 schema_method_list.extend([
     (isboolean, set([any, all])),

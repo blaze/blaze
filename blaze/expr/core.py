@@ -118,8 +118,6 @@ class Expr(object):
     def isidentical(self, other):
         return type(self) == type(other) and self.args == other.args
 
-    __eq__ = isidentical
-
     def __hash__(self):
         return hash((type(self), self.args))
 
@@ -181,8 +179,6 @@ class Expr(object):
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
-            if key[0] == '_':
-                raise
             if self.fields and key in self.fields:
                 return self.get_field(key)
             d = dshape_methods(self.dshape)
@@ -194,6 +190,16 @@ class Expr(object):
                     return partial(func, self)
             else:
                 raise AttributeError(key)
+
+    def __eq__(self, other):
+        ident = self.isidentical(other)
+        if ident is True:
+            return ident
+        try:
+            return self._eq(other)
+        except:
+            pass
+        return False
 
     def __ne__(self, other):
         return self._ne(other)

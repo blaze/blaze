@@ -43,6 +43,11 @@ def test_length():
         len(s)
 
 
+def test_tablesymbol_eq():
+    assert not (TableSymbol('t', '{name: string}')
+             == TableSymbol('v', '{name: string}'))
+
+
 def test_table_name():
     t = TableSymbol('t', '10 * {people: string, amount: int}')
     r = TableSymbol('r', 'int64')
