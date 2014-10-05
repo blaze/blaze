@@ -93,8 +93,6 @@ class Collection(Expr):
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
-            if key[0] == '_':
-                raise
             if self.fields and key in self.fields:
                 if isscalar(self.dshape.measure): # t.foo.foo is t.foo
                     return self
@@ -120,84 +118,6 @@ class Collection(Expr):
             return broadcast(Eq, self, other)
         else:
             return self.isidentical(other)
-
-    def __ne__(self, other):
-        return broadcast(Ne, self, other)
-
-    def __lt__(self, other):
-        return broadcast(Lt, self, other)
-
-    def __le__(self, other):
-        return broadcast(Le, self, other)
-
-    def __gt__(self, other):
-        return broadcast(Gt, self, other)
-
-    def __ge__(self, other):
-        return broadcast(Ge, self, other)
-
-    def __add__(self, other):
-        return broadcast(Add, self, other)
-
-    def __radd__(self, other):
-        return broadcast(Add, other, self)
-
-    def __mul__(self, other):
-        return broadcast(Mult, self, other)
-
-    def __rmul__(self, other):
-        return broadcast(Mult, other, self)
-
-    def __div__(self, other):
-        return broadcast(Div, self, other)
-
-    def __rdiv__(self, other):
-        return broadcast(Div, other, self)
-
-    __truediv__ = __div__
-    __rtruediv__ = __rdiv__
-
-    def __floordiv__(self, other):
-        return broadcast(FloorDiv, self, other)
-
-    def __rfloordiv__(self, other):
-        return broadcast(FloorDiv, other, self)
-
-    def __sub__(self, other):
-        return broadcast(Sub, self, other)
-
-    def __rsub__(self, other):
-        return broadcast(Sub, other, self)
-
-    def __pow__(self, other):
-        return broadcast(Pow, self, other)
-
-    def __rpow__(self, other):
-        return broadcast(Pow, other, self)
-
-    def __mod__(self, other):
-        return broadcast(Mod, self, other)
-
-    def __rmod__(self, other):
-        return broadcast(Mod, other, self)
-
-    def __or__(self, other):
-        return broadcast(Or, self, other)
-
-    def __ror__(self, other):
-        return broadcast(Or, other, self)
-
-    def __and__(self, other):
-        return broadcast(And, self, other)
-
-    def __rand__(self, other):
-        return broadcast(And, other, self)
-
-    def __neg__(self):
-        return broadcast(USub, self)
-
-    def __invert__(self):
-        return broadcast(Not, self)
 
     def map(self, func, schema=None, name=None):
         return Map(self, func, schema, name)
@@ -559,6 +479,81 @@ trunc = partial(broadcast, scalar.trunc)
 def isnan(expr):
     return broadcast(scalar.isnan, expr)
 
+def _ne(a, b):
+    return broadcast(Ne, a, b)
+
+def _lt(a, b):
+    return broadcast(Lt, a, b)
+
+def _le(a, b):
+    return broadcast(Le, a, b)
+
+def _gt(a, b):
+    return broadcast(Gt, a, b)
+
+def _ge(a, b):
+    return broadcast(Ge, a, b)
+
+def _add(a, b):
+    return broadcast(Add, a, b)
+
+def _radd(a, b):
+    return broadcast(Add, b, a)
+
+def _mul(a, b):
+    return broadcast(Mult, a, b)
+
+def _rmul(a, b):
+    return broadcast(Mult, b, a)
+
+def _div(a, b):
+    return broadcast(Div, a, b)
+
+def _rdiv(a, b):
+    return broadcast(Div, b, a)
+
+def _floordiv(a, b):
+    return broadcast(FloorDiv, a, b)
+
+def _rfloordiv(a, b):
+    return broadcast(FloorDiv, b, a)
+
+def _sub(a, b):
+    return broadcast(Sub, a, b)
+
+def _rsub(a, b):
+    return broadcast(Sub, b, a)
+
+def _pow(a, b):
+    return broadcast(Pow, a, b)
+
+def _rpow(a, b):
+    return broadcast(Pow, b, a)
+
+def _mod(a, b):
+    return broadcast(Mod, a, b)
+
+def _rmod(a, b):
+    return broadcast(Mod, b, a)
+
+def _or(a, b):
+    return broadcast(Or, a, b)
+
+def _ror(a, b):
+    return broadcast(Or, b, a)
+
+def _and(a, b):
+    return broadcast(And, a, b)
+
+def _rand(a, b):
+    return broadcast(And, b, a)
+
+def _neg(a):
+    return broadcast(USub, a)
+
+def _invert(a):
+    return broadcast(Not, a)
+
 
 class Map(ElemWise):
     """ Map an arbitrary Python function across elements in a collection
@@ -640,6 +635,7 @@ def ndim(expr):
     """
     return len(expr.shape)
 
+
 from .core import dshape_method_list, dshape_methods, method_properties
 
 schema_method_list = [
@@ -648,7 +644,9 @@ schema_method_list = [
 schema_methods = memoize(partial(select_functions, schema_method_list))
 
 dshape_method_list.extend([
-    (iscollection, {shape, ndim})
+    (iscollection, {shape, ndim, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
+        _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow, _rpow,
+        _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert})
     ])
 
 method_properties.update([shape, ndim])

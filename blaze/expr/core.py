@@ -195,6 +195,84 @@ class Expr(object):
             else:
                 raise AttributeError(key)
 
+    def __ne__(self, other):
+        return self._ne(other)
+
+    def __lt__(self, other):
+        return self._lt(other)
+
+    def __le__(self, other):
+        return self._le(other)
+
+    def __gt__(self, other):
+        return self._gt(other)
+
+    def __ge__(self, other):
+        return self._ge(other)
+
+    def __add__(self, other):
+        return self._add(other)
+
+    def __radd__(self, other):
+        return self._radd(other)
+
+    def __mul__(self, other):
+        return self._mul(other)
+
+    def __rmul__(self, other):
+        return self._rmul(other)
+
+    def __div__(self, other):
+        return self._div(other)
+
+    def __rdiv__(self, other):
+        return self._rdiv(other)
+
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
+
+    def __floordiv__(self, other):
+        return self._floordiv(other)
+
+    def __rfloordiv__(self, other):
+        return self._rfloordiv(other)
+
+    def __sub__(self, other):
+        return self._sub(other)
+
+    def __rsub__(self, other):
+        return self._rsub(other)
+
+    def __pow__(self, other):
+        return self._pow(other)
+
+    def __rpow__(self, other):
+        return self._rpow(other)
+
+    def __mod__(self, other):
+        return self._mod(other)
+
+    def __rmod__(self, other):
+        return self._rmod(other)
+
+    def __or__(self, other):
+        return self._or(other)
+
+    def __ror__(self, other):
+        return self._ror(other)
+
+    def __and__(self, other):
+        return self._and(other)
+
+    def __rand__(self, other):
+        return self._rand(other)
+
+    def __neg__(self):
+        return self._neg()
+
+    def __invert__(self):
+        return self._invert()
+
 
 
 @dispatch(Expr)
