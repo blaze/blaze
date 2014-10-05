@@ -141,8 +141,7 @@ def concrete_head(expr, n=10):
 
         if expr.columns:
             return into(DataFrame(columns=expr.columns), result)
-        else:
-            return into(DataFrame, result) # pragma: no cover
+            
     else:
         return repr(compute(expr)) # pragma: no cover
 
