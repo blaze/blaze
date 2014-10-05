@@ -621,7 +621,7 @@ def ndim(expr):
 
 
 dshape_method_list.extend([
-    (iscollection, {shape, ndim}),
+    (iscollection, set([shape, ndim])),
     ])
 
 method_properties.update([shape, ndim])

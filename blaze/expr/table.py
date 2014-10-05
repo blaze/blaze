@@ -842,8 +842,8 @@ from .broadcast import isnan
 schema_method_list.extend([
     (isboolean, set([any, all])),
     (isnumeric, set([mean, isnan, sum, mean, min, max, std, var])),
-    (isscalar, set([label, relabel])),
-    (isrecord, set([relabel])),
+    (isscalar,  set([label, relabel])),
+    (isrecord,  set([relabel])),
     ])
 
 dshape_method_list.extend([

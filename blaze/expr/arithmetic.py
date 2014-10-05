@@ -298,9 +298,9 @@ from .core import dshape_method_list
 
 dshape_method_list.extend([
     (isscalar,
-            {_add, _radd, _mul,
+            set([_add, _radd, _mul,
             _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
-            _rpow, _mod, _rmod,  _neg}),
-    (isscalar, {_eq, _ne, _lt, _le, _gt, _ge}),
-    (isscalar, {_or, _ror, _and, _rand, _invert}),
+            _rpow, _mod, _rmod,  _neg])),
+    (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
+    (isscalar, set([_or, _ror, _and, _rand, _invert])),
     ])

@@ -222,7 +222,7 @@ from .core import dshape_method_list
 
 dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isscalar(ds.measure),
-            {_eq, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
-            _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
-            _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert})
+            set([_eq, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
+                 _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
+                _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert]))
     ])
