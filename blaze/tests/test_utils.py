@@ -1,6 +1,7 @@
 import os
+import pytest
 
-from blaze.utils import tmpfile
+from blaze.utils import tmpfile, suppress
 
 
 def test_tmpfile():
@@ -11,3 +12,23 @@ def test_tmpfile():
             assert f != g
 
     assert not os.path.exists(f)
+
+
+def test_suppress():
+    class MyTypeError(TypeError):
+        pass
+
+    class MyExc(Exception):
+        pass
+
+    with pytest.raises(MyExc):
+        raise MyExc('asdf')
+
+    with suppress(MyExc):
+        raise MyExc('asdf')
+
+    with pytest.raises(TypeError):
+        raise MyTypeError('asdf')
+
+    with suppress(TypeError):
+        raise MyTypeError('asdf')

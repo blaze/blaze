@@ -21,19 +21,25 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
-from toolz import map, partition_all, reduce
-import numpy as np
-import math
+from blaze.expr import (TableSymbol, Head, Selection, Join, RowWise, Label,
+                        ReLabel, Distinct, By, nunique)
+from blaze.expr import count, mean, min, max, any, all, sum
+from blaze.utils import mapsafe
+from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
-from cytoolz import unique
+from cytoolz import unique, partial
 from datashape import var, isdimension
 import pandas as pd
-
-from ..compatibility import builtins
-from ..dispatch import dispatch
+from ..api.resource import resource
 from .core import compute
+from glob import glob
+from pandas import DataFrame
+import itertools
+import pandas
+
+
+from ..dispatch import dispatch
 from ..data.core import DataDescriptor
 from ..expr.split import split
 
@@ -253,19 +259,18 @@ def get_chunk(data, i, chunksize=None):
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
 
+
 @dispatch((list, tuple), int)
 def get_chunk(seq, i, chunksize=1024):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return seq[start:stop]
 
+
 @dispatch((list, tuple), ChunkIterator)
 def into(a, b):
     return type(a)(concat((into(a, chunk) for chunk in b)))
 
-
-from pandas import DataFrame
-import pandas
 
 @dispatch(DataFrame, ChunkIterator)
 def into(df, b, **kwargs):
@@ -291,11 +296,25 @@ class ChunkList(ChunkIndexable):
         return iter(self.data)
 
 
-from ..api.resource import resource
-from glob import glob
-
 @resource.register('.*\*.*', priority=14)
-def resource_glob(uri, **kwargs):
+def resource_glob(uri, skip_excs=(), **kwargs):
+    """Get a list of resources that can be computed over.
+
+    Parameters
+    ----------
+    uri : str
+        A glob pattern describing the kind of resource to construct
+    skip_excs : None or Exception, optional
+        An Exception instance indicating which exceptions should be caught when
+        constructing individual resources.
+    kwargs : dict
+        Any keyword arguments to be passed to the data descriptor.
+
+    Returns
+    -------
+    resources : ChunkList
+        A list of resources
+    """
     uris = sorted(glob(uri))
 
     first = resource(uris[0], **kwargs)
@@ -304,4 +323,5 @@ def resource_glob(uri, **kwargs):
     if hasattr(first, 'schema'):
         kwargs['schema'] = first.schema
 
-    return ChunkList([resource(uri, **kwargs) for uri in uris])
+    f = partial(resource, **kwargs)
+    return ChunkList([first] + list(mapsafe(f, uris[1:], skip_excs=skip_excs)))

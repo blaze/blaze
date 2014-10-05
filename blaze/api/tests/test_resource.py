@@ -1,5 +1,6 @@
 import os
 import pytest
+import pandas as pd
 from blaze.api.resource import resource
 from blaze.data import CSV, Excel, SQL, HDF5
 from blaze.api.into import into
@@ -31,6 +32,7 @@ def test_into_directory_of_csv_files():
                                (3, 'Charlie', 300),
                                (4, 'Dan', 400),
                                (5, 'Edith', 500)]
+
 
 def test_resource_different_csv_schemas():
     files = {'foobar_a.csv': '1.0,1\n2.0,2',
@@ -106,6 +108,45 @@ class TestResource(TestCase):
             assert isinstance(resource(filename + '::/path/to/data/',
                                        schema='{a: int, b: int}'),
                               HDF5)
+
+    def test_csv_glob(self):
+        files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b\n5,6\n7,8'}
+        with filetexts(files, mode='wb'):
+            result = into(pd.DataFrame, resource('*.csv'))
+            assert result.values.tolist() == [[1, 2], [3, 4], [5, 6], [7, 8]]
+            assert result.columns.tolist() == list('ab')
+            assert result.index.tolist() == list(range(len(result)))
+
+    def test_csv_glob_empty_header(self):
+        files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b'}
+
+        with filetexts(files, mode='wb'):
+            result = resource('*.csv')
+            assert list(result[0][:]) == [(1, 2), (3, 4)]
+            assert list(result[1][:]) == []
+
+        with filetexts(files, mode='wb'):
+            csvs = resource('*.csv', skip_excs=(StopIteration,))
+            result = into(pd.DataFrame, csvs)
+            assert result.values.tolist() == [[1, 2], [3, 4]]
+            assert result.columns.tolist() == list('ab')
+            assert result.index.tolist() == list(range(len(result)))
+
+    def test_csv_glob_bad(self):
+        files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b\n1'}
+
+        with filetexts(files, mode='wb'):
+            result = list(resource('*.csv', skip_excs=(ValueError,)))
+            import ipdb; ipdb.set_trace()
+            assert len(result) == 1
+            assert list(result[0]) == [(1, 2), (3, 4)]
+
+        with filetexts(files, mode='wb'):
+            csvs = resource('*.csv', skip_excs=(ValueError,))
+            result = into(pd.DataFrame, csvs)
+            assert result.values.tolist() == [[1, 2], [3, 4]]
+            assert result.columns.tolist() == list('ab')
+            assert result.index.tolist() == list(range(len(result)))
 
 
 class TestInto(TestCase):

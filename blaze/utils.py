@@ -105,36 +105,33 @@ def filetext(text, extension='', open=open, mode='wt'):
         try:
             f.write(text)
         finally:
-            try:
+            with suppress(AttributeError):
                 f.close()
-            except AttributeError:
-                pass
 
         yield filename
 
 
 @contextmanager
-def filetexts(d, open=open):
+def filetexts(d, open=open, mode='wt'):
     """ Dumps a number of textfiles to disk
 
     d - dict
         a mapping from filename to text like {'a.csv': '1,1\n2,2'}
     """
     for filename, text in d.items():
-        f = open(filename, 'wt')
+        f = open(filename, mode=mode)
         try:
             f.write(text)
         finally:
-            try:
+            with suppress(AttributeError):
                 f.close()
-            except AttributeError:
-                pass
 
     yield list(d)
 
     for filename in d:
         if os.path.exists(filename):
-            os.remove(filename)
+            with suppress(OSError):
+                os.remove(filename)
 
 
 @contextmanager
@@ -150,10 +147,8 @@ def tmpfile(extension=''):
     except OSError:  # Sometimes Windows can't close files
         if os.name == 'nt':
             os.close(handle)
-            try:
+            with suppress(OSError):  # finally give up
                 os.remove(filename)
-            except OSError:  # finally give up
-                pass
 
 
 def raises(err, lamda):
@@ -192,3 +187,32 @@ def example(filename, datapath=os.path.join('examples', 'data')):
     import blaze
     return os.path.join(os.path.dirname(blaze.__file__), os.pardir, datapath,
                         filename)
+
+
+try:
+    from contextlib import suppress  # in the stdlib after python 3.4
+except ImportError:
+    class suppress(object):
+        """Suppress supplied exceptions.
+
+        Examples
+        --------
+        >>> import os
+        >>> with suppress(OSError):
+        ...     os.remove('does_not_exist.txt')  # does not raise
+        """
+        def __init__(self, *excs):
+            super(suppress, self).__init__()
+            self._excs = excs
+
+        def __enter__(self):
+            pass
+
+        def __exit__(self, typ, inst, tb):
+            return typ is not None and issubclass(typ, self._excs)
+
+
+def mapsafe(func, seq, skip_excs=()):
+    for item in seq:
+        with suppress(*skip_excs):
+            yield func(item)
