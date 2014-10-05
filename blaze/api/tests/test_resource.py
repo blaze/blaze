@@ -117,7 +117,7 @@ class TestResource(TestCase):
             assert result.columns.tolist() == list('ab')
             assert result.index.tolist() == list(range(len(result)))
 
-    def test_csv_glob_bad(self):
+    def test_csv_glob_empty_header(self):
         files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b'}
 
         with filetexts(files, mode='wb'):
@@ -127,6 +127,22 @@ class TestResource(TestCase):
 
         with filetexts(files, mode='wb'):
             csvs = resource('*.csv', skip_excs=(StopIteration,))
+            result = into(pd.DataFrame, csvs)
+            assert result.values.tolist() == [[1, 2], [3, 4]]
+            assert result.columns.tolist() == list('ab')
+            assert result.index.tolist() == list(range(len(result)))
+
+    def test_csv_glob_bad(self):
+        files = {'a.csv': b'a,b\n1,2\n3,4', 'b.csv': b'a,b\n1'}
+
+        with filetexts(files, mode='wb'):
+            result = list(resource('*.csv', skip_excs=(ValueError,)))
+            import ipdb; ipdb.set_trace()
+            assert len(result) == 1
+            assert list(result[0]) == [(1, 2), (3, 4)]
+
+        with filetexts(files, mode='wb'):
+            csvs = resource('*.csv', skip_excs=(ValueError,))
             result = into(pd.DataFrame, csvs)
             assert result.values.tolist() == [[1, 2], [3, 4]]
             assert result.columns.tolist() == list('ab')
