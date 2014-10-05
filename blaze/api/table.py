@@ -142,9 +142,9 @@ def concrete_head(expr, n=10):
         if expr.columns:
             return into(DataFrame(columns=expr.columns), result)
         else:
-            return into(DataFrame, result)
+            return into(DataFrame, result) # pragma: no cover
     else:
-        return repr(compute(expr))
+        return repr(compute(expr)) # pragma: no cover
 
 
 def table_repr(expr, n=10):
@@ -160,14 +160,7 @@ def table_repr(expr, n=10):
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
-        return repr(result)
-
-
-def expr_repr(expr):
-    if not expr.resources():
-        return str(expr)
-    else:
-        return str(compute(expr))
+        return repr(result) # pragma: no cover
 
 
 def table_html(expr, n=10):
@@ -206,15 +199,6 @@ def into(a, b):
         return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(schema))
 
 
-def table_length(expr):
-    try:
-        return expr._len()
-    except TypeError:
-        return compute(expr.count())
-
-
-Expr.__repr__ = expr_repr
 TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
 TableExpr._repr_html_ = table_html
-TableExpr.__len__ = table_length

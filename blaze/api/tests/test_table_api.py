@@ -1,15 +1,25 @@
-from blaze.api.table import Table, compute, table_repr
+from blaze.api.table import Table, compute, table_repr, concrete_head
+from blaze.api.into import into
 from blaze.data.python import Python
 from blaze.compute.core import compute
 from blaze.compute.python import compute
+from blaze.expr.table import TableSymbol
 from datashape import dshape
 from blaze.utils import tmpfile
 import pytest
 
 import pandas as pd
+import numpy as np
+from dynd import nd
 
 data = (('Alice', 100),
         ('Bob', 200))
+
+L = [[1, 'Alice',   100],
+     [2, 'Bob',    -200],
+     [3, 'Charlie', 300],
+     [4, 'Denis',   400],
+     [5, 'Edith',  -500]]
 
 t = Table(data, columns=['name', 'amount'])
 
@@ -17,6 +27,24 @@ t = Table(data, columns=['name', 'amount'])
 def sample_table(data):
     t = Table(data, schema='{name: string, amount: float32}')
     return t
+
+@pytest.fixture
+def large_table():
+    t = Table(L, columns=['id', 'name', 'balance'])
+    return t
+
+@pytest.fixture
+def column_expr(large_table):
+    t = large_table
+    expr = t[t['balance'] < 0]['name']
+    return expr
+
+@pytest.fixture
+def selection_expr(large_table):
+    t = large_table
+    expr = t[t['balance'] < 0]
+    return expr
+
 
 def test_table_constructor_error():
     with pytest.raises(ValueError):
@@ -29,8 +57,20 @@ def test_table_column_types_error():
         t = Table([1,2,3,4,5])
 
 
+def test_table_columns():
+    ll = Table([1,2,3,4,5], columns='numbers')
+    lt = Table((1,2,3,4,5), columns='numbers')
+    lnp = Table(np.array([1,2,3,4,5]), columns='numbers')
+
+
 def test_resources():
     assert t.resources() == {t: t.data}
+
+def test_resources_fail():
+    t = TableSymbol('t', '{x:int, y:int}')
+    d = t[t['x'] > 100]
+    with pytest.raises(ValueError):
+        compute(d)
 
 
 def test_compute():
@@ -144,3 +184,23 @@ def test_table_resource():
         t = Table(filename)
         assert isinstance(t.data, CSV)
         assert list(compute(t)) == list(csv)
+
+
+def test_concretehead_failure():
+    t = TableSymbol('t', '{x:int, y:int}')
+    d = t[t['x'] > 100]
+    with pytest.raises(ValueError):
+        concrete_head(d)
+
+def test_into_np_ndarray(column_expr):
+    cexpr = into(np.ndarray, column_expr)
+    clen = len(list(compute(column_expr)))
+    nplen = len(cexpr)
+    assert clen == nplen
+
+def test_into_nd_array(selection_expr):
+    nexpr = into(nd.array, selection_expr)
+    nlen = len(list(compute(selection_expr)))
+    nexpr_len = len(nexpr)
+    assert nexpr_len == nlen
+
