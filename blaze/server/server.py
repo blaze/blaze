@@ -10,8 +10,7 @@ from functools import partial, wraps
 from blaze import into, compute, compute_up
 from datashape.predicates import iscollection
 from ..api import discover, Table
-from ..expr import (Expr, TableSymbol, Selection, Broadcast, TableSymbol,
-    istabular)
+from ..expr import Expr, TableSymbol, Selection, Broadcast, TableSymbol
 from ..expr.parser import exprify
 
 from ..compatibility import map

@@ -5,7 +5,7 @@ from pandas import DataFrame
 import numpy as np
 import bcolz
 from datashape.predicates import isscalar, iscollection
-from blaze.expr import TableSymbol, by, istabular, iscolumn
+from blaze.expr import TableSymbol, by
 from blaze.api.into import into
 from blaze.api.table import Table
 from blaze.compute import compute

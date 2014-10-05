@@ -8,13 +8,13 @@ from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
 from functools import partial
 from datetime import datetime
 import datashape
-from datashape.predicates import iscollection
+from datashape.predicates import iscollection, isscalar
 from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, union, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
-                        Summary, count, Symbol, iscolumn, Field)
+                        Summary, count, Symbol, Field)
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover
@@ -212,8 +212,8 @@ def test_different_schema_raises():
 
 
 def test_getattr_doesnt_override_properties():
-    t = TableSymbol('t', '{iscolumn: string, schema: string}')
-    assert iscolumn(t) is False
+    t = TableSymbol('t', '{subs: string, schema: string}')
+    assert callable(t.subs)
     assert isinstance(t.schema, DataShape)
 
 
@@ -568,8 +568,8 @@ def test_relabel():
     print(rl.fields)
     assert rl.fields == ['NAME', 'amount', 'ID']
 
-    assert not iscolumn(rl)
-    assert iscolumn(rlc)
+    assert not isscalar(rl.dshape.measure)
+    assert isscalar(rlc.dshape.measure)
 
 
 def test_relabel_join():
@@ -585,9 +585,9 @@ def test_map():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     r = TableSymbol('s', 'int64')
     inc = lambda x: x + 1
-    assert iscolumn(t['amount'].map(inc, schema='int'))
+    assert isscalar(t['amount'].map(inc, schema='int').dshape.measure)
     s = t['amount'].map(inc, schema='{amount: int}')
-    assert not iscolumn(s)
+    assert not isscalar(s.dshape.measure)
 
     assert s.dshape == dshape('var * {amount: int}')
 
@@ -738,6 +738,8 @@ def test_schema_of_complex_interaction():
     print(expr.dtype)
     assert expr.dtype == dshape('real')
 
+def iscolumn(x):
+    return isscalar(x.dshape.measure)
 
 def test_iscolumn():
     a = TableSymbol('a', '{x: int, y: int, z: int}')

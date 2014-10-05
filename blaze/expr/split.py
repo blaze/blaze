@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from blaze.expr import *
 from blaze.expr.table import *
 import datashape
+from datashape.predicates import isscalar
 from ..dispatch import dispatch
 
 good_to_split = (Reduction, Summary, By, Distinct)
@@ -98,7 +99,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
             split(leaf, expr.apply, chunk=chunk, agg=agg)
 
     chunk_grouper = expr.grouper.subs({leaf: chunk})
-    if iscolumn(expr.grouper):
+    if isscalar(expr.grouper.dshape.measure):
         agg_grouper = agg[expr.columns[0]]
     else:
         agg_grouper = agg[list(expr.columns[:len(expr.grouper.columns)])]

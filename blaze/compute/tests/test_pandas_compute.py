@@ -43,14 +43,6 @@ def df_all(a_df, b_df):
     return True
 
 
-@pytest.mark.xfail(reason="non-sensical")
-def test_series_column():
-    s = Series([1, 2, 3], name='a')
-    t = TableSymbol('t', '{a: int64}')
-    result = compute(t.a, s)
-    pd.util.testing.assert_series_equal(s, result)
-
-
 def test_series_columnwise():
     s = Series([1, 2, 3], name='a')
     t = TableSymbol('t', '{a: int64}')
