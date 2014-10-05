@@ -1,5 +1,9 @@
+from __future__ import absolute_import, division, print_function
+
 from blaze.expr import *
+from blaze.expr.table import *
 import datashape
+from ..dispatch import dispatch
 
 good_to_split = (Reduction, Summary, By, Distinct)
 can_split = good_to_split + (Selection, ElemWise)

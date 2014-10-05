@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+
 import math
 import itertools
 import operator
@@ -11,8 +12,8 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
 from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std, head, Symbol)
+                        Apply, sum, min, max, any, summary, Symbol,
+                        count, std, head, Symbol)
 import numpy as np
 
 from blaze import cos, sin
@@ -568,8 +569,8 @@ def test_reduction_arithmetic():
 
 
 def test_scalar_arithmetic():
-    x = ScalarSymbol('x', 'real')
-    y = ScalarSymbol('y', 'real')
+    x = Symbol('x', 'real')
+    y = Symbol('y', 'real')
     assert compute(x + y, {x: 2, y: 3}) == 5
     assert compute_up(x + y, 2, 3) == 5
     assert compute_up(x * y, 2, 3) == 6
@@ -584,7 +585,7 @@ def test_scalar_arithmetic():
 
     assert compute_up(-x, 1) == -1
 
-    assert compute_up(scalar.numbers.sin(x), 1) == math.sin(1)
+    assert compute_up(blaze.sin(x), 1) == math.sin(1)
 
 
 def test_like():

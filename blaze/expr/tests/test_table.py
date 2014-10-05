@@ -8,12 +8,13 @@ from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
 from functools import partial
 from datetime import datetime
 import datashape
+from datashape.predicates import iscollection
 from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, union, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
-                        Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol, iscolumn, Field,
+                        Label, ReLabel, Head, Sort, any, summary,
+                        Summary, count, Symbol, iscolumn, Field,
                         Collection)
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
@@ -429,8 +430,9 @@ class TestScalarArithmetic(object):
             result = f(r, 1)
             assert eval('r %s 1' % op).isidentical(result)
 
-            result = f(r, r)
-            assert eval('r %s r' % op).isidentical(result)
+            a = f(r, r)
+            b = eval('r %s r' % op)
+            assert a is b or a.isidentical(b)
 
             result = f(1, r)
             assert eval('1 %s r' % op).isidentical(result)
@@ -465,7 +467,7 @@ def test_summary():
 
     assert not summary(total=t.amount.sum()).child.isidentical(
             t.amount.sum())
-    assert isinstance(summary(total=t.amount.sum() + 1).child, Collection)
+    assert iscollection(summary(total=t.amount.sum() + 1).child.dshape)
 
 
 def test_reduction_arithmetic():
@@ -618,7 +620,7 @@ def test_apply():
 
 
 def test_broadcast():
-    from blaze.expr.scalar import Add, Eq, Mult, Le
+    from blaze.expr.arithmetic import Add, Eq, Mult, Le
     t = TableSymbol('t', '{x: int, y: int, z: int}')
     t2 = TableSymbol('t', '{a: int, b: int, c: int}')
     x = t['x']
@@ -808,12 +810,13 @@ def test_table_coercion():
 
 
 def test_isnan():
+    from blaze import isnan
     t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
 
     for expr in [t.amount.isnan(), ~t.amount.isnan()]:
         assert eval(str(expr)).isidentical(expr)
 
-    assert isinstance(t.amount.isnan(), Collection)
+    assert iscollection(t.amount.isnan().dshape)
     assert 'bool' in str(t.amount.isnan().dshape)
 
 
@@ -852,7 +855,7 @@ def test_distinct_name():
 def test_leaves():
     t = TableSymbol('t', '{id: int32, name: string}')
     v = TableSymbol('v', '{id: int32, city: string}')
-    x = ScalarSymbol('x', 'int32')
+    x = Symbol('x', 'int32')
 
     assert t.leaves() == [t]
     assert t.id.leaves() == [t]

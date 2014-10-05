@@ -1,13 +1,15 @@
+from __future__ import absolute_import, division, print_function
+
 from datashape.predicates import iscollection, isscalar
 from toolz import partial, unique, first
 import datashape
 from datashape import dshape, DataShape, Record, Var, Option, Unit
 
-from .expr import ElemWise, Field, Label, Expr
-from . import scalar
-from .scalar import ScalarSymbol, Number, eval_str
-from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, Not, eval_str, FloorDiv, NumberInterface)
+from .expr import ElemWise, Label, Expr
+from .core import eval_str, Symbol, Field
+from .arithmetic import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod,
+                         Or, And, USub, Not, FloorDiv)
+from . import math
 
 __all__ = ['broadcast', 'Broadcast']
 
@@ -88,7 +90,7 @@ class Broadcast(ElemWise):
     expr : ScalarExpr
         The names of the varibles within the scalar expr must match the columns
         of the child.  Use ``Column.scalar_variable`` to generate the
-        appropriate ScalarSymbol
+        appropriate scalar Symbol
 
     Examples
     --------
@@ -111,7 +113,7 @@ class Broadcast(ElemWise):
     @property
     def _name(self):
         names = [x._name for x in self.expr.traverse()
-                         if isinstance(x, ScalarSymbol)]
+                  if isinstance(x, Symbol)]
         if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
             return names[0]
 
@@ -127,40 +129,7 @@ class Broadcast(ElemWise):
 
     def active_columns(self):
         return sorted(unique(x._name for x in self.traverse()
-                                    if isinstance(x, ScalarSymbol)))
-
-
-sqrt = partial(broadcast, scalar.sqrt)
-
-sin = partial(broadcast, scalar.sin)
-cos = partial(broadcast, scalar.cos)
-tan = partial(broadcast, scalar.tan)
-sinh = partial(broadcast, scalar.sinh)
-cosh = partial(broadcast, scalar.cosh)
-tanh = partial(broadcast, scalar.tanh)
-acos = partial(broadcast, scalar.acos)
-acosh = partial(broadcast, scalar.acosh)
-asin = partial(broadcast, scalar.asin)
-asinh = partial(broadcast, scalar.asinh)
-atan = partial(broadcast, scalar.atan)
-atanh = partial(broadcast, scalar.atanh)
-
-exp = partial(broadcast, scalar.exp)
-log = partial(broadcast, scalar.log)
-expm1 = partial(broadcast, scalar.expm1)
-log10 = partial(broadcast, scalar.log10)
-log1p = partial(broadcast, scalar.log1p)
-
-radians = partial(broadcast, scalar.radians)
-degrees = partial(broadcast, scalar.degrees)
-
-ceil = partial(broadcast, scalar.ceil)
-floor = partial(broadcast, scalar.floor)
-trunc = partial(broadcast, scalar.trunc)
-
-def isnan(expr):
-    return broadcast(scalar.isnan, expr)
-
+                   if isinstance(x, Symbol) and isscalar(x.dshape)))
 
 
 def _eq(self, other):
@@ -246,6 +215,8 @@ def _neg(a):
 def _invert(a):
     return broadcast(Not, a)
 
+def isnan(expr):
+    return broadcast(math.isnan, expr)
 
 from .core import dshape_method_list
 

@@ -60,7 +60,7 @@ import toolz
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, ElemWise, By,
                     TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
-                    Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary, Like,
+                    Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
                     Broadcast, DateTime, Microsecond, Date, Time,
                     )
 from ..expr.core import Expr
@@ -154,15 +154,15 @@ def compute_sub(t):
 
     Examples
     --------
-    >>> from blaze import ScalarSymbol
-    >>> s = ScalarSymbol('s', 'float64')
+    >>> from blaze import Symbol
+    >>> s = Symbol('s', 'float64')
     >>> expr = s * 2 + s - 1
     >>> expr
     ((s * 2) + s) - 1
     >>> compute_sub(expr)
     {'$subtract': [{'$add': [{'$multiply': ['$s', 2]}, '$s']}, 1]}
     """
-    if isinstance(t, (_strtypes, ScalarSymbol)):
+    if isinstance(t, _strtypes + (Symbol,)):
         return '$%s' % t
     elif isinstance(t, numbers.Number):
         return t
@@ -351,12 +351,12 @@ def post_compute(e, q, d):
 def name(e):
     """
 
-    >>> name(ScalarSymbol('x', 'int32'))
+    >>> name(Symbol('x', 'int32'))
     'x'
     >>> name(1)
     1
     """
-    if isinstance(e, ScalarSymbol):
+    if isinstance(e, Symbol):
         return e._name
     elif isinstance(e, Expr):
         raise NotImplementedError("Complex queries not yet supported")
@@ -373,8 +373,8 @@ def match(expr):
 
     Examples
     --------
-    >>> x = ScalarSymbol('x', 'int32')
-    >>> name = ScalarSymbol('name', 'string')
+    >>> x = Symbol('x', 'int32')
+    >>> name = Symbol('name', 'string')
     >>> match(name == 'Alice')
     {'name': 'Alice'}
     >>> match(x > 10)

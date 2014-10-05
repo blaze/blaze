@@ -1,8 +1,8 @@
 from blaze.expr.predicates import *
-from blaze.expr import TableSymbol, ScalarSymbol
+from blaze.expr import TableSymbol, Symbol
 
 t = TableSymbol('t', '{name: string, amount: int}')
-s = ScalarSymbol('s', 'string')
+s = Symbol('s', 'string')
 
 def test_istabular():
     assert istabular(t)

@@ -2,25 +2,26 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 
-from blaze.expr.scalar import (ScalarSymbol, scalar_coerce, Mult, eval_str,
-                               Add, dshape, sin, exprify, cos, isnan, exp, log)
+from blaze.expr.arithmetic import (scalar_coerce, Mult, Add, dshape)
+from blaze.expr.math import sin, cos, isnan, exp, log
+from blaze.expr import Symbol, eval_str, exprify
 from blaze.compatibility import xfail, basestring, raises
 from datetime import date, datetime
 
-x = ScalarSymbol('x')
-y = ScalarSymbol('y')
+x = Symbol('x', 'real')
+y = Symbol('y', 'real')
 
 
 def test_basic():
     expr = (x + y) * 3
 
     assert eval(str(expr)).isidentical(expr)
-    assert expr.isidentical(Mult(Add(ScalarSymbol('x'), ScalarSymbol('y')), 3))
+    assert expr.isidentical(Mult(Add(Symbol('x', 'real'), Symbol('y', 'real')), 3))
 
 
 def test_eval_str():
     expr = (x + y) * 3
-    assert expr.eval_str() == '(x + y) * 3'
+    assert eval_str(expr) == '(x + y) * 3'
 
     assert eval_str(1) == '1'
     assert eval_str('Alice') == "'Alice'"
@@ -32,18 +33,18 @@ def test_eval_str():
 
 
 def test_str():
-    x = ScalarSymbol('x', 'real')
+    x = Symbol('x', 'real')
     assert str(x + 10) == 'x + 10'
 
 
 def test_invert():
-    x = ScalarSymbol('x', 'bool')
+    x = Symbol('x', 'bool')
     expr = ~x
     assert expr.op(x).isidentical(expr)
 
 
 def test_boolean_math_has_boolean_methods():
-    x = ScalarSymbol('x', '?int')
+    x = Symbol('x', '?int')
     expr = ~(isnan(x)) | (x > 0)
 
     assert eval(str(expr)).isidentical(expr)
@@ -57,20 +58,20 @@ def ishashable(x):
         return False
 
 
-def test_ScalarSymbol_is_hashable():
+def test_Symbol_is_hashable():
     assert ishashable(x)
 
 
 def test_relationals():
-    x = ScalarSymbol('x', 'real')
+    x = Symbol('x', 'real')
     for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1, ~x]:
         assert expr.dshape == dshape('bool')
         assert eval(str(expr)) == expr
 
 
 def test_numbers():
-    x = ScalarSymbol('x', 'real')
-    y = ScalarSymbol('x', 'int')
+    x = Symbol('x', 'real')
+    y = Symbol('x', 'int')
     for expr in [x + 1, x - 1, x * 1, x + y, x - y, x / y, x * y + x + y,
                  x**y, x**2, 2**x, x % 5, -x,
                  sin(x), cos(x ** 2), exp(log(y))]:
@@ -82,35 +83,35 @@ def test_numbers():
 
 @xfail(reason="TODO")
 def test_neg_dshape_unsigned():
-    y = ScalarSymbol('x', 'uint32')
+    y = Symbol('x', 'uint32')
     assert (-y).dshape == dshape('int32')
 
 
 @xfail(reason="TODO")
 def test_arithmetic_dshape_inference():
-    x = ScalarSymbol('x', 'int')
-    y = ScalarSymbol('y', 'int')
+    x = Symbol('x', 'int')
+    y = Symbol('y', 'int')
     assert (x + y).dshape == dshape('int')
 
 
 def test_date_coercion():
-    d = ScalarSymbol('d', 'date')
+    d = Symbol('d', 'date')
     expr = d < '2012-01-01'
     assert isinstance(expr.rhs, date)
 
 
 def test_datetime_coercion():
-    d = ScalarSymbol('d', 'datetime')
+    d = Symbol('d', 'datetime')
     expr = d > '2012-01-01T12:30:00'
     assert isinstance(expr.rhs, datetime)
 
 
 class TestExprify(object):
     dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
-    x = ScalarSymbol('x', 'int')
-    y = ScalarSymbol('y', 'real')
-    z = ScalarSymbol('z', 'int32')
-    name = ScalarSymbol('name', 'string')
+    x = Symbol('x', 'int')
+    y = Symbol('y', 'real')
+    z = Symbol('z', 'int32')
+    name = Symbol('name', 'string')
 
     def test_basic_arithmetic(self):
         assert exprify('x + y', self.dtypes).isidentical(self.x + self.y)
@@ -260,6 +261,6 @@ def test_scalar_coerce():
 
 
 def test_scalar_name_dtype():
-    x = ScalarSymbol('x', 'int64')
-    assert x.name == 'x'
+    x = Symbol('x', 'int64')
+    assert x._name == 'x'
     assert x.dtype == dshape('int64')

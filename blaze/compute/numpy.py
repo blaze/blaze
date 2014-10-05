@@ -1,16 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from pandas import DataFrame, Series
 
-from blaze.expr import Reduction, Field, Projection, Broadcast, Selection
-from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
-from blaze.expr import std, var, count, nunique
-from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
+from ..expr import Reduction, Field, Projection, Broadcast, Selection
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
+from ..expr import std, var, count, nunique
+from ..expr import BinOp, UnaryOp, USub, Not
 
 from .core import base, compute
 from ..dispatch import dispatch
-from blaze.api.into import into
-from pandas import DataFrame, Series
+from ..api.into import into
 
 __all__ = ['np']
 

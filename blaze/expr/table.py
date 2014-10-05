@@ -13,27 +13,20 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
 from datashape.predicates import isscalar, iscollection
 import numpy as np
-from . import scalar
-from .core import (Expr, path, common_subexpression)
+from .core import Expr, path, common_subexpression, Field
 from .expr import (Collection, Projection, projection, Selection, selection,
         Label, label, ElemWise, Map)
 from .broadcast import broadcast, Broadcast
-from .scalar import ScalarSymbol, Number
-from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
-from .expr import Field, Symbol
+from .expr import Symbol
 
-from .broadcast import (sqrt, sin, cos, tan, sinh, cosh, tanh, acos, acosh, asin,
-        asinh, atan, atanh, exp, log, expm1, log10, log1p, radians, degrees,
-        ceil, floor, trunc, isnan, _expr_child)
+from .broadcast import _expr_child
 
 __all__ = '''
 TableExpr TableSymbol Projection Selection Broadcast Join
-Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
-exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
+Reduction join any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union broadcast Summary summary'''.split()
@@ -204,7 +197,7 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 
 join.__doc__ = Join.__doc__
 
-class Reduction(NumberInterface):
+class Reduction(Expr):
     """ A column-wise reduction
 
     Blaze supports the same class of reductions as NumPy and Pandas.
@@ -251,7 +244,7 @@ class any(Reduction):
 class all(Reduction):
     dtype = ct.bool_
 
-class sum(Reduction, Number):
+class sum(Reduction):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -260,7 +253,7 @@ class sum(Reduction, Number):
         else:
             return schema
 
-class max(Reduction, Number):
+class max(Reduction):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -269,7 +262,7 @@ class max(Reduction, Number):
         else:
             return schema
 
-class min(Reduction, Number):
+class min(Reduction):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -278,10 +271,10 @@ class min(Reduction, Number):
         else:
             return schema
 
-class mean(Reduction, Number):
+class mean(Reduction):
     dtype = ct.real
 
-class var(Reduction, Number):
+class var(Reduction):
     """Variance
 
     Parameters
@@ -300,7 +293,7 @@ class var(Reduction, Number):
     def __init__(self, child, unbiased=False):
         super(var, self).__init__(child, unbiased)
 
-class std(Reduction, Number):
+class std(Reduction):
     """Standard Deviation
 
     Parameters
@@ -327,10 +320,10 @@ class std(Reduction, Number):
     def __init__(self, child, unbiased=False):
         super(std, self).__init__(child, unbiased)
 
-class count(Reduction, Number):
+class count(Reduction):
     dtype = ct.int_
 
-class nunique(Reduction, Number):
+class nunique(Reduction):
     dtype = ct.int_
 
 
@@ -841,10 +834,10 @@ def isboolean(ds):
         return isboolean(ds.ty)
     return ds == bool_
 
-
 from datashape.predicates import iscollection, isscalar, isrecord
 from datashape import Unit, Record, to_numpy_dtype, bool_
 from .expr import schema_method_list, dshape_method_list
+from .broadcast import isnan
 
 schema_method_list.extend([
     (isboolean, set([any, all])),

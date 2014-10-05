@@ -34,7 +34,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     DateTime, Date, Time, Millisecond, TableSymbol, ElemWise)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
-from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
+from ..expr import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply, unicode
 from . import core
 from .core import compute, compute_up

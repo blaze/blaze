@@ -8,11 +8,11 @@ from dynd import nd
 from cytoolz import first
 from functools import partial, wraps
 from blaze import into, compute, compute_up
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import iscollection
 from ..api import discover, Table
 from ..expr import (Expr, TableSymbol, Selection, Broadcast, TableSymbol,
     istabular)
-from ..expr.scalar.parser import exprify
+from ..expr.parser import exprify
 
 from ..compatibility import map
 from datashape import Mono

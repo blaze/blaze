@@ -1,4 +1,5 @@
 from ..expr import *
+from ..dispatch import dispatch
 from operator import and_
 from toolz import first, reduce
 import inspect
