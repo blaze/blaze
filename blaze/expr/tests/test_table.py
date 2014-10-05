@@ -14,8 +14,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, union, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
-                        Summary, count, Symbol, iscolumn, Field,
-                        Collection)
+                        Summary, count, Symbol, iscolumn, Field)
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
 from blaze.expr.core import discover

@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from .expr import Collection
+from .core import Expr
 
 __all__ = ['Like', 'like']
 
-class Like(Collection):
+class Like(Expr):
     __slots__ = 'child', '_patterns'
 
     @property

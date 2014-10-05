@@ -472,7 +472,7 @@ def into(cds, t, **kwargs):
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
 
-@dispatch(ColumnDataSource, expr.Collection)
+@dispatch(ColumnDataSource, Expr)
 def into(cds, t, **kwargs):
     columns = t.fields
     return ColumnDataSource(data=dict((col, into([], t[col]))

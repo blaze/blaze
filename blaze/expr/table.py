@@ -13,9 +13,9 @@ from toolz import (concat, partial, first, compose, get, unique, second,
                    isdistinct, frequencies, memoize)
 from datashape.predicates import isscalar, iscollection
 import numpy as np
-from .core import Expr, path, common_subexpression, Field
-from .expr import (Collection, Projection, projection, Selection, selection,
-        Label, label, ElemWise, Map)
+from .core import (Expr, path, common_subexpression, Field, Projection,
+        projection, ElemWise)
+from .expr import Selection, selection, Label, label, Map
 from .broadcast import broadcast, Broadcast
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
@@ -32,7 +32,7 @@ ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union broadcast Summary summary'''.split()
 
 
-class TableExpr(Collection):
+class TableExpr(Expr):
     """ Super class for all Table Expressions
 
     This is not intended to be constructed by users.

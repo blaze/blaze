@@ -18,16 +18,10 @@ from datashape.predicates import isscalar, iscollection
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
-__all__ = ['Collection', 'Projection', 'projection', 'Selection', 'selection',
-'Label', 'label', 'ElemWise']
+__all__ = ['Selection', 'selection', 'Label', 'label', 'ElemWise']
 
 
-class Collection(Expr):
-    pass
-
-
-
-class Selection(Collection):
+class Selection(Expr):
     """ Filter elements of expression based on predicate
 
     Examples
