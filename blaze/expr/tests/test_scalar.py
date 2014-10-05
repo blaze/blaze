@@ -264,3 +264,15 @@ def test_scalar_name_dtype():
     x = Symbol('x', 'int64')
     assert x._name == 'x'
     assert x.dtype == dshape('int64')
+
+
+def test_scalar_field():
+    x = Symbol('x', '{name: string, amount: int64, when: datetime}')
+    assert 'amount' in dir(x)
+    assert x.amount.dshape == dshape('int64')
+
+
+def test_scalar_projection():
+    x = Symbol('x', '{name: string, amount: int64, when: datetime}')
+    assert x[['amount', 'when']].dshape == \
+            dshape('{amount: int64, when: datetime}')
