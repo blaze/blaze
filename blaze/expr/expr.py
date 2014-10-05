@@ -137,8 +137,8 @@ class Map(ElemWise):
             return dshape(self._schema)
         else:
             raise NotImplementedError("Schema of mapped column not known.\n"
-                    "Please specify schema keyword in .map method.\n"
-                    "t['columnname'].map(function, schema='{col: type}')")
+                    "Please specify datashape keyword in .map method.\n"
+                    "Example: t['columnname'].map(function, 'int64')")
 
     def label(self, name):
         assert isscalar(self.dshape.measure)

@@ -60,7 +60,7 @@ def test_columnwise():
 
 
 def test_map():
-    assert list(concat(compute(t.id.map(lambda x: x+1), c))) == [2, 3, 4, 5, 6]
+    assert list(concat(compute(t.id.map(lambda x: x+1, schema='int'), c))) == [2, 3, 4, 5, 6]
 
 
 def test_selection():

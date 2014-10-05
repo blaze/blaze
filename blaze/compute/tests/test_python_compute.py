@@ -374,11 +374,11 @@ def test_relabel_join():
 
 def test_map_column():
     inc = lambda x: x + 1
-    assert list(compute(t['amount'].map(inc), data)) == [x[1] + 1 for x in data]
+    assert list(compute(t['amount'].map(inc, 'int'), data)) == [x[1] + 1 for x in data]
 
 
 def test_map():
-    assert (list(compute(t.map(lambda _, amt, id: amt + id), data)) ==
+    assert (list(compute(t.map(lambda _, amt, id: amt + id, 'int'), data)) ==
             [x[1] + x[2] for x in data])
 
 
@@ -399,7 +399,8 @@ def test_map_datetime():
     data = [['A', 0], ['B', 1]]
     t = TableSymbol('t', '{foo: string, datetime: int64}')
 
-    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp), data))
+    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp,
+    'datetime'), data))
     expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
 
     assert result == expected
@@ -425,7 +426,7 @@ def test_merge():
 def test_map_columnwise():
     colwise = t['amount'] * t['id']
 
-    expr = colwise.map(lambda x: x / 10, schema="int64", name='mod')
+    expr = colwise.map(lambda x: x / 10, 'int64', name='mod')
 
     assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data]
 
@@ -434,7 +435,7 @@ def test_map_columnwise_of_selection():
     tsel = t[t['name'] == 'Alice']
     colwise = tsel['amount'] * tsel['id']
 
-    expr = colwise.map(lambda x: x / 10, schema="int64", name='mod')
+    expr = colwise.map(lambda x: x / 10, 'int64', name='mod')
 
     assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data[::2]]
 
