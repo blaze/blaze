@@ -644,3 +644,15 @@ def test_nested():
             [(100, 200), (300, -400, 500)]
     assert list(compute(t.payments.amount + 1, payments_ordered)) ==\
             [(101, 201), (301, -399, 501)]
+
+
+def test_scalar():
+    s = Symbol('s', '{name: string, id: int32, payments: var * {amount: int32, when: datetime}}')
+    data = ('Alice', 1, ((100, datetime(2000, 1, 1, 1, 1 ,1)),
+                         (200, datetime(2000, 2, 2, 2, 2, 2)),
+                         (300, datetime(2000, 3, 3, 3, 3, 3))))
+
+    compute(s.name, data) == 'Alice'
+    compute(s.id + 1, data) == 2
+    compute(s.payments.amount + 1, data) == (100, 200, 300)
+    compute(s.payments.amount + 1, data) == (101, 201, 301)

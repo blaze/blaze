@@ -593,3 +593,35 @@ method_properties = set()
 
 dshape_methods = memoize(partial(select_functions, dshape_method_list))
 schema_methods = memoize(partial(select_functions, schema_method_list))
+
+
+def shape(expr):
+    """ Shape of expression
+
+    >>> Symbol('s', '3 * 5 * int32').shape
+    (3, 5)
+    """
+    s = list(expr.dshape.shape)
+    for i, elem in enumerate(s):
+        try:
+            s[i] = int(elem)
+        except TypeError:
+            pass
+
+    return tuple(s)
+
+
+def ndim(expr):
+    """ Number of dimensions of expression
+
+    >>> Symbol('s', '3 * var * int32').ndim
+    2
+    """
+    return len(expr.shape)
+
+
+dshape_method_list.extend([
+    (iscollection, {shape, ndim}),
+    ])
+
+method_properties.update([shape, ndim])

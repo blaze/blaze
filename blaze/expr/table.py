@@ -836,7 +836,7 @@ def isboolean(ds):
 
 from datashape.predicates import iscollection, isscalar, isrecord
 from datashape import Unit, Record, to_numpy_dtype, bool_
-from .expr import schema_method_list, dshape_method_list
+from .core import schema_method_list, dshape_method_list
 from .broadcast import isnan
 
 schema_method_list.extend([

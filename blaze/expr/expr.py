@@ -161,38 +161,3 @@ class Map(ElemWise):
             return self._name0
         else:
             return self.child._name
-
-
-def shape(expr):
-    """ Shape of expression
-
-    >>> Symbol('s', '3 * 5 * int32').shape
-    (3, 5)
-    """
-    s = list(expr.dshape.shape)
-    for i, elem in enumerate(s):
-        try:
-            s[i] = int(elem)
-        except TypeError:
-            pass
-
-    return tuple(s)
-
-
-def ndim(expr):
-    """ Number of dimensions of expression
-
-    >>> Symbol('s', '3 * var * int32').ndim
-    2
-    """
-    return len(expr.shape)
-
-
-from .core import dshape_method_list, schema_method_list, method_properties
-
-
-dshape_method_list.extend([
-    (iscollection, {shape, ndim}),
-    ])
-
-method_properties.update([shape, ndim])

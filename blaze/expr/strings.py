@@ -32,7 +32,7 @@ def like(child, **kwargs):
     """
     return Like(child, tuple(kwargs.items()))
 
-from .expr import schema_method_list
+from .core import schema_method_list
 from .table import min, max
 
 schema_method_list.extend([

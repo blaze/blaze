@@ -25,7 +25,7 @@ import toolz
 import sys
 import math
 from datashape import Record, Tuple
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
@@ -182,7 +182,10 @@ def rowfunc(t):
 @dispatch(ElemWise, Sequence)
 def compute_up(t, seq, **kwargs):
     func = rowfunc(t)
-    return deepmap(func, seq, n=t.child.ndim)
+    if iscollection(t.child.dshape):
+        return deepmap(func, seq, n=t.child.ndim)
+    else:
+        return func(seq)
 
 
 @dispatch(Selection, Sequence)

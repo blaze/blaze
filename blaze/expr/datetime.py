@@ -106,7 +106,7 @@ def isdatelike(ds):
     return ds in (date_, datetime_)
 
 
-from .expr import schema_method_list, method_properties
+from .core import schema_method_list, method_properties
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
