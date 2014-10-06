@@ -66,6 +66,10 @@ def test_UnaryOp():
               np.exp(x['amount']))
 
 
+def test_BinOp():
+    pass
+
+
 def test_Neg():
     assert eq(compute(-t['amount'], x),
               -x['amount'])
