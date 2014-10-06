@@ -189,7 +189,7 @@ def select(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
     t = TableSymbol('t', dset.schema)
-    dtypes = dict((c, t[c].dtype) for c in t.columns)
+    dtypes = dict((c, t[c].dshape.measure) for c in t.columns)
 
     columns = data.get('columns', None)
     if columns:

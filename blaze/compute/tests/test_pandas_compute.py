@@ -488,7 +488,7 @@ def test_summary_by():
                            ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
 
 
-@xfail(reason="reduction assumed to be at the end")
+@pytest.mark.xfail(reason="reduction assumed to be at the end")
 def test_summary_by_reduction_arithmetic():
     expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
     assert str(compute(expr, df)) == \

@@ -263,7 +263,7 @@ def test_scalar_coerce():
 def test_scalar_name_dtype():
     x = Symbol('x', 'int64')
     assert x._name == 'x'
-    assert x.dtype == dshape('int64')
+    assert x.dshape == dshape('int64')
 
 
 def test_scalar_field():

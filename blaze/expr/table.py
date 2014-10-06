@@ -217,11 +217,11 @@ class Reduction(Expr):
     350
     """
     __slots__ = 'child',
-    dtype = None
+    _dtype = None
 
     @property
     def dshape(self):
-        return dshape(self.dtype)
+        return dshape(self._dtype)
 
     @property
     def symbol(self):
@@ -237,14 +237,14 @@ class Reduction(Expr):
 
 
 class any(Reduction):
-    dtype = ct.bool_
+    _dtype = ct.bool_
 
 class all(Reduction):
-    dtype = ct.bool_
+    _dtype = ct.bool_
 
 class sum(Reduction):
     @property
-    def dtype(self):
+    def _dtype(self):
         schema = self.child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return first(schema.types)
@@ -253,7 +253,7 @@ class sum(Reduction):
 
 class max(Reduction):
     @property
-    def dtype(self):
+    def _dtype(self):
         schema = self.child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return first(schema.types)
@@ -262,7 +262,7 @@ class max(Reduction):
 
 class min(Reduction):
     @property
-    def dtype(self):
+    def _dtype(self):
         schema = self.child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return first(schema.types)
@@ -270,7 +270,7 @@ class min(Reduction):
             return schema
 
 class mean(Reduction):
-    dtype = ct.real
+    _dtype = ct.real
 
 class var(Reduction):
     """Variance
@@ -286,7 +286,7 @@ class var(Reduction):
     """
     __slots__ = 'child', 'unbiased'
 
-    dtype = ct.real
+    _dtype = ct.real
 
     def __init__(self, child, unbiased=False):
         super(var, self).__init__(child, unbiased)
@@ -313,16 +313,16 @@ class std(Reduction):
     """
     __slots__ = 'child', 'unbiased'
 
-    dtype = ct.real
+    _dtype = ct.real
 
     def __init__(self, child, unbiased=False):
         super(std, self).__init__(child, unbiased)
 
 class count(Reduction):
-    dtype = ct.int_
+    _dtype = ct.int_
 
 class nunique(Reduction):
-    dtype = ct.int_
+    _dtype = ct.int_
 
 
 class Summary(Expr):
@@ -347,7 +347,7 @@ class Summary(Expr):
     @property
     def dshape(self):
         return dshape(Record(list(zip(self.names,
-                                      [v.dtype for v in self.values]))))
+                                      [v._dtype for v in self.values]))))
 
     def __str__(self):
         return 'summary(' + ', '.join('%s=%s' % (name, str(val))

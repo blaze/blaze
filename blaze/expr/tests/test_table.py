@@ -388,8 +388,8 @@ def test_reduction_name():
 
 def test_max_min_class():
     t = TableSymbol('t', '{name: string, amount: int32}')
-    assert str(max(t).dtype) == '{ name : string, amount : int32 }'
-    assert str(min(t).dtype) == '{ name : string, amount : int32 }'
+    assert str(max(t).dshape) == '{ name : string, amount : int32 }'
+    assert str(min(t).dshape) == '{ name : string, amount : int32 }'
 
 
 @pytest.fixture
@@ -663,15 +663,6 @@ def test_TableSymbol_printing_is_legible():
     assert "+ accounts['id']" in str(expr)
 
 
-def test_dtype():
-    accounts = TableSymbol('accounts',
-                           '{name: string, balance: int32, id: int32}')
-
-    assert accounts['name'].dtype == dshape('string')
-    assert accounts['balance'].dtype == dshape('int32')
-    assert (accounts['balance'] > accounts['id']).dtype == dshape('bool')
-
-
 def test_merge():
     t = TableSymbol('t', 'int64')
     p = TableSymbol('p', '{amount:int}')
@@ -731,11 +722,10 @@ def test_common_subexpression():
 def test_schema_of_complex_interaction():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     expr = (a['x'] + a['y']) / a['z']
-    assert expr.dtype == dshape('real')
+    assert expr.schema == dshape('real')
 
     expr = expr.label('foo')
-    print(expr.dtype)
-    assert expr.dtype == dshape('real')
+    assert expr.schema == dshape('real')
 
 def iscolumn(x):
     return isscalar(x.dshape.measure)

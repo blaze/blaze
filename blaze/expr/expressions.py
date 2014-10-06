@@ -8,7 +8,7 @@ import functools
 from toolz import  concat, memoize, partial, first
 
 from datashape import dshape, DataShape, Record, Var, Option, Unit
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import isscalar, iscollection, isboolean
 
 from ..compatibility import _strtypes, builtins
 from .core import *
@@ -52,18 +52,6 @@ class Expr(Node):
     @property
     def schema(self):
         return datashape.dshape(self.dshape.measure)
-
-    @property
-    def dtype(self):
-        ds = self.schema[-1]
-        if isinstance(ds, Record):
-            if len(ds.fields) > 1:
-                raise TypeError("`.dtype` not defined for multicolumn object. "
-                                "Use `.schema` instead")
-            else:
-                return dshape(first(ds.types))
-        else:
-            return dshape(ds)
 
     @property
     def fields(self):
@@ -266,7 +254,7 @@ def selection(table, predicate):
                    "apply: %s\n"
                    "predicate: %s" % (subexpr, table, predicate))
 
-    if predicate.dtype != dshape('bool'):
+    if not isboolean(predicate.dshape):
         raise TypeError("Must select over a boolean predicate.  Got:\n"
                         "%s[%s]" % (table, predicate))
 
@@ -408,6 +396,8 @@ def ndim(expr):
 dshape_method_list.extend([
     (iscollection, set([shape, ndim])),
     ])
+
+schema_method_list
 
 method_properties.update([shape, ndim])
 
