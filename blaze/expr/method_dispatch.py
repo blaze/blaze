@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 
+__all__ = 'select_functions',
 
 def match(condition, data):
     """ Does the condition match the data

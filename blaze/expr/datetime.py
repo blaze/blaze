@@ -4,6 +4,11 @@ from blaze.expr import Expr, ElemWise
 from datashape import dshape, Record, DataShape, Unit, Option, date_, datetime_
 import datashape
 
+__all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
+        'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
+        'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
+        'time']
+
 class DateTime(ElemWise):
     __slots__ = 'child',
 
@@ -106,7 +111,7 @@ def isdatelike(ds):
     return ds in (date_, datetime_)
 
 
-from .core import schema_method_list, method_properties
+from .expr import schema_method_list, method_properties
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import dshape
-from blaze.expr.core import *
+from blaze.expr import *
 
 
 def test_subs():

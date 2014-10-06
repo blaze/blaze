@@ -14,10 +14,9 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, union, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
-                        Summary, count, Symbol, Field)
+                        Summary, count, Symbol, Field, discover)
 from blaze.expr.table import _expr_child, unpack, max, min
 from blaze.compatibility import PY3, builtins
-from blaze.expr.core import discover
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
 from toolz import identity, first

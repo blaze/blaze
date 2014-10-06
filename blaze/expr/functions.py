@@ -29,7 +29,7 @@ from ..dispatch import dispatch, namespace
 from ..compatibility import builtins
 from . import table
 from . import math as blazemath
-from .core import Expr, Symbol
+from .expr import Expr, Symbol
 from .broadcast import broadcast
 
 

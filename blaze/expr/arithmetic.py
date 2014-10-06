@@ -8,13 +8,14 @@ from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar
 from datashape import coretypes as ct
 
-from .core import Expr, parenthesize, eval_str
+from .core import parenthesize, eval_str
+from .expr import Expr
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
 
-__all__ = '''Add Mult Div FloorDiv Sub Pow Mod Eq Ne Lt Le Gt Ge Eq Ne And
-    Or USub Not UnaryOp BinOp'''.split()
+__all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
+Relational Eq Ne Ge Le Gt Gt And Or Not'''.split()
 
 @dispatch(ct.Option, object)
 def scalar_coerce(ds, val):
@@ -294,7 +295,7 @@ BitAnd = And
 BitOr = Or
 
 
-from .core import dshape_method_list
+from .expr import dshape_method_list
 
 dshape_method_list.extend([
     (isscalar,

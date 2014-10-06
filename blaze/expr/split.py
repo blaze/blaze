@@ -9,6 +9,8 @@ from ..dispatch import dispatch
 good_to_split = (Reduction, Summary, By, Distinct)
 can_split = good_to_split + (Selection, ElemWise)
 
+__all__ = ['path_split', 'split']
+
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
 

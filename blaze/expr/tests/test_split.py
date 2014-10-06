@@ -2,6 +2,7 @@ from blaze.expr import *
 from blaze.expr.split import *
 from blaze.api.dplyr import transform
 import datashape
+from datashape import dshape
 from datashape.predicates import isscalar
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')

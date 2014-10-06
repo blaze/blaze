@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from .core import Expr
+from .expr import Expr, schema_method_list
 
 __all__ = ['Like', 'like']
 
@@ -32,7 +32,6 @@ def like(child, **kwargs):
     """
     return Like(child, tuple(kwargs.items()))
 
-from .core import schema_method_list
 from .table import min, max
 
 schema_method_list.extend([
