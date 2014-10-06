@@ -17,6 +17,7 @@ from .core import *
 from .expressions import *
 from .collections import *
 from .reductions import *
+from .split_apply_combine import *
 from .broadcast import broadcast, Broadcast
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
@@ -197,73 +198,6 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 
 join.__doc__ = Join.__doc__
 
-def _names_and_types(expr):
-    schema = expr.dshape.measure
-    if isinstance(schema, Option):
-        schema = schema.ty
-    if isinstance(schema, Record):
-        return schema.names, schema.types
-    if isinstance(schema, Unit):
-        return [expr._name], [expr.dshape.measure]
-    raise ValueError("Unable to determine name and type of %s" % expr)
-
-
-class By(TableExpr):
-    """ Split-Apply-Combine Operator
-
-    Examples
-    --------
-
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    >>> e = by(t['name'], t['amount'].sum())
-
-    >>> data = [['Alice', 100, 1],
-    ...         ['Bob', 200, 2],
-    ...         ['Alice', 50, 3]]
-
-    >>> from blaze.compute.python import compute
-    >>> sorted(compute(e, data))
-    [('Alice', 150), ('Bob', 200)]
-    """
-
-    __slots__ = 'grouper', 'apply'
-
-    @property
-    def _child(self):
-        return common_subexpression(self.grouper, self.apply)
-
-    @property
-    def schema(self):
-        grouper_names, grouper_types = _names_and_types(self.grouper)
-        apply_names, apply_types = _names_and_types(self.apply)
-
-        names = grouper_names + apply_names
-        types = grouper_types + apply_types
-
-        return dshape(Record(list(zip(names, types))))
-
-
-@dispatch(Expr, (Summary, Reduction))
-def by(grouper, apply):
-    return By(grouper, apply)
-
-
-@dispatch(Expr)
-def by(grouper, **kwargs):
-    return By(grouper, summary(**kwargs))
-
-
-def count_values(expr, sort=True):
-    """
-    Count occurrences of elements in this column
-
-    Sort by counts by default
-    Add ``sort=False`` keyword to avoid this behavior.
-    """
-    result = by(expr, count=expr.count())
-    if sort:
-        result = result.sort('count', ascending=False)
-    return result
 
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
@@ -321,8 +255,4 @@ schema_method_list.extend([
     (isnumeric, set([isnan])),
     (isscalar,  set([label, relabel])),
     (isrecord,  set([relabel])),
-    ])
-
-dshape_method_list.extend([
-    (iscollection, set([count_values])),
     ])

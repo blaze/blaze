@@ -286,7 +286,7 @@ def expression_from_name(name):
     """
 
     >>> expression_from_name('By')
-    <class 'blaze.expr.table.By'>
+    <class 'blaze.expr.split_apply_combine.By'>
 
     >>> expression_from_name('And')
     <class 'blaze.expr.arithmetic.And'>

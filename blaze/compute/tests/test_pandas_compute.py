@@ -210,7 +210,7 @@ def test_by_three():
     expected = DataFrame([['Alice', 'F', 204],
                           ['Drew', 'F', 104],
                           ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
-    expected.columns = expr.columns
+    expected.columns = expr.fields
 
     assert str(result) == str(expected)
 

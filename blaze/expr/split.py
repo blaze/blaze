@@ -103,9 +103,9 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 
     chunk_grouper = expr.grouper._subs({leaf: chunk})
     if isscalar(expr.grouper.dshape.measure):
-        agg_grouper = agg[expr.columns[0]]
+        agg_grouper = agg[expr.fields[0]]
     else:
-        agg_grouper = agg[list(expr.columns[:len(expr.grouper.columns)])]
+        agg_grouper = agg[list(expr.fields[:len(expr.grouper.fields)])]
 
     return ((chunk, by(chunk_grouper, chunk_apply)),
             (agg, by(agg_grouper, agg_apply)))
