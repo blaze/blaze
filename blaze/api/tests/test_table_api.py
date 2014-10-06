@@ -23,27 +23,9 @@ L = [[1, 'Alice',   100],
 
 t = Table(data, columns=['name', 'amount'])
 
-@pytest.fixture
-def sample_table(data):
-    t = Table(data, schema='{name: string, amount: float32}')
-    return t
-
-@pytest.fixture
-def large_table():
-    t = Table(L, columns=['id', 'name', 'balance'])
-    return t
-
-@pytest.fixture
-def column_expr(large_table):
-    t = large_table
-    expr = t[t['balance'] < 0]['name']
-    return expr
-
-@pytest.fixture
-def selection_expr(large_table):
-    t = large_table
-    expr = t[t['balance'] < 0]
-    return expr
+tble = Table(L, columns=['id', 'name', 'balance'])
+colxpr = tble[tble['balance'] < 0]['name']
+selxpr = tble[tble['balance'] < 0]
 
 
 def test_table_constructor_error():
@@ -192,15 +174,29 @@ def test_concretehead_failure():
     with pytest.raises(ValueError):
         concrete_head(d)
 
-def test_into_np_ndarray(column_expr):
-    cexpr = into(np.ndarray, column_expr)
-    clen = len(list(compute(column_expr)))
+def test_into_np_ndarray():
+    cexpr = into(np.ndarray, colxpr)
+    clen = len(list(compute(colxpr)))
     nplen = len(cexpr)
     assert clen == nplen
 
-def test_into_nd_array(selection_expr):
-    nexpr = into(nd.array, selection_expr)
-    nlen = len(list(compute(selection_expr)))
-    nexpr_len = len(nexpr)
-    assert nexpr_len == nlen
+def test_into_nd_array():
+    selarray = into(nd.array, selxpr)
+    nlen = len(list(compute(selxpr)))
+    selarray_len = len(selarray)
+    assert selarray_len == nlen
+
+    """
+    The following test is to ensure that we test for column expressions into nd.array 
+    as soon as it is fixed. This can be replaced with:
+
+    colarray = into(nd.array, colxpr)
+    clen = len(list(compute(colxpr)))
+    colarray_len = len(colarray)
+
+    when the bugs are fixed. 
+    """
+    with pytest.raises(nd.BroadcastError):
+        into(nd.array, colxpr)
+
 
