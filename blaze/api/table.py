@@ -208,4 +208,3 @@ def into(a, b):
 TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
 TableExpr._repr_html_ = table_html
-TableExpr._len = table_length

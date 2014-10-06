@@ -23,10 +23,6 @@ L = [[1, 'Alice',   100],
 
 t = Table(data, columns=['name', 'amount'])
 
-tble = Table(L, columns=['id', 'name', 'balance'])
-colxpr = tble[tble['balance'] < 0]['name']
-selxpr = tble[tble['balance'] < 0]
-
 
 def test_table_constructor_error():
     with pytest.raises(ValueError):
@@ -174,29 +170,21 @@ def test_concretehead_failure():
     with pytest.raises(ValueError):
         concrete_head(d)
 
-def test_into_np_ndarray():
-    cexpr = into(np.ndarray, colxpr)
-    clen = len(list(compute(colxpr)))
-    nplen = len(cexpr)
-    assert clen == nplen
+def test_into_np_ndarray_column():
+    tble = Table(L, columns=['id', 'name', 'balance'])
+    expr = tble[tble['balance'] < 0]['name']
+    colarray = into(np.ndarray, expr)
+    assert len(list(compute(expr))) == len(colarray)
 
-def test_into_nd_array():
-    selarray = into(nd.array, selxpr)
-    nlen = len(list(compute(selxpr)))
-    selarray_len = len(selarray)
-    assert selarray_len == nlen
+def test_into_nd_array_selection():
+    tble = Table(L, columns=['id', 'name', 'balance'])
+    expr = tble[tble['balance'] < 0]
+    selarray = into(nd.array, expr)
+    assert len(list(compute(expr))) == len(selarray)
 
-    """
-    The following test is to ensure that we test for column expressions into nd.array 
-    as soon as it is fixed. This can be replaced with:
-
-    colarray = into(nd.array, colxpr)
-    clen = len(list(compute(colxpr)))
-    colarray_len = len(colarray)
-
-    when the bugs are fixed. 
-    """
-    with pytest.raises(nd.BroadcastError):
-        into(nd.array, colxpr)
-
-
+@pytest.mark.xfail
+def test_into_nd_array_column_failure():
+    tble = Table(L, columns=['id', 'name', 'balance'])
+    expr = tble[tble['balance'] < 0]
+    colarray = into(nd.array, expr)
+    assert len(list(compute(expr))) == len(colarray)
