@@ -165,4 +165,4 @@ def test_compute_up_column():
 
 def test_compute_up_projection():
     computed_expr = compute_up(table_projection, y)
-    #assert len(computed_expr) == 5
+    assert len(computed_expr) == 5
