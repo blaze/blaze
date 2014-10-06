@@ -126,16 +126,3 @@ class Apply(TableExpr):
             return dshape(self._dshape)
         else:
             raise NotImplementedError("Datashape of arbitrary Apply not defined")
-
-
-from datashape.predicates import (iscollection, isscalar, isrecord, isboolean,
-        isnumeric)
-from datashape import Unit, Record, to_numpy_dtype, bool_
-from .expressions import schema_method_list, dshape_method_list
-from .broadcast import isnan
-
-schema_method_list.extend([
-    (isnumeric, set([isnan])),
-    (isscalar,  set([label, relabel])),
-    (isrecord,  set([relabel])),
-    ])

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape.predicates import iscollection, isscalar
+from datashape.predicates import iscollection, isscalar, isnumeric
 from toolz import partial, unique, first
 import datashape
 from datashape import dshape, DataShape, Record, Var, Option, Unit
@@ -224,5 +224,7 @@ dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isscalar(ds.measure),
             set([_eq, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
                  _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
-                _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert]))
+                _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert])),
+    (lambda ds: iscollection(ds) and isnumeric(ds),
+            set([isnan]))
     ])

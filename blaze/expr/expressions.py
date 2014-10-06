@@ -8,7 +8,7 @@ import functools
 from toolz import  concat, memoize, partial, first
 
 from datashape import dshape, DataShape, Record, Var, Option, Unit
-from datashape.predicates import isscalar, iscollection, isboolean
+from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
 from .core import *
@@ -458,7 +458,10 @@ dshape_method_list.extend([
     (iscollection, set([shape, ndim])),
     ])
 
-schema_method_list
+schema_method_list.extend([
+    (isscalar,  set([label, relabel])),
+    (isrecord,  set([relabel])),
+    ])
 
 method_properties.update([shape, ndim])
 
