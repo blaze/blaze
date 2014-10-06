@@ -740,7 +740,7 @@ class Merge(ElemWise):
                 else:
                     return child[key]
 
-    def project(self, key):
+    def _project(self, key):
         if not isinstance(key, (tuple, list)):
             raise TypeError("Expected tuple or list, got %s" % key)
         return merge(*[self[c] for c in key])

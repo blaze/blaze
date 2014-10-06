@@ -105,11 +105,11 @@ def test_column():
 def test_symbol_projection_failures():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
     with pytest.raises(ValueError):
-        t.project(['name', 'id'])
+        t._project(['name', 'id'])
     with pytest.raises(AttributeError):
         t.foo
     with pytest.raises(TypeError):
-        t.project(t.dshape)
+        t._project(t.dshape)
 
 
 def test_Projection():
@@ -122,9 +122,9 @@ def test_Projection():
     assert t['amount']._name == 'amount'
 
     assert eval(str(p)).isidentical(p)
-    assert p.project(['amount','name']) == p[['amount','name']]
+    assert p._project(['amount','name']) == p[['amount','name']]
     with pytest.raises(ValueError):
-        p.project('balance')
+        p._project('balance')
 
 
 def test_Projection_retains_shape():

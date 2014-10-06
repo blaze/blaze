@@ -37,7 +37,7 @@ class Expr(Node):
         if (isinstance(key, list)
                 and builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
-                return self.project(key)
+                return self._project(key)
             else:
                 raise ValueError('Names %s not consistent with known names %s'
                         % (key, self.fields))
@@ -46,7 +46,7 @@ class Expr(Node):
     def map(self, func, schema=None, name=None):
         return Map(self, func, schema, name)
 
-    def project(self, key):
+    def _project(self, key):
         return projection(self, key)
 
     @property
@@ -197,7 +197,7 @@ class Projection(ElemWise):
         return '%s[[%s]]' % (self._child,
                              ', '.join(["'%s'" % name for name in self.fields]))
 
-    def project(self, key):
+    def _project(self, key):
         if isinstance(key, list) and set(key).issubset(set(self.fields)):
             return self._child[key]
         raise ValueError("Column Mismatch: %s" % key)
