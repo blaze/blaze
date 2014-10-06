@@ -726,10 +726,10 @@ class Merge(ElemWise):
     def fields(self):
         return list(concat(child.fields for child in self.children))
 
-    def subterms(self):
+    def _subterms(self):
         yield self
         for i in self.children:
-            for node in i.subterms():
+            for node in i._subterms():
                 yield node
 
     def get_field(self, key):
@@ -773,10 +773,10 @@ class Union(TableExpr):
     __slots__ = 'children',
     __inputs__ = 'children',
 
-    def subterms(self):
+    def _subterms(self):
         yield self
         for i in self.children:
-            for node in i.subterms():
+            for node in i._subterms():
                 yield node
 
     @property

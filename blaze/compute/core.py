@@ -43,7 +43,7 @@ def compute(expr, o, **kwargs):
     >>> list(compute(deadbeats, data))
     ['Bob', 'Charlie']
     """
-    ts = set([x for x in expr.subterms() if isinstance(x, Symbol)])
+    ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])
     if len(ts) == 1:
         return compute(expr, {first(ts): o}, **kwargs)
     else:

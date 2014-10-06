@@ -103,11 +103,11 @@ class Node(object):
         return toolz.merge([arg.resources() for arg in self._args
                             if isinstance(arg, Node)])
 
-    def subterms(self):
+    def _subterms(self):
         return subterms(self)
 
     def __contains__(self, other):
-        return other in set(self.subterms())
+        return other in set(self._subterms())
 
     def __getstate__(self):
         return self._args
@@ -329,7 +329,7 @@ def common_subexpression(*exprs):
     >>> common_subexpression(t['x'], t['y'])
     t
     """
-    sets = [set(t.subterms()) for t in exprs]
+    sets = [set(t._subterms()) for t in exprs]
     return builtins.max(set.intersection(*sets),
                         key=compose(len, str))
 

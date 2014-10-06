@@ -713,10 +713,10 @@ inc = lambda x: x + 1
 
 def test_subterms():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert list(a.subterms()) == [a]
-    assert set(a['x'].subterms()) == set([a, a['x']])
-    assert set(a['x'].map(inc).subterms()) == set([a, a['x'], a['x'].map(inc)])
-    assert a in set((a['x'] + 1).subterms())
+    assert list(a._subterms()) == [a]
+    assert set(a['x']._subterms()) == set([a, a['x']])
+    assert set(a['x'].map(inc)._subterms()) == set([a, a['x'], a['x'].map(inc)])
+    assert a in set((a['x'] + 1)._subterms())
 
 
 def test_common_subexpression():

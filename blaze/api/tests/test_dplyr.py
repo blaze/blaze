@@ -33,8 +33,8 @@ def test_transform():
 
     expr = transform(t, amount=amount + 1)
     assert expr.fields == ['id', 'name', 'amount']
-    assert (t['amount'] + 1) in expr.subterms()
-    assert t[['id', 'name']] in expr.subterms()
+    assert (t['amount'] + 1) in expr._subterms()
+    assert t[['id', 'name']] in expr._subterms()
 
 
 def test_groupby():
