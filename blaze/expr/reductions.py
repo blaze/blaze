@@ -193,10 +193,10 @@ from datashape.predicates import (iscollection, isscalar, isrecord, isboolean,
 from .expressions import schema_method_list, dshape_method_list
 
 schema_method_list.extend([
-    (isboolean, set([any, all])),
+    (isboolean, set([any, all, sum])),
     (isnumeric, set([mean, sum, mean, min, max, std, var])),
     ])
 
 dshape_method_list.extend([
-    (iscollection, set([count, nunique])),
+    (iscollection, set([count, nunique, min, max])),
     ])

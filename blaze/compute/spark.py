@@ -13,7 +13,7 @@ from . import core, python
 from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
-from ..expr import table
+from ..expr import reductions
 from ..dispatch import dispatch
 from ..data.utils import listpack
 
@@ -59,14 +59,14 @@ def compute_up(t, rdd, **kwargs):
 
 
 rdd_reductions = {
-        table.sum: RDD.sum,
-        table.min: RDD.min,
-        table.max: RDD.max,
-        table.count: RDD.count,
-        table.mean: RDD.mean,
-        table.var: RDD.variance,
-        table.std: RDD.stdev,
-        table.nunique: compose(RDD.count, RDD.distinct)}
+        reductions.sum: RDD.sum,
+        reductions.min: RDD.min,
+        reductions.max: RDD.max,
+        reductions.count: RDD.count,
+        reductions.mean: RDD.mean,
+        reductions.var: RDD.variance,
+        reductions.std: RDD.stdev,
+        reductions.nunique: compose(RDD.count, RDD.distinct)}
 
 
 @dispatch(tuple(rdd_reductions), RDD)
@@ -78,12 +78,12 @@ def istruthy(x):
     return not not x
 
 
-@dispatch(table.any, RDD)
+@dispatch(reductions.any, RDD)
 def compute_up(t, rdd, **kwargs):
     return istruthy(rdd.filter(identity).take(1))
 
 
-@dispatch(table.all, RDD)
+@dispatch(reductions.all, RDD)
 def compute_up(t, rdd, **kwargs):
     return not rdd.filter(lambda x: not x).take(1)
 
@@ -134,16 +134,16 @@ def compute_up(t, lhs, rhs, **kwargs):
 
 
 python_reductions = {
-              table.sum: builtins.sum,
-              table.count: builtins.len,
-              table.max: builtins.max,
-              table.min: builtins.min,
-              table.any: builtins.any,
-              table.all: builtins.all,
-              table.mean: python._mean,
-              table.var: python._var,
-              table.std: python._std,
-              table.nunique: lambda x: len(set(x))}
+              reductions.sum: builtins.sum,
+              reductions.count: builtins.len,
+              reductions.max: builtins.max,
+              reductions.min: builtins.min,
+              reductions.any: builtins.any,
+              reductions.all: builtins.all,
+              reductions.mean: python._mean,
+              reductions.var: python._var,
+              reductions.std: python._std,
+              reductions.nunique: lambda x: len(set(x))}
 
 @dispatch(By, RDD)
 def compute_up(t, rdd, **kwargs):

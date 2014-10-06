@@ -33,8 +33,6 @@ def like(child, **kwargs):
     return Like(child, tuple(kwargs.items()))
 like.__doc__ = Like.__doc__
 
-from .table import min, max
-
 schema_method_list.extend([
-    (lambda ds: 'string' in str(ds), set([like, min, max])),
+    (lambda ds: 'string' in str(ds), set([like])),
     ])

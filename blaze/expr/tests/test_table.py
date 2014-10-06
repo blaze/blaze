@@ -940,3 +940,9 @@ def test_distinct_column():
     t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
     assert t.name.distinct().name.dshape == t.name.distinct().dshape
     assert t.name.distinct().name.isidentical(t.name.distinct())
+
+
+def test_columns_attribute_for_backwards_compatibility():
+    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+
+    assert t.columns == t.fields

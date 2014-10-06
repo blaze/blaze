@@ -27,7 +27,7 @@ from toolz import curry
 from multipledispatch import Dispatcher
 from ..dispatch import dispatch, namespace
 from ..compatibility import builtins
-from . import table
+from . import reductions
 from . import math as blazemath
 from .expressions import Expr, Symbol
 from .broadcast import broadcast
@@ -67,12 +67,12 @@ def sqrt(o):
     return math.sqrt(o)
 """
 
-math_functions = '''sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
+math_names = '''sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan'''.split()
 
-reductions = '''any all sum min max mean var std'''.split()
+reduction_names = '''any all sum min max mean var std'''.split()
 
-__all__ = math_functions + reductions
+__all__ = math_names + reduction_names
 
 
 types = {builtins: object,
@@ -88,7 +88,7 @@ def switch(funcname, x):
         return f(x)
 
 
-for funcname in math_functions:  # sin, sqrt, ceil, ...
+for funcname in math_names:  # sin, sqrt, ceil, ...
     d = Dispatcher(funcname)
 
     d.add((Expr,), curry(switch, funcname))
@@ -101,10 +101,10 @@ for funcname in math_functions:  # sin, sqrt, ceil, ...
     locals()[funcname] = d
 
 
-for funcname in reductions:  # any, all, sum, max, ...
+for funcname in reduction_names:  # any, all, sum, max, ...
     d = Dispatcher(funcname)
 
-    d.add((Expr,), getattr(table, funcname))
+    d.add((Expr,), getattr(reductions, funcname))
 
     for module, typ in types.items():
         if hasattr(module, funcname):

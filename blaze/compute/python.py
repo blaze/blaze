@@ -33,6 +33,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
                     Symbol)
+from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr import BinOp, UnaryOp, RealMath
@@ -294,12 +295,12 @@ from operator import add, or_, and_
 # binop     :: b, a -> b
 # combiner  :: b, b -> b
 # init      :: b
-binops = {table.sum: (add, add, 0),
-          table.min: (lesser, lesser, 1e250),
-          table.max: (greater, lesser, -1e250),
-          table.count: (countit, add, 0),
-          table.any: (or_, or_, False),
-          table.all: (and_, and_, True)}
+binops = {reductions.sum: (add, add, 0),
+          reductions.min: (lesser, lesser, 1e250),
+          reductions.max: (greater, lesser, -1e250),
+          reductions.count: (countit, add, 0),
+          reductions.any: (or_, or_, False),
+          reductions.all: (and_, and_, True)}
 
 
 def reduce_by_funcs(t):

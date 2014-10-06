@@ -17,7 +17,7 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel']
+           'ReLabel', 'relabel', 'Apply']
 
 
 class Expr(Node):
@@ -418,6 +418,53 @@ class Map(ElemWise):
             return self._name0
         else:
             return self._child._name
+
+
+class Apply(Expr):
+    """ Apply an arbitrary Python function onto an expression
+
+    Examples
+    --------
+
+    >>> from blaze import TableSymbol
+    >>> t = TableSymbol('t', '{name: string, amount: int}')
+    >>> h = Apply(hash, t)  # Hash value of resultant table
+
+    Optionally provide extra datashape information
+
+    >>> h = Apply(hash, t, dshape='real')
+
+    Apply brings a function within the expression tree.
+    The following transformation is often valid
+
+    Before ``compute(Apply(f, expr), ...)``
+    After  ``f(compute(expr, ...)``
+
+    See Also
+    --------
+
+    blaze.expr.expressions.Map
+    """
+    __slots__ = '_child', 'func', '_dshape'
+
+    def __init__(self, func, child, dshape=None):
+        self._child = child
+        self.func = func
+        self._dshape = dshape
+
+    @property
+    def schema(self):
+        if iscollection(self.dshape):
+            return self.dshape.subshape[0]
+        else:
+            raise TypeError("Non-tabular datashape, %s" % self.dshape)
+
+    @property
+    def dshape(self):
+        if self._dshape:
+            return dshape(self._dshape)
+        else:
+            raise NotImplementedError("Datashape of arbitrary Apply not defined")
 
 
 dshape_method_list = list()
