@@ -14,8 +14,10 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, union, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
-                        Summary, count, Symbol, Field, discover)
-from blaze.expr.table import _expr_child, unpack, max, min
+                        Summary, count, Symbol, Field, discover,
+                        max, min
+                        )
+from blaze.expr.broadcast import _expr_child
 from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -252,10 +254,6 @@ def test_str():
     assert eval(str(expr)) == expr
 
     assert '*' in repr(expr)
-
-
-def test_unpack():
-    assert unpack('unpack') == 'unpack'
 
 
 def test_join():

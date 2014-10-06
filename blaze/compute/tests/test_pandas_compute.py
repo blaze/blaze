@@ -97,7 +97,7 @@ def test_join():
     print(expected)
     assert str(result) == str(expected)
 
-    assert list(result.columns) == list(joined.columns)
+    assert list(result.columns) == list(joined.fields)
 
 
 def test_multi_column_join():
@@ -125,7 +125,7 @@ def test_multi_column_join():
     print(result)
 
     assert str(result) == str(expected)
-    assert list(result.columns) == list(j.columns)
+    assert list(result.columns) == list(j.fields)
 
 
 def test_unary_op():

@@ -97,7 +97,7 @@ def test_join():
     assert str(select(result)) == str(select(expected))
 
     # Schemas match
-    assert list(result.c.keys()) == list(joined.columns)
+    assert list(result.c.keys()) == list(joined.fields)
 
 
 def test_clean_complex_join():
@@ -163,8 +163,8 @@ def test_multi_column_join():
 
     # Schemas match
     print(result.c.keys())
-    print(joined.columns)
-    assert list(result.c.keys()) == list(joined.columns)
+    print(joined.fields)
+    assert list(result.c.keys()) == list(joined.fields)
 
 
 def test_unary_op():

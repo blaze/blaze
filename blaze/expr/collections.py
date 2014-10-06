@@ -1,15 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import isdistinct, frequencies, concat, unique
+from toolz import isdistinct, frequencies, concat, unique, get
 import datashape
-from datashape import Option, Record, Unit, dshape
+from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, Symbol
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
-'union', 'head', 'sort']
+           'union', 'head', 'sort', 'Join', 'join']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -269,6 +269,137 @@ def union(*children):
         raise ValueError("Inconsistent schemas:\n\t%s" %
                             '\n\t'.join(map(str, schemas)))
     return Union(children)
+
+
+def unpack(l):
+    """ Unpack items from collections of length 1
+
+    >>> unpack('hello')
+    'hello'
+    >>> unpack(['hello'])
+    'hello'
+    """
+    if isinstance(l, (tuple, list, set)) and len(l) == 1:
+        return next(iter(l))
+    else:
+        return l
+
+
+class Join(Expr):
+    """ Join two tables on common columns
+
+    Parameters
+    ----------
+    lhs : Expr
+    rhs : Expr
+    on_left : string
+    on_right : string
+
+    Examples
+    --------
+
+    >>> names = Symbol('names', 'var * {name: string, id: int}')
+    >>> amounts = Symbol('amounts', 'var * {amount: int, id: int}')
+
+    Join tables based on shared column name
+    >>> joined = join(names, amounts, 'id')
+
+    Join based on different column names
+    >>> amounts = Symbol('amounts', 'var * {amount: int, acctNumber: int}')
+    >>> joined = join(names, amounts, 'id', 'acctNumber')
+
+    See Also
+    --------
+
+    blaze.expr.collections.Merge
+    blaze.expr.collections.Union
+    """
+    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
+    __inputs__ = 'lhs', 'rhs'
+
+    @property
+    def on_left(self):
+        if isinstance(self._on_left, tuple):
+            return list(self._on_left)
+        else:
+            return self._on_left
+
+    @property
+    def on_right(self):
+        if isinstance(self._on_right, tuple):
+            return list(self._on_right)
+        else:
+            return self._on_right
+
+    @property
+    def schema(self):
+        """
+
+        Examples
+        --------
+
+        >>> t = Symbol('t', 'var * {name: string, amount: int}')
+        >>> s = Symbol('t', 'var * {name: string, id: int}')
+
+        >>> join(t, s).schema
+        dshape("{ name : string, amount : int32, id : int32 }")
+
+        >>> join(t, s, how='left').schema
+        dshape("{ name : string, amount : int32, id : ?int32 }")
+        """
+        option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
+
+        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                        if name in self.on_left]
+
+        left = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                           if name not in self.on_left]
+
+        right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
+                            if name not in self.on_right]
+
+        if self.how in ('right', 'outer'):
+            left = [[name, option(dt)] for name, dt in left]
+        if self.how in ('left', 'outer'):
+            right = [[name, option(dt)] for name, dt in right]
+
+        return dshape(Record(joined + left + right))
+
+
+    @property
+    def dshape(self):
+        # TODO: think if this can be generalized
+        return var * self.schema
+
+
+def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
+    if not on_left and not on_right:
+        on_left = on_right = unpack(list(sorted(
+            set(lhs.fields) & set(rhs.fields),
+            key=lhs.fields.index)))
+    if not on_right:
+        on_right = on_left
+    if isinstance(on_left, tuple):
+        on_left = list(on_left)
+    if isinstance(on_right, tuple):
+        on_right = list(on_right)
+    if get(on_left, lhs.schema[0]) != get(on_right, rhs.schema[0]):
+        raise TypeError("Schema's of joining columns do not match")
+    _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
+    _on_right = (tuple(on_right) if isinstance(on_right, list)
+                        else on_right)
+
+    how = how.lower()
+    if how not in ('inner', 'outer', 'left', 'right'):
+        raise ValueError("How parameter should be one of "
+                         "\n\tinner, outer, left, right."
+                         "\nGot: %s" % how)
+
+    return Join(lhs, rhs, _on_left, _on_right, how)
+
+
+join.__doc__ = Join.__doc__
+
 
 from .expressions import dshape_method_list
 
