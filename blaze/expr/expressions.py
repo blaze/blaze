@@ -16,7 +16,8 @@ from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
-           'projection', 'Selection', 'selection', 'Label', 'label', 'Map']
+           'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
+           'ReLabel', 'relabel']
 
 
 class Expr(Node):
@@ -318,6 +319,50 @@ class Label(ElemWise):
 def label(expr, lab):
     return Label(expr, lab)
 label.__doc__ = Label.__doc__
+
+
+class ReLabel(ElemWise):
+    """
+    Table with same content but with new labels
+
+    Examples
+    --------
+
+    >>> from blaze import TableSymbol
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts.schema
+    dshape("{ name : string, amount : int32 }")
+    >>> accounts.relabel({'amount': 'balance'}).schema
+    dshape("{ name : string, balance : int32 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Label
+    """
+    __slots__ = '_child', 'labels'
+
+    @property
+    def schema(self):
+        subs = dict(self.labels)
+        d = self._child.dshape.measure.dict
+
+        return DataShape(Record([[subs.get(name, name), dtype]
+            for name, dtype in self._child.dshape.measure.parameters[0]]))
+
+
+def relabel(child, labels):
+    if isinstance(labels, dict):  # Turn dict into tuples
+        labels = tuple(sorted(labels.items()))
+    if isscalar(child.dshape.measure):
+        if child._name == labels[0][0]:
+            return child.label(labels[0][1])
+        else:
+            return child
+    return ReLabel(child, labels)
+
+relabel.__doc__ = ReLabel.__doc__
+
 
 
 class Map(ElemWise):

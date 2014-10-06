@@ -265,48 +265,6 @@ def count_values(expr, sort=True):
         result = result.sort('count', ascending=False)
     return result
 
-class ReLabel(ElemWise):
-    """
-    Table with same content but with new labels
-
-    Examples
-    --------
-
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
-    >>> accounts.schema
-    dshape("{ name : string, amount : int32 }")
-    >>> accounts.relabel({'amount': 'balance'}).schema
-    dshape("{ name : string, balance : int32 }")
-
-    See Also
-    --------
-
-    blaze.expr.table.Label
-    """
-    __slots__ = '_child', 'labels'
-
-    @property
-    def schema(self):
-        subs = dict(self.labels)
-        d = self._child.dshape.measure.dict
-
-        return DataShape(Record([[subs.get(name, name), dtype]
-            for name, dtype in self._child.dshape.measure.parameters[0]]))
-
-
-def relabel(child, labels):
-    if isinstance(labels, dict):  # Turn dict into tuples
-        labels = tuple(sorted(labels.items()))
-    if isscalar(child.dshape.measure):
-        if child._name == labels[0][0]:
-            return child.label(labels[0][1])
-        else:
-            return child
-    return ReLabel(child, labels)
-
-relabel.__doc__ = ReLabel.__doc__
-
-
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
 
