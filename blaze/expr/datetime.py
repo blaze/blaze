@@ -89,29 +89,8 @@ def microsecond(expr):
     return Microsecond(expr)
 
 
-
-def isdatelike(ds):
-    """
-
-    >>> isdatelike('int32')
-    False
-    >>> isdatelike('datetime')
-    True
-    >>> isdatelike('?datetime')
-    True
-    """
-    if isinstance(ds, str):
-        ds = dshape(ds)
-    if isinstance(ds, DataShape):
-        ds = ds[0]
-    if isinstance(ds, Option):
-        return isdatelike(ds.ty)
-    if isinstance(ds, Record) and len(ds.dict) == 1:
-        return isdatelike(ds.types[0])
-    return ds in (date_, datetime_)
-
-
 from .expressions import schema_method_list, method_properties
+from datashape.predicates import isdatelike
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,

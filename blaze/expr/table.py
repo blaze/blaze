@@ -795,44 +795,8 @@ def union(*children):
     return Union(children)
 
 
-def isnumeric(ds):
-    """ Is a numeric datashape
-
-    >>> isnumeric('int32')
-    True
-    >>> isnumeric('string')
-    False
-    >>> isnumeric('var * {amount: ?int32}')
-    False
-    """
-    if isinstance(ds, str):
-        ds = dshape(ds)
-    if isinstance(ds, DataShape) and len(ds) == 1:
-        ds = ds[0]
-    if isinstance(ds, Option):
-        return isnumeric(ds.ty)
-    return isinstance(ds, Unit) and np.issubdtype(to_numpy_dtype(ds), np.number)
-
-
-def isboolean(ds):
-    """ Is of boolean datashape
-
-    >>> isboolean('bool')
-    True
-    >>> isboolean('?bool')
-    True
-    >>> isboolean('int')
-    False
-    """
-    if isinstance(ds, str):
-        ds = dshape(ds)
-    if isinstance(ds, DataShape):
-        ds = ds[0]
-    if isinstance(ds, Option):
-        return isboolean(ds.ty)
-    return ds == bool_
-
-from datashape.predicates import iscollection, isscalar, isrecord
+from datashape.predicates import (iscollection, isscalar, isrecord, isboolean,
+        isnumeric)
 from datashape import Unit, Record, to_numpy_dtype, bool_
 from .expressions import schema_method_list, dshape_method_list
 from .broadcast import isnan
