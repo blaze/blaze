@@ -129,6 +129,9 @@ def test_table_resource():
         assert list(compute(t)) == list(csv)
 
 
+def test_can_trivially_create_csv_table():
+    Table(example('iris.csv'))
+
 def test_can_trivially_create_sqlite_table():
     Table('sqlite:///'+example('iris.db')+'::iris')
 
