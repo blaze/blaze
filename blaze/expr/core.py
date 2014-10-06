@@ -32,7 +32,7 @@ class Node(object):
         return tuple(getattr(self, slot) for slot in self.__slots__)
 
     @property
-    def inputs(self):
+    def _inputs(self):
         return tuple(getattr(self, i) for i in self.__inputs__)
 
     def __nonzero__(self): # pragma: no cover
@@ -59,10 +59,10 @@ class Node(object):
         [t, v]
         """
 
-        if not self.inputs:
+        if not self._inputs:
             return [self]
         else:
-            return list(unique(concat(i._leaves() for i in self.inputs if
+            return list(unique(concat(i._leaves() for i in self._inputs if
                                       isinstance(i, Node))))
 
     def isidentical(self, other):
@@ -243,7 +243,7 @@ def _str(s):
 
 @dispatch(Node)
 def subterms(expr):
-    return concat([[expr], concat(map(subterms, expr.inputs))])
+    return concat([[expr], concat(map(subterms, expr._inputs))])
 
 
 @dispatch(numbers.Real)
@@ -308,9 +308,9 @@ def path(a, b):
     """
     while not a.isidentical(b):
         yield a
-        if not a.inputs:
+        if not a._inputs:
             break
-        for child in a.inputs:
+        for child in a._inputs:
             if b in child._traverse():
                 a = child
                 break

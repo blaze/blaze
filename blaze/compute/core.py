@@ -72,8 +72,8 @@ def top_to_bottom(d, expr):
         return compute_down(expr, *leaves)
     else:
         # Compute children of this expression
-        children = ([top_to_bottom(d, child) for child in expr.inputs]
-                    if hasattr(expr, 'inputs') else [])
+        children = ([top_to_bottom(d, child) for child in expr._inputs]
+                    if hasattr(expr, '_inputs') else [])
 
         # Compute this expression given the children
         return compute_up(expr, *children, scope=d)
@@ -98,8 +98,8 @@ def bottom_up(d, expr):
         return d[expr]
 
     # Compute children of this expression
-    children = ([bottom_up(d, child) for child in expr.inputs]
-                if hasattr(expr, 'inputs') else [])
+    children = ([bottom_up(d, child) for child in expr._inputs]
+                if hasattr(expr, '_inputs') else [])
 
     # Compute this expression given the children
     result = compute_up(expr, *children, scope=d)

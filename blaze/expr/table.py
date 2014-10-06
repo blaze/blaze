@@ -362,7 +362,7 @@ def summary(**kwargs):
 
     if len(kwargs) == 1 and not iscollection(child.dshape):
         while not iscollection(child.dshape):
-            children = [i for i in child.inputs if isinstance(i, Expr)]
+            children = [i for i in child._inputs if isinstance(i, Expr)]
             if len(children) == 1:
                 child = children[0]
             else:
