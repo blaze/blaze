@@ -23,3 +23,7 @@ def test_nested_fields():
     assert e.payments.schema == dshape('{amount: int, when: datetime}')
     assert 'amount' in dir(e.payments)
     assert e.payments.amount.dshape == dshape('3 * var * int')
+
+def test_partialed_methods_have_docstrings():
+    e = Symbol('e', '3 * 5 * {name: string, amount: int}')
+    assert 'string comparison' in e.like.__doc__

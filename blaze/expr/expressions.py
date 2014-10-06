@@ -4,6 +4,7 @@ import numbers
 import toolz
 import inspect
 import datashape
+import functools
 from toolz import  concat, memoize, partial, first
 
 from datashape import dshape, DataShape, Record, Var, Option, Unit
@@ -108,7 +109,7 @@ class Expr(Node):
                 if func in method_properties:
                     return func(self)
                 else:
-                    return partial(func, self)
+                    return functools.update_wrapper(partial(func, self), func)
             else:
                 raise
 
