@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr import TableSymbol, Expr, TableExpr, Symbol
+from ..expr import TableSymbol, Expr, Symbol
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -209,4 +209,4 @@ def table_length(expr):
 Expr.__repr__ = expr_repr
 Expr.to_html = expr_html
 Expr._repr_html_ = expr_html
-TableExpr.__len__ = table_length
+Expr.__len__ = table_length

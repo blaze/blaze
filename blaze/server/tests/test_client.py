@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import TableSymbol, compute, Table, by, into, TableExpr, Field
+from blaze import Expr, TableSymbol, compute, Table, by, into, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.data.python import Python
@@ -90,7 +90,7 @@ def test_resource_all_in_one():
     assert discover(ec) == discover(df)
 
 
-class CustomExpr(TableExpr):
+class CustomExpr(Expr):
     __slots__ = '_child',
 
     @property

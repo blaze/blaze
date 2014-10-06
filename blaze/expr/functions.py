@@ -34,15 +34,11 @@ from .broadcast import broadcast
 
 
 """
-The following code creates functions equivalent to the following:
+The following code creates reductions equivalent to the following:
 
 @dispatch(Expr)
 def sum(expr):
-    return scalar.sum(expr)
-
-@dispatch(TableExpr)
-def sum(expr):
-    return table.sum(expr)
+    return blaze.sum(expr)
 
 @dispatch(np.ndarray)
 def sum(x):
@@ -51,6 +47,24 @@ def sum(x):
 @dispatch(object)
 def sum(o):
     return builtins.sum(o)
+
+
+As well as mathematical functions like the following
+
+@dispatch(Expr)
+def sqrt(expr):
+    if iscollection(expr.dshape):
+        return broadcast(blaze.expr.math.sqrt, expr)
+    else:
+        return blaze.expr.math.sqrt(expr)
+
+@dispatch(np.ndarray)
+def sqrt(x):
+    return np.sqrt(x)
+
+@dispatch(object)
+def sqrt(o):
+    return math.sqrt(o)
 """
 
 math_functions = '''sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh

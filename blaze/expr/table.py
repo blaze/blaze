@@ -26,32 +26,11 @@ from ..dispatch import dispatch
 from .broadcast import _expr_child
 
 __all__ = '''
-TableExpr TableSymbol Projection Selection Broadcast Join
+TableSymbol Projection Selection Broadcast Join
 Reduction join any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union broadcast Summary summary'''.split()
-
-
-class TableExpr(Expr):
-    """ Super class for all Table Expressions
-
-    This is not intended to be constructed by users.
-
-    See Also
-    --------
-
-    blaze.expr.table.TableSymbol
-    """
-    __inputs__ = '_child',
-
-    @property
-    def dshape(self):
-        return datashape.var * self.schema
-
-    @property
-    def columns(self):
-        return self.fields
 
 
 def TableSymbol(name, dshape):
@@ -77,7 +56,7 @@ def TableSymbol(name, dshape):
     return Symbol(name, dshape)
 
 
-class Apply(TableExpr):
+class Apply(Expr):
     """ Apply an arbitrary Python function onto a Table
 
     Examples
