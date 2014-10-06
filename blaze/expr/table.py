@@ -732,7 +732,7 @@ class Merge(ElemWise):
             for node in i._subterms():
                 yield node
 
-    def get_field(self, key):
+    def _get_field(self, key):
         for child in self.children:
             if key in child.fields:
                 if isscalar(child.dshape.measure):

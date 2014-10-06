@@ -21,7 +21,7 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
 
 class Expr(Node):
 
-    def get_field(self, fieldname):
+    def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, Record):
             if fieldname == self._name:
                 return self
@@ -31,7 +31,7 @@ class Expr(Node):
 
     def __getitem__(self, key):
         if isinstance(key, _strtypes) and key in self.fields:
-            return self.get_field(key)
+            return self._get_field(key)
         if isinstance(key, Expr) and iscollection(key.dshape):
             return selection(self, key)
         if (isinstance(key, list)
@@ -202,7 +202,7 @@ class Projection(ElemWise):
             return self._child[key]
         raise ValueError("Column Mismatch: %s" % key)
 
-    def get_field(self, fieldname):
+    def _get_field(self, fieldname):
         if fieldname in self.fields:
             return Field(self._child, fieldname)
         raise ValueError("Field %s not found in columns %s" % (fieldname,
@@ -293,7 +293,7 @@ class Label(ElemWise):
     def _name(self):
         return self.label
 
-    def get_field(self, key):
+    def _get_field(self, key):
         if key[0] == self.fields[0]:
             return self
         else:
