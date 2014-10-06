@@ -6,7 +6,7 @@ import flask
 from dynd import nd
 from datashape import dshape
 
-from ..data.core import DataDescriptor
+from ..data import DataDescriptor
 from ..data.utils import coerce
 from ..expr import Expr
 from ..dispatch import dispatch
@@ -18,6 +18,8 @@ from .server import DEFAULT_PORT
 # It's convenient to use requests for live production but use
 # flask for testing.  Sadly they have different Response objects,
 # hence the dispatched functions
+
+__all__ = 'Client', 'ExprClient'
 
 def content(response):
     if isinstance(response, flask.Response):

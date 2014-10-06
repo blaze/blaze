@@ -4,6 +4,10 @@ from operator import and_
 from toolz import first, reduce
 import inspect
 
+__all__ = ['inject', 'Filter', 'desc', 'select', 'arrange', 'transform',
+        'group_by', 'summarize', 'n', 'mutate', 'n_distinct']
+
+
 def inject(t, ns=None):
     """ Inject columns into local namespace
 

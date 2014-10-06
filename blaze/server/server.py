@@ -12,11 +12,14 @@ from datashape.predicates import iscollection
 from ..api import discover, Table
 from ..expr import Expr, TableSymbol, Selection, Broadcast, TableSymbol
 from ..expr.parser import exprify
+from .. import expr
 
 from ..compatibility import map
 from datashape import Mono
 
 from .index import parse_index
+
+__all__ = 'Server', 'to_tree', 'from_tree'
 
 # http://www.speedguide.net/port.php?port=6363
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
@@ -278,12 +281,19 @@ def to_tree(expr, names=None):
     else:
         return expr
 
+
 def expression_from_name(name):
     """
 
     >>> expression_from_name('By')
     <class 'blaze.expr.table.By'>
+
+    >>> expression_from_name('And')
+    <class 'blaze.expr.arithmetic.And'>
     """
+    import blaze
+    if hasattr(blaze, name):
+        return getattr(blaze, name)
     for signature, func in compute_up.funcs.items():
         try:
             if signature[0].__name__ == name:

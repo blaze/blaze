@@ -12,6 +12,8 @@ from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
 
 
+__all__ = ['drop', 'create_index']
+
 @dispatch(tb.Table)
 def discover(t):
     return t.shape[0] * ds.Record([[col, discover(getattr(t.cols, col))]

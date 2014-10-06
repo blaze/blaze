@@ -1,4 +1,5 @@
 from blaze.api.dplyr import *
+from blaze.expr import *
 
 L = [[1, 'Alice',   100],
      [2, 'Bob',    -200],

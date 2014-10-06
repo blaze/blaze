@@ -61,9 +61,8 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, ElemWise, By,
                     TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
-                    Broadcast, DateTime, Microsecond, Date, Time,
+                    Broadcast, DateTime, Microsecond, Date, Time, Expr
                     )
-from ..expr.core import Expr
 from .. import expr
 from ..compatibility import _strtypes
 

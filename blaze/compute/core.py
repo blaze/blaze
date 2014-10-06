@@ -4,8 +4,7 @@ from datetime import date, datetime
 from toolz import first
 
 from ..compatibility import basestring
-from ..expr.core import Expr
-from ..expr import Symbol, TableSymbol, eval_str, Union
+from ..expr import Expr, Symbol, TableSymbol, eval_str, Union
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up', 'drop', 'create_index']

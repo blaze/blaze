@@ -21,6 +21,7 @@ except ImportError:
 
 names = ('_table_%d' % i for i in itertools.count(1))
 
+__all__ = []
 
 class SparkSQLQuery(object):
     """ Pair of PySpark SQLContext and SQLAlchemy Table
