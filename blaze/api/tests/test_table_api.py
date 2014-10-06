@@ -131,3 +131,6 @@ def test_table_resource():
 
 def test_can_trivially_create_sqlite_table():
     Table('sqlite:///'+example('iris.db')+'::iris')
+
+def test_can_trivially_create_pytables():
+    Table(example('accounts.h5')+'::/accounts')

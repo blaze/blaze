@@ -10,6 +10,7 @@ import datashape
 
 import shutil
 from blaze.utils import tmpfile
+from .api.resource import resource
 
 __all__ = ['PyTables']
 
@@ -39,7 +40,7 @@ def dtype_to_pytables(dtype):
     return d
 
 
-def PyTables(path, datapath, dshape=None):
+def PyTables(path, datapath, dshape=None, **kwargs):
     """Create or open a ``tables.Table`` object.
 
     Parameters
@@ -113,3 +114,8 @@ def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return b[start:stop]
+
+
+@resource.register('.*.h5')
+def resource_pytables(path, datapath, **kwargs):
+    return PyTables(path, datapath, **kwargs)
