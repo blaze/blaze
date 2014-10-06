@@ -20,7 +20,13 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
 
 
 class Expr(Node):
+    """
+    Symbolic expression of a computation
 
+    All Blaze expressions (Join, By, Sort, ...) descend from this class.  It
+    contains shared logic and syntax.  It in turn inherits from ``Node`` which
+    holds all tree traversal logic
+    """
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, Record):
             if fieldname == self._name:
@@ -103,7 +109,10 @@ class Expr(Node):
 
 class Symbol(Expr):
     """
-    Symbolic data
+    Symbolic data.  The leaf of a Blaze expression
+
+    Example
+    -------
 
     >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
     """
@@ -125,7 +134,9 @@ class Symbol(Expr):
 
 class ElemWise(Expr):
     """
-    Elementwise operation
+    Elementwise operation.
+
+    The shape of this expression matches the shape of the child.
     """
     @property
     def dshape(self):
@@ -134,7 +145,11 @@ class ElemWise(Expr):
 
 
 class Field(ElemWise):
-    """ A single field from an expression
+    """
+    A single field from an expression
+
+    Get a single field from an expression with record-type schema.  Collapses
+    that record.  We store the name of the field in the ``_name`` attribute.
 
     SELECT a
     FROM table
@@ -217,6 +232,7 @@ def projection(expr, names):
                 "where expression has names %s" % (names, expr.fields))
     return Projection(expr, tuple(names))
 projection.__doc__ = Projection.__doc__
+
 
 class Selection(Expr):
     """ Filter elements of expression based on predicate

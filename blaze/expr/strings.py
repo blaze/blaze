@@ -6,18 +6,6 @@ from .expressions import Expr, schema_method_list
 __all__ = ['Like', 'like']
 
 class Like(Expr):
-    __slots__ = '_child', '_patterns'
-
-    @property
-    def patterns(self):
-        return dict(self._patterns)
-
-    @property
-    def dshape(self):
-        return datashape.var * self._child.dshape.subshape[0]
-
-
-def like(child, **kwargs):
     """ Filter expression by string comparison
 
     >>> from blaze import TableSymbol, like, compute
@@ -30,7 +18,20 @@ def like(child, **kwargs):
     >>> list(compute(expr, data))
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
+    __slots__ = '_child', '_patterns'
+
+    @property
+    def patterns(self):
+        return dict(self._patterns)
+
+    @property
+    def dshape(self):
+        return datashape.var * self._child.dshape.subshape[0]
+
+
+def like(child, **kwargs):
     return Like(child, tuple(kwargs.items()))
+like.__doc__ = Like.__doc__
 
 from .table import min, max
 

@@ -10,6 +10,7 @@ __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
         'time']
 
 class DateTime(ElemWise):
+    """ Superclass for datetime accessors """
     __slots__ = '_child',
 
     def __str__(self):

@@ -15,7 +15,18 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
 class Node(object):
-    """ Node in a tree """
+    """ Node in a tree
+
+    This serves as the base class for ``Expr``.  This class holds all of the
+    tree traversal functions that are independent of tabular or array
+    computation.  This is everything that we can do independent of the problem
+    domain.  Note that datashape is not imported.
+
+    See Also
+    --------
+
+    blaze.expr.expressions.Expr
+    """
     __inputs__ = '_child',
 
     def __init__(self, *args, **kwargs):

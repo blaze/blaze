@@ -32,6 +32,7 @@ def match(condition, data):
 
 
 def name(func):
+    """ Name of a function, robust to partials """
     if isinstance(func, partial):
         return name(func.func)
     else:

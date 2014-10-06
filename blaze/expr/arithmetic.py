@@ -17,55 +17,6 @@ from ..compatibility import _strtypes
 __all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
 Relational Eq Ne Ge Lt Le Gt Gt And Or Not'''.split()
 
-@dispatch(ct.Option, object)
-def scalar_coerce(ds, val):
-    if val or val == 0:
-        return scalar_coerce(ds.ty, val)
-    else:
-        return None
-
-@dispatch(ct.Date, _strtypes)
-def scalar_coerce(_, val):
-    dt = dt_parse(val)
-    if dt.time():
-        raise ValueError("Can not coerce %s to type Date, "
-                "contains time information")
-    return dt.date()
-
-@dispatch(ct.DateTime, _strtypes)
-def scalar_coerce(_, val):
-    return dt_parse(val)
-
-@dispatch(ct.CType, _strtypes)
-def scalar_coerce(dt, val):
-    return np.asscalar(np.asarray(val, dtype=dt.to_numpy_dtype()))
-
-@dispatch(ct.Record, object)
-def scalar_coerce(rec, val):
-    if len(rec.fields) == 1:
-        return scalar_coerce(first(rec.types), val)
-    else:
-        raise TypeError("Trying to coerce complex datashape\n"
-                "got dshape: %s\n"
-                "scalar_coerce only intended for scalar values" % rec)
-
-@dispatch(ct.DataShape, object)
-def scalar_coerce(ds, val):
-    if len(ds) == 1:
-        return scalar_coerce(ds[0], val)
-    else:
-        raise TypeError("Trying to coerce dimensional datashape\n"
-                "got dshape: %s\n"
-                "scalar_coerce only intended for scalar values" % ds)
-
-@dispatch(object, object)
-def scalar_coerce(dtype, val):
-    return val
-
-@dispatch(_strtypes, object)
-def scalar_coerce(ds, val):
-    return scalar_coerce(dshape(ds), val)
-
 
 class BinOp(Expr):
     __slots__ = 'lhs', 'rhs'
@@ -149,6 +100,63 @@ class USub(UnaryOp):
     def dshape(self):
         # TODO: better inference.  -uint -> int
         return self._child.dshape
+
+
+@dispatch(ct.Option, object)
+def scalar_coerce(ds, val):
+    if val or val == 0:
+        return scalar_coerce(ds.ty, val)
+    else:
+        return None
+
+
+@dispatch(ct.Date, _strtypes)
+def scalar_coerce(_, val):
+    dt = dt_parse(val)
+    if dt.time():
+        raise ValueError("Can not coerce %s to type Date, "
+                "contains time information")
+    return dt.date()
+
+
+@dispatch(ct.DateTime, _strtypes)
+def scalar_coerce(_, val):
+    return dt_parse(val)
+
+
+@dispatch(ct.CType, _strtypes)
+def scalar_coerce(dt, val):
+    return np.asscalar(np.asarray(val, dtype=dt.to_numpy_dtype()))
+
+
+@dispatch(ct.Record, object)
+def scalar_coerce(rec, val):
+    if len(rec.fields) == 1:
+        return scalar_coerce(first(rec.types), val)
+    else:
+        raise TypeError("Trying to coerce complex datashape\n"
+                "got dshape: %s\n"
+                "scalar_coerce only intended for scalar values" % rec)
+
+
+@dispatch(ct.DataShape, object)
+def scalar_coerce(ds, val):
+    if len(ds) == 1:
+        return scalar_coerce(ds[0], val)
+    else:
+        raise TypeError("Trying to coerce dimensional datashape\n"
+                "got dshape: %s\n"
+                "scalar_coerce only intended for scalar values" % ds)
+
+
+@dispatch(object, object)
+def scalar_coerce(dtype, val):
+    return val
+
+
+@dispatch(_strtypes, object)
+def scalar_coerce(ds, val):
+    return scalar_coerce(dshape(ds), val)
 
 
 def _neg(self):
