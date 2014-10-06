@@ -46,8 +46,8 @@ def compute_up(t, s, scope=None, **kwargs):
     if scope is None:
         scope = {}
     subexpression = t
-    while hasattr(subexpression, 'child'):
-        subexpression = subexpression.child
+    while hasattr(subexpression, '_child'):
+        subexpression = subexpression._child
     csubexpression = compute(subexpression, scope)
     # Hack because csubexpression may be SQL object
     if not isinstance(csubexpression, Selectable):
@@ -60,7 +60,7 @@ def compute_up(t, s, scope=None, **kwargs):
 @dispatch((Field, Projection), Select)
 def compute_up(t, s, **kwargs):
     cols = list(s.inner_columns)
-    cols = [lower_column(cols[t.child.fields.index(c)]) for c in t.fields]
+    cols = [lower_column(cols[t._child.fields.index(c)]) for c in t.fields]
     return s.with_only_columns(cols)
 
 
@@ -71,8 +71,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t.child[c].expr, lower_column(s.c.get(c)))
-             for c in t.child.fields)
+    d = dict((t._child[c].expr, lower_column(s.c.get(c)))
+             for c in t._child.fields)
     result = compute(t.expr, d)
 
     s = copy(s)
@@ -82,8 +82,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    d = dict((t.child[c].expr, lower_column(s.c.get(c)))
-             for c in t.child.fields)
+    d = dict((t._child[c].expr, lower_column(s.c.get(c)))
+             for c in t._child.fields)
     return compute(t.expr, d)
 
 
@@ -109,7 +109,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Selection, Select)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t.child[col.name], col) for col in s.inner_columns)
+    ns = dict((t._child[col.name], col) for col in s.inner_columns)
     predicate = compute(t.predicate, toolz.merge(ns, scope))
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
@@ -118,7 +118,7 @@ def compute_up(t, s, scope=None, **kwargs):
 
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t.child[col.name], lower_column(col)) for col in s.columns)
+    ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
     predicate = compute(t.predicate, toolz.merge(ns, scope))
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
@@ -227,7 +227,7 @@ names = {mean: 'avg',
 
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t.child[c], lower_column(s.c.get(c))) for c in t.child.fields)
+    d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
     col = compute(t, d)
 
     s = copy(s)
@@ -297,9 +297,9 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
     if isinstance(t.apply, Reduction):
-        reductions = [compute(t.apply, {t.child: s})]
+        reductions = [compute(t.apply, {t._child: s})]
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t.child: s}).label(name)
+        reductions = [compute(val, {t._child: s}).label(name)
                 for val, name in zip(t.apply.values, t.apply.fields)]
 
     return sqlalchemy.select([grouper] + reductions).group_by(grouper)
@@ -313,9 +313,9 @@ def compute_up(t, s, **kwargs):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
     if isinstance(t.apply, Reduction):
-        reductions = [compute(t.apply, {t.child: s})]
+        reductions = [compute(t.apply, {t._child: s})]
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t.child: s}).label(name)
+        reductions = [compute(val, {t._child: s}).label(name)
                 for val, name in zip(t.apply.values, t.apply.fields)]
 
     return sqlalchemy.select(grouper + reductions).group_by(*grouper)
@@ -362,10 +362,10 @@ def compute_up(t, s, **kwargs):
                                   % t.grouper)
 
     if isinstance(t.apply, Reduction):
-        reduction = compute(t.apply, {t.child: s})
+        reduction = compute(t.apply, {t._child: s})
 
     elif isinstance(t.apply, Summary):
-        reduction = compute(t.apply, {t.child: s})
+        reduction = compute(t.apply, {t._child: s})
 
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
     s2 = reduction.group_by(*grouper)
@@ -408,7 +408,7 @@ def compute_up(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
-               for col, new_col in zip(t.child.fields, t.fields)]
+               for col, new_col in zip(t._child.fields, t.fields)]
 
     return select(columns)
 
@@ -427,7 +427,7 @@ def compute_up(t, _, children):
 
 @dispatch(Summary, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t.child[c], lower_column(s.c.get(c))) for c in t.child.fields)
+    d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
 
     cols = [compute(val, d).label(name) for name, val in zip(t.fields, t.values)]
 
@@ -440,7 +440,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
-    return select([compute(value, {t.child: s}).label(name)
+    return select([compute(value, {t._child: s}).label(name)
         for value, name in zip(t.values, t.fields)])
 
 

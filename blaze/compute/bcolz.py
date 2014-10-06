@@ -72,7 +72,7 @@ def compute_up(expr, ba, chunksize=2**20, **kwargs):
 
 @dispatch(std, bcolz.carray)
 def compute_up(expr, ba, **kwargs):
-    result = compute_up(expr.child.var(unbiased=expr.unbiased), ba, **kwargs)
+    result = compute_up(expr._child.var(unbiased=expr.unbiased), ba, **kwargs)
     return math.sqrt(result)
 
 

@@ -51,7 +51,7 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
-    d = dict((t.child[c].expr, df[c]) for c in t.child.fields)
+    d = dict((t._child[c].expr, df[c]) for c in t._child.fields)
     return compute(t.expr, d)
 
 
@@ -81,7 +81,7 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Selection, (Series, DataFrame))
 def compute_up(t, df, **kwargs):
-    predicate = compute(t.predicate, {t.child: df})
+    predicate = compute(t.predicate, {t._child: df})
     return df[predicate]
 
 
@@ -181,7 +181,7 @@ def get_grouper(c, grouper, df):
 
 @dispatch(By, (ElemWise, Series), NDFrame)
 def get_grouper(c, grouper, df):
-    return compute(grouper, {c.child: df})
+    return compute(grouper, {c._child: df})
 
 
 @dispatch(By, (Field, Projection), NDFrame)
@@ -192,7 +192,7 @@ def get_grouper(c, grouper, df):
 @dispatch(By, Reduction, Grouper, NDFrame)
 def compute_by(t, r, g, df):
     names = [r._name]
-    preapply = compute(r.child, {t.child: df})
+    preapply = compute(r._child, {t._child: df})
 
     # Pandas and Blaze column naming schemes differ
     # Coerce DataFrame column names to match Blaze's names
@@ -204,7 +204,7 @@ def compute_by(t, r, g, df):
     group_df = concat_nodup(df, preapply)
 
     gb = group_df.groupby(g)
-    groups = gb[names[0] if isscalar(t.apply.child.dshape.measure) else names]
+    groups = gb[names[0] if isscalar(t.apply._child.dshape.measure) else names]
 
     return compute_up(r, groups)  # do reduction
 
@@ -213,7 +213,7 @@ def compute_by(t, r, g, df):
 def compute_by(t, s, g, df):
     names = s.fields
     preapply = DataFrame(dict(zip(names,
-                                  (compute(v.child, {t.child: df})
+                                  (compute(v._child, {t._child: df})
                                    for v in s.values))))
 
     df2 = concat_nodup(df, preapply)
@@ -362,7 +362,7 @@ def compute_up(t, df, **kwargs):
 def compute_up(t, df, scope=None, **kwargs):
     subexpression = common_subexpression(*t.children)
     scope = merge_dicts(scope or {}, {subexpression: df})
-    children = [compute(child, scope) for child in t.children]
+    children = [compute(_child, scope) for _child in t.children]
     return pd.concat(children, axis=1)
 
 
@@ -373,7 +373,7 @@ def compute_up(t, example, children, **kwargs):
 
 @dispatch(Summary, DataFrame)
 def compute_up(expr, data, **kwargs):
-    return Series(dict(zip(expr.fields, [compute(val, {expr.child: data})
+    return Series(dict(zip(expr.fields, [compute(val, {expr._child: data})
                                         for val in expr.values])))
 
 

@@ -19,8 +19,8 @@ __all__ = ['np']
 def compute_up(c, x, **kwargs):
     if x.dtype.names and c._name in x.dtype.names:
         return x[c._name]
-    if not x.dtype.names and x.shape[1] == len(c.child.fields):
-        return x[:, c.child.fields.index(c._name)]
+    if not x.dtype.names and x.shape[1] == len(c._child.fields):
+        return x[:, c._child.fields.index(c._name)]
     raise NotImplementedError()
 
 
@@ -28,14 +28,14 @@ def compute_up(c, x, **kwargs):
 def compute_up(t, x, **kwargs):
     if all(col in x.dtype.names for col in t.fields):
         return x[t.fields]
-    if not x.dtype.names and x.shape[1] == len(t.child.fields):
-        return x[:, [t.child.fields.index(col) for col in t.fields]]
+    if not x.dtype.names and x.shape[1] == len(t._child.fields):
+        return x[:, [t._child.fields.index(col) for col in t.fields]]
     raise NotImplementedError()
 
 
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t.child[c].expr, x[c]) for c in t.child.fields)
+    d = dict((t._child[c].expr, x[c]) for c in t._child.fields)
     return compute(t.expr, d)
 
 
@@ -66,7 +66,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Selection, np.ndarray)
 def compute_up(t, x, **kwargs):
-    predicate = compute(t.predicate, {t.child: x})
+    predicate = compute(t.predicate, {t._child: x})
     return x[predicate]
 
 
@@ -129,7 +129,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Selection, np.ndarray)
 def compute_up(sel, x, **kwargs):
-    return x[compute(sel.predicate, {sel.child: x})]
+    return x[compute(sel.predicate, {sel._child: x})]
 
 
 @dispatch(Union, np.ndarray, tuple)
@@ -141,9 +141,9 @@ def compute_up(expr, example, children, **kwargs):
 @dispatch(Expr, np.ndarray)
 def compute_up(t, x, **kwargs):
     if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
-        df = DataFrame(columns=t.child.fields)
+        df = DataFrame(columns=t._child.fields)
     else:
-        df = Series(name=t.child.fields[0])
+        df = Series(name=t._child.fields[0])
     return compute_up(t, into(df, x), **kwargs)
 
 

@@ -75,10 +75,10 @@ class GroupBy(Expr):
     >>> summarize(g, total=t.y.sum()).fields
     ['x', 'total']
     """
-    __slots__ = ['child', 'grouper']
+    __slots__ = ['_child', 'grouper']
 
     def __init__(self, child, *grouper):
-        self.child = child
+        self._child = child
         if len(grouper) == 1:
             grouper = grouper[0]
         else:

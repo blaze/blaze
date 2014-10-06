@@ -463,9 +463,9 @@ def test_summary():
     assert 'num=' in str(s)
     assert str(t.amount.sum()) in str(s)
 
-    assert not summary(total=t.amount.sum()).child.isidentical(
+    assert not summary(total=t.amount.sum())._child.isidentical(
             t.amount.sum())
-    assert iscollection(summary(total=t.amount.sum() + 1).child.dshape)
+    assert iscollection(summary(total=t.amount.sum() + 1)._child.dshape)
 
 
 def test_reduction_arithmetic():
@@ -546,7 +546,7 @@ def test_map_label():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     c = t.amount.map(identity, schema='int32')
     assert c.label('bar')._name == 'bar'
-    assert c.label('bar').child.isidentical(c.child)
+    assert c.label('bar')._child.isidentical(c._child)
 
 
 def test_columns():
@@ -629,13 +629,13 @@ def test_broadcast():
     c = t2['c']
 
     assert str(broadcast(Add, x, y).expr) == 'x + y'
-    assert broadcast(Add, x, y).child.isidentical(t)
+    assert broadcast(Add, x, y)._child.isidentical(t)
 
     c1 = broadcast(Add, x, y)
     c2 = broadcast(Mult, x, z)
 
     assert eval_str(broadcast(Eq, c1, c2).expr) == '(x + y) == (x * z)'
-    assert broadcast(Eq, c1, c2).child.isidentical(t)
+    assert broadcast(Eq, c1, c2)._child.isidentical(t)
 
     assert str(broadcast(Add, x, 1).expr) == 'x + 1'
 
@@ -871,7 +871,7 @@ class TestRepr(object):
     def test_partial_lambda(self, t):
         expr = t.amount.map(partial(lambda x, y: x + y, 1))
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=partial(%s, 1), "
                      "_schema=None, _name0=None)" %
                      funcname('test_partial_lambda'))
@@ -879,7 +879,7 @@ class TestRepr(object):
     def test_lambda(self, t):
         expr = t.amount.map(lambda x: x)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=%s, _schema=None, _name0=None)" %
                      funcname('test_lambda'))
 
@@ -888,7 +888,7 @@ class TestRepr(object):
             return x + y
         expr = t.amount.map(partial(myfunc, 1))
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=partial(%s, 1), "
                      "_schema=None, _name0=None)" % funcname('test_partial',
                                                                 'myfunc'))
@@ -896,7 +896,7 @@ class TestRepr(object):
     def test_builtin(self, t):
         expr = t.amount.map(datetime.fromtimestamp)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=datetime.fromtimestamp, _schema=None,"
                      " _name0=None)")
 
@@ -905,7 +905,7 @@ class TestRepr(object):
             return x + 1
         expr = t.amount.map(myfunc)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=%s, _schema=None,"
                      " _name0=None)" % funcname('test_udf', 'myfunc'))
 
@@ -915,7 +915,7 @@ class TestRepr(object):
         f = partial(partial(myfunc, 2), 1)
         expr = t.amount.map(f)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], func=partial(partial(%s, 2), 1),"
+        assert s == ("Map(_child=t['amount'], func=partial(partial(%s, 2), 1),"
                      " _schema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
 

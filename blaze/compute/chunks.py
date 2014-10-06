@@ -91,7 +91,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 @dispatch(tuple(reductions), ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    t = TableSymbol('_', dshape=expr.child.dshape)
+    t = TableSymbol('_', dshape=expr._child.dshape)
     a, b = reductions[type(expr)]
 
     return compute_up(b(t), [compute_up(a(t), chunk) for chunk in c])
@@ -104,8 +104,8 @@ def compute_up(expr, c, **kwargs):
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_up(expr.child.sum(), chunk)
-        total_count += compute_up(expr.child.count(), chunk)
+        total_sum += compute_up(expr._child.sum(), chunk)
+        total_count += compute_up(expr._child.count(), chunk)
 
     return total_sum / total_count
 
@@ -119,7 +119,7 @@ def compute_up(expr, c, **kwargs):
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
-                   compute_up(expr.child.head(expr.n - len(df)), chunk),
+                   compute_up(expr._child.head(expr.n - len(df)), chunk),
                    columns=expr.fields)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
@@ -167,13 +167,13 @@ def compute_up(expr, c, **kwargs):
 
 @dispatch(nunique, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    dist = compute_up(expr.child.distinct(), c)
-    return compute_up(expr.child.count(), dist)
+    dist = compute_up(expr._child.distinct(), c)
+    return compute_up(expr._child.count(), dist)
 
 
 @dispatch(By, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    (chunkleaf, chunkexpr), (aggleaf, aggexpr) = split(expr.child, expr)
+    (chunkleaf, chunkexpr), (aggleaf, aggexpr) = split(expr._child, expr)
 
     # Put each chunk into a list, then concatenate
     intermediate = list(concat(into([], compute(chunkexpr, {chunkleaf: chunk}))

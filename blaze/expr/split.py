@@ -18,10 +18,10 @@ def path_split(leaf, expr):
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     >>> path_split(t, t.amount.sum() + 1)
-    sum(child=t['amount'])
+    sum(_child=t['amount'])
 
     >>> path_split(t, t.amount.distinct().sort())
-    Distinct(child=t['amount'])
+    Distinct(_child=t['amount'])
     """
     last = None
     for node in list(path(expr, leaf))[:-1][::-1]:
@@ -55,7 +55,7 @@ def split(leaf, expr, chunk=None, agg=None):
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
-    ((chunk, count(child=chunk['id'])), (aggregate, sum(child=aggregate)))
+    ((chunk, count(_child=chunk['id'])), (aggregate, sum(_child=aggregate)))
     """
     center = path_split(leaf, expr)
     chunk = chunk or TableSymbol('chunk', leaf.dshape)
@@ -76,7 +76,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 @dispatch(tuple(reductions))
 def _split(expr, leaf=None, chunk=None, agg=None):
     a, b = reductions[type(expr)]
-    return ((chunk, a(expr._subs({leaf: chunk}).child)),
+    return ((chunk, a(expr._subs({leaf: chunk})._child)),
             (agg, b(agg)))
 
 

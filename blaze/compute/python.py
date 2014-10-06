@@ -67,7 +67,7 @@ def recursive_rowfunc(t, stop):
     funcs = []
     while not t.isidentical(stop):
         funcs.append(rowfunc(t))
-        t = t.child
+        t = t._child
     return compose(*funcs)
 
 
@@ -94,13 +94,13 @@ def rowfunc(t):
         compute<Rowwise, Sequence>
     """
     from cytoolz.curried import get
-    indices = [t.child.fields.index(col) for col in t.fields]
+    indices = [t._child.fields.index(col) for col in t.fields]
     return get(indices)
 
 
 @dispatch(Field)
 def rowfunc(t):
-    index = t.child.fields.index(t._name)
+    index = t._child.fields.index(t._name)
     return lambda x: x[index]
 
 
@@ -118,7 +118,7 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if isscalar(t.child.dshape.measure):
+    if isscalar(t._child.dshape.measure):
         return t.func
     else:
         return partial(apply, t.func)
@@ -175,22 +175,22 @@ def deepmap(func, data, n=1):
 
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = [rrowfunc(child, t.child) for child in t.children]
+    funcs = [rrowfunc(_child, t._child) for _child in t.children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
 @dispatch(ElemWise, Sequence)
 def compute_up(t, seq, **kwargs):
     func = rowfunc(t)
-    if iscollection(t.child.dshape):
-        return deepmap(func, seq, n=t.child.ndim)
+    if iscollection(t._child.dshape):
+        return deepmap(func, seq, n=t._child.ndim)
     else:
         return func(seq)
 
 
 @dispatch(Selection, Sequence)
 def compute_up(t, seq, **kwargs):
-    predicate = rrowfunc(t.predicate, t.child)
+    predicate = rrowfunc(t.predicate, t._child)
     return filter(predicate, seq)
 
 
@@ -324,12 +324,12 @@ def reduce_by_funcs(t):
     See Also:
         compute_up(By, Sequence)
     """
-    grouper = rrowfunc(t.grouper, t.child)
+    grouper = rrowfunc(t.grouper, t._child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, combiner, initial = binops[type(t.apply)]
-        applier = rrowfunc(t.apply.child, t.child)
+        applier = rrowfunc(t.apply._child, t._child)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
@@ -340,7 +340,7 @@ def reduce_by_funcs(t):
         builtins.all(type(val) in binops for val in t.apply.values)):
 
         binops2, combiners, inits = zip(*[binops[type(v)] for v in t.apply.values])
-        appliers = [rrowfunc(v.child, t.child) for v in t.apply.values]
+        appliers = [rrowfunc(v._child, t._child) for v in t.apply.values]
 
         def binop2(accs, x):
             return tuple(binop(acc, applier(x)) for binop, acc, applier in
@@ -360,9 +360,9 @@ def compute_up(t, seq, **kwargs):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
         d = reduceby(grouper, binop, seq, initial)
     else:
-        grouper = rrowfunc(t.grouper, t.child)
+        grouper = rrowfunc(t.grouper, t._child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t._child: v})) for k, v in groups.items())
 
     if isscalar(t.grouper.dshape.measure):
         keyfunc = lambda x: (x,)
@@ -447,7 +447,7 @@ def compute_up(t, lhs, rhs, **kwargs):
 @dispatch(Sort, Sequence)
 def compute_up(t, seq, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
-        key = rowfunc(t.child[t.key])
+        key = rowfunc(t._child[t.key])
     else:
         key = rowfunc(t.key)
     return sorted(seq,
@@ -482,10 +482,10 @@ def compute_up(t, example, children, **kwargs):
 def compute_up(expr, data, **kwargs):
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        return tuple(compute(val, {expr.child: data})
+        return tuple(compute(val, {expr._child: data})
                         for val, data in zip(expr.values, datas))
     else:
-        return tuple(compute(val, {expr.child: data})
+        return tuple(compute(val, {expr._child: data})
                         for val in expr.values)
 
 

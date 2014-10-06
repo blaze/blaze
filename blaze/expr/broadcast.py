@@ -28,9 +28,9 @@ def _expr_child(col):
     Helper function for ``broadcast``
     """
     if isinstance(col, (Broadcast, Field)):
-        return col.expr, col.child
+        return col.expr, col._child
     elif isinstance(col, Label):
-        return _expr_child(col.child)
+        return _expr_child(col._child)
     else:
         return col, None
 
@@ -108,7 +108,7 @@ class Broadcast(ElemWise):
 
     blaze.expr.table.broadcast
     """
-    __slots__ = 'child', 'expr'
+    __slots__ = '_child', 'expr'
 
     @property
     def _name(self):
@@ -119,11 +119,11 @@ class Broadcast(ElemWise):
 
     @property
     def dshape(self):
-        return DataShape(*(self.child.shape + (self.expr.dshape.measure,)))
+        return DataShape(*(self._child.shape + (self.expr.dshape.measure,)))
 
     def __str__(self):
         columns = self.active_columns()
-        newcol = lambda c: "%s['%s']" % (self.child, c)
+        newcol = lambda c: "%s['%s']" % (self._child, c)
         return eval_str(self.expr._subs(dict(zip(columns,
                                                 map(newcol, columns)))))
 

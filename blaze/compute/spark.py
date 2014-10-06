@@ -54,7 +54,7 @@ def compute_up(t, rdd, **kwargs):
 
 @dispatch(Selection, RDD)
 def compute_up(t, rdd, **kwargs):
-    predicate = rrowfunc(t.predicate, t.child)
+    predicate = rrowfunc(t.predicate, t._child)
     return rdd.filter(predicate)
 
 
@@ -96,9 +96,9 @@ def compute_up(t, rdd, **kwargs):
 @dispatch(Sort, RDD)
 def compute_up(t, rdd, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
-        key = rowfunc(t.child[t.key])
+        key = rowfunc(t._child[t.key])
     else:
-        key = rrowfunc(t.key, t.child)
+        key = rrowfunc(t.key, t._child)
     return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
@@ -183,7 +183,7 @@ def compute_up(t, rdd, **kwargs):
 @dispatch(Summary, RDD)
 def compute_up(t, rdd, **kwargs):
     rdd = rdd.cache()
-    return tuple(compute(value, {t.child: rdd}) for value in t.values)
+    return tuple(compute(value, {t._child: rdd}) for value in t.values)
 
 
 @dispatch(Like, RDD)

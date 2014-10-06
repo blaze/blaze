@@ -91,11 +91,11 @@ def test_resource_all_in_one():
 
 
 class CustomExpr(TableExpr):
-    __slots__ = 'child',
+    __slots__ = '_child',
 
     @property
     def dshape(self):
-        return self.child.dshape
+        return self._child.dshape
 
 
 @dispatch(CustomExpr, DataFrame)

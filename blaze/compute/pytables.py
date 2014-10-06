@@ -112,7 +112,7 @@ def compute_up(c, t, **kwargs):
 
 @dispatch(Sort, tb.Table)
 def compute_up(s, t, **kwargs):
-    if isinstance(s.key, Field) and s.key.child.isidentical(s.child):
+    if isinstance(s.key, Field) and s.key._child.isidentical(s._child):
         key = s.key._name
     else:
         key = s.key

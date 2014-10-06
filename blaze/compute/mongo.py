@@ -227,7 +227,7 @@ def group_apply(expr):
     {'amount_sum': {'$sum': '$amount'}}
     """
     key = expr._name
-    col = '$' + expr.child._name
+    col = '$' + expr._child._name
     if isinstance(expr, count):
         return {key: {'$sum': 1}}
     if isinstance(expr, sum):
@@ -250,11 +250,11 @@ def group_apply(expr):
     # TODO: implement columns variable more generally when Broadcast works
     reducs = expr.values
     names = expr.fields
-    values = [(name, c, getattr(c.child, 'column', None) or name)
+    values = [(name, c, getattr(c._child, 'column', None) or name)
                for name, c in zip(names, reducs)]
     key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
     query = dict((k, {key_getter(v): int(isinstance(v, count)) or
-                      compute_sub(v.child.expr)})
+                      compute_sub(v._child.expr)})
                  for k, v, z in values)
     return query
 
@@ -269,7 +269,7 @@ def compute_up(t, q, **kwargs):
 def compute_up(t, q, **kwargs):
     name = t._name
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
-    column = '$' + t.child._name
+    column = '$' + t._child._name
     arg = {'$group': {'_id': {}, name: {reduction: column}}}
     return q.append(arg)
 
@@ -284,7 +284,7 @@ def compute_up(expr, q, **kwargs):
     attr = expr.attr
     d = {'$project': {expr._name:
                       {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
-                       '$%s' % expr.child._name}}}
+                       '$%s' % expr._child._name}}}
     return q.append(d)
 
 

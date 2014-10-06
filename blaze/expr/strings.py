@@ -6,7 +6,7 @@ from .expressions import Expr, schema_method_list
 __all__ = ['Like', 'like']
 
 class Like(Expr):
-    __slots__ = 'child', '_patterns'
+    __slots__ = '_child', '_patterns'
 
     @property
     def patterns(self):
@@ -14,7 +14,7 @@ class Like(Expr):
 
     @property
     def dshape(self):
-        return datashape.var * self.child.dshape.subshape[0]
+        return datashape.var * self._child.dshape.subshape[0]
 
 
 def like(child, **kwargs):

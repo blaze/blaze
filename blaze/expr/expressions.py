@@ -129,7 +129,7 @@ class ElemWise(Expr):
     """
     @property
     def dshape(self):
-        return datashape.DataShape(*(self.child.dshape.shape
+        return datashape.DataShape(*(self._child.dshape.shape
                                   + tuple(self.schema)))
 
 
@@ -143,10 +143,10 @@ class Field(ElemWise):
     >>> points.x.dshape
     dshape("5 * 3 * int32")
     """
-    __slots__ = 'child', '_name'
+    __slots__ = '_child', '_name'
 
     def __str__(self):
-        return "%s['%s']" % (self.child, self._name)
+        return "%s['%s']" % (self._child, self._name)
 
     @property
     def expr(self):
@@ -154,8 +154,8 @@ class Field(ElemWise):
 
     @property
     def dshape(self):
-        shape = self.child.dshape.shape
-        schema = self.child.dshape.measure.dict[self._name]
+        shape = self._child.dshape.shape
+        schema = self._child.dshape.measure.dict[self._name]
 
         shape = shape + schema.shape
         schema = (schema.measure,)
@@ -182,7 +182,7 @@ class Projection(ElemWise):
 
     blaze.expr.expressions.Field
     """
-    __slots__ = 'child', '_fields'
+    __slots__ = '_child', '_fields'
 
     @property
     def fields(self):
@@ -190,21 +190,21 @@ class Projection(ElemWise):
 
     @property
     def schema(self):
-        d = self.child.schema[0].dict
+        d = self._child.schema[0].dict
         return DataShape(Record([(name, d[name]) for name in self.fields]))
 
     def __str__(self):
-        return '%s[[%s]]' % (self.child,
+        return '%s[[%s]]' % (self._child,
                              ', '.join(["'%s'" % name for name in self.fields]))
 
     def project(self, key):
         if isinstance(key, list) and set(key).issubset(set(self.fields)):
-            return self.child[key]
+            return self._child[key]
         raise ValueError("Column Mismatch: %s" % key)
 
     def get_field(self, fieldname):
         if fieldname in self.fields:
-            return Field(self.child, fieldname)
+            return Field(self._child, fieldname)
         raise ValueError("Field %s not found in columns %s" % (fieldname,
             self.fields))
 
@@ -229,16 +229,16 @@ class Selection(Expr):
     ...                        '{name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
     """
-    __slots__ = 'child', 'predicate'
+    __slots__ = '_child', 'predicate'
 
     def __str__(self):
-        return "%s[%s]" % (self.child, self.predicate)
+        return "%s[%s]" % (self._child, self.predicate)
 
     @property
     def dshape(self):
-        shape = list(self.child.dshape.shape)
+        shape = list(self._child.dshape.shape)
         shape[0] = Var()
-        return DataShape(*(shape + [self.child.dshape.measure]))
+        return DataShape(*(shape + [self._child.dshape.measure]))
 
 
 def selection(table, predicate):
@@ -283,11 +283,11 @@ class Label(ElemWise):
 
     blaze.expr.table.ReLabel
     """
-    __slots__ = 'child', 'label'
+    __slots__ = '_child', 'label'
 
     @property
     def schema(self):
-        return self.child.schema
+        return self._child.schema
 
     @property
     def _name(self):
@@ -326,7 +326,7 @@ class Map(ElemWise):
 
     blaze.expr.table.Apply
     """
-    __slots__ = 'child', 'func', '_schema', '_name0'
+    __slots__ = '_child', 'func', '_schema', '_name0'
 
     @property
     def schema(self):
@@ -339,25 +339,25 @@ class Map(ElemWise):
 
     def label(self, name):
         assert isscalar(self.dshape.measure)
-        return Map(self.child,
+        return Map(self._child,
                    self.func,
                    self.schema,
                    name)
 
     @property
     def shape(self):
-        return self.child.shape
+        return self._child.shape
 
     @property
     def ndim(self):
-        return self.child.ndim
+        return self._child.ndim
 
     @property
     def _name(self):
         if self._name0:
             return self._name0
         else:
-            return self.child._name
+            return self._child._name
 
 
 dshape_method_list = list()

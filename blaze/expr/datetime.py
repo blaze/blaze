@@ -10,10 +10,10 @@ __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
         'time']
 
 class DateTime(ElemWise):
-    __slots__ = 'child',
+    __slots__ = '_child',
 
     def __str__(self):
-        return '%s.%s' % (str(self.child), type(self).__name__.lower())
+        return '%s.%s' % (str(self._child), type(self).__name__.lower())
 
     @property
     def schema(self):
@@ -21,7 +21,7 @@ class DateTime(ElemWise):
 
     @property
     def _name(self):
-        return '%s_%s' % (self.child._name, self.attr)
+        return '%s_%s' % (self._child._name, self.attr)
 
     @property
     def attr(self):

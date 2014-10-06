@@ -40,7 +40,7 @@ class TableExpr(Expr):
 
     blaze.expr.table.TableSymbol
     """
-    __inputs__ = 'child',
+    __inputs__ = '_child',
 
     @property
     def dshape(self):
@@ -216,7 +216,7 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = 'child',
+    __slots__ = '_child',
     _dtype = None
 
     @property
@@ -230,7 +230,7 @@ class Reduction(Expr):
     @property
     def _name(self):
         try:
-            return self.child._name + '_' + type(self).__name__
+            return self._child._name + '_' + type(self).__name__
         except (AttributeError, ValueError, TypeError):
             return type(self).__name__
 
@@ -245,7 +245,7 @@ class all(Reduction):
 class sum(Reduction):
     @property
     def _dtype(self):
-        schema = self.child.schema[0]
+        schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return first(schema.types)
         else:
@@ -254,7 +254,7 @@ class sum(Reduction):
 class max(Reduction):
     @property
     def _dtype(self):
-        schema = self.child.schema[0]
+        schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return first(schema.types)
         else:
@@ -263,7 +263,7 @@ class max(Reduction):
 class min(Reduction):
     @property
     def _dtype(self):
-        schema = self.child.schema[0]
+        schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return first(schema.types)
         else:
@@ -284,7 +284,7 @@ class var(Reduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = 'child', 'unbiased'
+    __slots__ = '_child', 'unbiased'
 
     _dtype = ct.real
 
@@ -311,7 +311,7 @@ class std(Reduction):
     --------
     var
     """
-    __slots__ = 'child', 'unbiased'
+    __slots__ = '_child', 'unbiased'
 
     _dtype = ct.real
 
@@ -342,7 +342,7 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = 'child', 'names', 'values'
+    __slots__ = '_child', 'names', 'values'
 
     @property
     def dshape(self):
@@ -406,7 +406,7 @@ class By(TableExpr):
     __slots__ = 'grouper', 'apply'
 
     @property
-    def child(self):
+    def _child(self):
         return common_subexpression(self.grouper, self.apply)
 
     @property
@@ -457,11 +457,11 @@ class Sort(TableExpr):
 
     >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
     """
-    __slots__ = 'child', '_key', 'ascending'
+    __slots__ = '_child', '_key', 'ascending'
 
     @property
     def schema(self):
-        return self.child.schema
+        return self._child.schema
 
     @property
     def key(self):
@@ -471,11 +471,11 @@ class Sort(TableExpr):
             return self._key
 
     def _len(self):
-        return self.child._len()
+        return self._child._len()
 
     @property
     def _name(self):
-        return self.child._name
+        return self._child._name
 
 
 def sort(child, key=None, ascending=True):
@@ -516,19 +516,19 @@ class Distinct(TableExpr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
     """
-    __slots__ = 'child',
+    __slots__ = '_child',
 
     @property
     def schema(self):
-        return self.child.schema
+        return self._child.schema
 
     @property
     def fields(self):
-        return self.child.fields
+        return self._child.fields
 
     @property
     def _name(self):
-        return self.child._name
+        return self._child._name
 
 
 def distinct(expr):
@@ -545,22 +545,22 @@ class Head(TableExpr):
     >>> accounts.head(5).dshape
     dshape("5 * { name : string, amount : int32 }")
     """
-    __slots__ = 'child', 'n'
+    __slots__ = '_child', 'n'
 
     @property
     def schema(self):
-        return self.child.schema
+        return self._child.schema
 
     @property
     def dshape(self):
         return self.n * self.schema
 
     def _len(self):
-        return builtins.min(self.child._len(), self.n)
+        return builtins.min(self._child._len(), self.n)
 
     @property
     def _name(self):
-        return self.child._name
+        return self._child._name
 
 
 def head(child, n=10):
@@ -587,15 +587,15 @@ class ReLabel(ElemWise):
 
     blaze.expr.table.Label
     """
-    __slots__ = 'child', 'labels'
+    __slots__ = '_child', 'labels'
 
     @property
     def schema(self):
         subs = dict(self.labels)
-        d = self.child.dshape.measure.dict
+        d = self._child.dshape.measure.dict
 
         return DataShape(Record([[subs.get(name, name), dtype]
-            for name, dtype in self.child.dshape.measure.parameters[0]]))
+            for name, dtype in self._child.dshape.measure.parameters[0]]))
 
 
 def relabel(child, labels):
@@ -635,10 +635,10 @@ class Apply(TableExpr):
 
     blaze.expr.table.Map
     """
-    __slots__ = 'child', 'func', '_dshape'
+    __slots__ = '_child', 'func', '_dshape'
 
     def __init__(self, func, child, dshape=None):
-        self.child = child
+        self._child = child
         self.func = func
         self._dshape = dshape
 
@@ -716,7 +716,7 @@ class Merge(ElemWise):
     blaze.expr.table.Union
     blaze.expr.table.Join
     """
-    __slots__ = 'child', 'children'
+    __slots__ = '_child', 'children'
 
     @property
     def schema(self):

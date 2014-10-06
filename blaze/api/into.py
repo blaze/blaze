@@ -890,11 +890,11 @@ def into(a, b, **kwargs):
     >>> t = Table(csv)                              # doctest: +SKIP
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
-    if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.child.fields)
+    if isinstance(b._child, TableSymbol) and isinstance(b._child.data, CSV):
+        kwargs.setdefault('names', b._child.fields)
         kwargs.setdefault('usecols', b.fields)
         kwargs.setdefault('squeeze', isscalar(b.dshape.measure))
-        return into(a, b.child.data, **kwargs)
+        return into(a, b._child.data, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once
         # https://github.com/mrocklin/multipledispatch/pull/39 is merged

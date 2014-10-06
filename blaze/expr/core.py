@@ -16,7 +16,7 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 class Node(object):
     """ Node in a tree """
-    __inputs__ = 'child',
+    __inputs__ = '_child',
 
     def __init__(self, *args, **kwargs):
         assert frozenset(kwargs).issubset(self.__slots__)
@@ -304,7 +304,7 @@ def path(a, b):
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> expr = t['amount'].sum()
     >>> list(path(expr, t))
-    [sum(child=t['amount']), t['amount'], t]
+    [sum(_child=t['amount']), t['amount'], t]
     """
     while not a.isidentical(b):
         yield a

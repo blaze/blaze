@@ -82,13 +82,13 @@ class BinOp(Expr):
 
 
 class UnaryOp(Expr):
-    __slots__ = 'child',
+    __slots__ = '_child',
 
     def __init__(self, child):
-        self.child = child
+        self._child = child
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, eval_str(self.child))
+        return '%s(%s)' % (self.symbol, eval_str(self._child))
 
     @property
     def symbol(self):
@@ -143,12 +143,12 @@ class USub(UnaryOp):
     op = operator.neg
 
     def __str__(self):
-        return '-%s' % self.child
+        return '-%s' % self._child
 
     @property
     def dshape(self):
         # TODO: better inference.  -uint -> int
-        return self.child.dshape
+        return self._child.dshape
 
 
 def _neg(self):
