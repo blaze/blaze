@@ -21,16 +21,16 @@ def compute_up(c, x, **kwargs):
         return x[c.column]
     if not x.dtype.names and x.shape[1] == len(c.child.columns):
         return x[:, c.child.columns.index(c.column)]
-    raise NotImplementedError()
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(Projection, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if all(col in x.dtype.names for col in t.columns):
+    if x.dtype.names and all(col in x.dtype.names for col in t.columns):
         return x[t.columns]
     if not x.dtype.names and x.shape[1] == len(t.child.columns):
         return x[:, [t.child.columns.index(col) for col in t.columns]]
-    raise NotImplementedError()
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(ColumnWise, np.ndarray)
