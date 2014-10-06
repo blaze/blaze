@@ -28,7 +28,7 @@ class Node(object):
             setattr(self, key, value)
 
     @property
-    def args(self):
+    def _args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
 
     @property
@@ -66,14 +66,14 @@ class Node(object):
                                       isinstance(i, Node))))
 
     def isidentical(self, other):
-        return type(self) == type(other) and self.args == other.args
+        return type(self) == type(other) and self._args == other._args
 
     def __hash__(self):
-        return hash((type(self), self.args))
+        return hash((type(self), self._args))
 
     def __str__(self):
         rep = ["%s=%s" % (slot, _str(arg))
-               for slot, arg in zip(self.__slots__, self.args)]
+               for slot, arg in zip(self.__slots__, self._args)]
         return "%s(%s)" % (type(self).__name__, ', '.join(rep))
 
     def __repr__(self):
@@ -83,7 +83,7 @@ class Node(object):
         """ Traverse over tree, yielding all subtrees and leaves """
         yield self
         traversals = (arg.traverse() if isinstance(arg, Node) else [arg]
-                      for arg in self.args)
+                      for arg in self._args)
         for trav in traversals:
             for item in trav:
                 yield item
@@ -100,7 +100,7 @@ class Node(object):
         return subs(self, d)
 
     def resources(self):
-        return toolz.merge([arg.resources() for arg in self.args
+        return toolz.merge([arg.resources() for arg in self._args
                             if isinstance(arg, Node)])
 
     def subterms(self):
@@ -110,7 +110,7 @@ class Node(object):
         return other in set(self.subterms())
 
     def __getstate__(self):
-        return self.args
+        return self._args
 
     def __setstate__(self, state):
         self.__init__(*state)
@@ -283,7 +283,7 @@ def _subs(o, d):
     >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
-    newargs = [subs(arg, d) for arg in o.args]
+    newargs = [subs(arg, d) for arg in o._args]
     return type(o)(*newargs)
 
 

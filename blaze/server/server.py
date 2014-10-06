@@ -277,7 +277,7 @@ def to_tree(expr, names=None):
         return to_tree(TableSymbol(expr._name, expr.schema), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
-                'args': [to_tree(arg, names) for arg in expr.args]}
+                'args': [to_tree(arg, names) for arg in expr._args]}
     else:
         return expr
 

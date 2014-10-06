@@ -106,7 +106,7 @@ class Table(TableSymbol):
         return {self: self.data}
 
     @property
-    def args(self):
+    def _args(self):
         return (id(self.data), self.dshape, self._name)
 
     def __setstate__(self, state):
