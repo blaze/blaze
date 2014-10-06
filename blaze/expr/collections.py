@@ -1,10 +1,12 @@
+from __future__ import absolute_import, division, print_function
+
+from toolz import isdistinct, frequencies, concat, unique
+import datashape
+from datashape import Option, Record, Unit, dshape
+from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, Symbol
-from datashape import Option, Record, Unit, dshape
-from datashape.predicates import isscalar, iscollection
-import datashape
-from toolz import isdistinct, frequencies, concat, unique
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
 'union', 'head', 'sort']
