@@ -32,7 +32,6 @@ class Expr(Node):
         if isinstance(key, _strtypes) and key in self.fields:
             return self.get_field(key)
         if isinstance(key, Expr) and iscollection(key.dshape):
-            from .expr import selection
             return selection(self, key)
         if (isinstance(key, list)
                 and builtins.all(isinstance(k, _strtypes) for k in key)):
@@ -44,7 +43,6 @@ class Expr(Node):
         raise ValueError("Not understood %s[%s]" % (self, key))
 
     def map(self, func, schema=None, name=None):
-        from .expr import Map
         return Map(self, func, schema, name)
 
     def project(self, key):
@@ -193,7 +191,7 @@ class Projection(ElemWise):
     See Also
     --------
 
-    blaze.expr.expr.Field
+    blaze.expr.expressions.Field
     """
     __slots__ = 'child', '_fields'
 

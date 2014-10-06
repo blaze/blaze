@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import dshape
 
-from .expr import Expr
+from .expressions import Expr
 from .arithmetic import UnaryOp
 
 # Here follows a large number of unary operators.  These were selected by

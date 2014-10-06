@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from .expr import Expr, schema_method_list
+from .expressions import Expr, schema_method_list
 
 __all__ = ['Like', 'like']
 

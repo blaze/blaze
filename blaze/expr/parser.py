@@ -7,7 +7,7 @@ from toolz import merge
 
 from . import arithmetic
 from . import math
-from .expr import Expr, Symbol
+from .expressions import Expr, Symbol
 
 __all__ = ['exprify']
 

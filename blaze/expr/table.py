@@ -14,12 +14,11 @@ from toolz import (concat, partial, first, compose, get, unique, second,
 from datashape.predicates import isscalar, iscollection
 import numpy as np
 from .core import *
-from .expr import *
+from .expressions import *
 from .broadcast import broadcast, Broadcast
 from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
-from .expr import Symbol
 
 from .broadcast import _expr_child
 
@@ -835,7 +834,7 @@ def isboolean(ds):
 
 from datashape.predicates import iscollection, isscalar, isrecord
 from datashape import Unit, Record, to_numpy_dtype, bool_
-from .expr import schema_method_list, dshape_method_list
+from .expressions import schema_method_list, dshape_method_list
 from .broadcast import isnan
 
 schema_method_list.extend([

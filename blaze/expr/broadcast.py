@@ -5,7 +5,7 @@ from toolz import partial, unique, first
 import datashape
 from datashape import dshape, DataShape, Record, Var, Option, Unit
 
-from .expr import ElemWise, Label, Expr, Symbol, Field
+from .expressions import ElemWise, Label, Expr, Symbol, Field
 from .core import eval_str
 from .arithmetic import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod,
                          Or, And, USub, Not, FloorDiv)
@@ -218,7 +218,7 @@ def _invert(a):
 def isnan(expr):
     return broadcast(math.isnan, expr)
 
-from .expr import dshape_method_list
+from .expressions import dshape_method_list
 
 dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isscalar(ds.measure),

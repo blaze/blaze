@@ -9,13 +9,13 @@ from datashape.predicates import isscalar
 from datashape import coretypes as ct
 
 from .core import parenthesize, eval_str
-from .expr import Expr
+from .expressions import Expr
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
 
 __all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
-Relational Eq Ne Ge Le Gt Gt And Or Not'''.split()
+Relational Eq Ne Ge Lt Le Gt Gt And Or Not'''.split()
 
 @dispatch(ct.Option, object)
 def scalar_coerce(ds, val):
@@ -295,7 +295,7 @@ BitAnd = And
 BitOr = Or
 
 
-from .expr import dshape_method_list
+from .expressions import dshape_method_list
 
 dshape_method_list.extend([
     (isscalar,

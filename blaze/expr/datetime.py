@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import Expr, ElemWise
+from .expressions import Expr, ElemWise
 from datashape import dshape, Record, DataShape, Unit, Option, date_, datetime_
 import datashape
 
@@ -111,7 +111,7 @@ def isdatelike(ds):
     return ds in (date_, datetime_)
 
 
-from .expr import schema_method_list, method_properties
+from .expressions import schema_method_list, method_properties
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,

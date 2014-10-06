@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
-from blaze.expr.table import *
+from .core import *
+from .expressions import *
+from .table import *
 import datashape
 from datashape.predicates import isscalar
 from ..dispatch import dispatch
