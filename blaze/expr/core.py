@@ -41,7 +41,7 @@ class Node(object):
     def __bool__(self):
         return True
 
-    def leaves(self):
+    def _leaves(self):
         """ Leaves of an expresion tree
 
         All nodes without inputs.  Leaves are returned in order, left to right.
@@ -49,20 +49,20 @@ class Node(object):
         >>> from blaze import TableSymbol, join, by
 
         >>> t = TableSymbol('t', '{id: int32, name: string}')
-        >>> t.leaves()
+        >>> t._leaves()
         [t]
-        >>> by(t.name, t.id.nunique()).leaves()
+        >>> by(t.name, t.id.nunique())._leaves()
         [t]
 
         >>> v = TableSymbol('v', '{id: int32, city: string}')
-        >>> join(t, v).leaves()
+        >>> join(t, v)._leaves()
         [t, v]
         """
 
         if not self.inputs:
             return [self]
         else:
-            return list(unique(concat(i.leaves() for i in self.inputs if
+            return list(unique(concat(i._leaves() for i in self.inputs if
                                       isinstance(i, Node))))
 
     def isidentical(self, other):

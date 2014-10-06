@@ -857,13 +857,13 @@ def test_leaves():
     v = TableSymbol('v', '{id: int32, city: string}')
     x = Symbol('x', 'int32')
 
-    assert t.leaves() == [t]
-    assert t.id.leaves() == [t]
-    assert by(t.name, t.id.nunique()).leaves() == [t]
-    assert join(t, v).leaves() == [t, v]
-    assert join(v, t).leaves() == [v, t]
+    assert t._leaves() == [t]
+    assert t.id._leaves() == [t]
+    assert by(t.name, t.id.nunique())._leaves() == [t]
+    assert join(t, v)._leaves() == [t, v]
+    assert join(v, t)._leaves() == [v, t]
 
-    assert (x + 1).leaves() == [x]
+    assert (x + 1)._leaves() == [x]
 
 
 @pytest.fixture

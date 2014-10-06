@@ -745,8 +745,8 @@ class Merge(ElemWise):
             raise TypeError("Expected tuple or list, got %s" % key)
         return merge(*[self[c] for c in key])
 
-    def leaves(self):
-        return list(unique(concat(i.leaves() for i in self.children)))
+    def _leaves(self):
+        return list(unique(concat(i._leaves() for i in self.children)))
 
 
 class Union(TableExpr):
@@ -783,8 +783,8 @@ class Union(TableExpr):
     def schema(self):
         return self.children[0].schema
 
-    def leaves(self):
-        return list(unique(concat(i.leaves() for i in self.children)))
+    def _leaves(self):
+        return list(unique(concat(i._leaves() for i in self.children)))
 
 
 def union(*children):
