@@ -124,7 +124,7 @@ class Broadcast(ElemWise):
     def __str__(self):
         columns = self.active_columns()
         newcol = lambda c: "%s['%s']" % (self.child, c)
-        return eval_str(self.expr.subs(dict(zip(columns,
+        return eval_str(self.expr._subs(dict(zip(columns,
                                                 map(newcol, columns)))))
 
     def active_columns(self):

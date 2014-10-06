@@ -270,7 +270,7 @@ def selection(table, predicate):
         raise TypeError("Must select over a boolean predicate.  Got:\n"
                         "%s[%s]" % (table, predicate))
 
-    return table.subs({subexpr: Selection(subexpr, predicate)})
+    return table._subs({subexpr: Selection(subexpr, predicate)})
 
 selection.__doc__ = Selection.__doc__
 

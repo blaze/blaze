@@ -65,7 +65,7 @@ def split(leaf, expr, chunk=None, agg=None):
             _split(center, leaf=leaf, chunk=chunk, agg=agg)
 
     return ((chunk, chunk_expr),
-            (agg, expr.subs({center: agg}).subs({agg: agg_expr})))
+            (agg, expr._subs({center: agg})._subs({agg: agg_expr})))
 
 
 reductions = {sum: (sum, sum), count: (count, sum),
@@ -76,13 +76,13 @@ reductions = {sum: (sum, sum), count: (count, sum),
 @dispatch(tuple(reductions))
 def _split(expr, leaf=None, chunk=None, agg=None):
     a, b = reductions[type(expr)]
-    return ((chunk, a(expr.subs({leaf: chunk}).child)),
+    return ((chunk, a(expr._subs({leaf: chunk}).child)),
             (agg, b(agg)))
 
 
 @dispatch(Distinct)
 def _split(expr, leaf=None, chunk=None, agg=None):
-    return ((chunk, expr.subs({leaf: chunk})),
+    return ((chunk, expr._subs({leaf: chunk})),
             (agg, agg.distinct()))
 
 
@@ -90,7 +90,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 def _split(expr, leaf=None, chunk=None, agg=None):
     chunk_expr = summary(**dict((name, split(leaf, val, chunk=chunk)[0][1])
                             for name, val in zip(expr.fields, expr.values)))
-    agg_expr = summary(**dict((name, split(leaf, val, agg=agg)[1][1].subs(
+    agg_expr = summary(**dict((name, split(leaf, val, agg=agg)[1][1]._subs(
                                                         {agg: agg[name]}))
                             for name, val in zip(expr.fields, expr.values)))
     return ((chunk, chunk_expr), (agg, agg_expr))
@@ -101,7 +101,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
     (chunk, chunk_apply), (agg, agg_apply) = \
             split(leaf, expr.apply, chunk=chunk, agg=agg)
 
-    chunk_grouper = expr.grouper.subs({leaf: chunk})
+    chunk_grouper = expr.grouper._subs({leaf: chunk})
     if isscalar(expr.grouper.dshape.measure):
         agg_grouper = agg[expr.columns[0]]
     else:
@@ -113,5 +113,5 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 
 @dispatch((ElemWise, Selection))
 def _split(expr, leaf=None, chunk=None, agg=None):
-    return ((chunk, expr.subs({leaf: chunk})),
+    return ((chunk, expr._subs({leaf: chunk})),
             (agg, agg))

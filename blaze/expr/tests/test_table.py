@@ -211,8 +211,8 @@ def test_different_schema_raises():
 
 
 def test_getattr_doesnt_override_properties():
-    t = TableSymbol('t', '{subs: string, schema: string}')
-    assert callable(t.subs)
+    t = TableSymbol('t', '{_subs: string, schema: string}')
+    assert callable(t._subs)
     assert isinstance(t.schema, DataShape)
 
 

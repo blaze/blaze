@@ -88,13 +88,13 @@ class Node(object):
             for item in trav:
                 yield item
 
-    def subs(self, d):
+    def _subs(self, d):
         """ Substitute terms in the tree
 
         >>> from blaze.expr.table import TableSymbol
         >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
         >>> expr = t['amount'] + 3
-        >>> expr.subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
+        >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
         True
         """
         return subs(self, d)

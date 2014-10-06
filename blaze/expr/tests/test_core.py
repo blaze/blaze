@@ -8,11 +8,11 @@ def test_subs():
     from blaze.expr.table import TableSymbol
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     expr = t['amount'] + 3
-    assert expr.subs({3: 4, 'amount': 'id'}).isidentical(
+    assert expr._subs({3: 4, 'amount': 'id'}).isidentical(
             t['id'] + 4)
 
     t2 = TableSymbol('t', '{name: string, amount: int}')
-    assert t['amount'].subs({t: t2}).isidentical(t2['amount'])
+    assert t['amount']._subs({t: t2}).isidentical(t2['amount'])
 
 
 def test_contains():

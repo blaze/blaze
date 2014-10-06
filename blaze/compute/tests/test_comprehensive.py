@@ -96,7 +96,7 @@ def typename(obj):
 
 def test_base():
     for expr, exclusions in expressions.items():
-        model = compute(expr.subs({t: Table(base, t.schema)}))
+        model = compute(expr._subs({t: Table(base, t.schema)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
@@ -104,11 +104,11 @@ def test_base():
             print('%s <- %s' % (typename(model), typename(source)))
             T = Table(source)
             if iscollection(expr.dshape):
-                result = into(model, expr.subs({t: T}))
+                result = into(model, expr._subs({t: T}))
                 if isscalar(expr.dshape.measure):
                     assert set(into([], result)) == set(into([], model))
                 else:
                     assert df_eq(result, model)
             else:
-                result = compute(expr.subs({t: T}))
+                result = compute(expr._subs({t: T}))
                 assert result == model
