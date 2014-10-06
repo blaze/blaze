@@ -112,7 +112,7 @@ class Broadcast(ElemWise):
 
     @property
     def _name(self):
-        names = [x._name for x in self.expr.traverse()
+        names = [x._name for x in self.expr._traverse()
                   if isinstance(x, Symbol)]
         if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
             return names[0]
@@ -128,7 +128,7 @@ class Broadcast(ElemWise):
                                                 map(newcol, columns)))))
 
     def active_columns(self):
-        return sorted(unique(x._name for x in self.traverse()
+        return sorted(unique(x._name for x in self._traverse()
                    if isinstance(x, Symbol) and isscalar(x.dshape)))
 
 

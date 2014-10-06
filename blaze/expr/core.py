@@ -79,10 +79,10 @@ class Node(object):
     def __repr__(self):
         return str(self)
 
-    def traverse(self):
+    def _traverse(self):
         """ Traverse over tree, yielding all subtrees and leaves """
         yield self
-        traversals = (arg.traverse() if isinstance(arg, Node) else [arg]
+        traversals = (arg._traverse() if isinstance(arg, Node) else [arg]
                       for arg in self._args)
         for trav in traversals:
             for item in trav:
@@ -311,7 +311,7 @@ def path(a, b):
         if not a.inputs:
             break
         for child in a.inputs:
-            if b in child.traverse():
+            if b in child._traverse():
                 a = child
                 break
     yield a

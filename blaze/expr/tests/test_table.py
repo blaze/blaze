@@ -339,10 +339,10 @@ def test_multi_column_join():
 
 def test_traverse():
     t = TableSymbol('t', '{name: string, amount: int}')
-    assert t in list(t.traverse())
+    assert t in list(t._traverse())
 
     expr = t[t['amount'] < 0]['name']
-    trav = list(expr.traverse())
+    trav = list(expr._traverse())
     assert any(t['amount'].isidentical(x) for x in trav)
     assert any((t['amount'] < 0).isidentical(x) for x in trav)
 
