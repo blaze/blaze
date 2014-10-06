@@ -298,7 +298,7 @@ class Label(ElemWise):
     See Also
     --------
 
-    blaze.expr.table.ReLabel
+    blaze.expr.expressions.ReLabel
     """
     __slots__ = '_child', 'label'
 
@@ -338,7 +338,7 @@ class ReLabel(ElemWise):
     See Also
     --------
 
-    blaze.expr.table.Label
+    blaze.expr.expressions.Label
     """
     __slots__ = '_child', 'labels'
 
@@ -364,7 +364,6 @@ def relabel(child, labels):
 relabel.__doc__ = ReLabel.__doc__
 
 
-
 class Map(ElemWise):
     """ Map an arbitrary Python function across elements in a collection
 
@@ -385,7 +384,7 @@ class Map(ElemWise):
     See Also
     --------
 
-    blaze.expr.table.Apply
+    blaze.expr.expresions.Apply
     """
     __slots__ = '_child', 'func', '_schema', '_name0'
 

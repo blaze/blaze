@@ -106,7 +106,7 @@ class Broadcast(ElemWise):
     See Also
     --------
 
-    blaze.expr.table.broadcast
+    blaze.expr.broadcast.broadcast
     """
     __slots__ = '_child', 'expr'
 

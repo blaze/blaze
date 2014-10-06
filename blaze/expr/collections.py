@@ -189,8 +189,8 @@ class Merge(ElemWise):
     See Also
     --------
 
-    blaze.expr.table.Union
-    blaze.expr.table.Join
+    blaze.expr.collections.Union
+    blaze.expr.collections.Join
     """
     __slots__ = '_child', 'children'
 
@@ -243,8 +243,7 @@ class Union(Expr):
     See Also
     --------
 
-    blaze.expr.table.Merge
-    blaze.expr.table.Join
+    blaze.expr.collections.Merge
     """
     __slots__ = 'children',
     __inputs__ = 'children',

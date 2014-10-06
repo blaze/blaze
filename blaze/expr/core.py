@@ -102,7 +102,7 @@ class Node(object):
     def _subs(self, d):
         """ Substitute terms in the tree
 
-        >>> from blaze.expr.table import TableSymbol
+        >>> from blaze import TableSymbol
         >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
         >>> expr = t['amount'] + 3
         >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
@@ -289,7 +289,7 @@ def _subs(o, d):
 def _subs(o, d):
     """
 
-    >>> from blaze.expr.table import TableSymbol
+    >>> from blaze import TableSymbol
     >>> t = TableSymbol('t', '{name: string, balance: int}')
     >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
@@ -311,7 +311,7 @@ def _subs(o, d):
 def path(a, b):
     """ A path of nodes from a to b
 
-    >>> from blaze.expr.table import TableSymbol
+    >>> from blaze import TableSymbol
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> expr = t['amount'].sum()
     >>> list(path(expr, t))

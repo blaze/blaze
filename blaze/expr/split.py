@@ -2,6 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 from .core import *
 from .expressions import *
+from .reductions import *
+from .split_apply_combine import *
+from .collections import *
 from .table import *
 import datashape
 from datashape.predicates import isscalar

@@ -25,12 +25,7 @@ from ..dispatch import dispatch
 
 from .broadcast import _expr_child
 
-__all__ = '''
-TableSymbol Projection Selection Broadcast Join
-Reduction join any all sum
-min max mean var std count nunique By by Sort Distinct distinct Head head Label
-ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union broadcast Summary summary'''.split()
+__all__ = '''TableSymbol Apply'''.split()
 
 
 def TableSymbol(name, dshape):
@@ -78,7 +73,7 @@ class Apply(Expr):
     See Also
     --------
 
-    blaze.expr.table.Map
+    blaze.expr.expressions.Map
     """
     __slots__ = '_child', 'func', '_dshape'
 
