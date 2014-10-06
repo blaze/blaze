@@ -22,7 +22,7 @@ from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
 from .. import expr
-from ..expr import Expr, Projection, TableSymbol, Field
+from ..expr import Expr, Projection, TableSymbol, Field, Symbol
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes, map
@@ -890,7 +890,7 @@ def into(a, b, **kwargs):
     >>> t = Table(csv)                              # doctest: +SKIP
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
-    if isinstance(b._child, TableSymbol) and isinstance(b._child.data, CSV):
+    if isinstance(b._child, Symbol) and isinstance(b._child.data, CSV):
         kwargs.setdefault('names', b._child.fields)
         kwargs.setdefault('usecols', b.fields)
         kwargs.setdefault('squeeze', isscalar(b.dshape.measure))

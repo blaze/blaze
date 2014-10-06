@@ -54,7 +54,7 @@ class TableExpr(Expr):
         return self.fields
 
 
-class TableSymbol(TableExpr, Symbol):
+def TableSymbol(name, dshape):
     """ A Symbol for Tabular data
 
     This is a leaf in the expression tree
@@ -70,16 +70,11 @@ class TableSymbol(TableExpr, Symbol):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = '_name', 'dshape'
-    __inputs__ = ()
-
-    def __init__(self, name, dshape=None):
-        self._name = name
-        if isinstance(dshape, _strtypes):
-            dshape = datashape.dshape(dshape)
-        if not isdimension(dshape[0]):
-            dshape = datashape.var * dshape
-        self.dshape = dshape
+    if isinstance(dshape, _strtypes):
+        dshape = datashape.dshape(dshape)
+    if not iscollection(dshape):
+        dshape = datashape.var * dshape
+    return Symbol(name, dshape)
 
 
 class Apply(TableExpr):

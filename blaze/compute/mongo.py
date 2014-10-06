@@ -61,7 +61,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Apply, Distinct, ElemWise, By,
                     TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
-                    Broadcast, DateTime, Microsecond, Date, Time, Expr
+                    Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol
                     )
 from .. import expr
 from ..compatibility import _strtypes
@@ -115,7 +115,7 @@ def compute_up(e, coll, **kwargs):
     return compute_up(e, MongoQuery(coll, []))
 
 
-@dispatch(TableSymbol, Collection)
+@dispatch(Symbol, Collection)
 def compute_up(t, coll, **kwargs):
     return MongoQuery(coll, [])
 

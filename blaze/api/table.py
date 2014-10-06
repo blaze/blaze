@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr import TableSymbol, Expr, TableExpr
+from ..expr import TableSymbol, Expr, TableExpr, Symbol
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -19,7 +19,7 @@ __all__ = ['Table', 'compute', 'into']
 
 names = ('_%d' % i for i in itertools.count(1))
 
-class Table(TableSymbol):
+class Table(Symbol):
     """ Table of data
 
     The ``Table`` object presents a familiar view onto a variety of forms of

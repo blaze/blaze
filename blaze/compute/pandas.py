@@ -31,7 +31,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like,
-                    ElemWise, DateTime, Millisecond, Expr)
+                    ElemWise, DateTime, Millisecond, Expr, Symbol)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
@@ -85,7 +85,7 @@ def compute_up(t, df, **kwargs):
     return df[predicate]
 
 
-@dispatch(TableSymbol, DataFrame)
+@dispatch(Symbol, DataFrame)
 def compute_up(t, df, **kwargs):
     if not list(t.fields) == list(df.names):
         # TODO also check dtype
@@ -110,7 +110,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     return result.reset_index()[t.fields]
 
 
-@dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
+@dispatch(Symbol, (DataFrameGroupBy, SeriesGroupBy))
 def compute_up(t, gb, **kwargs):
     return gb
 

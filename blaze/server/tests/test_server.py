@@ -149,7 +149,7 @@ def test_to_tree():
                 'args': [{'op': 'Field',
                           'args':
                             [
-                              {'op': 'TableSymbol',
+                              {'op': 'Symbol',
                                'args': [
                                     't',
                                     'var * { name : string, amount : int32 }',

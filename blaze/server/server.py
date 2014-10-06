@@ -10,7 +10,7 @@ from functools import partial, wraps
 from blaze import into, compute, compute_up
 from datashape.predicates import iscollection
 from ..api import discover, Table
-from ..expr import Expr, TableSymbol, Selection, Broadcast, TableSymbol
+from ..expr import Expr, TableSymbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify
 from .. import expr
 
@@ -189,7 +189,7 @@ def select(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
     t = TableSymbol('t', dset.schema)
-    dtypes = dict((c, t[c].dshape.measure) for c in t.columns)
+    dtypes = dict((c, t[c].dshape.measure) for c in t.fields)
 
     columns = data.get('columns', None)
     if columns:

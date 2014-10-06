@@ -6,7 +6,7 @@ import tables as tb
 import datashape as ds
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
-                        TableSymbol, Sort, Reduction, count)
+                        TableSymbol, Sort, Reduction, count, Symbol)
 from blaze.expr import eval_str
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
@@ -57,7 +57,7 @@ def compute_up(sel, t, **kwargs):
     return t.read_where(s)
 
 
-@dispatch(TableSymbol, tb.Table)
+@dispatch(Symbol, tb.Table)
 def compute_up(ts, t, **kwargs):
     return t
 

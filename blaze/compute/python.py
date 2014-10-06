@@ -31,7 +31,8 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
-                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise)
+                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
+                    Symbol)
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr import BinOp, UnaryOp, RealMath
@@ -74,7 +75,7 @@ def recursive_rowfunc(t, stop):
 rrowfunc = recursive_rowfunc
 
 
-@dispatch(TableSymbol)
+@dispatch(Symbol)
 def rowfunc(t):
     return identity
 
