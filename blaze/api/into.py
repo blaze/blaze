@@ -27,7 +27,7 @@ from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
-from ..compute.spark import Dummy
+from ..compute.spark import RDD
 
 
 __all__ = ['into', 'discover']
@@ -912,10 +912,39 @@ def into(a, b):
     return compute(b)
 
 
-@dispatch((type, Dummy, set, np.ndarray, object), _strtypes)
+@dispatch(_strtypes, _strtypes)
+def into(a, b, **kwargs):
+    """ Transfer data between two URIs
+
+    Transfer data between two data resources based on their URIs.
+
+    >>> into('sqlite://:memory:::tablename', '/path/to/file.csv') #doctest:+SKIP
+    <blaze.data.sql.SQL at 0x7f32d80b80d0>
+
+    Uses ``resource`` functin to resolve data resources
+
+    See Also
+    --------
+
+    blaze.api.resource.resource
+    """
+    b = resource(b, **kwargs)
+    return into(a, b, **kwargs)
+
+
+@dispatch((type, RDD, set, np.ndarray, object), _strtypes)
 def into(a, b, **kwargs):
     return into(a, resource(b, **kwargs), **kwargs)
 
+
+@dispatch(_strtypes, (TableExpr, RDD, object))
+def into(a, b, **kwargs):
+    dshape = discover(b)
+    target = resource(a, dshape=dshape,
+                         schema=dshape.subshape[0],
+                         mode='a',
+                         **kwargs)
+    return into(target, b, **kwargs)
 
 @dispatch(Iterator, (list, tuple, set, Iterator))
 def into(a, b):
