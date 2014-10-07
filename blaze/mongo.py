@@ -1,12 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
+import re
 from toolz import take
 from datashape import discover, isdimension
 
 from .compatibility import basestring, map
 from .compute.mongo import dispatch
+from .api.resource import resource
 
 try:
+    import pymongo
     from pymongo.collection import Collection
     from pymongo import ASCENDING
 except ImportError:
@@ -71,3 +74,13 @@ def create_index(coll, key, **kwargs):
 @dispatch(Collection, list)
 def create_index(coll, keys, **kwargs):
     coll.create_index(list(scrub_keys(keys)), **kwargs)
+
+
+@resource.register('mongodb://.*')
+def resource_mongo(uri, collection_name):
+    pattern = 'mongodb://(?P<hostport>\w*:?\d*)/(?P<database>\w*)'
+    d = re.search(pattern, uri).groupdict()
+    client = pymongo.MongoClient(d['hostport'])
+    db = getattr(client, d['database'])
+    coll = getattr(db, collection_name)
+    return coll
