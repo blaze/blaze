@@ -145,7 +145,7 @@ def compute_down(expr, ec):
     return data['data']
 
 
-@resource.register('blaze://.*')
+@resource.register('blaze://.+')
 def resource_blaze(uri, name, **kwargs):
     uri = uri[len('blaze://'):]
     sp = uri.split('/')

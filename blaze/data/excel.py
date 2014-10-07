@@ -10,6 +10,6 @@ class Excel(object):
         self.worksheet = 0
 
 from ..api.resource import resource
-@resource.register('.*\.(xls|xlsx)')
+@resource.register('.+\.(xls|xlsx)')
 def resource_excel(path, **kwargs):
     return Excel(path, **kwargs)

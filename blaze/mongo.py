@@ -83,7 +83,7 @@ def resource_mongo_with_authentication(uri, collection_name, **kwargs):
     return _resource_mongo(d, collection_name)
 
 
-@resource.register('mongodb://.*')
+@resource.register('mongodb://.+')
 def resource_mongo(uri, collection_name, **kwargs):
     pattern = 'mongodb://(?P<hostport>\w*:?\d*)/(?P<database>\w*)'
     d = re.search(pattern, uri).groupdict()
