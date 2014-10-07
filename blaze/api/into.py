@@ -914,6 +914,20 @@ def into(a, b):
 
 @dispatch(_strtypes, _strtypes)
 def into(a, b, **kwargs):
+    """ Transfer data between two URIs
+
+    Transfer data between two data resources based on their URIs.
+
+    >>> into('sqlite://:memory:::tablename', '/path/to/file.csv') #doctest:+SKIP
+    <blaze.data.sql.SQL at 0x7f32d80b80d0>
+
+    Uses ``resource`` functin to resolve data resources
+
+    See Also
+    --------
+
+    blaze.api.resource.resource
+    """
     b = resource(b, **kwargs)
     return into(a, b, **kwargs)
 
