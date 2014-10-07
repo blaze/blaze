@@ -76,11 +76,24 @@ def create_index(coll, keys, **kwargs):
     coll.create_index(list(scrub_keys(keys)), **kwargs)
 
 
+@resource.register('mongodb://\w*:\w*@\w*.*', priority=11)
+def resource_mongo_with_authentication(uri, collection_name, **kwargs):
+    pattern = 'mongodb://(?P<user>\w*):(?P<pass>\w*)@(?P<hostport>\w*:?\d*)/(?P<database>\w*)'
+    d = re.search(pattern, uri).groupdict()
+    return _resource_mongo(d, collection_name)
+
+
 @resource.register('mongodb://.*')
-def resource_mongo(uri, collection_name):
+def resource_mongo(uri, collection_name, **kwargs):
     pattern = 'mongodb://(?P<hostport>\w*:?\d*)/(?P<database>\w*)'
     d = re.search(pattern, uri).groupdict()
+    return _resource_mongo(d, collection_name)
+
+
+def _resource_mongo(d, collection_name):
     client = pymongo.MongoClient(d['hostport'])
     db = getattr(client, d['database'])
+    if d.get('user'):
+        db.authenticate(d['user'], d['pass'])
     coll = getattr(db, collection_name)
     return coll
