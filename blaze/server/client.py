@@ -101,7 +101,7 @@ class ExprClient(object):
     blaze.server.server.Server
     """
     __slots__ = 'url', 'name'
-    def __init__(self, url, name):
+    def __init__(self, url, name, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
@@ -145,12 +145,12 @@ def compute_down(expr, ec):
     return data['data']
 
 
-@resource.register('blaze://.*')
-def resource_blaze(uri, name):
+@resource.register('blaze://.+')
+def resource_blaze(uri, name, **kwargs):
     uri = uri[len('blaze://'):]
     sp = uri.split('/')
     tld, rest = sp[0], sp[1:]
     if ':' not in tld:
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
-    return ExprClient(uri, name)
+    return ExprClient(uri, name, **kwargs)
