@@ -477,11 +477,11 @@ def drop(c):
     c.remove()
 
 
-@resource.register('.*\.(\wsv|data|txt|dat)')
+@resource.register('.+\.(\wsv|data|txt|dat)')
 def resource_csv(uri, **kwargs):
     return CSV(uri, **kwargs)
 
 
-@resource.register('.*\.(\wsv|data|txt|dat)\.gz')
+@resource.register('.+\.(\wsv|data|txt|dat)\.gz')
 def resource_csv_gz(uri, **kwargs):
     return CSV(uri, open=gzip.open, **kwargs)

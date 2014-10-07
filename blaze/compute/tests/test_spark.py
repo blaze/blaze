@@ -4,6 +4,7 @@ from blaze import into
 from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
+from blaze.expr.functions import *
 from datashape.predicates import iscollection
 
 import pytest
@@ -165,9 +166,9 @@ def test_spark_distinct():
 def test_spark_join():
 
     joined = join(t, t2, 'name')
-    expected = [['Alice', 100, 1, 'Austin'],
-                ['Bob', 200, 2, 'Boston'],
-                ['Alice', 50, 3, 'Austin']]
+    expected = [('Alice', 100, 1, 'Austin'),
+                ('Bob', 200, 2, 'Boston'),
+                ('Alice', 50, 3, 'Austin')]
     result = compute(joined, {t: rdd, t2: rdd2}).collect()
     assert all(i in expected for i in result)
 

@@ -36,7 +36,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(SparkContext, (Expr, RDD, object))
+@dispatch(SparkContext, (Expr, RDD, object) + _strtypes)
 def into(sc, o, **kwargs):
     return sc.parallelize(into(list, o, **kwargs))
 

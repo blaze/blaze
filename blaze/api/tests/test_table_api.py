@@ -6,7 +6,7 @@ from blaze.data import CSV
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from datashape import dshape
-from blaze.utils import tmpfile
+from blaze.utils import tmpfile, example
 
 import pandas as pd
 
@@ -141,3 +141,12 @@ def test_table_attribute_repr():
     result = t.timestamp.day
     expected = pd.DataFrame({'timestamp_day': [25] * 3})
     assert repr(result) == repr(expected)
+
+def test_can_trivially_create_csv_table():
+    Table(example('iris.csv'))
+
+def test_can_trivially_create_sqlite_table():
+    Table('sqlite:///'+example('iris.db')+'::iris')
+
+def test_can_trivially_create_pytables():
+    Table(example('accounts.h5')+'::/accounts')

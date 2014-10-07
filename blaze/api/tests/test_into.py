@@ -556,3 +556,22 @@ def test_into_list_Column():
         csv = CSV(fn, columns=['name', 'id'])
         t = Table(csv)
         assert into(list, t.name) == ['Alice', 'Bob']
+
+
+def test_into_filename():
+    with tmpfile('csv') as filename:
+        df = DataFrame([['Alice', 100], ['Bob', 200]],
+                       columns=['name', 'amount'])
+        into(filename, df)
+
+        csv = CSV(filename)
+        assert into(list, csv) == into(list, df)
+
+
+def test_into_filename_filename():
+    with filetext('1,2\n3,4', extension='csv') as source_fn:
+        with tmpfile('csv') as target_fn:
+            into(target_fn, source_fn)
+
+            csv = CSV(target_fn)
+            assert into(list, csv) == [(1, 2), (3, 4)]

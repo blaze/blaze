@@ -58,7 +58,7 @@ class Table(Symbol):
     def __init__(self, data, dshape=None, name=None, columns=None,
             schema=None):
         if isinstance(data, str):
-            data = resource(data, schema=schema, dshape=dshape)
+            data = resource(data, schema=schema, dshape=dshape, columns=columns)
         if schema and dshape:
             raise ValueError("Please specify one of schema= or dshape= keyword"
                     " arguments")
