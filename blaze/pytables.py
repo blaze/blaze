@@ -116,6 +116,6 @@ def get_chunk(b, i, chunksize=2**15):
     return b[start:stop]
 
 
-@resource.register('.*.h5')
+@resource.register('.*\.h5')
 def resource_pytables(path, datapath, **kwargs):
     return PyTables(path, datapath, **kwargs)
