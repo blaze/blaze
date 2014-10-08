@@ -64,12 +64,6 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
-@dispatch(Selection, np.ndarray)
-def compute_up(t, x, **kwargs):
-    predicate = compute(t.predicate, {t.child: x})
-    return x[predicate]
-
-
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
     return len(x)
@@ -103,7 +97,7 @@ def compute_up(t, x, **kwargs):
     elif t.key:
         raise NotImplementedError("Sort key %s not supported" % str(t.key))
     else:
-        result = np.sort(x)
+        result = np.sort(x) # pragma: no cover
 
     if not t.ascending:
         result = result[::-1]

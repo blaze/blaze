@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pytest
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import TableSymbol, union, by, exp
@@ -168,8 +169,8 @@ def test_compute_up_projection():
     computed_expr = compute_up(table_projection, y)
     assert len(computed_expr) == 5
 
-def test_compute_up_selection():
-    tablesymbol_selection = t[t['amount'] < 0]
-    computed_expr = compute_up(tablesymbol_selection, x)
-    assert len(computed_expr) == 2
+def test_compute_up_sort_failure():
+    sort_failure = t.sort('balance')
+    with pytest.raises(NotImplementedError):
+        compute_up(sort_failure, x)
 
