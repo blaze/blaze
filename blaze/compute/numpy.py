@@ -46,7 +46,6 @@ def compute_up(t, lhs, rhs, **kwargs):
 
 @dispatch(BinOp, base, np.ndarray)
 def compute_up(t, lhs, rhs, **kwargs):
-    import pdb; pdb.set_trace()
     return t.op(lhs, rhs)
 
 

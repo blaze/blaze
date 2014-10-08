@@ -9,9 +9,6 @@ from blaze.api.table import Table
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
 
-tablesymbol_column = t[t['amount'] < 0]['name']
-tablesymbol_projection = t[['name', 'amount']]
-
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
@@ -27,8 +24,6 @@ y = np.array([(1, 'Alice', 100),
 
 tble = Table(x)
 
-table_column = tble[tble['amount'] < 0]['name']
-table_projection = tble[['name', 'amount']]
 
 def eq(a, b):
     return (a == b).all()
@@ -164,9 +159,17 @@ def test_by():
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
 
 def test_compute_up_column():
+    tablesymbol_column = t[t['amount'] < 0]['name']
     computed_expr = compute_up(tablesymbol_column, y)
     assert len(computed_expr) == 5
 
 def test_compute_up_projection():
+    table_projection = tble[['name', 'amount']]
     computed_expr = compute_up(table_projection, y)
     assert len(computed_expr) == 5
+
+def test_compute_up_selection():
+    tablesymbol_selection = t[t['amount'] < 0]
+    computed_expr = compute_up(tablesymbol_selection, x)
+    assert len(computed_expr) == 2
+
