@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import Selection, Head, Column, Projection, ReLabel, RowWise
+from blaze.expr import Selection, Head, Field, Projection, ReLabel, ElemWise
 from blaze.expr import Label, Distinct, By, Reduction, Like
 from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str
@@ -37,14 +37,14 @@ def compute_up(h, t, **kwargs):
     return t[:h.n]
 
 
-@dispatch(Column, bcolz.ctable)
+@dispatch(Field, bcolz.ctable)
 def compute_up(c, t, **kwargs):
-    return t[c.column]
+    return t[c._name]
 
 
 @dispatch(Projection, bcolz.ctable)
 def compute_up(p, t, **kwargs):
-    return t[p.columns]
+    return t[p.fields]
 
 
 @dispatch(sum, (bcolz.carray, bcolz.ctable))
@@ -72,7 +72,7 @@ def compute_up(expr, ba, chunksize=2**20, **kwargs):
 
 @dispatch(std, bcolz.carray)
 def compute_up(expr, ba, **kwargs):
-    result = compute_up(expr.child.var(unbiased=expr.unbiased), ba, **kwargs)
+    result = compute_up(expr._child.var(unbiased=expr.unbiased), ba, **kwargs)
     return math.sqrt(result)
 
 
@@ -81,7 +81,7 @@ def compute_up(expr, b, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch((RowWise, Distinct, By, nunique, Like), bcolz.ctable)
+@dispatch((ElemWise, Distinct, By, nunique, Like), bcolz.ctable)
 def compute_up(c, t, **kwargs):
     return compute_up(c, iter(t), **kwargs)
 

@@ -8,15 +8,18 @@ from dynd import nd
 from cytoolz import first
 from functools import partial, wraps
 from blaze import into, compute, compute_up
+from datashape.predicates import iscollection
 from ..api import discover, Table
-from ..expr import Expr, TableSymbol, Selection, ColumnWise, TableSymbol
-from ..expr import TableExpr
-from ..expr.scalar.parser import exprify
+from ..expr import Expr, TableSymbol, Selection, Broadcast, Symbol
+from ..expr.parser import exprify
+from .. import expr
 
 from ..compatibility import map
 from datashape import Mono
 
 from .index import parse_index
+
+__all__ = 'Server', 'to_tree', 'from_tree'
 
 # http://www.speedguide.net/port.php?port=6363
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
@@ -186,7 +189,7 @@ def select(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
     t = TableSymbol('t', dset.schema)
-    dtypes = dict((c, t[c].dtype) for c in t.columns)
+    dtypes = dict((c, t[c].dshape.measure) for c in t.fields)
 
     columns = data.get('columns', None)
     if columns:
@@ -199,7 +202,7 @@ def select(datasets, name):
     except (ValueError, KeyError):
         return ("Bad selection", 404)
 
-    expr = Selection(t, ColumnWise(t, select))
+    expr = Selection(t, Broadcast(t, select))
     if columns:
         expr = expr[columns]
     try:
@@ -208,7 +211,7 @@ def select(datasets, name):
         return ("Bad selection", 404)
 
     return jsonify({'name': name,
-                    'columns': expr.columns,
+                    'columns': expr.fields,
                     'selection': str(select),
                     'datashape': str(expr.dshape),
                     'data': rv})
@@ -274,16 +277,23 @@ def to_tree(expr, names=None):
         return to_tree(TableSymbol(expr._name, expr.schema), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
-                'args': [to_tree(arg, names) for arg in expr.args]}
+                'args': [to_tree(arg, names) for arg in expr._args]}
     else:
         return expr
+
 
 def expression_from_name(name):
     """
 
     >>> expression_from_name('By')
-    <class 'blaze.expr.table.By'>
+    <class 'blaze.expr.split_apply_combine.By'>
+
+    >>> expression_from_name('And')
+    <class 'blaze.expr.arithmetic.And'>
     """
+    import blaze
+    if hasattr(blaze, name):
+        return getattr(blaze, name)
     for signature, func in compute_up.funcs.items():
         try:
             if signature[0].__name__ == name:
@@ -320,7 +330,7 @@ def from_tree(expr, namespace=None):
     >>> tree # doctest: +SKIP
     {'op': 'sum',
      'args': [
-         {'op': 'Column',
+         {'op': 'Field',
          'args': [
              {
               'op': 'TableSymbol'
@@ -331,14 +341,14 @@ def from_tree(expr, namespace=None):
      }
 
     >>> from_tree(tree)
-    sum(child=t['x'])
+    sum(_child=t['x'])
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
     below we replace the ``TableSymbol`` node with the string ``'t'``.
 
     >>> tree = to_tree(t.x, names={t: 't'})
     >>> tree # doctest: +SKIP
-    {'op': 'Column', 'args': ['t', 'x']}
+    {'op': 'Field', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
     t['x']
@@ -387,7 +397,7 @@ def comp(datasets, name):
     expr = from_tree(data['expr'], namespace={name: t})
 
     result = compute(expr, dset)
-    if isinstance(expr, TableExpr):
+    if iscollection(expr.dshape):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),

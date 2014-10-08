@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from operator import itemgetter
 import pytest
 pymongo = pytest.importorskip('pymongo')
 
@@ -45,6 +46,22 @@ def big_bank(db):
             {'name': 'Bob', 'amount': 300, 'city': 'San Francisco'}]
     coll = db.bigbank
     coll = into(coll, data)
+    yield coll
+    coll.drop()
+
+
+@pytest.yield_fixture
+def date_data(db):
+    import numpy as np
+    import pandas as pd
+    n = 3
+    d = {'name': ['Alice', 'Bob', 'Joe'],
+         'when': [datetime(2010, 1, 1, i) for i in [1, 2, 3]],
+         'amount': [100, 200, 300],
+         'id': [1, 2, 3]}
+    data = [dict(zip(d.keys(), [d[k][i] for k in d.keys()]))
+            for i in range(n)]
+    coll = into(db.date_coll, data)
     yield coll
     coll.drop()
 
@@ -309,3 +326,14 @@ def test_missing_values(p, missing_vals):
             dshape('{x: int64, y: ?int64, z: ?int64}')
 
     assert set(compute(p.y, missing_vals)) == set([None, 20, None, 40])
+
+
+def test_datetime_access(date_data):
+    t = TableSymbol('t',
+            '{amount: float64, id: int64, name: string, when: datetime}')
+
+    py_data = into(list, date_data) # a python version of the collection
+
+    for attr in ['day', 'minute', 'second', 'year']:
+        assert list(compute(getattr(t.when, attr), date_data)) == \
+                list(compute(getattr(t.when, attr), py_data))

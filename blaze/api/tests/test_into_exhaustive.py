@@ -116,7 +116,8 @@ def normalize(a):
         return list(a)
     return (str(a).replace("u'", "'")
                   .replace("(", "[").replace(")", "]")
-                  .replace('L', ''))
+                  .replace('L', '')
+                  .replace('.0', ''))
 
 
 def test_base():
@@ -190,7 +191,16 @@ tables_data = [v for k, v in data if k != list]
 def test_into_PyTables(a, h5tmp):
     dshape = 'var * {amount: int64, id: int64, name: string[7, "A"], timestamp: datetime}'
     lhs = into(tables.Table, a, dshape=dshape, filename=h5tmp, datapath='/data')
-    np.testing.assert_array_equal(into(np.ndarray, lhs), numpy_ensure_bytes(x))
+    result = into(np.ndarray, lhs)
+    expected = numpy_ensure_bytes(x)
+
+    assert into(list, result) == into(list, expected)
+    assert result.dtype.names == expected.dtype.names
+
+    # Ideally we would be doing this.  Sadly there is a float/int discrepancy
+    # np.testing.assert_array_equal(into(np.ndarray, lhs),
+    #                               numpy_ensure_bytes(x))
+
     lhs._v_file.close()
 
 

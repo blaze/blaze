@@ -6,7 +6,7 @@ from .core import DataDescriptor
 from ..utils import ndget
 
 class Python(DataDescriptor):
-    def __init__(self, storage=None, schema=None, dshape=None):
+    def __init__(self, storage=None, schema=None, dshape=None, **kwargs):
         self.storage = storage if storage is not None else []
         self._schema = schema
         self._dshape = dshape

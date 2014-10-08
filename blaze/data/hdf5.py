@@ -185,6 +185,6 @@ def drop(h):
         del f[h.datapath]
 
 
-@resource.register('.*\.hdf5')
+@resource.register('.+\.hdf5')
 def resource_hdf5(uri, datapath, *args, **kwargs):
     return HDF5(uri, datapath, *args, **kwargs)

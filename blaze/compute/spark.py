@@ -5,14 +5,15 @@ from operator import itemgetter
 import operator
 from toolz import compose, identity
 from collections import Iterator
+from datashape import Record, Tuple
 
-from blaze.expr.table import *
-from blaze.expr.table import count as Count
+from blaze.expr import *
+from blaze.expr import count as Count
 from . import core, python
-from .python import (compute, rrowfunc, rowfunc, RowWise, pair_assemble,
+from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
-from ..expr import table
+from ..expr import reductions
 from ..dispatch import dispatch
 from ..data.utils import listpack
 
@@ -22,14 +23,14 @@ from toolz.curried import get
 
 __all__ = ['RDD', 'pyspark', 'SparkContext']
 
+class Dummy(object):
+    sum = max = min = count = distinct = mean = variance = stdev = None
+
 try:
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
 except ImportError:
-    #Create a dummy RDD for py 2.6
-    class Dummy(object):
-        sum = max = min = count = distinct = mean = variance = stdev = None
     SparkContext = Dummy
     pyspark = Dummy()
     pyspark.rdd = Dummy()
@@ -45,7 +46,7 @@ except:
     pass
 
 
-@dispatch(RowWise, RDD)
+@dispatch(ElemWise, RDD)
 def compute_up(t, rdd, **kwargs):
     func = rowfunc(t)
     return rdd.map(func)
@@ -53,19 +54,19 @@ def compute_up(t, rdd, **kwargs):
 
 @dispatch(Selection, RDD)
 def compute_up(t, rdd, **kwargs):
-    predicate = rrowfunc(t.predicate, t.child)
+    predicate = rrowfunc(t.predicate, t._child)
     return rdd.filter(predicate)
 
 
 rdd_reductions = {
-        table.sum: RDD.sum,
-        table.min: RDD.min,
-        table.max: RDD.max,
-        table.count: RDD.count,
-        table.mean: RDD.mean,
-        table.var: RDD.variance,
-        table.std: RDD.stdev,
-        table.nunique: compose(RDD.count, RDD.distinct)}
+        reductions.sum: RDD.sum,
+        reductions.min: RDD.min,
+        reductions.max: RDD.max,
+        reductions.count: RDD.count,
+        reductions.mean: RDD.mean,
+        reductions.var: RDD.variance,
+        reductions.std: RDD.stdev,
+        reductions.nunique: compose(RDD.count, RDD.distinct)}
 
 
 @dispatch(tuple(rdd_reductions), RDD)
@@ -77,12 +78,12 @@ def istruthy(x):
     return not not x
 
 
-@dispatch(table.any, RDD)
+@dispatch(reductions.any, RDD)
 def compute_up(t, rdd, **kwargs):
     return istruthy(rdd.filter(identity).take(1))
 
 
-@dispatch(table.all, RDD)
+@dispatch(reductions.all, RDD)
 def compute_up(t, rdd, **kwargs):
     return not rdd.filter(lambda x: not x).take(1)
 
@@ -95,9 +96,9 @@ def compute_up(t, rdd, **kwargs):
 @dispatch(Sort, RDD)
 def compute_up(t, rdd, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
-        key = rowfunc(t.child[t.key])
+        key = rowfunc(t._child[t.key])
     else:
-        key = rrowfunc(t.key, t.child)
+        key = rrowfunc(t.key, t._child)
     return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
@@ -133,16 +134,16 @@ def compute_up(t, lhs, rhs, **kwargs):
 
 
 python_reductions = {
-              table.sum: builtins.sum,
-              table.count: builtins.len,
-              table.max: builtins.max,
-              table.min: builtins.min,
-              table.any: builtins.any,
-              table.all: builtins.all,
-              table.mean: python._mean,
-              table.var: python._var,
-              table.std: python._std,
-              table.nunique: lambda x: len(set(x))}
+              reductions.sum: builtins.sum,
+              reductions.count: builtins.len,
+              reductions.max: builtins.max,
+              reductions.min: builtins.min,
+              reductions.any: builtins.any,
+              reductions.all: builtins.all,
+              reductions.mean: python._mean,
+              reductions.var: python._var,
+              reductions.std: python._std,
+              reductions.nunique: lambda x: len(set(x))}
 
 @dispatch(By, RDD)
 def compute_up(t, rdd, **kwargs):
@@ -151,16 +152,15 @@ def compute_up(t, rdd, **kwargs):
                                                 for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
 
-        if t.grouper.iscolumn:
+        if isscalar(t.grouper.dshape.measure):
             keyfunc = lambda x: (x,)
         else:
             keyfunc = identity
-        if isinstance(t.apply, Reduction):
+        if isscalar(t.apply.dshape.measure):
             valfunc = lambda x: (x,)
         else:
             valfunc = identity
         unpack = lambda kv: keyfunc(kv[0]) + valfunc(kv[1])
-
 
         create = lambda v: binop(initial, v)
 
@@ -183,7 +183,7 @@ def compute_up(t, rdd, **kwargs):
 @dispatch(Summary, RDD)
 def compute_up(t, rdd, **kwargs):
     rdd = rdd.cache()
-    return tuple(compute(value, {t.child: rdd}) for value in t.values)
+    return tuple(compute(value, {t._child: rdd}) for value in t.values)
 
 
 @dispatch(Like, RDD)

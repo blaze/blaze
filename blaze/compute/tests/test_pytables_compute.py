@@ -65,7 +65,7 @@ def eq(a, b):
 def test_discover_datashape(data):
     ds = discover(data)
     t = TableSymbol('t', dshape=ds)
-    columns = t.columns
+    columns = t.fields
     assert columns is not None
 
 

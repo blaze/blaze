@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import toolz
 from toolz import pipe
 import itertools
-from datashape import discover
+from datashape import discover, Unit, Tuple, Record, iscollection, isscalar
 import sqlalchemy as sa
 
 from ..data.sql import dshape_to_alchemy
@@ -21,6 +21,7 @@ except ImportError:
 
 names = ('_table_%d' % i for i in itertools.count(1))
 
+__all__ = []
 
 class SparkSQLQuery(object):
     """ Pair of PySpark SQLContext and SQLAlchemy Table
@@ -47,7 +48,6 @@ class SparkSQLQuery(object):
         self.mapping = mapping
 
 
-
 def make_query(rdd, primary_key='', name=None):
     # SparkSQL
     name = name or next(names)
@@ -70,14 +70,14 @@ def make_query(rdd, primary_key='', name=None):
     return SparkSQLQuery(context, query, mapping)
 
 
-@dispatch(TableSymbol, SchemaRDD)
+@dispatch(Symbol, SchemaRDD)
 def compute_up(ts, rdd, **kwargs):
     return make_query(rdd)
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean,
-           Head, ReLabel, Apply, Distinct, RowWise, By, any, all, sum, max,
-           min, Reduction, Projection, Column), SchemaRDD)
+           Head, ReLabel, Apply, Distinct, ElemWise, By, any, all, sum, max,
+           min, Reduction, Projection, Field), SchemaRDD)
 def compute_up(e, rdd, **kwargs):
     return compute_up(e, make_query(rdd), **kwargs)
 
@@ -122,7 +122,7 @@ def sql_string(query):
 @dispatch(Expr, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
     result = query.context.sql(sql_string(query.query))
-    if isinstance(expr, TableExpr) and expr.iscolumn:
+    if iscollection(expr.dshape) and isscalar(expr.dshape.measure):
         result = result.map(lambda x: x[0])
     return result
 
@@ -130,6 +130,6 @@ def post_compute(expr, query, d):
 @dispatch(Head, SparkSQLQuery, dict)
 def post_compute(expr, query, d):
     result = query.context.sql(sql_string(query.query))
-    if isinstance(expr, TableExpr) and expr.iscolumn:
+    if iscollection(expr.dshape) and isscalar(expr.dshape.measure):
         result = result.map(lambda x: x[0])
     return result.collect()

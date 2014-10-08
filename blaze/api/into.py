@@ -5,7 +5,8 @@ from dynd import nd
 import datashape
 import sys
 from functools import partial
-from datashape import dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype, Option
+from datashape.predicates import isscalar
 import toolz
 from toolz import concat, partition_all, first, merge
 from cytoolz import pluck
@@ -20,13 +21,15 @@ import tables as tb
 from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
-from ..expr import TableExpr, Expr, Projection, TableSymbol
+from .. import expr
+from ..expr import Expr, Projection, TableSymbol, Field, Symbol
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
+from ..compute.spark import RDD
 
 
 __all__ = ['into', 'discover']
@@ -129,7 +132,7 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
-@dispatch(nd.array, (Iterable, Number, str))
+@dispatch(nd.array, (Iterable, Number) + _strtypes)
 def into(a, b, **kwargs):
     return nd.array(b, **kwargs)
 
@@ -308,7 +311,7 @@ def into(table, data, filename=None, datapath=None, **kwargs):
 def into(bc, data, **kwargs):
     cs = chunks(data)
     bc = into(bc, next(cs))
-    for chunk in chunks(data):
+    for chunk in cs:
         bc.append(chunk)
     return bc
 
@@ -353,7 +356,7 @@ def into(_, df, **kwargs):
 def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
     if list(a.columns):
-        names = a.columns
+        names = list(a.columns)
     elif isinstance(ds[-1], Record):
         names = ds[-1].names
     else:
@@ -386,10 +389,10 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return pd.Series(b, **kwargs)
 
-@dispatch(pd.Series, TableExpr)
+@dispatch(pd.Series, Expr)
 def into(ser, col, **kwargs):
     ser = into(ser, compute(col))
-    ser.name = col.name
+    ser.name = col._name
     return ser
 
 
@@ -450,6 +453,11 @@ def discover(df):
     return len(df) * schema
 
 
+@dispatch(pd.Series)
+def discover(s):
+    return discover(s.to_frame())
+
+
 @dispatch(np.ndarray, carray)
 def into(a, b, **kwargs):
     return b[:]
@@ -458,9 +466,15 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b))
 
-@dispatch(ColumnDataSource, (TableExpr, pd.DataFrame, np.ndarray, ctable))
+@dispatch(ColumnDataSource, (pd.DataFrame, np.ndarray, ctable))
 def into(cds, t, **kwargs):
     columns = discover(t).subshape[0][0].names
+    return ColumnDataSource(data=dict((col, into([], t[col]))
+                                      for col in columns))
+
+@dispatch(ColumnDataSource, Expr)
+def into(cds, t, **kwargs):
+    columns = t.fields
     return ColumnDataSource(data=dict((col, into([], t[col]))
                                       for col in columns))
 
@@ -478,21 +492,16 @@ def into(cds, t, **kwargs):
 
 @dispatch(ColumnDataSource, Collection)
 def into(cds, other, **kwargs):
-    return into(cds, into(pd.DataFrame(), other))
+    return into(cds, into(pd.DataFrame, other))
 
 
-@dispatch(pd.DataFrame, ColumnDataSource)
-def into(df, cds, **kwargs):
-    return cds.to_df()
-
-
-@dispatch(ctable, TableExpr)
+@dispatch(ctable, Expr)
 def into(a, b, **kwargs):
     c = compute(b)
     if isinstance(c, (list, tuple, Iterator)):
         kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
                 b.schema[0].types]
-        kwargs['names'] = b.columns
+        kwargs['names'] = b.fields
     return into(a, c, **kwargs)
 
 
@@ -655,7 +664,7 @@ def into(coll, df, **kwargs):
     return into(coll, into([], df), columns=list(df.columns), **kwargs)
 
 
-@dispatch(Collection, TableExpr)
+@dispatch(Collection, Expr)
 def into(coll, t, **kwargs):
     from blaze import compute
     result = compute(t)
@@ -769,9 +778,10 @@ def into(coll, d, if_exists="replace", **kwargs):
     date_cols = []
     dshape = csv_dd.dshape
     for t, c in zip(dshape[1].types, dshape[1].names):
-        if hasattr(t, "ty"):
-            if isinstance(t.ty, (datashape.Date, datashape.DateTime)):
-                date_cols.append((c, t.ty))
+        if isinstance(t, Option):
+            t = t.ty
+        if isinstance(t, (datashape.Date, datashape.DateTime)):
+            date_cols.append((c, t))
 
     for d_col, ty in date_cols:
         mongo_data = list(coll.find({}, {d_col: 1}))
@@ -847,11 +857,16 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
-
 @dispatch(ColumnDataSource, pd.Series)
 def into(a, b, **kwargs):
     return ColumnDataSource(data={b.name: b.tolist()})
 
+
+@dispatch((list, tuple, set), ColumnDataSource)
+def into(a, cds, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(zip(*cds.data.values()))
 
 @dispatch(pd.DataFrame, CSV)
 def into(a, b, **kwargs):
@@ -859,11 +874,11 @@ def into(a, b, **kwargs):
     kws = keywords(pd.read_csv)
     options = toolz.merge(b.dialect, kwargs)
     options = toolz.keyfilter(kws.__contains__, options)
-    return b.reader(**options)
+    return b.pandas_read_csv(chunksize=None, **options)
 
 
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
-           tuple, set), Projection)
+           tuple, set), (Projection, Field))
 def into(a, b, **kwargs):
     """ Special case on anything <- Table(CSV)[columns]
 
@@ -875,18 +890,23 @@ def into(a, b, **kwargs):
     >>> t = Table(csv)                              # doctest: +SKIP
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
-    if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
-        kwargs.setdefault('names', b.columns)
-        kwargs.setdefault('squeeze', b.iscolumn)
-        return into(a, b.child.data, **kwargs)
+    if isinstance(b._child, Symbol) and isinstance(b._child.data, CSV):
+        kwargs.setdefault('names', b._child.fields)
+        kwargs.setdefault('usecols', b.fields)
+        kwargs.setdefault('squeeze', isscalar(b.dshape.measure))
+        return into(a, b._child.data, **kwargs)
     else:
         # TODO, replace with with raise MDNotImplementeError once
         # https://github.com/mrocklin/multipledispatch/pull/39 is merged
         a = a if isinstance(a, type) else type(a)
-        f = into.dispatch(a, TableExpr)
+        f = into.dispatch(a, Expr)
         return f(a, b, **kwargs)
 
-        # TODO: add signature for SQL import
+    # TODO: add signature for SQL import
+
+    # TODO: CSV of Field
+
+
 
 
 @dispatch(pd.DataFrame, DataDescriptor)
@@ -909,11 +929,39 @@ def into(a, b):
     return compute(b)
 
 
-@dispatch((tuple, list, Iterator, np.ndarray, pd.DataFrame, Collection, set,
-    ctable), _strtypes)
+@dispatch(_strtypes, _strtypes)
+def into(a, b, **kwargs):
+    """ Transfer data between two URIs
+
+    Transfer data between two data resources based on their URIs.
+
+    >>> into('sqlite://:memory:::tablename', '/path/to/file.csv') #doctest:+SKIP
+    <blaze.data.sql.SQL at 0x7f32d80b80d0>
+
+    Uses ``resource`` functin to resolve data resources
+
+    See Also
+    --------
+
+    blaze.api.resource.resource
+    """
+    b = resource(b, **kwargs)
+    return into(a, b, **kwargs)
+
+
+@dispatch((type, RDD, set, np.ndarray, object), _strtypes)
 def into(a, b, **kwargs):
     return into(a, resource(b, **kwargs), **kwargs)
 
+
+@dispatch(_strtypes, (Expr, RDD, object))
+def into(a, b, **kwargs):
+    dshape = discover(b)
+    target = resource(a, dshape=dshape,
+                         schema=dshape.subshape[0],
+                         mode='a',
+                         **kwargs)
+    return into(target, b, **kwargs)
 
 @dispatch(Iterator, (list, tuple, set, Iterator))
 def into(a, b):
@@ -934,7 +982,7 @@ def into(x, chunks, **kwargs):
     arrs = [into(x, chunk, **kwargs) for chunk in chunks]
     return np.vstack(arrs)
 
-@dispatch(Collection, ChunkIterator)
+@dispatch((DataDescriptor, Collection), ChunkIterator)
 def into(coll, chunks, **kwargs):
     for chunk in chunks:
         into(coll, chunk, **kwargs)
@@ -948,7 +996,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
+@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor, Iterator))
 def into(a, b, **kwargs):
     a.extend(b)
     return a
@@ -957,3 +1005,9 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     a.extend(into(list,b))
     return a
+
+@dispatch(Number, Number)
+def into(a, b, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(b)

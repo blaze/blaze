@@ -21,22 +21,25 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
-from toolz import map, partition_all, reduce
-import numpy as np
-import math
+import itertools
+from ..expr import (TableSymbol, Head, Join, Selection, By, Label,
+        ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
+        nunique)
+from .core import compute
+from toolz import partition_all
 from collections import Iterator
 from toolz import concat, first
 from cytoolz import unique
 from datashape import var, isdimension
+from datashape.predicates import isscalar
 import pandas as pd
 
-from ..compatibility import builtins
 from ..dispatch import dispatch
-from .core import compute
 from ..data.core import DataDescriptor
+from ..expr.split import split
 
-__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk', 'chunks', 'into']
+__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk',
+           'chunks', 'into']
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -88,7 +91,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 @dispatch(tuple(reductions), ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    t = TableSymbol('_', dshape=expr.child.dshape)
+    t = TableSymbol('_', dshape=expr._child.dshape)
     a, b = reductions[type(expr)]
 
     return compute_up(b(t), [compute_up(a(t), chunk) for chunk in c])
@@ -101,8 +104,8 @@ def compute_up(expr, c, **kwargs):
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_up(expr.child.sum(), chunk)
-        total_count += compute_up(expr.child.count(), chunk)
+        total_sum += compute_up(expr._child.sum(), chunk)
+        total_count += compute_up(expr._child.count(), chunk)
 
     return total_sum / total_count
 
@@ -111,19 +114,19 @@ def compute_up(expr, c, **kwargs):
 def compute_up(expr, c, **kwargs):
     c = iter(c)
     df = into(DataFrame, compute_up(expr, next(c)),
-              columns=expr.columns)
+              columns=expr.fields)
     for chunk in c:
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
-                   compute_up(expr.child.head(expr.n - len(df)), chunk),
-                   columns=expr.columns)
+                   compute_up(expr._child.head(expr.n - len(df)), chunk),
+                   columns=expr.fields)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
     return df
 
 
-@dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
+@dispatch((Selection, ElemWise, Label, ReLabel), ChunkIterator)
 def compute_up(expr, c, **kwargs):
     return ChunkIterator(compute_up(expr, chunk) for chunk in c)
 
@@ -164,35 +167,19 @@ def compute_up(expr, c, **kwargs):
 
 @dispatch(nunique, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    dist = compute_up(expr.child.distinct(), c)
-    return compute_up(expr.child.count(), dist)
+    dist = compute_up(expr._child.distinct(), c)
+    return compute_up(expr._child.count(), dist)
 
 
 @dispatch(By, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    if not isinstance(expr.apply, tuple(reductions)):
-        raise NotImplementedError("Chunked split-apply-combine only "
-                "implemented for simple reductions")
-
-    a, b = reductions[type(expr.apply)]
-
-    perchunk = by(expr.grouper, a(expr.apply.child))
+    (chunkleaf, chunkexpr), (aggleaf, aggexpr) = split(expr._child, expr)
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_up(perchunk, chunk))
-                          for chunk in c)
+    intermediate = list(concat(into([], compute(chunkexpr, {chunkleaf: chunk}))
+                          for chunk in c))
 
-    # Form computation to do on the concatenated union
-    t = TableSymbol('_chunk', perchunk.schema)
-
-    apply_cols = expr.apply.dshape[0].names
-    if expr.apply.child.iscolumn:
-        apply_cols = apply_cols[0]
-
-    group = by(t[expr.grouper.columns],
-               b(t[apply_cols]))
-
-    return compute_up(group, intermediate)
+    return compute(aggexpr, {aggleaf: intermediate})
 
 
 @dispatch(object)
@@ -309,7 +296,14 @@ class ChunkList(ChunkIndexable):
 from ..api.resource import resource
 from glob import glob
 
-@resource.register('.*\*.*', priority=14)
+@resource.register('.+\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
+
+    first = resource(uris[0], **kwargs)
+    if hasattr(first, 'dshape'):
+        kwargs['dshape'] = first.dshape
+    if hasattr(first, 'schema'):
+        kwargs['schema'] = first.schema
+
     return ChunkList([resource(uri, **kwargs) for uri in uris])

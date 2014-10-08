@@ -6,7 +6,7 @@ cd /D "%RECIPE_DIR%\.."
 
 REM # X.X.X.dev builds
 FOR /F "delims=" %%i IN ('git describe --tags') DO set BLAZE_VERSION=%%i
-set _result=%ALPHA:-=_%
+set _result=%BLAZE_VERSION:-=_%
 
 echo %_result%>__conda_version__.txt
 

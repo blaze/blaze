@@ -1,13 +1,18 @@
 import os
+import sys
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 from dynd import nd
 import unittest
+import gzip
 
 from blaze.data.sql import SQL, discover, dshape_to_alchemy
-from blaze.utils import raises
+from blaze.utils import raises, filetext
 from datashape import dshape
 import datashape
+from blaze.compatibility import PY2
+
+import pytest
 
 
 class SingleTestClass(unittest.TestCase):
@@ -175,3 +180,19 @@ def test_dshape_to_alchemy():
 
     assert dshape_to_alchemy('float32').precision == 24
     assert dshape_to_alchemy('float64').precision == 53
+
+
+@pytest.mark.xfail(sys.platform == 'win32' and PY2,
+                   reason='Win32 py2.7 unicode/gzip/eol needs sorting out')
+def test_csv_gzip_into_sql():
+    from blaze.data.csv import CSV
+    from blaze.data.sql import into
+    engine = sa.create_engine('sqlite:///:memory:')
+    sql = SQL(engine,
+              'accounts',
+              schema='{name: string, amount: int32}')
+    with filetext(b'Alice,2\nBob,4', extension='csv.gz',
+                  open=gzip.open, mode='wb') as fn:
+        csv = CSV(fn, schema=sql.schema)
+        into(sql, csv)
+        assert list(sql) == list(csv)
