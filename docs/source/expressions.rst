@@ -59,9 +59,10 @@ split-apply-combine workflows.
 
 .. code-block:: python
 
-   >>> by(accounts['name'],             # Splitting/grouping element
-   ... accounts['balance'].sum())       # Apply and reduction
-   By(grouper=accounts['name'], apply=sum(child=accounts['balance']))
+   >>> by(accounts['name'],                 # Splitting/grouping element
+   ...    total=accounts['balance'].sum())  # Apply and reduction
+   By(grouper=accounts['name'], apply=summary(total=sum(_child=accounts['balance'])))
+
 
 This operation groups the table by name and then sums the balance of each
 group.  It finds out how much all of the "Alice"s, "Bob"s, etc. of the world

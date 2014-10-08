@@ -12,23 +12,23 @@ Expressions
 
 Blaze represents expressions as Python objects.  Classes include
 
-- **TableSymbol**: leaf expression, ``t``
+- **Symbol**: leaf expression, ``t``
 - **Projection**: subset of columns, ``t[['name', 'amount']]``
 - **Selection**: subset of rows ``t[t['amount'] < 0]``
-- **Column**: single column t['name']
-- **ColumnWise**: a combination of a table and a scalar expression, ``t['amount'] + 1``
+- **Field**: single column of table or field of record dataset t['name']
+- **Broadcast**: a scalar expression broadcast to a collection, ``t['amount'] + 1``
 - **Join**: join two tables on shared columns, ``join(t, s, 'id')``
 - **Reduction**: perform a sum or min or max on a table, ``t['amount'].sum()``
 - **By**: split-apply-combine operation, by(t['name'], ``t['amount'].sum())``
-- **Also**: ``Sort, Distinct, Head, Label, Map, Apply, Merge``
+- **Also**: ``Sort, Distinct, Head, Label, Map, Merge``
 
 In each case an operation (like ``Selection``) is a Python class.  Each
 expression defines a fixed set of fields in the ``__slots__`` attribute
 
 .. code-block:: python
 
-   class Column(ColumnSyntaxMixin, Projection):
-       __slots__ = 'child', 'column'
+   class Field(ElemWise):
+       __slots__ = 'child', 'fieldname'
 
 
 To create a node in the tree explicitly we create a Python object of this class
@@ -36,32 +36,32 @@ To create a node in the tree explicitly we create a Python object of this class
 .. code-block:: python
 
    >>> from blaze import *
-   >>> t = TableSymbol('t', '{id: int, name: string, amount: int}')
-   >>> names = Column(t, 'name')
+   >>> t = Symbol('t', 'var * {id: int, name: string, amount: int}')
+   >>> amounts = Field(t, 'amount')
 
 This object contains its information in a .args attribute
 
 .. code-block:: python
 
-   >>> names.args
-   (t, 'name')
+   >>> amounts._args
+   (t, 'amount')
 
-And the set of input expressions in a ``.inputs`` attribute
+And the set of input expressions in a ``._inputs`` attribute
 
 .. code-block:: python
 
-   >>> names.inputs
+   >>> amounts._inputs
    (t,)
 
-By traversing ``.args`` one can traverse the tree of all identifying
-information (including annotating strings and values like ``'name'``) or by
-traversing ``.inputs`` one can inspect the much sparser tree of just the major
-table expressions, skipping parameters like the particular column name to be
+By traversing ``._args`` one can traverse the tree of all identifying
+information (including annotating strings and values like ``'amount'``) or by
+traversing ``._inputs`` one can inspect the much sparser tree of just the major
+expressions, skipping parameters like the particular field name to be
 selected.
 
-Most terms have only a single child input.  And so often the ``.inputs`` tree
+Most terms have only a single child input.  And so often the ``._inputs`` tree
 is just a single line of nodes.  Notable exceptions include operations like
-``Join`` and ``Binop`` which contain two inputs.
+``Join`` and ``BinOp`` which contain two inputs.
 
 
 Expression Invariants
@@ -77,26 +77,23 @@ Blaze expressions adhere to the following properties:
     ``Join`` class has an analagous ``join`` function that should be used by
     users.  Same with the internal ``By`` class as the user-level ``by``
     function.
-4.  They can compute their datashape ``dshape``.  Table expressions can compute
-    their ``schema`` (the ``dshape`` of a single row) and ``columns``, a list
-    of fields.
+4.  They can compute their datashape ``dshape``.
 
 
-Other Expressions
------------------
+Organization
+------------
 
-Most work today happens in ``blaze/expr/table.py`` which contains definitions
-for all of the classes / terms above.  Additionally much of the traversing
-logic is defined on the ``Expr`` super-class defined in ``blaze/expr/core.py``.
-This class exists to support common code between ``TableSymbol``s and
-``ScalarSymbol``s and also in anticipation of arrays in the future.
+All expr code occurs in ``blaze/expr/``.  This directory should be
+self-contained and not dependent on other parts of Blaze like ``compute`` or
+``api``.
 
-Scalar symbols live in ``blaze/expr/scalar/*.py``.  These include arithmetic
-operations like ``Add`` and ``Mul`` as well as mathematical operations like
-``sin``, ``cos``, ``exp``, and ``isnan``.  These scalar operations interact
-with tables (mostly ``Column`` objects) through the ``ColumnWise`` operation,
-which broadcasts a scalar expression onto a table expression.
-
+* ``blaze/expr/core.py`` contains code related to abstract tree traversal
+* ``blaze/expr/expr.py`` contains code related to datashape imbued expressions
+* ``blaze/expr/collections.py`` contains operations related to expressions with
+  datashapes that contain a dimension.  Operations like ``Selection`` and
+  ``Join`` live here
+* ``blaze/expr/datetime.py``, ``blaze/expr/string.py``, ...  all contain
+  specialized operations for particular domains.
 
 Computation
 -----------
@@ -105,7 +102,7 @@ Once we have a Blaze expression like the following:
 
 .. code-block:: python
 
-   >>> deadbeats = t[t['amount'] < 0]['name']
+   >>> deadbeats = t[t.amount < 0].name
 
 and some data like the following:
 
@@ -115,7 +112,7 @@ and some data like the following:
    ...         [2, 'Bob', -200],
    ...         [3, 'Charlie', 300]]
 
-and a mapping of TableSymbols to data like the following:
+and a mapping of Symbols to data like the following:
 
 .. code-block:: python
 
@@ -174,9 +171,9 @@ example here is a start of a backend for PyTables:
    ... def compute_up(expr, data):
    ...     return data[:expr.n]          # PyTables supports standard indexing
 
-   >>> @dispatch(Column, tb.Table)       # doctest: +SKIP
+   >>> @dispatch(Field, tb.Table)       # doctest: +SKIP
    ... def compute_up(expr, data):
-   ...     return data.col(expr.column)  # Use the PyTables .col method
+   ...     return data.col(expr._name)  # Use the PyTables .col method
 
 
 These small functions are isolated enough from Blaze to be easy for new
