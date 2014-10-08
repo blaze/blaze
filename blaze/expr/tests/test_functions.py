@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.functions import *
-from blaze.expr import TableSymbol, Expr, ScalarSymbol
+from blaze.expr import TableSymbol, Expr, Symbol
 import numpy as np
 
 
@@ -17,4 +17,4 @@ def test_math():
     assert sin(0) == 0
     assert isinstance(sin(0), float)
     assert isinstance(sin(np.int32(0)), np.float)
-    assert isinstance(sin(ScalarSymbol('x', 'real')), Expr)
+    assert isinstance(sin(Symbol('x', 'real')), Expr)

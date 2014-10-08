@@ -7,7 +7,7 @@ from datashape.internal_utils import IndexCallable
 from datashape import discover
 from functools import partial
 from ..dispatch import dispatch
-from blaze.expr.table import Projection, Column
+from blaze.expr import Projection, Field
 from blaze.expr import Expr, UnaryOp
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
@@ -185,12 +185,12 @@ def compute_up(t, ddesc, **kwargs):
 
 @dispatch(Projection, DataDescriptor)
 def compute_up(t, ddesc, **kwargs):
-    return ddesc[:, t.columns]
+    return ddesc[:, t.fields]
 
 
-@dispatch(Column, DataDescriptor)
+@dispatch(Field, DataDescriptor)
 def compute_up(t, ddesc, **kwargs):
-    return ddesc[:, t.columns[0]]
+    return ddesc[:, t.fields[0]]
 
 
 @dispatch(DataDescriptor)

@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import TableSymbol, compute, Table, by, into, TableExpr
+from blaze import Expr, TableSymbol, compute, Table, by, into, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.data.python import Python
@@ -62,6 +62,8 @@ def test_expr_client():
     expr = t.amount.sum()
 
     assert compute(expr, ec) == 300
+    assert 'name' in t.fields
+    assert isinstance(t.name, Field)
     assert compute(t.name, ec) == ['Alice', 'Bob']
 
 
@@ -88,12 +90,12 @@ def test_resource_all_in_one():
     assert discover(ec) == discover(df)
 
 
-class CustomExpr(TableExpr):
-    __slots__ = 'child',
+class CustomExpr(Expr):
+    __slots__ = '_child',
 
     @property
     def dshape(self):
-        return self.child.dshape
+        return self._child.dshape
 
 
 @dispatch(CustomExpr, DataFrame)

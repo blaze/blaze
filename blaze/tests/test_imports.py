@@ -2,7 +2,6 @@ import blaze
 
 def test_basic_interface():
     blaze.Table
-    blaze.TableExpr
     blaze.compute
     blaze.into
     blaze.discover

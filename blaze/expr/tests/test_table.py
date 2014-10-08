@@ -5,23 +5,20 @@ import pandas as pd
 from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
                       gt, le, ge, getitem)
 
-try:
-    from operator import div
-except ImportError:
-    from operator import truediv as div
-
 from functools import partial
 from datetime import datetime
 import datashape
+from datashape.predicates import iscollection, isscalar
 from blaze import CSV, Table
-from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
-                        join, cos, by, union, TableExpr, exp, distinct, Apply,
-                        columnwise, eval_str, merge, common_subexpression, sum,
-                        Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count, ScalarSymbol, like, Like)
-from blaze.expr.table import _expr_child, unpack, max, min
-from blaze.compatibility import PY3, _strtypes
-from blaze.expr.core import discover
+from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
+                        join, cos, by, union, exp, distinct, Apply,
+                        broadcast, eval_str, merge, common_subexpression, sum,
+                        Label, ReLabel, Head, Sort, any, summary,
+                        Summary, count, Symbol, Field, discover,
+                        max, min
+                        )
+from blaze.expr.broadcast import _expr_child
+from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
 from toolz import identity, first
@@ -46,13 +43,25 @@ def test_length():
     with pytest.raises(ValueError):
         len(s)
 
+
+def test_tablesymbol_eq():
+    assert not (TableSymbol('t', '{name: string}')
+             == TableSymbol('v', '{name: string}'))
+
+
 def test_table_name():
     t = TableSymbol('t', '10 * {people: string, amount: int}')
-    r = TableSymbol('r', 'int64', iscolumn=True)
-    with pytest.raises(ValueError):
+    r = TableSymbol('r', 'int64')
+    with pytest.raises(AttributeError):
         t.name
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         r.name
+
+def test_shape():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    assert t.shape
+    assert isinstance(t.shape, tuple)
+    assert len(t.shape) == 1
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
@@ -85,24 +94,24 @@ def test_arithmetic():
 
 def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
-    assert t.columns == ['name', 'amount']
+    assert t.fields== ['name', 'amount']
 
     assert eval(str(t['name'])) == t['name']
     assert str(t['name']) == "t['name']"
-    with pytest.raises(ValueError):
-        t['name'].project('balance')
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
+        t['name'].balance
+    with pytest.raises((NotImplementedError, ValueError)):
         getitem(t, set('balance'))
 
 
 def test_symbol_projection_failures():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
     with pytest.raises(ValueError):
-        t.project(['name', 'id'])
-    with pytest.raises(ValueError):
-        t.project('id')
-    with pytest.raises(ValueError):
-        t.project(t.dshape)
+        t._project(['name', 'id'])
+    with pytest.raises(AttributeError):
+        t.foo
+    with pytest.raises(TypeError):
+        t._project(t.dshape)
 
 
 def test_Projection():
@@ -111,18 +120,26 @@ def test_Projection():
     assert p.schema == dshape('{amount: int32, name: string}')
     print(t['amount'].dshape)
     print(dshape('var * int32'))
-    assert t['amount'].dshape == dshape('var * {amount: int32}')
+    assert t['amount'].dshape == dshape('var * int32')
+    assert t['amount']._name == 'amount'
 
     assert eval(str(p)).isidentical(p)
-    assert p.project(['amount','name']) == p[['amount','name']]
+    assert p._project(['amount','name']) == p[['amount','name']]
     with pytest.raises(ValueError):
-        p.project('balance')
+        p._project('balance')
+
+
+def test_Projection_retains_shape():
+    t = TableSymbol('t', '5 * {name: string, amount: int, id: int32}')
+
+    assert t[['name', 'amount']].dshape == \
+            dshape('5 * {name: string, amount: int}')
 
 
 def test_indexing():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == projection(t, ['amount', 'id'])
-    assert t['amount'].isidentical(Column(t, 'amount'))
+    assert t['amount'].isidentical(Field(t, 'amount'))
 
 
 def test_relational():
@@ -130,7 +147,8 @@ def test_relational():
 
     r = (t['name'] == 'Alice')
 
-    assert r.dshape == dshape('var * {name: bool}')
+    assert 'bool' in str(r.dshape)
+    assert r._name
 
 
 def test_selection():
@@ -143,7 +161,6 @@ def test_selection():
         selection(t, p)
 
     assert s.dshape == t.dshape
-
 
 
 def test_selection_typecheck():
@@ -177,11 +194,12 @@ def test_selection_path_check():
     t3 = t2[t2.amount > 0]
     assert t3
 
+
 def test_path_issue():
     from blaze.api.dplyr import transform
     t = TableSymbol('t', "{ topic : string, word : string, result : ?float64}")
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
-                                         schema='{size: float64}'))
+                                         schema='float64', name='size'))
 
     assert t2.sizes in t2.children
 
@@ -195,15 +213,15 @@ def test_different_schema_raises():
 
 
 def test_getattr_doesnt_override_properties():
-    t = TableSymbol('t', '{iscolumn: string, schema: string}')
-    assert isinstance(t.iscolumn, bool)
+    t = TableSymbol('t', '{_subs: string, schema: string}')
+    assert callable(t._subs)
     assert isinstance(t.schema, DataShape)
 
 
 def test_dir_contains_columns():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     result = dir(t)
-    columns_set = set(t.columns)
+    columns_set = set(t.fields)
     assert set(result) & columns_set == columns_set
 
 
@@ -212,10 +230,10 @@ def test_selection_consistent_children():
 
     expr = t['name'][t['amount'] < 0]
 
-    assert list(expr.columns) == ['name']
+    assert list(expr.fields) == ['name']
 
 
-def test_columnwise_syntax():
+def test_broadcast_syntax():
     t = TableSymbol('t', '{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']
     assert (x + y).active_columns() == ['x', 'y']
@@ -223,7 +241,7 @@ def test_columnwise_syntax():
     assert ((z + y) * x).active_columns() == ['x', 'y', 'z']
 
     expr = (z % x * y + z ** 2 > 0) & (x < 0)
-    assert isinstance(expr, ColumnWise)
+    assert isinstance(expr, Broadcast)
 
 
 def test_str():
@@ -236,10 +254,6 @@ def test_str():
     assert eval(str(expr)) == expr
 
     assert '*' in repr(expr)
-
-
-def test_unpack():
-    assert unpack('unpack') == 'unpack'
 
 
 def test_join():
@@ -313,20 +327,20 @@ def test_multi_column_join():
     b = TableSymbol('b', '{w: int, x: int, y: int}')
     j = join(a, b, ['x', 'y'])
 
-    assert set(j.columns) == set('wxyz')
+    assert set(j.fields) == set('wxyz')
 
     assert j.on_left == j.on_right == ['x', 'y']
     assert hash(j)
 
-    assert j.columns == ['x', 'y', 'z', 'w']
+    assert j.fields == ['x', 'y', 'z', 'w']
 
 
 def test_traverse():
     t = TableSymbol('t', '{name: string, amount: int}')
-    assert t in list(t.traverse())
+    assert t in list(t._traverse())
 
     expr = t[t['amount'] < 0]['name']
-    trav = list(expr.traverse())
+    trav = list(expr._traverse())
     assert any(t['amount'].isidentical(x) for x in trav)
     assert any((t['amount'] < 0).isidentical(x) for x in trav)
 
@@ -351,7 +365,7 @@ def test_reduction():
 
     assert 'amount' not in str(t.count().dshape)
 
-    assert first(t.count().dshape[0].types)[0] in (int32, int64)
+    assert t.count().dshape[0] in (int32, int64)
 
     assert 'int' in str(t.count().dshape)
     assert 'int' in str(t.nunique().dshape)
@@ -365,10 +379,15 @@ def test_reduction():
     assert 'int' not in str(t['amount'].sum().dshape)
 
 
+def test_reduction_name():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    assert (t.amount + t.id).sum()._name
+
+
 def test_max_min_class():
     t = TableSymbol('t', '{name: string, amount: int32}')
-    assert str(max(t).dtype) == '{ name : string, amount : int32 }'
-    assert str(min(t).dtype) == '{ name : string, amount : int32 }'
+    assert str(max(t).dshape) == '{ name : string, amount : int32 }'
+    assert str(min(t).dshape) == '{ name : string, amount : int32 }'
 
 
 @pytest.fixture
@@ -390,10 +409,10 @@ def ds():
 
 def test_discover_dshape_symbol(ds):
     t_ds = TableSymbol('t', dshape=ds)
-    assert t_ds.columns is not None
+    assert t_ds.fields is not None
 
     t_sch = TableSymbol('t', dshape=ds.subshape[0])
-    assert t_sch.columns is not None
+    assert t_sch.fields is not None
 
     assert t_ds.isidentical(t_sch)
 
@@ -407,8 +426,9 @@ class TestScalarArithmetic(object):
             result = f(r, 1)
             assert eval('r %s 1' % op).isidentical(result)
 
-            result = f(r, r)
-            assert eval('r %s r' % op).isidentical(result)
+            a = f(r, r)
+            b = eval('r %s r' % op)
+            assert a is b or a.isidentical(b)
 
             result = f(1, r)
             assert eval('1 %s r' % op).isidentical(result)
@@ -441,9 +461,9 @@ def test_summary():
     assert 'num=' in str(s)
     assert str(t.amount.sum()) in str(s)
 
-    assert not summary(total=t.amount.sum()).child.isidentical(
+    assert not summary(total=t.amount.sum())._child.isidentical(
             t.amount.sum())
-    assert isinstance(summary(total=t.amount.sum() + 1).child, TableExpr)
+    assert iscollection(summary(total=t.amount.sum() + 1)._child.dshape)
 
 
 def test_reduction_arithmetic():
@@ -456,7 +476,8 @@ def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = distinct(t['name'])
     print(r.dshape)
-    assert r.dshape  == dshape('var * {name: string}')
+    assert r.dshape  == dshape('var * string')
+    assert r._name == 'name'
 
     r = t.distinct()
     assert r.dshape  == t.dshape
@@ -482,10 +503,10 @@ def test_by_summary():
 def test_by_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
-    assert len(by(t['id'], t['amount'].sum()).columns) == 2
-    assert len(by(t['id'], t['id'].count()).columns) == 2
-    print(by(t, t.count()).columns)
-    assert len(by(t, t.count()).columns) == 4
+    assert len(by(t['id'], t['amount'].sum()).fields) == 2
+    assert len(by(t['id'], t['id'].count()).fields) == 2
+    print(by(t, t.count()).fields)
+    assert len(by(t, t.count()).fields) == 4
 
 
 def test_sort():
@@ -513,25 +534,24 @@ def test_label():
 
     assert eval(str(quantity)).isidentical(quantity)
 
-    assert quantity.columns == ['quantity']
+    assert quantity.fields == ['quantity']
 
     with pytest.raises(ValueError):
-        quantity.project('balance')
+        quantity['balance']
 
 
 def test_map_label():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    c = t.amount.map(identity, schema='{foo: int32}')
-    assert c.label('bar').name == 'bar'
-    assert c.label('bar').child.isidentical(c.child)
-
+    c = t.amount.map(identity, schema='int32')
+    assert c.label('bar')._name == 'bar'
+    assert c.label('bar')._child.isidentical(c._child)
 
 
 def test_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    assert list(t.columns) == ['name', 'amount', 'id']
-    assert list(t['name'].columns) == ['name']
-    (t['amount'] + 1).columns
+    assert list(t.fields) == ['name', 'amount', 'id']
+    assert list(t['name'].fields) == ['name']
+    (t['amount'] + 1).fields
 
 
 def test_relabel():
@@ -542,11 +562,11 @@ def test_relabel():
 
     assert eval(str(rl)).isidentical(rl)
 
-    print(rl.columns)
-    assert rl.columns == ['NAME', 'amount', 'ID']
+    print(rl.fields)
+    assert rl.fields == ['NAME', 'amount', 'ID']
 
-    assert not rl.iscolumn
-    assert rlc.iscolumn
+    assert not isscalar(rl.dshape.measure)
+    assert isscalar(rlc.dshape.measure)
 
 
 def test_relabel_join():
@@ -555,24 +575,28 @@ def test_relabel_join():
     siblings = join(names.relabel({'last': 'left'}),
                     names.relabel({'last': 'right'}), 'first')
 
-    assert siblings.columns == ['first', 'left', 'right']
+    assert siblings.fields == ['first', 'left', 'right']
 
 
 def test_map():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    r = TableSymbol('s', 'int64')
     inc = lambda x: x + 1
-    assert t['amount'].map(inc).iscolumn
-    assert t['amount'].map(inc, schema='{amount: int}').iscolumn
-    s = t['amount'].map(inc, schema='{amount: int}', iscolumn=False)
-    assert not s.iscolumn
+    assert isscalar(t['amount'].map(inc, schema='int').dshape.measure)
+    s = t['amount'].map(inc, schema='{amount: int}')
+    assert not isscalar(s.dshape.measure)
 
     assert s.dshape == dshape('var * {amount: int}')
 
-    assert not t[['name', 'amount']].map(identity).iscolumn
+    expr = (t[['name', 'amount']]
+            .map(identity, schema='{name: string, amount: int}'))
+    assert expr._name is None
 
-    with pytest.raises(ValueError):
-        t[['name', 'amount']].map(identity, schema='{name: string, amount: int}').name
+
+@pytest.mark.xfail(reason="Not sure that we should even support this")
+def test_map_without_any_info():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    assert iscolumn(t['amount'].map(inc))
+    assert not iscolumn(t[['name', 'amount']].map(identity))
 
 
 def test_apply():
@@ -582,15 +606,15 @@ def test_apply():
     l = Apply(sum, t['amount'])
     assert s.dshape == dshape('real')
     assert r.schema == dshape("float64")
-    
+
     with pytest.raises(TypeError):
         s.schema
     with pytest.raises(NotImplementedError):
         l.dshape
 
 
-def test_columnwise():
-    from blaze.expr.scalar import Add, Eq, Mult, Le
+def test_broadcast():
+    from blaze.expr.arithmetic import Add, Eq, Mult, Le
     t = TableSymbol('t', '{x: int, y: int, z: int}')
     t2 = TableSymbol('t', '{a: int, b: int, c: int}')
     x = t['x']
@@ -600,16 +624,16 @@ def test_columnwise():
     b = t2['b']
     c = t2['c']
 
-    assert str(columnwise(Add, x, y).expr) == 'x + y'
-    assert columnwise(Add, x, y).child.isidentical(t)
+    assert str(broadcast(Add, x, y).expr) == 'x + y'
+    assert broadcast(Add, x, y)._child.isidentical(t)
 
-    c1 = columnwise(Add, x, y)
-    c2 = columnwise(Mult, x, z)
+    c1 = broadcast(Add, x, y)
+    c2 = broadcast(Mult, x, z)
 
-    assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
-    assert columnwise(Eq, c1, c2).child.isidentical(t)
+    assert eval_str(broadcast(Eq, c1, c2).expr) == '(x + y) == (x * z)'
+    assert broadcast(Eq, c1, c2)._child.isidentical(t)
 
-    assert str(columnwise(Add, x, 1).expr) == 'x + 1'
+    assert str(broadcast(Add, x, 1).expr) == 'x + 1'
 
     assert str(x <= y) == "t['x'] <= t['y']"
     assert str(x >= y) == "t['x'] >= t['y']"
@@ -618,7 +642,7 @@ def test_columnwise():
     assert str(x.__rand__(y)) == "t['y'] & t['x']"
 
     with pytest.raises(ValueError):
-        columnwise(Add, x, a)
+        broadcast(Add, x, a)
 
 
 def test_expr_child():
@@ -635,15 +659,6 @@ def test_TableSymbol_printing_is_legible():
     assert "+ accounts['id']" in str(expr)
 
 
-def test_dtype():
-    accounts = TableSymbol('accounts',
-                           '{name: string, balance: int32, id: int32}')
-
-    assert accounts['name'].dtype == dshape('string')
-    assert accounts['balance'].dtype == dshape('int32')
-    assert (accounts['balance'] > accounts['id']).dtype == dshape('bool')
-
-
 def test_merge():
     t = TableSymbol('t', 'int64')
     p = TableSymbol('p', '{amount:int}')
@@ -652,9 +667,10 @@ def test_merge():
     new_amount = (accounts['balance'] * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
-    assert c.columns == ['name', 'balance', 'new']
+    assert c.fields == ['name', 'balance', 'new']
+    assert c.schema == dshape('{name: string, balance: int32, new: float64}')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         merge(t, t)
     with pytest.raises(ValueError):
         merge(t, p)
@@ -684,10 +700,10 @@ inc = lambda x: x + 1
 
 def test_subterms():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert list(a.subterms()) == [a]
-    assert set(a['x'].subterms()) == set([a, a['x']])
-    assert set(a['x'].map(inc).subterms()) == set([a, a['x'], a['x'].map(inc)])
-    assert a in set((a['x'] + 1).subterms())
+    assert list(a._subterms()) == [a]
+    assert set(a['x']._subterms()) == set([a, a['x']])
+    assert set(a['x'].map(inc)._subterms()) == set([a, a['x'], a['x'].map(inc)])
+    assert a in set((a['x'] + 1)._subterms())
 
 
 def test_common_subexpression():
@@ -702,34 +718,33 @@ def test_common_subexpression():
 def test_schema_of_complex_interaction():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     expr = (a['x'] + a['y']) / a['z']
-    assert expr.dtype == dshape('real')
+    assert expr.schema == dshape('real')
 
     expr = expr.label('foo')
-    print(expr.dtype)
-    assert expr.dtype == dshape('real')
+    assert expr.schema == dshape('real')
 
+def iscolumn(x):
+    return isscalar(x.dshape.measure)
 
 def test_iscolumn():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert not a.iscolumn
-    assert a['x'].iscolumn
-    assert not a[['x', 'y']].iscolumn
-    assert not a[['x']].iscolumn
-    assert (a['x'] + a['y']).iscolumn
-    assert a['x'].distinct().iscolumn
-    assert not a[['x']].distinct().iscolumn
-    assert not by(a['x'], a['y'].sum()).iscolumn
-    assert a['x'][a['x'] > 1].iscolumn
-    assert not a[['x', 'y']][a['x'] > 1].iscolumn
-    assert a['x'].sort().iscolumn
-    assert not a[['x', 'y']].sort().iscolumn
-    assert a['x'].head().iscolumn
-    assert not a[['x', 'y']].head().iscolumn
+    assert not iscolumn(a)
+    assert iscolumn(a['x'])
+    assert not iscolumn(a[['x', 'y']])
+    assert not iscolumn(a[['x']])
+    assert iscolumn((a['x'] + a['y']))
+    assert iscolumn(a['x'].distinct())
+    assert not iscolumn(a[['x']].distinct())
+    assert not iscolumn(by(a['x'], a['y'].sum()))
+    assert iscolumn(a['x'][a['x'] > 1])
+    assert not iscolumn(a[['x', 'y']][a['x'] > 1])
+    assert iscolumn(a['x'].sort())
+    assert not iscolumn(a[['x', 'y']].sort())
+    assert iscolumn(a['x'].head())
+    assert not iscolumn(a[['x', 'y']].head())
 
-    assert TableSymbol('b', '{x: int}', iscolumn=True).iscolumn
-    assert not TableSymbol('b', '{x: int}', iscolumn=False).iscolumn
-    assert not TableSymbol('b', '{x: int}', iscolumn=True).isidentical(
-            TableSymbol('b', '{x: int}', iscolumn=False))
+    assert iscolumn(TableSymbol('b', 'int'))
+    assert not iscolumn(TableSymbol('b', '{x: int}'))
 
 
 def test_discover():
@@ -781,20 +796,21 @@ def test_table_coercion():
 
 
 def test_isnan():
+    from blaze import isnan
     t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
 
     for expr in [t.amount.isnan(), ~t.amount.isnan()]:
         assert eval(str(expr)).isidentical(expr)
 
-    assert isinstance(t.amount.isnan(), TableExpr)
+    assert iscollection(t.amount.isnan().dshape)
     assert 'bool' in str(t.amount.isnan().dshape)
 
 
-def test_columnwise_naming():
+def test_broadcast_naming():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
 
-    assert t.x.name == 'x'
-    assert (t.x + 1).name == 'x'
+    assert t.x._name == 'x'
+    assert (t.x + 1)._name == 'x'
 
 
 def test_scalar_expr():
@@ -805,12 +821,12 @@ def test_scalar_expr():
     assert 'int32' in str(y.dshape)
 
     expr = (t.x + 1).expr
-    assert expr.inputs[0].dshape == x.dshape
-    assert expr.inputs[0].isidentical(x)
+    assert expr._inputs[0].dshape == x.dshape
+    assert expr._inputs[0].isidentical(x)
 
     t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
     expr = (t.amount + 1).expr
-    assert 'int64' in str(expr.inputs[0].dshape)
+    assert 'int64' in str(expr._inputs[0].dshape)
 
 
 def test_distinct_name():
@@ -818,22 +834,22 @@ def test_distinct_name():
 
     assert t.name.isidentical(t['name'])
     assert t.distinct().name.isidentical(t.distinct()['name'])
-    assert t.id.distinct().name == 'id'
-    assert t.name.name == 'name'
+    assert t.id.distinct()._name == 'id'
+    assert t.name._name == 'name'
 
 
 def test_leaves():
     t = TableSymbol('t', '{id: int32, name: string}')
     v = TableSymbol('v', '{id: int32, city: string}')
-    x = ScalarSymbol('x', 'int32')
+    x = Symbol('x', 'int32')
 
-    assert t.leaves() == [t]
-    assert t.id.leaves() == [t]
-    assert by(t.name, t.id.nunique()).leaves() == [t]
-    assert join(t, v).leaves() == [t, v]
-    assert join(v, t).leaves() == [v, t]
+    assert t._leaves() == [t]
+    assert t.id._leaves() == [t]
+    assert by(t.name, t.id.nunique())._leaves() == [t]
+    assert join(t, v)._leaves() == [t, v]
+    assert join(v, t)._leaves() == [v, t]
 
-    assert (x + 1).leaves() == [x]
+    assert (x + 1)._leaves() == [x]
 
 
 @pytest.fixture
@@ -851,16 +867,16 @@ class TestRepr(object):
     def test_partial_lambda(self, t):
         expr = t.amount.map(partial(lambda x, y: x + y, 1))
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=partial(%s, 1), "
-                     "_schema=None, _iscolumn=None)" %
+                     "_schema=None, _name0=None)" %
                      funcname('test_partial_lambda'))
 
     def test_lambda(self, t):
         expr = t.amount.map(lambda x: x)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
-                     "func=%s, _schema=None, _iscolumn=None)" %
+        assert s == ("Map(_child=t['amount'], "
+                     "func=%s, _schema=None, _name0=None)" %
                      funcname('test_lambda'))
 
     def test_partial(self, t):
@@ -868,26 +884,26 @@ class TestRepr(object):
             return x + y
         expr = t.amount.map(partial(myfunc, 1))
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=partial(%s, 1), "
-                     "_schema=None, _iscolumn=None)" % funcname('test_partial',
+                     "_schema=None, _name0=None)" % funcname('test_partial',
                                                                 'myfunc'))
 
     def test_builtin(self, t):
         expr = t.amount.map(datetime.fromtimestamp)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=datetime.fromtimestamp, _schema=None,"
-                     " _iscolumn=None)")
+                     " _name0=None)")
 
     def test_udf(self, t):
         def myfunc(x):
             return x + 1
         expr = t.amount.map(myfunc)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], "
+        assert s == ("Map(_child=t['amount'], "
                      "func=%s, _schema=None,"
-                     " _iscolumn=None)" % funcname('test_udf', 'myfunc'))
+                     " _name0=None)" % funcname('test_udf', 'myfunc'))
 
     def test_nested_partial(self, t):
         def myfunc(x, y, z):
@@ -895,19 +911,10 @@ class TestRepr(object):
         f = partial(partial(myfunc, 2), 1)
         expr = t.amount.map(f)
         s = str(expr)
-        assert s == ("Map(child=t['amount'], func=partial(partial(%s, 2), 1),"
-                     " _schema=None, _iscolumn=None)" %
+        assert s == ("Map(_child=t['amount'], func=partial(partial(%s, 2), 1),"
+                     " _schema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
 
-
-def test_like():
-    t = TableSymbol('t', '{name: string, amount: int, city: string}')
-
-    expr = like(t, name='Alice*')
-
-    assert eval(str(expr)).isidentical(expr)
-    assert expr.schema == t.schema
-    assert expr.dshape[0] == datashape.var
 
 
 def test_count_values():
@@ -916,3 +923,24 @@ def test_count_values():
             by(t.name, count=t.name.count()))
     assert t.name.count_values(sort=True).isidentical(
             by(t.name, count=t.name.count()).sort('count', ascending=False))
+
+
+def test_dir():
+    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+    assert 'day' in dir(t.dt)
+    assert 'mean' not in dir(t.dt)
+    assert 'mean' in dir(t.amount)
+    assert 'like' not in dir(t[['amount', 'dt']])
+    assert 'any' not in dir(t.name)
+
+
+def test_distinct_column():
+    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+    assert t.name.distinct().name.dshape == t.name.distinct().dshape
+    assert t.name.distinct().name.isidentical(t.name.distinct())
+
+
+def test_columns_attribute_for_backwards_compatibility():
+    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+
+    assert t.columns == t.fields

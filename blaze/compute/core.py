@@ -4,8 +4,7 @@ from datetime import date, datetime
 from toolz import first
 
 from ..compatibility import basestring
-from ..expr.core import Expr
-from ..expr import TableSymbol, eval_str, Union
+from ..expr import Expr, Symbol, TableSymbol, eval_str, Union
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up', 'drop', 'create_index']
@@ -44,7 +43,7 @@ def compute(expr, o, **kwargs):
     >>> list(compute(deadbeats, data))
     ['Bob', 'Charlie']
     """
-    ts = set([x for x in expr.subterms() if isinstance(x, TableSymbol)])
+    ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])
     if len(ts) == 1:
         return compute(expr, {first(ts): o}, **kwargs)
     else:
@@ -67,14 +66,14 @@ def top_to_bottom(d, expr):
         return d[expr]
 
     # See if we have a direct computation path
-    if (hasattr(expr, 'leaves') and compute_down.resolve(
-            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
-        leaves = [d[leaf] for leaf in expr.leaves()]
+    if (hasattr(expr, '_leaves') and compute_down.resolve(
+            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr._leaves()))):
+        leaves = [d[leaf] for leaf in expr._leaves()]
         return compute_down(expr, *leaves)
     else:
         # Compute children of this expression
-        children = ([top_to_bottom(d, child) for child in expr.inputs]
-                    if hasattr(expr, 'inputs') else [])
+        children = ([top_to_bottom(d, child) for child in expr._inputs]
+                    if hasattr(expr, '_inputs') else [])
 
         # Compute this expression given the children
         return compute_up(expr, *children, scope=d)
@@ -99,8 +98,8 @@ def bottom_up(d, expr):
         return d[expr]
 
     # Compute children of this expression
-    children = ([bottom_up(d, child) for child in expr.inputs]
-                if hasattr(expr, 'inputs') else [])
+    children = ([bottom_up(d, child) for child in expr._inputs]
+                if hasattr(expr, '_inputs') else [])
 
     # Compute this expression given the children
     result = compute_up(expr, *children, scope=d)
@@ -141,19 +140,19 @@ def columnwise_funcstr(t, variadic=True, full=False):
 
     Parameters
     ----------
-    t : ColumnWise
+    t : Broadcast
         An expression whose leaves (at each application of the returned
         expression) are all instances of ``ScalarExpression``.
         For example ::
 
             t.petal_length / max(t.petal_length)
 
-        is **not** a valid ``ColumnWise``, since the expression ::
+        is **not** a valid ``Broadcast``, since the expression ::
 
             max(t.petal_length)
 
         has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
-        valid ``ColumnWise`` expression is ::
+        valid ``Broadcast`` expression is ::
 
             t.petal_length / 4
 
@@ -178,7 +177,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
     'lambda (x, y, z): x + z'
     """
     if full:
-        columns = t.child.columns
+        columns = t._child.fields
     else:
         columns = t.active_columns()
     if variadic:

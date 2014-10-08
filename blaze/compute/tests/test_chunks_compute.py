@@ -1,15 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import map, pluck
-import math
+import pytest
+import datetime
+
+from toolz import map
 from pandas import DataFrame
 from toolz import concat
-from collections import Iterator
 
-from blaze.expr import *
+from blaze import into
+from blaze.expr import TableSymbol, join, by
 from blaze.compute.core import compute
-from blaze.compute.python import *
-from blaze.compute.chunks import *
+from blaze.compute.chunks import ChunkIterable, get_chunk
 
 
 data = [[1, 'Alice', 100],
@@ -48,6 +49,7 @@ def test_distinct():
     assert sorted(compute(t.name.distinct(), c)) == \
             ['Alice', 'Bob', 'Charlie', 'Edith']
 
+
 def test_nunique():
     assert compute(t.name.nunique(), c) == 4
     assert compute(t.nunique(), c) == 5
@@ -58,7 +60,7 @@ def test_columnwise():
 
 
 def test_map():
-    assert list(concat(compute(t.id.map(lambda x: x+1), c))) == [2, 3, 4, 5, 6]
+    assert list(concat(compute(t.id.map(lambda x: x+1, schema='int'), c))) == [2, 3, 4, 5, 6]
 
 
 def test_selection():
@@ -81,11 +83,11 @@ def test_join():
 
     city_data = [[1, 'NYC'], [1, 'Chicago'], [5, 'Paris']]
 
-    assert set(concat(compute(join(cities, t, 'id')[['name', 'city']],
+    assert set(concat(compute(j[['name', 'city']],
                               {t: c, cities: city_data}))) == \
             set((('Alice', 'NYC'), ('Alice', 'Chicago'), ('Edith', 'Paris')))
 
-    assert set(concat(compute(join(t, cities, 'id')[['name', 'city']],
+    assert set(concat(compute(j[['name', 'city']],
                               {t: c, cities: city_data}))) == \
             set((('Alice', 'NYC'), ('Alice', 'Chicago'), ('Edith', 'Paris')))
 
@@ -110,7 +112,23 @@ def test_into_DataFrame_chunks():
                     columns=['name', 'id'])) == \
                 str(DataFrame(data, columns=['name', 'id']))
 
+
 def test_chunk_list():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     assert get_chunk(data, 0, chunksize=2) == [1, 2]
     assert get_chunk(data, 2, chunksize=2) == [5, 6]
+
+
+def test_chunk_datetime():
+    data = [[1, 'Alice', 100, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [2, 'Bob', 200, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [3, 'Alice', -300, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [4, 'Charlie', 400, datetime.datetime(2014, 10, 1, 1, 1, 1)],
+            [5, 'Edith', 200, datetime.datetime(2014, 10, 1, 1, 1, 1)]]
+
+    t = TableSymbol('t', '{id: int, name: string, amount: int, when: datetime}')
+
+    c = ChunkIterable(data, chunksize=2)
+    assert list(concat(compute(t.when.day, c))) == [1] * 5
+    assert list(concat(compute(t.when.date, c))) == \
+            [datetime.date(2014, 10, 1)] * 5

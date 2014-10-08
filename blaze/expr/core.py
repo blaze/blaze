@@ -3,21 +3,223 @@ from __future__ import absolute_import, division, print_function
 import numbers
 import toolz
 import inspect
-import functools
-from toolz import unique, concat
-from pprint import pprint
-from blaze.compatibility import StringIO
 
+from toolz import unique, concat, compose, partial
+import toolz
+from pprint import pprint
+
+from ..compatibility import StringIO, _strtypes, builtins
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover', 'path']
+__all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
+
+
+class Node(object):
+    """ Node in a tree
+
+    This serves as the base class for ``Expr``.  This class holds all of the
+    tree traversal functions that are independent of tabular or array
+    computation.  This is everything that we can do independent of the problem
+    domain.  Note that datashape is not imported.
+
+    See Also
+    --------
+
+    blaze.expr.expressions.Expr
+    """
+    __inputs__ = '_child',
+
+    def __init__(self, *args, **kwargs):
+        assert frozenset(kwargs).issubset(self.__slots__)
+
+        for slot, arg in zip(self.__slots__, args):
+            setattr(self, slot, arg)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    @property
+    def _args(self):
+        return tuple(getattr(self, slot) for slot in self.__slots__)
+
+    @property
+    def _inputs(self):
+        return tuple(getattr(self, i) for i in self.__inputs__)
+
+    def __nonzero__(self): # pragma: no cover
+        return True
+
+    def __bool__(self):
+        return True
+
+    def _leaves(self):
+        """ Leaves of an expresion tree
+
+        All nodes without inputs.  Leaves are returned in order, left to right.
+
+        >>> from blaze import Symbol, join, by
+
+        >>> t = Symbol('t', 'var * {id: int32, name: string}')
+        >>> t._leaves()
+        [t]
+        >>> by(t.name, t.id.nunique())._leaves()
+        [t]
+
+        >>> v = Symbol('v', 'var * {id: int32, city: string}')
+        >>> join(t, v)._leaves()
+        [t, v]
+        """
+
+        if not self._inputs:
+            return [self]
+        else:
+            return list(unique(concat(i._leaves() for i in self._inputs if
+                                      isinstance(i, Node))))
+
+    def isidentical(self, other):
+        return type(self) == type(other) and self._args == other._args
+
+    def __hash__(self):
+        return hash((type(self), self._args))
+
+    def __str__(self):
+        rep = ["%s=%s" % (slot, _str(arg))
+               for slot, arg in zip(self.__slots__, self._args)]
+        return "%s(%s)" % (type(self).__name__, ', '.join(rep))
+
+    def __repr__(self):
+        return str(self)
+
+    def _traverse(self):
+        """ Traverse over tree, yielding all subtrees and leaves """
+        yield self
+        traversals = (arg._traverse() if isinstance(arg, Node) else [arg]
+                      for arg in self._args)
+        for trav in traversals:
+            for item in trav:
+                yield item
+
+    def _subs(self, d):
+        """ Substitute terms in the tree
+
+        >>> from blaze import Symbol
+        >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+        >>> expr = t['amount'] + 3
+        >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
+        True
+        """
+        return subs(self, d)
+
+    def resources(self):
+        return toolz.merge([arg.resources() for arg in self._args
+                            if isinstance(arg, Node)])
+
+    def _subterms(self):
+        return subterms(self)
+
+    def __contains__(self, other):
+        return other in set(self._subterms())
+
+    def __getstate__(self):
+        return self._args
+
+    def __setstate__(self, state):
+        self.__init__(*state)
+
+    def __eq__(self, other):
+        ident = self.isidentical(other)
+        if ident is True:
+            return ident
+        try:
+            return self._eq(other)
+        except:
+            pass
+        return False
+
+    def __ne__(self, other):
+        return self._ne(other)
+
+    def __lt__(self, other):
+        return self._lt(other)
+
+    def __le__(self, other):
+        return self._le(other)
+
+    def __gt__(self, other):
+        return self._gt(other)
+
+    def __ge__(self, other):
+        return self._ge(other)
+
+    def __add__(self, other):
+        return self._add(other)
+
+    def __radd__(self, other):
+        return self._radd(other)
+
+    def __mul__(self, other):
+        return self._mul(other)
+
+    def __rmul__(self, other):
+        return self._rmul(other)
+
+    def __div__(self, other):
+        return self._div(other)
+
+    def __rdiv__(self, other):
+        return self._rdiv(other)
+
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
+
+    def __floordiv__(self, other):
+        return self._floordiv(other)
+
+    def __rfloordiv__(self, other):
+        return self._rfloordiv(other)
+
+    def __sub__(self, other):
+        return self._sub(other)
+
+    def __rsub__(self, other):
+        return self._rsub(other)
+
+    def __pow__(self, other):
+        return self._pow(other)
+
+    def __rpow__(self, other):
+        return self._rpow(other)
+
+    def __mod__(self, other):
+        return self._mod(other)
+
+    def __rmod__(self, other):
+        return self._rmod(other)
+
+    def __or__(self, other):
+        return self._or(other)
+
+    def __ror__(self, other):
+        return self._ror(other)
+
+    def __and__(self, other):
+        return self._and(other)
+
+    def __rand__(self, other):
+        return self._rand(other)
+
+    def __neg__(self):
+        return self._neg()
+
+    def __invert__(self):
+        return self._invert()
 
 
 def get_callable_name(o):
     """Welcome to str inception. Leave your kittens at home.
     """
     # special case partial objects
-    if isinstance(o, functools.partial):
+    if isinstance(o, partial):
         return 'partial(%s, %s)' % (get_callable_name(o.func),
                                     ', '.join(map(str, o.args)))
 
@@ -50,121 +252,9 @@ def _str(s):
         return stream.getvalue().rstrip()
 
 
-class Expr(object):
-    __inputs__ = 'child',
-
-    def __init__(self, *args, **kwargs):
-        assert frozenset(kwargs).issubset(self.__slots__)
-
-        for slot, arg in zip(self.__slots__, args):
-            setattr(self, slot, arg)
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    @property
-    def args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__)
-
-    @property
-    def inputs(self):
-        return tuple(getattr(self, i) for i in self.__inputs__)
-
-    @property
-    def shape(self):
-        return datashape.to_numpy(self.dshape)[0]
-
-    @property
-    def dtype(self):
-        return datashape.to_numpy_dtype(self.schema)
-
-    @property
-    def schema(self):
-        return dshape(self.dshape[-1])
-
-    def leaves(self):
-        """ Leaves of an expresion tree
-
-        All nodes without inputs.  Leaves are returned in order, left to right.
-
-        >>> from blaze import TableSymbol, join, by
-
-        >>> t = TableSymbol('t', '{id: int32, name: string}')
-        >>> t.leaves()
-        [t]
-        >>> by(t.name, t.id.nunique()).leaves()
-        [t]
-
-        >>> v = TableSymbol('v', '{id: int32, city: string}')
-        >>> join(t, v).leaves()
-        [t, v]
-        """
-
-        if not self.inputs:
-            return [self]
-        else:
-            return list(unique(concat(i.leaves() for i in self.inputs if
-                                      isinstance(i, Expr))))
-
-    def isidentical(self, other):
-        return type(self) == type(other) and self.args == other.args
-
-    __eq__ = isidentical
-
-    def __hash__(self):
-        return hash((type(self), self.args))
-
-    def __str__(self):
-        rep = ["%s=%s" % (slot, _str(arg))
-               for slot, arg in zip(self.__slots__, self.args)]
-        return "%s(%s)" % (type(self).__name__, ', '.join(rep))
-
-    def __repr__(self):
-        return str(self)
-
-    def traverse(self):
-        """ Traverse over tree, yielding all subtrees and leaves """
-        yield self
-        traversals = (arg.traverse() if isinstance(arg, Expr) else [arg]
-                      for arg in self.args)
-        for trav in traversals:
-            for item in trav:
-                yield item
-
-    def subs(self, d):
-        """ Substitute terms in the tree
-
-        >>> from blaze.expr.table import TableSymbol
-        >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-        >>> expr = t['amount'] + 3
-        >>> expr.subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
-        True
-        """
-        return subs(self, d)
-
-    def resources(self):
-        return toolz.merge([arg.resources() for arg in self.args
-                            if isinstance(arg, Expr)])
-
-    def subterms(self):
-        return subterms(self)
-
-    def __contains__(self, other):
-        return other in set(self.subterms())
-
-    def __getstate__(self):
-        return self.args
-
-    def __setstate__(self, state):
-        self.__init__(*state)
-
-
-@dispatch(Expr)
+@dispatch(Node)
 def subterms(expr):
-    yield expr
-    for i in expr.inputs:
-        for node in subterms(i):
-            yield node
+    return concat([[expr], concat(map(subterms, expr._inputs))])
 
 
 @dispatch(numbers.Real)
@@ -195,16 +285,16 @@ def _subs(o, d):
     return type(o)([subs(arg, d) for arg in o])
 
 
-@dispatch(Expr, dict)
+@dispatch(Node, dict)
 def _subs(o, d):
     """
 
-    >>> from blaze.expr.table import TableSymbol
-    >>> t = TableSymbol('t', '{name: string, balance: int}')
-    >>> subs(t, {'balance': 'amount'}).columns
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, balance: int}')
+    >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
-    newargs = [subs(arg, d) for arg in o.args]
+    newargs = [subs(arg, d) for arg in o._args]
     return type(o)(*newargs)
 
 
@@ -218,26 +308,63 @@ def _subs(o, d):
     return o
 
 
-@dispatch(Expr)
-def discover(expr):
-    return expr.dshape
-
-
 def path(a, b):
     """ A path of nodes from a to b
 
-    >>> from blaze.expr.table import TableSymbol
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t['amount'].sum()
     >>> list(path(expr, t))
-    [sum(child=t['amount']), t['amount'], t]
+    [sum(_child=t['amount']), t['amount'], t]
     """
     while not a.isidentical(b):
         yield a
-        if not a.inputs:
+        if not a._inputs:
             break
-        for child in a.inputs:
-            if b in child.traverse():
+        for child in a._inputs:
+            if b in child._traverse():
                 a = child
                 break
     yield a
+
+
+def common_subexpression(*exprs):
+    """ Common sub expression between subexpressions
+
+    Examples
+    --------
+
+    >>> from blaze import Symbol, common_subexpression
+
+    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> common_subexpression(t['x'], t['y'])
+    t
+    """
+    sets = [set(t._subterms()) for t in exprs]
+    return builtins.max(set.intersection(*sets),
+                        key=compose(len, str))
+
+
+def eval_str(expr):
+    """ String suitable for evaluation
+
+    >>> from blaze import Symbol, eval_str
+    >>> x = Symbol('x', 'real')
+    >>> eval_str(2*x + 1)
+    '(2 * x) + 1'
+    """
+    return repr(expr) if isinstance(expr, _strtypes) else str(expr)
+
+
+def parenthesize(s):
+    """
+
+    >>> parenthesize('1')
+    '1'
+    >>> parenthesize('1 + 2')
+    '(1 + 2)'
+    """
+    if ' ' in s:
+        return '(%s)' % s
+    else:
+        return s

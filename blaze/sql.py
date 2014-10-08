@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+from datashape.predicates import isscalar
 from .compute.sql import select
 from .data.sql import SQL, dispatch
-from .expr import Expr, TableExpr, Projection, Column, UnaryOp, BinOp, Join
-from .expr.scalar.core import Scalar
+from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
+from .data.sql import SQL, dispatch
 from .compatibility import basestring
 from .api.resource import resource
 from toolz import first
@@ -14,7 +15,7 @@ import sqlalchemy as sa
 __all__ = ['compute_up', 'SQL']
 
 
-@dispatch((Column, Projection, Expr, UnaryOp), SQL)
+@dispatch((Field, Projection, Expr, UnaryOp), SQL)
 def compute_up(t, ddesc, **kwargs):
     return compute_up(t, ddesc.table, **kwargs)
 
@@ -53,9 +54,9 @@ def post_compute(expr, query, d):
     with engine.connect() as conn:  # Perform query
         result = conn.execute(select(query)).fetchall()
 
-    if isinstance(expr, Scalar):
+    if isscalar(expr.dshape):
         return result[0][0]
-    if isinstance(expr, TableExpr) and expr.iscolumn:
+    if isscalar(expr.dshape.measure):
         return [x[0] for x in result]
     return result
 
