@@ -353,14 +353,7 @@ def eval_str(expr):
     >>> eval_str(2*x + 1)
     '(2 * x) + 1'
     """
-    if hasattr(expr, 'eval_str'):
-        return expr.eval_str()
-    elif isinstance(expr, str):
-        return "'%s'" % expr
-    elif isinstance(expr, unicode):
-        return "u'%s'" % expr
-    else:
-        return str(expr)
+    return repr(expr) if isinstance(expr, _strtypes) else str(expr)
 
 
 def parenthesize(s):

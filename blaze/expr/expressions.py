@@ -1,13 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-import numbers
 import toolz
-import inspect
 import datashape
 import functools
-from toolz import  concat, memoize, partial, first
+from toolz import concat, memoize, partial
 
-from datashape import dshape, DataShape, Record, Var, Option, Unit
+from datashape import dshape, DataShape, Record, Var
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
@@ -107,6 +105,11 @@ class Expr(Node):
                     return functools.update_wrapper(partial(func, self), func)
             else:
                 raise
+
+    @property
+    def _name(self):
+        pass
+
 
 class Symbol(Expr):
     """
