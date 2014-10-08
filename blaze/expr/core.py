@@ -57,15 +57,15 @@ class Node(object):
 
         All nodes without inputs.  Leaves are returned in order, left to right.
 
-        >>> from blaze import TableSymbol, join, by
+        >>> from blaze import Symbol, join, by
 
-        >>> t = TableSymbol('t', '{id: int32, name: string}')
+        >>> t = Symbol('t', 'var * {id: int32, name: string}')
         >>> t._leaves()
         [t]
         >>> by(t.name, t.id.nunique())._leaves()
         [t]
 
-        >>> v = TableSymbol('v', '{id: int32, city: string}')
+        >>> v = Symbol('v', 'var * {id: int32, city: string}')
         >>> join(t, v)._leaves()
         [t, v]
         """
@@ -102,8 +102,8 @@ class Node(object):
     def _subs(self, d):
         """ Substitute terms in the tree
 
-        >>> from blaze import TableSymbol
-        >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+        >>> from blaze import Symbol
+        >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
         >>> expr = t['amount'] + 3
         >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
         True
@@ -289,8 +289,8 @@ def _subs(o, d):
 def _subs(o, d):
     """
 
-    >>> from blaze import TableSymbol
-    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, balance: int}')
     >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
@@ -311,8 +311,8 @@ def _subs(o, d):
 def path(a, b):
     """ A path of nodes from a to b
 
-    >>> from blaze import TableSymbol
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t['amount'].sum()
     >>> list(path(expr, t))
     [sum(_child=t['amount']), t['amount'], t]
@@ -334,9 +334,9 @@ def common_subexpression(*exprs):
     Examples
     --------
 
-    >>> from blaze import TableSymbol, common_subexpression
+    >>> from blaze import Symbol, common_subexpression
 
-    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> t = Symbol('t', 'var * {x: int, y: int}')
     >>> common_subexpression(t['x'], t['y'])
     t
     """

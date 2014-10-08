@@ -18,7 +18,7 @@ __all__ = ['path_split', 'split']
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
 
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     >>> path_split(t, t.amount.sum() + 1)
     sum(_child=t['amount'])
@@ -51,18 +51,21 @@ def split(leaf, expr, chunk=None, agg=None):
     Returns
     -------
 
-    Pair of (TableSymbol, Expr) pairs
+    Pair of (Symbol, Expr) pairs
 
         (chunk, chunk_expr), (aggregate, aggregate_expr)
 
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
     ((chunk, count(_child=chunk['id'])), (aggregate, sum(_child=aggregate)))
     """
     center = path_split(leaf, expr)
-    chunk = chunk or TableSymbol('chunk', leaf.dshape)
-    agg = agg or TableSymbol('aggregate', center.dshape)
+    chunk = chunk or Symbol('chunk', leaf.dshape)
+    if iscollection(center.dshape):
+        agg = agg or Symbol('aggregate', center.dshape)
+    else:
+        agg = agg or Symbol('aggregate', datashape.var * center.dshape)
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
             _split(center, leaf=leaf, chunk=chunk, agg=agg)

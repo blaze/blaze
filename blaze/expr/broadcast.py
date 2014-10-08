@@ -19,9 +19,8 @@ def _expr_child(col):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts = Symbol('accounts',
+    ...                   'var * {name: string, amount: int, id: int}')
     >>> _expr_child(accounts['name'])
     (name, accounts)
 
@@ -47,9 +46,8 @@ def broadcast(op, *column_inputs):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts = Symbol('accounts',
+    ...                   'var * {name: string, amount: int, id: int}')
 
     >>> broadcast(Add, accounts['amount'], 100)
     accounts['amount'] + 100
@@ -95,9 +93,9 @@ class Broadcast(ElemWise):
     Examples
     --------
 
-    >>> from blaze import TableSymbol, Add
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
+    >>> from blaze import Symbol, Add
+    >>> accounts = Symbol('accounts',
+    ...                   'var * {name: string, amount: int, id: int}')
 
     >>> expr = Add(accounts['amount'].expr, 100)
     >>> Broadcast(accounts, expr)

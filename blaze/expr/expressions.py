@@ -190,9 +190,8 @@ class Projection(ElemWise):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts = Symbol('accounts',
+    ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{ name : string, amount : int32 }")
 
@@ -244,9 +243,8 @@ class Selection(Expr):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts',
-    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts = Symbol('accounts',
+    ...                   'var * {name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
     """
     __slots__ = '_child', 'predicate'
@@ -289,8 +287,7 @@ class Label(ElemWise):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 
     >>> (accounts['amount'] * 100)._name
     'amount'
@@ -331,8 +328,7 @@ class ReLabel(ElemWise):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
     dshape("{ name : string, amount : int32 }")
     >>> accounts.relabel({'amount': 'balance'}).schema
@@ -374,9 +370,8 @@ class Map(ElemWise):
     --------
 
     >>> from datetime import datetime
-    >>> from blaze import TableSymbol
 
-    >>> t = TableSymbol('t', '{price: real, time: int64}')  # times as integers
+    >>> t = Symbol('t', 'var * {price: real, time: int64}')  # times as integers
     >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
@@ -429,8 +424,7 @@ class Apply(Expr):
     Examples
     --------
 
-    >>> from blaze import TableSymbol
-    >>> t = TableSymbol('t', '{name: string, amount: int}')
+    >>> t = Symbol('t', 'var * {name: string, amount: int}')
     >>> h = Apply(hash, t)  # Hash value of resultant table
 
     Optionally provide extra datashape information
