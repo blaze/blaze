@@ -580,7 +580,6 @@ def test_relabel_join():
 
 def test_map():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    r = TableSymbol('s', 'int64')
     inc = lambda x: x + 1
     assert isscalar(t['amount'].map(inc, schema='int').dshape.measure)
     s = t['amount'].map(inc, schema='{amount: int}')
@@ -590,8 +589,7 @@ def test_map():
 
     expr = (t[['name', 'amount']]
             .map(identity, schema='{name: string, amount: int}'))
-    with pytest.raises((AttributeError, ValueError)):
-        expr._name
+    assert expr._name is None
 
 
 @pytest.mark.xfail(reason="Not sure that we should even support this")
