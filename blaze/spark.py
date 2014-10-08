@@ -22,7 +22,7 @@ def into(a, rdd, **kwargs):
     return f(a, rdd, **kwargs)
 
 @dispatch(object, RDD)
-def into(o, rdd):
+def into(o, rdd, **kwargs):
     return into(o, rdd.collect())
 
 
