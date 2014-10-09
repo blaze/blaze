@@ -253,7 +253,7 @@ class Slice(Expr):
 
     @property
     def dshape(self):
-        return self.child.dshape.subshape[self.index]
+        return self._child.dshape.subshape[self.index]
 
     @property
     def index(self):
@@ -261,9 +261,9 @@ class Slice(Expr):
 
     def __str__(self):
         if isinstance(self.index, tuple):
-            return '%s[%s]' % (self.child, ', '.join(map(str, self._index)))
+            return '%s[%s]' % (self._child, ', '.join(map(str, self._index)))
         else:
-            return '%s[%s]' % (self.child, self._index)
+            return '%s[%s]' % (self._child, self._index)
 
     __repr__ = __str__
 
