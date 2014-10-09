@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 import datashape
-from datashape import dshape
+from datashape import dshape, Record
 
 from blaze.expr.table import TableSymbol
 from blaze.compute.python import compute
@@ -52,8 +52,8 @@ def test_a_mode():
         csv.extend([(6, 'Frank', 600),
                     (7, 'Georgina', 700)])
 
-        expected = set(csv[:, 'name'])
-        assert 'Georgina' in expected
+        result = set(csv[:, 'name'])
+        assert 'Georgina' in result
 
 
 def test_sep_kwarg():
@@ -197,6 +197,17 @@ def test_extend_structured_newline():
         csv.extend([(3, 3)])
         assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
 
+def test_tuple_types():
+    """
+    CSVs with uniform types still create record types with names
+    """
+    with filetext('1,1\n2,2\n') as fn:
+        csv = CSV(fn, 'r+', delimiter=',')
+        assert csv[0] == (1, 1)
+        assert isinstance(csv.schema[0], Record)
+        assert len(csv.schema[0].types) == 2
+        assert len(set(csv.schema[0].types)) == 1
+
 
 def test_extend_structured_no_newline():
     with filetext('1,1.0\n2,2.0') as fn:
@@ -205,8 +216,7 @@ def test_extend_structured_no_newline():
         assert tuplify(tuple(csv)) == ((1, 1.0), (2, 2.0), (3, 3.0))
 
 
-@xfail(PY3, raises=ValueError, reason="No float nan conversion to integer "
-        "allowed in Python 3")
+@xfail(reason="\n perceived as missing value.  Not allowed in int types")
 def test_extend_structured_many_newlines():
     with filetext('1,1.0\n2,2.0\n\n\n\n') as fn:
         csv = CSV(fn, 'r+', schema='{x: int32, y: float32}', delimiter=',')
@@ -283,7 +293,7 @@ def test_re_dialect():
 
     text = '1,1\n2,2\n'
 
-    schema = '2 * int32'
+    schema = '{a: int32, b: int32}'
 
     with filetext(text) as source_fn:
         with filetext('') as dest_fn:
@@ -300,13 +310,13 @@ def test_re_dialect():
 
 def test_iter():
     with filetext('1,1\n2,2\n') as fn:
-        dd = CSV(fn, schema='2 * int32')
+        dd = CSV(fn, schema='{a: int32, b: int32}')
         assert tuplify(list(dd)) == ((1, 1), (2, 2))
 
 
 def test_chunks():
     with filetext('1,1\n2,2\n3,3\n4,4\n') as fn:
-        dd = CSV(fn, schema='2 * int32')
+        dd = CSV(fn, schema='{a: int32, b: int32}')
         assert all(isinstance(chunk, nd.array) for chunk in dd.chunks())
         assert len(list(dd.chunks(blen=2))) == 2
         assert len(list(dd.chunks(blen=3))) == 2
@@ -386,7 +396,13 @@ def test_getitem_start_step_kv(kv_dd, kv_data):
 
 
 def test_repr_hdma():
-    assert repr(Table(CSV(example('hmda-small.csv'))))
+    csv = CSV(example('hmda-small.csv'))
+    t = TableSymbol('hmda', csv.schema)
+
+    assert compute(t.head(), csv)
+
+    columns = ['action_taken_name', 'agency_abbr', 'applicant_ethnicity_name']
+    assert compute(t[columns].head(), csv)
 
 
 @pytest.yield_fixture
@@ -411,11 +427,10 @@ def test_subset_with_date(date_data):
 
 def test_subset_no_date(date_data):
     csv = date_data
-    sub = csv[:, ['amount', 'name']]
     expected = [(100.0, 'Alice'),
                 (-200.0, 'Alice'),
                 (300.0, 'Bob')]
-    result = into(list, sub)
+    result = into(list, csv[:, ['amount', 'name']])
     assert result == expected
 
 

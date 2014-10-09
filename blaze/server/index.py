@@ -1,4 +1,8 @@
-from blaze.compatibility import _strtypes, _inttypes
+from __future__ import absolute_import, division, print_function
+
+from ..compatibility import _strtypes, _inttypes
+
+__all__ = 'parse_index', 'emit_index'
 
 def parse_index(ind, inside=False):
     """ Parse structured index into Pythonic form

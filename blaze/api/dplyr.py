@@ -1,7 +1,12 @@
 from ..expr import *
+from ..dispatch import dispatch
 from operator import and_
 from toolz import first, reduce
 import inspect
+
+__all__ = ['inject', 'Filter', 'desc', 'select', 'arrange', 'transform',
+        'group_by', 'summarize', 'n', 'mutate', 'n_distinct']
+
 
 def inject(t, ns=None):
     """ Inject columns into local namespace
@@ -17,7 +22,7 @@ def inject(t, ns=None):
     """
     if not ns:
         ns = inspect.currentframe().f_back.f_locals
-    for c in t.columns:
+    for c in t.fields:
         ns[c] = t[c]
 
 
@@ -40,18 +45,18 @@ def select(t, *columns):
     >>> select(t, t.x, t.z)
     t[['x', 'z']]
     """
-    return t[[c.name for c in columns]]
+    return t[[c._name for c in columns]]
 
 
 def transform(t, replace=True, **kwargs):
     """ Add named columns to table
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
-    >>> transform(t, xy=t.x + t.y).columns
+    >>> transform(t, xy=t.x + t.y).fields
     ['x', 'y', 'xy']
     """
-    if replace and set(t.columns).intersection(set(kwargs)):
-        t = t[[c for c in t.columns if c not in kwargs]]
+    if replace and set(t.fields).intersection(set(kwargs)):
+        t = t[[c for c in t.fields if c not in kwargs]]
 
     args = [t] + [v.label(k) for k, v in kwargs.items()]
     return merge(*args)
@@ -67,13 +72,13 @@ class GroupBy(Expr):
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
     >>> g = group_by(t, t.x)
-    >>> summarize(g, total=t.y.sum()).columns
+    >>> summarize(g, total=t.y.sum()).fields
     ['x', 'total']
     """
-    __slots__ = ['child', 'grouper']
+    __slots__ = ['_child', 'grouper']
 
     def __init__(self, child, *grouper):
-        self.child = child
+        self._child = child
         if len(grouper) == 1:
             grouper = grouper[0]
         else:
@@ -83,7 +88,7 @@ class GroupBy(Expr):
 group_by = GroupBy
 
 
-@dispatch(TableExpr)
+@dispatch(Expr)
 def summarize(t, **kwargs):
     return summary(**kwargs)
 

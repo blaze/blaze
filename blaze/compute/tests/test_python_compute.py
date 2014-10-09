@@ -1,23 +1,25 @@
 from __future__ import absolute_import, division, print_function
+
 import math
 import itertools
 import operator
-import sys
+import pytest
+from datetime import datetime, date
 
 import blaze
-from blaze.compute.python import nunique, mean, rrowfunc, rowfunc, Sequence, reduce_by_funcs
-from blaze import dshape
+from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
+                                  reduce_by_funcs)
+from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, summary, ScalarSymbol,
-                        count, scalar, std, head)
+                        Apply, sum, min, max, any, summary, Symbol,
+                        count, std, head, Symbol)
 import numpy as np
 
 from blaze import cos, sin
 from blaze.compatibility import builtins
 from blaze.utils import raises
 
-from toolz import identity
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -259,6 +261,7 @@ def test_multi_column_join():
                                                      (1, 3, 5, 150)]
 
 
+@pytest.mark.xfail(reason="This doesn't necessarily make sense")
 def test_column_of_column():
     assert list(compute(t['name']['name'], data)) == \
             list(compute(t['name'], data))
@@ -273,7 +276,7 @@ def test_Distinct():
 
 def test_Distinct_count():
     t2 = t['name'].distinct()
-    gby = by(t2['name'], t2['name'].count())
+    gby = by(t2, t2.count())
     result = set(compute(gby, data))
     assert result == set([('Alice', 1), ('Bob', 1)])
 
@@ -371,11 +374,11 @@ def test_relabel_join():
 
 def test_map_column():
     inc = lambda x: x + 1
-    assert list(compute(t['amount'].map(inc), data)) == [x[1] + 1 for x in data]
+    assert list(compute(t['amount'].map(inc, 'int'), data)) == [x[1] + 1 for x in data]
 
 
 def test_map():
-    assert (list(compute(t.map(lambda _, amt, id: amt + id), data)) ==
+    assert (list(compute(t.map(lambda _, amt, id: amt + id, 'int'), data)) ==
             [x[1] + x[2] for x in data])
 
 
@@ -396,7 +399,8 @@ def test_map_datetime():
     data = [['A', 0], ['B', 1]]
     t = TableSymbol('t', '{foo: string, datetime: int64}')
 
-    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp), data))
+    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp,
+    'datetime'), data))
     expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
 
     assert result == expected
@@ -422,7 +426,7 @@ def test_merge():
 def test_map_columnwise():
     colwise = t['amount'] * t['id']
 
-    expr = colwise.map(lambda x: x / 10, schema="{mod: int64}", iscolumn=True)
+    expr = colwise.map(lambda x: x / 10, 'int64', name='mod')
 
     assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data]
 
@@ -431,7 +435,7 @@ def test_map_columnwise_of_selection():
     tsel = t[t['name'] == 'Alice']
     colwise = tsel['amount'] * tsel['id']
 
-    expr = colwise.map(lambda x: x / 10, schema="{mod: int64}", iscolumn=True)
+    expr = colwise.map(lambda x: x / 10, 'int64', name='mod')
 
     assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data[::2]]
 
@@ -566,8 +570,8 @@ def test_reduction_arithmetic():
 
 
 def test_scalar_arithmetic():
-    x = ScalarSymbol('x', 'real')
-    y = ScalarSymbol('y', 'real')
+    x = Symbol('x', 'real')
+    y = Symbol('y', 'real')
     assert compute(x + y, {x: 2, y: 3}) == 5
     assert compute_up(x + y, 2, 3) == 5
     assert compute_up(x * y, 2, 3) == 6
@@ -582,7 +586,8 @@ def test_scalar_arithmetic():
 
     assert compute_up(-x, 1) == -1
 
-    assert compute_up(scalar.numbers.sin(x), 1) == math.sin(1)
+    assert compute_up(blaze.sin(x), 1) == math.sin(1)
+
 
 def test_like():
     t = TableSymbol('t', '{name: string, city: string}')
@@ -594,3 +599,60 @@ def test_like():
     assert list(compute(t.like(name='lice*'), data)) == []
     assert list(compute(t.like(name='*Smith*'), data)) == [data[0], data[1]]
     assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
+
+
+def test_datetime_access():
+    data = [['Alice', 100, 1, datetime(2000, 1, 1, 1, 1, 1)],
+            ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
+            ['Alice', 50, 3, datetime(2000, 1, 1, 1, 1, 1)]]
+
+    t = TableSymbol('t',
+            '{amount: float64, id: int64, name: string, when: datetime}')
+
+    assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
+    assert list(compute(t.when.second, data)) == [1, 1, 1]
+    assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
+
+
+payments = [{'name': 'Alice', 'payments': [
+                {'amount':  100, 'when': datetime(2000, 1, 1, 1, 1 ,1)},
+                {'amount':  200, 'when': datetime(2000, 2, 2, 2, 2, 2)}
+                ]},
+            {'name': 'Bob', 'payments': [
+                {'amount':  300, 'when': datetime(2000, 3, 3, 3, 3 ,3)},
+                {'amount': -400, 'when': datetime(2000, 4, 4, 4, 4, 4)},
+                {'amount':  500, 'when': datetime(2000, 5, 5, 5, 5, 5)}
+                ]},
+            ]
+
+payments_ordered = [('Alice', [( 100, datetime(2000, 1, 1, 1, 1 ,1)),
+                               ( 200, datetime(2000, 2, 2, 2, 2, 2))]),
+                    ('Bob',   [( 300, datetime(2000, 3, 3, 3, 3 ,3)),
+                               (-400, datetime(2000, 4, 4, 4, 4, 4)),
+                               ( 500, datetime(2000, 5, 5, 5, 5, 5))])]
+
+payment_dshape = 'var * {name: string, payments: var * {amount: int32, when: datetime}}'
+
+
+def test_nested():
+    t = Symbol('t', payment_dshape)
+    assert list(compute(t.name, payments_ordered)) == ['Alice', 'Bob']
+
+    assert list(compute(t.payments, payments_ordered)) == \
+                [p[1] for p in payments_ordered]
+    assert list(compute(t.payments.amount, payments_ordered)) == \
+            [(100, 200), (300, -400, 500)]
+    assert list(compute(t.payments.amount + 1, payments_ordered)) ==\
+            [(101, 201), (301, -399, 501)]
+
+
+def test_scalar():
+    s = Symbol('s', '{name: string, id: int32, payments: var * {amount: int32, when: datetime}}')
+    data = ('Alice', 1, ((100, datetime(2000, 1, 1, 1, 1 ,1)),
+                         (200, datetime(2000, 2, 2, 2, 2, 2)),
+                         (300, datetime(2000, 3, 3, 3, 3, 3))))
+
+    assert compute(s.name, data) == 'Alice'
+    assert compute(s.id + 1, data) == 2
+    assert tuple(compute(s.payments.amount, data)) == (100, 200, 300)
+    assert tuple(compute(s.payments.amount + 1, data)) == (101, 201, 301)

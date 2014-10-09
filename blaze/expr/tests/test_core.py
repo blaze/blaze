@@ -1,21 +1,22 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.core import *
+from datashape import dshape
+from blaze.expr import *
 
 
 def test_subs():
-    from blaze.expr.table import TableSymbol
+    from blaze import TableSymbol
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     expr = t['amount'] + 3
-    assert expr.subs({3: 4, 'amount': 'id'}).isidentical(
+    assert expr._subs({3: 4, 'amount': 'id'}).isidentical(
             t['id'] + 4)
 
     t2 = TableSymbol('t', '{name: string, amount: int}')
-    assert t['amount'].subs({t: t2}).isidentical(t2['amount'])
+    assert t['amount']._subs({t: t2}).isidentical(t2['amount'])
 
 
 def test_contains():
-    from blaze.expr.table import TableSymbol, By
+    from blaze import TableSymbol, By
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     assert t in t['name']
@@ -25,7 +26,7 @@ def test_contains():
     assert t['id'] in t['id'].sum()
 
 def test_path():
-    from blaze.expr.table import TableSymbol, join
+    from blaze import TableSymbol, join
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     v = TableSymbol('v', '{city: string, id: int}')
     expr = t['amount'].sum()
