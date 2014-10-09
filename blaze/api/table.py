@@ -79,13 +79,12 @@ class Table(Symbol):
                 types = dshape[1].types
             if isinstance(dshape[1], Fixed):
                 types = (dshape[2],) * int(dshape[1])
+            if not types:
+                types = datashape.dshape(dshape[-1])
             if not columns:
                 raise TypeError("Could not infer column names from data. "
                                 "Please specify column names with `columns=` "
                                 "keyword")
-            if not types:
-                raise TypeError("Could not infer data types from data. "
-                                "Please specify schema with `schema=` keyword")
 
             dshape = dshape[0] * datashape.dshape(Record(list(zip(columns, types))))
 
@@ -139,10 +138,8 @@ def concrete_head(expr, n=10):
         if not len(result):
             return DataFrame(columns=expr.fields)
 
-        if expr.fields:
+        if iscollection(expr.dshape):
             return into(DataFrame(columns=expr.fields), result)
-        elif isscalar(expr.dshape.measure):
-            return into(DataFrame(columns=[expr._name]), result)
     else:
         return compute(expr)
 
@@ -160,7 +157,7 @@ def expr_repr(expr, n=10):
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
-        return repr(result)
+        return repr(result) # pragma: no cover
 
 
 def expr_html(expr, n=10):
@@ -180,23 +177,19 @@ def into(a, b, **kwargs):
 
 
 @dispatch(DataFrame, Expr)
-def into(a, b):
+def into(a, b, **kwargs):
     return into(DataFrame(columns=b.fields), compute(b))
 
 
 @dispatch(nd.array, Expr)
-def into(a, b):
+def into(a, b, **kwargs):
     return into(nd.array(), compute(b), dtype=str(b.schema))
 
 
 @dispatch(np.ndarray, Expr)
-def into(a, b):
+def into(a, b, **kwargs):
     schema = dshape(str(b.schema).replace('?', ''))
-    if iscollection(b.dshape) and isscalar(b.dshape.measure):
-        return into(np.ndarray(0), compute(b),
-                dtype=to_numpy_dtype(schema[0].types[0]))
-    else:
-        return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(schema))
+    return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(schema))
 
 
 def table_length(expr):
