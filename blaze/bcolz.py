@@ -7,6 +7,7 @@ from pandas import DataFrame
 from collections import Iterator
 from toolz import partition_all, keyfilter
 
+from .api.resource import resource
 from .dispatch import dispatch
 from .compute.bcolz import *
 from .utils import keywords
@@ -103,3 +104,8 @@ from blaze.data.core import DataDescriptor
 def into(a, b, **kwargs):
     a.extend_chunks(chunks(b))
     return a
+
+
+@resource.register('.+\.bcolz/?')
+def resource_bcolz(rootdir, **kwargs):
+    return bcolz.ctable(rootdir=rootdir, **kwargs)
