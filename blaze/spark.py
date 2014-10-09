@@ -5,7 +5,7 @@ from .compatibility import _strtypes
 from .compute.spark import *
 from .data.utils import coerce
 from .dispatch import dispatch
-from .expr import Expr, TableExpr
+from .expr import Expr
 from datashape import discover, var
 from collections import Iterator, Iterable
 
@@ -22,7 +22,7 @@ def into(a, rdd, **kwargs):
     return f(a, rdd, **kwargs)
 
 @dispatch(object, RDD)
-def into(o, rdd):
+def into(o, rdd, **kwargs):
     return into(o, rdd.collect())
 
 
@@ -36,7 +36,7 @@ def into(a, b, **kwargs):
     return a(b)
 
 
-@dispatch(SparkContext, (Expr, TableExpr, RDD, object))
+@dispatch(SparkContext, (Expr, RDD, object) + _strtypes)
 def into(sc, o, **kwargs):
     return sc.parallelize(into(list, o, **kwargs))
 

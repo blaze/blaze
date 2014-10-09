@@ -3,13 +3,13 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
     to_numpy_dtype, isdimension, var)
+from datashape.predicates import iscollection, isscalar
 from pandas import DataFrame, Series
 import itertools
 import numpy as np
 from dynd import nd
 
-from ..expr.core import Expr
-from ..expr.table import TableSymbol, TableExpr
+from ..expr import TableSymbol, Expr, Symbol
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -19,7 +19,7 @@ __all__ = ['Table', 'compute', 'into']
 
 names = ('_%d' % i for i in itertools.count(1))
 
-class Table(TableSymbol):
+class Table(Symbol):
     """ Table of data
 
     The ``Table`` object presents a familiar view onto a variety of forms of
@@ -53,12 +53,12 @@ class Table(TableSymbol):
     0    Bob
     1  Edith
     """
-    __slots__ = 'data', 'dshape', '_name', 'iscolumn'
+    __slots__ = 'data', 'dshape', '_name'
 
     def __init__(self, data, dshape=None, name=None, columns=None,
-            iscolumn=False, schema=None):
+            schema=None):
         if isinstance(data, str):
-            data = resource(data, schema=schema, dshape=dshape)
+            data = resource(data, schema=schema, dshape=dshape, columns=columns)
         if schema and dshape:
             raise ValueError("Please specify one of schema= or dshape= keyword"
                     " arguments")
@@ -101,14 +101,13 @@ class Table(TableSymbol):
                              type(self).__name__, self.schema))
 
         self._name = name or next(names)
-        self.iscolumn = iscolumn
 
     def resources(self):
         return {self: self.data}
 
     @property
-    def args(self):
-        return (id(self.data), self.dshape, self._name, self.iscolumn)
+    def _args(self):
+        return (id(self.data), self.dshape, self._name)
 
     def __setstate__(self, state):
         for slot, arg in zip(self.__slots__, state):
@@ -133,22 +132,22 @@ def concrete_head(expr, n=10):
     """ Return head of computed expression """
     if not expr.resources():
         raise ValueError("Expression does not contain data resources")
-    if isinstance(expr, TableExpr):
+    if iscollection(expr.dshape):
         head = expr.head(n + 1)
         result = compute(head)
 
         if not len(result):
-            return DataFrame(columns=expr.columns)
+            return DataFrame(columns=expr.fields)
 
-        if expr.columns:
-            return into(DataFrame(columns=expr.columns), result)
-        else:
-            return into(DataFrame, result)
+        if expr.fields:
+            return into(DataFrame(columns=expr.fields), result)
+        elif isscalar(expr.dshape.measure):
+            return into(DataFrame(columns=[expr._name]), result)
     else:
-        return repr(compute(expr))
+        return compute(expr)
 
 
-def table_repr(expr, n=10):
+def expr_repr(expr, n=10):
     if not expr.resources():
         return str(expr)
 
@@ -164,43 +163,36 @@ def table_repr(expr, n=10):
         return repr(result)
 
 
-def expr_repr(expr):
-    if not expr.resources():
-        return str(expr)
-    else:
-        return str(compute(expr))
-
-
-def table_html(expr, n=10):
+def expr_html(expr, n=10):
     return concrete_head(expr).to_html()
 
 
-@dispatch(type, TableExpr)
+@dispatch(type, Expr)
 def into(a, b, **kwargs):
     f = into.dispatch(a, type(b))
     return f(a, b, **kwargs)
 
 
-@dispatch(object, TableExpr)
+@dispatch(object, Expr)
 def into(a, b, **kwargs):
     return into(a, compute(b), dshape=kwargs.pop('dshape', b.dshape),
                 schema=b.schema, **kwargs)
 
 
-@dispatch(DataFrame, TableExpr)
+@dispatch(DataFrame, Expr)
 def into(a, b):
-    return into(DataFrame(columns=b.columns), compute(b))
+    return into(DataFrame(columns=b.fields), compute(b))
 
 
-@dispatch(nd.array, TableExpr)
+@dispatch(nd.array, Expr)
 def into(a, b):
     return into(nd.array(), compute(b), dtype=str(b.schema))
 
 
-@dispatch(np.ndarray, TableExpr)
+@dispatch(np.ndarray, Expr)
 def into(a, b):
     schema = dshape(str(b.schema).replace('?', ''))
-    if b.iscolumn:
+    if iscollection(b.dshape) and isscalar(b.dshape.measure):
         return into(np.ndarray(0), compute(b),
                 dtype=to_numpy_dtype(schema[0].types[0]))
     else:
@@ -215,7 +207,6 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-TableExpr.__repr__ = table_repr
-TableExpr.to_html = table_html
-TableExpr._repr_html_ = table_html
-TableExpr.__len__ = table_length
+Expr.to_html = expr_html
+Expr._repr_html_ = expr_html
+Expr.__len__ = table_length

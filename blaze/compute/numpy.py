@@ -1,41 +1,57 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from pandas import DataFrame, Series
 
-from blaze.expr import Reduction, Column, Projection, ColumnWise, Selection
-from blaze.expr import Distinct, Sort, Head, Label, ReLabel, Union, TableExpr
-from blaze.expr import std, var, count, nunique
-from blaze.expr.scalar import BinOp, UnaryOp, USub, Not
+from ..expr import Reduction, Field, Projection, Broadcast, Selection
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
+from ..expr import std, var, count, nunique
+from ..expr import BinOp, UnaryOp, USub, Not
 
 from .core import base, compute
 from ..dispatch import dispatch
-from blaze.api.into import into
-from pandas import DataFrame, Series
+from ..api.into import into
 
 __all__ = ['np']
 
 
-@dispatch(Column, np.ndarray)
+@dispatch(Field, np.ndarray)
 def compute_up(c, x, **kwargs):
+<<<<<<< HEAD
     if x.dtype.names and c.column in x.dtype.names:
         return x[c.column]
     if not x.dtype.names and x.shape[1] == len(c.child.columns):
         return x[:, c.child.columns.index(c.column)]
     raise NotImplementedError() # pragma: no cover
+=======
+    if x.dtype.names and c._name in x.dtype.names:
+        return x[c._name]
+    if not x.dtype.names and x.shape[1] == len(c._child.fields):
+        return x[:, c._child.fields.index(c._name)]
+    raise NotImplementedError()
+>>>>>>> upstream/master
 
 
 @dispatch(Projection, np.ndarray)
 def compute_up(t, x, **kwargs):
+<<<<<<< HEAD
     if x.dtype.names and all(col in x.dtype.names for col in t.columns):
         return x[t.columns]
     if not x.dtype.names and x.shape[1] == len(t.child.columns):
         return x[:, [t.child.columns.index(col) for col in t.columns]]
     raise NotImplementedError() # pragma: no cover
+=======
+    if all(col in x.dtype.names for col in t.fields):
+        return x[t.fields]
+    if not x.dtype.names and x.shape[1] == len(t._child.fields):
+        return x[:, [t._child.fields.index(col) for col in t.fields]]
+    raise NotImplementedError()
+>>>>>>> upstream/master
 
 
-@dispatch(ColumnWise, np.ndarray)
+@dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t.child[c].expr, x[c]) for c in t.child.columns)
+    d = dict((t._child[c].expr, x[c]) for c in t._child.fields)
     return compute(t.expr, d)
 
 
@@ -65,6 +81,15 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
+<<<<<<< HEAD
+=======
+@dispatch(Selection, np.ndarray)
+def compute_up(t, x, **kwargs):
+    predicate = compute(t.predicate, {t._child: x})
+    return x[predicate]
+
+
+>>>>>>> upstream/master
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
     return len(x)
@@ -119,12 +144,12 @@ def compute_up(t, x, **kwargs):
 @dispatch(ReLabel, np.ndarray)
 def compute_up(t, x, **kwargs):
     types = [x.dtype[i] for i in range(len(x.dtype))]
-    return np.array(x, dtype=list(zip(t.columns, types)))
+    return np.array(x, dtype=list(zip(t.fields, types)))
 
 
 @dispatch(Selection, np.ndarray)
 def compute_up(sel, x, **kwargs):
-    return x[compute(sel.predicate, {sel.child: x})]
+    return x[compute(sel.predicate, {sel._child: x})]
 
 
 @dispatch(Union, np.ndarray, tuple)
@@ -133,12 +158,12 @@ def compute_up(expr, example, children, **kwargs):
 
 
 
-@dispatch(TableExpr, np.ndarray)
+@dispatch(Expr, np.ndarray)
 def compute_up(t, x, **kwargs):
     if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
-        df = DataFrame(columns=t.child.columns)
+        df = DataFrame(columns=t._child.fields)
     else:
-        df = Series(name=t.child.columns[0])
+        df = Series(name=t._child.fields[0])
     return compute_up(t, into(df, x), **kwargs)
 
 

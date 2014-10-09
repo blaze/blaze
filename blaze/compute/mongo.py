@@ -44,7 +44,6 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 
 from __future__ import absolute_import, division, print_function
 
-import operator as op
 import numbers
 
 try:
@@ -53,16 +52,18 @@ except ImportError:
     Collection = type(None)
 
 import fnmatch
-from datashape import Record
-from toolz import pluck, first
+from datashape import Record, Tuple
+from datashape.predicates import isscalar
+from toolz import pluck, first, get
 import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
-                    Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
-                    TableSymbol, Projection, sum, min, max, TableExpr,
-                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or, Summary,
-                    Like, Arithmetic, ColumnWise)
-from ..expr.core import Expr
+                    Reduction, Head, ReLabel, Apply, Distinct, ElemWise, By,
+                    TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
+                    Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
+                    Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol
+                    )
+from .. import expr
 from ..compatibility import _strtypes
 
 from ..dispatch import dispatch
@@ -108,12 +109,13 @@ class MongoQuery(object):
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Apply, Distinct, RowWise, By, Like), Collection)
+           Head, ReLabel, Apply, Distinct, ElemWise, By, Like, DateTime, Field),
+          Collection)
 def compute_up(e, coll, **kwargs):
     return compute_up(e, MongoQuery(coll, []))
 
 
-@dispatch(TableSymbol, Collection)
+@dispatch(Symbol, Collection)
 def compute_up(t, coll, **kwargs):
     return MongoQuery(coll, [])
 
@@ -123,7 +125,7 @@ def compute_up(t, q, **kwargs):
     return q.append({'$limit': t.n})
 
 
-@dispatch(ColumnWise, MongoQuery)
+@dispatch(Broadcast, MongoQuery)
 def compute_up(t, q, **kwargs):
     return q.append({'$project': {str(t.expr): compute_sub(t.expr)}})
 
@@ -136,7 +138,8 @@ binops = {'+': 'add',
 
 
 def compute_sub(t):
-    """Build an expression tree in a MongoDB compatible way.
+    """
+    Build an expression tree in a MongoDB compatible way.
 
     Parameters
     ----------
@@ -150,15 +153,15 @@ def compute_sub(t):
 
     Examples
     --------
-    >>> from blaze import ScalarSymbol
-    >>> s = ScalarSymbol('s', 'float64')
+    >>> from blaze import Symbol
+    >>> s = Symbol('s', 'float64')
     >>> expr = s * 2 + s - 1
     >>> expr
     ((s * 2) + s) - 1
     >>> compute_sub(expr)
     {'$subtract': [{'$add': [{'$multiply': ['$s', 2]}, '$s']}, 1]}
     """
-    if isinstance(t, (_strtypes, ScalarSymbol)):
+    if isinstance(t, _strtypes + (Symbol,)):
         return '$%s' % t
     elif isinstance(t, numbers.Number):
         return t
@@ -170,9 +173,9 @@ def compute_sub(t):
     return {compute_sub(op): [compute_sub(t.lhs), compute_sub(t.rhs)]}
 
 
-@dispatch(Projection, MongoQuery)
+@dispatch((Projection, Field), MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append({'$project': dict((col, 1) for col in t.columns)})
+    return q.append({'$project': dict((col, 1) for col in t.fields)})
 
 
 @dispatch(Selection, MongoQuery)
@@ -189,19 +192,19 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(By, MongoQuery)
 def compute_up(t, q, **kwargs):
-    if not isinstance(t.grouper, Projection):
+    if not isinstance(t.grouper, (Field, Projection)):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
-    names = t.apply.dshape[0].names
+    names = t.apply.fields
     return MongoQuery(q.coll, q.query +
     ({
         '$group': toolz.merge(
-                    {'_id': dict((col, '$'+col) for col in t.grouper.columns)},
+                    {'_id': dict((col, '$'+col) for col in t.grouper.fields)},
                     group_apply(t.apply)
                     )
      },
      {
-         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.columns),
+         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.fields),
                                  dict((name, '$' + name) for name in names))
      }))
 
@@ -209,8 +212,8 @@ def compute_up(t, q, **kwargs):
 @dispatch(Distinct, MongoQuery)
 def compute_up(t, q, **kwargs):
     return MongoQuery(q.coll, q.query +
-    ({'$group': {'_id': dict((col, '$'+col) for col in t.columns)}},
-     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.columns),
+    ({'$group': {'_id': dict((col, '$'+col) for col in t.fields)}},
+     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.fields),
                               {'_id': 0})}))
 
 
@@ -223,9 +226,8 @@ def group_apply(expr):
     >>> group_apply(accounts.amount.sum())
     {'amount_sum': {'$sum': '$amount'}}
     """
-    assert isinstance(expr.dshape[0], Record)
-    key = expr.dshape[0].names[0]
-    col = '$' + expr.child.columns[0]
+    key = expr._name
+    col = '$' + expr._child._name
     if isinstance(expr, count):
         return {key: {'$sum': 1}}
     if isinstance(expr, sum):
@@ -245,29 +247,29 @@ reductions = {mean: 'avg', count: 'sum', max: 'max', min: 'min'}
 
 @dispatch(Summary)
 def group_apply(expr):
-    # TODO: implement columns variable more generally when ColumnWise works
+    # TODO: implement columns variable more generally when Broadcast works
     reducs = expr.values
-    names = expr.names
-    values = [(name, c, getattr(c.child, 'column', None) or name)
+    names = expr.fields
+    values = [(name, c, getattr(c._child, 'column', None) or name)
                for name, c in zip(names, reducs)]
     key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
     query = dict((k, {key_getter(v): int(isinstance(v, count)) or
-                      compute_sub(v.child.expr)})
+                      compute_sub(v._child.expr)})
                  for k, v, z in values)
     return query
 
 
 @dispatch(count, MongoQuery)
 def compute_up(t, q, **kwargs):
-    name = t.dshape[0].names[0]
+    name = t._name
     return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
 
 
 @dispatch((sum, min, max, mean), MongoQuery)
 def compute_up(t, q, **kwargs):
-    name = t.dshape[0].names[0]
+    name = t._name
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
-    column = '$' + t.child.columns[0]
+    column = '$' + t._child._name
     arg = {'$group': {'_id': {}, name: {reduction: column}}}
     return q.append(arg)
 
@@ -275,6 +277,21 @@ def compute_up(t, q, **kwargs):
 @dispatch(Sort, MongoQuery)
 def compute_up(t, q, **kwargs):
     return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
+
+
+@dispatch(DateTime, MongoQuery)
+def compute_up(expr, q, **kwargs):
+    attr = expr.attr
+    d = {'$project': {expr._name:
+                      {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
+                       '$%s' % expr._child._name}}}
+    return q.append(d)
+
+
+@dispatch((Date, Time, Microsecond), MongoQuery)
+def compute_up(expr, q, **kwargs):
+    raise NotImplementedError('MongoDB does not support the %r field' %
+                              type(expr).__name__.lower())
 
 
 @dispatch(Expr, Collection, dict)
@@ -288,16 +305,6 @@ def post_compute(e, c, d):
 @dispatch(Expr, MongoQuery, dict)
 def post_compute(e, q, d):
     """
-    Get single result, like a sum or count, from mongodb query
-    """
-    field = e.dshape[0].names[0]
-    result = q.coll.aggregate(list(q.query))['result']
-    return result[0][field]
-
-
-@dispatch(TableExpr, MongoQuery, dict)
-def post_compute(e, q, d):
-    """
     Execute a query using MongoDB's aggregation pipeline
 
     The compute_up functions operate on Mongo Collection / list-of-dict
@@ -307,19 +314,27 @@ def post_compute(e, q, d):
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
     d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
-                                 dict((col, 1) for col in e.columns))}
+                                 dict((col, 1) for col in e.fields))}
     q = q.append(d)
+
+    if not e.dshape.shape:  # not a collection
+        result = q.coll.aggregate(list(q.query))['result'][0]
+        if isscalar(e.dshape.measure):
+            return result[e._name]
+        else:
+            return get(e.fields, result)
+
     dicts = q.coll.aggregate(list(q.query))['result']
 
-    if e.iscolumn:
-        return list(pluck(e.columns[0], dicts, default=None))  # dicts -> values
+    if isscalar(e.dshape.measure):
+        return list(pluck(e.fields[0], dicts, default=None))  # dicts -> values
     else:
-        return list(pluck(e.columns, dicts, default=None))  # dicts -> tuples
+        return list(pluck(e.fields, dicts, default=None))  # dicts -> tuples
 
 
-@dispatch(ColumnWise, MongoQuery, dict)
+@dispatch(Broadcast, MongoQuery, dict)
 def post_compute(e, q, d):
-    """Compute the result of a columnwise expression.
+    """Compute the result of a Broadcast expression.
     """
     columns = dict((col, 1) for qry in q.query
                    for col in qry.get('$project', []))
@@ -335,12 +350,12 @@ def post_compute(e, q, d):
 def name(e):
     """
 
-    >>> name(ScalarSymbol('x', 'int32'))
+    >>> name(Symbol('x', 'int32'))
     'x'
     >>> name(1)
     1
     """
-    if isinstance(e, ScalarSymbol):
+    if isinstance(e, Symbol):
         return e._name
     elif isinstance(e, Expr):
         raise NotImplementedError("Complex queries not yet supported")
@@ -357,8 +372,8 @@ def match(expr):
 
     Examples
     --------
-    >>> x = ScalarSymbol('x', 'int32')
-    >>> name = ScalarSymbol('name', 'string')
+    >>> x = Symbol('x', 'int32')
+    >>> name = Symbol('name', 'string')
     >>> match(name == 'Alice')
     {'name': 'Alice'}
     >>> match(x > 10)

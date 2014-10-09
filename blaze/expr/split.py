@@ -1,19 +1,30 @@
-from blaze.expr import *
+from __future__ import absolute_import, division, print_function
+
+from .core import *
+from .expressions import *
+from .reductions import *
+from .split_apply_combine import *
+from .collections import *
+from .table import *
 import datashape
+from datashape.predicates import isscalar
+from ..dispatch import dispatch
 
 good_to_split = (Reduction, Summary, By, Distinct)
-can_split = good_to_split + (Selection, RowWise)
+can_split = good_to_split + (Selection, ElemWise)
+
+__all__ = ['path_split', 'split']
 
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
 
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     >>> path_split(t, t.amount.sum() + 1)
-    sum(child=t['amount'])
+    sum(_child=t['amount'])
 
     >>> path_split(t, t.amount.distinct().sort())
-    Distinct(child=t['amount'])
+    Distinct(_child=t['amount'])
     """
     last = None
     for node in list(path(expr, leaf))[:-1][::-1]:
@@ -22,6 +33,8 @@ def path_split(leaf, expr):
         elif not isinstance(node, can_split):
             return last
         last = node
+    if not node:
+        raise ValueError()
     return node
 
 
@@ -38,29 +51,27 @@ def split(leaf, expr, chunk=None, agg=None):
     Returns
     -------
 
-    Pair of (TableSymbol, Expr) pairs
+    Pair of (Symbol, Expr) pairs
 
         (chunk, chunk_expr), (aggregate, aggregate_expr)
 
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
-    ((chunk, count(child=chunk['id'])), (aggregate, sum(child=aggregate)))
+    ((chunk, count(_child=chunk['id'])), (aggregate, sum(_child=aggregate)))
     """
     center = path_split(leaf, expr)
-    chunk = chunk or TableSymbol('chunk', leaf.dshape, leaf.iscolumn)
-    if isinstance(center, TableExpr):
-        agg = agg or TableSymbol('aggregate', center.schema, center.iscolumn)
+    chunk = chunk or Symbol('chunk', leaf.dshape)
+    if iscollection(center.dshape):
+        agg = agg or Symbol('aggregate', center.dshape)
     else:
-        agg = agg or TableSymbol('aggregate',
-                                 center.dshape,
-                                 isinstance(center, Reduction))
+        agg = agg or Symbol('aggregate', datashape.var * center.dshape)
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
             _split(center, leaf=leaf, chunk=chunk, agg=agg)
 
     return ((chunk, chunk_expr),
-            (agg, expr.subs({center: agg}).subs({agg: agg_expr})))
+            (agg, expr._subs({center: agg})._subs({agg: agg_expr})))
 
 
 reductions = {sum: (sum, sum), count: (count, sum),
@@ -71,23 +82,23 @@ reductions = {sum: (sum, sum), count: (count, sum),
 @dispatch(tuple(reductions))
 def _split(expr, leaf=None, chunk=None, agg=None):
     a, b = reductions[type(expr)]
-    return ((chunk, a(expr.subs({leaf: chunk}).child)),
+    return ((chunk, a(expr._subs({leaf: chunk})._child)),
             (agg, b(agg)))
 
 
 @dispatch(Distinct)
 def _split(expr, leaf=None, chunk=None, agg=None):
-    return ((chunk, expr.subs({leaf: chunk})),
+    return ((chunk, expr._subs({leaf: chunk})),
             (agg, agg.distinct()))
 
 
 @dispatch(Summary)
 def _split(expr, leaf=None, chunk=None, agg=None):
     chunk_expr = summary(**dict((name, split(leaf, val, chunk=chunk)[0][1])
-                            for name, val in zip(expr.names, expr.values)))
-    agg_expr = summary(**dict((name, split(leaf, val, agg=agg)[1][1].subs(
+                            for name, val in zip(expr.fields, expr.values)))
+    agg_expr = summary(**dict((name, split(leaf, val, agg=agg)[1][1]._subs(
                                                         {agg: agg[name]}))
-                            for name, val in zip(expr.names, expr.values)))
+                            for name, val in zip(expr.fields, expr.values)))
     return ((chunk, chunk_expr), (agg, agg_expr))
 
 
@@ -96,17 +107,17 @@ def _split(expr, leaf=None, chunk=None, agg=None):
     (chunk, chunk_apply), (agg, agg_apply) = \
             split(leaf, expr.apply, chunk=chunk, agg=agg)
 
-    chunk_grouper = expr.grouper.subs({leaf: chunk})
-    if expr.grouper.iscolumn:
-        agg_grouper = agg[expr.columns[0]]
+    chunk_grouper = expr.grouper._subs({leaf: chunk})
+    if isscalar(expr.grouper.dshape.measure):
+        agg_grouper = agg[expr.fields[0]]
     else:
-        agg_grouper = agg[list(expr.columns[:len(expr.grouper.columns)])]
+        agg_grouper = agg[list(expr.fields[:len(expr.grouper.fields)])]
 
     return ((chunk, by(chunk_grouper, chunk_apply)),
             (agg, by(agg_grouper, agg_apply)))
 
 
-@dispatch((RowWise, Selection))
+@dispatch((ElemWise, Selection))
 def _split(expr, leaf=None, chunk=None, agg=None):
-    return ((chunk, expr.subs({leaf: chunk})),
+    return ((chunk, expr._subs({leaf: chunk})),
             (agg, agg))

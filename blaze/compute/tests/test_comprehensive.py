@@ -4,7 +4,8 @@ import numpy as np
 from pandas import DataFrame
 import numpy as np
 import bcolz
-from blaze.expr import TableSymbol, by, TableExpr
+from datashape.predicates import isscalar, iscollection
+from blaze.expr import TableSymbol, by
 from blaze.api.into import into
 from blaze.api.table import Table
 from blaze.compute import compute
@@ -17,10 +18,10 @@ sources = []
 t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
-     [200, 2, 'Bob'],
-     [300, 3, 'Charlie'],
-     [400, 4, 'Dan'],
-     [500, 5, 'Edith']]
+        [200, 2, 'Bob'],
+        [300, 3, 'Charlie'],
+        [400, 4, 'Dan'],
+        [500, 5, 'Edith']]
 
 df = DataFrame(L, columns=['amount', 'id', 'name'])
 
@@ -65,7 +66,7 @@ expressions = {
         t.head(3): [],
         t.name.distinct(): [],
         t[t.amount > 50]['name']: [], # odd ordering issue
-        t.id.map(lambda x: x + 1, '{id: int}'): [sql, mongo],
+        t.id.map(lambda x: x + 1, schema='int', name='id'): [sql, mongo],
         t[t.amount > 50]['name']: [],
         by(t.name, t.amount.sum()): [],
         by(t.id, t.id.count()): [],
@@ -95,18 +96,19 @@ def typename(obj):
 
 def test_base():
     for expr, exclusions in expressions.items():
-        model = compute(expr.subs({t: Table(base, t.schema)}))
+        model = compute(expr._subs({t: Table(base, t.schema)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
             T = Table(source)
-            result = into(model, expr.subs({t: T}))
-            if isinstance(expr, TableExpr):
-                if expr.iscolumn:
+            if iscollection(expr.dshape):
+                result = into(model, expr._subs({t: T}))
+                if isscalar(expr.dshape.measure):
                     assert set(into([], result)) == set(into([], model))
                 else:
                     assert df_eq(result, model)
             else:
+                result = compute(expr._subs({t: T}))
                 assert result == model

@@ -257,7 +257,7 @@ def test_discover_pandas(data):
 
 def test_into_table_dataframe(data_table, data):
     t = data_table
-    assert list(into(DataFrame(), t).columns) == list(t.columns)
+    assert list(into(DataFrame(), t).columns) == list(t.fields)
     assert into([], into(DataFrame(), t)) == list(map(tuple, data))
 
 
@@ -268,7 +268,7 @@ def test_Column_data_source(data_table):
     cds = into(ColumnDataSource(), data_table)
 
     assert isinstance(cds, ColumnDataSource)
-    assert set(cds.column_names) == set(data_table.columns)
+    assert set(cds.column_names) == set(data_table.fields)
 
 
 def test_into_ColumnDataSource_pytables():
@@ -547,8 +547,31 @@ def test_into_DataFrame_concat():
     assert df.columns.tolist() == csv_df.columns.tolist()
 
 
+def test_literal_to_literal():
+    assert into(10, 10) == 10
+
+
 def test_into_list_Column():
     with filetext('Alice,1\nBob,2') as fn:
         csv = CSV(fn, columns=['name', 'id'])
         t = Table(csv)
         assert into(list, t.name) == ['Alice', 'Bob']
+
+
+def test_into_filename():
+    with tmpfile('csv') as filename:
+        df = DataFrame([['Alice', 100], ['Bob', 200]],
+                       columns=['name', 'amount'])
+        into(filename, df)
+
+        csv = CSV(filename)
+        assert into(list, csv) == into(list, df)
+
+
+def test_into_filename_filename():
+    with filetext('1,2\n3,4', extension='csv') as source_fn:
+        with tmpfile('csv') as target_fn:
+            into(target_fn, source_fn)
+
+            csv = CSV(target_fn)
+            assert into(list, csv) == [(1, 2), (3, 4)]

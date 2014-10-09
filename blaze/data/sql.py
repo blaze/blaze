@@ -180,7 +180,7 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-    def __init__(self, engine, tablename, primary_key='', schema=None):
+    def __init__(self, engine, tablename, primary_key='', schema=None, **kwargs):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine

@@ -21,9 +21,9 @@ def rsrc():
         yield filename
 
 
-@xfail(reason='Invalid opener')
+@xfail(is_py2_win, reason='Invalid opener')
 def test_gzopen_no_gzip_open(rsrc):
-    dd = CSV(rsrc, schema='2 * int')
+    dd = CSV(rsrc, schema='{a: int32, b: int32}')
     assert tuplify(list(dd)) == ((1, 1), (2, 2))
 
 

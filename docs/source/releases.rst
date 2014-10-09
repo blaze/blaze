@@ -2,6 +2,12 @@
 Release Notes
 ======================
 
+Release 0.6.5
+-------------
+
+* Improve uri string handling #715
+* Various bug fixes #715
+
 Release 0.6.4
 -------------
 

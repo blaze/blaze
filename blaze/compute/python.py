@@ -24,15 +24,19 @@ import cytoolz
 import toolz
 import sys
 import math
+from datashape import Record, Tuple
+from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
-from ..expr.table import TableSymbol
-from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
-                          Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union, Summary, Like)
-from ..expr.table import count, nunique, mean, var, std
+from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
+                    Merge, Join, Selection, Reduction, Distinct,
+                    By, Sort, Head, Apply, Union, Summary, Like,
+                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
+                    Symbol)
+from ..expr import reductions
+from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
-from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
+from ..expr import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply, unicode
 from . import core
 from .core import compute, compute_up
@@ -65,14 +69,14 @@ def recursive_rowfunc(t, stop):
     funcs = []
     while not t.isidentical(stop):
         funcs.append(rowfunc(t))
-        t = t.child
+        t = t._child
     return compose(*funcs)
 
 
 rrowfunc = recursive_rowfunc
 
 
-@dispatch(TableSymbol)
+@dispatch(Symbol)
 def rowfunc(t):
     return identity
 
@@ -92,19 +96,17 @@ def rowfunc(t):
         compute<Rowwise, Sequence>
     """
     from cytoolz.curried import get
-    indices = [t.child.columns.index(col) for col in t.columns]
+    indices = [t._child.fields.index(col) for col in t.fields]
     return get(indices)
 
 
-@dispatch(Column)
+@dispatch(Field)
 def rowfunc(t):
-    if t.child.iscolumn and t.column == t.child.columns[0]:
-        return identity
-    index = t.child.columns.index(t.column)
+    index = t._child.fields.index(t._name)
     return lambda x: x[index]
 
 
-@dispatch(ColumnWise)
+@dispatch(Broadcast)
 def rowfunc(t):
     if sys.version_info[0] == 3:
         # Python3 doesn't allow argument unpacking
@@ -118,7 +120,7 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if t.child.iscolumn:
+    if isscalar(t._child.dshape.measure):
         return t.func
     else:
         return partial(apply, t.func)
@@ -127,6 +129,21 @@ def rowfunc(t):
 @dispatch((Label, ReLabel))
 def rowfunc(t):
     return identity
+
+
+@dispatch(DateTime)
+def rowfunc(t):
+    return lambda row: getattr(row, t.attr)
+
+
+@dispatch((Date, Time))
+def rowfunc(t):
+    return lambda row: getattr(row, t.attr)()
+
+
+@dispatch(Millisecond)
+def rowfunc(_):
+    return lambda row: getattr(row, 'microsecond') // 1000
 
 
 def concat_maybe_tuples(vals):
@@ -144,20 +161,38 @@ def concat_maybe_tuples(vals):
     return tuple(result)
 
 
+def deepmap(func, data, n=1):
+    """
+
+    >>> inc = lambda x: x + 1
+    >>> list(deepmap(inc, [1, 2], n=1))
+    [2, 3]
+    >>> list(deepmap(inc, [(1, 2), (3, 4)], n=2))
+    [(2, 3), (4, 5)]
+    """
+    if n == 1:
+        return map(func, data)
+    else:
+        return map(compose(tuple, partial(deepmap, func, n=n-1)), data)
+
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = [rrowfunc(child, t.child) for child in t.children]
+    funcs = [rrowfunc(_child, t._child) for _child in t.children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
-@dispatch(RowWise, Sequence)
+@dispatch(ElemWise, Sequence)
 def compute_up(t, seq, **kwargs):
-    return map(rowfunc(t), seq)
+    func = rowfunc(t)
+    if iscollection(t._child.dshape):
+        return deepmap(func, seq, n=t._child.ndim)
+    else:
+        return func(seq)
 
 
 @dispatch(Selection, Sequence)
 def compute_up(t, seq, **kwargs):
-    predicate = rrowfunc(t.predicate, t.child)
+    predicate = rrowfunc(t.predicate, t._child)
     return filter(predicate, seq)
 
 
@@ -260,12 +295,12 @@ from operator import add, or_, and_
 # binop     :: b, a -> b
 # combiner  :: b, b -> b
 # init      :: b
-binops = {table.sum: (add, add, 0),
-          table.min: (lesser, lesser, 1e250),
-          table.max: (greater, lesser, -1e250),
-          table.count: (countit, add, 0),
-          table.any: (or_, or_, False),
-          table.all: (and_, and_, True)}
+binops = {reductions.sum: (add, add, 0),
+          reductions.min: (lesser, lesser, 1e250),
+          reductions.max: (greater, lesser, -1e250),
+          reductions.count: (countit, add, 0),
+          reductions.any: (or_, or_, False),
+          reductions.all: (and_, and_, True)}
 
 
 def reduce_by_funcs(t):
@@ -291,12 +326,12 @@ def reduce_by_funcs(t):
     See Also:
         compute_up(By, Sequence)
     """
-    grouper = rrowfunc(t.grouper, t.child)
+    grouper = rrowfunc(t.grouper, t._child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, combiner, initial = binops[type(t.apply)]
-        applier = rrowfunc(t.apply.child, t.child)
+        applier = rrowfunc(t.apply._child, t._child)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
@@ -307,7 +342,7 @@ def reduce_by_funcs(t):
         builtins.all(type(val) in binops for val in t.apply.values)):
 
         binops2, combiners, inits = zip(*[binops[type(v)] for v in t.apply.values])
-        appliers = [rrowfunc(v.child, t.child) for v in t.apply.values]
+        appliers = [rrowfunc(v._child, t._child) for v in t.apply.values]
 
         def binop2(accs, x):
             return tuple(binop(acc, applier(x)) for binop, acc, applier in
@@ -327,15 +362,15 @@ def compute_up(t, seq, **kwargs):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
         d = reduceby(grouper, binop, seq, initial)
     else:
-        grouper = rrowfunc(t.grouper, t.child)
+        grouper = rrowfunc(t.grouper, t._child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t._child: v})) for k, v in groups.items())
 
-    if t.grouper.iscolumn:
+    if isscalar(t.grouper.dshape.measure):
         keyfunc = lambda x: (x,)
     else:
         keyfunc = identity
-    if isinstance(t.apply, Reduction):
+    if isscalar(t.apply.dshape.measure):
         valfunc = lambda x: (x,)
     else:
         valfunc = identity
@@ -348,12 +383,12 @@ def pair_assemble(t):
     This is mindful to shared columns as well as missing records
     """
     from cytoolz import get  # not curried version
-    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+    on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
-    left_self_columns = [t.lhs.columns.index(c) for c in t.lhs.columns
+    left_self_columns = [t.lhs.fields.index(c) for c in t.lhs.fields
                                             if c not in listpack(t.on_left)]
-    right_self_columns = [t.rhs.columns.index(c) for c in t.rhs.columns
+    right_self_columns = [t.rhs.fields.index(c) for c in t.rhs.fields
                                             if c not in listpack(t.on_right)]
     def assemble(pair):
         a, b = pair
@@ -365,12 +400,12 @@ def pair_assemble(t):
         if a is not None:
             left_entries = get(left_self_columns, a)
         else:
-            left_entries = (None,) * (len(t.lhs.columns) - len(on_left))
+            left_entries = (None,) * (len(t.lhs.fields) - len(on_left))
 
         if b is not None:
             right_entries = get(right_self_columns, b)
         else:
-            right_entries = (None,) * (len(t.rhs.columns) - len(on_right))
+            right_entries = (None,) * (len(t.rhs.fields) - len(on_right))
 
         return joined + left_entries + right_entries
 
@@ -393,8 +428,8 @@ def compute_up(t, lhs, rhs, **kwargs):
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)
 
-    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+    on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
     left_default = (None if t.how in ('right', 'outer')
                          else toolz.itertoolz.no_default)
@@ -414,7 +449,7 @@ def compute_up(t, lhs, rhs, **kwargs):
 @dispatch(Sort, Sequence)
 def compute_up(t, seq, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
-        key = rowfunc(t.child[t.key])
+        key = rowfunc(t._child[t.key])
     else:
         key = rowfunc(t.key)
     return sorted(seq,
@@ -449,17 +484,17 @@ def compute_up(t, example, children, **kwargs):
 def compute_up(expr, data, **kwargs):
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        return tuple(compute(val, {expr.child: data})
+        return tuple(compute(val, {expr._child: data})
                         for val, data in zip(expr.values, datas))
     else:
-        return tuple(compute(val, {expr.child: data})
+        return tuple(compute(val, {expr._child: data})
                         for val in expr.values)
 
 
 def like_regex_predicate(expr):
     regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
                     for name, pattern in expr.patterns.items())
-    regex_tup = [regexes.get(name, None) for name in expr.columns]
+    regex_tup = [regexes.get(name, None) for name in expr.fields]
     def predicate(tup):
         for item, regex in zip(tup, regex_tup):
             if regex and not regex.match(item):
