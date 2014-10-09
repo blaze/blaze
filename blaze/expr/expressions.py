@@ -244,10 +244,10 @@ projection.__doc__ = Projection.__doc__
 
 from .util import hashable_index, replace_slices
 class Slice(Expr):
-    __slots__ = 'child', '_index'
+    __slots__ = '_child', '_index'
 
     def __init__(self, child, index):
-        self.child = child
+        self._child = child
         self._index = hashable_index(index)
         hash(self)
 
