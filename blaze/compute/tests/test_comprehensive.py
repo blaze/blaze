@@ -4,7 +4,7 @@ import numpy as np
 from pandas import DataFrame
 import numpy as np
 import bcolz
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import TableSymbol, by
 from blaze.api.into import into
 from blaze.api.table import Table
@@ -18,10 +18,10 @@ sources = []
 t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
-        [200, 2, 'Bob'],
-        [300, 3, 'Charlie'],
-        [400, 4, 'Dan'],
-        [500, 5, 'Edith']]
+     [200, 2, 'Bob'],
+     [300, 3, 'Charlie'],
+     [400, 4, 'Dan'],
+     [500, 5, 'Edith']]
 
 df = DataFrame(L, columns=['amount', 'id', 'name'])
 
@@ -79,6 +79,8 @@ expressions = {
         # by(t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
+        t[0]: [sql, mongo],
+        t[::2]: [sql, mongo],
         }
 
 base = df
@@ -109,6 +111,9 @@ def test_base():
                     assert set(into([], result)) == set(into([], model))
                 else:
                     assert df_eq(result, model)
+            elif isrecord(expr.dshape):
+                result = compute(expr._subs({t: T}))
+                assert into(tuple, result) == into(tuple, model)
             else:
                 result = compute(expr._subs({t: T}))
                 assert result == model

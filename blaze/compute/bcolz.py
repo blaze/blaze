@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr import Selection, Head, Field, Projection, ReLabel, ElemWise
-from blaze.expr import Label, Distinct, By, Reduction, Like
+from blaze.expr import Label, Distinct, By, Reduction, Like, Slice
 from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str
 
@@ -94,6 +94,11 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Reduction, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
     return compute_up(expr, ChunkIndexable(data), **kwargs)
+
+
+@dispatch(Slice, (bcolz.carray, bcolz.ctable))
+def compute_up(expr, x, **kwargs):
+    return x[expr.index]
 
 
 @dispatch((bcolz.carray, bcolz.ctable))

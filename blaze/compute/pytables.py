@@ -6,7 +6,7 @@ import tables as tb
 import datashape as ds
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
-                        TableSymbol, Sort, Reduction, count, Symbol)
+                        TableSymbol, Sort, Reduction, count, Symbol, Slice)
 from blaze.expr import eval_str
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
@@ -121,3 +121,8 @@ def compute_up(s, t, **kwargs):
     if s.ascending:
         return result
     return result[::-1]
+
+
+@dispatch(Slice, tb.Table)
+def compute_up(expr, x, **kwargs):
+    return x[expr.index]
