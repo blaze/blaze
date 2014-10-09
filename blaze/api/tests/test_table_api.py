@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 from dynd import nd
 
+
 data = (('Alice', 100),
         ('Bob', 200))
 
