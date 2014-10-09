@@ -108,7 +108,7 @@ class SingleTestClass(MakeFile):
 
         result = dd.as_dynd()[-2:, :]
         expected = nd.array([[1, 2, 3],
-                             [4, 5, 6]], dtype='strided * strided * int32')
+                             [4, 5, 6]], dtype='fixed * fixed * int32')
 
         self.assertEquals(nd.as_py(result), nd.as_py(expected))
 
