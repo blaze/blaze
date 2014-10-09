@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import toolz
 from toolz import first
 import datashape
-from datashape import Record, dshape
+from datashape import Record, dshape, DataShape
 from datashape import coretypes as ct
 from datashape.predicates import isscalar, iscollection
 
@@ -31,12 +31,24 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = '_child',
+    __slots__ = '_child', 'axis'
     _dtype = None
+
+    def __init__(self, _child, axis=None):
+        self._child = _child
+        self.axis = axis
 
     @property
     def dshape(self):
-        return dshape(self._dtype)
+        axis = self.axis
+        if axis == None:
+            return dshape(self._dtype)
+        if isinstance(axis, int):
+            axis = [axis]
+        s = tuple(slice(None) if i not in axis else 0
+                              for i in range(self._child.ndim))
+        ds = self._child.dshape.subshape[s]
+        return DataShape(*(ds.shape + (self._dtype,)))
 
     @property
     def symbol(self):

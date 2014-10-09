@@ -36,13 +36,3 @@ def test_slice():
     assert str(x[:2]) == 'x[:2]'
     assert str(x[0, :2]) == 'x[0, :2]'
     assert str(x[1:4:2, :2]) == 'x[1:4:2, :2]'
-
-
-"""
-def test_reduction_dshape():
-    x = ArraySymbol('x', '5 * 3 * float32')
-    assert x.sum().dshape == x.schema
-    assert x.sum(axis=0).dshape == dshape('3 * float32')
-    assert x.sum(axis=1).dshape == dshape('5 * float32')
-    assert x.sum(axis=(0, 1)).dshape == dshape('float32')
-    """
