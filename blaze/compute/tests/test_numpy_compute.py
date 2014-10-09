@@ -150,6 +150,7 @@ def test_by():
 
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
 
+
 def test_compute_up_column():
     y = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
