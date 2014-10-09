@@ -111,7 +111,6 @@ def into(a, b, **kwargs):
 
 @resource.register('.+\.bcolz/?')
 def resource_bcolz(rootdir, **kwargs):
-    rootdir.rstrip('/') + '/'
     if os.path.exists(rootdir):
         kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
         return ctable(rootdir=rootdir, **kwargs)
