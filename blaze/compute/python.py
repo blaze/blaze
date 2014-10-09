@@ -19,7 +19,7 @@ import re
 from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
-from cytoolz import groupby, reduceby, unique, take, concat, first
+from cytoolz import groupby, reduceby, unique, take, concat, first, nth
 import cytoolz
 import toolz
 import sys
@@ -32,12 +32,12 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
-                    Symbol)
+                    Symbol, Slice)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr import BinOp, UnaryOp, RealMath
-from ..compatibility import builtins, apply, unicode
+from ..compatibility import builtins, apply, unicode, _inttypes
 from . import core
 from .core import compute, compute_up
 
@@ -508,3 +508,15 @@ def like_regex_predicate(expr):
 def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)
+
+
+@dispatch(Slice, Sequence)
+def compute_up(expr, seq, **kwargs):
+    index = expr.index
+    if isinstance(index, tuple) and len(index) == 1:
+        index = index[0]
+    if isinstance(index, _inttypes):
+        return nth(index, seq)
+    if isinstance(index, slice):
+        return itertools.islice(seq, index.start, index.stop, index.step)
+    raise NotImplementedError("Only 1d slices supported")

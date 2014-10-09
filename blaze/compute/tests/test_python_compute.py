@@ -5,6 +5,7 @@ import itertools
 import operator
 import pytest
 from datetime import datetime, date
+from cytoolz import pluck
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
@@ -656,3 +657,9 @@ def test_scalar():
     assert compute(s.id + 1, data) == 2
     assert tuple(compute(s.payments.amount, data)) == (100, 200, 300)
     assert tuple(compute(s.payments.amount + 1, data)) == (101, 201, 301)
+
+
+def test_slice():
+    assert compute(t[0], data) == data[0]
+    assert list(compute(t[:2], data)) == list(data[:2])
+    assert list(compute(t.name[:2], data)) == [data[0][0], data[1][0]]
