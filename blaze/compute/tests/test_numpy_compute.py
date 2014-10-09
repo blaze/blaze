@@ -17,15 +17,6 @@ x = np.array([(1, 'Alice', 100),
               (5, 'Edith', -500)],
             dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
 
-y = np.array([(1, 'Alice', 100),
-              (2, 'Bob', -200),
-              (3, 'Charlie', 300),
-              (4, 'Denis', 400),
-              (5, 'Edith', -500)])
-
-tble = Table(x)
-
-
 def eq(a, b):
     return (a == b).all()
 
@@ -160,17 +151,28 @@ def test_by():
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
 
 def test_compute_up_column():
+    y = np.array([(1, 'Alice', 100),
+              (2, 'Bob', -200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
+              (5, 'Edith', -500)])
+    t = TableSymbol('t', '{id: int, name: string, amount: int}')
     tablesymbol_column = t[t['amount'] < 0]['name']
     computed_expr = compute_up(tablesymbol_column, y)
     assert len(computed_expr) == 5
 
 def test_compute_up_projection():
-    table_projection = tble[['name', 'amount']]
-    computed_expr = compute_up(table_projection, y)
+    y = np.array([(1, 'Alice', 100),
+              (2, 'Bob', -200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
+              (5, 'Edith', -500)])
+    tablesymbol_projection = t[['name', 'amount']]
+    computed_expr = compute_up(tablesymbol_projection, y)
     assert len(computed_expr) == 5
 
 def test_compute_up_sort_failure():
     sort_failure = t.sort('balance')
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         compute_up(sort_failure, x)
 
