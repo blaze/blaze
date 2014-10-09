@@ -242,7 +242,7 @@ def projection(expr, names):
 projection.__doc__ = Projection.__doc__
 
 
-from .util import hashable_index, replace_slices
+from .utils import hashable_index, replace_slices
 class Slice(Expr):
     __slots__ = '_child', '_index'
 
