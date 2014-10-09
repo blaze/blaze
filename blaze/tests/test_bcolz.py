@@ -6,8 +6,11 @@ bcolz = pytest.importorskip('bcolz')
 import numpy as np
 from pandas import DataFrame
 from toolz import count
+import os
+from datashape import discover, dshape
 
-from blaze.bcolz import into, chunks
+from blaze.bcolz import into, chunks, resource
+from blaze.utils import tmpfile
 
 
 b = bcolz.ctable([[1, 2, 3],
@@ -100,3 +103,22 @@ def test_into_chunks():
     b2 = into(bcolz.ctable, x)
 
     assert str(b1) == str(b2)
+
+
+def test_resource():
+    with tmpfile('bcolz') as filename:
+        os.remove(filename)
+        bc = bcolz.ctable(rootdir=filename,
+                          columns=[[1, 2, 3], [1., 2., 3.]],
+                          names=['a', 'b'])
+        bc2 = resource(filename)
+
+        assert isinstance(bc2, bcolz.ctable)
+
+def test_resource_works_with_empty_file():
+    with tmpfile('bcolz') as filename:
+        os.remove(filename)
+
+        bc = resource(filename, dshape=dshape('{a: int32, b: float64}'))
+        assert len(bc) == 0
+        assert discover(bc).measure == dshape('{a: int32, b: float64}').measure
