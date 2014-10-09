@@ -62,7 +62,7 @@ def test_invert_not():
 
 
 def test_union_1d():
-    t = TableSymbol('t', '{x: int}', iscolumn=True)
+    t = TableSymbol('t', 'int')
     x = np.array([1, 2, 3])
     assert eq(compute(union(t, t), x), np.array([1, 2, 3, 1, 2, 3]))
 

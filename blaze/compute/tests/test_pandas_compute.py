@@ -11,7 +11,7 @@ from blaze.compute.core import compute
 from blaze import dshape, Table, discover, transform
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
-                        min, max, any, all, Projection, var, std, Like)
+                        min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -41,13 +41,6 @@ def df_all(a_df, b_df):
     for col in a_df.columns:
         assert np.all(a_df[col] == b_df[col])
     return True
-
-
-def test_series_column():
-    s = Series([1, 2, 3], name='a')
-    t = TableSymbol('t', '{a: int64}')
-    result = compute(t.a, s)
-    pd.util.testing.assert_series_equal(s, result)
 
 
 def test_series_columnwise():
@@ -104,7 +97,7 @@ def test_join():
     print(expected)
     assert str(result) == str(expected)
 
-    assert list(result.columns) == list(joined.columns)
+    assert list(result.columns) == list(joined.fields)
 
 
 def test_multi_column_join():
@@ -132,7 +125,7 @@ def test_multi_column_join():
     print(result)
 
     assert str(result) == str(expected)
-    assert list(result.columns) == list(j.columns)
+    assert list(result.columns) == list(j.fields)
 
 
 def test_unary_op():
@@ -143,8 +136,7 @@ def test_neg():
     assert (compute(-t['amount'], df) == -df['amount']).all()
 
 
-@xfail(not hasattr(Projection, '__neg__'),
-       reason='Projection does not support arithmetic')
+@xfail(reason='Projection does not support arithmetic')
 def test_neg_projection():
     assert (compute(-t[['amount', 'id']], df) == -df[['amount', 'id']]).all()
 
@@ -218,7 +210,7 @@ def test_by_three():
     expected = DataFrame([['Alice', 'F', 204],
                           ['Drew', 'F', 104],
                           ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
-    expected.columns = expr.columns
+    expected.columns = expr.fields
 
     assert str(result) == str(expected)
 
@@ -324,9 +316,10 @@ def test_map_with_rename(tframe):
     t = Table(tframe)
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
-    assert renamed.columns == ['date']
+    assert renamed.fields == ['date']
 
 
+@pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
 def test_multiple_renames_on_series_fails(tframe):
     t = Table(tframe)
     expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
@@ -495,7 +488,7 @@ def test_summary_by():
                            ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
 
 
-@xfail(reason="reduction assumed to be at the end")
+@pytest.mark.xfail(reason="reduction assumed to be at the end")
 def test_summary_by_reduction_arithmetic():
     expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
     assert str(compute(expr, df)) == \
@@ -512,7 +505,7 @@ def test_dplyr_transform():
     df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
     t = TableSymbol('t', discover(df))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
-                                             schema='{date: datetime}'))
+                                             schema='datetime'))
     lhs = compute(expr, df)
     rhs = pd.concat([df, Series(df.timestamp.map(lambda x: x.date()),
                                 name='date').to_frame()], axis=1)
@@ -525,9 +518,9 @@ def test_nested_transform():
     df = DataFrame(d)
     t = TableSymbol('t', discover(df))
     t = transform(t, timestamp=t.timestamp.map(datetime.fromtimestamp,
-                                               schema='{timestamp: datetime}'))
+                                               schema='datetime'))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
-                                             schema='{date: datetime}'))
+                                             schema='datetime'))
     result = compute(expr, df)
     df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
     df['date'] = df.timestamp.map(lambda x: x.date())
@@ -558,3 +551,16 @@ def test_rowwise_by():
     assert expected.index.tolist() == result.index.tolist()
     assert expected.columns.tolist() == result.columns.tolist()
     assert expected.values.tolist() == result.values.tolist()
+
+
+def test_datetime_access():
+    df = DataFrame({'name': ['Alice', 'Bob', 'Joe'],
+                    'when': [datetime(2010, 1, 1, 1, 1, 1)] * 3,
+                    'amount': [100, 200, 300],
+                    'id': [1, 2, 3]})
+
+    t = TableSymbol('t', discover(df))
+
+    for attr in ['day', 'month', 'minute', 'second']:
+        assert (compute(getattr(t.when, attr), df) == \
+                Series([1, 1, 1])).all()

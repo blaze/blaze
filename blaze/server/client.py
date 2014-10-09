@@ -6,9 +6,9 @@ import flask
 from dynd import nd
 from datashape import dshape
 
-from ..data.core import DataDescriptor
+from ..data import DataDescriptor
 from ..data.utils import coerce
-from ..expr import Expr, TableExpr
+from ..expr import Expr
 from ..dispatch import dispatch
 from .index import emit_index
 from ..api.resource import resource
@@ -18,6 +18,8 @@ from .server import DEFAULT_PORT
 # It's convenient to use requests for live production but use
 # flask for testing.  Sadly they have different Response objects,
 # hence the dispatched functions
+
+__all__ = 'Client', 'ExprClient'
 
 def content(response):
     if isinstance(response, flask.Response):
@@ -100,13 +102,13 @@ class ExprClient(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'name'
+    __slots__ = 'url', 'dataname'
     def __init__(self, url, name, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
-        self.name = name
+        self.dataname = name
 
     @property
     def dshape(self):
@@ -117,7 +119,7 @@ class ExprClient(object):
 
         data = json.loads(content(response))
 
-        return dshape(data[self.name])
+        return dshape(data[self.dataname])
 
 
 @dispatch(ExprClient)
@@ -133,7 +135,7 @@ def compute_down(expr, ec):
     from pandas import DataFrame
     tree = to_tree(expr)
 
-    r = requests.get('%s/compute/%s.json' % (ec.url, ec.name),
+    r = requests.get('%s/compute/%s.json' % (ec.url, ec.dataname),
                      data = json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 

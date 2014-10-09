@@ -5,6 +5,7 @@ from datashape import (dshape, DataShape, Record, isdimension, Option,
         discover, Tuple)
 
 from .dispatch import dispatch
+from .expr import Expr
 from .compatibility import _strtypes
 
 __all__ = []
@@ -150,8 +151,7 @@ if pyspark:
         return sqlContext.applySchema(rdd, sql_schema)
 
 
-    from blaze.expr import Expr, TableExpr
-    @dispatch(SQLContext, (TableExpr, Expr, object) + _strtypes)
+    @dispatch(SQLContext, (Expr, object) + _strtypes)
     def into(sqlContext, o, **kwargs):
         schema = kwargs.pop('schema', None) or discover(o).subshape[0]
         return into(sqlContext, into(sqlContext._sc, o), schema=schema, **kwargs)

@@ -5,12 +5,14 @@ import numpy as np
 import tables as tb
 import datashape as ds
 
-from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
-                        TableSymbol, Sort, Reduction, count)
+from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
+                        TableSymbol, Sort, Reduction, count, Symbol)
 from blaze.expr import eval_str
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
 
+
+__all__ = ['drop', 'create_index']
 
 @dispatch(tb.Table)
 def discover(t):
@@ -55,7 +57,7 @@ def compute_up(sel, t, **kwargs):
     return t.read_where(s)
 
 
-@dispatch(TableSymbol, tb.Table)
+@dispatch(Symbol, tb.Table)
 def compute_up(ts, t, **kwargs):
     return t
 
@@ -78,7 +80,7 @@ def compute_up(proj, t, **kwargs):
     #
     # TODO: benchmark on big tables because i'm not sure exactly what the
     # implications here are for memory usage
-    columns = proj.columns
+    columns = proj.fields
     dtype = np.dtype([(col, t.dtype[col]) for col in columns])
     out = np.empty(t.shape, dtype=dtype)
     for c in columns:
@@ -86,9 +88,9 @@ def compute_up(proj, t, **kwargs):
     return out
 
 
-@dispatch(Column, tb.Table)
+@dispatch(Field, tb.Table)
 def compute_up(c, t, **kwargs):
-    return getattr(t.cols, c.column)
+    return getattr(t.cols, c._name)
 
 
 @dispatch(count, tb.Column)
@@ -101,7 +103,7 @@ def compute_up(h, t, **kwargs):
     return t[:h.n]
 
 
-@dispatch(ColumnWise, tb.Table)
+@dispatch(Broadcast, tb.Table)
 def compute_up(c, t, **kwargs):
     uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
     e = tb.Expr(str(c.expr), uservars=uservars, truediv=True)
@@ -110,8 +112,8 @@ def compute_up(c, t, **kwargs):
 
 @dispatch(Sort, tb.Table)
 def compute_up(s, t, **kwargs):
-    if isinstance(s.key, Column) and s.key.child.isidentical(s.child):
-        key = s.key.name
+    if isinstance(s.key, Field) and s.key._child.isidentical(s._child):
+        key = s.key._name
     else:
         key = s.key
     assert hasattr(t.cols, key), 'Table has no column(s) %s' % s.key

@@ -1,13 +1,15 @@
+from __future__ import absolute_import, division, print_function
+
 import ast
 from itertools import repeat
 
 from toolz import merge
 
-from . import numbers
-from .core import Scalar
-from ..core import Expr
+from . import arithmetic
+from . import math
+from .expressions import Expr, Symbol
 
-from .interface import ScalarSymbol
+__all__ = ['exprify']
 
 
 def generate_methods(node_names, funcs, builder):
@@ -18,13 +20,13 @@ def generate_methods(node_names, funcs, builder):
     return wrapped
 
 
-boolean_ops = 'Eq', 'Ne', 'Lt', 'Gt', 'Le', 'Ge', 'BitAnd', 'BitOr', 'Invert'
+arithmetic_ops = ['Eq', 'Ne', 'Lt', 'Gt', 'Le', 'Ge', 'BitAnd', 'BitOr',
+        'Invert', 'USub', 'Add', 'Mult', 'Div', 'FloorDiv', 'Pow', 'Mod',
+        'Sub']
 
-arithmetic_ops = 'USub', 'Add', 'Mult', 'Div', 'FloorDiv', 'Pow', 'Mod', 'Sub'
 
-
-@generate_methods(boolean_ops + arithmetic_ops, boolean_ops + arithmetic_ops,
-                  builder=lambda func: lambda self, node: getattr(numbers, func))
+@generate_methods(arithmetic_ops, arithmetic_ops,
+                  builder=lambda func: lambda self, node: getattr(arithmetic, func))
 class BlazeParser(ast.NodeVisitor):
     def __init__(self, dtypes, scope):
         self.dtypes = dtypes
@@ -49,7 +51,7 @@ class BlazeParser(ast.NodeVisitor):
         try:
             return self.scope[name]
         except KeyError:
-            return ScalarSymbol(name, self.dtypes[name])
+            return Symbol(name, self.dtypes[name])
 
     def visit_BinOp(self, node):
         return self.visit(node.op)(self.visit(node.left),
@@ -79,8 +81,8 @@ class BlazeParser(ast.NodeVisitor):
 
 
 # Operations like sin, cos, exp, isnan, floor, ceil, ...
-math_operators = dict((k, v) for k, v in numbers.__dict__.items()
-                      if isinstance(v, type) and issubclass(v, Scalar))
+math_operators = dict((k, v) for k, v in math.__dict__.items()
+                if isinstance(v, type) and issubclass(v, Expr))
 safe_scope = {'__builtins__': {},  # Python 2
               'builtins': {}}      # Python 3
 

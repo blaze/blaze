@@ -1,5 +1,6 @@
 import numpy as np
 from datashape import *
+from datashape.predicates import isscalar, isnumeric
 
 def unit_to_dtype(ds):
     """
@@ -15,7 +16,7 @@ def unit_to_dtype(ds):
     """
     if isinstance(ds, str):
         ds = dshape(ds)[0]
-    if isinstance(ds, Option) and isnumeric(ds):
+    if isinstance(ds, Option) and isscalar(ds) and isnumeric(ds):
         return unit_to_dtype(str(ds).replace('int', 'float').replace('?', ''))
     if isinstance(ds, Option) and ds.ty in (date_, datetime_, string):
         ds = ds.ty
@@ -47,21 +48,3 @@ def dshape_to_pandas(ds):
                     if 'date' in str(typ)]
 
     return dtypes, datetimes
-
-
-def isnumeric(ds):
-    """
-    >>> isnumeric('int32')
-    True
-    >>> isnumeric('string')
-    False
-    >>> isnumeric('var * {amount: ?int32}')
-    False
-    """
-    if isinstance(ds, str):
-            ds = dshape(ds)
-    if isinstance(ds, DataShape) and len(ds) == 1:
-        ds = ds[0]
-    if isinstance(ds, Option):
-        return isnumeric(ds.ty)
-    return isinstance(ds, Unit) and np.issubdtype(to_numpy_dtype(ds), np.number)
