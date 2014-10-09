@@ -15,7 +15,7 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply']
+           'ReLabel', 'relabel', 'Apply', 'Slice']
 
 
 class Expr(Node):
