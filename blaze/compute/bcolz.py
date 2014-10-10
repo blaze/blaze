@@ -61,8 +61,8 @@ def compute_up(expr, data, **kwargs):
 def compute_up(c, t, **kwargs):
     cols = t.cols
     dtype = [(cname, 'int64') for cname in cols.names]
-    lst = tuple(compute_up(c, cols[col]) for col in cols.names)
-    return np.array([lst], dtype=dtype)
+    counts = tuple(compute_up(c, cols[col]) for col in cols.names)
+    return np.array([counts], dtype=dtype)
 
 
 @dispatch(count, bcolz.carray)
