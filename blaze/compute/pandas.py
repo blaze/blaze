@@ -34,7 +34,8 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp, nelements, DateTimeTruncate, count)
+                    UTCFromTimestamp, nelements, DateTimeTruncate, count,
+                    IsNull, NonNull)
 from ..expr import UnaryOp, BinOp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -122,6 +123,16 @@ def compute_up(t, lhs, rhs, **kwargs):
                       left_on=t.on_left, right_on=t.on_right,
                       how=t.how)
     return result.reset_index()[t.fields]
+
+
+@dispatch(NonNull, NDFrame)
+def compute_up(t, df, **kwargs):
+    return df.dropna()
+
+
+@dispatch(IsNull, NDFrame)
+def compute_up(t, df, **kwargs):
+    return df.isnull()
 
 
 @dispatch(Symbol, (DataFrameGroupBy, SeriesGroupBy))
