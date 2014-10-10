@@ -61,6 +61,14 @@ def into(a, b, dtype=None, **kwargs):
     return into(a, x, **kwargs)
 
 
+@dispatch(carray, carray)
+def into(a, b, **kwargs):
+    if isinstance(a, type):
+        return b
+    else:
+        a.append(iter(b))
+        return a
+
 @dispatch(ctable, (tuple, list))
 def into(a, b, names=None, types=None, **kwargs):
 
