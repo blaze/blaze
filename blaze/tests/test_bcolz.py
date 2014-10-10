@@ -8,6 +8,7 @@ from pandas import DataFrame
 from toolz import count
 import os
 from datashape import discover, dshape
+from collections import Iterator
 
 from blaze.bcolz import into, chunks, resource
 from blaze.utils import tmpfile
@@ -54,8 +55,11 @@ def test_into_ctable_list():
 
 def test_into_ctable_list_datetimes():
     from datetime import datetime
-    b = into(bcolz.carray, [datetime(2012, 1, 1), datetime(2013, 2, 2)])
+    L = [datetime(2012, 1, 1), datetime(2013, 2, 2)]
+    b = into(bcolz.carray, L)
     assert np.issubdtype(b.dtype, np.datetime64)
+
+    assert list(into(Iterator, b)) == L
 
 
 def test_into_ctable_iterator():
@@ -68,8 +72,10 @@ def test_into_ndarray_carray():
     assert str(into(np.ndarray, b['a'])) == \
             str(np.array([1, 2, 3]))
 
+
 def test_into_list_ctable():
     assert into([], b) == [(1, 1.), (2, 2.), (3, 3.)]
+
 
 def test_into_DataFrame_ctable():
     result = into(DataFrame(), b)
