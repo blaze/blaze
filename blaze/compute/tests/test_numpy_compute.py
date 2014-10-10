@@ -4,6 +4,7 @@ import numpy as np
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol, union, by, exp
+from datashape import discover
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -150,12 +151,11 @@ def test_slice():
         assert (compute(t[s], x) == x[s]).all()
 
 
-a = TableSymbol('a', '5 * 3 * float32')
 
-ax = np.arange(15, dtype='f4').reshape((5, 3))
+ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
 
+a = TableSymbol('a', discover(ax))
 
 def test_array_reductions():
-    assert eq(compute(a.sum(), ax), ax.sum())
-    assert eq(compute(a.sum(axis=1), ax), ax.sum(axis=1))
-    assert eq(compute(a.sum(axis=0), ax), ax.sum(axis=0))
+    for axis in [None, 0, 1, (0, 1), (2, 1)]:
+        assert eq(compute(a.sum(axis=axis), ax), ax.sum(axis=axis))
