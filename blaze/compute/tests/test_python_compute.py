@@ -103,6 +103,11 @@ def test_reductions():
     assert compute(any(t['amount'] > 250), data) is False
 
 
+def test_count():
+    t = TableSymbol('t', '3 * int')
+    assert compute(t.count(), [1, None, 2]) == 2
+
+
 def reduction_runner(funcs):
     from blaze.compatibility import builtins as bts
     exprs = sum, min, max

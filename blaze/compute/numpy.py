@@ -72,7 +72,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return len(x)
+    return (~np.isnan(x)).sum()
 
 
 @dispatch(nunique, np.ndarray)
