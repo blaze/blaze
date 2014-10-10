@@ -165,9 +165,8 @@ def test_compute_up_projection_no_ndarray_fieldnames():
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
     projection_expr = t[['name', 'amount']]
-    computed_expr = compute_up(projection_expr, y)
-    for z in range(0, 1 - len(computed_expr)):
-        assert computed_expr[z][0] == x[z][1]
+    for z in range(0, 1 - len(compute_up(projection_expr, y))):
+        assert computed_expr[z][0] == y[z][1]
 
 def test_compute_up_sort_field_not_found():
     sort_failure = t.sort('missing-field')
