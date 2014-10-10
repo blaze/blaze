@@ -143,3 +143,8 @@ def test_by():
     result = compute(expr, x)
 
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
+
+
+def test_slice():
+    for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
+        assert (compute(t[s], x) == x[s]).all()

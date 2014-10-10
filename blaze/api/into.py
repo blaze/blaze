@@ -112,7 +112,8 @@ def into(a, b, **kwargs):
     return f(a, b, **kwargs)
 
 @dispatch((list, tuple, set), (list, tuple, set, Iterator,
-                               type(dict().items())))
+                               type(dict().items()),
+                               pd.Series, np.record, np.void))
 def into(a, b, **kwargs):
     return type(a)(b)
 

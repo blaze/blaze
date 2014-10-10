@@ -30,11 +30,12 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, std, var, Like,
+                    Map, Apply, Merge, Union, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol)
 from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_up, base
+from ..compatibility import _inttypes
 
 __all__ = []
 
@@ -400,3 +401,21 @@ def compute_up(expr, s, **kwargs):
 @dispatch(Millisecond, Series)
 def compute_up(_, s, **kwargs):
     return get_date_attr(s, 'microsecond') // 1000
+
+
+@dispatch(Slice, DataFrame)
+def compute_up(expr, df, **kwargs):
+    index = expr.index
+    if isinstance(index, tuple) and len(index) == 1:
+        index = index[0]
+    if isinstance(index, _inttypes):
+        return df.iloc[index]
+    elif isinstance(index, slice):
+        if index.stop is not None:
+            return df.iloc[slice(index.start,
+                                index.stop,
+                                index.step)]
+        else:
+            return df.iloc[index]
+    else:
+        raise NotImplementedError()
