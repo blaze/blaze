@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from operator import itemgetter
 import pytest
 pymongo = pytest.importorskip('pymongo')
 
@@ -46,6 +45,18 @@ def big_bank(db):
             {'name': 'Bob', 'amount': 300, 'city': 'San Francisco'}]
     coll = db.bigbank
     coll = into(coll, data)
+    yield coll
+    coll.drop()
+
+
+@pytest.yield_fixture
+def null_bank(db):
+    data = [{'name': None, 'amount': 100, 'city': 'New York City'},
+            {'name': 'Alice', 'amount': None, 'city': 'Austin'},
+            {'name': 'Bob', 'amount': 100, 'city': 'New York City'},
+            {'name': None, 'amount': None, 'city': 'New York City'},
+            {'name': 'Bob', 'amount': None, 'city': 'San Francisco'}]
+    coll = into(db.nullbank, data)
     yield coll
     coll.drop()
 
@@ -222,6 +233,13 @@ def test_reductions(t, bank):
     assert compute(t.amount.min(), bank) == 100
     assert compute(t.amount.max(), bank) == 300
     assert compute(t.amount.sum(), bank) == 900
+
+
+def test_count(null_bank):
+    t = TableSymbol('t', '{name: ?string, amount: ?int64, city: string}')
+    assert compute(t.name.count(), null_bank) == 3
+    assert compute(t.amount.count(), null_bank) == 2
+    assert compute(t.city.count(), null_bank) == 5
 
 
 def test_distinct(t, bank):
