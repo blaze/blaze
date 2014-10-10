@@ -5,6 +5,7 @@ from blaze.expr import Label, Distinct, By, Reduction, Like, Slice
 from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str
 
+from collections import Iterator
 import datashape
 import bcolz
 import math
@@ -13,6 +14,7 @@ from .chunks import ChunkIndexable
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
+from ..api import into
 
 __all__ = ['bcolz']
 
@@ -29,7 +31,7 @@ def compute_up(sel, t, **kwargs):
         return t.where(s)
     except (NotImplementedError, NameError, AttributeError):
         # numexpr may not be able to handle the predicate
-        return compute_up(sel, iter(t), **kwargs)
+        return compute_up(sel, into(Iterator, t), **kwargs)
 
 
 @dispatch(Head, (bcolz.carray, bcolz.ctable))
