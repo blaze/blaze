@@ -17,26 +17,22 @@ from distutils.util import convert_path
 # Top Level Packages
 #------------------------------------------------------------------------
 
-def includable(x):
-    return os.path.isdir(x) and os.path.basename(x) != '__pycache__'
-
-
 def ispackage(x):
-    return includable(x) and os.path.exists(os.path.join(x, '__init__.py'))
+    return os.path.isdir(x) and os.path.exists(os.path.join(x, '__init__.py'))
 
 
 def istestdir(x):
-    return includable(x) and not os.path.exists(os.path.join(x, '__init__.py'))
+    return os.path.isdir(x) and not os.path.exists(os.path.join(x, '__init__.py'))
 
 
 def find_packages(where='blaze', exclude=('ez_setup', 'distribute_setup'),
-                  predicate=complement(istestdir)):
+                  predicate=ispackage):
     if sys.version_info[0] == 3:
         exclude += ('*py2only*', '*__pycache__*')
 
-    func = lambda x: predicate(x) and not any(map(partial(fnmatch, x), exclude))
-    out = filter(func, map(first, os.walk(convert_path(where))))
-    return list(out)
+    func = lambda x: predicate(x) and not any(fnmatch(x, exc)
+                                              for exc in exclude)
+    return list(filter(func, map(first, os.walk(convert_path(where)))))
 
 
 packages = find_packages()
