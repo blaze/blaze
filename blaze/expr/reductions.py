@@ -133,6 +133,7 @@ class std(Reduction):
         super(std, self).__init__(child, unbiased)
 
 class count(Reduction):
+    """ The number of non-null elements """
     _dtype = ct.int_
 
 class nunique(Reduction):
