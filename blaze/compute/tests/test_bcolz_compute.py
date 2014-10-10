@@ -13,6 +13,7 @@ from blaze.compute.core import compute
 b = bcolz.ctable([[1, 2, 3], [1., 2., 3.]],
                  names=['a', 'b'])
 
+
 t = TableSymbol('t', '{a: int32, b: float64}')
 
 
@@ -40,6 +41,22 @@ def test_reductions():
     assert compute(t.nunique(), b) == 3
     assert len(list(compute(t.distinct(), b))) == 3
     assert len(list(compute(t.a.distinct(), b))) == 3
+
+    assert compute(t.a.count(), b) == 3
+    assert compute(t.b.count(), b) == 3
+
+
+def test_count_nulls():
+    c = bcolz.ctable([[1.0, 2.0, np.nan], [1., np.nan, np.nan]],
+                     names=list('ab'))
+    ct = TableSymbol('t', '{a: float64, b: float64}')
+    lhs = compute(ct.count(), c)
+    rhs = np.array([(2, 1)], dtype=[('a', 'int64'), ('b', 'int64')])
+    rhs = np.array([(2, 1)], dtype=[('a', 'int64'), ('b', 'int64')])
+    assert (lhs == rhs).all()
+
+    assert compute(ct.a.count(), c) == 2
+    assert compute(ct.b.count(), c) == 1
 
 
 def test_selection_head():
