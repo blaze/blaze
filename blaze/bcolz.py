@@ -6,7 +6,11 @@ import numpy as np
 from pandas import DataFrame
 from collections import Iterator
 from toolz import partition_all, keyfilter
+import os
+from datashape import to_numpy_dtype
+from toolz import keyfilter
 
+from .api.resource import resource
 from .dispatch import dispatch
 from .compute.bcolz import *
 from .utils import keywords
@@ -103,3 +107,17 @@ from blaze.data.core import DataDescriptor
 def into(a, b, **kwargs):
     a.extend_chunks(chunks(b))
     return a
+
+
+@resource.register('.+\.bcolz/?')
+def resource_bcolz(rootdir, **kwargs):
+    if os.path.exists(rootdir):
+        kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+        return ctable(rootdir=rootdir, **kwargs)
+    else:
+        if 'dshape' in kwargs:
+            dtype = to_numpy_dtype(kwargs['dshape'])
+            kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+            return ctable(np.empty(0, dtype), rootdir=rootdir, **kwargs)
+        else:
+            raise ValueError("File does not exist and no `dshape=` given")
