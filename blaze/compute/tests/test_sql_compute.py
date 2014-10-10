@@ -70,6 +70,7 @@ def test_arithmetic():
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
 
+
 def test_join():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -132,8 +133,6 @@ def test_clean_complex_join():
     WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
 
 
-
-
 def test_multi_column_join():
     metadata = sa.MetaData()
     lhs = sa.Table('aaa', metadata,
@@ -185,6 +184,7 @@ def test_reductions():
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
 
+
 def test_count_on_table():
     assert normalize(str(select(compute(t.count(), s)))) == normalize("""
     SELECT count(accounts.id) as count_1
@@ -195,6 +195,7 @@ def test_count_on_table():
     SELECT count(accounts.id) as count_1
     FROM accounts
     WHERE accounts.amount > :amount_1""")
+
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -276,6 +277,7 @@ def test_by_three():
     FROM accountsbig GROUP BY accountsbig.name, accountsbig.sex
     """)
 
+
 def test_by_summary_clean():
     expr = by(t.name, min=t.amount.min(), max=t.amount.max())
     result = compute(expr, s)
@@ -287,8 +289,6 @@ def test_by_summary_clean():
     """
 
     assert normalize(str(result)) == normalize(expected)
-
-
 
 
 def test_join_projection():
@@ -347,6 +347,7 @@ def test_merge():
     assert 'FROM accounts' in result
     assert 'SELECT accounts.name' in result
     assert 'new' in result
+
 
 def test_projection_of_selection():
     print(compute(t[t['amount'] < 0][['name', 'amount']], s))
@@ -505,13 +506,13 @@ def test_clean_join():
         """)
 
 
-
 def test_like():
     expr = t.like(name='Alice*')
     assert normalize(str(compute(expr, s))) == normalize("""
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
 
 def test_columnwise_on_complex_selection():
     assert normalize(str(select(compute(t[t.amount > 0].amount + 1, s)))) == \
@@ -520,6 +521,7 @@ def test_columnwise_on_complex_selection():
     FROM accounts
     WHERE accounts.amount > :amount_2
     """)
+
 
 def test_reductions_on_complex_selections():
 
