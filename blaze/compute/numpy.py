@@ -21,16 +21,16 @@ def compute_up(c, x, **kwargs):
         return x[c._name]
     if not x.dtype.names and x.shape[1] == len(c._child.fields):
         return x[:, c._child.fields.index(c._name)]
-    raise NotImplementedError()
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(Projection, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if all(col in x.dtype.names for col in t.fields):
+    if x.dtype.names and all(col in x.dtype.names for col in t.fields):
         return x[t.fields]
     if not x.dtype.names and x.shape[1] == len(t._child.fields):
         return x[:, [t._child.fields.index(col) for col in t.fields]]
-    raise NotImplementedError()
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(Broadcast, np.ndarray)
@@ -64,12 +64,6 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
-@dispatch(Selection, np.ndarray)
-def compute_up(t, x, **kwargs):
-    predicate = compute(t.predicate, {t._child: x})
-    return x[predicate]
-
-
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
     return (~np.isnan(x)).sum()
@@ -100,10 +94,10 @@ def compute_up(t, x, **kwargs):
     if (t.key in x.dtype.names or
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
-    elif t.key:
-        raise NotImplementedError("Sort key %s not supported" % str(t.key))
+    elif t.key not in x.dtype.names or not all(k in x.dtype.names for k in t.key):
+        raise ValueError("Column %s not found in numpy array" % t.key)
     else:
-        result = np.sort(x)
+        result = np.sort(x) # pragma: no cover
 
     if not t.ascending:
         result = result[::-1]
