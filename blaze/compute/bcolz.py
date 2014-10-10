@@ -27,7 +27,7 @@ def compute_up(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     try:
         return t.where(s)
-    except (NotImplementedError, NameError):
+    except (NotImplementedError, NameError, AttributeError):
         # numexpr may not be able to handle the predicate
         return compute_up(sel, iter(t), **kwargs)
 
