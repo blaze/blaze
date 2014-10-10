@@ -15,7 +15,7 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply']
+           'ReLabel', 'relabel', 'Apply', 'Slice']
 
 
 class Expr(Node):
@@ -37,15 +37,20 @@ class Expr(Node):
     def __getitem__(self, key):
         if isinstance(key, _strtypes) and key in self.fields:
             return self._get_field(key)
-        if isinstance(key, Expr) and iscollection(key.dshape):
+        elif isinstance(key, Expr) and iscollection(key.dshape):
             return selection(self, key)
-        if (isinstance(key, list)
+        elif (isinstance(key, list)
                 and builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
                 return self._project(key)
             else:
                 raise ValueError('Names %s not consistent with known names %s'
                         % (key, self.fields))
+        elif (isinstance(key, tuple)
+                and all(isinstance(k, (int, slice)) for k in key)):
+            return Slice(self, key)
+        elif isinstance(key, (slice, int)):
+            return Slice(self, (key,))
         raise ValueError("Not understood %s[%s]" % (self, key))
 
     def map(self, func, schema=None, name=None):
@@ -235,6 +240,32 @@ def projection(expr, names):
                 "where expression has names %s" % (names, expr.fields))
     return Projection(expr, tuple(names))
 projection.__doc__ = Projection.__doc__
+
+
+from .utils import hashable_index, replace_slices
+class Slice(Expr):
+    __slots__ = '_child', '_index'
+
+    def __init__(self, child, index):
+        self._child = child
+        self._index = hashable_index(index)
+        hash(self)
+
+    @property
+    def dshape(self):
+        return self._child.dshape.subshape[self.index]
+
+    @property
+    def index(self):
+        return replace_slices(self._index)
+
+    def __str__(self):
+        if isinstance(self.index, tuple):
+            return '%s[%s]' % (self._child, ', '.join(map(str, self._index)))
+        else:
+            return '%s[%s]' % (self._child, self._index)
+
+    __repr__ = __str__
 
 
 class Selection(Expr):

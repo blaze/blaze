@@ -24,6 +24,11 @@ This architecture allows a single Blaze code to run against several
 computational backends.  Blaze depends on and exposes the hard work of
 countless other projects.
 
+Presentations
+-------------
+
+* [See previous presentations about Blaze](http://blaze.pydata.org/presentations)
+
 
 Under Development
 -----------------

@@ -4,7 +4,7 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not
 
@@ -130,6 +130,10 @@ def compute_up(sel, x, **kwargs):
 def compute_up(expr, example, children, **kwargs):
     return np.concatenate(list(children), axis=0)
 
+
+@dispatch(Slice, np.ndarray)
+def compute_up(expr, x, **kwargs):
+    return x[expr.index]
 
 
 @dispatch(Expr, np.ndarray)
