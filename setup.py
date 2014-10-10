@@ -9,6 +9,7 @@ import textwrap
 from fnmatch import fnmatch
 from toolz import first, partial, complement
 
+from distutils.command.install_data import install_data
 from distutils.core import Command, setup
 from distutils.util import convert_path
 
@@ -127,11 +128,32 @@ class CleanCommand(Command):
 # Setup
 #------------------------------------------------------------------------
 
+def find_data_files(exts, where='blaze'):
+    exts = tuple(exts)
+    for root, dirs, files in os.walk(where):
+        for f in files:
+            if any(fnmatch(f, pat) for pat in exts):
+                yield os.path.join(root, f)
+
+
+exts = '*.h5', '*.csv', '*.xls', '*.xlsx', '*.db'
 package_data = [os.path.join(x.replace('blaze' + os.sep, ''),
                              '*.py') for x in testdirs]
+package_data += [x.replace('blaze' + os.sep, '') for x in find_data_files(exts)]
+data_files = list(find_data_files(exts, where='examples'))
+
 
 with open('README.MD') as f:
     longdesc = f.read()
+
+
+class smart_install_data(install_data):
+    """need to change self.install_dir to the actual library dir"""
+    def run(self):
+        install_cmd = self.get_finalized_command('install')
+        self.install_dir = os.path.join(getattr(install_cmd, 'install_lib'),
+                                        'blaze', 'examples', 'data')
+        return install_data.run(self)
 
 
 setup(
@@ -155,7 +177,8 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    data_files=data_files,
     package_data={'blaze': package_data},
     packages=packages,
-    cmdclass={'clean': CleanCommand}
+    cmdclass={'clean': CleanCommand, 'install_data': smart_install_data}
 )
