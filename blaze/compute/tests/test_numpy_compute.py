@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import TableSymbol, union, by, exp
-from blaze.api.table import Table
+from blaze.expr import TableSymbol, union, by, exp, Symbol
+from datashape import discover
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
