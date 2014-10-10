@@ -355,11 +355,11 @@ def eval_str(expr):
 
     >>> from datetime import date
     >>> eval_str(date(2000, 1, 20))
-    '"2000-01-20"'
+    datetime.date(2000, 1, 20)
     """
     from datetime import date, datetime
     if isinstance(expr, (date, datetime)):
-        return '"%s"' % str(expr)
+        return repr(expr)
     return repr(expr) if isinstance(expr, _strtypes) else str(expr)
 
 

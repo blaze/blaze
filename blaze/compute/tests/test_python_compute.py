@@ -607,6 +607,18 @@ def test_like():
     assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
 
 
+def test_datetime_comparison():
+    data = [['Alice', date(2000, 1, 1)],
+            ['Bob', date(2000, 2, 2)],
+            ['Alice', date(2000, 3, 3)]]
+
+    t = Symbol('t', 'var * {name: string, when: date}')
+
+    assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
+
+
+
+
 def test_datetime_access():
     data = [['Alice', 100, 1, datetime(2000, 1, 1, 1, 1, 1)],
             ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
