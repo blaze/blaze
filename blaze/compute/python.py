@@ -244,7 +244,7 @@ def _std(seq, unbiased):
 
 @dispatch(count, Sequence)
 def compute_up(t, seq, **kwargs):
-    return cytoolz.count(seq)
+    return cytoolz.count(filter(None, seq))
 
 
 @dispatch(Distinct, Sequence)

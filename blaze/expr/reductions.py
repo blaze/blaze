@@ -110,12 +110,14 @@ class var(Reduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = '_child', 'unbiased'
+    __slots__ = '_child', 'unbiased', 'axis'
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False):
-        super(var, self).__init__(child, unbiased)
+    def __init__(self, child, unbiased=False, axis=None):
+        self._child = child
+        self.unbiased = unbiased
+        self.axis = axis
 
 class std(Reduction):
     """Standard Deviation
@@ -137,14 +139,17 @@ class std(Reduction):
     --------
     var
     """
-    __slots__ = '_child', 'unbiased'
+    __slots__ = '_child', 'unbiased', 'axis'
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False):
-        super(std, self).__init__(child, unbiased)
+    def __init__(self, child, unbiased=False, axis=None):
+        self._child = child
+        self.unbiased = unbiased
+        self.axis = axis
 
 class count(Reduction):
+    """ The number of non-null elements """
     _dtype = ct.int_
 
 class nunique(Reduction):

@@ -61,7 +61,7 @@ split-apply-combine workflows.
 
    >>> by(accounts['name'],                 # Splitting/grouping element
    ...    total=accounts['balance'].sum())  # Apply and reduction
-   By(grouper=accounts['name'], apply=summary(total=sum(_child=accounts['balance'])))
+   By(grouper=accounts['name'], apply=summary(total=sum(_child=accounts['balance'], axis=None)))
 
 
 This operation groups the table by name and then sums the balance of each
