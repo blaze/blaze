@@ -7,7 +7,6 @@ from blaze.compute.core import compute, compute_up
 from blaze.expr import TableSymbol, union, by, exp, Symbol
 from datashape import discover
 
-
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
 
 x = np.array([(1, 'Alice', 100),
