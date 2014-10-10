@@ -355,7 +355,7 @@ def eval_str(expr):
 
     >>> from datetime import date
     >>> eval_str(date(2000, 1, 20))
-    datetime.date(2000, 1, 20)
+    'datetime.date(2000, 1, 20)'
     """
     from datetime import date, datetime
     if isinstance(expr, (date, datetime)):
