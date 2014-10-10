@@ -7,7 +7,7 @@ from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
                     Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
                     Reduction, symbol)
 from ..expr import Label, Distinct, By, Slice
-from ..expr import Expr
+from ..expr import Expr, NonNull, IsNull
 from ..expr import path
 from ..expr.optimize import lean_projection
 from ..expr.split import split
@@ -58,6 +58,22 @@ def compute_down(expr, data, **kwargs):
         return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
     else:
         raise MDNotImplementedError()
+
+
+@dispatch(NonNull, bcolz.ctable)
+def compute_up(n, t, **kwargs):
+    return t.where(~compute_up(n._child.isnull(), t, **kwargs))
+
+
+@dispatch(IsNull, bcolz.ctable)
+def compute_up(n, t, **kwargs):
+    # TODO: a projection insertion here would be nice
+    # i.e., only compute_up over the columns in the child of an IsNull
+    # expression
+    names = t.cols.names
+    expr = ' | '.join('({0} != {0})'.format(x) for x in names)
+    user_dict = dict((c, t.cols[c]) for c in names)
+    return bcolz.eval(expr, user_dict=user_dict)
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
