@@ -409,13 +409,13 @@ def compute_up(expr, df, **kwargs):
     if isinstance(index, tuple) and len(index) == 1:
         index = index[0]
     if isinstance(index, _inttypes):
-        return df.loc[index]
+        return df.iloc[index]
     elif isinstance(index, slice):
         if index.stop is not None:
             return df.iloc[slice(index.start,
                                 index.stop,
                                 index.step)]
         else:
-            return df.loc[index]
+            return df.iloc[index]
     else:
         raise NotImplementedError()
