@@ -53,10 +53,6 @@ def test_UnaryOp():
               np.exp(x['amount']))
 
 
-def test_BinOp():
-    pass
-
-
 def test_Neg():
     assert eq(compute(-t['amount'], x),
               -x['amount'])
@@ -150,30 +146,31 @@ def test_by():
 
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
 
+def test_field():
+    assert eq(compute_up(t['name'], x), x['name'])
 
-def test_compute_up_column():
+def test_compute_up_field_no_ndarray_fieldnames():
     y = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
-    t = TableSymbol('t', '{id: int, name: string, amount: int}')
-    tablesymbol_column = t[t['amount'] < 0]['name']
-    computed_expr = compute_up(tablesymbol_column, y)
-    assert len(computed_expr) == 5
+    field_expr = t[t['amount'] < 0]['name']
+    assert (compute_up(field_expr, y) == x['name']).all()
 
-def test_compute_up_projection():
+def test_compute_up_projection_no_ndarray_fieldnames():
     y = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
-    tablesymbol_projection = t[['name', 'amount']]
-    computed_expr = compute_up(tablesymbol_projection, y)
-    assert len(computed_expr) == 5
+    projection_expr = t[['name', 'amount']]
+    computed_expr = compute_up(projection_expr, y)
+    for z in range(0, 1 - len(computed_expr)):
+        assert computed_expr[z][0] == x[z][1]
 
-def test_compute_up_sort_failure():
-    sort_failure = t.sort('balance')
+def test_compute_up_sort_field_not_found():
+    sort_failure = t.sort('missing-field')
     with pytest.raises(ValueError):
         compute_up(sort_failure, x)
 

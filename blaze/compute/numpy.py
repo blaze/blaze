@@ -30,7 +30,7 @@ def compute_up(t, x, **kwargs):
         return x[t.fields]
     if not x.dtype.names and x.shape[1] == len(t._child.fields):
         return x[:, [t._child.fields.index(col) for col in t.fields]]
-    raise NotImplementedError() #pragma: no cover
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(Broadcast, np.ndarray)
@@ -46,7 +46,6 @@ def compute_up(t, lhs, rhs, **kwargs):
 
 @dispatch(BinOp, base, np.ndarray)
 def compute_up(t, lhs, rhs, **kwargs):
-    import pdb; pdb.set_trace()
     return t.op(lhs, rhs)
 
 
