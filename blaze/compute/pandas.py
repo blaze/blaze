@@ -412,8 +412,8 @@ def compute_up(expr, df, **kwargs):
         return df.loc[index]
     elif isinstance(index, slice):
         if index.stop is not None:
-            return df.loc[slice(index.start,
-                                index.stop - 1,
+            return df.iloc[slice(index.start,
+                                index.stop,
                                 index.step)]
         else:
             return df.loc[index]
