@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from blaze.compute.core import compute
-from blaze.expr import TableSymbol, union, by, exp
+from blaze.expr import TableSymbol, union, by, exp, Symbol
 from datashape import discover
 
 
@@ -90,6 +90,12 @@ def test_Reductions():
     assert compute(t['amount'].std(unbiased=True), x) == x['amount'].std(ddof=1)
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
+
+
+def test_count_nan():
+    t = Symbol('t', '3 * ?real')
+    x = np.array([1.0, np.nan, 2.0])
+    assert compute(t.count(), x) == 2
 
 
 def test_Distinct():

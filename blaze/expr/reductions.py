@@ -149,6 +149,7 @@ class std(Reduction):
         self.axis = axis
 
 class count(Reduction):
+    """ The number of non-null elements """
     _dtype = ct.int_
 
 class nunique(Reduction):
