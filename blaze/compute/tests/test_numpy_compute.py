@@ -148,3 +148,14 @@ def test_by():
 def test_slice():
     for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
         assert (compute(t[s], x) == x[s]).all()
+
+
+a = TableSymbol('a', '5 * 3 * float32')
+
+ax = np.arange(15, dtype='f4').reshape((5, 3))
+
+
+def test_array_reductions():
+    assert eq(compute(a.sum(), ax), ax.sum())
+    assert eq(compute(a.sum(axis=1), ax), ax.sum(axis=1))
+    assert eq(compute(a.sum(axis=0), ax), ax.sum(axis=0))
