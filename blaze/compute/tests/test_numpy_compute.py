@@ -156,8 +156,10 @@ def test_compute_up_field_no_ndarray_fieldnames():
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
-    field_expr = t[t['amount'] < 0]['name']
-    assert (compute_up(field_expr, y) == x['name']).all()
+    field_expr = t['name']
+    computed_expr = compute_up(field_expr, y)
+    for z in range(0, 1 - len(computed_expr)):
+        assert computed_expr[z][0] == x[z][1]
 
 def test_compute_up_projection_no_ndarray_fieldnames():
     y = np.array([(1, 'Alice', 100),
@@ -166,8 +168,9 @@ def test_compute_up_projection_no_ndarray_fieldnames():
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
     projection_expr = t[['name', 'amount']]
-    for z in range(0, 1 - len(compute_up(projection_expr, y))):
-        assert computed_expr[z][0] == y[z][1]
+    computed_expr = compute_up(projection_expr, y)
+    for z in range(0, 1 - len(computed_expr)):
+        assert computed_expr[z][0] == x[z][1]
 
 def test_compute_up_sort_field_not_found():
     sort_failure = t.sort('missing-field')
