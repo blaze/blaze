@@ -361,6 +361,23 @@ class Projection(ElemWise):
                                                                self.fields))
 
 
+
+class IsNull(ElemWise):
+    __slots__ = '_child'
+
+
+class DropNA(ElemWise):
+    __slots__ = '_child', 'how'
+
+
+def isnull(expr):
+    return IsNull(expr)
+
+
+def dropna(expr, how='any'):
+    return DropNA(expr, how=how)
+
+
 def projection(expr, names):
     if not names:
         raise ValueError("Projection with no names")
