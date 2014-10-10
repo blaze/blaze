@@ -91,6 +91,12 @@ def test_Reductions():
     assert compute((t['amount'] > 250).all(), x) == False
 
 
+def test_count_nan():
+    t = TableSymbol('t', '3 * ?real')
+    x = np.array([1.0, np.nan, 2.0])
+    assert compute(t.count(), x) == 2
+
+
 def test_Distinct():
     x = np.array([('Alice', 100),
                   ('Alice', -200),
