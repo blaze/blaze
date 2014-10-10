@@ -1,9 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pytest
 
-from blaze.compute.core import compute
+from blaze.compute.core import compute, compute_up
 from blaze.expr import TableSymbol, union, by, exp
+from blaze.api.table import Table
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -143,6 +145,34 @@ def test_by():
     result = compute(expr, x)
 
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
+
+
+def test_field():
+    assert eq(compute_up(t['name'], x), x['name'])
+
+def test_compute_up_field_no_ndarray_fieldnames():
+    y = np.array([(1, 'Alice', 100),
+              (2, 'Bob', -200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
+              (5, 'Edith', -500)])
+    field_expr = t[t['amount'] < 0]['name']
+    assert (compute_up(field_expr, y) == x['name']).all()
+
+def test_compute_up_projection_no_ndarray_fieldnames():
+    y = np.array([(1, 'Alice', 100),
+              (2, 'Bob', -200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
+              (5, 'Edith', -500)])
+    projection_expr = t[['name', 'amount']]
+    for z in range(0, 1 - len(compute_up(projection_expr, y))):
+        assert computed_expr[z][0] == y[z][1]
+
+def test_compute_up_sort_field_not_found():
+    sort_failure = t.sort('missing-field')
+    with pytest.raises(ValueError):
+        compute_up(sort_failure, x)
 
 
 def test_slice():
