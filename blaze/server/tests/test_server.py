@@ -157,7 +157,7 @@ def test_to_tree():
                                },
                               'amount'
                             ]
-                        }]
+                        }, None]
                 }
     assert to_tree(expr) == expected
 

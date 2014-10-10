@@ -341,7 +341,7 @@ def from_tree(expr, namespace=None):
      }
 
     >>> from_tree(tree)
-    sum(_child=t['x'])
+    sum(_child=t['x'], axis=None)
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
     below we replace the ``TableSymbol`` node with the string ``'t'``.
