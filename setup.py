@@ -6,7 +6,8 @@ import os
 import sys
 import shutil
 import textwrap
-from fnmatch import fnmatchcase
+from fnmatch import fnmatch
+from toolz import first, partial, complement
 
 from distutils.core import Command, setup
 from distutils.util import convert_path
@@ -16,28 +17,31 @@ from distutils.util import convert_path
 # Top Level Packages
 #------------------------------------------------------------------------
 
-def find_packages(where='.', exclude=()):
-    out = []
-    stack = [(convert_path(where), '')]
-    while stack:
-        where, prefix = stack.pop(0)
-        for name in os.listdir(where):
-            fn = os.path.join(where,name)
-            if ('.' not in name and os.path.isdir(fn) and
-                os.path.isfile(os.path.join(fn, '__init__.py'))
-            ):
-                out.append(prefix+name)
-                stack.append((fn, prefix+name+'.'))
+def includable(x):
+    return os.path.isdir(x) and os.path.basename(x) != '__pycache__'
 
+
+def ispackage(x):
+    return includable(x) and os.path.exists(os.path.join(x, '__init__.py'))
+
+
+def istestdir(x):
+    return includable(x) and not os.path.exists(os.path.join(x, '__init__.py'))
+
+
+def find_packages(where='blaze', exclude=('ez_setup', 'distribute_setup'),
+                  predicate=complement(istestdir)):
     if sys.version_info[0] == 3:
-        exclude = exclude + ('*py2only*', )
+        exclude += ('*py2only*', '*__pycache__*')
 
-    for pat in list(exclude) + ['ez_setup', 'distribute_setup']:
-        out = [item for item in out if not fnmatchcase(item, pat)]
+    func = lambda x: predicate(x) and not any(map(partial(fnmatch, x), exclude))
+    out = filter(func, map(first, os.walk(convert_path(where))))
+    return list(out)
 
-    return out
 
 packages = find_packages()
+testdirs = find_packages(predicate=(lambda x: istestdir(x) and
+                                    os.path.basename(x) == 'tests'))
 
 #------------------------------------------------------------------------
 # Minimum Versions
@@ -123,7 +127,12 @@ class CleanCommand(Command):
 # Setup
 #------------------------------------------------------------------------
 
-longdesc = open('README.md').read()
+package_data = [os.path.join(x.replace('blaze' + os.sep, ''),
+                             '*.py') for x in testdirs]
+
+with open('README.MD') as f:
+    longdesc = f.read()
+
 
 setup(
     name='blaze',
@@ -132,7 +141,6 @@ setup(
     author_email='blaze-dev@continuum.io',
     description='Blaze',
     long_description=longdesc,
-    data_files=[],
     license='BSD',
     platforms = ['any'],
     classifiers=[
@@ -147,8 +155,7 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    package_data={'blaze': package_data},
     packages=packages,
-    cmdclass = {
-        'clean'     : CleanCommand,
-    }
+    cmdclass={'clean': CleanCommand}
 )
