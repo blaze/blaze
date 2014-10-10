@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from blaze.compute.core import compute
-from blaze.expr import TableSymbol, union, by, exp
+from blaze.expr import TableSymbol, union, by, exp, Symbol
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -92,7 +92,7 @@ def test_Reductions():
 
 
 def test_count_nan():
-    t = TableSymbol('t', '3 * ?real')
+    t = Symbol('t', '3 * ?real')
     x = np.array([1.0, np.nan, 2.0])
     assert compute(t.count(), x) == 2
 
