@@ -125,9 +125,14 @@ def compute_up(t, lhs, rhs, **kwargs):
     return result.reset_index()[t.fields]
 
 
-@dispatch(DropNA, NDFrame)
+@dispatch(DropNA, Series)
 def compute_up(t, df, **kwargs):
     return df.dropna()
+
+
+@dispatch(DropNA, DataFrame)
+def compute_up(t, df, **kwargs):
+    return df.dropna(how=t.how)
 
 
 @dispatch(IsNull, NDFrame)

@@ -7,7 +7,7 @@ from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
                     Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
                     Reduction, symbol)
 from ..expr import Label, Distinct, By, Slice
-from ..expr import Expr, NonNull, IsNull
+from ..expr import Expr, DropNA, IsNull
 from ..expr import path
 from ..expr.optimize import lean_projection
 from ..expr.split import split
@@ -60,9 +60,17 @@ def compute_down(expr, data, **kwargs):
         raise MDNotImplementedError()
 
 
-@dispatch(NonNull, bcolz.ctable)
+@dispatch(DropNA, (bcolz.ctable, bcolz.carray))
 def compute_up(n, t, **kwargs):
-    return t.where(~compute_up(n._child.isnull(), t, **kwargs))
+    expr = n._child.isnull()
+    bres = bcolz.eval('~nulls', user_dict={'nulls': compute_up(expr, t,
+                                                               **kwargs)})
+    if bres.ndim == 1:
+        r = bres
+    else:
+        r = {'all': np.logical_and,
+             'any': np.logical_or}[n.how].reduce(bres, axis=1)
+    return t[r]
 
 
 @dispatch(IsNull, bcolz.ctable)
@@ -71,9 +79,12 @@ def compute_up(n, t, **kwargs):
     # i.e., only compute_up over the columns in the child of an IsNull
     # expression
     names = t.cols.names
-    expr = ' | '.join('({0} != {0})'.format(x) for x in names)
-    user_dict = dict((c, t.cols[c]) for c in names)
-    return bcolz.eval(expr, user_dict=user_dict)
+    return bcolz.carray([compute_up(n, t.cols[c], **kwargs) for c in names])
+
+
+@dispatch(IsNull, bcolz.carray)
+def compute_up(n, t, **kwargs):
+    return bcolz.eval('t != t')
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
