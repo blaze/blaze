@@ -24,7 +24,7 @@ def discover(t):
     return datashape.from_numpy(t.shape, t.dtype)
 
 
-@dispatch(Selection, (bcolz.ctable, bcolz.carray))
+@dispatch(Selection, bcolz.ctable)
 def compute_up(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     try:
@@ -32,6 +32,11 @@ def compute_up(sel, t, **kwargs):
     except (NotImplementedError, NameError, AttributeError):
         # numexpr may not be able to handle the predicate
         return compute_up(sel, into(Iterator, t), **kwargs)
+
+
+@dispatch(Selection, bcolz.ctable)
+def compute_up(sel, t, **kwargs):
+    return compute_up(sel, into(Iterator, t), **kwargs)
 
 
 @dispatch(Head, (bcolz.carray, bcolz.ctable))
