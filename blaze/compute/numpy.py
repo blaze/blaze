@@ -73,10 +73,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    try:
-        return pd.notnull(x).sum()
-    except TypeError:
-        return len(x)
+    return pd.notnull(x).sum()
 
 
 @dispatch(nunique, np.ndarray)
