@@ -471,7 +471,6 @@ def test_summary_by():
                           ['Bob', 1, 201]], columns=['name', 'count', 'sum'])
     tm.assert_frame_equal(result, expected)
 
-
 @pytest.mark.xfail(raises=TypeError,
                    reason=('pandas backend cannot support non Reduction '
                            'subclasses'))
@@ -656,3 +655,19 @@ def test_by_with_complex_summary():
     result = compute(expr, df)
     assert list(result.columns) == expr.fields
     assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
+
+
+def test_isnull():
+    assert (compute(nt.isnull(), ndf) == ndf.isnull()).all().all()
+    assert (compute(nt.name.isnull(), ndf) == ndf.name.isnull()).all()
+
+
+def test_dropna():
+    # any
+    assert (compute(nt.dropna(), ndf) == ndf.dropna()).all().all()
+    assert (compute(nt.name.dropna(), ndf) == ndf.name.dropna()).all()
+
+    # all
+    lhs = compute(nt.dropna(how='all'), ndf).fillna(-9999)
+    rhs = ndf.dropna(how='all').fillna(-9999)
+    assert (lhs == rhs).all().all()

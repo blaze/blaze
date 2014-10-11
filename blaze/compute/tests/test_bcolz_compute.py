@@ -146,6 +146,10 @@ def test_unicode_field_names():
 
     assert eq(compute(s[u'a'], b)[:], compute(s['a'], b)[:])
     assert eq(compute(s[[u'a', u'c']], b)[:], compute(s[['a', 'c']], b)[:])
+    assert eq(compute(s[u'a'], b)[:],
+              compute(s['a'],  b)[:])
+    assert eq(compute(s[[u'a', u'c']], b)[:],
+              compute(s[['a', 'c']],  b)[:])
 
 
 def test_chunksize_inference():
@@ -153,3 +157,13 @@ def test_chunksize_inference():
                               dtype=[('a', 'i8'), ('b', 'f8'), ('c', 'f8')]),
                      chunklen=2)
     assert get_chunksize(b) == 2
+
+
+def test_isnull():
+    assert (compute(t.b.isnull(), b) == np.array([False, False, False])).all()
+    assert (compute(nt.b.isnull(), nb) == np.array([True, False, False])).all()
+
+
+def test_dropna():
+    e = nt.b.dropna()
+    assert (compute(e, nb) == bcolz.carray([2.0, 3.0])).all()
