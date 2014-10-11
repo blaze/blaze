@@ -11,6 +11,7 @@ from ..expr import BinOp, UnaryOp, USub, Not
 from .core import base, compute
 from ..dispatch import dispatch
 from ..api.into import into
+import pandas as pd
 
 __all__ = ['np']
 
@@ -72,7 +73,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return (~np.isnan(x)).sum()
+    return pd.notnull(x).sum()
 
 
 @dispatch(nunique, np.ndarray)
