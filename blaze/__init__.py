@@ -29,6 +29,10 @@ try:
 except ImportError:
     pass
 try:
+    from .compute.h5py import *
+except ImportError:
+    pass
+try:
     from .compute.pytables import *
 except ImportError:
     pass
