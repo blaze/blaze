@@ -61,16 +61,15 @@ def compute_down(expr, data, **kwargs):
 
 
 @dispatch(DropNA, (bcolz.ctable, bcolz.carray))
-def compute_up(n, t, **kwargs):
-    expr = n._child.isnull()
-    bres = bcolz.eval('~nulls', user_dict={'nulls': compute_up(expr, t,
-                                                               **kwargs)})
-    if bres.ndim == 1:
-        r = bres
+def compute_up(expr, data, **kwargs):
+    expr = expr._child.isnull()
+    notnulls = bcolz.eval('~nulls', user_dict={'nulls': compute_up(expr, data,
+                                                                   **kwargs)})
+    if notnulls.ndim == 1:
+        cond = notnulls
     else:
-        r = {'all': np.logical_and,
-             'any': np.logical_or}[n.how].reduce(bres, axis=1)
-    return t[r]
+        cond = getattr(np, expr.how)(notnulls, axis=1)
+    return data[cond]
 
 
 @dispatch(IsNull, bcolz.ctable)
@@ -83,8 +82,8 @@ def compute_up(n, t, **kwargs):
 
 
 @dispatch(IsNull, bcolz.carray)
-def compute_up(n, t, **kwargs):
-    return bcolz.eval('t != t')
+def compute_up(_, data, **kwargs):
+    return bcolz.eval('t != t', user_dict={'t': data})
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
