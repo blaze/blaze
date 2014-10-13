@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .regex import RegexDispatcher
 from .dispatch import dispatch
+from .compatibility import _strtypes
 
 __all__ = 'resource', 'create_index', 'drop'
 
@@ -50,7 +51,7 @@ def create_index(t, column_name_or_names, name=None):
                               type(t).__name__)
 
 
-@dispatch(str, (basestring, list, tuple))
+@dispatch(_strtypes, (basestring, list, tuple))
 def create_index(uri, column_name_or_names, name=None, **kwargs):
     data = resource(uri, **kwargs)
     create_index(data, column_name_or_names, name=name)
@@ -88,7 +89,7 @@ def drop(rsrc):
                               type(rsrc).__name__)
 
 
-@dispatch(str)
+@dispatch(_strtypes)
 def drop(uri, **kwargs):
     data = resource(uri, **kwargs)
     drop(data)
