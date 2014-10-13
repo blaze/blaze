@@ -19,7 +19,7 @@ def resource_split(uri, *args, **kwargs):
     return resource(uri, other, *args, **kwargs)
 
 
-@dispatch(object, (basestring, list, tuple))
+@dispatch(object, _strtypes + (list, tuple))
 def create_index(t, column_name_or_names, name=None):
     """Create an index on a column.
 
@@ -28,7 +28,7 @@ def create_index(t, column_name_or_names, name=None):
     o : table-like
     index_name : str
         The name of the index to create
-    column_name_or_names : basestring, list, tuple
+    column_name_or_names : string, list, tuple
         A column name to index on, or a list or tuple for a composite index
 
     Examples
@@ -51,7 +51,7 @@ def create_index(t, column_name_or_names, name=None):
                               type(t).__name__)
 
 
-@dispatch(_strtypes, (basestring, list, tuple))
+@dispatch(_strtypes, _strtypes + (list, tuple))
 def create_index(uri, column_name_or_names, name=None, **kwargs):
     data = resource(uri, **kwargs)
     create_index(data, column_name_or_names, name=name)
