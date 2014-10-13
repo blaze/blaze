@@ -130,5 +130,5 @@ def test_null_dshape():
         s.isnull
 
     s = Symbol('s', '5 * ?int32')
-    assert str(s.dropna().dshape) == '5 * int32'
-    assert str(s.isnull().dshape) == '5 * bool'
+    assert str(s.dropna().dshape) == 'var * int32'
+    assert str(s.isnull().dshape) == 'var * bool'

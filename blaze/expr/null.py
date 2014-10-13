@@ -1,4 +1,4 @@
-from datashape import Option, real, dshape, Record
+from datashape import Option, dshape, DataShape, Var
 from datashape.predicates import iscollection
 from .expressions import ElemWise, Expr
 
@@ -13,6 +13,10 @@ class IsNull(ElemWise):
     def schema(self):
         return dshape('bool')
 
+    @property
+    def dshape(self):
+        return DataShape(Var(), self.schema.measure)
+
 
 def isnull(expr):
     return IsNull(expr)
@@ -23,7 +27,8 @@ class DropNA(Expr):
 
     @property
     def dshape(self):
-        return self._child.dshape
+        ds = self._child.dshape
+        return DataShape(Var(), ds.measure.ty)
 
 
 def dropna(expr, how='any'):
@@ -34,12 +39,12 @@ from .expressions import schema_method_list, dshape_method_list
 
 
 schema_method_list.extend([
-    (lambda ds: isinstance(ds, (Option, Record)) or ds == real, set([isnull]))
+    (lambda ds: isinstance(ds, Option), set([isnull]))
 ])
 
 
 def isdropna(ds):
-    return (isinstance(ds.measure, (Option, Record)) or ds.measure == real) and iscollection(ds)
+    return isinstance(ds.measure, Option) and iscollection(ds)
 
 
 dshape_method_list.extend([
