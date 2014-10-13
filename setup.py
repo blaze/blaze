@@ -137,7 +137,7 @@ package_data = [os.path.join(x.replace('blaze' + os.sep, ''),
 package_data += [x.replace('blaze' + os.sep, '') for x in find_data_files(exts)]
 
 
-with open('README.MD') as f:
+with open('README.md') as f:
     longdesc = f.read()
 
 
