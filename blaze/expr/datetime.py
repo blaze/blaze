@@ -5,7 +5,7 @@ from datashape import dshape, Record, DataShape, Unit, Option, date_, datetime_
 import datashape
 
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
-        'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
+        'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second', 'Millisecond',
         'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
         'time']
 
