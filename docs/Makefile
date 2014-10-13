@@ -153,4 +153,6 @@ doctest:
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
 capabilities:
+	mkdir -p build/html
+	touch build/html/capabilities.html
 	python source/scripts/capabilities.py
