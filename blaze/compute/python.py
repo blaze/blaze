@@ -17,7 +17,7 @@ import numbers
 import fnmatch
 import operator
 import re
-from collections import Iterator
+from collections import Iterator, Iterable
 from functools import partial
 from toolz import map, filter, compose, juxt, identity, tail
 from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
@@ -33,7 +33,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Summary, Like,
                     DateTime, Date, Time, Millisecond, ElemWise, symbol,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp)
+                    UTCFromTimestamp, IsNull, DropNA)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -216,6 +216,15 @@ def compute_up(expr, data, **kwargs):
     return rowfunc(expr)(data)
 
 
+@dispatch(IsNull)
+def rowfunc(_):
+    def f(row):
+        if isinstance(row, Iterable) and not isinstance(row, _strtypes):
+            return (x is None for x in row)
+        return row is None
+    return f
+
+
 def concat_maybe_tuples(vals):
     """
 
@@ -255,6 +264,7 @@ def deepmap(func, *data, **kwargs):
         return map(compose(tuple, partial(deepmap, func, n=n-1)), *data)
 
 
+
 @dispatch(Merge)
 def rowfunc(t):
     children = [optimize(child, []) for child in t.children]
@@ -290,6 +300,20 @@ def compute_up(t, a, b, **kwargs):
     # TODO: Tee if necessary
     func = rowfunc(t)
     return deepmap(func, a, b, n=ndim(t.lhs))
+
+
+@dispatch(DropNA, Sequence)
+def compute_up(expr, data, **kwargs):
+    f = rowfunc(expr._child.isnull())
+    first_el = first(data)
+
+    def mapper(x):
+        if (isinstance(first_el, Iterable) and
+            not isinstance(first_el, Iterable)):
+            return not getattr(builtins, expr.how)(x)
+        else:
+            return not x
+    return filter(compose(mapper, f), data)
 
 
 @dispatch(Selection, Sequence)
