@@ -3,12 +3,15 @@ from .dispatch import dispatch
 import numpy as np
 from math import ceil
 
-@dispatch(np.ndarray, object)
+import h5py
+
+Array = (h5py.Dataset, np.ndarray)
+@dispatch(Array, object)
 def partition_get(data, part, blockshape=None):
     return data[part]
 
 
-@dispatch(np.ndarray, object, object)
+@dispatch(Array, object, object)
 def partition_set(data, part, value, blockshape=None):
     data[part] = value
     return data
@@ -57,6 +60,6 @@ def slicesnd(shape, blockshape):
                                      for l in local]
 
 
-@dispatch(np.ndarray)
+@dispatch(Array)
 def partitions(data, blockshape=None):
     return slicesnd(data.shape, blockshape)
