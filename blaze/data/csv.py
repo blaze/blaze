@@ -7,7 +7,7 @@ import bz2
 from functools import partial
 from contextlib import contextmanager
 
-from multipledispatch import dispatch
+from ..dispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, pluck
 from toolz import concat, get, pipe, identity
 from toolz.curried import map, get
