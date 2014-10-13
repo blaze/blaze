@@ -525,7 +525,7 @@ def ndim(expr):
     >>> Symbol('s', '3 * var * int32').ndim
     2
     """
-    return len(expr.shape)
+    return len(shape(expr))
 
 
 dshape_method_list.extend([
