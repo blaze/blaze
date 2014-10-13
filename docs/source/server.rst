@@ -16,7 +16,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> # Server code, run this once.  Leave running.
 
    >>> from blaze import *
-   >>> csv = CSV('examples/data/iris.csv')
+   >>> csv = CSV('blaze/examples/data/iris.csv')
    >>> csv.schema
    dshape("{ sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }")
    >>> Table(csv)

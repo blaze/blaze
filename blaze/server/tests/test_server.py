@@ -1,13 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-import os
 import pytest
 
 from flask import json
 from datetime import datetime
 from pandas import DataFrame
 
-import blaze
 from blaze.utils import example
 from blaze import discover, TableSymbol, by, CSV, compute
 from blaze.server.server import Server, to_tree, from_tree
@@ -100,8 +98,6 @@ def test_bad_responses():
 
 def test_datetimes():
     query = {'index': 1}
-    expected = [2, datetime(2013, 1, 1, 12, 0, 0)]
-
     response = test.post('/data/times.json',
                          data = json.dumps(query),
                          content_type='application/json')
@@ -137,8 +133,6 @@ def test_selection_on_columns():
 
 def test_to_from_json():
     t = TableSymbol('t', '{name: string, amount: int}')
-    expr = t.amount.sum()
-
     assert from_tree(to_tree(t)).isidentical(t)
 
 
@@ -188,7 +182,6 @@ def test_compute():
 
 
 def test_compute_with_namespace():
-    t = TableSymbol('t', '{name: string, amount: int}')
     query = {'expr': {'op': 'Field',
                       'args': ['accounts_df', 'name']}}
     expected = ['Alice', 'Bob']
@@ -210,9 +203,7 @@ def iris_server():
 
 @pytest.fixture
 def iris():
-    iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir,
-                             'examples', 'data', 'iris.csv')
-    return CSV(iris_path)
+    return CSV(example('iris.csv'))
 
 
 def test_compute_by_with_summary(iris_server, iris):

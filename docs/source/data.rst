@@ -29,7 +29,7 @@ Over the course of this document we'll refer to the following simple
 .. code-block:: python
 
    >>> from blaze import *
-   >>> csv = CSV('examples/data/accounts.csv')
+   >>> csv = CSV('blaze/examples/data/accounts.csv')
 
 Interface
 =========
@@ -73,7 +73,7 @@ for CSV or ``INSERT`` statements for SQL.
 
 .. code-block:: python
 
-   >>> csv = CSV('examples/data/accounts.csv', mode='a')    # doctest: +SKIP
+   >>> csv = CSV('blaze/examples/data/accounts.csv', mode='a')    # doctest: +SKIP
    >>> csv.extend([(6, 'Frank', 600),                       # doctest: +SKIP
    ...             (7, 'Georgina', 700)])
 
@@ -130,7 +130,7 @@ approach ideal for subsampling datasets.
 
 .. code-block:: python
 
-   >>> csv = CSV('examples/data/accounts.csv')
+   >>> csv = CSV('blaze/examples/data/accounts.csv')
    >>> selection = csv[::2, 'name']  # Fast, deserializes a small fraction of dataset
 
 HDF5
@@ -141,7 +141,7 @@ and offers various forms of compression for binary data.
 
 .. code-block:: python
 
-   >>> hdf5 = HDF5('examples/data/accounts.h5', '/accounts')  # doctest: +SKIP
+   >>> hdf5 = HDF5('blaze/examples/data/accounts.h5', '/accounts')  # doctest: +SKIP
 
 Directories
 -----------
@@ -153,7 +153,7 @@ data source.
 .. code-block:: python
 
    >>> from glob import glob
-   >>> filenames = glob('examples/data/accounts*.csv')
+   >>> filenames = glob('blaze/examples/data/accounts*.csv')
    >>> csvs = [CSV(filename) for filename in filenames]
 
    >>> stack = Stack(csvs)

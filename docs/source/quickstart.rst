@@ -65,7 +65,7 @@ operate on a CSV file of the traditional `iris dataset`_.
 
 .. code-block:: python
 
-   >>> iris = Table(CSV('examples/data/iris.csv'))
+   >>> iris = Table(CSV('blaze/examples/data/iris.csv'))
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -86,7 +86,7 @@ stored in a `sqlite file`_.
 
 .. code-block:: python
 
-   >>> sql = SQL('sqlite:///examples/data/iris.db', 'iris')
+   >>> sql = SQL('sqlite:///blaze/examples/data/iris.db', 'iris')
    >>> iris = Table(sql)
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
@@ -151,8 +151,8 @@ container type.
    1  Iris-versicolor             1.326
    2   Iris-virginica             2.026
 
-   >>> csv = CSV('examples/data/output.csv', schema=result.schema, mode='w')
+   >>> csv = CSV('blaze/examples/data/output.csv', schema=result.schema, mode='w')
    >>> write_to = into(csv, result)                      # Write result to CSV file
 
-.. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.csv
-.. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db
+.. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.csv
+.. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.db
