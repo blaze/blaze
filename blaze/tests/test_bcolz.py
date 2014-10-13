@@ -68,8 +68,10 @@ def test_into_ndarray_carray():
     assert str(into(np.ndarray, b['a'])) == \
             str(np.array([1, 2, 3]))
 
+
 def test_into_list_ctable():
     assert into([], b) == [(1, 1.), (2, 2.), (3, 3.)]
+
 
 def test_into_DataFrame_ctable():
     result = into(DataFrame(), b)
@@ -106,19 +108,29 @@ def test_into_chunks():
 
 
 def test_resource():
-    with tmpfile('bcolz') as filename:
-        os.remove(filename)
-        bc = bcolz.ctable(rootdir=filename,
-                          columns=[[1, 2, 3], [1., 2., 3.]],
-                          names=['a', 'b'])
-        bc2 = resource(filename)
+    f = None
+    with tmpfile('.bcolz') as filename:
+        f = filename
 
-        assert isinstance(bc2, bcolz.ctable)
+    bcolz.ctable(rootdir=f, columns=[[1, 2, 3], [1., 2., 3.]], names=['a', 'b'])
+    bc2 = resource(f)
+
+    assert isinstance(bc2, bcolz.ctable)
+    try:
+        os.remove(f)
+    except OSError:
+        pass
+
 
 def test_resource_works_with_empty_file():
-    with tmpfile('bcolz') as filename:
-        os.remove(filename)
+    f = None
+    with tmpfile('.bcolz') as filename:
+        f = filename
 
-        bc = resource(filename, dshape=dshape('{a: int32, b: float64}'))
-        assert len(bc) == 0
-        assert discover(bc).measure == dshape('{a: int32, b: float64}').measure
+    bc = resource(f, dshape=dshape('{a: int32, b: float64}'))
+    assert len(bc) == 0
+    assert discover(bc).measure == dshape('{a: int32, b: float64}').measure
+    try:
+        os.remove(f)
+    except OSError:
+        pass
