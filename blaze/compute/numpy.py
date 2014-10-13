@@ -83,7 +83,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)(axis=t.axis)
+    return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
 
 
 @dispatch((std, var), np.ndarray)
