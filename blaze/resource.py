@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .regex import RegexDispatcher
 from .dispatch import dispatch
-from .compatibility import _strtypes
+from .compatibility import basestring
 
 __all__ = 'resource', 'create_index', 'drop'
 
@@ -19,7 +19,7 @@ def resource_split(uri, *args, **kwargs):
     return resource(uri, other, *args, **kwargs)
 
 
-@dispatch(object, _strtypes + (list, tuple))
+@dispatch(object, (basestring, list, tuple))
 def create_index(t, column_name_or_names, name=None):
     """Create an index on a column.
 
@@ -51,7 +51,7 @@ def create_index(t, column_name_or_names, name=None):
                               type(t).__name__)
 
 
-@dispatch(_strtypes, _strtypes + (list, tuple))
+@dispatch(basestring, (basestring, list, tuple))
 def create_index(uri, column_name_or_names, name=None, **kwargs):
     data = resource(uri, **kwargs)
     create_index(data, column_name_or_names, name=name)
@@ -89,7 +89,7 @@ def drop(rsrc):
                               type(rsrc).__name__)
 
 
-@dispatch(_strtypes)
+@dispatch(basestring)
 def drop(uri, **kwargs):
     data = resource(uri, **kwargs)
     drop(data)
