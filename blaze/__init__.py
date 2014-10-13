@@ -15,6 +15,7 @@ from .expr.functions import *
 from .api import *
 from .data import *
 from .resource import *
+from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
@@ -27,6 +28,10 @@ try:
     from .spark import *
     from .compute.sparksql import *
     from .sparksql import *
+except ImportError:
+    pass
+try:
+    from .compute.h5py import *
 except ImportError:
     pass
 try:
