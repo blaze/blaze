@@ -8,6 +8,7 @@ from blaze.expr import eval_str
 import datashape
 import bcolz
 import math
+import numpy as np
 from .chunks import ChunkIndexable
 
 
@@ -56,9 +57,19 @@ def compute_up(expr, data, **kwargs):
     return data.sum()
 
 
-@dispatch(count, (bcolz.ctable, bcolz.carray))
-def compute_up(expr, data, **kwargs):
-    return len(data)
+@dispatch(count, bcolz.ctable)
+def compute_up(c, t, **kwargs):
+    cols = t.cols
+    dtype = [(cname, 'int64') for cname in cols.names]
+    counts = tuple(compute_up(c, cols[col]) for col in cols.names)
+    return np.array([counts], dtype=dtype)
+
+
+@dispatch(count, bcolz.carray)
+def compute_up(c, t, **kwargs):
+    name = c._child._name
+    expr = '{0} == {0}'.format(name)
+    return bcolz.eval(expr, user_dict={name: t}).sum()
 
 
 @dispatch(mean, bcolz.carray)
