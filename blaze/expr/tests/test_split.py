@@ -6,7 +6,7 @@ from datashape import dshape
 from datashape.predicates import isscalar
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
-a = TableSymbol('a', '1000 * 2000 * {x: float32, y: float32}')
+a = Symbol('a', '1000 * 2000 * {x: float32, y: float32}')
 
 
 def test_path_split():
@@ -44,6 +44,18 @@ def test_sum_with_axis_argument():
 
     assert chunk_expr.isidentical(chunk.x.sum(axis=0))
     assert agg_expr.isidentical(agg.sum(axis=0))
+
+
+def test_split_reasons_correctly_about_aggregate_shape():
+    chunk = Symbol('chunk', '100 * 100 * {x: float32, y: float32}')
+    (chunk, chunk_expr), (agg, agg_expr) = split(a, a.x.sum(), chunk=chunk)
+
+    assert agg.shape == (10, 20)
+
+    chunk = Symbol('chunk', '100 * 100 * {x: float32, y: float32}')
+    (chunk, chunk_expr), (agg, agg_expr) = split(a, a.x.sum(axis=0), chunk=chunk)
+
+    assert agg.shape == (10, 2000)
 
 
 def test_distinct():
