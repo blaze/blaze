@@ -831,3 +831,23 @@ def test_compute_up_on_base():
     d = datetime.now()
     s = symbol('s', 'datetime')
     assert compute(s.minute, d) == d.minute
+
+
+def test_isnull():
+    data = [('Alice', -100, None),
+            (None, None, None),
+            ('Bob', 300, 'New York City')]
+    t = TableSymbol('t', '{name: ?string, amount: ?int32, city: ?string}')
+    expr = t.name.isnull()
+    result = compute(expr, data)
+    assert list(result) == [False, True, False]
+
+
+def test_dropna():
+    data = [('Alice', -100, None),
+            (None, None, None),
+            ('Bob', 300, 'New York City')]
+    t = TableSymbol('t', '{name: ?string, amount: ?int32, city: ?string}')
+    expr = t.name.dropna()
+    result = compute(expr, data)
+    assert list(result) == ['Alice', 'Bob']
