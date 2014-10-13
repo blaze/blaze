@@ -264,7 +264,6 @@ def deepmap(func, *data, **kwargs):
         return map(compose(tuple, partial(deepmap, func, n=n-1)), *data)
 
 
-
 @dispatch(Merge)
 def rowfunc(t):
     children = [optimize(child, []) for child in t.children]
