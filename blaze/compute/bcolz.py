@@ -18,50 +18,56 @@ from ..api import into
 
 __all__ = ['bcolz']
 
+COMFORTABLE_MEMORY_SIZE = 1e9
+
 
 @dispatch(bcolz.ctable)
-def discover(t):
-    return datashape.from_numpy(t.shape, t.dtype)
+def discover(data):
+    return datashape.from_numpy(data.shape, data.dtype)
 
 
 @dispatch(Selection, bcolz.ctable)
-def compute_up(sel, t, **kwargs):
-    s = eval_str(sel.predicate.expr)
+def compute_up(expr, data, **kwargs):
+    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+        return compute_up(expr, data[:], **kwargs)
+    s = eval_str(expr.predicate.expr)
     try:
-        return t.where(s)
+        return data.where(s)
     except (NotImplementedError, NameError, AttributeError):
         # numexpr may not be able to handle the predicate
-        return compute_up(sel, into(Iterator, t), **kwargs)
+        return compute_up(expr, into(Iterator, data), **kwargs)
 
 
 @dispatch(Selection, bcolz.ctable)
-def compute_up(sel, t, **kwargs):
-    return compute_up(sel, into(Iterator, t), **kwargs)
+def compute_up(expr, data, **kwargs):
+    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+        return compute_up(expr, data[:], **kwargs)
+    return compute_up(expr, into(Iterator, data), **kwargs)
 
 
 @dispatch(Head, (bcolz.carray, bcolz.ctable))
-def compute_up(h, t, **kwargs):
-    return t[:h.n]
+def compute_up(expr, data, **kwargs):
+    return data[:expr.n]
 
 
 @dispatch(Field, bcolz.ctable)
-def compute_up(c, t, **kwargs):
-    return t[c._name]
+def compute_up(expr, data, **kwargs):
+    return data[expr._name]
 
 
 @dispatch(Projection, bcolz.ctable)
-def compute_up(p, t, **kwargs):
-    return t[p.fields]
+def compute_up(expr, data, **kwargs):
+    return data[expr.fields]
 
 
 @dispatch(sum, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, t, **kwargs):
-    return t.sum()
+def compute_up(expr, data, **kwargs):
+    return data.sum()
 
 
 @dispatch(count, (bcolz.ctable, bcolz.carray))
-def compute_up(c, t, **kwargs):
-    return len(t)
+def compute_up(expr, data, **kwargs):
+    return len(data)
 
 
 @dispatch(mean, bcolz.carray)
@@ -89,8 +95,10 @@ def compute_up(expr, b, **kwargs):
 
 
 @dispatch((ElemWise, Distinct, By, nunique, Like), bcolz.ctable)
-def compute_up(c, t, **kwargs):
-    return compute_up(c, iter(t), **kwargs)
+def compute_up(expr, data, **kwargs):
+    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+        return compute_up(expr, data[:], **kwargs)
+    return compute_up(expr, iter(data), **kwargs)
 
 
 @dispatch(nunique, bcolz.carray)
@@ -100,6 +108,8 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Reduction, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
+    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+        return compute_up(expr, data[:], **kwargs)
     return compute_up(expr, ChunkIndexable(data), **kwargs)
 
 
