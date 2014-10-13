@@ -63,3 +63,17 @@ def slicesnd(shape, blockshape):
 @dispatch(Array)
 def partitions(data, blockshape=None):
     return slicesnd(data.shape, blockshape)
+
+
+def flatten(x):
+    """
+
+    >>> flatten([[1]])
+    [1]
+    >>> flatten([[1, 2], [3, 4]])
+    [1, 2, 3, 4]
+    """
+    if isinstance(x[0], list):
+        return list(concat(x))
+    else:
+        return x
