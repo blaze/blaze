@@ -10,6 +10,7 @@ from datashape.predicates import isscalar, iscollection
 from .core import common_subexpression
 from .expressions import Expr, Symbol
 
+
 class Reduction(Expr):
     """ A column-wise reduction
 
@@ -31,24 +32,32 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = '_child', 'axis'
+    __slots__ = '_child', 'axis', 'keepdims'
     _dtype = None
 
-    def __init__(self, _child, axis=None):
+    def __init__(self, _child, axis=None, keepdims=False):
         self._child = _child
+        if axis is None:
+            axis = tuple(range(_child.ndim))
+        if isinstance(axis, (set, list)):
+            axis = tuple(axis)
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+        axis = tuple(sorted(axis))
         self.axis = axis
+        self.keepdims = keepdims
 
     @property
     def dshape(self):
         axis = self.axis
-        if axis == None:
-            return dshape(self._dtype)
-        if isinstance(axis, int):
-            axis = [axis]
-        s = tuple(slice(None) if i not in axis else 0
-                              for i in range(self._child.ndim))
-        ds = self._child.dshape.subshape[s]
-        return DataShape(*(ds.shape + (self._dtype,)))
+        if self.keepdims:
+            shape = tuple(1 if i in self.axis else d
+                          for i, d in enumerate(self._child.shape))
+        else:
+            shape = tuple(d
+                          for i, d in enumerate(self._child.shape)
+                          if i not in self.axis)
+        return DataShape(*(shape + (self._dtype,)))
 
     @property
     def symbol(self):
