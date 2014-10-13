@@ -18,8 +18,8 @@ def resource_split(uri, *args, **kwargs):
     return resource(uri, other, *args, **kwargs)
 
 
-@dispatch(object, basestring, (basestring, list, tuple))
-def create_index(t, index_name, column_name_or_names):
+@dispatch(object, (basestring, list, tuple))
+def create_index(t, column_name_or_names, name=None):
     """Create an index on a column.
 
     Parameters
@@ -48,6 +48,13 @@ def create_index(t, index_name, column_name_or_names):
     """
     raise NotImplementedError("create_index not implemented for type %r" %
                               type(t).__name__)
+
+
+@dispatch(str, (basestring, list, tuple))
+def create_index(uri, column_name_or_names, name=None, **kwargs):
+    data = resource(uri, **kwargs)
+    create_index(data, column_name_or_names, name=name)
+    return data
 
 
 @dispatch(object)
@@ -79,3 +86,9 @@ def drop(rsrc):
     """
     raise NotImplementedError("drop not implemented for type %r" %
                               type(rsrc).__name__)
+
+
+@dispatch(str)
+def drop(uri, **kwargs):
+    data = resource(uri, **kwargs)
+    drop(data)

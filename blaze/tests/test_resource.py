@@ -1,6 +1,6 @@
 import os
 import pytest
-from blaze.resource import resource
+from blaze.resource import resource, drop, create_index
 from blaze.data import CSV, SQL, HDF5
 from blaze.api.into import into
 
@@ -103,3 +103,22 @@ class TestInto(TestCase):
             data = [(1, 2), (3, 4)]
             A = into(A, data)
             assert list(map(tuple, A)) == list(data)
+
+
+def test_drop_uri():
+    from blaze.data.csv import drop
+    with filetexts({'foo.csv': '1,1\n2,2'}):
+        assert os.path.exists('foo.csv')
+        drop('foo.csv')
+        assert not os.path.exists('foo.csv')
+
+
+def test_create_index_uri():
+    from blaze.data.csv import drop
+    with tmpfile(extension='.db') as fn:
+        uri = 'sqlite:///%s::table' % fn
+        sql = resource(uri, schema='{x: int, y: int}')
+        create_index(uri, 'x', name='x_index')
+        sql = resource(uri, schema='{x: int, y: int}')
+
+        assert list(list(sql.table.indexes)[0].columns)[0].name == 'x'
