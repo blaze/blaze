@@ -16,6 +16,10 @@ b = bcolz.ctable([[1, 2, 3], [1., 2., 3.]],
 t = TableSymbol('t', '{a: int32, b: float64}')
 
 
+to = TableSymbol('to', '{a: int32, b: float64}')
+bo = bcolz.ctable([[1, 2, 3], [1., 2., np.nan]],
+                  names=['a', 'b'])
+
 def test_chunks():
     assert len(list(chunks(b, chunksize=2))) == 2
     assert (next(chunks(b, chunksize=2)) == into(np.array(0), b)[:2]).all()
@@ -56,5 +60,27 @@ def test_selection_head():
 
 
 def test_selection_isnan():
-    assert compute(t[t.a.isnan()].count(), b) == 0
-    assert compute(t[~(t.a.isnan())].count(), b) == 3
+    b = bcolz.ctable([[1, np.nan, 3], [1., 2., np.nan]], names=['a', 'b'])
+    lhs = compute(t[t.a.isnan()], b)
+    rhs = np.array([(np.nan, 2.0)], dtype=b.dtype)
+
+    for n in b.dtype.names:
+        assert np.isclose(lhs[n], rhs[n], equal_nan=True).all()
+        assert np.isclose(compute(t[~t.b.isnan()], b)[n],
+                          np.array([(1, 1.0), (np.nan, 2.0)], dtype=b.dtype)[n],
+                          equal_nan=True).all()
+
+
+def test_count_isnan():
+    assert compute(to.b[to.a.isnan()].count(), bo) == 0
+    assert compute(to.a[~to.b.isnan()].count(), bo) == 2
+
+
+def test_count_isnan_object():
+    assert compute(to.a[~to.b.isnan()].count(), bo) == 2
+
+
+@pytest.mark.xfail(raises=TypeError,
+                   reason="isnan doesn't work on struct/record dtypes")
+def test_count_isnan_struct():
+    assert compute(t[~t.a.isnan()].count(), b) == 2  # 3?

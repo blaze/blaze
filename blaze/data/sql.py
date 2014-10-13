@@ -284,7 +284,7 @@ class SQL(DataDescriptor):
             return result
 
 @dispatch(SQL, CSV)
-def into(sql, csv, if_exists="replace", **kwargs):
+def into(sql, csv, if_exists="append", **kwargs):
     """
     Parameters
     ----------
