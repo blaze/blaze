@@ -2,6 +2,7 @@ from .dispatch import dispatch
 
 import numpy as np
 from math import ceil
+from toolz import concat
 
 import h5py
 
