@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .core import *
 from .expressions import *
+from .expressions import ndim, shape
 from .reductions import *
 from .split_apply_combine import *
 from .collections import *
@@ -62,7 +63,7 @@ def split(leaf, expr, chunk=None, agg=None):
     """
     center = path_split(leaf, expr)
     chunk = chunk or Symbol('chunk', leaf.dshape)
-    if iscollection(center.dshape):
+    if ndim(center) == ndim(leaf):
         agg = agg or Symbol('aggregate', center.dshape)
     else:
         agg = agg or Symbol('aggregate', datashape.var * center.dshape)
@@ -82,8 +83,8 @@ reductions = {sum: (sum, sum), count: (count, sum),
 @dispatch(tuple(reductions))
 def _split(expr, leaf=None, chunk=None, agg=None):
     a, b = reductions[type(expr)]
-    return ((chunk, a(expr._subs({leaf: chunk})._child)),
-            (agg, b(agg)))
+    return ((chunk, a(expr._subs({leaf: chunk})._child, axis=expr.axis)),
+            (agg, b(agg, axis=expr.axis)))
 
 
 @dispatch(Distinct)
