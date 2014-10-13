@@ -14,7 +14,7 @@ from datashape import discover, dshape
 
 from blaze import drop, into, create_index
 from blaze.utils import assert_allclose
-from blaze.api.resource import resource
+from blaze.resource import resource
 
 
 no_mongoimport = pytest.mark.skipif(raises(OSError,

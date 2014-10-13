@@ -12,7 +12,7 @@ from ..dispatch import dispatch
 from .core import DataDescriptor
 from ..utils import partition_all, get
 from ..compatibility import _strtypes, unicode
-from ..api.resource import resource
+from ..resource import resource
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']

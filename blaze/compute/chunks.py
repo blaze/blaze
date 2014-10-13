@@ -293,7 +293,7 @@ class ChunkList(ChunkIndexable):
         return iter(self.data)
 
 
-from ..api.resource import resource
+from ..resource import resource
 from glob import glob
 
 @resource.register('.+\*.*', priority=14)

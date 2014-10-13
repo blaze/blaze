@@ -10,7 +10,7 @@ import datashape
 
 import shutil
 from blaze.utils import tmpfile
-from .api.resource import resource
+from .resource import resource
 
 __all__ = ['PyTables']
 

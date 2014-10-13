@@ -24,7 +24,7 @@ from ..dispatch import dispatch
 from .. import expr
 from ..expr import Expr, Projection, TableSymbol, Field, Symbol
 from ..compute.core import compute
-from .resource import resource
+from ..resource import resource
 from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
@@ -944,7 +944,7 @@ def into(a, b, **kwargs):
     See Also
     --------
 
-    blaze.api.resource.resource
+    blaze.resource.resource
     """
     b = resource(b, **kwargs)
     return into(a, b, **kwargs)

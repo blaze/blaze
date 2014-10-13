@@ -10,7 +10,7 @@ import os
 from datashape import to_numpy_dtype
 from toolz import keyfilter
 
-from .api.resource import resource
+from .resource import resource
 from .dispatch import dispatch
 from .compute.bcolz import *
 from .utils import keywords

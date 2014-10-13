@@ -11,7 +11,7 @@ from ..data.utils import coerce
 from ..expr import Expr
 from ..dispatch import dispatch
 from .index import emit_index
-from ..api.resource import resource
+from ..resource import resource
 from .server import DEFAULT_PORT
 
 # These are a hack for testing

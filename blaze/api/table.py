@@ -13,7 +13,7 @@ from ..expr import TableSymbol, Expr, Symbol
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
-from .resource import resource
+from ..resource import resource
 
 __all__ = ['Table', 'compute', 'into']
 
