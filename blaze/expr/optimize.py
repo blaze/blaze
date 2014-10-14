@@ -19,7 +19,7 @@ def lean_projection(expr):
 
 @dispatch(Symbol)
 def _lean(expr, fields=None):
-    if not fields or set(expr.fields).issubset(fields):
+    if set(expr.fields).issubset(fields):
         return expr, fields
     else:
         return expr[sorted(fields)], fields
@@ -71,7 +71,12 @@ def _lean(expr, fields=None):
 
 @dispatch(Reduction)
 def _lean(expr, fields=None):
-    child, child_fields = _lean(expr._child, fields=set())
+    child = expr._child
+    try:
+        fields = child.active_columns()
+    except AttributeError:
+        fields = child.fields
+    child, child_fields = _lean(child, fields=set(filter(None, fields)))
     return expr._subs({expr._child: child}), child_fields
 
 
