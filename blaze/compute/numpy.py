@@ -98,7 +98,7 @@ def compute_up(t, x, **kwargs):
     elif t.key not in x.dtype.names or not all(k in x.dtype.names for k in t.key):
         raise ValueError("Column %s not found in numpy array" % t.key)
     else:
-        result = np.sort(x) # pragma: no cover
+        result = np.sort(x)
 
     if not t.ascending:
         result = result[::-1]

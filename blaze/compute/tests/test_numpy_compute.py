@@ -26,10 +26,6 @@ def test_table():
     assert eq(compute(t, x), x)
 
 
-def test_projection():
-    assert eq(compute(t['name'], x), x['name'])
-
-
 def test_eq():
     assert eq(compute(t['amount'] == 100, x),
               x['amount'] == 100)
@@ -154,35 +150,29 @@ def test_by():
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
 
 
-def test_field():
-    assert eq(compute_up(t['name'], x), x['name'])
-
-def test_compute_up_field_no_ndarray_fieldnames():
+def test_compute_up_field():
     y = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
-    field_expr = t['name']
-    computed_expr = compute_up(field_expr, y)
-    for z in range(0, 1 - len(computed_expr)):
+    for z in range(0, 1 - len(compute_up(t['name'], y))):
         assert computed_expr[z][0] == x[z][1]
+    #assert eq(compute(t['name'], y), x['name'])
 
-def test_compute_up_projection_no_ndarray_fieldnames():
+def test_compute_up_projection():
     y = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)])
-    projection_expr = t[['name', 'amount']]
-    computed_expr = compute_up(projection_expr, y)
-    for z in range(0, 1 - len(computed_expr)):
+    for z in range(0, 1 - len(compute_up(t[['name', 'amount']], y))):
         assert computed_expr[z][0] == x[z][1]
+    #assert eq(compute_up(t[['name', 'amount']], y), x[['name', 'amount']])
 
 def test_compute_up_sort_field_not_found():
-    sort_failure = t.sort('missing-field')
     with pytest.raises(ValueError):
-        compute_up(sort_failure, x)
+        compute_up(t.sort('missing-field'), x)
 
 
 def test_slice():
