@@ -42,6 +42,10 @@ try:
 except ImportError:
     pass
 try:
+    from .compute.scidb import *
+except ImportError:
+    pass
+try:
     from .compute.chunks import *
 except ImportError:
     pass
