@@ -191,3 +191,8 @@ def assert_allclose(lhs, rhs):
 def example(filename, datapath=os.path.join('examples', 'data')):
     import blaze
     return os.path.join(os.path.dirname(blaze.__file__), datapath, filename)
+
+
+def available_memory():
+    import psutil
+    return psutil.virtual_memory().available
