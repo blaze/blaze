@@ -31,7 +31,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
-                    DateTime, Date, Time, Millisecond, Weekday, TableSymbol, ElemWise,
+                    DateTime, Date, Time, Millisecond, Weekday, WeekNumber, TableSymbol, ElemWise,
                     Symbol, Slice)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
@@ -136,9 +136,17 @@ def rowfunc(t):
     return lambda row: getattr(row, t.attr)
 
 
-@dispatch((Date, Time, Weekday))
+@dispatch((Date, Time))
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)()
+
+
+@dispatch((WeekNumber, Weekday))
+def rowfunc(t):
+    if isinstance(t, WeekNumber):
+        return lambda row: getattr(row, 'isocalendar')()[1] - 1
+    else:
+        return lambda row: getattr(row, t.attr)()
 
 
 @dispatch(Millisecond)

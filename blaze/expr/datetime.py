@@ -7,7 +7,7 @@ import datashape
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
         'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second', 'Millisecond',
         'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-        'time', 'Weekday', 'weekday']
+        'time', 'Weekday', 'weekday', 'WeekNumber', 'weeknumber']
 
 class DateTime(ElemWise):
     """ Superclass for datetime accessors """
@@ -95,14 +95,20 @@ class Weekday(DateTime):
 def weekday(expr):
     return Weekday(expr)
 
+class WeekNumber(DateTime):
+    _dtype = datashape.int32
+
+def weeknumber(expr):
+    return WeekNumber(expr)
+
 
 from .expressions import schema_method_list, method_properties
 from datashape.predicates import isdatelike
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
-                      millisecond, microsecond, weekday]))
+                      millisecond, microsecond, weekday, weeknumber]))
     ])
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,
-                          microsecond, date, time, weekday])
+                          microsecond, date, time, weekday, weeknumber])
