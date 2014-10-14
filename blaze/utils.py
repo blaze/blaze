@@ -8,6 +8,7 @@ from itertools import islice
 from contextlib import contextmanager
 from collections import Iterator
 
+import psutil
 import numpy as np
 
 # Imports that replace older utils.
@@ -194,5 +195,4 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 
 def available_memory():
-    import psutil
     return psutil.virtual_memory().available
