@@ -389,7 +389,7 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(builtins.sum, t['amount']), data)
+    result = compute(Apply(t['amount'], builtins.sum), data)
     expected = compute(t['amount'].sum(), data)
 
     assert result == expected
@@ -397,7 +397,7 @@ def test_apply_column():
 
 def test_apply():
     data2 = tuple(map(tuple, data))
-    assert compute(Apply(hash, t), data2) == hash(data2)
+    assert compute(Apply(t, hash), data2) == hash(data2)
 
 
 def test_map_datetime():
