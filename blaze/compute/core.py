@@ -143,7 +143,7 @@ def swap_resources_into_scope(expr, scope):
     """
     resources = expr.resources()
     symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
-    resources = {symbol_dict[k]: v for k, v in resources.items()}
+    resources = dict((symbol_dict[k], v) for k, v in resources.items())
     scope = toolz.merge(resources, scope)
     expr = expr._subs(symbol_dict)
 
