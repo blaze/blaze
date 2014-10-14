@@ -57,6 +57,17 @@ def _lean(expr, fields=None):
     return expr._subs({expr._child: child}), fields
 
 
+@dispatch(Sort)
+def _lean(expr, fields=None):
+    key = expr.key
+    if not isinstance(key, (list, set, tuple)):
+        key = [key]
+    new_fields = set(fields) | set(key)
+
+    child, _ = _lean(expr._child, fields=new_fields)
+    return child.sort(key=expr.key, ascending=expr.ascending), new_fields
+
+
 @dispatch(Reduction)
 def _lean(expr, fields=None):
     child, child_fields = _lean(expr._child, fields=set())

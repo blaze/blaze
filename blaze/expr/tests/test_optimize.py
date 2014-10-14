@@ -29,3 +29,7 @@ def test_summary():
     assert expr.isidentical(summary(a=t.x.sum()))
 
     assert fields == set(['x'])
+
+
+def test_sort():
+    assert lean_projection(t.sort('x').y).isidentical(t[['x','y']].sort('x').y)
