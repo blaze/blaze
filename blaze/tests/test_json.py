@@ -7,4 +7,10 @@ def test_simple():
     assert len(list(resource(example('accounts.json')))) == 5
 
 def test_streaming():
-    assert len(list(resource(example('accounts-streaming.json'))))
+    assert len(list(resource(example('accounts-streaming.json')))) == 5
+
+def test_simple_gzip():
+    assert len(list(resource(example('accounts.json.gz')))) == 5
+
+def test_streaming_gzip():
+    assert len(list(resource(example('accounts-streaming.json.gz')))) == 5
