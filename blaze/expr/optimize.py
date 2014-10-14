@@ -72,7 +72,7 @@ def _lean(expr, fields=None):
 
 @dispatch(Head)
 def _lean(expr, fields=None):
-    child, child_fields = _lean(expr._child, fields=set())
+    child, child_fields = _lean(expr._child, fields=fields)
     return child.head(expr.n), child_fields
 
 
