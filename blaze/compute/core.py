@@ -120,8 +120,10 @@ def post_compute(expr, result, d):
     return result
 
 
-def optimize(*args):
-    return args[0]
+@dispatch(Expr, object)
+def optimize(expr, data):
+    """ Optimize expression to be computed on data """
+    return expr
 
 
 def swap_resources_into_scope(expr, scope):
@@ -162,7 +164,11 @@ def compute(expr, d):
     expr2, d2 = swap_resources_into_scope(expr, d)
 
     expr3 = pre_compute(expr2, d2)
-    expr4 = optimize(expr3, *[e for e in d2 if e in expr3])
+    try:
+        expr4 = optimize(expr3, *[v for e, v in d2.items() if e in expr3])
+        print(expr4)
+    except NotImplementedError:
+        expr4 = expr3
     result = top_to_bottom(d2, expr4)
     return post_compute(expr4, result, d2)
 
