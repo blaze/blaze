@@ -19,7 +19,7 @@ def lean_projection(expr):
 
 @dispatch(Symbol)
 def _lean(expr, fields=None):
-    if set(expr.fields).issubset(fields) or not fields:
+    if not fields or set(expr.fields).issubset(fields):
         return expr, fields
     else:
         return expr[sorted(fields)], fields
