@@ -166,7 +166,6 @@ def compute(expr, d):
     expr3 = pre_compute(expr2, d2)
     try:
         expr4 = optimize(expr3, *[v for e, v in d2.items() if e in expr3])
-        print(expr4)
     except NotImplementedError:
         expr4 = expr3
     result = top_to_bottom(d2, expr4)
