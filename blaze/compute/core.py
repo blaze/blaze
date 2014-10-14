@@ -120,6 +120,10 @@ def post_compute(expr, result, d):
     return result
 
 
+def optimize(*args):
+    return args[0]
+
+
 def swap_resources_into_scope(expr, scope):
     """ Translate interactive expressions into normal abstract expressions
 
@@ -132,8 +136,8 @@ def swap_resources_into_scope(expr, scope):
 
     >>> from blaze import Table
     >>> t = Table([1, 2, 3], dshape='3 * int', name='t')
-    >>> swap_resources_into_scope(t, {})
-    (t, {t: [1, 2, 3]})
+    >>> swap_resources_into_scope(t.head(2), {})
+    (t.head(2), {t: [1, 2, 3]})
     """
     resources = expr.resources()
     symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
@@ -155,11 +159,12 @@ def compute(expr, d):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
-    expr, d = swap_resources_into_scope(expr, d)
+    expr2, d2 = swap_resources_into_scope(expr, d)
 
-    expr = pre_compute(expr, d)
-    result = top_to_bottom(d, expr)
-    return post_compute(expr, result, d)
+    expr3 = pre_compute(expr2, d2)
+    expr4 = optimize(expr3, *[e for e in d2 if e in expr3])
+    result = top_to_bottom(d2, expr4)
+    return post_compute(expr4, result, d2)
 
 
 def columnwise_funcstr(t, variadic=True, full=False):
