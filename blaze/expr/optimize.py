@@ -34,6 +34,7 @@ def _lean(expr, fields=None):
 def _lean(expr, fields=None):
     fields = set(fields)
     fields.add(expr._name)
+
     child, _ = _lean(expr._child, fields=fields)
     return child[expr._name], fields
 
@@ -41,6 +42,7 @@ def _lean(expr, fields=None):
 @dispatch(Broadcast)
 def _lean(expr, fields=None):
     fields = set(fields) | set(expr.active_columns())
+
     child, _ = _lean(expr._child, fields=fields)
     return expr._subs({expr._child: child}), fields
 
@@ -48,7 +50,9 @@ def _lean(expr, fields=None):
 @dispatch(Selection)
 def _lean(expr, fields=None):
     predicate, pred_fields = _lean(expr.predicate, fields=fields)
+
     fields = set(fields) | set(pred_fields)
+
     child, _ = _lean(expr._child, fields=fields)
     return expr._subs({expr._child: child}), fields
 
@@ -91,3 +95,25 @@ def _lean(expr, fields=None):
 
     return By(grouper, apply), new_fields
 
+
+@dispatch(Expr)
+def _lean(expr, fields=None):
+    """ Lean projection version of expression
+
+    Paramters
+    ---------
+
+    expr : Expression
+        An expression to be optimized
+    fields : Iterable of strings
+        The fields that will be needed from this expression
+
+    Returns
+    -------
+
+    expr : Expression
+        An expression with Projections inserted to avoid unnecessary fields
+    fields : Iterable of strings
+        The fields that this expression requires to execute
+    """
+    raise NotImplementedError()
