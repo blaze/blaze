@@ -39,3 +39,8 @@ def test_summary():
 
 def test_sort():
     assert lean_projection(t.sort('x').y).isidentical(t[['x','y']].sort('x').y)
+
+
+def test_head():
+    assert lean_projection(t.sort('x').y.head(5)).isidentical(
+                t[['x','y']].sort('x').y.head(5))
