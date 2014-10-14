@@ -3,6 +3,12 @@ from blaze.expr import *
 
 t = Symbol('t', 'var * {x: int, y: int, z: int, w: int}')
 
+
+def test_lean_on_Symbol():
+    assert _lean(t, fields=['x'])[0] == t[['x']]
+    assert _lean(t, fields=['x', 'y', 'z', 'w'])[0] == t
+
+
 def test_lean_projection():
     assert lean_projection(t[t.x > 0].y)._child._child.isidentical(t[['x', 'y']])
 
