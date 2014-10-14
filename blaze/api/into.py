@@ -532,6 +532,7 @@ def into(a, b, **kwargs):
 
 @dispatch(ctable, pd.DataFrame)
 def into(a, df, **kwargs):
+    kwargs = toolz.keyfilter(keywords(ctable).__contains__, kwargs)
     return ctable([fix_len_string_filter(df[c]) for c in df.columns],
                       names=list(df.columns), **kwargs)
 
