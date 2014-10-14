@@ -146,29 +146,16 @@ def test_by():
     from blaze.api.into import into
     expr = by(t.amount > 0, t.id.count())
     result = compute(expr, x)
-
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
 
 
 def test_compute_up_field():
-    y = np.array([(1, 'Alice', 100),
-              (2, 'Bob', -200),
-              (3, 'Charlie', 300),
-              (4, 'Denis', 400),
-              (5, 'Edith', -500)])
-    for z in range(0, 1 - len(compute_up(t['name'], y))):
-        assert computed_expr[z][0] == x[z][1]
-    #assert eq(compute(t['name'], y), x['name'])
+    assert eq(compute(t['name'], x), x['name'])
+
 
 def test_compute_up_projection():
-    y = np.array([(1, 'Alice', 100),
-              (2, 'Bob', -200),
-              (3, 'Charlie', 300),
-              (4, 'Denis', 400),
-              (5, 'Edith', -500)])
-    for z in range(0, 1 - len(compute_up(t[['name', 'amount']], y))):
-        assert computed_expr[z][0] == x[z][1]
-    #assert eq(compute_up(t[['name', 'amount']], y), x[['name', 'amount']])
+    assert eq(compute_up(t[['name', 'amount']], x), x[['name', 'amount']])
+
 
 def test_compute_up_sort_field_not_found():
     with pytest.raises(ValueError):
