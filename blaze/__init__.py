@@ -26,6 +26,9 @@ from .server import *
 
 try:
     from .spark import *
+except ImportError:
+    pass
+try:
     from .compute.sparksql import *
     from .sparksql import *
 except ImportError:
