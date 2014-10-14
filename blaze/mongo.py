@@ -6,7 +6,7 @@ from datashape import discover, isdimension
 
 from .compatibility import basestring, map
 from .compute.mongo import dispatch
-from .api.resource import resource
+from .resource import resource
 
 try:
     import pymongo

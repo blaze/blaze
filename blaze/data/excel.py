@@ -9,7 +9,7 @@ class Excel(object):
             raise NotImplementedError("Only supports first worksheet for now")
         self.worksheet = 0
 
-from ..api.resource import resource
+from ..resource import resource
 @resource.register('.+\.(xls|xlsx)')
 def resource_excel(path, **kwargs):
     return Excel(path, **kwargs)

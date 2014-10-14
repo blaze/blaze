@@ -7,7 +7,7 @@ import bz2
 from functools import partial
 from contextlib import contextmanager
 
-from multipledispatch import dispatch
+from ..dispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, pluck
 from toolz import concat, get, pipe, identity
 from toolz.curried import map, get
@@ -23,7 +23,7 @@ from datashape.predicates import isdimension
 import blaze as bz
 from .pandas_dtype import dshape_to_pandas
 from .core import DataDescriptor
-from ..api.resource import resource
+from ..resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END, builtins, _strtypes, _inttypes

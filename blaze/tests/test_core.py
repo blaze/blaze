@@ -1,10 +1,8 @@
-from blaze import into, compute_up
+from blaze import into, drop, create_index
+from blaze.compute.core import compute_down, compute_up
 from multipledispatch.conflict import ambiguities
 
 
-def test_into_non_ambiguous():
-    assert not ambiguities(into.funcs)
-
-
-def test_compute_up_non_ambiguous():
-    assert not ambiguities(compute_up.funcs)
+def test_no_dispatch_ambiguities():
+    for func in [into, compute_up, compute_down, drop, create_index]:
+        assert not ambiguities(func.funcs)
