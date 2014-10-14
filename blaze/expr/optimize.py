@@ -14,13 +14,12 @@ def lean_projection(expr):
     t[['a', 'b']].sort('a', ascending=True)['b']
     """
     fields = expr.fields
-
-    return _lean(expr, fields=expr.fields)[0]
+    return _lean(expr, fields=fields)[0]
 
 
 @dispatch(Symbol)
 def _lean(expr, fields=None):
-    if set(expr.fields).issubset(fields):
+    if set(expr.fields).issubset(fields) or not fields:
         return expr, fields
     else:
         return expr[sorted(fields)], fields
