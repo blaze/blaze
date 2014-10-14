@@ -69,6 +69,12 @@ def _lean(expr, fields=None):
     return child.sort(key=expr.key, ascending=expr.ascending), new_fields
 
 
+@dispatch(Head)
+def _lean(expr, fields=None):
+    child, child_fields = _lean(expr._child, fields=set())
+    return child.head(expr.n), child_fields
+
+
 @dispatch(Reduction)
 def _lean(expr, fields=None):
     child = expr._child
