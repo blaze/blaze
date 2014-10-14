@@ -36,10 +36,12 @@ def test_reductions():
                                                            ddof=1)) < 1e-5
     assert abs(compute(t.a.var(unbiased=True), b) - np.var([1, 2, 3],
                                                            ddof=1)) < 1e-5
-    assert compute(t.a.nunique(), b) == 3
-    assert compute(t.nunique(), b) == 3
     assert len(list(compute(t.distinct(), b))) == 3
     assert len(list(compute(t.a.distinct(), b))) == 3
+
+def test_nunique():
+    assert compute(t.a.nunique(), b) == 3
+    assert compute(t.nunique(), b) == 3
 
 
 def test_selection_head():
