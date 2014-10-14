@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
+import toolz
 from toolz import first
 
 from ..compatibility import basestring
@@ -119,6 +120,30 @@ def post_compute(expr, result, d):
     return result
 
 
+def swap_resources_into_scope(expr, scope):
+    """ Translate interactive expressions into normal abstract expressions
+
+    Interactive Blaze expressions link to data on their leaves.  From the
+    expr/compute perspective, this is a hack.  We push the resources onto the
+    scope and return simple unadorned expressions instead.
+
+    Example
+    -------
+
+    >>> from blaze import Table
+    >>> t = Table([1, 2, 3], dshape='3 * int', name='t')
+    >>> swap_resources_into_scope(t, {})
+    (t, {t: [1, 2, 3]})
+    """
+    resources = expr.resources()
+    symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
+    resources = {symbol_dict[k]: v for k, v in resources.items()}
+    scope = toolz.merge(resources, scope)
+    expr = expr._subs(symbol_dict)
+
+    return expr, scope
+
+
 @dispatch(Expr, dict)
 def compute(expr, d):
     """ Compute expression against data sources
@@ -130,6 +155,8 @@ def compute(expr, d):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
+    expr, d = swap_resources_into_scope(expr, d)
+
     expr = pre_compute(expr, d)
     result = top_to_bottom(d, expr)
     return post_compute(expr, result, d)
