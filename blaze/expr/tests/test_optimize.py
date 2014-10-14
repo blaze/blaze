@@ -1,16 +1,31 @@
-from blaze.expr.optimize import lean_projection
+from blaze.expr.optimize import lean_projection, _lean
 from blaze.expr import *
 
-def test_lean_projection():
-    t = Symbol('t', 'var * {x: int, y: int, z: int, w: int}')
+t = Symbol('t', 'var * {x: int, y: int, z: int, w: int}')
 
+def test_lean_projection():
     assert lean_projection(t[t.x > 0].y)._child._child.isidentical(t[['x', 'y']])
 
 
 def test_lean_projection_by():
-    t = Symbol('t', 'var * {x: int, y: int, z: int, w: int}')
-
     assert lean_projection(by(t.x, t.y.sum()))._child.isidentical(
                     t[['x', 'y']])
+
+
+def test_lean_by_with_summary():
     assert lean_projection(by(t.x, total=t.y.sum()))._child.isidentical(
                     t[['x', 'y']])
+
+    tt = t[['x', 'y']]
+    result = lean_projection(by(t.x, a=t.y.sum(), b=t.z.sum())[['x', 'a']])
+    expected = Projection(
+                    By(Field(tt, 'x'), summary(a=sum(Field(tt, 'y')))),
+                    ('x', 'a'))
+    assert result.isidentical(expected)
+
+
+def test_summary():
+    expr, fields = _lean(summary(a=t.x.sum(), b=t.y.sum()), fields=['a'])
+    assert expr.isidentical(summary(a=t.x.sum()))
+
+    assert fields == set(['x'])
