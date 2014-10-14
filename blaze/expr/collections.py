@@ -130,6 +130,9 @@ class Head(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return '%s.head(%d)' % (self._child, self.n)
+
 
 def head(child, n=10):
     return Head(child, n)

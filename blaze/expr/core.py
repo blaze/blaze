@@ -257,7 +257,7 @@ def subterms(expr):
     return concat([[expr], concat(map(subterms, expr._inputs))])
 
 
-@dispatch(numbers.Real)
+@dispatch(object)
 def subterms(x):
     yield x
 

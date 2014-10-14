@@ -456,16 +456,16 @@ class Apply(Expr):
     --------
 
     >>> t = Symbol('t', 'var * {name: string, amount: int}')
-    >>> h = Apply(hash, t)  # Hash value of resultant table
+    >>> h = Apply(t, hash)  # Hash value of resultant table
 
     Optionally provide extra datashape information
 
-    >>> h = Apply(hash, t, dshape='real')
+    >>> h = Apply(t, hash, dshape='real')
 
     Apply brings a function within the expression tree.
     The following transformation is often valid
 
-    Before ``compute(Apply(f, expr), ...)``
+    Before ``compute(Apply(expr, f), ...)``
     After  ``f(compute(expr, ...)``
 
     See Also
@@ -475,7 +475,7 @@ class Apply(Expr):
     """
     __slots__ = '_child', 'func', '_dshape'
 
-    def __init__(self, func, child, dshape=None):
+    def __init__(self, child, func, dshape=None):
         self._child = child
         self.func = func
         self._dshape = dshape

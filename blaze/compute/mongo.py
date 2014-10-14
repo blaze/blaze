@@ -58,7 +58,7 @@ from toolz import pluck, first, get
 import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
-                    Reduction, Head, ReLabel, Apply, Distinct, ElemWise, By,
+                    Reduction, Head, ReLabel, Distinct, ElemWise, By,
                     TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
                     Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol
@@ -109,7 +109,7 @@ class MongoQuery(object):
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Apply, Distinct, ElemWise, By, Like, DateTime, Field),
+           Head, ReLabel, Distinct, ElemWise, By, Like, DateTime, Field),
           Collection)
 def compute_up(e, coll, **kwargs):
     return compute_up(e, MongoQuery(coll, []))
