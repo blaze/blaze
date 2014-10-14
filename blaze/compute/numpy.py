@@ -95,8 +95,8 @@ def compute_up(t, x, **kwargs):
     if (t.key in x.dtype.names or
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
-    elif t.key not in x.dtype.names or not all(k in x.dtype.names for k in t.key):
-        raise ValueError("Column %s not found in numpy array" % t.key)
+    elif t.key:
+        raise NotImplementedError("Sort key %s not supported" % str(t.key))
     else:
         result = np.sort(x)
 

@@ -157,11 +157,6 @@ def test_compute_up_projection():
     assert eq(compute_up(t[['name', 'amount']], x), x[['name', 'amount']])
 
 
-def test_compute_up_sort_field_not_found():
-    with pytest.raises(ValueError):
-        compute_up(t.sort('missing-field'), x)
-
-
 def test_slice():
     for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
         assert (compute(t[s], x) == x[s]).all()
