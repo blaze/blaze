@@ -86,7 +86,7 @@ def compute_up(expr, b, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch((ElemWise, Distinct, By, nunique, Like), bcolz.ctable)
+@dispatch((ElemWise, Distinct, By, nunique, Like), (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
         return compute_up(expr, data[:], **kwargs)
@@ -126,6 +126,6 @@ def get_chunk(b, i, chunksize=2**15):
     return b[start:stop]
 
 
-@dispatch(Expr, bcolz.ctable)
+@dispatch(Expr, (bcolz.ctable, bcolz.carray))
 def optimize(expr, _):
     return lean_projection(expr)
