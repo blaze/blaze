@@ -14,7 +14,6 @@ from blaze.compute.chunks import ChunkIterator, chunks
 
 import pandas as pd
 from pandas import DataFrame
-from blaze.data.python import Python
 from blaze.data import CSV
 
 from blaze.api.into import into, discover
@@ -160,13 +159,6 @@ def test_into_pytables_dataframe(h5):
     samp = h5.root.test.sample
     final = into(pd.DataFrame, samp)
     assert len(final) == 1
-
-
-def test_pandas_data_descriptor():
-    dd = Python(data, schema=schema)
-    result = into(DataFrame, dd)
-    expected = DataFrame(data, columns=['name', 'amount'])
-    assert str(result) == str(expected)
 
 
 def test_pandas_dynd():

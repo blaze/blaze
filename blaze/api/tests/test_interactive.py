@@ -2,7 +2,6 @@ from blaze.api.interactive import Data, compute, concrete_head, expr_repr
 from blaze.api.into import into
 import os
 
-from blaze.data.python import Python
 from blaze.data import CSV
 from blaze.compute.core import compute
 from blaze.compute.python import compute
