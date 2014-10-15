@@ -296,7 +296,7 @@ class ChunkList(ChunkIndexable):
 from ..resource import resource
 from glob import glob
 
-@resource.register('.+\*.*', priority=14)
+@resource.register('.*\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
 
