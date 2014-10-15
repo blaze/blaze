@@ -9,7 +9,7 @@ from pandas import DataFrame
 from blaze.api.into import into
 from blaze.api.into import degrade_numpy_dtype_to_python, numpy_ensure_bytes
 from blaze.utils import tmpfile
-from blaze import Table
+from blaze import Data
 import bcolz
 from blaze.data import CSV
 from blaze.sql import SQL
@@ -49,7 +49,7 @@ sql = SQL('sqlite:///:memory:', 'accounts', schema=schema)
 sql.extend(L)
 
 data = [(list, L),
-        (Table, Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}')),
+        (Data, Data(L, 'var * {amount: int64, id: int64, name: string[7], timestamp: datetime}')),
         (DataFrame, df),
         (np.ndarray, x),
         (nd.array, arr),
@@ -64,8 +64,8 @@ L_no_date = list(pluck([0, 1, 2], L))
 sql_no_date.extend(L_no_date)
 
 no_date = [(list, list(pluck([0, 1, 2], L))),
-           (Table, Table(list(pluck([0, 1, 2], L)),
-                         '{amount: int64, id: int64, name: string[7]}')),
+           (Data, Data(list(pluck([0, 1, 2], L)),
+                       'var * {amount: int64, id: int64, name: string[7]}')),
            (DataFrame, df[['amount', 'id', 'name']]),
            (np.ndarray, x[['amount', 'id', 'name']]),
            (nd.array, nd.fields(arr, 'amount', 'id', 'name')),
@@ -123,7 +123,7 @@ def normalize(a):
 def test_base():
     """ Test all pairs of base in-memory data structures """
     sources = [v for k, v in data if k not in [list]]
-    targets = [v for k, v in data if k not in [Table, Collection, CSV,
+    targets = [v for k, v in data if k not in [Data, Collection, CSV,
         nd.array, SQL]]
     for a in sources:
         for b in targets:
@@ -138,13 +138,13 @@ def test_into_empty_sql():
 
 
 def test_expressions():
-    sources = [v for k, v in data if k not in [nd.array, CSV, Table]]
+    sources = [v for k, v in data if k not in [nd.array, CSV, Data]]
     targets = [v for k, v in no_date if k not in
-               [Table, CSV, Collection, nd.array, PyTable, SQL]]
+               [Data, CSV, Collection, nd.array, PyTable, SQL]]
 
     for a in sources:
         for b in targets:
-            c = Table(a, "{amount: int64, id: int64, name: string, timestamp: datetime}")[['amount', 'id', 'name']]
+            c = Data(a, "var * {amount: int64, id: int64, name: string, timestamp: datetime}")[['amount', 'id', 'name']]
             assert normalize(into(type(b), c)) == normalize(b)
 
 try:
