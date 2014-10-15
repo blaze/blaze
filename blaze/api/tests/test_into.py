@@ -575,3 +575,7 @@ def test_into_filename_filename():
 
             csv = CSV(target_fn)
             assert into(list, csv) == [(1, 2), (3, 4)]
+
+
+def test_into_curries():
+    assert into(list, (1, 2, 3)) == into(list)((1, 2, 3))

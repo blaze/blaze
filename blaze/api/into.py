@@ -1016,3 +1016,16 @@ def into(a, b, **kwargs):
     if not isinstance(a, type):
         a = type(a)
     return a(b)
+
+
+@dispatch(object)
+def into(a, **kwargs):
+    """ Curried into function
+
+    >>> f = into(list)
+    >>> f((1, 2, 3))
+    [1, 2, 3]
+    """
+    def partial_into(b, **kwargs2):
+        return into(a, b, **merge(kwargs, kwargs2))
+    return partial_into
