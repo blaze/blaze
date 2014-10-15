@@ -6,7 +6,6 @@ from pandas import DataFrame
 from blaze import Expr, TableSymbol, compute, Table, by, into, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
-from blaze.data.python import Python
 from blaze.server.index import parse_index, emit_index
 from blaze.server.client import Client, discover, resource
 

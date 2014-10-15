@@ -9,9 +9,7 @@ from pandas import DataFrame
 from blaze.utils import example
 from blaze import discover, TableSymbol, by, CSV, compute
 from blaze.server.server import Server, to_tree, from_tree
-from blaze.data.python import Python
 from blaze.server.index import emit_index
-
 
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
