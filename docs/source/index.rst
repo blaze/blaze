@@ -46,7 +46,6 @@ Index
    install
    overview
    quickstart
-   data
    expressions
    backends
    interactivity

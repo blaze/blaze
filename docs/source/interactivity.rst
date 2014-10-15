@@ -3,9 +3,9 @@
 Interactive Expressions
 =======================
 
-Internally Blaze is abstract; this limits interactivity.  To solve this
-Blaze provides *interactive expressions* which give a smooth real-time
-experience to handling foreign data.
+Internally Blaze is abstract; this limits interactivity.  Blaze *interactive
+expressions* resolve this issue and provide a smooth experience to handling
+foreign data.
 
 Expressions with Data
 ---------------------
@@ -22,6 +22,9 @@ the cost of full generality.
 
 Example
 -------
+
+We create an interactive expression by calling the ``Data`` constructor on any
+object or URI with which Blaze is familiar.
 
 .. code-block:: python
 
@@ -86,8 +89,8 @@ Compute calls including ``iris`` may omit the customary namespace, e.g.
    >>> expr = iris.species.distinct()
 
    >>> # compute(expr, {iris: some_sql_object})  # Usually provide a namespace
-   >>> compute(expr)                             # Now namespace is implicit
-   [u'Iris-setosa', u'Iris-versicolor', u'Iris-virginica']
+   >>> compute(expr)                             # doctest: +SKIP
+   ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica']
 
 This implicit namespace can be found with the ``.resources`` method
 
@@ -97,7 +100,10 @@ This implicit namespace can be found with the ``.resources`` method
    {iris: <blaze.data.sql.SQL at 0x7f0f64ffbdd0>}
 
 Additionally, we override the ``__repr__`` and ``_repr_html_`` methods to
-include calls to ``compute``, something like the following:
+include calls to ``compute``.  This way, whenever an expression is printed to
+the screen a small computation is done to print the computed data instead.
+
+As an example, this ``__repr__`` function looks something like the following:
 
 .. code-block:: python
 

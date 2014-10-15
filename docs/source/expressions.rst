@@ -28,9 +28,11 @@ and a datashape.
 Projections, Selection, Arithmetic
 ----------------------------------
 
-Intuitive operations follow from intuitive Python syntax, learned from systems
-like NumPy and Pandas.  The following defines a collection, ``accounts``, and then
-selects the names of those accounts with negative balance.
+Many operations follow from standard Python syntax, familiar from systems like
+NumPy and Pandas.
+
+The following example defines a collection, ``accounts``, and then selects the
+names of those accounts with negative balance.
 
 .. code-block:: python
 
@@ -38,17 +40,17 @@ selects the names of those accounts with negative balance.
 
    >>> deadbeats = accounts[accounts.balance < 0].name
 
-Internally this doesn't do any actual work (we haven't specified a data source
-or a computational engine).  Instead it builds up a symbolic representation of
-a comutation to do in the future.
+Internally this doesn't do any actual work (we haven't specified a data
+source.)  Instead it builds a symbolic representation of a comutation to
+execute in the future.
 
 .. code-block:: python
 
    >>> deadbeats
    accounts[accounts.balance < 0].name
 
-   >>> deadbeats.schema
-   dshape("string")
+   >>> deadbeats.dshape
+   dshape("var * string")
 
 Split-apply-combine, Reductions
 -------------------------------
