@@ -3,7 +3,7 @@
 >>> from blaze import *
 >>> from blaze.compute.core import compute
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -24,6 +24,7 @@ import cytoolz
 import toolz
 import sys
 import math
+import datetime
 from datashape import Record, Tuple
 from datashape.predicates import isscalar, iscollection
 
@@ -31,11 +32,11 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
-                    DateTime, Date, Time, Millisecond, TableSymbol, ElemWise,
+                    DateTime, Date, Time, Millisecond, Symbol, ElemWise,
                     Symbol, Slice)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
-from ..expr import table, eval_str
+from ..expr import eval_str
 from ..expr import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply, unicode, _inttypes
 from . import core
@@ -57,7 +58,7 @@ Sequence = (tuple, list, Iterator, type(dict().items()))
 def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> expr = accounts['amount'].map(lambda x: x + 1)
     >>> f = recursive_rowfunc(expr, accounts)
 
@@ -85,7 +86,7 @@ def rowfunc(t):
 def rowfunc(t):
     """ Rowfunc provides a function that can be mapped onto a sequence.
 
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> f = rowfunc(accounts['amount'])
 
     >>> row = ('Alice', 100)
@@ -423,7 +424,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     As a result this approach compromises and fully realizes the LEFT sequence
     while allowing the RIGHT sequence to stream.  As a result
 
-    Always put your bigger table on the RIGHT side of the Join.
+    Always put your bigger collection on the RIGHT side of the Join.
     """
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)

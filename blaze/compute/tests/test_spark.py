@@ -27,9 +27,9 @@ rdd = sc.parallelize(data)
 rdd2 = sc.parallelize(data2)
 
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
-t2 = TableSymbol('t2', '{name: string, city: string}')
+t2 = Symbol('t2', 'var * {name: string, city: string}')
 
 #Web Commons Graph Example data
 data_idx = [['A', 1],
@@ -40,11 +40,11 @@ data_arc = [[1, 3],
             [2, 3],
             [3, 1]]
 
-t_idx = TableSymbol('idx', '{name: string, node_id: int32}')
+t_idx = Symbol('idx', 'var * {name: string, node_id: int32}')
 
-t_arc = TableSymbol('arc', '{node_out: int32, node_id: int32}')
+t_arc = Symbol('arc', 'var * {node_out: int32, node_id: int32}')
 
-def test_spark_table():
+def test_spark_symbol():
     assert compute(t, rdd) == rdd
 
 
@@ -128,7 +128,7 @@ def check_exprs_against_python(exprs, data, rdd):
 
 
 def test_spark_big_by():
-    tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+    tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
     big_exprs = [
         by(tbig[['name', 'sex']], tbig['amount'].sum()),
@@ -183,8 +183,8 @@ def test_spark_multi_column_join():
     rleft = sc.parallelize(left)
     rright = sc.parallelize(right)
 
-    L = TableSymbol('L', '{x: int, y: int, z: int}')
-    R = TableSymbol('R', '{x: int, y: int, w: int}')
+    L = Symbol('L', 'var * {x: int, y: int, z: int}')
+    R = Symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -258,9 +258,9 @@ def test_union():
     r2 = sc.parallelize(L2)
     r3 = sc.parallelize(L3)
 
-    t1 = TableSymbol('t1', '{name: string, amount: int, id: int}')
-    t2 = TableSymbol('t2', '{name: string, amount: int, id: int}')
-    t3 = TableSymbol('t3', '{name: string, amount: int, id: int}')
+    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
+    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
+    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
 
     expr = union(t1, t2, t3)
 
@@ -280,8 +280,8 @@ def test_spark_outer_join():
              ('Moscow', 4)]
     right = sc.parallelize(right)
 
-    L = TableSymbol('L', '{id: int, name: string, amount: real}')
-    R = TableSymbol('R', '{city: string, id: int}')
+    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = Symbol('R', 'var * {city: string, id: int}')
 
     assert set(compute(join(L, R), {L: left, R: right}).collect()) == set(
             [(1, 'Alice', 100, 'NYC'),
@@ -362,7 +362,7 @@ def test_sparksql_with_literals():
 
 
 def test_sparksql_by_summary():
-    t = TableSymbol('t', '{name: string, amount: int64, id: int64}')
+    t = Symbol('t', 'var * {name: string, amount: int64, id: int64}')
     srdd = into(sqlContext, data, schema=t.schema)
     expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
     result = compute(expr, srdd)
@@ -372,10 +372,10 @@ def test_sparksql_by_summary():
 
 
 def test_spqrksql_join():
-    accounts = TableSymbol('accounts', '{name: string, amount: int64, id: int64}')
+    accounts = Symbol('accounts', 'var * {name: string, amount: int64, id: int64}')
     accounts_rdd = into(sqlContext, data, schema=accounts.schema)
 
-    cities = TableSymbol('cities', '{name: string, city: string}')
+    cities = Symbol('cities', 'var * {name: string, city: string}')
     cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
     cities_rdd = into(sqlContext,
                       cities_data,
@@ -402,7 +402,7 @@ def test_comprehensive():
     rdd = into(sc, df)
     srdd = into(sqlContext, df)
 
-    t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
+    t = Symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
     expressions = {
             t: [],

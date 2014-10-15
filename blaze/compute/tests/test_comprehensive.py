@@ -5,9 +5,8 @@ from pandas import DataFrame
 import numpy as np
 import bcolz
 from datashape.predicates import isscalar, iscollection, isrecord
-from blaze.expr import TableSymbol, by
-from blaze.api.into import into
-from blaze.api.table import Table
+from blaze.expr import Symbol, by
+from blaze.api import Data, into
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 from blaze.sql import SQL
@@ -15,7 +14,7 @@ from blaze.sql import SQL
 
 sources = []
 
-t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
+t = Symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
      [200, 2, 'Bob'],
@@ -98,13 +97,13 @@ def typename(obj):
 
 def test_base():
     for expr, exclusions in expressions.items():
-        model = compute(expr._subs({t: Table(base, t.schema)}))
+        model = compute(expr._subs({t: Data(base, t.dshape)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
-            T = Table(source)
+            T = Data(source)
             if iscollection(expr.dshape):
                 result = into(model, expr._subs({t: T}))
                 if isscalar(expr.dshape.measure):

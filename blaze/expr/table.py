@@ -1,7 +1,7 @@
 """ An abstract Table
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts.name[accounts.amount < 0]
 """
 from __future__ import absolute_import, division, print_function
 
@@ -23,8 +23,8 @@ def TableSymbol(name, dshape):
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
-    >>> accounts['amount'] + 1
-    accounts['amount'] + 1
+    >>> accounts.amount + 1
+    accounts.amount + 1
 
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.

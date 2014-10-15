@@ -1,3 +1,3 @@
 from .into import *
-from .table import *
+from .interactive import *
 from .dplyr import inject, transform

@@ -23,7 +23,7 @@ class Sort(Expr):
 
     Some backends support sorting by arbitrary rowwise tables, e.g.
 
-    >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
+    >>> accounts.sort(-accounts.amount) # doctest: +SKIP
     """
     __slots__ = '_child', '_key', 'ascending'
 
@@ -45,6 +45,10 @@ class Sort(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return "%s.sort(%s, ascending=%s)" % (self._child, repr(self._key),
+                self.ascending)
+
 
 def sort(child, key=None, ascending=True):
     """ Sort collection
@@ -55,7 +59,7 @@ def sort(child, key=None, ascending=True):
         Defines by what you want to sort.  Either:
             A single column string, ``t.sort('amount')``
             A list of column strings, ``t.sort(['name', 'amount'])``
-            A Table Expression, ``t.sort(-t['amount'])``
+            A Table Expression, ``t.sort(-t.amount)``
     ascending: bool
         Determines order of the sort
     """
@@ -126,6 +130,9 @@ class Head(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return '%s.head(%d)' % (self._child, self.n)
+
 
 def head(child, n=10):
     return Head(child, n)
@@ -181,7 +188,7 @@ class Merge(ElemWise):
 
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 
-    >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
+    >>> newamount = (accounts.amount * 1.5).label('new_amount')
 
     >>> merge(accounts, newamount).fields
     ['name', 'amount', 'new_amount']

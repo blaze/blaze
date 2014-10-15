@@ -1,10 +1,11 @@
 from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
+import toolz
 from toolz import first
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, TableSymbol, eval_str, Union
+from ..expr import Expr, Symbol, Symbol, eval_str, Union
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -33,9 +34,9 @@ def compute_up(seq, scope={}, **kwargs):
 def compute(expr, o, **kwargs):
     """ Compute against single input
 
-    Assumes that only one TableSymbol exists in expression
+    Assumes that only one Symbol exists in expression
 
-    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> t = Symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -86,7 +87,7 @@ def bottom_up(d, expr):
     Parameters
     ----------
 
-    d : dict mapping {TableSymbol: data}
+    d : dict mapping {Symbol: data}
         Maps expressions to data elements, likely at the leaves of the tree
     expr : Expr
         Expression to compute
@@ -119,20 +120,56 @@ def post_compute(expr, result, d):
     return result
 
 
+@dispatch(Expr, object)
+def optimize(expr, data):
+    """ Optimize expression to be computed on data """
+    return expr
+
+
+def swap_resources_into_scope(expr, scope):
+    """ Translate interactive expressions into normal abstract expressions
+
+    Interactive Blaze expressions link to data on their leaves.  From the
+    expr/compute perspective, this is a hack.  We push the resources onto the
+    scope and return simple unadorned expressions instead.
+
+    Example
+    -------
+
+    >>> from blaze import Data
+    >>> t = Data([1, 2, 3], dshape='3 * int', name='t')
+    >>> swap_resources_into_scope(t.head(2), {})
+    (t.head(2), {t: [1, 2, 3]})
+    """
+    resources = expr.resources()
+    symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
+    resources = dict((symbol_dict[k], v) for k, v in resources.items())
+    scope = toolz.merge(resources, scope)
+    expr = expr._subs(symbol_dict)
+
+    return expr, scope
+
+
 @dispatch(Expr, dict)
 def compute(expr, d):
     """ Compute expression against data sources
 
-    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> t = Symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
-    expr = pre_compute(expr, d)
-    result = top_to_bottom(d, expr)
-    return post_compute(expr, result, d)
+    expr2, d2 = swap_resources_into_scope(expr, d)
+
+    expr3 = pre_compute(expr2, d2)
+    try:
+        expr4 = optimize(expr3, *[v for e, v in d2.items() if e in expr3])
+    except NotImplementedError:
+        expr4 = expr3
+    result = top_to_bottom(d2, expr4)
+    return post_compute(expr4, result, d2)
 
 
 def columnwise_funcstr(t, variadic=True, full=False):
@@ -165,7 +202,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
 
     Examples
     --------
-    >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
+    >>> t = Symbol('t', 'var * {x: real, y: real, z: real}')
     >>> cw = t['x'] + t['z']
     >>> columnwise_funcstr(cw)
     'lambda x, z: x + z'

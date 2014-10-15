@@ -6,17 +6,17 @@ bcolz = pytest.importorskip('bcolz')
 import numpy as np
 
 from blaze.bcolz import into, chunks
-from blaze.expr import TableSymbol
+from blaze.expr import Symbol
 from blaze.compute.core import compute
 
 
 b = bcolz.ctable([[1, 2, 3], [1., 2., 3.]],
                  names=['a', 'b'])
 
-t = TableSymbol('t', '{a: int32, b: float64}')
+t = Symbol('t', 'var * {a: int32, b: float64}')
 
 
-to = TableSymbol('to', '{a: int32, b: float64}')
+to = Symbol('to', 'var * {a: int32, b: float64}')
 bo = bcolz.ctable([[1, 2, 3], [1., 2., np.nan]],
                   names=['a', 'b'])
 
@@ -46,7 +46,7 @@ def test_selection_head():
     b = into(bcolz.ctable,
              ((i, i + 1, float(i)**2) for i in range(10000)),
              names=['a', 'b', 'c'])
-    t = TableSymbol('t', '{a: int32, b: int32, c: float64}')
+    t = Symbol('t', 'var * {a: int32, b: int32, c: float64}')
 
     assert compute((t.a < t.b).all(), b) == True
     assert list(compute(t[t.a < t.b].a.head(10), b)) == list(range(10))
