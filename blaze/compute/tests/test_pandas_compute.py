@@ -8,13 +8,13 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze import dshape, Table, discover, transform
-from blaze.expr import TableSymbol, join, by, summary, Distinct
+from blaze import dshape, Data, discover, transform
+from blaze.expr import Symbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],
@@ -22,7 +22,7 @@ df = DataFrame([['Alice', 100, 1],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
 
 
-tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Alice', 'F', 100, 3],
@@ -45,12 +45,12 @@ def df_all(a_df, b_df):
 
 def test_series_columnwise():
     s = Series([1, 2, 3], name='a')
-    t = TableSymbol('t', '{a: int64}')
+    t = Symbol('t', 'var * {a: int64}')
     result = compute(t.a + 1, s)
     pd.util.testing.assert_series_equal(s + 1, result)
 
 
-def test_table():
+def test_symbol():
     assert str(compute(t, df)) == str(df)
 
 
@@ -81,8 +81,8 @@ def test_join():
     left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
     right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
 
-    L = TableSymbol('L', '{name: string, amount: int}')
-    R = TableSymbol('R', '{name: string, id: int}')
+    L = Symbol('L', 'var * {name: string, amount: int}')
+    R = Symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     assert (dshape(joined.schema) ==
@@ -110,8 +110,8 @@ def test_multi_column_join():
              (1, 3, 150)]
     right = DataFrame(right, columns=['x', 'y', 'w'])
 
-    L = TableSymbol('L', '{x: int, y: int, z: int}')
-    R = TableSymbol('R', '{x: int, y: int, w: int}')
+    L = Symbol('L', 'var * {x: int, y: int, z: int}')
+    R = Symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -237,9 +237,9 @@ def test_join_by_arcs():
                         [3, 1]],
                        columns=['node_out', 'node_id'])
 
-    t_idx = TableSymbol('t_idx', '{name: string, node_id: int32}')
+    t_idx = Symbol('t_idx', 'var * {name: string, node_id: int32}')
 
-    t_arc = TableSymbol('t_arc', '{node_out: int32, node_id: int32}')
+    t_arc = Symbol('t_arc', 'var * {node_out: int32, node_id: int32}')
 
     joined = join(t_arc, t_idx, "node_id")
 
@@ -313,7 +313,7 @@ def tframe():
 
 
 def test_map_with_rename(tframe):
-    t = Table(tframe)
+    t = Symbol('s', discover(tframe))
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
     assert renamed.fields == ['date']
@@ -321,10 +321,10 @@ def test_map_with_rename(tframe):
 
 @pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
 def test_multiple_renames_on_series_fails(tframe):
-    t = Table(tframe)
+    t = Symbol('s', discover(tframe))
     expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
     with pytest.raises(ValueError):
-        compute(expr)
+        compute(expr, tframe)
 
 
 def test_map_column():
@@ -400,9 +400,9 @@ def test_union():
                     ['Bob', 200, 8],
                     ['Alice', 50, 9]], columns=['name', 'amount', 'id'])
 
-    t1 = TableSymbol('t1', '{name: string, amount: int, id: int}')
-    t2 = TableSymbol('t2', '{name: string, amount: int, id: int}')
-    t3 = TableSymbol('t3', '{name: string, amount: int, id: int}')
+    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
+    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
+    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
 
     expr = union(t1, t2, t3)
 
@@ -424,8 +424,8 @@ def test_outer_join():
              ('Moscow', 4)]
     right = DataFrame(right, columns=['city', 'id'])
 
-    L = TableSymbol('L', '{id: int, name: string, amount: real}')
-    R = TableSymbol('R', '{city: string, id: int}')
+    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = Symbol('R', 'var * {city: string, id: int}')
 
     convert = lambda df: set(df.to_records(index=False).tolist())
 
@@ -466,7 +466,7 @@ def test_outer_join():
 
 def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
-    t = TableSymbol('data', dshape='{id:int, value:int}')
+    t = Symbol('data', 'var * {id: int, value: int}')
 
     gby = by(t['id'], t['id'].count())
 
@@ -503,7 +503,7 @@ def test_summary():
 
 def test_dplyr_transform():
     df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
-    t = TableSymbol('t', discover(df))
+    t = Symbol('t', discover(df))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
                                              schema='datetime'))
     lhs = compute(expr, df)
@@ -516,7 +516,7 @@ def test_nested_transform():
     d = {'timestamp': [1379613528, 1379620047], 'platform': ["Linux",
                                                              "Windows"]}
     df = DataFrame(d)
-    t = TableSymbol('t', discover(df))
+    t = Symbol('t', discover(df))
     t = transform(t, timestamp=t.timestamp.map(datetime.fromtimestamp,
                                                schema='datetime'))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
@@ -559,7 +559,7 @@ def test_datetime_access():
                     'amount': [100, 200, 300],
                     'id': [1, 2, 3]})
 
-    t = TableSymbol('t', discover(df))
+    t = Symbol('t', discover(df))
 
     for attr in ['day', 'month', 'minute', 'second']:
         assert (compute(getattr(t.when, attr), df) == \

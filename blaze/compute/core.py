@@ -5,7 +5,7 @@ import toolz
 from toolz import first
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, TableSymbol, eval_str, Union
+from ..expr import Expr, Symbol, Symbol, eval_str, Union
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -34,9 +34,9 @@ def compute_up(seq, scope={}, **kwargs):
 def compute(expr, o, **kwargs):
     """ Compute against single input
 
-    Assumes that only one TableSymbol exists in expression
+    Assumes that only one Symbol exists in expression
 
-    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> t = Symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -87,7 +87,7 @@ def bottom_up(d, expr):
     Parameters
     ----------
 
-    d : dict mapping {TableSymbol: data}
+    d : dict mapping {Symbol: data}
         Maps expressions to data elements, likely at the leaves of the tree
     expr : Expr
         Expression to compute
@@ -136,8 +136,8 @@ def swap_resources_into_scope(expr, scope):
     Example
     -------
 
-    >>> from blaze import Table
-    >>> t = Table([1, 2, 3], dshape='3 * int', name='t')
+    >>> from blaze import Data
+    >>> t = Data([1, 2, 3], dshape='3 * int', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
     (t.head(2), {t: [1, 2, 3]})
     """
@@ -154,7 +154,7 @@ def swap_resources_into_scope(expr, scope):
 def compute(expr, d):
     """ Compute expression against data sources
 
-    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> t = Symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -202,7 +202,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
 
     Examples
     --------
-    >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
+    >>> t = Symbol('t', 'var * {x: real, y: real, z: real}')
     >>> cw = t['x'] + t['z']
     >>> columnwise_funcstr(cw)
     'lambda x, z: x + z'

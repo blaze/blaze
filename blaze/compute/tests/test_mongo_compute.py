@@ -10,7 +10,7 @@ from toolz import pluck, reduceby, groupby
 from blaze import into, compute, compute_up, discover, dshape
 
 from blaze.compute.mongo import MongoQuery
-from blaze.expr import TableSymbol, by
+from blaze.expr import Symbol, by
 from blaze.compatibility import xfail
 
 
@@ -111,22 +111,22 @@ def events(db):
 
 @pytest.fixture
 def t():
-    return TableSymbol('t', '{name: string, amount: int}')
+    return Symbol('t', 'var * {name: string, amount: int}')
 
 
 @pytest.fixture
 def bigt():
-    return TableSymbol('bigt', '{name: string, amount: int, city: string}')
+    return Symbol('bigt', 'var * {name: string, amount: int, city: string}')
 
 
 @pytest.fixture
 def p():
-    return TableSymbol('p', '{x: int, y: int, z: int}')
+    return Symbol('p', 'var * {x: int, y: int, z: int}')
 
 
 @pytest.fixture
 def e():
-    return TableSymbol('e', '{time: datetime, x: int}')
+    return Symbol('e', 'var * {time: datetime, x: int}')
 
 
 @pytest.fixture
@@ -134,11 +134,11 @@ def q():
     return MongoQuery('fake', [])
 
 
-def test_tablesymbol_one(t, bank):
+def test_symbol_one(t, bank):
     assert compute_up(t, bank) == MongoQuery(bank, ())
 
 
-def test_tablesymbol(t, bank, bank_raw):
+def test_symbol(t, bank, bank_raw):
     assert compute(t, bank) == list(pluck(['name', 'amount'], bank_raw))
 
 
@@ -329,8 +329,8 @@ def test_missing_values(p, missing_vals):
 
 
 def test_datetime_access(date_data):
-    t = TableSymbol('t',
-            '{amount: float64, id: int64, name: string, when: datetime}')
+    t = Symbol('t',
+            'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     py_data = into(list, date_data) # a python version of the collection
 
