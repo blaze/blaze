@@ -342,19 +342,19 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(np.sum, t['amount']), df)
+    result = compute(Apply(t['amount'], np.sum), df)
     expected = np.sum(df['amount'])
 
     assert str(result) == str(expected)
 
-    result = compute(Apply(builtins.sum, t['amount']), df)
+    result = compute(Apply(t['amount'], builtins.sum), df)
     expected = builtins.sum(df['amount'])
 
     assert str(result) == str(expected)
 
 
 def test_apply():
-    result = compute(Apply(str, t), df)
+    result = compute(Apply(t, str), df)
     expected = str(df)
 
     assert result == expected

@@ -389,7 +389,7 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(builtins.sum, t['amount']), data)
+    result = compute(Apply(t['amount'], builtins.sum), data)
     expected = compute(t['amount'].sum(), data)
 
     assert result == expected
@@ -397,7 +397,7 @@ def test_apply_column():
 
 def test_apply():
     data2 = tuple(map(tuple, data))
-    assert compute(Apply(hash, t), data2) == hash(data2)
+    assert compute(Apply(t, hash), data2) == hash(data2)
 
 
 def test_map_datetime():
@@ -605,6 +605,18 @@ def test_like():
     assert list(compute(t.like(name='lice*'), data)) == []
     assert list(compute(t.like(name='*Smith*'), data)) == [data[0], data[1]]
     assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
+
+
+def test_datetime_comparison():
+    data = [['Alice', date(2000, 1, 1)],
+            ['Bob', date(2000, 2, 2)],
+            ['Alice', date(2000, 3, 3)]]
+
+    t = Symbol('t', 'var * {name: string, when: date}')
+
+    assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
+
+
 
 
 def test_datetime_access():

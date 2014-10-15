@@ -532,6 +532,7 @@ def into(a, b, **kwargs):
 
 @dispatch(ctable, pd.DataFrame)
 def into(a, df, **kwargs):
+    kwargs = toolz.keyfilter(keywords(ctable).__contains__, kwargs)
     return ctable([fix_len_string_filter(df[c]) for c in df.columns],
                       names=list(df.columns), **kwargs)
 
@@ -957,12 +958,15 @@ def into(a, b, **kwargs):
 
 @dispatch(_strtypes, (Expr, RDD, object))
 def into(a, b, **kwargs):
-    dshape = discover(b)
+    dshape = kwargs.pop('dshape', None)
+    dshape = dshape or discover(b)
+    if isinstance(dshape, str):
+        dshape = datashape.dshape(dshape)
     target = resource(a, dshape=dshape,
                          schema=dshape.subshape[0],
                          mode='a',
                          **kwargs)
-    return into(target, b, **kwargs)
+    return into(target, b, dshape=dshape, **kwargs)
 
 @dispatch(Iterator, (list, tuple, set, Iterator))
 def into(a, b):
@@ -1012,3 +1016,11 @@ def into(a, b, **kwargs):
     if not isinstance(a, type):
         a = type(a)
     return a(b)
+
+
+# This is only here due to a conflict
+# Which is only because issubclass(carray, Iterable)
+@dispatch(Collection, carray)
+def into(a, b, **kwargs):
+    into(a, into(Iterator, b, **kwargs))
+    return a

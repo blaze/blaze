@@ -600,9 +600,9 @@ def test_map_without_any_info():
 
 def test_apply():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    s = Apply(sum, t['amount'], dshape='real')
-    r = Apply(sum, t['amount'], dshape='3 * real')
-    l = Apply(sum, t['amount'])
+    s = Apply(t['amount'], sum, dshape='real')
+    r = Apply(t['amount'], sum, dshape='3 * real')
+    l = Apply(t['amount'], sum)
     assert s.dshape == dshape('real')
     assert r.schema == dshape("float64")
 

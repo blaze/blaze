@@ -1,10 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pytest
 
-from blaze.compute.core import compute
+from blaze.compute.core import compute, compute_up
 from blaze.expr import TableSymbol, union, by, exp, Symbol
 from datashape import discover
+
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -22,10 +24,6 @@ def eq(a, b):
 
 def test_table():
     assert eq(compute(t, x), x)
-
-
-def test_projection():
-    assert eq(compute(t['name'], x), x['name'])
 
 
 def test_eq():
@@ -148,8 +146,15 @@ def test_by():
     from blaze.api.into import into
     expr = by(t.amount > 0, t.id.count())
     result = compute(expr, x)
-
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
+
+
+def test_compute_up_field():
+    assert eq(compute(t['name'], x), x['name'])
+
+
+def test_compute_up_projection():
+    assert eq(compute_up(t[['name', 'amount']], x), x[['name', 'amount']])
 
 
 def test_slice():

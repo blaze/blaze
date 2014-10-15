@@ -24,6 +24,7 @@ import cytoolz
 import toolz
 import sys
 import math
+import datetime
 from datashape import Record, Tuple
 from datashape.predicates import isscalar, iscollection
 
