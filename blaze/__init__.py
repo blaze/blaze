@@ -14,6 +14,7 @@ from .expr import *
 from .expr.functions import *
 from .api import *
 from .data import *
+from .json import *
 from .resource import *
 from .compute.dynd import *
 from .compute.python import *

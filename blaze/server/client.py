@@ -56,7 +56,7 @@ class Client(object):
 
     >>> # This example matches with the docstring of ``Server``
     >>> ec = Client('localhost:6363', 'accounts')
-    >>> t = Table(ec) # doctest: +SKIP
+    >>> t = Data(ec) # doctest: +SKIP
 
     See Also
     --------
@@ -96,7 +96,7 @@ def discover(ec):
 @dispatch(Expr, Client)
 def compute_down(expr, ec):
     from .server import to_tree
-    from ..api import Table
+    from ..api import Data
     from ..api import into
     from pandas import DataFrame
     tree = to_tree(expr)
