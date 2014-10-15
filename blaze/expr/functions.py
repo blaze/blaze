@@ -11,7 +11,7 @@ input
 >>> type(sum(np.array([1, 2, 3], dtype=np.int64))).__name__
 'int64'
 
->>> t = Symbol('t', '{x: int, y: int}')
+>>> t = Symbol('t', 'var * {x: int, y: int}')
 >>> type(sum(t.x)).__name__
 'sum'
 
