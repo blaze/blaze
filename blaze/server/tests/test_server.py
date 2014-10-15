@@ -39,22 +39,6 @@ server = Server(datasets={'accounts': accounts,
 test = server.app.test_client()
 
 
-def test_full_response():
-    py_index = (slice(0, None), 'name')
-    json_index = [{'start': 0, 'stop': None}, 'name']
-
-    response = test.post('/data/accounts.json',
-                         data = json.dumps({'index': emit_index(py_index)}),
-                         content_type='application/json')
-
-    print(response.data)
-    assert json.loads(response.data) == \
-            {'name': 'accounts',
-             'datashape': "var * string",
-             'index': json_index,
-             'data': ['Alice', 'Bob']}
-
-
 def test_datasets():
     response = test.get('/datasets.json')
     assert json.loads(response.data) == {'accounts': str(accounts.dshape),
@@ -64,71 +48,14 @@ def test_datasets():
                                          'times': str(times.dshape)}
 
 
-def test_data():
-    pairs = [(0, ['Alice', 100]),
-             ((0, 0), 'Alice'),
-             ((0, 'name'), 'Alice'),
-             ((slice(0, None), 'name'), ['Alice', 'Bob'])]
-
-
-    for ind, expected in pairs:
-        index = {'index': emit_index(ind)}
-
-        response = test.post('/data/accounts.json',
-                             data = json.dumps(index),
-                             content_type='application/json')
-        assert 'OK' in response.status
-
-        if not json.loads(response.data)['data'] == expected:
-            print(json.loads(response.data)['data'])
-            print(expected)
-        assert json.loads(response.data)['data'] == expected
-
-
 def test_bad_responses():
-
-    assert 'OK' not in test.post('/data/accounts.json',
+    assert 'OK' not in test.post('/compute/accounts.json',
                                  data = json.dumps(500),
                                  content_type='application/json').status
-    assert 'OK' not in test.post('/data/non-existent-table.json',
+    assert 'OK' not in test.post('/compute/non-existent-table.json',
                                  data = json.dumps(0),
                                  content_type='application/json').status
-    assert 'OK' not in test.post('/data/accounts.json').status
-
-
-def test_datetimes():
-    query = {'index': 1}
-    response = test.post('/data/times.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-
-    assert 'OK' in response.status
-    result = json.loads(response.data)['data']
-    assert result[0] == 2
-    assert '2013' in result[1]
-
-
-def test_selection():
-    query = {'selection': 'x > y'}
-    expected = [[2, 1], [4, 3]]
-
-    response = test.post('/select/pairs.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-    assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
-
-
-def test_selection_on_columns():
-    query = {'selection': 'city == "LA"',
-             'columns': 'name'}
-    expected = ['Bob']
-
-    response = test.post('/select/cities.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-    assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
+    assert 'OK' not in test.post('/compute/accounts.json').status
 
 
 def test_to_from_json():

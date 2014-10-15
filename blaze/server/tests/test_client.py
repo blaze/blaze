@@ -29,31 +29,6 @@ from blaze.server import client
 client.requests = test # OMG monkey patching
 
 
-dd = Client('http://localhost:6363', 'accounts')
-
-def test_dshape():
-    assert dd.dshape == accounts.dshape
-
-
-def test_get_py():
-    assert list(dd[0:, 'name']) == list(accounts[:, 'name'])
-
-
-def test_get_dynd():
-    result = dd.dynd[0:, 'name']
-    expected = accounts.dynd[:, 'name']
-    assert nd.as_py(result) == nd.as_py(expected)
-
-
-def test_iter():
-    assert list(dd) == list(accounts)
-
-
-def test_chunks():
-    assert [nd.as_py(chunk) for chunk in dd.chunks()] == \
-            [nd.as_py(chunk) for chunk in accounts.chunks()]
-
-
 def test_expr_client():
     ec = ExprClient('localhost:6363', 'accounts_df')
     assert discover(ec) == discover(df)
