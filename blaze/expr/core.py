@@ -104,8 +104,8 @@ class Node(object):
 
         >>> from blaze import Symbol
         >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
-        >>> expr = t['amount'] + 3
-        >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
+        >>> expr = t.amount + 3
+        >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t.id + 4)
         True
         """
         return subs(self, d)
@@ -313,9 +313,9 @@ def path(a, b):
 
     >>> from blaze import Symbol
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
-    >>> expr = t['amount'].sum()
+    >>> expr = t.amount.sum()
     >>> list(path(expr, t))
-    [sum(_child=t['amount'], axis=(0,), keepdims=False), t['amount'], t]
+    [sum(_child=t.amount, axis=(0,), keepdims=False), t.amount, t]
     """
     while not a.isidentical(b):
         yield a
@@ -337,7 +337,7 @@ def common_subexpression(*exprs):
     >>> from blaze import Symbol, common_subexpression
 
     >>> t = Symbol('t', 'var * {x: int, y: int}')
-    >>> common_subexpression(t['x'], t['y'])
+    >>> common_subexpression(t.x, t.y)
     t
     """
     sets = [set(t._subterms()) for t in exprs]

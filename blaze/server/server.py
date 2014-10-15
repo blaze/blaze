@@ -260,7 +260,7 @@ def to_tree(expr, names=None):
     {'op': 'Column', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
-    t['x']
+    t.x
 
     See Also
     --------
@@ -341,7 +341,7 @@ def from_tree(expr, namespace=None):
      }
 
     >>> from_tree(tree)
-    sum(_child=t['x'], axis=(0,), keepdims=False)
+    sum(_child=t.x, axis=(0,), keepdims=False)
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
     below we replace the ``Symbol`` node with the string ``'t'``.
@@ -351,7 +351,7 @@ def from_tree(expr, namespace=None):
     {'op': 'Field', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
-    t['x']
+    t.x
 
 
     See Also

@@ -23,10 +23,10 @@ def test_optimize():
     def compute_down(expr, foo):
         return str(expr)
 
-    assert compute(s.x * 2, Foo()) == "s['x'] * 2"
+    assert compute(s.x * 2, Foo()) == "s.x * 2"
 
     @dispatch(Expr, Foo)
     def optimize(expr, foo):
         return expr + 1
 
-    assert compute(s.x * 2, Foo()) == "(s['x'] * 2) + 1"
+    assert compute(s.x * 2, Foo()) == "(s.x * 2) + 1"

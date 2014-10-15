@@ -15,10 +15,10 @@ def inject(t, ns=None):
     >>> inject(t)
 
     >>> x
-    t['x']
+    t.x
 
     >>> x + y
-    t['x'] + t['y']
+    t.x + t.y
     """
     if not ns:
         ns = inspect.currentframe().f_back.f_locals
@@ -75,7 +75,7 @@ class GroupBy(Expr):
     >>> summarize(g, total=t.y.sum()).fields
     ['x', 'total']
     """
-    __slots__ = ['_child', 'grouper']
+    __slots__ = ('_child', 'grouper')
 
     def __init__(self, child, *grouper):
         self._child = child

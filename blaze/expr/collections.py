@@ -23,7 +23,7 @@ class Sort(Expr):
 
     Some backends support sorting by arbitrary rowwise tables, e.g.
 
-    >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
+    >>> accounts.sort(-accounts.amount) # doctest: +SKIP
     """
     __slots__ = '_child', '_key', 'ascending'
 
@@ -59,7 +59,7 @@ def sort(child, key=None, ascending=True):
         Defines by what you want to sort.  Either:
             A single column string, ``t.sort('amount')``
             A list of column strings, ``t.sort(['name', 'amount'])``
-            A Table Expression, ``t.sort(-t['amount'])``
+            A Table Expression, ``t.sort(-t.amount)``
     ascending: bool
         Determines order of the sort
     """
@@ -188,7 +188,7 @@ class Merge(ElemWise):
 
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 
-    >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
+    >>> newamount = (accounts.amount * 1.5).label('new_amount')
 
     >>> merge(accounts, newamount).fields
     ['name', 'amount', 'new_amount']
