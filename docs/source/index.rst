@@ -52,7 +52,6 @@ Index
    datashape
    server
    api
-   examples
    dev_workflow
    expr-compute-dev
 
