@@ -49,9 +49,11 @@ Index
    data
    expressions
    backends
+   interactivity
    datashape
    server
    api
+   examples
    dev_workflow
    expr-compute-dev
 
