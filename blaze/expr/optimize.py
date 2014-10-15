@@ -119,8 +119,8 @@ def _lean(expr, fields=None):
 def _lean(expr, fields=None):
     """ Lean projection version of expression
 
-    Paramters
-    ---------
+    Parameters
+    ----------
 
     expr : Expression
         An expression to be optimized
