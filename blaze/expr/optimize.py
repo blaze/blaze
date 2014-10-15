@@ -10,8 +10,8 @@ def lean_projection(expr):
     """ Insert projections to keep dataset as thin as possible
 
     >>> t = Symbol('t', 'var * {a: int, b: int, c: int, d: int}')
-    >>> lean_projection(t.sort('a')['b'])
-    t[['a', 'b']].sort('a', ascending=True)['b']
+    >>> lean_projection(t.sort('a').b)
+    t[['a', 'b']].sort('a', ascending=True).b
     """
     fields = expr.fields
 

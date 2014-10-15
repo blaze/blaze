@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableSymbol
+>>> from blaze.expr import Symbol
 >>> from blaze.compute.pandas import compute
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from pandas import DataFrame
@@ -33,7 +33,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol)
 from ..expr import UnaryOp, BinOp
-from ..expr import TableSymbol, common_subexpression
+from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
 from ..compatibility import _inttypes
 

@@ -8,7 +8,7 @@ from pandas import DataFrame
 from toolz import concat
 
 from blaze import into
-from blaze.expr import TableSymbol, join, by
+from blaze.expr import Symbol, join, by
 from blaze.compute.core import compute
 from blaze.compute.chunks import ChunkIterable, get_chunk
 
@@ -19,7 +19,7 @@ data = [[1, 'Alice', 100],
         [4, 'Charlie', 400],
         [5, 'Edith', 200]]
 
-t = TableSymbol('t', '{id: int, name: string, amount: int}')
+t = Symbol('t', 'var * {id: int, name: string, amount: int}')
 
 c = ChunkIterable(data, chunksize=2)
 
@@ -78,7 +78,7 @@ def test_head():
 
 
 def test_join():
-    cities = TableSymbol('cities', dshape='{id: int, city: string}')
+    cities = Symbol('cities', dshape='var * {id: int, city: string}')
     j = join(t, cities, 'id')
 
     city_data = [[1, 'NYC'], [1, 'Chicago'], [5, 'Paris']]
@@ -126,7 +126,7 @@ def test_chunk_datetime():
             [4, 'Charlie', 400, datetime.datetime(2014, 10, 1, 1, 1, 1)],
             [5, 'Edith', 200, datetime.datetime(2014, 10, 1, 1, 1, 1)]]
 
-    t = TableSymbol('t', '{id: int, name: string, amount: int, when: datetime}')
+    t = Symbol('t', 'var * {id: int, name: string, amount: int, when: datetime}')
 
     c = ChunkIterable(data, chunksize=2)
     assert list(concat(compute(t.when.day, c))) == [1] * 5

@@ -22,7 +22,7 @@ from ..compute.chunks import ChunkIterator, chunks
 from ..data.meta import Concat
 from ..dispatch import dispatch
 from .. import expr
-from ..expr import Expr, Projection, TableSymbol, Field, Symbol
+from ..expr import Expr, Projection, Field, Symbol
 from ..compute.core import compute
 from ..resource import resource
 from ..compatibility import _strtypes, map
@@ -882,14 +882,14 @@ def into(a, b, **kwargs):
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tb.Table, list,
            tuple, set), (Projection, Field))
 def into(a, b, **kwargs):
-    """ Special case on anything <- Table(CSV)[columns]
+    """ Special case on anything <- Data(CSV)[columns]
 
     Many CSV injest functions have keyword arguments to take only certain
     columns.  We should leverage these if our input is of the form like the
     following for CSVs
 
     >>> csv = CSV('/path/to/file.csv')              # doctest: +SKIP
-    >>> t = Table(csv)                              # doctest: +SKIP
+    >>> t = Data(csv)                               # doctest: +SKIP
     >>> into(list, t[['column-1', 'column-2']])     # doctest: +SKIP
     """
     if isinstance(b._child, Symbol) and isinstance(b._child.data, CSV):
@@ -1016,6 +1016,19 @@ def into(a, b, **kwargs):
     if not isinstance(a, type):
         a = type(a)
     return a(b)
+
+
+@dispatch(object)
+def into(a, **kwargs):
+    """ Curried into function
+
+    >>> f = into(list)
+    >>> f((1, 2, 3))
+    [1, 2, 3]
+    """
+    def partial_into(b, **kwargs2):
+        return into(a, b, **merge(kwargs, kwargs2))
+    return partial_into
 
 
 # This is only here due to a conflict

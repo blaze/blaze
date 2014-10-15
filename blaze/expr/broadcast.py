@@ -21,7 +21,7 @@ def _expr_child(col):
 
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
-    >>> _expr_child(accounts['name'])
+    >>> _expr_child(accounts.name)
     (name, accounts)
 
     Helper function for ``broadcast``
@@ -49,13 +49,13 @@ def broadcast(op, *column_inputs):
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
 
-    >>> broadcast(Add, accounts['amount'], 100)
-    accounts['amount'] + 100
+    >>> broadcast(Add, accounts.amount, 100)
+    accounts.amount + 100
 
     Fuses operations down into ScalarExpr level
 
-    >>> broadcast(Mult, 2, (accounts['amount'] + 100))
-    2 * (accounts['amount'] + 100)
+    >>> broadcast(Mult, 2, (accounts.amount + 100))
+    2 * (accounts.amount + 100)
     """
     expr_inputs = []
     children = set()
@@ -97,9 +97,9 @@ class Broadcast(ElemWise):
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
 
-    >>> expr = Add(accounts['amount'].expr, 100)
+    >>> expr = Add(accounts.amount.expr, 100)
     >>> Broadcast(accounts, expr)
-    accounts['amount'] + 100
+    accounts.amount + 100
 
     See Also
     --------
@@ -121,7 +121,7 @@ class Broadcast(ElemWise):
 
     def __str__(self):
         columns = self.active_columns()
-        newcol = lambda c: "%s['%s']" % (self._child, c)
+        newcol = lambda c: "%s.%s" % (self._child, c)
         return eval_str(self.expr._subs(dict(zip(columns,
                                                 map(newcol, columns)))))
 

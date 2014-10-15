@@ -14,11 +14,10 @@ from blaze.compute.chunks import ChunkIterator, chunks
 
 import pandas as pd
 from pandas import DataFrame
-from blaze.data.python import Python
 from blaze.data import CSV
 
 from blaze.api.into import into, discover
-from blaze import Table, Concat
+from blaze import Data, Concat
 from blaze.utils import tmpfile, filetext, example
 from blaze.pytables import PyTables
 import pytest
@@ -88,14 +87,9 @@ def h5():
         h5file.close()
 
 
-@pytest.fixture
-def data():
-    return [('Alice', 100), ('Bob', 200)]
-
-
-@pytest.fixture
-def schema():
-    return '{name: string, amount: int}'
+data = [('Alice', 100), ('Bob', 200)]
+schema = '{name: string, amount: int}'
+data_table = Data(data, '2 * {name: string, amount: int}')
 
 @pytest.fixture
 def cds():
@@ -111,9 +105,6 @@ def cds():
     })
     return cds
 
-@pytest.fixture
-def data_table(data, schema):
-    return Table(data, schema=schema)
 
 
 @pytest.yield_fixture
@@ -170,14 +161,7 @@ def test_into_pytables_dataframe(h5):
     assert len(final) == 1
 
 
-def test_pandas_data_descriptor(data, schema):
-    dd = Python(data, schema=schema)
-    result = into(DataFrame, dd)
-    expected = DataFrame(data, columns=['name', 'amount'])
-    assert str(result) == str(expected)
-
-
-def test_pandas_dynd(data, schema):
+def test_pandas_dynd():
     arr = nd.array(data, dtype=schema)
 
     result = into(DataFrame, arr)
@@ -194,7 +178,7 @@ def test_pandas_dynd(data, schema):
     assert list(df_no_names.columns) == [0,1,2]
 
 
-def test_pandas_numpy(data):
+def test_pandas_numpy():
     dtype = [('name', 'O'), ('amount', int)]
 
     x = np.array(data, dtype=dtype)
@@ -215,7 +199,7 @@ def test_pandas_seq():
             str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b'])))
 
 
-def test_pandas_pandas(data):
+def test_pandas_pandas():
     df = DataFrame(data, columns=['name', 'balance'])
     new_df = into(DataFrame, df)
     # Data must be the same
@@ -224,7 +208,7 @@ def test_pandas_pandas(data):
     assert id(new_df) != id(df)
 
 
-def test_DataFrame_Series(data):
+def test_DataFrame_Series():
     df = DataFrame(data, columns=['name', 'balance'])
 
     new_df = into(DataFrame, df['name'])
@@ -237,17 +221,17 @@ def test_DataFrame_Series(data):
     assert isinstance(new_df, DataFrame)
 
 
-def test_discover_ndarray(data, schema):
+def test_discover_ndarray():
     arr = nd.array(data, dtype=schema)
     assert discover(arr) == 2 * dshape(schema)
 
 
-def test_discover_pandas(data, schema):
+def test_discover_pandas():
     df = DataFrame(data, columns=['name', 'balance'])
     assert discover(df).subshape[0] == dshape(schema)
 
 
-def test_discover_pandas(data):
+def test_discover_pandas():
     df = DataFrame(data, columns=['name', 'balance'])
 
     result = into(nd.array, df)
@@ -255,13 +239,13 @@ def test_discover_pandas(data):
     assert nd.as_py(result, tuple=True) == data
 
 
-def test_into_table_dataframe(data_table, data):
+def test_into_table_dataframe():
     t = data_table
     assert list(into(DataFrame(), t).columns) == list(t.fields)
     assert into([], into(DataFrame(), t)) == list(map(tuple, data))
 
 
-def test_Column_data_source(data_table):
+def test_Column_data_source():
     pytest.importorskip('bokeh')
     from bokeh.objects import ColumnDataSource
 
@@ -281,7 +265,7 @@ def test_into_ColumnDataSource_pytables():
 
 
 
-def test_numpy_list(data):
+def test_numpy_list():
     dtype = into(np.ndarray, data).dtype
     assert np.issubdtype(dtype[0], object)
     assert np.issubdtype(dtype[1], int)
@@ -289,8 +273,8 @@ def test_numpy_list(data):
     assert into([], into(np.ndarray, data)) == data
 
 
-def test_numpy_table_expr(data):
-    t = Table(data, schema='{name: string, amount: int64}')
+def test_numpy_table_expr():
+    t = Data(data, 'var * {name: string, amount: int64}')
     assert (into(np.ndarray, t).dtype ==
             np.dtype([('name', 'O'), ('amount', 'i8')]))
 
@@ -336,7 +320,7 @@ def test_into_tables_chunk_iterator():
 
 
 def test_into_csv_blaze_table(good_csv):
-    t = Table(CSV(good_csv))
+    t = Data(CSV(good_csv))
     df = into(pd.DataFrame, t[['userid', 'text']])
     assert list(df.columns) == ['userid', 'text']
 
@@ -418,8 +402,8 @@ def test_into_DataFrame_Excel_xlsx_format():
 
 
 def test_into_numpy_from_tableexpr_with_option_types():
-    t = Table([[1, 'Alice'], [2, 'Bob']],
-              schema='{id: ?int32, name: string[5, "ascii"]}')
+    t = Data([[1, 'Alice'], [2, 'Bob']],
+              '2 * {id: ?int32, name: string[5, "ascii"]}')
     assert into(np.ndarray, t).dtype == np.dtype([('id', 'i4'), ('name', 'S5')])
 
 
@@ -435,7 +419,7 @@ def test_into_cds_mixed():
     with tmpfile('.csv') as fn:
         df.to_csv(fn, header=None, index=False, encoding='utf8')
         csv = CSV(fn, columns=['first', 'second', 'third'], encoding='utf8')
-        t = Table(csv)
+        t = Data(csv)
 
         cds = into(ColumnDataSource, t)
         assert isinstance(cds, ColumnDataSource)
@@ -454,9 +438,9 @@ def test_into_cds_mixed():
         assert cds.data == {'first': into(list, csv[:, 'first'])}
 
 
-def test_series_single_column(data):
+def test_series_single_column():
     data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
-    t = Table(data, '{name: string, amount: float64, id: int64}')
+    t = Data(data, '2 * {name: string, amount: float64, id: int64}')
 
     df = into(pd.Series, t['name'])
     out_df = into(df, into(DataFrame, t['amount']))
@@ -466,7 +450,7 @@ def test_series_single_column(data):
     assert df.name == out_df.name
 
 
-def test_into_series_failure(data):
+def test_into_series_failure():
     failure = into(DataFrame, data)
     with pytest.raises(TypeError):
         into(pd.Series, failure)
@@ -474,7 +458,7 @@ def test_into_series_failure(data):
 
 def test_series_single_column_projection():
     data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
-    t = Table(data, '{name: string, amount: float64, id: int64}')
+    t = Data(data, '2 * {name: string, amount: float64, id: int64}')
     df = into(pd.Series, t[['name']])
     assert isinstance(df, pd.Series)
     expected = pd.DataFrame(data, columns=t.schema.measure.names).name
@@ -483,7 +467,7 @@ def test_series_single_column_projection():
 
 def test_data_frame_single_column():
     data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
-    t = Table(data, '{name: string, amount: float64, id: int64}')
+    t = Data(data, '2 * {name: string, amount: float64, id: int64}')
 
     df = into(pd.DataFrame, t['name'])
     assert isinstance(df, pd.DataFrame)
@@ -493,7 +477,7 @@ def test_data_frame_single_column():
 
 def test_data_frame_single_column_projection():
     data = [('Alice', -200.0, 1), ('Bob', -300.0, 2)]
-    t = Table(data, '{name: string, amount: float64, id: int64}')
+    t = Data(data, '2 * {name: string, amount: float64, id: int64}')
 
     df = into(pd.DataFrame, t[['name']])
     assert isinstance(df, pd.DataFrame)
@@ -554,7 +538,7 @@ def test_literal_to_literal():
 def test_into_list_Column():
     with filetext('Alice,1\nBob,2') as fn:
         csv = CSV(fn, columns=['name', 'id'])
-        t = Table(csv)
+        t = Data(csv)
         assert into(list, t.name) == ['Alice', 'Bob']
 
 
@@ -575,3 +559,7 @@ def test_into_filename_filename():
 
             csv = CSV(target_fn)
             assert into(list, csv) == [(1, 2), (3, 4)]
+
+
+def test_into_curries():
+    assert into(list, (1, 2, 3)) == into(list)((1, 2, 3))

@@ -30,7 +30,7 @@ Using MongoDB query language
 
 Using Blaze
 
->> t = Table(db.mydata)
+>> t = Data(db.mydata)
 >> t[t.amount < 0].name
     name
 0    Bob
@@ -59,7 +59,7 @@ import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Distinct, ElemWise, By,
-                    TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
+                    Symbol, Projection, Field, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
                     Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol
                     )
@@ -83,7 +83,7 @@ class MongoQuery(object):
     Parameters
     ----------
     coll: pymongo.collection.Collection
-        A single pymongo collection, holds a table
+        A single pymongo collection
     query: list of dicts
         A query to send to coll.aggregate
 
@@ -222,7 +222,7 @@ def group_apply(expr):
     """
     Dictionary corresponding to apply part of split-apply-combine operation
 
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> group_apply(accounts.amount.sum())
     {'amount_sum': {'$sum': '$amount'}}
     """

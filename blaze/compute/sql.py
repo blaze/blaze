@@ -2,7 +2,7 @@
 
 >>> from blaze import *
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
