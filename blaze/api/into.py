@@ -1029,3 +1029,11 @@ def into(a, **kwargs):
     def partial_into(b, **kwargs2):
         return into(a, b, **merge(kwargs, kwargs2))
     return partial_into
+
+
+# This is only here due to a conflict
+# Which is only because issubclass(carray, Iterable)
+@dispatch(Collection, carray)
+def into(a, b, **kwargs):
+    into(a, into(Iterator, b, **kwargs))
+    return a
