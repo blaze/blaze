@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import json
-from toolz import map
+from toolz import map, partial
 import gzip
 
 from .resource import resource
@@ -23,4 +23,4 @@ def resource_json(uri, open=open):
 
 @resource.register('.*\.json.gz')
 def resource_json_gzip(uri):
-    return resource_json(uri, open=gzip.open)
+    return resource_json(uri, open=partial(gzip.open, mode='rt'))
