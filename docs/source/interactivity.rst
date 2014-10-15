@@ -3,7 +3,7 @@
 Interactive Expressions
 =======================
 
-Internally Blaze is very abstract; this limits interactivity.  To solve this
+Internally Blaze is abstract; this limits interactivity.  To solve this
 Blaze provides *interactive expressions* which give a smooth real-time
 experience to handling foreign data.
 
@@ -11,12 +11,13 @@ Expressions with Data
 ---------------------
 
 Internally Blaze separates the intent of the computation from the data/backend.
-While powerful, this abstract separation limits *interactivity*, one of the
+While powerful, this abstract separation limits interactivity, one of the
 core goals of Blaze.
 
-To resolve this conflict Blaze provides *interactive expressions* which are
-exactly like normal expressions but their leaves may hold on to a concrete data
-resource (like a DataFrame or SQL database.)
+Blaze *interactive expressions* are like normal expressions but their leaves
+may hold on to a concrete data resource (like a DataFrame or SQL database.)
+This embeds a specific data context, providing uesr interface improvements at
+the cost of full generality.
 
 
 Example
@@ -63,16 +64,20 @@ Example
 
 
 In the case above ``iris`` is a ``Symbol``, just like any normal Blaze leaf
-expresion, but ``iris`` has one additional field, ``iris.data`` which points to
-a Blaze ``SQL`` object holding a SQLAlchemy Table.
+expresion
 
 .. code-block:: python
 
    >>> isinstance(iris, Symbol)
    True
+
+But ``iris`` has one additional field, ``iris.data`` which points to
+a Blaze ``SQL`` object holding a SQLAlchemy Table.
+
+.. code-block:: python
+
    >>> iris.data                                 # doctest: +SKIP
    <blaze.data.sql.SQL at 0x7f0f64ffbdd0>
-
 
 Compute calls including ``iris`` may omit the customary namespace, e.g.
 
