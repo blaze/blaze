@@ -1,9 +1,8 @@
 
+.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
+   :alt: Blaze logo
+   :align: center
 
-.. raw:: html
-   <p align="center" style="padding: 20px">
-   <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
-   </p>
 
 |Build Status| |Coverage Status| |Version Status|
 
