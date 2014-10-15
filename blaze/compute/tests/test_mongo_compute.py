@@ -27,14 +27,11 @@ def db(conn):
     return conn.test_db
 
 
-@pytest.fixture
-def bank_raw():
-    data = [{'name': 'Alice', 'amount': 100},
+bank_raw = [{'name': 'Alice', 'amount': 100},
             {'name': 'Alice', 'amount': 200},
             {'name': 'Bob', 'amount': 100},
             {'name': 'Bob', 'amount': 200},
             {'name': 'Bob', 'amount': 300}]
-    return data
 
 
 @pytest.yield_fixture
@@ -67,7 +64,7 @@ def date_data(db):
 
 
 @pytest.yield_fixture
-def bank(db, bank_raw):
+def bank(db):
     coll = db.tmp_collection
     coll = into(coll, bank_raw)
     yield coll
@@ -109,57 +106,41 @@ def events(db):
     coll.drop()
 
 
-@pytest.fixture
-def t():
-    return Symbol('t', 'var * {name: string, amount: int}')
+t = Symbol('t', 'var * {name: string, amount: int}')
+bigt = Symbol('bigt', 'var * {name: string, amount: int, city: string}')
+p = Symbol('p', 'var * {x: int, y: int, z: int}')
+e = Symbol('e', 'var * {time: datetime, x: int}')
 
 
-@pytest.fixture
-def bigt():
-    return Symbol('bigt', 'var * {name: string, amount: int, city: string}')
+q = MongoQuery('fake', [])
 
 
-@pytest.fixture
-def p():
-    return Symbol('p', 'var * {x: int, y: int, z: int}')
-
-
-@pytest.fixture
-def e():
-    return Symbol('e', 'var * {time: datetime, x: int}')
-
-
-@pytest.fixture
-def q():
-    return MongoQuery('fake', [])
-
-
-def test_symbol_one(t, bank):
+def test_symbol_one(bank):
     assert compute_up(t, bank) == MongoQuery(bank, ())
 
 
-def test_symbol(t, bank, bank_raw):
+def test_symbol(bank):
     assert compute(t, bank) == list(pluck(['name', 'amount'], bank_raw))
 
 
-def test_projection_one(t, q):
+def test_projection_one():
     assert compute_up(t[['name']], q).query == ({'$project': {'name': 1}},)
 
 
-def test_head_one(t, q):
+def test_head_one():
     assert compute_up(t.head(5), q).query == ({'$limit': 5},)
 
 
-def test_head(t, bank):
+def test_head(bank):
     assert len(compute(t.head(2), bank)) == 2
 
 
-def test_projection(t, bank):
+def test_projection(bank):
     assert set(compute(t.name, bank)) == set(['Alice', 'Bob'])
     assert set(compute(t[['name']], bank)) == set([('Alice',), ('Bob',)])
 
 
-def test_selection(t, bank):
+def test_selection(bank):
     assert set(compute(t[t.name=='Alice'], bank)) == set([('Alice', 100),
                                                             ('Alice', 200)])
     assert set(compute(t['Alice'==t.name], bank)) == set([('Alice', 100),
@@ -177,16 +158,16 @@ def test_selection(t, bank):
                     ('Bob', 300)])
 
 
-def test_columnwise(p, points):
+def test_columnwise(points):
     assert set(compute(p.x + p.y, points)) == set([11, 22, 33, 44])
 
 
-def test_columnwise_multiple_operands(p, points):
+def test_columnwise_multiple_operands(points):
     expected = [x['x'] + x['y'] - x['z'] * x['x'] / 2 for x in points.find()]
     assert set(compute(p.x + p.y - p.z * p.x / 2, points)) == set(expected)
 
 
-def test_columnwise_mod(p, points):
+def test_columnwise_mod(points):
     expected = [x['x'] % x['y'] - x['z'] * x['x'] / 2 + 1
                 for x in points.find()]
     expr = p.x % p.y - p.z * p.x / 2 + 1
@@ -195,19 +176,19 @@ def test_columnwise_mod(p, points):
 
 @xfail(raises=NotImplementedError,
        reason='MongoDB does not implement certain arith ops')
-def test_columnwise_pow(p, points):
+def test_columnwise_pow(points):
     expected = [x['x'] ** x['y'] for x in points.find()]
     assert set(compute(p.x ** p.y, points)) == set(expected)
 
 
-def test_by_one(t, q):
+def test_by_one():
     assert compute_up(by(t.name, t.amount.sum()), q).query == \
             ({'$group': {'_id': {'name': '$name'},
                          'amount_sum': {'$sum': '$amount'}}},
              {'$project': {'amount_sum': '$amount_sum', 'name': '$_id.name'}})
 
 
-def test_by(t, bank):
+def test_by(bank):
     assert set(compute(by(t.name, t.amount.sum()), bank)) == \
             set([('Alice', 300), ('Bob', 600)])
     assert set(compute(by(t.name, t.amount.min()), bank)) == \
@@ -218,66 +199,66 @@ def test_by(t, bank):
             set([('Alice', 2), ('Bob', 3)])
 
 
-def test_reductions(t, bank):
+def test_reductions(bank):
     assert compute(t.amount.min(), bank) == 100
     assert compute(t.amount.max(), bank) == 300
     assert compute(t.amount.sum(), bank) == 900
 
 
-def test_distinct(t, bank):
+def test_distinct(bank):
     assert set(compute(t.name.distinct(), bank)) == set(['Alice', 'Bob'])
 
 
-def test_sort(t, bank):
+def test_sort(bank):
     assert compute(t.amount.sort('amount'), bank) == \
             [100, 100, 200, 200, 300]
     assert compute(t.amount.sort('amount', ascending=False), bank) == \
             [300, 200, 200, 100, 100]
 
 
-def test_by_multi_column(t, bank, bank_raw):
+def test_by_multi_column(bank):
     assert set(compute(by(t[['name', 'amount']], t.count()), bank)) == \
             set([(d['name'], d['amount'], 1) for d in bank_raw])
 
 
-def test_datetime_handling(e, events):
+def test_datetime_handling(events):
     assert set(compute(e[e.time >= datetime(2012, 1, 2, 12, 0, 0)].x,
                         events)) == set([2, 3])
     assert set(compute(e[e.time >= "2012-01-02"].x,
                         events)) == set([2, 3])
 
 
-def test_summary_kwargs(t, bank):
+def test_summary_kwargs(bank):
     expr = by(t.name, total=t.amount.sum(), avg=t.amount.mean())
     result = compute(expr, bank)
     assert result == [('Bob', 200.0, 600), ('Alice', 150.0, 300)]
 
 
-def test_summary_count(t, bank):
+def test_summary_count(bank):
     expr = by(t.name, how_many=t.amount.count())
     result = compute(expr, bank)
     assert result == [('Bob', 3), ('Alice', 2)]
 
 
-def test_summary_arith(t, bank):
+def test_summary_arith(bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).sum())
     result = compute(expr, bank)
     assert result == [('Bob', 603), ('Alice', 302)]
 
 
-def test_summary_arith_min(t, bank):
+def test_summary_arith_min(bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).min())
     result = compute(expr, bank)
     assert result == [('Bob', 101), ('Alice', 101)]
 
 
-def test_summary_arith_max(t, bank):
+def test_summary_arith_max(bank):
     expr = by(t.name, add_one_and_sum=(t.amount + 1).max())
     result = compute(expr, bank)
     assert result == [('Bob', 301), ('Alice', 201)]
 
 
-def test_summary_complex_arith(t, bank):
+def test_summary_complex_arith(bank):
     expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum())
     result = compute(expr, bank)
     reducer = lambda acc, x: (100 - x['amount'] * 2 / 30.0) + acc
@@ -285,7 +266,7 @@ def test_summary_complex_arith(t, bank):
     assert set(result) == set(expected.items())
 
 
-def test_summary_complex_arith_multiple(t, bank):
+def test_summary_complex_arith_multiple(bank):
     expr = by(t.name, arith=(100 - t.amount * 2 / 30.0).sum(),
               other=t.amount.mean())
     result = compute(expr, bank)
@@ -300,28 +281,28 @@ def test_summary_complex_arith_multiple(t, bank):
     assert set(result) == set(items)
 
 
-def test_like(t, bank):
+def test_like(bank):
     bank.create_index([('name', pymongo.TEXT)])
     expr = t.like(name='*Alice*')
     result = compute(expr, bank)
     assert set(result) == set((('Alice', 100), ('Alice', 200)))
 
 
-def test_like_multiple(bigt, big_bank):
+def test_like_multiple(big_bank):
     expr = bigt.like(name='*Bob*', city='*York*')
     result = compute(expr, big_bank)
     assert set(result) == set((('Bob', 100, 'New York City'),
                                ('Bob', 200, 'New York City')))
 
 
-def test_like_mulitple_no_match(bigt, big_bank):
+def test_like_mulitple_no_match(big_bank):
     # make sure we aren't OR-ing the matches
     expr = bigt.like(name='*York*', city='*Bob*')
     result = compute(expr, big_bank)
     assert not set(result)
 
 
-def test_missing_values(p, missing_vals):
+def test_missing_values(missing_vals):
     assert discover(missing_vals).subshape[0] == \
             dshape('{x: int64, y: ?int64, z: ?int64}')
 
