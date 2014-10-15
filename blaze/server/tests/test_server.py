@@ -14,38 +14,17 @@ from blaze.server.index import emit_index
 
 
 
-accounts = Python([['Alice', 100], ['Bob', 200]],
-                  schema='{name: string, amount: int32}')
-
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
 
-cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
-                  schema='{name: string, city: string}')
-
-pairs = Python([(1, 2), (2, 1), (3, 4), (4, 3)],
-               schema='{x: int, y: int}')
-
-times = Python([(1, datetime(2012, 1, 1, 12, 0, 0)),
-                (2, datetime(2013, 1, 1, 12, 0, 0))],
-               schema='{x: int, y: datetime}')
-
-server = Server(datasets={'accounts': accounts,
-                          'accounts_df': df,
-                          'cities': cities,
-                          'pairs': pairs,
-                          'times': times})
+server = Server(datasets={'accounts': df})
 
 test = server.app.test_client()
 
 
 def test_datasets():
     response = test.get('/datasets.json')
-    assert json.loads(response.data) == {'accounts': str(accounts.dshape),
-                                         'accounts_df': str(discover(df)),
-                                         'cities': str(cities.dshape),
-                                         'pairs': str(pairs.dshape),
-                                         'times': str(times.dshape)}
+    assert json.loads(response.data) == {'accounts': str(discover(df))}
 
 
 def test_bad_responses():
@@ -100,7 +79,7 @@ def test_compute():
     query = {'expr': to_tree(expr)}
     expected = 300
 
-    response = test.post('/compute/accounts_df.json',
+    response = test.post('/compute/accounts.json',
                          data = json.dumps(query),
                          content_type='application/json')
 
@@ -110,10 +89,10 @@ def test_compute():
 
 def test_compute_with_namespace():
     query = {'expr': {'op': 'Field',
-                      'args': ['accounts_df', 'name']}}
+                      'args': ['accounts', 'name']}}
     expected = ['Alice', 'Bob']
 
-    response = test.post('/compute/accounts_df.json',
+    response = test.post('/compute/accounts.json',
                          data = json.dumps(query),
                          content_type='application/json')
 

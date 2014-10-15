@@ -10,18 +10,10 @@ from blaze.data.python import Python
 from blaze.server.index import parse_index, emit_index
 from blaze.server.client import Client, discover, resource
 
-accounts = Python([['Alice', 100], ['Bob', 200]],
-                  schema='{name: string, amount: int32}')
-
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
 
-cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
-                  schema='{name: string, city: string}')
-
-server = Server(datasets={'accounts': accounts,
-                          'accounts_df': df,
-                          'cities': cities})
+server = Server(datasets={'accounts': df})
 
 test = server.app.test_client()
 
@@ -30,7 +22,7 @@ client.requests = test # OMG monkey patching
 
 
 def test_expr_client():
-    ec = Client('localhost:6363', 'accounts_df')
+    ec = Client('localhost:6363', 'accounts')
     assert discover(ec) == discover(df)
 
     t = TableSymbol('t', discover(ec))
@@ -43,7 +35,7 @@ def test_expr_client():
 
 
 def test_expr_client_interactive():
-    ec = Client('localhost:6363', 'accounts_df')
+    ec = Client('localhost:6363', 'accounts')
     t = Table(ec)
 
     assert compute(t.name) == ['Alice', 'Bob']
@@ -53,15 +45,15 @@ def test_expr_client_interactive():
 
 
 def test_resource():
-    ec = resource('blaze://localhost:6363', 'accounts_df')
+    ec = resource('blaze://localhost:6363', 'accounts')
     assert discover(ec) == discover(df)
 
 def test_resource_default_port():
-    ec = resource('blaze://localhost', 'accounts_df')
+    ec = resource('blaze://localhost', 'accounts')
     assert discover(ec) == discover(df)
 
 def test_resource_all_in_one():
-    ec = resource('blaze://localhost:6363::accounts_df')
+    ec = resource('blaze://localhost:6363::accounts')
     assert discover(ec) == discover(df)
 
 
@@ -79,7 +71,7 @@ def compute_up(expr, data, **kwargs):
 
 
 def test_custom_expressions():
-    ec = Client('localhost:6363', 'accounts_df')
+    ec = Client('localhost:6363', 'accounts')
     t = TableSymbol('t', discover(ec))
 
     assert list(map(tuple, compute(CustomExpr(t), ec))) == into(list, df)
