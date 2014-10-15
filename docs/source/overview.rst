@@ -56,6 +56,6 @@ Interfaces
 ----------
 
 Blaze interfaces provide interactive Python objects and an intuitive user
-experience.  These high level ``Table`` and ``Array`` objects manage Blaze
+experience.  These high level ``Data`` objects manage Blaze
 expressions and computations in an interactive session similar to existing
 workflows with Pandas DataFrames and NumPy NDArrays.
