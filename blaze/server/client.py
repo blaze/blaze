@@ -40,46 +40,7 @@ def reason(response):
         return response.reason
 
 
-class Client(DataDescriptor):
-    __slots__ = 'url', '_name'
-    def __init__(self, url, name):
-        self.url = url.strip('/')
-        self._name = name
-
-    def _get_data(self, key):
-        response = requests.put('%s/data/%s.json' % (self.url, self._name),
-                                data=json.dumps({'index': emit_index(key)}),
-                                headers = {'Content-type': 'application/json',
-                                           'Accept': 'text/plain'})
-        if not ok(response):
-            raise ValueError("Bad Response: %s" % reason(response))
-
-        data = json.loads(content(response))
-
-        return data['datashape'], data['data']
-
-    def get_py(self, key):
-        dshape, data = self._get_data(key)
-        return coerce(dshape, data)
-
-    def get_dynd(self, key):
-        dshape, data = self._get_data(key)
-        return nd.array(data, type=str(dshape))
-
-
-    @property
-    def dshape(self):
-        response = requests.get('%s/datasets.json' % self.url)
-
-        if not ok(response):
-            raise ValueError("Bad Response: %s" % reason(response))
-
-        data = json.loads(content(response))
-
-        return dshape(data[self._name])
-
-
-class ExprClient(object):
+class Client(object):
     """ Expression Client for Blaze Server
 
     Parameters
@@ -94,7 +55,7 @@ class ExprClient(object):
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> ec = ExprClient('localhost:6363', 'accounts')
+    >>> ec = Client('localhost:6363', 'accounts')
     >>> t = Data(ec) # doctest: +SKIP
 
     See Also
@@ -121,13 +82,18 @@ class ExprClient(object):
 
         return dshape(data[self.dataname])
 
+def ExprClient(*args, **kwargs):
+    import warnings
+    warnings.warn("Deprecated use `Client` instead", DeprecationWarning)
+    return Client(*args, **kwargs)
 
-@dispatch(ExprClient)
+
+@dispatch(Client)
 def discover(ec):
     return ec.dshape
 
 
-@dispatch(Expr, ExprClient)
+@dispatch(Expr, Client)
 def compute_down(expr, ec):
     from .server import to_tree
     from ..api import Data
@@ -155,4 +121,4 @@ def resource_blaze(uri, name, **kwargs):
     if ':' not in tld:
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
-    return ExprClient(uri, name, **kwargs)
+    return Client(uri, name, **kwargs)
