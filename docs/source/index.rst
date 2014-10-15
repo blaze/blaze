@@ -46,7 +46,6 @@ Index
    install
    overview
    quickstart
-   examples
    data
    expressions
    backends

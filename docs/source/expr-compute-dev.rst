@@ -27,8 +27,11 @@ expression defines a fixed set of fields in the ``__slots__`` attribute
 
 .. code-block:: python
 
+   class Selection(Expr):
+       __slots__ = '_child', 'predicate'
+
    class Field(ElemWise):
-       __slots__ = 'child', 'fieldname'
+       __slots__ = '_child', 'fieldname'
 
 
 To create a node in the tree explicitly we create a Python object of this class
@@ -77,7 +80,8 @@ Blaze expressions adhere to the following properties:
     ``Join`` class has an analagous ``join`` function that should be used by
     users.  Same with the internal ``By`` class as the user-level ``by``
     function.
-4.  They can compute their datashape ``dshape``.
+4.  They can compute their datashape ``.dshape`` given the datashape of their
+    children and their arguments.
 
 
 Organization
@@ -116,7 +120,7 @@ and a mapping of Symbols to data like the following:
 
 .. code-block:: python
 
-   >>> d = {t: data}
+   >>> namespace = {t: data}
 
 then we need to evaluate the intent of the expression on the data.  We do this
 in a step-by-step system outlined by various ``compute`` functions.  The user
@@ -124,18 +128,18 @@ experience is as follows
 
 .. code-block:: python
 
-   >>> list(compute(deadbeats, d))
+   >>> list(compute(deadbeats, namespace))
    ['Bob']
 
 But internally ``compute`` traverses our expression from the leaves (like
 ``t``) on up, transforming ``data`` as it goes.  At each step it looks at a
-node in the Blaze expression graph like
+node in the Blaze expression graph like the following:
 
 .. code-block:: python
 
    >>> selection_t = t[t.amount < 0]
 
-and transforms the data appropriately, like
+and transforms the data appropriately, like the following:
 
 .. code-block:: python
 
