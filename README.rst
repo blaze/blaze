@@ -1,10 +1,10 @@
 
+|Build Status| |Coverage Status| |Version Status|
+
 .. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
    :alt: Blaze logo
    :align: center
 
-
-|Build Status| |Coverage Status| |Version Status|
 
 **Blaze** extends the usability of NumPy and Pandas to distributed and
 out-of-core computing. Blaze provides an interface similar to that of
@@ -67,11 +67,8 @@ building and communicating between computational systems. Blaze
 primitives can help with consistent and robust data migration, as well
 as remote execution.
 
-.. raw:: html
-
-   <p align="center" style="padding: 20px">
-   <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
-   </p>
+.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png
+   :align: center
 
 Blaze aims to be a foundational project allowing many different users of
 other PyData projects (Pandas, Theano, Numba, SciPy, Scikit-Learn) to
@@ -79,11 +76,8 @@ interoperate at the application level and at the library level with the
 goal of being able to to lift their existing functionality into a
 distributed context.
 
-.. raw:: html
-
-   <p align="center" style="padding: 20px">
-   <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
-   </p>
+.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png
+   :align: center
 
 Getting Started
 ---------------
