@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
 
@@ -17,7 +17,7 @@ s = sa.Table('accounts', metadata,
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
-tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 sbig = sa.Table('accountsbig', metadata,
              sa.Column('name', sa.String),
@@ -84,8 +84,8 @@ def test_join():
     expected = select(list(unique(expected.columns, key=lambda c:
         c.name))).select_from(expected)
 
-    L = TableSymbol('L', '{name: string, amount: int}')
-    R = TableSymbol('R', '{name: string, id: int}')
+    L = Symbol('L', 'var * {name: string, amount: int}')
+    R = Symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     result = compute(joined, {L: lhs, R: rhs})
@@ -110,8 +110,8 @@ def test_clean_complex_join():
                    sa.Column('name', sa.String),
                    sa.Column('id', sa.Integer))
 
-    L = TableSymbol('L', '{name: string, amount: int}')
-    R = TableSymbol('R', '{name: string, id: int}')
+    L = Symbol('L', 'var * {name: string, amount: int}')
+    R = Symbol('R', 'var * {name: string, id: int}')
 
     joined = join(L[L.amount > 0], R, 'name')
 
@@ -146,8 +146,8 @@ def test_multi_column_join():
                    sa.Column('x', sa.Integer),
                    sa.Column('y', sa.Integer))
 
-    L = TableSymbol('L', '{x: int, y: int, z: int}')
-    R = TableSymbol('R', '{w: int, x: int, y: int}')
+    L = Symbol('L', 'var * {x: int, y: int, z: int}')
+    R = Symbol('R', 'var * {w: int, x: int, y: int}')
     joined = join(L, R, ['x', 'y'])
 
     expected = lhs.join(rhs, (lhs.c.x == rhs.c.x)
@@ -301,8 +301,8 @@ def test_join_projection():
                    sa.Column('name', sa.String),
                    sa.Column('id', sa.Integer))
 
-    L = TableSymbol('L', '{name: string, amount: int}')
-    R = TableSymbol('R', '{name: string, id: int}')
+    L = Symbol('L', 'var * {name: string, amount: int}')
+    R = Symbol('R', 'var * {name: string, id: int}')
     want = join(L, R, 'name')[['amount', 'id']]
 
     result = compute(want, {L: lhs, R: rhs})
@@ -356,7 +356,7 @@ def test_projection_of_selection():
 
 def test_union():
     metadata = sa.MetaData()
-    ts = [TableSymbol('t_%d' % i, '{name: string, amount: int, id: int}')
+    ts = [Symbol('t_%d' % i, 'var * {name: string, amount: int, id: int}')
             for i in [1, 2, 3]]
     ss = [sa.Table('accounts_%d' % i, metadata,
              sa.Column('name', sa.String),
@@ -372,8 +372,8 @@ def test_union():
 
 
 def test_outer_join():
-    L = TableSymbol('L', '{id: int, name: string, amount: real}')
-    R = TableSymbol('R', '{city: string, id: int}')
+    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = Symbol('R', 'var * {city: string, id: int}')
 
     from blaze.sql import SQL
     engine = sa.create_engine('sqlite:///:memory:')
@@ -484,9 +484,9 @@ def test_clean_join():
              sa.Column('b', sa.Integer),
              )
 
-    tcity = TableSymbol('city', discover(city))
-    tfriends = TableSymbol('friends', discover(friends))
-    tname = TableSymbol('name', discover(name))
+    tcity = Symbol('city', discover(city))
+    tfriends = Symbol('friends', discover(friends))
+    tname = Symbol('name', discover(name))
 
     ns = {tname: name, tfriends: friends, tcity: city}
 
@@ -568,8 +568,8 @@ def test_join_complex_clean():
 
     sel = select(name).where(name.c.id > 10)
 
-    tname = TableSymbol('name', discover(name))
-    tcity = TableSymbol('city', discover(city))
+    tname = Symbol('name', discover(name))
+    tcity = Symbol('city', discover(city))
 
     ns = {tname: name, tcity: city}
 
@@ -594,8 +594,8 @@ def test_projection_of_join():
              sa.Column('country', sa.String),
              )
 
-    tname = TableSymbol('name', discover(name))
-    tcity = TableSymbol('city', discover(city))
+    tname = Symbol('name', discover(name))
+    tcity = Symbol('city', discover(city))
 
     expr = join(tname, tcity[tcity.city == 'NYC'], 'id')[['country', 'name']]
 
@@ -619,8 +619,8 @@ def test_lower_column():
              sa.Column('country', sa.String),
              )
 
-    tname = TableSymbol('name', discover(name))
-    tcity = TableSymbol('city', discover(city))
+    tname = Symbol('name', discover(name))
+    tcity = Symbol('city', discover(city))
 
     ns = {tname: name, tcity: city}
 
@@ -645,8 +645,8 @@ def test_selection_of_join():
              sa.Column('country', sa.String),
              )
 
-    tname = TableSymbol('name', discover(name))
-    tcity = TableSymbol('city', discover(city))
+    tname = Symbol('name', discover(name))
+    tcity = Symbol('city', discover(city))
 
     ns = {tname: name, tcity: city}
 

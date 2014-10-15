@@ -14,13 +14,13 @@ Blaze represents expressions as Python objects.  Classes include
 
 - **Symbol**: leaf expression, ``t``
 - **Projection**: subset of columns, ``t[['name', 'amount']]``
-- **Selection**: subset of rows ``t[t['amount'] < 0]``
-- **Field**: single column of table or field of record dataset t['name']
-- **Broadcast**: a scalar expression broadcast to a collection, ``t['amount'] + 1``
-- **Join**: join two tables on shared columns, ``join(t, s, 'id')``
-- **Reduction**: perform a sum or min or max on a table, ``t['amount'].sum()``
-- **By**: split-apply-combine operation, by(t['name'], ``t['amount'].sum())``
-- **Also**: ``Sort, Distinct, Head, Label, Map, Merge``
+- **Selection**: subset of rows ``t[t.amount < 0]``
+- **Field**: single column of data or field of record dataset ``t.name``
+- **Broadcast**: a scalar expression broadcast to a collection, ``t.amount + 1``
+- **Join**: join two expressions on shared fields , ``join(t, s, 'id')``
+- **Reduction**: perform a sum or min or max on a collection, ``t.amount.sum()``
+- **By**: split-apply-combine operation, ``by(t.name, total=t.amount.sum())``
+- **Also**: ``Sort, Distinct, Head, Label, Map, Merge, ...``
 
 In each case an operation (like ``Selection``) is a Python class.  Each
 expression defines a fixed set of fields in the ``__slots__`` attribute
@@ -133,7 +133,7 @@ node in the Blaze expression graph like
 
 .. code-block:: python
 
-   >>> selection_t = t[t['amount'] < 0]
+   >>> selection_t = t[t.amount < 0]
 
 and transforms the data appropriately, like
 

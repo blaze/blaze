@@ -96,10 +96,10 @@ def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.fields== ['name', 'amount']
 
-    assert eval(str(t['name'])) == t['name']
-    assert str(t['name']) == "t['name']"
+    assert eval(str(t.name)) == t.name
+    assert str(t.name) == "t.name"
     with pytest.raises(AttributeError):
-        t['name'].balance
+        t.name.balance
     with pytest.raises((NotImplementedError, ValueError)):
         getitem(t, set('balance'))
 
@@ -634,11 +634,11 @@ def test_broadcast():
 
     assert str(broadcast(Add, x, 1).expr) == 'x + 1'
 
-    assert str(x <= y) == "t['x'] <= t['y']"
-    assert str(x >= y) == "t['x'] >= t['y']"
-    assert str(x | y) == "t['x'] | t['y']"
-    assert str(x.__ror__(y)) == "t['y'] | t['x']"
-    assert str(x.__rand__(y)) == "t['y'] & t['x']"
+    assert str(x <= y) == "t.x <= t.y"
+    assert str(x >= y) == "t.x >= t.y"
+    assert str(x | y) == "t.x | t.y"
+    assert str(x.__ror__(y)) == "t.y | t.x"
+    assert str(x.__rand__(y)) == "t.y & t.x"
 
     with pytest.raises(ValueError):
         broadcast(Add, x, a)
@@ -653,9 +653,9 @@ def test_expr_child():
 def test_TableSymbol_printing_is_legible():
     accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
 
-    expr = (exp(accounts['balance'] * 10)) + accounts['id']
-    assert "exp(accounts['balance'] * 10)" in str(expr)
-    assert "+ accounts['id']" in str(expr)
+    expr = (exp(accounts.balance * 10)) + accounts['id']
+    assert "exp(accounts.balance * 10)" in str(expr)
+    assert "+ accounts.id" in str(expr)
 
 
 def test_merge():
@@ -663,7 +663,7 @@ def test_merge():
     p = TableSymbol('p', '{amount:int}')
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
-    new_amount = (accounts['balance'] * 1.5).label('new')
+    new_amount = (accounts.balance * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
     assert c.fields == ['name', 'balance', 'new']
@@ -866,7 +866,7 @@ class TestRepr(object):
     def test_partial_lambda(self, t):
         expr = t.amount.map(partial(lambda x, y: x + y, 1))
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=partial(%s, 1), "
                      "_schema=None, _name0=None)" %
                      funcname('test_partial_lambda'))
@@ -874,7 +874,7 @@ class TestRepr(object):
     def test_lambda(self, t):
         expr = t.amount.map(lambda x: x)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=%s, _schema=None, _name0=None)" %
                      funcname('test_lambda'))
 
@@ -883,7 +883,7 @@ class TestRepr(object):
             return x + y
         expr = t.amount.map(partial(myfunc, 1))
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=partial(%s, 1), "
                      "_schema=None, _name0=None)" % funcname('test_partial',
                                                                 'myfunc'))
@@ -891,7 +891,7 @@ class TestRepr(object):
     def test_builtin(self, t):
         expr = t.amount.map(datetime.fromtimestamp)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=datetime.fromtimestamp, _schema=None,"
                      " _name0=None)")
 
@@ -900,7 +900,7 @@ class TestRepr(object):
             return x + 1
         expr = t.amount.map(myfunc)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=%s, _schema=None,"
                      " _name0=None)" % funcname('test_udf', 'myfunc'))
 
@@ -910,7 +910,7 @@ class TestRepr(object):
         f = partial(partial(myfunc, 2), 1)
         expr = t.amount.map(f)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], func=partial(partial(%s, 2), 1),"
+        assert s == ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
                      " _schema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
 

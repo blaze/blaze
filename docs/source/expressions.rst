@@ -13,30 +13,30 @@ Tables
 Table expressions track operations found in relational algebra or your standard
 Pandas/R DataFrame object.  Operations include projecting columns, filtering, mapping and basic mathematics, reductions, split-apply-combine (groupby) operations, and joining.  This compact set of operations can express a surprisingly large set of common computations.  They are widely supported.
 
-TableSymbol
------------
+Symbol
+------
 
-A ``TableSymbol`` refers to a single table in storage.  It must be given a name
-and a schema.
+A ``Symbol`` refers to a single collection of data.  It must be given a name
+and a datashape.
 
 .. code-block:: python
 
    >>> from blaze import *
-   >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
+   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
 
 
 Projections, Selection, Arithmetic
 ----------------------------------
 
 Intuitive operations follow from intuitive Python syntax, learned from systems
-like NumPy and Pandas.  The following defines a table, ``accounts``, and then
+like NumPy and Pandas.  The following defines a collection, ``accounts``, and then
 selects the names of those accounts with negative balance.
 
 .. code-block:: python
 
-   >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
+   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
 
-   >>> deadbeats = accounts[accounts['balance'] < 0]['name']
+   >>> deadbeats = accounts[accounts.balance < 0].name
 
 Internally this doesn't do any actual work (we haven't specified a data source
 or a computational engine).  Instead it builds up a symbolic representation of
@@ -45,7 +45,7 @@ a comutation to do in the future.
 .. code-block:: python
 
    >>> deadbeats
-   accounts[accounts['balance'] < 0]['name']
+   accounts[accounts.balance < 0].name
 
    >>> deadbeats.schema
    dshape("string")
@@ -59,12 +59,12 @@ split-apply-combine workflows.
 
 .. code-block:: python
 
-   >>> by(accounts['name'],                 # Splitting/grouping element
-   ...    total=accounts['balance'].sum())  # Apply and reduction
-   By(grouper=accounts['name'], apply=summary(total=sum(_child=accounts['balance'], axis=(0,), keepdims=False)))
+   >>> by(accounts.name,                 # Splitting/grouping element
+   ...    total=accounts.balance.sum())  # Apply and reduction
+   By(grouper=accounts.name, apply=summary(total=sum(_child=accounts.balance, axis=(0,), keepdims=False)))
 
 
-This operation groups the table by name and then sums the balance of each
+This operation groups the collection by name and then sums the balance of each
 group.  It finds out how much all of the "Alice"s, "Bob"s, etc. of the world
 have in total.
 
@@ -76,19 +76,19 @@ reductions of Pandas like ``count`` and ``nunique``.
 Join
 ----
 
-Tables can be joined with the ``join`` operation, which allows for advanced
-queries to span multiple tables.
+Collections can be joined with the ``join`` operation, which allows for advanced
+queries to span multiple collections.
 
 .. code-block:: python
 
-   >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
-   >>> cities = TableSymbol('cities', '{name: string, city: string}')
+   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
+   >>> cities = Symbol('cities', 'var * {name: string, city: string}')
 
    >>> join(accounts, cities, 'name')
    Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner')
 
 If given no inputs, ``join`` will join on all columns with shared names between
-the two tables.
+the two collections.
 
    >>> shared_names = join(accounts, cities)
 

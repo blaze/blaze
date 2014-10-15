@@ -4,6 +4,7 @@ import toolz
 import datashape
 import functools
 from toolz import concat, memoize, partial
+import re
 
 from datashape import dshape, DataShape, Record, Var
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
@@ -170,7 +171,10 @@ class Field(ElemWise):
     __slots__ = '_child', '_name'
 
     def __str__(self):
-        return "%s['%s']" % (self._child, self._name)
+        if re.match('^\w+$', self._name):
+            return '%s.%s' % (self._child, self._name)
+        else:
+            return "%s['%s']" % (self._child, self._name)
 
     @property
     def expr(self):
@@ -276,7 +280,7 @@ class Selection(Expr):
 
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
-    >>> deadbeats = accounts[accounts['amount'] < 0]
+    >>> deadbeats = accounts[accounts.amount < 0]
     """
     __slots__ = '_child', 'predicate'
 
@@ -320,10 +324,10 @@ class Label(ElemWise):
 
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 
-    >>> (accounts['amount'] * 100)._name
+    >>> (accounts.amount * 100)._name
     'amount'
 
-    >>> (accounts['amount'] * 100).label('new_amount')._name
+    >>> (accounts.amount * 100).label('new_amount')._name
     'new_amount'
 
     See Also
@@ -403,11 +407,11 @@ class Map(ElemWise):
     >>> from datetime import datetime
 
     >>> t = Symbol('t', 'var * {price: real, time: int64}')  # times as integers
-    >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
+    >>> datetimes = t.time.map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
 
-    >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
+    >>> datetimes = t.time.map(datetime.utcfromtimestamp,
     ...                           schema='{time: datetime}')
 
     See Also
@@ -424,7 +428,7 @@ class Map(ElemWise):
         else:
             raise NotImplementedError("Schema of mapped column not known.\n"
                     "Please specify datashape keyword in .map method.\n"
-                    "Example: t['columnname'].map(function, 'int64')")
+                    "Example: t.columnname.map(function, 'int64')")
 
     def label(self, name):
         assert isscalar(self.dshape.measure)

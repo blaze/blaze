@@ -4,12 +4,12 @@ import numpy as np
 import pytest
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import TableSymbol, union, by, exp, Symbol
+from blaze.expr import Symbol, union, by, exp, Symbol
 from datashape import discover
 
 
 
-t = TableSymbol('t', '{id: int, name: string, amount: int}')
+t = Symbol('t', 'var * {id: int, name: string, amount: int}')
 
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
@@ -22,7 +22,7 @@ def eq(a, b):
     return (a == b).all()
 
 
-def test_table():
+def test_symbol():
     assert eq(compute(t, x), x)
 
 
@@ -61,7 +61,7 @@ def test_invert_not():
 
 
 def test_union_1d():
-    t = TableSymbol('t', 'int')
+    t = Symbol('t', 'var * int')
     x = np.array([1, 2, 3])
     assert eq(compute(union(t, t), x), np.array([1, 2, 3, 1, 2, 3]))
 
@@ -103,7 +103,7 @@ def test_Distinct():
                   ('Bob', 100)],
                 dtype=[('name', 'S5'), ('amount', 'i8')])
 
-    t = TableSymbol('t', '{name: string, amount: int64}')
+    t = Symbol('t', 'var * {name: string, amount: int64}')
 
     assert eq(compute(t['name'].distinct(), x),
               np.unique(x['name']))
@@ -165,7 +165,7 @@ def test_slice():
 
 ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
 
-a = TableSymbol('a', discover(ax))
+a = Symbol('a', discover(ax))
 
 def test_array_reductions():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:

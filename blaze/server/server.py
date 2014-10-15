@@ -9,8 +9,8 @@ from cytoolz import first
 from functools import partial, wraps
 from blaze import into, compute, compute_up
 from datashape.predicates import iscollection
-from ..api import discover, Table
-from ..expr import Expr, TableSymbol, Selection, Broadcast, Symbol
+from ..api import discover, Data
+from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify
 from .. import expr
 
@@ -188,7 +188,7 @@ def select(datasets, name):
         dset = datasets[name]
     except KeyError:
         return ("Dataset %s not found" % name, 404)
-    t = TableSymbol('t', dset.schema)
+    t = Symbol('t', dset.dshape)
     dtypes = dict((c, t[c].dshape.measure) for c in t.fields)
 
     columns = data.get('columns', None)
@@ -233,9 +233,9 @@ def to_tree(expr, names=None):
     Examples
     --------
 
-    >>> t = TableSymbol('t', '{x: int32, y: int32}')
+    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
     >>> to_tree(t) # doctest: +SKIP
-    {'op': 'TableSymbol',
+    {'op': 'Symbol',
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
 
 
@@ -245,7 +245,7 @@ def to_tree(expr, names=None):
          {'op': 'Column',
          'args': [
              {
-              'op': 'TableSymbol'
+              'op': 'Symbol'
               'args': ['t', 'var * { x : int32, y : int32 }', False]
              }
              'x']
@@ -253,14 +253,14 @@ def to_tree(expr, names=None):
      }
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
-    below we replace the ``TableSymbol`` node with the string ``'t'``.
+    below we replace the ``Symbol`` node with the string ``'t'``.
 
     >>> tree = to_tree(t.x, names={t: 't'})
     >>> tree # doctest: +SKIP
     {'op': 'Column', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
-    t['x']
+    t.x
 
     See Also
     --------
@@ -273,8 +273,8 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     elif isinstance(expr, Mono):
         return str(expr)
-    elif isinstance(expr, Table):
-        return to_tree(TableSymbol(expr._name, expr.schema), names)
+    elif isinstance(expr, Data):
+        return to_tree(Symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
                 'args': [to_tree(arg, names) for arg in expr._args]}
@@ -317,10 +317,10 @@ def from_tree(expr, namespace=None):
     Examples
     --------
 
-    >>> t = TableSymbol('t', '{x: int32, y: int32}')
+    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
     >>> tree = to_tree(t)
     >>> tree # doctest: +SKIP
-    {'op': 'TableSymbol',
+    {'op': 'Symbol',
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
 
     >>> from_tree(tree)
@@ -333,7 +333,7 @@ def from_tree(expr, namespace=None):
          {'op': 'Field',
          'args': [
              {
-              'op': 'TableSymbol'
+              'op': 'Symbol'
               'args': ['t', 'var * { x : int32, y : int32 }', False]
              }
              'x']
@@ -341,17 +341,17 @@ def from_tree(expr, namespace=None):
      }
 
     >>> from_tree(tree)
-    sum(_child=t['x'], axis=(0,), keepdims=False)
+    sum(_child=t.x, axis=(0,), keepdims=False)
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
-    below we replace the ``TableSymbol`` node with the string ``'t'``.
+    below we replace the ``Symbol`` node with the string ``'t'``.
 
     >>> tree = to_tree(t.x, names={t: 't'})
     >>> tree # doctest: +SKIP
     {'op': 'Field', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
-    t['x']
+    t.x
 
 
     See Also
@@ -392,7 +392,7 @@ def comp(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
 
-    t = TableSymbol(name, discover(dset))
+    t = Symbol(name, discover(dset))
 
     expr = from_tree(data['expr'], namespace={name: t})
 
