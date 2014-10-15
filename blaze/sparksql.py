@@ -20,6 +20,8 @@ try:
 except ImportError:
     pyspark = None
 
+
+
 def deoption(ds):
     """
 
@@ -40,6 +42,10 @@ def deoption(ds):
 
 
 if pyspark:
+    if not issubclass(SQLContext, object):
+        raise ImportError("This version of SparkSQL uses old-style classes. "
+                "Please update to newer version of Spark")
+
 
     types = {datashape.int16: ShortType(),
              datashape.int32: IntegerType(),
