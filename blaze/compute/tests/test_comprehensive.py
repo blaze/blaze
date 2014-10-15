@@ -6,8 +6,7 @@ import numpy as np
 import bcolz
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import Symbol, by
-from blaze.api.into import into
-from blaze.api.table import Data
+from blaze.api import Data, into
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 from blaze.sql import SQL

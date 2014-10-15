@@ -1,4 +1,4 @@
-from blaze.api.table import Data, compute, concrete_head, expr_repr
+from blaze.api.interactive import Data, compute, concrete_head, expr_repr
 from blaze.api.into import into
 import os
 
