@@ -19,7 +19,7 @@ from .server import DEFAULT_PORT
 # flask for testing.  Sadly they have different Response objects,
 # hence the dispatched functions
 
-__all__ = 'Client', 'ExprClient'
+__all__ = 'ExprClient'
 
 def content(response):
     if isinstance(response, flask.Response):
@@ -38,45 +38,6 @@ def reason(response):
         return response.status
     if isinstance(response, requests.Response):
         return response.reason
-
-
-class Client(DataDescriptor):
-    __slots__ = 'url', '_name'
-    def __init__(self, url, name):
-        self.url = url.strip('/')
-        self._name = name
-
-    def _get_data(self, key):
-        response = requests.put('%s/data/%s.json' % (self.url, self._name),
-                                data=json.dumps({'index': emit_index(key)}),
-                                headers = {'Content-type': 'application/json',
-                                           'Accept': 'text/plain'})
-        if not ok(response):
-            raise ValueError("Bad Response: %s" % reason(response))
-
-        data = json.loads(content(response))
-
-        return data['datashape'], data['data']
-
-    def get_py(self, key):
-        dshape, data = self._get_data(key)
-        return coerce(dshape, data)
-
-    def get_dynd(self, key):
-        dshape, data = self._get_data(key)
-        return nd.array(data, type=str(dshape))
-
-
-    @property
-    def dshape(self):
-        response = requests.get('%s/datasets.json' % self.url)
-
-        if not ok(response):
-            raise ValueError("Bad Response: %s" % reason(response))
-
-        data = json.loads(content(response))
-
-        return dshape(data[self._name])
 
 
 class ExprClient(object):

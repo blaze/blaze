@@ -8,7 +8,7 @@ from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.data.python import Python
 from blaze.server.index import parse_index, emit_index
-from blaze.server.client import Client, ExprClient, discover, resource
+from blaze.server.client import ExprClient, discover, resource
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
