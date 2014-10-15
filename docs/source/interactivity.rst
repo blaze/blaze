@@ -16,7 +16,7 @@ core goals of Blaze.
 
 Blaze *interactive expressions* are like normal expressions but their leaves
 may hold on to a concrete data resource (like a DataFrame or SQL database.)
-This embeds a specific data context, providing uesr interface improvements at
+This embeds a specific data context, providing user interface improvements at
 the cost of full generality.
 
 
