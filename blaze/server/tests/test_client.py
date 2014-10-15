@@ -8,7 +8,7 @@ from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.data.python import Python
 from blaze.server.index import parse_index, emit_index
-from blaze.server.client import ExprClient, discover, resource
+from blaze.server.client import Client, discover, resource
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
@@ -30,7 +30,7 @@ client.requests = test # OMG monkey patching
 
 
 def test_expr_client():
-    ec = ExprClient('localhost:6363', 'accounts_df')
+    ec = Client('localhost:6363', 'accounts_df')
     assert discover(ec) == discover(df)
 
     t = TableSymbol('t', discover(ec))
@@ -43,7 +43,7 @@ def test_expr_client():
 
 
 def test_expr_client_interactive():
-    ec = ExprClient('localhost:6363', 'accounts_df')
+    ec = Client('localhost:6363', 'accounts_df')
     t = Table(ec)
 
     assert compute(t.name) == ['Alice', 'Bob']
@@ -79,7 +79,7 @@ def compute_up(expr, data, **kwargs):
 
 
 def test_custom_expressions():
-    ec = ExprClient('localhost:6363', 'accounts_df')
+    ec = Client('localhost:6363', 'accounts_df')
     t = TableSymbol('t', discover(ec))
 
     assert list(map(tuple, compute(CustomExpr(t), ec))) == into(list, df)

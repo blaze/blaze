@@ -50,7 +50,7 @@ Data Server
 .. currentmodule:: blaze.server.client
 
 .. autosummary::
-   ExprClient
+   Client
 
 
 

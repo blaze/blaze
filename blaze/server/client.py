@@ -19,7 +19,7 @@ from .server import DEFAULT_PORT
 # flask for testing.  Sadly they have different Response objects,
 # hence the dispatched functions
 
-__all__ = 'ExprClient'
+__all__ = 'Client', 'ExprClient'
 
 def content(response):
     if isinstance(response, flask.Response):
@@ -40,7 +40,7 @@ def reason(response):
         return response.reason
 
 
-class ExprClient(object):
+class Client(object):
     """ Expression Client for Blaze Server
 
     Parameters
@@ -55,7 +55,7 @@ class ExprClient(object):
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> ec = ExprClient('localhost:6363', 'accounts')
+    >>> ec = Client('localhost:6363', 'accounts')
     >>> t = Table(ec) # doctest: +SKIP
 
     See Also
@@ -82,13 +82,18 @@ class ExprClient(object):
 
         return dshape(data[self.dataname])
 
+def ExprClient(*args, **kwargs):
+    import warnings
+    warnings.warn("Deprecated use `Client` instead", DeprecationWarning)
+    return Client(*args, **kwargs)
 
-@dispatch(ExprClient)
+
+@dispatch(Client)
 def discover(ec):
     return ec.dshape
 
 
-@dispatch(Expr, ExprClient)
+@dispatch(Expr, Client)
 def compute_down(expr, ec):
     from .server import to_tree
     from ..api import Table
@@ -116,4 +121,4 @@ def resource_blaze(uri, name, **kwargs):
     if ':' not in tld:
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
-    return ExprClient(uri, name, **kwargs)
+    return Client(uri, name, **kwargs)
