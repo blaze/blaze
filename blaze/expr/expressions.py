@@ -366,7 +366,7 @@ class ReLabel(ElemWise):
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
     dshape("{ name : string, amount : int32 }")
-    >>> accounts.relabel({'amount': 'balance'}).schema
+    >>> accounts.relabel(amount='balance').schema
     dshape("{ name : string, balance : int32 }")
 
     See Also
@@ -384,8 +384,14 @@ class ReLabel(ElemWise):
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self._child.dshape.measure.parameters[0]]))
 
+    def __str__(self):
+        return '%s.relabel(%s)' % (self._child, ', '.join('%s="%s"' % l for l
+            in self.labels))
 
-def relabel(child, labels):
+
+def relabel(child, labels=None, **kwargs):
+    labels = labels or dict()
+    labels = toolz.merge(labels, kwargs)
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):
