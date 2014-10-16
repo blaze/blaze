@@ -520,8 +520,13 @@ def shape(expr):
 
     >>> Symbol('s', '3 * 5 * int32').shape
     (3, 5)
+
+    Works on anything discoverable
+
+    >>> shape([[1, 2], [3, 4]])
+    (2, 2)
     """
-    s = list(expr.dshape.shape)
+    s = list(discover(expr).shape)
     for i, elem in enumerate(s):
         try:
             s[i] = int(elem)
