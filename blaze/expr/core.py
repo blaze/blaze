@@ -340,7 +340,7 @@ def common_subexpression(*exprs):
     >>> common_subexpression(t.x, t.y)
     t
     """
-    sets = [set(t._subterms()) for t in exprs]
+    sets = [set(subterms(t)) for t in exprs]
     return builtins.max(set.intersection(*sets),
                         key=compose(len, str))
 
