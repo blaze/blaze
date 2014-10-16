@@ -103,9 +103,14 @@ def test_reductions():
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
 
+def test_1d_reductions_keepdims():
+    for r in [sum, min, max, nunique, count]:
+        assert compute(r(t.amount, keepdims=True), data) == \
+               (compute(r(t.amount), data),)
+
 
 def test_count():
-    t = Symbol('t', 'var * 3 * int')
+    t = Symbol('t', '3 * int')
     assert compute(t.count(), [1, None, 2]) == 2
 
 
