@@ -57,9 +57,10 @@ class Data(Symbol):
     __slots__ = 'data', 'dshape', '_name'
 
     def __init__(self, data, dshape=None, name=None, fields=None, columns=None,
-            schema=None):
+            schema=None, **kwargs):
         if isinstance(data, str):
-            data = resource(data, schema=schema, dshape=dshape, columns=columns)
+            data = resource(data, schema=schema, dshape=dshape,
+                    columns=columns, **kwargs)
         if columns:
             warnings.warn("columns kwarg deprecated.  Use fields instead",
                           DeprecationWarning)
