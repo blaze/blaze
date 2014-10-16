@@ -201,7 +201,8 @@ class Summary(Expr):
 
     def __str__(self):
         return 'summary(' + ', '.join('%s=%s' % (name, str(val))
-                for name, val in zip(self.fields, self.values)) + ')'
+                for name, val in zip(self.fields, self.values)) + \
+                    ', keepdims=%s' % self.keepdims + ')'
 
 
 def summary(keepdims=False, **kwargs):
