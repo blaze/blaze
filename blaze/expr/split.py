@@ -82,52 +82,78 @@ reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
               any: (any, any), all: (all, all)}
 
+@dispatch(Expr)
+def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
+    return ((chunk, _split_chunk(expr, leaf=leaf, chunk=chunk,
+                                 keepdims=keepdims)),
+            (agg, _split_agg(expr, leaf=leaf, agg=agg)))
+
 
 @dispatch(tuple(reductions))
-def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
     a, b = reductions[type(expr)]
-    return ((chunk, a(expr._subs({leaf: chunk})._child, keepdims=keepdims)),
-            (agg, b(agg)))
+    return a(expr._subs({leaf: chunk})._child, keepdims=keepdims)
+
+@dispatch(tuple(reductions))
+def _split_agg(expr, leaf=None, agg=None):
+    a, b = reductions[type(expr)]
+    return b(agg)
 
 
 @dispatch(Distinct)
-def _split(expr, leaf=None, chunk=None, agg=None):
-    return ((chunk, expr._subs({leaf: chunk})),
-            (agg, agg.distinct()))
+def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
+    return expr._subs({leaf: chunk})
+
+@dispatch(Distinct)
+def _split_agg(expr, leaf=None, agg=None):
+    return agg.distinct()
 
 
 @dispatch(Summary)
-def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
-    chunk_expr = summary(keepdims=keepdims,
-                         **dict((name, split(leaf, val, chunk=chunk,
-                                             keepdims=False)[0][1])
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
+    return summary(keepdims=keepdims,
+                   **dict((name, split(leaf, val, chunk=chunk,
+                                       keepdims=False)[0][1])
                             for name, val in zip(expr.fields, expr.values)))
-    agg_expr = summary(**dict((name, split(leaf, val, agg=agg,
-                                           keepdims=False)[1][1]._subs(
+    return chunk_expr
+
+
+@dispatch(Summary)
+def _split_agg(expr, leaf=None, chunk=None, agg=None, keepdims=True):
+    return summary(**dict((name, split(leaf, val, agg=agg,
+                                       keepdims=False)[1][1]._subs(
                                                         {agg: agg[name]}))
                             for name, val in zip(expr.fields, expr.values)))
-    return ((chunk, chunk_expr), (agg, agg_expr))
+
 
 
 @dispatch(By)
-def _split(expr, leaf=None, chunk=None, agg=None):
-    (chunk, chunk_apply), (agg, agg_apply) = \
-            split(leaf, expr.apply, chunk=chunk, agg=agg, keepdims=False)
-
+def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
+    chunk_apply = _split_chunk(expr.apply, leaf=leaf, chunk=chunk, keepdims=False)
     chunk_grouper = expr.grouper._subs({leaf: chunk})
+
+    return by(chunk_grouper, chunk_apply)
+
+@dispatch(By)
+def _split_agg(expr, leaf=None, agg=None):
+    agg_apply = _split_agg(expr.apply, leaf=leaf, agg=agg)
+    agg_grouper = expr.grouper._subs({leaf: agg})
+
     if isscalar(expr.grouper.dshape.measure):
         agg_grouper = agg[expr.fields[0]]
     else:
         agg_grouper = agg[list(expr.fields[:len(expr.grouper.fields)])]
 
-    return ((chunk, by(chunk_grouper, chunk_apply)),
-            (agg, by(agg_grouper, agg_apply)))
+    return by(agg_grouper, agg_apply)
 
 
 @dispatch((ElemWise, Selection))
-def _split(expr, leaf=None, chunk=None, agg=None):
-    return ((chunk, expr._subs({leaf: chunk})),
-            (agg, agg))
+def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
+    return expr._subs({leaf: chunk})
+
+@dispatch((ElemWise, Selection))
+def _split_agg(expr, leaf=None, agg=None):
+    return agg
 
 
 def aggregate_shape(expr_shape, chunk_shape):
