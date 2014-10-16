@@ -128,3 +128,38 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 def _split(expr, leaf=None, chunk=None, agg=None):
     return ((chunk, expr._subs({leaf: chunk})),
             (agg, agg))
+
+
+def aggregate_shape(expr_shape, chunk_shape):
+    """ Compute the shape of the resulting aggregate
+
+    >>> aggregate_shape((10, 20), (5, 5))
+    (2, 4)
+
+    We round up
+
+    >>> aggregate_shape((20, 30), (9, 9))
+    (3, 4)
+
+    In the case of datashape.var, we resort to var
+
+    >>> from datashape import var
+    >>> aggregate_shape((var,), (5,))
+    (Var(),)
+    >>> aggregate_shape((50,), (var,))
+    (Var(),)
+    """
+    assert len(expr_shape) == len(chunk_shape)
+    return tuple(map(dimension_div, expr_shape, chunk_shape))
+
+from datashape import var, Fixed
+from math import ceil
+
+def dimension_div(a, b):
+    if a == var or b == var:
+        return var
+    if isinstance(a, Fixed):
+        a = int(a)
+    if isinstance(b, Fixed):
+        b = int(b)
+    return int(ceil(a / b))
