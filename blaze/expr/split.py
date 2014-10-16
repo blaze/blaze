@@ -38,7 +38,7 @@ def path_split(leaf, expr):
     return node
 
 
-def split(leaf, expr, chunk=None, agg=None):
+def split(leaf, expr, chunk=None, agg=None, **kwargs):
     """ Split expression for chunked computation
 
     Break up a computation ``leaf -> expr`` so that it can be run in chunks.
@@ -47,6 +47,10 @@ def split(leaf, expr, chunk=None, agg=None):
 
         chunk -> chunk-expr
         aggregate -> aggregate-expr
+
+    The chunk_expr will have the same dimesions as the input
+    (reductions set keepdims=True) so that this should work cleanly with
+    concatenation functions like ``np.concatenate``.
 
     Returns
     -------
@@ -58,7 +62,7 @@ def split(leaf, expr, chunk=None, agg=None):
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
-    ((chunk, count(_child=chunk.id, axis=(0,), keepdims=False)), (aggregate, sum(_child=aggregate, axis=(0,), keepdims=False)))
+    ((chunk, count(_child=chunk.id, axis=(0,), keepdims=True)), (aggregate, sum(_child=aggregate, axis=(0,), keepdims=False)))
     """
     center = path_split(leaf, expr)
     chunk = chunk or Symbol('chunk', leaf.dshape)
@@ -68,7 +72,7 @@ def split(leaf, expr, chunk=None, agg=None):
         agg = agg or Symbol('aggregate', datashape.var * center.dshape)
 
     ((chunk, chunk_expr), (agg, agg_expr)) = \
-            _split(center, leaf=leaf, chunk=chunk, agg=agg)
+            _split(center, leaf=leaf, chunk=chunk, agg=agg, **kwargs)
 
     return ((chunk, chunk_expr),
             (agg, expr._subs({center: agg})._subs({agg: agg_expr})))
@@ -80,9 +84,9 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 
 @dispatch(tuple(reductions))
-def _split(expr, leaf=None, chunk=None, agg=None):
+def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
     a, b = reductions[type(expr)]
-    return ((chunk, a(expr._subs({leaf: chunk})._child)),
+    return ((chunk, a(expr._subs({leaf: chunk})._child, keepdims=keepdims)),
             (agg, b(agg)))
 
 
@@ -93,10 +97,13 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 
 
 @dispatch(Summary)
-def _split(expr, leaf=None, chunk=None, agg=None):
-    chunk_expr = summary(**dict((name, split(leaf, val, chunk=chunk)[0][1])
+def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
+    chunk_expr = summary(keepdims=keepdims,
+                         **dict((name, split(leaf, val, chunk=chunk,
+                                             keepdims=False)[0][1])
                             for name, val in zip(expr.fields, expr.values)))
-    agg_expr = summary(**dict((name, split(leaf, val, agg=agg)[1][1]._subs(
+    agg_expr = summary(**dict((name, split(leaf, val, agg=agg,
+                                           keepdims=False)[1][1]._subs(
                                                         {agg: agg[name]}))
                             for name, val in zip(expr.fields, expr.values)))
     return ((chunk, chunk_expr), (agg, agg_expr))
@@ -105,7 +112,7 @@ def _split(expr, leaf=None, chunk=None, agg=None):
 @dispatch(By)
 def _split(expr, leaf=None, chunk=None, agg=None):
     (chunk, chunk_apply), (agg, agg_apply) = \
-            split(leaf, expr.apply, chunk=chunk, agg=agg)
+            split(leaf, expr.apply, chunk=chunk, agg=agg, keepdims=False)
 
     chunk_grouper = expr.grouper._subs({leaf: chunk})
     if isscalar(expr.grouper.dshape.measure):

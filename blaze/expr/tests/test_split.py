@@ -30,7 +30,7 @@ def test_sum():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.sum())
 
     assert chunk.schema == t.schema
-    assert chunk_expr.isidentical(chunk.amount.sum())
+    assert chunk_expr.isidentical(chunk.amount.sum(keepdims=True))
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(sum(agg))
@@ -52,7 +52,7 @@ def test_summary():
 
     assert chunk.schema == t.schema
     assert chunk_expr.isidentical(summary(a=chunk.amount.count(),
-                                          b=chunk.id.sum()))
+                                          b=chunk.id.sum(), keepdims=True))
 
     assert not agg.schema == dshape('{a: int32, b: int32}')
     assert agg_expr.isidentical(summary(a=agg.a.sum(),
@@ -61,7 +61,8 @@ def test_summary():
     (chunk, chunk_expr), (agg, agg_expr) = \
             split(t, summary(total=t.amount.sum()))
 
-    assert chunk_expr.isidentical(summary(total=chunk.amount.sum()))
+    assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
+                                          keepdims=True))
     assert agg_expr.isidentical(summary(total=agg.total.sum()))
 
 
@@ -74,6 +75,7 @@ def test_by_sum():
 
     assert not isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
+
 
 def test_by_count():
     (chunk, chunk_expr), (agg, agg_expr) = \
