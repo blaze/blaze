@@ -216,5 +216,5 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-Expr._repr_html_ = to_html
+Expr._repr_html_ = lambda self: to_html(self)
 Expr.__len__ = table_length

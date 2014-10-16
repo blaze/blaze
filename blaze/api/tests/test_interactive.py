@@ -131,6 +131,11 @@ def test_to_html():
     assert to_html(t.count()) == '2'
 
 
+def test_repr_html():
+    assert '<table' in s._repr_html_()
+
+
+
 def test_into():
     from blaze.api.into import into
     assert into([], t) == into([], data)
