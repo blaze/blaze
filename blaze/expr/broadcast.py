@@ -93,7 +93,7 @@ class Broadcast(ElemWise):
     Examples
     --------
 
-    >>> from blaze import Symbol, Add
+    >>> from blaze.expr import Symbol, Add
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
 
