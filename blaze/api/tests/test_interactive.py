@@ -1,4 +1,5 @@
-from blaze.api.interactive import Data, compute, concrete_head, expr_repr
+from blaze.api.interactive import (Data, compute, concrete_head, expr_repr,
+        to_html)
 from blaze.api.into import into
 import os
 
@@ -33,7 +34,7 @@ def test_table_raises_on_inconsistent_inputs():
 
 
 def test_resources():
-    assert t.resources() == {t: t.data}
+    assert t._resources() == {t: t.data}
 
 
 def test_resources_fail():
@@ -120,10 +121,14 @@ def test_expr_repr_empty():
 
 
 def test_to_html():
-    s = t.to_html()
+    s = to_html(t)
     assert s
     assert 'Alice' in s
     assert '<table' in s
+
+    assert to_html(1) == '1'
+
+    assert to_html(t.count()) == '2'
 
 
 def test_into():

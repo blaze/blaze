@@ -92,11 +92,11 @@ Compute calls including ``iris`` may omit the customary namespace, e.g.
    >>> compute(expr)                             # doctest: +SKIP
    ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica']
 
-This implicit namespace can be found with the ``.resources`` method
+This implicit namespace can be found with the ``._resources`` method
 
 .. code-block:: python
 
-   >>> expr.resources()                          # doctest: +SKIP
+   >>> expr._resources()                          # doctest: +SKIP
    {iris: <blaze.data.sql.SQL at 0x7f0f64ffbdd0>}
 
 Additionally, we override the ``__repr__`` and ``_repr_html_`` methods to

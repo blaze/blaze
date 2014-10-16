@@ -53,7 +53,7 @@ def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
 
 @dispatch(Selection, tb.Table)
 def compute_up(sel, t, **kwargs):
-    s = eval_str(sel.predicate.expr)
+    s = eval_str(sel.predicate._expr)
     return t.read_where(s)
 
 
@@ -106,7 +106,7 @@ def compute_up(h, t, **kwargs):
 @dispatch(Broadcast, tb.Table)
 def compute_up(c, t, **kwargs):
     uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
-    e = tb.Expr(str(c.expr), uservars=uservars, truediv=True)
+    e = tb.Expr(str(c._expr), uservars=uservars, truediv=True)
     return e.eval()
 
 

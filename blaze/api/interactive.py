@@ -16,7 +16,7 @@ from .into import into
 from ..compatibility import _strtypes, unicode
 from ..resource import resource
 
-__all__ = ['Data', 'Table', 'compute', 'into']
+__all__ = ['Data', 'Table', 'compute', 'into', 'to_html']
 
 names = ('_%d' % i for i in itertools.count(1))
 
@@ -101,7 +101,7 @@ class Data(Symbol):
 
         self._name = name or next(names)
 
-    def resources(self):
+    def _resources(self):
         return {self: self.data}
 
     @property
@@ -126,7 +126,7 @@ def _subs(o, d):
 
 @dispatch(Expr)
 def compute(expr):
-    resources = expr.resources()
+    resources = expr._resources()
     if not resources:
         raise ValueError("No data resources found")
     else:
@@ -135,7 +135,7 @@ def compute(expr):
 
 def concrete_head(expr, n=10):
     """ Return head of computed expression """
-    if not expr.resources():
+    if not expr._resources():
         raise ValueError("Expression does not contain data resources")
     if iscollection(expr.dshape):
         head = expr.head(n + 1)
@@ -151,7 +151,7 @@ def concrete_head(expr, n=10):
 
 
 def expr_repr(expr, n=10):
-    if not expr.resources():
+    if not expr._resources():
         return str(expr)
 
     result = concrete_head(expr, n)
@@ -166,8 +166,18 @@ def expr_repr(expr, n=10):
         return repr(result) # pragma: no cover
 
 
-def expr_html(expr, n=10):
-    return concrete_head(expr).to_html()
+@dispatch(DataFrame)
+def to_html(df):
+    return df.to_html()
+
+@dispatch(Expr)
+def to_html(expr):
+    return to_html(concrete_head(expr))
+
+
+@dispatch(object)
+def to_html(o):
+    return repr(o)
 
 
 @dispatch(type, Expr)
@@ -206,6 +216,5 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-Expr.to_html = expr_html
-Expr._repr_html_ = expr_html
+Expr._repr_html_ = to_html
 Expr.__len__ = table_length

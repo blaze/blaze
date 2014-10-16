@@ -83,7 +83,7 @@ class Expr(Node):
 
     def __dir__(self):
         result = dir(type(self))
-        if self.fields:
+        if isrecord(self.dshape.measure) and self.fields:
             result.extend(list(self.fields))
 
         d = toolz.merge(schema_methods(self.dshape.measure),
@@ -138,7 +138,7 @@ class Symbol(Expr):
     def __str__(self):
         return self._name
 
-    def resources(self):
+    def _resources(self):
         return dict()
 
 
@@ -177,7 +177,7 @@ class Field(ElemWise):
             return "%s['%s']" % (self._child, self._name)
 
     @property
-    def expr(self):
+    def _expr(self):
         return Symbol(self._name, datashape.DataShape(self.dshape.measure))
 
     @property

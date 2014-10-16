@@ -141,7 +141,7 @@ def swap_resources_into_scope(expr, scope):
     >>> swap_resources_into_scope(t.head(2), {})
     (t.head(2), {t: [1, 2, 3]})
     """
-    resources = expr.resources()
+    resources = expr._resources()
     symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
     scope = toolz.merge(resources, scope)
@@ -222,7 +222,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
     else:
         prefix = 'lambda (%s): '
 
-    return prefix % ', '.join(map(str, columns)) + eval_str(t.expr)
+    return prefix % ', '.join(map(str, columns)) + eval_str(t._expr)
 
 
 @dispatch(Union, (list, tuple))
