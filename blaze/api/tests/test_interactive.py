@@ -204,3 +204,7 @@ def test_can_trivially_create_sqlite_table():
 
 def test_can_trivially_create_pytables():
     Data(example('accounts.h5')+'::/accounts')
+
+
+def test_data_passes_kwargs_to_resource():
+    assert Data(example('iris.csv'), encoding='ascii').data.encoding == 'ascii'
