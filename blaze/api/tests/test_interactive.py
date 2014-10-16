@@ -34,7 +34,7 @@ def test_table_raises_on_inconsistent_inputs():
 
 
 def test_resources():
-    assert t.resources() == {t: t.data}
+    assert t._resources() == {t: t.data}
 
 
 def test_resources_fail():

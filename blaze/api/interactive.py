@@ -101,7 +101,7 @@ class Data(Symbol):
 
         self._name = name or next(names)
 
-    def resources(self):
+    def _resources(self):
         return {self: self.data}
 
     @property
@@ -126,7 +126,7 @@ def _subs(o, d):
 
 @dispatch(Expr)
 def compute(expr):
-    resources = expr.resources()
+    resources = expr._resources()
     if not resources:
         raise ValueError("No data resources found")
     else:
@@ -135,7 +135,7 @@ def compute(expr):
 
 def concrete_head(expr, n=10):
     """ Return head of computed expression """
-    if not expr.resources():
+    if not expr._resources():
         raise ValueError("Expression does not contain data resources")
     if iscollection(expr.dshape):
         head = expr.head(n + 1)
@@ -151,7 +151,7 @@ def concrete_head(expr, n=10):
 
 
 def expr_repr(expr, n=10):
-    if not expr.resources():
+    if not expr._resources():
         return str(expr)
 
     result = concrete_head(expr, n)

@@ -110,8 +110,8 @@ class Node(object):
         """
         return subs(self, d)
 
-    def resources(self):
-        return toolz.merge([arg.resources() for arg in self._args
+    def _resources(self):
+        return toolz.merge([arg._resources() for arg in self._args
                             if isinstance(arg, Node)])
 
     def _subterms(self):

@@ -138,7 +138,7 @@ class Symbol(Expr):
     def __str__(self):
         return self._name
 
-    def resources(self):
+    def _resources(self):
         return dict()
 
 
