@@ -16,7 +16,7 @@ from .into import into
 from ..compatibility import _strtypes, unicode
 from ..resource import resource
 
-__all__ = ['Data', 'Table', 'compute', 'into', 'to_html']
+__all__ = ['Data', 'Table', 'into', 'to_html']
 
 names = ('_%d' % i for i in itertools.count(1))
 
@@ -57,9 +57,10 @@ class Data(Symbol):
     __slots__ = 'data', 'dshape', '_name'
 
     def __init__(self, data, dshape=None, name=None, fields=None, columns=None,
-            schema=None):
+            schema=None, **kwargs):
         if isinstance(data, str):
-            data = resource(data, schema=schema, dshape=dshape, columns=columns)
+            data = resource(data, schema=schema, dshape=dshape,
+                    columns=columns, **kwargs)
         if columns:
             warnings.warn("columns kwarg deprecated.  Use fields instead",
                           DeprecationWarning)
@@ -216,5 +217,5 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-Expr._repr_html_ = to_html
+Expr._repr_html_ = lambda self: to_html(self)
 Expr.__len__ = table_length

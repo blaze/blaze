@@ -41,3 +41,10 @@ def test_dir():
     assert 'name' not in dir(e.name)
     assert 'isnan' in dir(e.x)
     assert 'isnan' not in dir(e.amount)
+
+
+def test_label():
+    e = Symbol('e', '3 * int')
+    assert e._name == 'e'
+    assert label(e, 'foo')._name == 'foo'
+    assert label(e, 'e').isidentical(e)

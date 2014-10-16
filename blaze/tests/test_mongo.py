@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 import csv as csv_module
-from blaze import CSV, JSON
+from blaze.data import CSV, JSON
 import subprocess
 import tempfile
 import json

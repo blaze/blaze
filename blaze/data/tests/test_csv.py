@@ -10,9 +10,9 @@ from datashape import dshape, Record
 
 from blaze.expr.table import TableSymbol
 from blaze.compute.python import compute
-from blaze import Table, into, discover, DataDescriptor
+from blaze import Table, into, discover
 from blaze.compatibility import min_python_version, xfail, PY3
-from blaze.data import CSV
+from blaze.data import CSV, DataDescriptor
 from blaze.utils import filetext, tmpfile, example
 from blaze.data.utils import tuplify
 from blaze.data.csv import drop, has_header, discover_dialect

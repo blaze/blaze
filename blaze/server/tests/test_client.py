@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import Expr, TableSymbol, compute, Table, by, into, Field
+from blaze import compute, Table, by, into
+from blaze.expr import Expr, TableSymbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.server.index import parse_index, emit_index

@@ -90,7 +90,7 @@ safe_scope = {'__builtins__': {},  # Python 2
 def exprify(expr, dtypes):
     """ Transform string into scalar expression
 
-    >>> from blaze import Expr
+    >>> from blaze.expr import Expr
     >>> expr = exprify('x + y', {'x': 'int64', 'y': 'real'})
     >>> expr
     x + y

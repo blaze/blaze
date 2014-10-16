@@ -10,10 +10,15 @@ from multipledispatch import halt_ordering, restart_ordering
 
 halt_ordering() # Turn off multipledispatch ordering
 
-from .expr import *
+from datashape import dshape, discover
+from .expr import (Symbol, TableSymbol)
+from .expr import (by, count, count_values, distinct, head, join, label, like,
+        mean, merge, nunique, relabel, selection, sort, summary, union, var)
+from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
+        second, time, year)
 from .expr.functions import *
 from .api import *
-from .data import *
+from .data import CSV, HDF5, SQL, coerce
 from .json import *
 from .resource import *
 from .compute.dynd import *
@@ -43,7 +48,7 @@ try:
 except ImportError:
     pass
 try:
-    from .compute.chunks import *
+    import blaze.compute.chunks
 except ImportError:
     pass
 try:

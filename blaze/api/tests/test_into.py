@@ -17,7 +17,8 @@ from pandas import DataFrame
 from blaze.data import CSV
 
 from blaze.api.into import into, discover
-from blaze import Data, Concat
+from blaze import Data
+from blaze.data import Concat
 from blaze.utils import tmpfile, filetext, example
 from blaze.pytables import PyTables
 import pytest
