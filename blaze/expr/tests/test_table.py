@@ -943,3 +943,6 @@ def test_columns_attribute_for_backwards_compatibility():
     t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
 
     assert t.columns == t.fields
+
+    assert 'columns' in dir(t)
+    assert 'columns' not in dir(t.name)

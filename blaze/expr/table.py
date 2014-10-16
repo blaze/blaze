@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import isscalar, iscollection, isrecord
 from .expressions import Symbol
 from ..compatibility import _strtypes
 
@@ -43,7 +43,7 @@ def columns(expr):
 from .expressions import dshape_method_list, method_properties
 
 dshape_method_list.extend([
-    (lambda ds: len(ds.shape) == 1, set([columns]))
+    (lambda ds: len(ds.shape) == 1 and isrecord(ds.measure), set([columns]))
     ])
 
 method_properties.add(columns)
