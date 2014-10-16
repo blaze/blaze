@@ -27,7 +27,7 @@ def _expr_child(col):
     Helper function for ``broadcast``
     """
     if isinstance(col, (Broadcast, Field)):
-        return col.expr, col._child
+        return col._expr, col._child
     elif isinstance(col, Label):
         return _expr_child(col._child)
     else:
@@ -97,7 +97,7 @@ class Broadcast(ElemWise):
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
 
-    >>> expr = Add(accounts.amount.expr, 100)
+    >>> expr = Add(accounts.amount._expr, 100)
     >>> Broadcast(accounts, expr)
     accounts.amount + 100
 
@@ -106,23 +106,23 @@ class Broadcast(ElemWise):
 
     blaze.expr.broadcast.broadcast
     """
-    __slots__ = '_child', 'expr'
+    __slots__ = '_child', '_expr'
 
     @property
     def _name(self):
-        names = [x._name for x in self.expr._traverse()
+        names = [x._name for x in self._expr._traverse()
                   if isinstance(x, Symbol)]
-        if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
+        if len(names) == 1 and not isinstance(self._expr.dshape[0], Record):
             return names[0]
 
     @property
     def dshape(self):
-        return DataShape(*(self._child.shape + (self.expr.dshape.measure,)))
+        return DataShape(*(self._child.shape + (self._expr.dshape.measure,)))
 
     def __str__(self):
         columns = self.active_columns()
         newcol = lambda c: "%s.%s" % (self._child, c)
-        return eval_str(self.expr._subs(dict(zip(columns,
+        return eval_str(self._expr._subs(dict(zip(columns,
                                                 map(newcol, columns)))))
 
     def active_columns(self):
@@ -218,11 +218,18 @@ def isnan(expr):
 
 from .expressions import dshape_method_list
 
+def isreal(ds):
+    if isinstance(ds, DataShape) and len(ds) == 1:
+        ds = ds[0]
+    if isinstance(ds, Option):
+        ds = ds.ty
+    return isinstance(ds, Unit) and 'float' in str(ds)
+
 dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isscalar(ds.measure),
             set([_eq, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
                  _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
                 _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert])),
-    (lambda ds: iscollection(ds) and isnumeric(ds),
+    (lambda ds: iscollection(ds) and isreal(ds.measure),
             set([isnan]))
     ])
