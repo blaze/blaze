@@ -370,8 +370,11 @@ def compute_up(t, example, children, **kwargs):
 
 @dispatch(Summary, DataFrame)
 def compute_up(expr, data, **kwargs):
-    return Series(dict(zip(expr.fields, [compute(val, {expr._child: data})
-                                        for val in expr.values])))
+    values = [compute(val, {expr._child: data}) for val in expr.values]
+    if expr.keepdims:
+        return DataFrame([values], columns=expr.fields)
+    else:
+        return Series(dict(zip(expr.fields, values)))
 
 
 @dispatch(Like, DataFrame)

@@ -508,6 +508,12 @@ def test_summary():
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
 
 
+def test_summary_keepdims():
+    expr = summary(count=t.id.count(), sum=t.amount.sum(), keepdims=True)
+    expected = DataFrame([[3, 350]], columns=['count', 'sum'])
+    assert str(compute(expr, df)) == str(expected)
+
+
 def test_dplyr_transform():
     df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
     t = Symbol('t', discover(df))
