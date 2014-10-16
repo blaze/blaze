@@ -123,9 +123,10 @@ class var(Reduction):
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False, axis=None):
+    def __init__(self, child, unbiased=False, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, _child=child, axis=axis)
+        Reduction.__init__(self, child, **kwargs)
+
 
 class std(Reduction):
     """Standard Deviation
@@ -151,9 +152,10 @@ class std(Reduction):
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False, axis=None):
+    def __init__(self, child, unbiased=False, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, _child=child, axis=axis)
+        Reduction.__init__(self, child, **kwargs)
+
 
 class count(Reduction):
     """ The number of non-null elements """
