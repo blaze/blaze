@@ -99,12 +99,14 @@ def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
 @dispatch(tuple(reductions))
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
     a, b = reductions[type(expr)]
-    return a(expr._subs({leaf: chunk})._child, keepdims=keepdims)
+    return a(expr._subs({leaf: chunk})._child,
+             keepdims=keepdims,
+             axis=expr.axis)
 
 @dispatch(tuple(reductions))
 def _split_agg(expr, leaf=None, agg=None):
     a, b = reductions[type(expr)]
-    return b(agg)
+    return b(agg, axis=expr.axis, keepdims=expr.keepdims)
 
 
 @dispatch(Distinct)
@@ -131,7 +133,6 @@ def _split_agg(expr, leaf=None, chunk=None, agg=None, keepdims=True):
                                        keepdims=False)[1][1]._subs(
                                                         {agg: agg[name]}))
                             for name, val in zip(expr.fields, expr.values)))
-
 
 
 @dispatch(By)

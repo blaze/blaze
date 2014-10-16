@@ -112,3 +112,16 @@ def test_nd_chunk():
 
     assert agg.shape == (6, 4)
     assert agg_expr.isidentical(agg.sum())
+
+
+def test_nd_chunk_axis_args():
+    c = Symbol('c', '4 * 4 * int32')
+
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(axis=0), chunk=c)
+
+    assert chunk.shape == (4, 4)
+    assert chunk_expr.shape == (1, 4)
+    assert chunk_expr.isidentical(chunk.sum(keepdims=True, axis=0))
+
+    assert agg.shape == (6, 16)
+    assert agg_expr.isidentical(agg.sum(axis=0))
