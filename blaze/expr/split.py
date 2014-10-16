@@ -65,14 +65,21 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     ((chunk, count(_child=chunk.id, axis=(0,), keepdims=True)), (aggregate, sum(_child=aggregate, axis=(0,), keepdims=False)))
     """
     center = path_split(leaf, expr)
-    chunk = chunk or Symbol('chunk', leaf.dshape)
-    if iscollection(center.dshape):
-        agg = agg or Symbol('aggregate', center.dshape)
-    else:
-        agg = agg or Symbol('aggregate', datashape.var * center.dshape)
+    if not chunk:
+        if leaf.ndim > 1:
+            raise ValueError("Please provide a chunk symbol")
+        else:
+            chunk = Symbol('chunk', datashape.var * leaf.dshape.measure)
 
-    ((chunk, chunk_expr), (agg, agg_expr)) = \
-            _split(center, leaf=leaf, chunk=chunk, agg=agg, **kwargs)
+    chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
+
+    blocks_shape = tuple(map(dimension_div, leaf.shape, chunk.shape))
+    agg_shape = tuple(map(dimension_mul, blocks_shape, shape(chunk_expr)))
+    agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
+
+    agg = Symbol('aggregate', agg_dshape)
+
+    agg_expr = _split_agg(center, leaf=leaf, agg=agg)
 
     return ((chunk, chunk_expr),
             (agg, expr._subs({center: agg})._subs({agg: agg_expr})))
@@ -156,23 +163,23 @@ def _split_agg(expr, leaf=None, agg=None):
     return agg
 
 
-def aggregate_shape(expr_shape, chunk_shape):
+def shape_div(expr_shape, chunk_shape):
     """ Compute the shape of the resulting aggregate
 
-    >>> aggregate_shape((10, 20), (5, 5))
+    >>> shape_div((10, 20), (5, 5))
     (2, 4)
 
     We round up
 
-    >>> aggregate_shape((20, 30), (9, 9))
+    >>> shape_div((20, 30), (9, 9))
     (3, 4)
 
     In the case of datashape.var, we resort to var
 
     >>> from datashape import var
-    >>> aggregate_shape((var,), (5,))
+    >>> shape_div((var,), (5,))
     (Var(),)
-    >>> aggregate_shape((50,), (var,))
+    >>> shape_div((50,), (var,))
     (Var(),)
     """
     assert len(expr_shape) == len(chunk_shape)
@@ -182,6 +189,22 @@ from datashape import var, Fixed
 from math import ceil
 
 def dimension_div(a, b):
+    """ How many times does b fit into a?
+
+    >>> dimension_div(10, 5)
+    2
+
+    We round up
+    >>> dimension_div(20, 9)
+    3
+
+    In the case of datashape.var, we resort to var
+    >>> from datashape import var
+    >>> dimension_div(var, 5)
+    Var()
+    >>> dimension_div(50, var)
+    Var()
+    """
     if a == var or b == var:
         return var
     if isinstance(a, Fixed):
@@ -189,3 +212,29 @@ def dimension_div(a, b):
     if isinstance(b, Fixed):
         b = int(b)
     return int(ceil(a / b))
+
+
+def dimension_mul(a, b):
+    """ Given b number of a's how big is our dimension?
+
+    >>> dimension_mul(2, 5)
+    10
+
+    We round up
+    >>> dimension_mul(9, 3)
+    27
+
+    In the case of datashape.var, we resort to var
+    >>> from datashape import var
+    >>> dimension_mul(var, 5)
+    Var()
+    >>> dimension_mul(10, var)
+    Var()
+    """
+    if a == var or b == var:
+        return var
+    if isinstance(a, Fixed):
+        a = int(a)
+    if isinstance(b, Fixed):
+        b = int(b)
+    return int(a * b)
