@@ -494,13 +494,20 @@ def compute_up(t, example, children, **kwargs):
 
 @dispatch(Summary, Sequence)
 def compute_up(expr, data, **kwargs):
+    if expr._child.ndim != 1:
+        raise NotImplementedError('Only 1D reductions currently supported')
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        return tuple(compute(val, {expr._child: data})
+        result = tuple(compute(val, {expr._child: data})
                         for val, data in zip(expr.values, datas))
     else:
-        return tuple(compute(val, {expr._child: data})
+        result = tuple(compute(val, {expr._child: data})
                         for val in expr.values)
+
+    if expr.keepdims:
+        return (result,)
+    else:
+        return result
 
 
 def like_regex_predicate(expr):

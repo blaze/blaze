@@ -562,6 +562,13 @@ def test_summary():
     assert compute(expr, iter(data)) == (3, 350)
 
 
+def test_summary_keepdims():
+    assert compute(summary(count=t.id.count(), sum=t.amount.sum(),
+                           keepdims=True), data) == \
+          (compute(summary(count=t.id.count(), sum=t.amount.sum(),
+                           keepdims=False), data),)
+
+
 def test_summary_by():
     expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum()))
     assert set(compute(expr, data)) == set([('Alice', 2, 150),
