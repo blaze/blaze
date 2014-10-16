@@ -384,6 +384,10 @@ class ReLabel(ElemWise):
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self._child.dshape.measure.parameters[0]]))
 
+    def __str__(self):
+        return '%s.relabel(%s)' % (self._child, ', '.join('%s="%s"' % l for l
+            in self.labels))
+
 
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
