@@ -177,7 +177,7 @@ class Field(ElemWise):
             return "%s['%s']" % (self._child, self._name)
 
     @property
-    def expr(self):
+    def _expr(self):
         return Symbol(self._name, datashape.DataShape(self.dshape.measure))
 
     @property

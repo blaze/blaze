@@ -30,7 +30,7 @@ def discover(data):
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
         return compute_up(expr, data[:], **kwargs)
-    s = eval_str(expr.predicate.expr)
+    s = eval_str(expr.predicate._expr)
     try:
         return data.where(s)
     except (NotImplementedError, NameError, AttributeError):

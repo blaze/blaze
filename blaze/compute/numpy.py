@@ -36,8 +36,8 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t._child[c].expr, x[c]) for c in t._child.fields)
-    return compute(t.expr, d)
+    d = dict((t._child[c]._expr, x[c]) for c in t._child.fields)
+    return compute(t._expr, d)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))

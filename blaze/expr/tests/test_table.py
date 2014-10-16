@@ -623,16 +623,16 @@ def test_broadcast():
     b = t2['b']
     c = t2['c']
 
-    assert str(broadcast(Add, x, y).expr) == 'x + y'
+    assert str(broadcast(Add, x, y)._expr) == 'x + y'
     assert broadcast(Add, x, y)._child.isidentical(t)
 
     c1 = broadcast(Add, x, y)
     c2 = broadcast(Mult, x, z)
 
-    assert eval_str(broadcast(Eq, c1, c2).expr) == '(x + y) == (x * z)'
+    assert eval_str(broadcast(Eq, c1, c2)._expr) == '(x + y) == (x * z)'
     assert broadcast(Eq, c1, c2)._child.isidentical(t)
 
-    assert str(broadcast(Add, x, 1).expr) == 'x + 1'
+    assert str(broadcast(Add, x, 1)._expr) == 'x + 1'
 
     assert str(x <= y) == "t.x <= t.y"
     assert str(x >= y) == "t.x >= t.y"
@@ -789,9 +789,9 @@ def test_serializable():
 def test_table_coercion():
     from datetime import date
     t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
-    assert (t.amount + '10').expr.rhs == 10
+    assert (t.amount + '10')._expr.rhs == 10
 
-    assert (t.timestamp < '2014-12-01').expr.rhs == date(2014, 12, 1)
+    assert (t.timestamp < '2014-12-01')._expr.rhs == date(2014, 12, 1)
 
 
 def test_isnan():
@@ -814,17 +814,17 @@ def test_broadcast_naming():
 
 def test_scalar_expr():
     t = TableSymbol('t', '{x: int64, y: int32, z: int64}')
-    x = t.x.expr
-    y = t.y.expr
+    x = t.x._expr
+    y = t.y._expr
     assert 'int64' in str(x.dshape)
     assert 'int32' in str(y.dshape)
 
-    expr = (t.x + 1).expr
+    expr = (t.x + 1)._expr
     assert expr._inputs[0].dshape == x.dshape
     assert expr._inputs[0].isidentical(x)
 
     t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
-    expr = (t.amount + 1).expr
+    expr = (t.amount + 1)._expr
     assert 'int64' in str(expr._inputs[0].dshape)
 
 

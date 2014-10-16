@@ -222,7 +222,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
     else:
         prefix = 'lambda (%s): '
 
-    return prefix % ', '.join(map(str, columns)) + eval_str(t.expr)
+    return prefix % ', '.join(map(str, columns)) + eval_str(t._expr)
 
 
 @dispatch(Union, (list, tuple))
