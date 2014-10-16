@@ -164,28 +164,6 @@ def _split_agg(expr, leaf=None, agg=None):
     return agg
 
 
-def shape_div(expr_shape, chunk_shape):
-    """ Compute the shape of the resulting aggregate
-
-    >>> shape_div((10, 20), (5, 5))
-    (2, 4)
-
-    We round up
-
-    >>> shape_div((20, 30), (9, 9))
-    (3, 4)
-
-    In the case of datashape.var, we resort to var
-
-    >>> from datashape import var
-    >>> shape_div((var,), (5,))
-    (Var(),)
-    >>> shape_div((50,), (var,))
-    (Var(),)
-    """
-    assert len(expr_shape) == len(chunk_shape)
-    return tuple(map(dimension_div, expr_shape, chunk_shape))
-
 from datashape import var, Fixed
 from math import ceil
 
