@@ -119,13 +119,13 @@ class var(Reduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = '_child', 'unbiased', 'axis'
+    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False, **kwargs):
+    def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, child, **kwargs)
+        Reduction.__init__(self, child, *args, **kwargs)
 
 
 class std(Reduction):
@@ -148,13 +148,13 @@ class std(Reduction):
     --------
     var
     """
-    __slots__ = '_child', 'unbiased', 'axis'
+    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False, **kwargs):
+    def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, child, **kwargs)
+        Reduction.__init__(self, child, *args, **kwargs)
 
 
 class count(Reduction):

@@ -162,6 +162,13 @@ def test_reductions():
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
 
 
+def test_1d_reductions_keepdims():
+    series = df['amount']
+    for r in [sum, min, max, nunique, count, std, var]:
+        result = compute(r(t.amount, keepdims=True), {t.amount: series})
+        assert type(result) == type(series)
+
+
 def test_distinct():
     dftoobig = DataFrame([['Alice', 'F', 100, 1],
                           ['Alice', 'F', 100, 1],
