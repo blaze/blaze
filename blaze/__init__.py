@@ -48,7 +48,7 @@ try:
 except ImportError:
     pass
 try:
-    from .compute.chunks import *
+    import blaze.compute.chunks
 except ImportError:
     pass
 try:
