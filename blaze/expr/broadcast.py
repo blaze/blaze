@@ -218,11 +218,18 @@ def isnan(expr):
 
 from .expressions import dshape_method_list
 
+def isreal(ds):
+    if isinstance(ds, DataShape) and len(ds) == 1:
+        ds = ds[0]
+    if isinstance(ds, Option):
+        ds = ds.ty
+    return isinstance(ds, Unit) and 'float' in str(ds)
+
 dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isscalar(ds.measure),
             set([_eq, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
                  _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
                 _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert])),
-    (lambda ds: iscollection(ds) and isnumeric(ds),
+    (lambda ds: iscollection(ds) and isreal(ds.measure),
             set([isnan]))
     ])

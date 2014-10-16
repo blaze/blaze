@@ -796,7 +796,7 @@ def test_table_coercion():
 
 def test_isnan():
     from blaze import isnan
-    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+    t = TableSymbol('t', '{name: string, amount: real, timestamp: ?date}')
 
     for expr in [t.amount.isnan(), ~t.amount.isnan()]:
         assert eval(str(expr)).isidentical(expr)
