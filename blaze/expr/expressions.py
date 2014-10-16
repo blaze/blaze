@@ -6,7 +6,7 @@ import functools
 from toolz import concat, memoize, partial
 import re
 
-from datashape import dshape, DataShape, Record, Var
+from datashape import dshape, DataShape, Record, Var, Mono
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
@@ -133,6 +133,8 @@ class Symbol(Expr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
+        if isinstance(dshape, Mono) and not isinstance(dshape, DataShape):
+            dshape = DataShape(dshape)
         self.dshape = dshape
 
     def __str__(self):
