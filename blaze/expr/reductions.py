@@ -182,19 +182,29 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = '_child', 'names', 'values'
+    __slots__ = '_child', 'names', 'values', 'keepdims'
+
+    def __init__(self, _child, names, values, keepdims=False):
+        self._child = _child
+        self.names = names
+        self.values = values
+        self.keepdims = keepdims
 
     @property
     def dshape(self):
-        return dshape(Record(list(zip(self.names,
-                                      [v._dtype for v in self.values]))))
+        measure = Record(list(zip(self.names,
+                                  [v._dtype for v in self.values])))
+        if self.keepdims:
+            return DataShape(*((1,) * self._child.ndim + (measure,)))
+        else:
+            return DataShape(measure)
 
     def __str__(self):
         return 'summary(' + ', '.join('%s=%s' % (name, str(val))
                 for name, val in zip(self.fields, self.values)) + ')'
 
 
-def summary(**kwargs):
+def summary(keepdims=False, **kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
     values = tuple(map(toolz.second, items))
@@ -208,7 +218,7 @@ def summary(**kwargs):
             else:
                 raise ValueError()
 
-    return Summary(child, names, values)
+    return Summary(child, names, values, keepdims=keepdims)
 
 
 summary.__doc__ = Summary.__doc__
