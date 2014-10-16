@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -6,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backends &mdash; Blaze 0.6.3 documentation</title>
+    <title>Backends &mdash; Blaze 0.6.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,8 +16,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.6.3',
+        URL_ROOT:    './',
+        VERSION:     '0.6.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,8 +30,8 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
-    <link rel="next" title="Datashape" href="datashape.html" />
+    <link rel="top" title="Blaze 0.6.5 documentation" href="index.html" />
+    <link rel="next" title="URI strings" href="uri.html" />
     <link rel="prev" title="Expressions" href="expressions.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -86,7 +85,7 @@
 <ul>
 <li><a class="reference internal" href="#">Backends</a><ul>
 <li><a class="reference internal" href="#existing-backends">Existing Backends</a><ul>
-<li><a class="reference internal" href="#streaming-python-via-toolz-and-cytoolz">Streaming Python via toolz and cytoolz</a></li>
+<li><a class="reference internal" href="#streaming-python">Streaming Python</a></li>
 <li><a class="reference internal" href="#id1">Pandas</a></li>
 <li><a class="reference internal" href="#id2">SQLAlchemy</a></li>
 <li><a class="reference internal" href="#id3">MongoDB</a></li>
@@ -111,13 +110,15 @@
   <div class="section" id="backends">
 <h1>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h1>
 <p>Blaze backends include projects like streaming Python, Pandas, SQLAlchemy,
-MongoDB, PyTables, and Spark.  A Blaze expression can run equally well on any
-of these backends, allowing developers to easily transition their computation
-to changing performance needs.</p>
+MongoDB, PyTables, and Spark.  Most Blaze expressions can run well on any of
+these backends, allowing developers to easily transition their computation to
+changing performance needs.</p>
 <iframe style='width:105%; height:625px; border:0;' src='capabilities.html'></iframe><div class="section" id="existing-backends">
 <h2>Existing Backends<a class="headerlink" href="#existing-backends" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="streaming-python-via-toolz-and-cytoolz">
-<h3>Streaming Python via <a class="reference external" href="http://toolz.readthedocs.org/en/latest/">toolz</a> and <a class="reference external" href="https://github.com/pytoolz/cytoolz/">cytoolz</a><a class="headerlink" href="#streaming-python-via-toolz-and-cytoolz" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="streaming-python">
+<h3>Streaming Python<a class="headerlink" href="#streaming-python" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><em>via `toolz &lt;http://toolz.readthedocs.org/en/latest/&gt;`_ and `cytoolz &lt;https://github.com/pytoolz/cytoolz/&gt;`_</em></div></blockquote>
 <p>Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit
 testing but also in large cases where streaming computation is desired.</p>
@@ -139,6 +140,9 @@ and data I/O.</p>
 <p>Blaze levarages the SQLAlchemy project, which provides a uniform interface over
 the varied landscape of SQL systems.  Blaze manipulates SQLAlchemy expressions
 which are then compiled down to SQL query strings of the appropriate backend.</p>
+<p>The prevalance of SQL among data technologies makes this backend particularly
+useful.  Databases like Impala and Hive have SQLAlchemy dialects, enabling
+easy Blaze interoperation.</p>
 </div>
 <div class="section" id="id3">
 <h3><a class="reference external" href="http://www.mongodb.org/">MongoDB</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>

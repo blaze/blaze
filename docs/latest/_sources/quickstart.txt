@@ -2,27 +2,27 @@ Quickstart
 ===========
 
 This quickstart is here to show some simple ways to get started created
-and manipulating Blaze Tables. To run these examples, import blaze
+and manipulating Blaze Symbols. To run these examples, import blaze
 as follows.
 
 .. code-block:: python
 
     >>> from blaze import *
 
-Blaze Tables
-~~~~~~~~~~~~
+Blaze Interactive Data
+~~~~~~~~~~~~~~~~~~~~~~
 
-Create simple Blaze tables from nested lists/tuples. Blaze will deduce the
+Create simple Blaze expressions from nested lists/tuples. Blaze will deduce the
 dimensionality and data type to use.
 
 .. code-block:: python
 
-    >>> t = Table([(1, 'Alice', 100),
-    ...            (2, 'Bob', -200),
-    ...            (3, 'Charlie', 300),
-    ...            (4, 'Denis', 400),
-    ...            (5, 'Edith', -500)],
-    ...            columns=['id', 'name', 'balance'])
+    >>> t = Data([(1, 'Alice', 100),
+    ...           (2, 'Bob', -200),
+    ...           (3, 'Charlie', 300),
+    ...           (4, 'Denis', 400),
+    ...           (5, 'Edith', -500)],
+    ...           fields=['id', 'name', 'balance'])
 
     >>> t
        id     name  balance
@@ -41,11 +41,6 @@ with familiar Pandas getitem or attribute syntax.
 
 .. code-block:: python
 
-   >>> t[t['balance'] < 0]
-      id   name  balance
-   0   2    Bob     -200
-   1   5  Edith     -500
-
    >>> t[t.balance < 0]
       id   name  balance
    0   2    Bob     -200
@@ -60,12 +55,12 @@ with familiar Pandas getitem or attribute syntax.
 Stored Data
 ~~~~~~~~~~~
 
-Define Blaze Tables directly from storage like CSV or HDF5 files.  Here we
+Define Blaze expressions directly from storage like CSV or HDF5 files.  Here we
 operate on a CSV file of the traditional `iris dataset`_.
 
 .. code-block:: python
 
-   >>> iris = Table(CSV('examples/data/iris.csv'))
+   >>> iris = Data('blaze/examples/data/iris.csv')
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -86,8 +81,7 @@ stored in a `sqlite file`_.
 
 .. code-block:: python
 
-   >>> sql = SQL('sqlite:///examples/data/iris.db', 'iris')
-   >>> iris = Table(sql)
+   >>> iris = Data('sqlite:///blaze/examples/data/iris.db::iris')
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -127,7 +121,7 @@ by calling ``compute``.
 
 .. code-block:: python
 
-   >>> t[t.balance < 0].name                  # Still a Table Expression
+   >>> t[t.balance < 0].name                  # Still an Expression
        name
    0    Bob
    1  Edith
@@ -141,18 +135,20 @@ container type.
 .. code-block:: python
 
    >>> result = by(iris.species,
-   ...             iris.petal_width.mean())
+   ...             avg=iris.petal_width.mean())
 
    >>> result_list = into(list, result)                     # Push result into a list
 
    >>> into(DataFrame, result)                # Push result into a DataFrame
-              species  petal_width_mean
-   0      Iris-setosa             0.246
-   1  Iris-versicolor             1.326
-   2   Iris-virginica             2.026
+              species    avg
+   0      Iris-setosa  0.246
+   1  Iris-versicolor  1.326
+   2   Iris-virginica  2.026
 
-   >>> csv = CSV('examples/data/output.csv', schema=result.schema, mode='w')
-   >>> write_to = into(csv, result)                      # Write result to CSV file
+   >>> # Write result to CSV file
+   >>> into('blaze/examples/data/output.csv', result)  # doctest: +SKIP
+   <blaze.data.csv.CSV object at 0x7f2b26fe4710>
 
-.. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.csv
-.. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db
+
+.. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.csv
+.. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.db

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -6,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Developer Workflow &mdash; Blaze 0.6.3 documentation</title>
+    <title>Developer Workflow &mdash; Blaze 0.6.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,8 +16,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.6.3',
+        URL_ROOT:    './',
+        VERSION:     '0.6.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.5 documentation" href="index.html" />
     <link rel="next" title="Expressions and Computation" href="expr-compute-dev.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -105,43 +104,27 @@ then please email <a class="reference external" href="mailto:blaze-dev&#37;&#52;
 <h2>Installing Development Blaze<a class="headerlink" href="#installing-development-blaze" title="Permalink to this headline">¶</a></h2>
 <p>Blaze has a number of dependencies, both due to relying on community projects
 and also because it itself is split among a few projects.</p>
-<p><strong>TL;DR</strong>:  Install <cite>conda_</cite>, then copy-paste the following</p>
-<div class="highlight-python"><pre># Get source
-git clone https://github.com/ContinuumIO/blaze.git
-cd blaze
-
-# Install most of the requirements through conda
-conda install --yes -c blaze
+<p>Install <cite>conda_</cite>, then copy-paste the following</p>
+<div class="highlight-python"><div class="highlight"><pre># Install most of the requirements through the recent conda release
+conda install --yes blaze
 
 # Some requirements are kept up-to-date on PyPI
 conda install --yes pip
 pip install git+https://github.com/ContinuumIO/datashape.git --upgrade
 pip install toolz cytoolz multipledispatch  --upgrade
 
+# Get source
+git clone https://github.com/ContinuumIO/blaze.git
+cd blaze
+
 # Install and run tests
 python setup.py install                      # Install Blaze
-python -c 'import blaze; blaze.test()'       # Run tests</pre>
+python -c &#39;import blaze; blaze.test()&#39;       # Run tests
+</pre></div>
 </div>
-<p><strong>Detailed Version</strong>:</p>
-<p>Get Source:  Fork and clone the Blaze git repository to your local machine (see
-Github Flow below)</p>
-<div class="highlight-python"><pre>git clone git@github.com:ContinuumIO/blaze.git
-or
-git clone git@github.com:GITHUB-USERNAME/blaze.git</pre>
-</div>
-<p>Install dependencies:  Blaze depends on a number of projects within the larger
-scientific Python ecosystem.  We strongly suggest that you install these
-dependencies using <a class="reference external" href="http://conda.pydata.org/">conda</a>, preferably from the <a class="reference external" href="http://continuum.io/downloads">Anaconda</a> download.</p>
-<div class="highlight-python"><pre>conda install --file requirements.txt</pre>
-</div>
-<p>It may be that newer versions of these projects have critical updates that have
-not yet reached the main conda channel.  Because of this we recommend
-installing with some additional Binstar channels.</p>
-<div class="highlight-python"><pre>conda install -c mwiebe -c mrocklin --file requirements.txt</pre>
-</div>
-<p>If you don&#8217;t want to use conda that&#8217;s fine too.  Most of the requirements can
-be installed from PyPI.  A notable exception is <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">DyND</a> which must be compiled
-from source.</p>
+<p>It is possible but challenging to install Blaze without conda.
+Most of the requirements can be installed from PyPI.
+A notable exception is <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">DyND</a> which must be compiled from source.</p>
 </div>
 <div class="section" id="github-flow">
 <h2>GitHub Flow<a class="headerlink" href="#github-flow" title="Permalink to this headline">¶</a></h2>
@@ -170,11 +153,15 @@ requests that are made. This provides a smoke test against both
 Python 2 and Python 3 before a merge.</p>
 <p>The Travis tests only run on Linux, but Blaze is supported on Linux,
 OS X, and Windows. Internal to Continuum, a <a class="reference external" href="http://jenkins-ci.org/">Jenkins</a> server is
-running which builds and tests Blaze on 15 different configurations,
-versions 2.6, 2.7, and 3.3 for different 32-bit and 64-bit versions
-of Linux, OS X, and Windows. That these configurations are all working
-should be verified by someone at Continuum after each merge of a
-pull request.</p>
+running which builds and tests Blaze on the following platforms/versions</p>
+<ul class="simple">
+<li>Python versions 2.6, 2.7, 3.3, 3.4</li>
+<li>Operating systems Windows, OS-X, Linux</li>
+<li>32-bit and 64-bit</li>
+</ul>
+<p>That these configurations are all working should be verified by someone at
+Continuum ideally after each merge of a pull request and certainly before each
+release.</p>
 <p><strong>Relative Imports:</strong></p>
 <p>To avoid the side effects of top level imports, e.g. <cite>import blaze</cite>, all internal code should be imported relatively.  Thus:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#file: blaze/objects/table.py</span>

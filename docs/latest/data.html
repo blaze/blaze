@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -6,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Data &mdash; Blaze 0.6.3 documentation</title>
+    <title>Data &mdash; Blaze 0.6.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,8 +16,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.6.3',
+        URL_ROOT:    './',
+        VERSION:     '0.6.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.5 documentation" href="index.html" />
     <link rel="next" title="Expressions" href="expressions.html" />
     <link rel="prev" title="Examples" href="examples.html" />
 <meta charset='utf-8'>
@@ -110,6 +109,9 @@
           
   <div class="section" id="data">
 <h1>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h1>
+<p><em>The data descriptor interface may be phased out in the near future.  We
+recommend the use of expressions and ``into`` rather than data descriptor
+indexing.  See quickstart for suggested usage.</em></p>
 <p>Blaze Data Descriptors provide uniform access to a variety of common data
 formats.  They provide standard iteration, insertion, and numpy-like fancy
 indexing over on-disk files in common formats like csv, json, and hdf5 in
@@ -128,7 +130,7 @@ but with some more flexibility.</p>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts.csv&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="interface">
@@ -162,7 +164,7 @@ to NumPy arrays.</p>
 methods take iterators of Python objects and DyND arrays respectively.  The
 data is coerced into whatever form is native for the storage medium e.g. text
 for CSV or <tt class="docutils literal"><span class="pre">INSERT</span></tt> statements for SQL.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>    
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts.csv&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>    
 <span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">extend</span><span class="p">([(</span><span class="mi">6</span><span class="p">,</span> <span class="s">&#39;Frank&#39;</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>                       
 <span class="gp">... </span>            <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">&#39;Georgina&#39;</span><span class="p">,</span> <span class="mi">700</span><span class="p">)])</span>
 </pre></div>
@@ -188,7 +190,7 @@ interfaces.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span><span class="o">.</span><span class="n">dynd</span><span class="p">[</span><span class="mi">2</span><span class="p">::,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;balance&#39;</span><span class="p">]]</span>                   
 <span class="go">nd.array([ [&quot;Charlie&quot;, 300],    [&quot;Denis&quot;, 400],    [&quot;Edith&quot;, 500],</span>
 <span class="go">             [&quot;Frank&quot;, 600], [&quot;Georgina&quot;, 700]],</span>
-<span class="go">         type=&quot;var * {name : string, balance : ?int64}&quot;)</span>
+<span class="go">         type=&quot;var * {name : string, balance : int64}&quot;)</span>
 </pre></div>
 </div>
 <p>Performance of this approach varies depending on the underlying storage system.
@@ -207,7 +209,7 @@ with SQL databases.</p>
 like <tt class="docutils literal"><span class="pre">csv</span></tt> to tokenize strings and the fast library DyND to serialize and
 deserialize data elements.  This separation enables a <em>serialize what you need</em>
 approach ideal for subsampling datasets.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.csv&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts.csv&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">selection</span> <span class="o">=</span> <span class="n">csv</span><span class="p">[::</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">]</span>  <span class="c"># Fast, deserializes a small fraction of dataset</span>
 </pre></div>
 </div>
@@ -216,7 +218,7 @@ approach ideal for subsampling datasets.</p>
 <h3>HDF5<a class="headerlink" href="#hdf5" title="Permalink to this headline">¶</a></h3>
 <p>HDF5 support comes via <a class="reference external" href="http://docs.h5py.org/en/latest/">h5py</a>, which loads data in through <tt class="docutils literal"><span class="pre">numpy</span></tt> arrays
 and offers various forms of compression for binary data.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">hdf5</span> <span class="o">=</span> <span class="n">HDF5</span><span class="p">(</span><span class="s">&#39;examples/data/accounts.h5&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">hdf5</span> <span class="o">=</span> <span class="n">HDF5</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts.h5&#39;</span><span class="p">,</span> <span class="s">&#39;/accounts&#39;</span><span class="p">)</span>  
 </pre></div>
 </div>
 </div>
@@ -226,7 +228,7 @@ and offers various forms of compression for binary data.</p>
 <tt class="docutils literal"><span class="pre">Concat</span></tt> which allow you to treat directories of files as a single, indexable
 data source.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&#39;examples/data/accounts*.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts*.csv&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">csvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">]</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stack</span> <span class="o">=</span> <span class="n">Stack</span><span class="p">(</span><span class="n">csvs</span><span class="p">)</span>

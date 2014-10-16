@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -6,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Release Notes &mdash; Blaze 0.6.3 documentation</title>
+    <title>Release Notes &mdash; Blaze 0.6.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,8 +16,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.6.3',
+        URL_ROOT:    './',
+        VERSION:     '0.6.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.5 documentation" href="index.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -83,6 +82,8 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Release Notes</a><ul>
+<li><a class="reference internal" href="#release-0-6-5">Release 0.6.5</a></li>
+<li><a class="reference internal" href="#release-0-6-4">Release 0.6.4</a></li>
 <li><a class="reference internal" href="#release-0-6-3">Release 0.6.3</a></li>
 <li><a class="reference internal" href="#release-0-6-2">Release 0.6.2</a></li>
 <li><a class="reference internal" href="#release-0-6-1">Release 0.6.1</a></li>
@@ -104,6 +105,24 @@
           
   <div class="section" id="release-notes">
 <h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="release-0-6-5">
+<h2>Release 0.6.5<a class="headerlink" href="#release-0-6-5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Improve uri string handling #715</li>
+<li>Various bug fixes #715</li>
+</ul>
+</div>
+<div class="section" id="release-0-6-4">
+<h2>Release 0.6.4<a class="headerlink" href="#release-0-6-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Back CSV with <tt class="docutils literal"><span class="pre">pandas.read_csv</span></tt>.  Better performance and more robust
+unicode support but less robust missing value support (some regressions) #597</li>
+<li>Much improved SQL support #626 #650 #652 #662</li>
+<li>Server supports remote execution of computations, not just indexing #631</li>
+<li>Better PyTables and datetime support #608 #639</li>
+<li>Support SparkSQL #592</li>
+</ul>
+</div>
 <div class="section" id="release-0-6-3">
 <h2>Release 0.6.3<a class="headerlink" href="#release-0-6-3" title="Permalink to this headline">¶</a></h2>
 <ul>
