@@ -16,7 +16,7 @@ from .into import into
 from ..compatibility import _strtypes, unicode
 from ..resource import resource
 
-__all__ = ['Data', 'Table', 'compute', 'into', 'to_html']
+__all__ = ['Data', 'Table', 'into', 'to_html']
 
 names = ('_%d' % i for i in itertools.count(1))
 
