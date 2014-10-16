@@ -352,6 +352,8 @@ class Label(ElemWise):
             raise ValueError("Column Mismatch: %s" % key)
 
 def label(expr, lab):
+    if expr._name == lab:
+        return expr
     return Label(expr, lab)
 label.__doc__ = Label.__doc__
 
