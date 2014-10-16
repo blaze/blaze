@@ -83,7 +83,7 @@ class Expr(Node):
 
     def __dir__(self):
         result = dir(type(self))
-        if self.fields:
+        if isrecord(self.dshape.measure) and self.fields:
             result.extend(list(self.fields))
 
         d = toolz.merge(schema_methods(self.dshape.measure),

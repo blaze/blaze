@@ -27,3 +27,10 @@ def test_nested_fields():
 def test_partialed_methods_have_docstrings():
     e = Symbol('e', '3 * 5 * {name: string, amount: int}')
     assert 'string comparison' in e.like.__doc__
+
+
+def test_dir():
+    e = Symbol('e', '3 * 5 * {name: string, amount: int}')
+
+    assert 'name' in dir(e)
+    assert 'name' not in dir(e.name)
