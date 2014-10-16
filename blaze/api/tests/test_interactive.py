@@ -132,8 +132,7 @@ def test_to_html():
 
 
 def test_repr_html():
-    assert '<table' in s._repr_html_()
-
+    assert '<table' in t._repr_html_()
 
 
 def test_into():
