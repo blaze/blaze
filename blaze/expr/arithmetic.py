@@ -291,7 +291,7 @@ class Not(UnaryOp):
 
     @property
     def dshape(self):
-        return dshape('bool')
+        return DataShape(*(shape(self._child) + ('bool',)))
 
 
 def _eq(self, other):
