@@ -6,7 +6,7 @@ import functools
 from toolz import concat, memoize, partial
 import re
 
-from datashape import dshape, DataShape, Record, Var
+from datashape import dshape, DataShape, Record, Var, Mono
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
@@ -133,6 +133,8 @@ class Symbol(Expr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
+        if isinstance(dshape, Mono) and not isinstance(dshape, DataShape):
+            dshape = DataShape(dshape)
         self.dshape = dshape
 
     def __str__(self):
@@ -520,8 +522,13 @@ def shape(expr):
 
     >>> Symbol('s', '3 * 5 * int32').shape
     (3, 5)
+
+    Works on anything discoverable
+
+    >>> shape([[1, 2], [3, 4]])
+    (2, 2)
     """
-    s = list(expr.dshape.shape)
+    s = list(discover(expr).shape)
     for i, elem in enumerate(s):
         try:
             s[i] = int(elem)
