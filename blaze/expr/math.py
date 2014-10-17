@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape import dshape
+from datashape import dshape, real, int_, bool_
 
 from .expressions import Expr
 from .arithmetic import UnaryOp
@@ -15,9 +15,7 @@ __all__ = ['sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp', 'expm1',
 
 class RealMath(UnaryOp):
     """ Mathematical unary operator with real valued dshape like sin, or exp """
-    @property
-    def dshape(self):
-        return dshape('real')
+    _dtype = real
 
 
 class sqrt(RealMath): pass
@@ -48,9 +46,7 @@ class degrees(RealMath): pass
 
 class IntegerMath(UnaryOp):
     """ Mathematical unary operator with int valued dshape like ceil, floor """
-    @property
-    def dshape(self):
-        return dshape('int')
+    _dtype = int_
 
 
 class ceil(IntegerMath): pass
@@ -60,9 +56,7 @@ class trunc(IntegerMath): pass
 
 class BooleanMath(UnaryOp):
     """ Mathematical unary operator with bool valued dshape like isnan """
-    @property
-    def dshape(self):
-        return dshape('bool')
+    _dtype = bool_
 
 
 class isnan(BooleanMath): pass
