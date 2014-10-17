@@ -76,6 +76,10 @@ class UnaryOp(Expr):
     def symbol(self):
         return type(self).__name__
 
+    @property
+    def dshape(self):
+        return DataShape(*(shape(self._child) + (self._dtype,)))
+
 
 class Arithmetic(BinOp):
     """ Super class for arithmetic operators like add or mul """
@@ -129,9 +133,9 @@ class USub(UnaryOp):
         return '-%s' % self._child
 
     @property
-    def dshape(self):
+    def _dtype(self):
         # TODO: better inference.  -uint -> int
-        return self._child.dshape
+        return self._child.schema
 
 
 @dispatch(ct.Option, object)
@@ -286,10 +290,7 @@ class Or(Arithmetic):
 class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
-
-    @property
-    def dshape(self):
-        return DataShape(*(shape(self._child) + ('bool',)))
+    _dtype = ct.bool_
 
 
 def _eq(self, other):
