@@ -10,6 +10,7 @@ from blaze.expr.table import Symbol
 from datashape import dshape
 from blaze.utils import tmpfile, example
 import pytest
+import sys
 
 import pandas as pd
 import numpy as np
@@ -196,6 +197,11 @@ def test_Data_attribute_repr():
 
 def test_can_trivially_create_csv_Data():
     Data(example('iris.csv'))
+
+
+def test_can_trivially_create_csv_Data_with_unicode():
+    if sys.version[0] == '2':
+        assert isinstance(Data(example(u'iris.csv')).data, CSV)
 
 
 def test_can_trivially_create_sqlite_table():

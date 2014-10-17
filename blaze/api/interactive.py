@@ -58,7 +58,7 @@ class Data(Symbol):
 
     def __init__(self, data, dshape=None, name=None, fields=None, columns=None,
             schema=None, **kwargs):
-        if isinstance(data, str):
+        if isinstance(data, _strtypes):
             data = resource(data, schema=schema, dshape=dshape,
                     columns=columns, **kwargs)
         if columns:
