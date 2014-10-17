@@ -50,6 +50,14 @@ def compute_up(t, df, **kwargs):
     return df[t.fields[0]]
 
 
+@dispatch(Field, Series)
+def compute_up(t, data, **kwargs):
+    if t.fields[0] == data.name:
+        return data
+    else:
+        raise ValueError("Fieldname %s does not match Series name %s"
+                % (t.fields[0], data.name))
+
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
     d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)

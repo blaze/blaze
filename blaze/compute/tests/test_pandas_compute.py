@@ -290,6 +290,11 @@ def test_sort_on_series_no_warning(recwarn):
     with pytest.raises(AssertionError):
         assert recwarn.pop(FutureWarning)
 
+def test_field_on_series():
+    expr = Symbol('s', 'var * int')
+    data = Series([1, 2, 3, 4], name='s')
+    assert str(compute(expr.s, data)) == str(data)
+
 
 def test_head():
     assert str(compute(t.head(1), df)) == str(df.head(1))
