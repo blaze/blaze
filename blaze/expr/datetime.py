@@ -114,7 +114,6 @@ class Quarter(DateTime):
 def quarter(expr):
     return Quarter(expr)
 
-
 from .expressions import schema_method_list, method_properties
 from datashape.predicates import isdatelike
 

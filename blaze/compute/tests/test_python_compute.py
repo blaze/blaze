@@ -6,13 +6,14 @@ import operator
 import pytest
 from datetime import datetime, date
 from cytoolz import pluck
+import datashape
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs)
 from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
-from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
+from blaze.expr import (Symbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, Symbol,
                         count, std, head, Symbol)
 import numpy as np
@@ -22,7 +23,7 @@ from blaze.compatibility import builtins
 from blaze.utils import raises
 
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
 
 data = [['Alice', 100, 1],
@@ -30,7 +31,7 @@ data = [['Alice', 100, 1],
         ['Alice', 50, 3]]
 
 
-tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 
 databig = [['Alice', 'F', 100, 1],
@@ -52,7 +53,7 @@ def test_reduce_by_funcs():
     assert reduce_by_funcs(b)[2]([1,2,3], [4,5,6]) == (1, 7)
 
 
-def test_table():
+def test_symbol():
     assert compute(t, data) == data
 
 
@@ -104,7 +105,7 @@ def test_reductions():
 
 
 def test_count():
-    t = TableSymbol('t', '3 * int')
+    t = Symbol('t', 'var * 3 * int')
     assert compute(t.count(), [1, None, 2]) == 2
 
 
@@ -197,8 +198,8 @@ def test_join():
     left = [['Alice', 100], ['Bob', 200]]
     right = [['Alice', 1], ['Bob', 2]]
 
-    L = TableSymbol('L', '{name: string, amount: int}')
-    R = TableSymbol('R', '{name: string, id: int}')
+    L = Symbol('L', 'var * {name: string, amount: int}')
+    R = Symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     assert dshape(joined.schema) == \
@@ -220,8 +221,8 @@ def test_outer_join():
              ('LA', 3),
              ('Moscow', 4)]
 
-    L = TableSymbol('L', '{id: int, name: string, amount: real}')
-    R = TableSymbol('R', '{city: string, id: int}')
+    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = Symbol('R', 'var * {city: string, id: int}')
 
     assert set(compute(join(L, R), {L: left, R: right})) == set(
             [(1, 'Alice', 100, 'NYC'),
@@ -256,8 +257,8 @@ def test_multi_column_join():
              (1, 3, 50),
              (1, 3, 150)]
 
-    L = TableSymbol('L', '{x: int, y: int, z: int}')
-    R = TableSymbol('R', '{x: int, y: int, w: int}')
+    L = Symbol('L', 'var * {x: int, y: int, z: int}')
+    R = Symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -339,9 +340,9 @@ def test_graph_double_join():
     wanted = [['A'],
               ['F']]
 
-    t_idx = TableSymbol('t_idx', '{name: string, b: int32}')
-    t_arc = TableSymbol('t_arc', '{a: int32, b: int32}')
-    t_wanted = TableSymbol('t_wanted', '{name: string}')
+    t_idx = Symbol('t_idx', 'var * {name: string, b: int32}')
+    t_arc = Symbol('t_arc', 'var * {a: int32, b: int32}')
+    t_wanted = Symbol('t_wanted', 'var * {name: string}')
 
     j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
@@ -363,7 +364,7 @@ def test_label():
 
 
 def test_relabel_join():
-    names = TableSymbol('names', '{first: string, last: string}')
+    names = Symbol('names', 'var * {first: string, last: string}')
 
     siblings = join(names.relabel({'first': 'left'}),
                     names.relabel({'first': 'right'}),
@@ -389,7 +390,7 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(builtins.sum, t['amount']), data)
+    result = compute(Apply(t['amount'], builtins.sum), data)
     expected = compute(t['amount'].sum(), data)
 
     assert result == expected
@@ -397,13 +398,13 @@ def test_apply_column():
 
 def test_apply():
     data2 = tuple(map(tuple, data))
-    assert compute(Apply(hash, t), data2) == hash(data2)
+    assert compute(Apply(t, hash), data2) == hash(data2)
 
 
 def test_map_datetime():
     from datetime import datetime
     data = [['A', 0], ['B', 1]]
-    t = TableSymbol('t', '{foo: string, datetime: int64}')
+    t = Symbol('t', 'var * {foo: string, datetime: int64}')
 
     result = list(compute(t['datetime'].map(datetime.utcfromtimestamp,
     'datetime'), data))
@@ -413,7 +414,7 @@ def test_map_datetime():
 
 
 def test_by_multi_column_grouper():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    t = Symbol('t', 'var * {x: int, y: int, z: int}')
     expr = by(t[['x', 'y']], t['z'].count())
     data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
 
@@ -518,9 +519,9 @@ def test_union():
           ['Bob', 200, 8],
           ['Alice', 50, 9]]
 
-    t1 = TableSymbol('t1', '{name: string, amount: int, id: int}')
-    t2 = TableSymbol('t2', '{name: string, amount: int, id: int}')
-    t3 = TableSymbol('t3', '{name: string, amount: int, id: int}')
+    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
+    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
+    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
 
     expr = union(t1, t2, t3)
 
@@ -536,7 +537,7 @@ def test_by_groupby_deep():
             (2, 4, '')]
 
     schema = '{x: int, y: int, name: string}'
-    t = TableSymbol('t', schema)
+    t = Symbol('t', datashape.var * schema)
 
     t2 = t[t['name'] != '']
     t3 = merge(t2.x, t2.name)
@@ -596,7 +597,7 @@ def test_scalar_arithmetic():
 
 
 def test_like():
-    t = TableSymbol('t', '{name: string, city: string}')
+    t = Symbol('t', 'var * {name: string, city: string}')
     data = [('Alice Smith', 'New York'),
             ('Bob Smith', 'Chicago'),
             ('Alice Walker', 'LA')]
@@ -607,13 +608,25 @@ def test_like():
     assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
 
 
+def test_datetime_comparison():
+    data = [['Alice', date(2000, 1, 1)],
+            ['Bob', date(2000, 2, 2)],
+            ['Alice', date(2000, 3, 3)]]
+
+    t = Symbol('t', 'var * {name: string, when: date}')
+
+    assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
+
+
+
+
 def test_datetime_access():
     data = [['Alice', 100, 1, datetime(2000, 1, 1, 1, 1, 1)],
             ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
             ['Alice', 50, 3, datetime(2000, 1, 1, 1, 1, 1)]]
 
-    t = TableSymbol('t',
-            '{amount: float64, id: int64, name: string, when: datetime}')
+    t = Symbol('t',
+            'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
     assert list(compute(t.when.second, data)) == [1, 1, 1]
