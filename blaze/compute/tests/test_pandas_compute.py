@@ -162,6 +162,13 @@ def test_reductions():
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
 
 
+def test_1d_reductions_keepdims():
+    series = df['amount']
+    for r in [sum, min, max, nunique, count, std, var]:
+        result = compute(r(t.amount, keepdims=True), {t.amount: series})
+        assert type(result) == type(series)
+
+
 def test_distinct():
     dftoobig = DataFrame([['Alice', 'F', 100, 1],
                           ['Alice', 'F', 100, 1],
@@ -499,6 +506,12 @@ def test_summary_by_reduction_arithmetic():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
+
+
+def test_summary_keepdims():
+    expr = summary(count=t.id.count(), sum=t.amount.sum(), keepdims=True)
+    expected = DataFrame([[3, 350]], columns=['count', 'sum'])
+    assert str(compute(expr, df)) == str(expected)
 
 
 def test_dplyr_transform():

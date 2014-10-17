@@ -30,7 +30,7 @@ def test_sum():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.sum())
 
     assert chunk.schema == t.schema
-    assert chunk_expr.isidentical(chunk.amount.sum())
+    assert chunk_expr.isidentical(chunk.amount.sum(keepdims=True))
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(sum(agg))
@@ -52,16 +52,17 @@ def test_summary():
 
     assert chunk.schema == t.schema
     assert chunk_expr.isidentical(summary(a=chunk.amount.count(),
-                                          b=chunk.id.sum()))
+                                          b=chunk.id.sum(), keepdims=True))
 
-    assert not agg.schema == dshape('{a: int32, b: int32}')
+    # assert not agg.schema == dshape('{a: int32, b: int32}')
     assert agg_expr.isidentical(summary(a=agg.a.sum(),
                                         b=agg.b.sum() + 1))
 
     (chunk, chunk_expr), (agg, agg_expr) = \
             split(t, summary(total=t.amount.sum()))
 
-    assert chunk_expr.isidentical(summary(total=chunk.amount.sum()))
+    assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
+                                          keepdims=True))
     assert agg_expr.isidentical(summary(total=agg.total.sum()))
 
 
@@ -74,6 +75,7 @@ def test_by_sum():
 
     assert not isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
+
 
 def test_by_count():
     (chunk, chunk_expr), (agg, agg_expr) = \
@@ -96,3 +98,30 @@ def test_embarassing_selection():
 
     assert chunk_expr.isidentical(chunk[chunk.amount > 0])
     assert agg_expr.isidentical(agg)
+
+
+x = Symbol('x', '24 * 16 * int32')
+
+def test_nd_chunk():
+    c = Symbol('c', '4 * 4 * int32')
+
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(), chunk=c)
+
+    assert chunk.shape == (4, 4)
+    assert chunk_expr.isidentical(chunk.sum(keepdims=True))
+
+    assert agg.shape == (6, 4)
+    assert agg_expr.isidentical(agg.sum())
+
+
+def test_nd_chunk_axis_args():
+    c = Symbol('c', '4 * 4 * int32')
+
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(axis=0), chunk=c)
+
+    assert chunk.shape == (4, 4)
+    assert chunk_expr.shape == (1, 4)
+    assert chunk_expr.isidentical(chunk.sum(keepdims=True, axis=0))
+
+    assert agg.shape == (6, 16)
+    assert agg_expr.isidentical(agg.sum(axis=0))
