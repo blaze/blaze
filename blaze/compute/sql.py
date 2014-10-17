@@ -20,7 +20,7 @@ import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql
 from sqlalchemy.sql import Selectable, Select
-from sqlalchemy.sql.elements import ClauseElement
+from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from operator import and_
 from datashape import Record
 from copy import copy
@@ -87,17 +87,17 @@ def compute_up(t, s, **kwargs):
     return compute(t._expr, d)
 
 
-@dispatch(BinOp, ClauseElement, (ClauseElement, base))
+@dispatch(BinOp, ColumnElement, (ColumnElement, base))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(BinOp, (ClauseElement, base), ClauseElement)
+@dispatch(BinOp, (ColumnElement, base), ColumnElement)
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(UnaryOp, ClauseElement)
+@dispatch(UnaryOp, ColumnElement)
 def compute_up(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
