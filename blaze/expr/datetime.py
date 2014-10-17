@@ -7,7 +7,8 @@ import datashape
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
         'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second', 'Millisecond',
         'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-        'time', 'Weekday', 'weekday', 'WeekNumber', 'weeknumber']
+        'time', 'DayOfWeek', 'dayofweek', 'Week', 'week', 'DayOfYear',
+        'dayofyear', 'Quarter', 'quarter']
 
 class DateTime(ElemWise):
     """ Superclass for datetime accessors """
@@ -89,17 +90,29 @@ class Microsecond(DateTime):
 def microsecond(expr):
     return Microsecond(expr)
 
-class Weekday(DateTime):
+class DayOfWeek(DateTime):
     _dtype = datashape.int32
 
-def weekday(expr):
-    return Weekday(expr)
+def dayofweek(expr):
+    return DayOfWeek(expr)
 
-class WeekNumber(DateTime):
+class Week(DateTime):
     _dtype = datashape.int32
 
-def weeknumber(expr):
-    return WeekNumber(expr)
+def week(expr):
+    return Week(expr)
+
+class DayOfYear(DateTime):
+    _dtype = datashape.int32
+
+def dayofyear(expr):
+    return DayOfYear(expr)
+
+class Quarter(DateTime):
+    _dtype = datashape.int32
+
+def quarter(expr):
+    return Quarter(expr)
 
 
 from .expressions import schema_method_list, method_properties
@@ -107,8 +120,8 @@ from datashape.predicates import isdatelike
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
-                      millisecond, microsecond, weekday, weeknumber]))
+                      millisecond, microsecond, dayofweek, week, dayofyear, quarter]))
     ])
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,
-                          microsecond, date, time, weekday, weeknumber])
+                          microsecond, date, time, dayofweek, week, dayofyear, quarter])

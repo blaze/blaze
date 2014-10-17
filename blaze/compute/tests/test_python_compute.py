@@ -620,6 +620,19 @@ def test_datetime_access():
     assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
 
 
+def test_unique_datetime_expressions():
+    dates = list([[x, datetime(2000, x, 1, 1, 1, 1)] for x in range(1, 13)])
+    s = Symbol('s', 'var * {id: int32, when: datetime}')
+    assert list(compute(s.when.dayofweek, dates)) == [5, 1, 2, 5, 0, 3, 5, 1, 4,
+        6, 2, 4]
+    assert list(compute(s.when.week, dates)) == [52,  5,  9, 13, 18, 22,
+        26, 31, 35, 39, 44, 48]
+    assert list(compute(s.when.dayofyear, dates)) == [1,  32,  61,  92, 122,
+        153, 183, 214, 245, 275, 306, 336]
+    assert list(compute(s.when.quarter, dates)) == [1, 1, 1, 2, 2, 2, 3, 3, 3,
+        4, 4, 4]
+
+
 payments = [{'name': 'Alice', 'payments': [
                 {'amount':  100, 'when': datetime(2000, 1, 1, 1, 1 ,1)},
                 {'amount':  200, 'when': datetime(2000, 2, 2, 2, 2, 2)}
