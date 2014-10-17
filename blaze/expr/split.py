@@ -73,11 +73,12 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
 
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
 
-    blocks_shape = tuple(map(dimension_div, leaf.shape, chunk.shape))
-    agg_shape = tuple(map(dimension_mul, blocks_shape, shape(chunk_expr)))
-    agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
+    if not agg:
+        blocks_shape = tuple(map(dimension_div, leaf.shape, chunk.shape))
+        agg_shape = tuple(map(dimension_mul, blocks_shape, shape(chunk_expr)))
+        agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
 
-    agg = Symbol('aggregate', agg_dshape)
+        agg = Symbol('aggregate', agg_dshape)
 
     agg_expr = _split_agg(center, leaf=leaf, agg=agg)
 
