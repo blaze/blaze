@@ -9,7 +9,7 @@ from datashape.predicates import isscalar
 from datashape import coretypes as ct
 
 from .core import parenthesize, eval_str
-from .expressions import Expr, shape
+from .expressions import Expr, shape, ElemWise
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
@@ -18,7 +18,13 @@ __all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
 Relational Eq Ne Ge Lt Le Gt Gt And Or Not'''.split()
 
 
-class BinOp(Expr):
+def name(o):
+    if hasattr(o, '_name'):
+        return o._name
+    else:
+        return None
+
+class BinOp(ElemWise):
     __slots__ = 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
 
@@ -31,6 +37,15 @@ class BinOp(Expr):
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
+    @property
+    def _name(self):
+        if not isscalar(self.dshape.measure):
+            return None
+        l, r = name(self.lhs), name(self.rhs)
+        if l and not r:
+            return l
+        if r and not l:
+            return r
 
 
 def maxvar(L):
@@ -63,7 +78,7 @@ def maxshape(shapes):
     return tuple(map(maxvar, zip(*shapes)))
 
 
-class UnaryOp(Expr):
+class UnaryOp(ElemWise):
     __slots__ = '_child',
 
     def __init__(self, child):
@@ -79,6 +94,10 @@ class UnaryOp(Expr):
     @property
     def dshape(self):
         return DataShape(*(shape(self._child) + (self._dtype,)))
+
+    @property
+    def _name(self):
+        return self._child._name
 
 
 class Arithmetic(BinOp):
@@ -177,6 +196,7 @@ def scalar_coerce(rec, val):
 
 @dispatch(ct.DataShape, object)
 def scalar_coerce(ds, val):
+    return scalar_coerce(ds.measure, val)
     if len(ds) == 1:
         return scalar_coerce(ds[0], val)
     else:
@@ -334,9 +354,9 @@ BitAnd = And
 BitOr = Or
 
 
-from .expressions import dshape_method_list
+from .expressions import schema_method_list
 
-dshape_method_list.extend([
+schema_method_list.extend([
     (isscalar,
             set([_add, _radd, _mul,
             _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,

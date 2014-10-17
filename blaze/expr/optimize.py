@@ -1,7 +1,8 @@
 from .expressions import *
+from .arithmetic import *
 from .collections import *
 from .split_apply_combine import *
-from .broadcast import *
+from .broadcast2 import *
 from .reductions import *
 from ..dispatch import dispatch
 
@@ -39,6 +40,20 @@ def _lean(expr, fields=None):
 
     child, _ = _lean(expr._child, fields=fields)
     return child[expr._name], fields
+
+
+@dispatch(Arithmetic)
+def _lean(expr, fields=None):
+    lhs, right_fields  = _lean(expr.lhs, fields=())
+    rhs, left_fields = _lean(expr.rhs, fields=())
+    new_fields = set(fields) | set(left_fields) | set(right_fields)
+
+    return type(expr)(lhs, rhs), new_fields
+
+
+@dispatch(object)
+def _lean(expr, fields=None):
+    return expr, fields
 
 
 @dispatch(Broadcast)

@@ -4,6 +4,8 @@ import itertools
 from .expressions import *
 from .arithmetic import maxshape
 
+__all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
+
 def broadcast(expr, leaves, scalars=None):
     scalars = scalars or scalar_symbols(leaves)
     assert len(scalars) == len(leaves)

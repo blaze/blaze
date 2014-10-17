@@ -60,3 +60,12 @@ class BooleanMath(UnaryOp):
 
 
 class isnan(BooleanMath): pass
+
+
+from datashape.predicates import isreal
+
+from .expressions import schema_method_list
+
+schema_method_list.extend([
+    (isreal, set([isnan]))
+        ])
