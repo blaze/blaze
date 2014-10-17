@@ -105,7 +105,7 @@ def test_reductions():
 
 
 def test_count():
-    t = Symbol('t', 'var * 3 * int')
+    t = Symbol('t', '3 * int')
     assert compute(t.count(), [1, None, 2]) == 2
 
 
