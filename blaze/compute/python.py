@@ -145,7 +145,7 @@ def rowfunc(t):
 
 @dispatch(DayOfWeek)
 def rowfunc(t):
-    return lambda row: getattr(row, 'isocalendar')()[1]
+    return lambda row: getattr(row, 'weekday')()
 
 
 @dispatch(Week)
