@@ -131,6 +131,10 @@ def test_to_html():
     assert to_html(t.count()) == '2'
 
 
+def test_repr_html():
+    assert '<table' in t._repr_html_()
+
+
 def test_into():
     from blaze.api.into import into
     assert into([], t) == into([], data)
@@ -200,3 +204,7 @@ def test_can_trivially_create_sqlite_table():
 
 def test_can_trivially_create_pytables():
     Data(example('accounts.h5')+'::/accounts')
+
+
+def test_data_passes_kwargs_to_resource():
+    assert Data(example('iris.csv'), encoding='ascii').data.encoding == 'ascii'

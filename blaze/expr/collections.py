@@ -6,7 +6,7 @@ from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, Symbol
+from .expressions import Expr, ElemWise, Symbol, label
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
            'union', 'head', 'sort', 'Join', 'join']
@@ -140,8 +140,9 @@ def head(child, n=10):
 head.__doc__ = Head.__doc__
 
 
-def merge(*exprs):
+def merge(*exprs, **kwargs):
     # Get common sub expression
+    exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
     try:
         child = common_subexpression(*exprs)
     except:
@@ -179,25 +180,15 @@ def schema_concat(exprs):
 
 
 class Merge(ElemWise):
-    """ Merge the columns of many Tables together
-
-    Must all descend from same table via ElemWise operations
+    """ Merge many fields together
 
     Examples
     --------
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, x: int, y: real}')
 
-    >>> newamount = (accounts.amount * 1.5).label('new_amount')
-
-    >>> merge(accounts, newamount).fields
-    ['name', 'amount', 'new_amount']
-
-    See Also
-    --------
-
-    blaze.expr.collections.Union
-    blaze.expr.collections.Join
+    >>> merge(accounts.name, z=accounts.x + accounts.y).fields
+    ['name', 'z']
     """
     __slots__ = '_child', 'children'
 

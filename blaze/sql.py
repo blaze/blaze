@@ -12,7 +12,7 @@ from toolz import first
 
 import sqlalchemy as sa
 
-__all__ = ['compute_up', 'SQL']
+__all__ = 'SQL',
 
 
 @dispatch((Field, Projection, Expr, UnaryOp), SQL)

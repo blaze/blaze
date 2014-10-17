@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from datetime import date, datetime
 
 from blaze.compute.core import compute_up, compute_down, optimize, compute
-from blaze import by, Symbol, Expr
+from blaze.expr import by, Symbol, Expr
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
 

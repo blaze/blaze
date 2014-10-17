@@ -7,7 +7,8 @@ from flask import Flask, request, jsonify, json
 from dynd import nd
 from cytoolz import first
 from functools import partial, wraps
-from blaze import into, compute, compute_up
+from blaze import into, compute
+from blaze.compute import compute_up
 from datashape.predicates import iscollection
 from ..api import discover, Data
 from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
@@ -153,6 +154,8 @@ def expression_from_name(name):
     import blaze
     if hasattr(blaze, name):
         return getattr(blaze, name)
+    if hasattr(blaze.expr, name):
+        return getattr(blaze.expr, name)
     for signature, func in compute_up.funcs.items():
         try:
             if signature[0].__name__ == name:

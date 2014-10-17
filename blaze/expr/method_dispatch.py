@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
+from multipledispatch import Dispatcher
 
 __all__ = 'select_functions',
 
@@ -35,6 +36,8 @@ def name(func):
     """ Name of a function, robust to partials """
     if isinstance(func, partial):
         return name(func.func)
+    elif isinstance(func, Dispatcher):
+        return func.name
     else:
         return func.__name__
 
