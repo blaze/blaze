@@ -220,6 +220,17 @@ def compute_up(t, seq, **kwargs):
 
 @dispatch(Reduction, Sequence)
 def compute_up(t, seq, **kwargs):
+    if t.axis != (0,):
+        raise NotImplementedError('Only 1D reductions currently supported')
+    result = compute_up_1d(t, seq, **kwargs)
+    if t.keepdims:
+        return (result,)
+    else:
+        return result
+
+
+@dispatch(Reduction, Sequence)
+def compute_up_1d(t, seq, **kwargs):
     op = getattr(builtins, t.symbol)
     return op(seq)
 
@@ -265,7 +276,7 @@ def _std(seq, unbiased):
 
 
 @dispatch(count, Sequence)
-def compute_up(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return cytoolz.count(filter(None, seq))
 
 
@@ -284,22 +295,22 @@ def compute_up(t, seq, **kwargs):
 
 
 @dispatch(nunique, Sequence)
-def compute_up(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return len(set(seq))
 
 
 @dispatch(mean, Sequence)
-def compute_up(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return _mean(seq)
 
 
 @dispatch(var, Sequence)
-def compute_up(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return _var(seq, t.unbiased)
 
 
 @dispatch(std, Sequence)
-def compute_up(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return _std(seq, t.unbiased)
 
 
@@ -504,13 +515,20 @@ def compute_up(t, example, children, **kwargs):
 
 @dispatch(Summary, Sequence)
 def compute_up(expr, data, **kwargs):
+    if expr._child.ndim != 1:
+        raise NotImplementedError('Only 1D reductions currently supported')
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        return tuple(compute(val, {expr._child: data})
+        result = tuple(compute(val, {expr._child: data})
                         for val, data in zip(expr.values, datas))
     else:
-        return tuple(compute(val, {expr._child: data})
+        result = tuple(compute(val, {expr._child: data})
                         for val in expr.values)
+
+    if expr.keepdims:
+        return (result,)
+    else:
+        return result
 
 
 def like_regex_predicate(expr):
