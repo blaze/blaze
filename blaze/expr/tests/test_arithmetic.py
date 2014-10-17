@@ -10,6 +10,10 @@ b = Symbol('b', '5 * 3 * bool')
 def test_arithmetic_dshape_on_collections():
     assert Add(x, y).shape == x.shape == y.shape
 
+def test_arithmetic_broadcasts_to_scalars():
+    assert Add(x, a).shape == x.shape
+    assert Add(x, 1).shape == x.shape
+
 def test_unary_ops_are_elemwise():
     assert USub(x).shape == x.shape
     assert Not(b).shape == b.shape
