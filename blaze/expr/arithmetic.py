@@ -237,10 +237,8 @@ def _rmod(self, other):
     return Mod(scalar_coerce(self.dshape, other), self)
 
 
-class Relational(BinOp):
-    @property
-    def dshape(self):
-        return dshape('bool')
+class Relational(Arithmetic):
+    _dtype = 'bool'
 
 
 class Eq(Relational):
