@@ -28,3 +28,15 @@ def test_scalar_symbols():
     assert len(scalars) == len(exprs)
     assert isdistinct([s._name for s in scalars])
     assert builtins.all(s.dshape == e.schema for s, e in zip(scalars, exprs))
+
+
+def test_broadcast_function():
+    expr =  Pow(Add(x, Mult(2, y)), 2)  # (x + (2 * y)) ** 2
+    b = broadcast(expr, [x, y])
+    xx, yy = b._scalars
+    assert b._scalar_expr.isidentical((xx + (2 * yy)) ** 2)
+
+    # A different set of leaves
+    b = broadcast(expr, [x, Mult(2, y)])
+    xx, yy = b._scalars
+    assert b._scalar_expr.isidentical((xx + yy) ** 2)

@@ -4,6 +4,12 @@ import itertools
 from .expressions import *
 from .arithmetic import maxshape
 
+def broadcast(expr, leaves, scalars=None):
+    scalars = scalars or scalar_symbols(leaves)
+    assert len(scalars) == len(leaves)
+    return Broadcast(leaves, scalars, expr._subs(dict(zip(leaves, scalars))))
+
+
 class Broadcast(Expr):
     __slots__ = '_children', '_scalars', '_scalar_expr'
 
