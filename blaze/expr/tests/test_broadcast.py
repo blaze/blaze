@@ -1,5 +1,6 @@
 from blaze.expr import *
 from blaze.expr.broadcast2 import *
+from blaze.expr.broadcast2 import leaves_of_type, broadcast_collect
 from blaze.compatibility import builtins
 from toolz import isdistinct
 
@@ -52,3 +53,20 @@ def test_tabular_case():
     tt, = b._scalars
 
     assert b._scalar_expr.isidentical(tt.x + tt.y * 2)
+
+
+def test_optimize_broadcast():
+    expr = (t.distinct().x + 1).distinct()
+
+    expected = broadcast(t.distinct().x + 1, [t.distinct()]).distinct()
+    result = broadcast_collect((Field, Arithmetic), expr)
+
+    assert result.isidentical(expected)
+
+
+def test_leaves_of_type():
+    expr = Distinct(Distinct(Distinct(t.x)))
+
+    result = leaves_of_type((Distinct,), expr)
+    assert len(result) == 1
+    assert list(result)[0].isidentical(t.x)
