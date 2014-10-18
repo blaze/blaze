@@ -47,6 +47,15 @@ class BinOp(ElemWise):
         if r and not l:
             return r
 
+    @property
+    def _inputs(self):
+        result = []
+        if isinstance(self.lhs, Expr):
+            result.append(self.lhs)
+        if isinstance(self.rhs, Expr):
+            result.append(self.rhs)
+        return tuple(result)
+
 
 def maxvar(L):
     """
