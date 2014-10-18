@@ -1,4 +1,5 @@
 from datashape import *
+from datashape.predicates import iscollection
 import itertools
 from toolz import curry
 
@@ -77,7 +78,7 @@ def broadcast_collect(broadcastable_types, expr):
     >>> broadcast_collect((Field, Add), x + 2*y)
     Broadcast(_children=(2 * y, x), _scalars=(y, x), _scalar_expr=x + y)
     """
-    if isinstance(expr, broadcastable_types):
+    if isinstance(expr, broadcastable_types) and iscollection(expr.dshape):
         leaves = leaves_of_type(broadcastable_types, expr)
         expr = broadcast(expr, sorted(leaves, key=str))
 

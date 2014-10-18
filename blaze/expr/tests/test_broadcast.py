@@ -70,3 +70,9 @@ def test_leaves_of_type():
     result = leaves_of_type((Distinct,), expr)
     assert len(result) == 1
     assert list(result)[0].isidentical(t.x)
+
+
+def test_broadcast_collect_doesnt_collect_scalars():
+    expr = xx + yy * a
+
+    assert broadcast_collect(Arithmetic, expr).isidentical(expr)
