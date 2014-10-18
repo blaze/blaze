@@ -185,7 +185,7 @@ class SQL(DataDescriptor):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
-        self.schemaname = '.'.join(tablename.split('.')[:-1]) or None
+        self.schemaname = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
         self.tablename = tablename.split('.')[-1]
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
