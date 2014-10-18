@@ -156,6 +156,7 @@ class Mod(Arithmetic):
 
 class USub(UnaryOp):
     op = operator.neg
+    symbol = '-'
 
     def __str__(self):
         return '-%s' % self._child

@@ -15,7 +15,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
                         Summary, count, Symbol, Field, discover,
-                        max, min
+                        max, min, label
                         )
 from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile

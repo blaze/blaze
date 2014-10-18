@@ -16,7 +16,7 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim']
+           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label']
 
 
 class Expr(Node):
@@ -352,6 +352,10 @@ class Label(ElemWise):
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)
+
+    def __str__(self):
+        return "label(%s, '%s')" % (self._child, self.label)
+
 
 def label(expr, lab):
     if expr._name == lab:
