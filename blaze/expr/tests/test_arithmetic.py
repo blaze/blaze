@@ -33,6 +33,6 @@ def test_names():
     assert Add(y, x)._name != y._name
 
 def test_inputs():
-    assert (x + y)._inputs == [x, y]
-    assert (x + 1)._inputs == [x]
-    assert (1 + y)._inputs == [y]
+    assert (x + y)._inputs == (x, y)
+    assert (x + 1)._inputs == (x,)
+    assert (1 + y)._inputs == (y,)
