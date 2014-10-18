@@ -72,10 +72,10 @@ def broadcast_collect(broadcastable_types, expr):
     >>> expr = (x + 2*y)
 
     >>> broadcast_collect((Field, Arithmetic), x + 2*y)
-    Broadcast(_children=[x, y], _scalars=(x, y), _scalar_expr=x + (2 * y))
+    Broadcast(_children=(x, y), _scalars=(x, y), _scalar_expr=x + (2 * y))
 
     >>> broadcast_collect((Field, Add), x + 2*y)
-    Broadcast(_children=[2 * y, x], _scalars=(y, x), _scalar_expr=x + y)
+    Broadcast(_children=(2 * y, x), _scalars=(y, x), _scalar_expr=x + y)
     """
     if isinstance(expr, broadcastable_types):
         leaves = leaves_of_type(broadcastable_types, expr)
@@ -83,7 +83,7 @@ def broadcast_collect(broadcastable_types, expr):
 
     children = [broadcast_collect(broadcastable_types, child)
                 for child in expr._inputs]
-    return expr._subs({expr._inputs: children})
+    return expr._subs(dict(zip(expr._inputs, children)))
 
 
 
@@ -93,8 +93,6 @@ def broadcast_collect(broadcastable_types, expr):
 def leaves_of_type(types, expr):
     """ Leaves of an expression skipping all operations of type ``types``
     """
-    if not isinstance(expr, Expr):
-        return set()
     if not isinstance(expr, types):
         return set([expr])
     else:
