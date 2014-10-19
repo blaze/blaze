@@ -113,6 +113,7 @@ def parenthesize(s):
     else:
         return s
 
+
 def print_python(expr):
     """ Print expression to be evaluated in Python
 
@@ -142,6 +143,12 @@ def print_python(expr):
     if isinstance(expr, (RealMath, IntegerMath)):
         return '%s(%s)' % (type(expr).__name__,
                            print_python(expr._child))
+    if isinstance(expr, Date):
+        return '%s.date()' % (parenthesize(print_python(expr._child)),
+    if isinstance(expr, Time):
+        return '%s.time()' % (parenthesize(print_python(expr._child)),
+    if isinstance(expr, Millisecond):
+        return '%s.microsecond // 1000' % (parenthesize(print_python(expr._child)),
     if isinstance(expr, DateTime):
         return '%s.%s' % (parenthesize(print_python(expr._child)),
                           type(expr).__name__.lower())
