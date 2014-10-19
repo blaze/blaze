@@ -15,6 +15,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 import numbers
 import fnmatch
+import operator
 import re
 from collections import Iterator
 from functools import partial
@@ -193,6 +194,27 @@ def rowfunc(t):
 @dispatch(Millisecond)
 def rowfunc(_):
     return lambda row: getattr(row, 'microsecond') // 1000
+
+
+@dispatch((RealMath, IntegerMath, BooleanMath))
+def rowfunc(expr):
+    return getattr(math, type(expr).__name__)
+
+@dispatch(USub)
+def rowfunc(expr):
+    return operator.neg
+
+@dispatch(Not)
+def rowfunc(expr):
+    return operator.invert
+
+@dispatch(Arithmetic)
+def rowfunc(expr):
+    if not isinstance(expr.lhs, Expr):
+        return lambda x: expr.op(expr.lhs, x)
+    if not isinstance(expr.rhs, Expr):
+        return lambda x: expr.op(x, expr.rhs)
+    return expr.op
 
 
 def concat_maybe_tuples(vals):
