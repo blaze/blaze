@@ -33,11 +33,11 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice)
+                    Symbol, Slice, Expr, Arithmetic)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import eval_str
-from ..expr import BinOp, UnaryOp, RealMath
+from ..expr import BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath
 from ..compatibility import builtins, apply, unicode, _inttypes
 from . import core
 from .core import compute, compute_up
