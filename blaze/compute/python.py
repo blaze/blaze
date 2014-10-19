@@ -210,7 +210,7 @@ def concat_maybe_tuples(vals):
     return tuple(result)
 
 
-def deepmap(func, data, n=1):
+def deepmap(func, *data, **kwargs):
     """
 
     >>> inc = lambda x: x + 1
@@ -218,11 +218,21 @@ def deepmap(func, data, n=1):
     [2, 3]
     >>> list(deepmap(inc, [(1, 2), (3, 4)], n=2))
     [(2, 3), (4, 5)]
+
+    Works on variadic args too
+
+    >>> add = lambda x, y: x + y
+    >>> list(deepmap(add, [1, 2], [10, 20], n=1))
+    [11, 22]
     """
+    n = kwargs.pop('n', 1)
+    if n == 0:
+        return func(*data)
     if n == 1:
-        return map(func, data)
+        return map(func, *data)
     else:
-        return map(compose(tuple, partial(deepmap, func, n=n-1)), data)
+        return map(compose(tuple, partial(deepmap, func, n=n-1)), *data)
+
 
 @dispatch(Merge)
 def rowfunc(t):
