@@ -34,14 +34,15 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice, Expr, Arithmetic)
+                    Symbol, Slice, Expr, Arithmetic, shape, ndim)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import eval_str
-from ..expr import BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath
+from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
+        Not)
 from ..compatibility import builtins, apply, unicode, _inttypes
 from . import core
-from .core import compute, compute_up
+from .core import compute, compute_up, optimize
 
 from ..data import DataDescriptor
 from ..data.utils import listpack
@@ -54,6 +55,24 @@ from math import *
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
+
+Broadcastables = (Arithmetic, Field)
+
+from ..expr.broadcast2 import broadcast_collect
+
+"""
+@dispatch(Expr, Sequence)
+def optimize(expr, seq):
+    return broadcast_collect(Broadcastables, expr)
+"""
+
+
+def child(x):
+    if hasattr(x, '_child'):
+        return x._child
+    if hasattr(x, '_inputs') and len(x._inputs) == 1:
+        return x._inputs[0]
+    raise NotImplementedError()
 
 
 def recursive_rowfunc(t, stop):
@@ -71,7 +90,7 @@ def recursive_rowfunc(t, stop):
     funcs = []
     while not t.isidentical(stop):
         funcs.append(rowfunc(t))
-        t = t._child
+        t = child(t)
     return compose(*funcs)
 
 
@@ -145,27 +164,26 @@ def print_python(expr):
         return '%s(%s)' % (type(expr).__name__,
                            print_python(expr._child))
     if isinstance(expr, Date):
-        return '%s.date()' % (parenthesize(print_python(expr._child)),
+        return '%s.date()' % parenthesize(print_python(expr._child))
     if isinstance(expr, Time):
-        return '%s.time()' % (parenthesize(print_python(expr._child)),
+        return '%s.time()' % parenthesize(print_python(expr._child))
     if isinstance(expr, Millisecond):
-        return '%s.microsecond // 1000' % (parenthesize(print_python(expr._child)),
+        return '%s.microsecond // 1000' % parenthesize(print_python(expr._child))
     if isinstance(expr, DateTime):
         return '%s.%s' % (parenthesize(print_python(expr._child)),
                           type(expr).__name__.lower())
     raise NotImplementedError()
 
+def funcstr(t):
+    """ Lambda string for a broadcastable """
+
+    return 'lambda %s: %s' % (', '.join(map(str, t._scalars)),
+                              print_python(t._scalar_expr))
+
 
 @dispatch(Broadcast)
 def rowfunc(t):
-    if sys.version_info[0] == 3:
-        # Python3 doesn't allow argument unpacking
-        # E.g. ``lambda (x, y, z): x + z`` is illegal
-        # Solution: Make ``lambda x, y, z: x + y``, then wrap with ``apply``
-        func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
-        return partial(apply, func)
-    elif sys.version_info[0] == 2:
-        return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+    return eval(funcstr(t))
 
 
 @dispatch(Map)
@@ -266,14 +284,35 @@ def rowfunc(t):
 def compute_up(t, seq, **kwargs):
     func = rowfunc(t)
     if iscollection(t._child.dshape):
-        return deepmap(func, seq, n=t._child.ndim)
+        return deepmap(func, seq, n=ndim(child(t)))
     else:
         return func(seq)
+
+@dispatch(Broadcast, Sequence)
+def compute_up(t, seq, **kwargs):
+    func = rowfunc(t)
+    return deepmap(func, seq, n=ndim(child(t)))
+
+
+@dispatch(Arithmetic, Sequence + (int, float, bool))
+def compute_up(t, seq, **kwargs):
+    func = rowfunc(t)
+    return deepmap(func, seq, n=ndim(child(t)))
+
+
+@dispatch(Arithmetic, Sequence, Sequence)
+def compute_up(t, a, b, **kwargs):
+    if ndim(t.lhs) != ndim(t.rhs):
+        raise ValueError()
+    # TODO: Tee if necessary
+    func = rowfunc(t)
+    return deepmap(func, a, b, n=ndim(t.lhs))
 
 
 @dispatch(Selection, Sequence)
 def compute_up(t, seq, **kwargs):
-    predicate = rrowfunc(t.predicate, t._child)
+    predicate = optimize(t.predicate, seq)
+    predicate = rrowfunc(predicate, child(t))
     return filter(predicate, seq)
 
 
