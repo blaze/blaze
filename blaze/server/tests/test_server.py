@@ -12,13 +12,13 @@ from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.index import emit_index
 
 
-df = DataFrame([['Alice', 100], ['Bob', 200]],
-               columns=['name', 'amount'])
+accounts = DataFrame([['Alice', 100], ['Bob', 200]],
+                     columns=['name', 'amount'])
 
 cities = DataFrame([['Alice', 'NYC'], ['Bob', 'LA']],
                    columns=['name', 'city'])
 
-server = Server(datasets={'accounts': df,
+server = Server(datasets={'accounts': accounts,
                           'cities': cities})
 
 test = server.app.test_client()
@@ -26,7 +26,7 @@ test = server.app.test_client()
 
 def test_datasets():
     response = test.get('/datasets.json')
-    assert json.loads(response.data) == {'accounts': str(discover(df)),
+    assert json.loads(response.data) == {'accounts': str(discover(accounts)),
                                          'cities': str(discover(cities))}
 
 
