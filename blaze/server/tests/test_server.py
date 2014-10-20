@@ -15,14 +15,19 @@ from blaze.server.index import emit_index
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
 
-server = Server(datasets={'accounts': df})
+cities = DataFrame([['Alice', 'NYC'], ['Bob', 'LA']],
+                   columns=['name', 'city'])
+
+server = Server(datasets={'accounts': df,
+                          'cities': cities})
 
 test = server.app.test_client()
 
 
 def test_datasets():
     response = test.get('/datasets.json')
-    assert json.loads(response.data) == {'accounts': str(discover(df))}
+    assert json.loads(response.data) == {'accounts': str(discover(df)),
+                                         'cities': str(discover(cities))}
 
 
 def test_bad_responses():
