@@ -105,12 +105,10 @@ def iris_server():
     return server.app.test_client()
 
 
-@pytest.fixture
-def iris():
-    return CSV(example('iris.csv'))
+iris = CSV(example('iris.csv'))
 
 
-def test_compute_by_with_summary(iris_server, iris):
+def test_compute_by_with_summary(iris_server):
     test = iris_server
     t = TableSymbol('t', iris.dshape)
     expr = by(t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
@@ -124,7 +122,7 @@ def test_compute_by_with_summary(iris_server, iris):
     assert result == list(map(list, expected))
 
 
-def test_compute_column_wise(iris_server, iris):
+def test_compute_column_wise(iris_server):
     test = iris_server
     t = TableSymbol('t', iris.dshape)
     subexpr = ((t.petal_width / 2 > 0.5) &
