@@ -278,14 +278,15 @@ def compserver(datasets):
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 
-    ns = valmap(discover, datasets)
+
+    tree_ns = dict((name, Symbol(name, discover(datasets[name])))
+                    for name in datasets)
     if 'namespace' in data:
-        ns = merge(ns, data['namespace'])
+        tree_ns = merge(tree_ns, data['namespace'])
 
-    expr = from_tree(data['expr'], namespace=ns)
+    expr = from_tree(data['expr'], namespace=tree_ns)
 
-
-    compute_ns = dict((Symbol(name, ns[name]), datasets[name])
+    compute_ns = dict((Symbol(name, discover(datasets[name])), datasets[name])
                         for name in datasets)
     result = compute(expr, compute_ns)
     if iscollection(expr.dshape):
