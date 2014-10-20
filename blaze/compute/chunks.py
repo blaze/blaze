@@ -22,7 +22,7 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 from __future__ import absolute_import, division, print_function
 
 import itertools
-from ..expr import (TableSymbol, Head, Join, Selection, By, Label,
+from ..expr import (Symbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
         nunique)
 from .core import compute
@@ -91,7 +91,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 @dispatch(tuple(reductions), ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    t = TableSymbol('_', dshape=expr._child.dshape)
+    t = Symbol('_', expr._child.dshape)
     a, b = reductions[type(expr)]
 
     return compute_up(b(t), [compute_up(a(t), chunk) for chunk in c])
@@ -293,10 +293,10 @@ class ChunkList(ChunkIndexable):
         return iter(self.data)
 
 
-from ..api.resource import resource
+from ..resource import resource
 from glob import glob
 
-@resource.register('.+\*.*', priority=14)
+@resource.register('.*\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
 

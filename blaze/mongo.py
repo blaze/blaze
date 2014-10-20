@@ -6,7 +6,7 @@ from datashape import discover, isdimension
 
 from .compatibility import basestring, map
 from .compute.mongo import dispatch
-from .api.resource import resource
+from .resource import resource
 
 try:
     import pymongo
@@ -78,14 +78,14 @@ def create_index(coll, keys, **kwargs):
 
 @resource.register('mongodb://\w*:\w*@\w*.*', priority=11)
 def resource_mongo_with_authentication(uri, collection_name, **kwargs):
-    pattern = 'mongodb://(?P<user>\w*):(?P<pass>\w*)@(?P<hostport>\w*:?\d*)/(?P<database>\w*)'
+    pattern = 'mongodb://(?P<user>\w*):(?P<pass>\w*)@(?P<hostport>.*:?\d*)/(?P<database>\w+)'
     d = re.search(pattern, uri).groupdict()
     return _resource_mongo(d, collection_name)
 
 
 @resource.register('mongodb://.+')
 def resource_mongo(uri, collection_name, **kwargs):
-    pattern = 'mongodb://(?P<hostport>\w*:?\d*)/(?P<database>\w*)'
+    pattern = 'mongodb://(?P<hostport>.*:?\d*)/(?P<database>\w+)'
     d = re.search(pattern, uri).groupdict()
     return _resource_mongo(d, collection_name)
 

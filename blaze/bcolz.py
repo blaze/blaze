@@ -9,8 +9,9 @@ from toolz import partition_all, keyfilter
 import os
 from datashape import to_numpy_dtype
 from toolz import keyfilter
+from toolz.curried import pipe, partial, map, concat
 
-from .api.resource import resource
+from .resource import resource
 from .dispatch import dispatch
 from .compute.bcolz import *
 from .utils import keywords
@@ -24,9 +25,17 @@ def into(a, b, **kwargs):
     f = into.dispatch(a, type(b))
     return f(a, b, **kwargs)
 
+
 @dispatch((tuple, set, list), (ctable, carray))
 def into(o, b, **kwargs):
     return into(o, into(np.ndarray(0), b))
+
+
+@dispatch(Iterator, (ctable, carray))
+def into(_, b, **kwargs):
+    return pipe(b, chunks, map(partial(into, np.ndarray(0))),
+                           map(partial(into, list)),
+                           concat)
 
 
 @dispatch(np.ndarray, (ctable, carray))
@@ -51,6 +60,14 @@ def into(a, b, dtype=None, **kwargs):
     kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
     return into(a, x, **kwargs)
 
+
+@dispatch(carray, carray)
+def into(a, b, **kwargs):
+    if isinstance(a, type):
+        return b
+    else:
+        a.append(iter(b))
+        return a
 
 @dispatch(ctable, (tuple, list))
 def into(a, b, names=None, types=None, **kwargs):

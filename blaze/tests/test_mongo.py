@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 import csv as csv_module
-from blaze import CSV, JSON
+from blaze.data import CSV, JSON
 import subprocess
 import tempfile
 import json
@@ -14,7 +14,7 @@ from datashape import discover, dshape
 
 from blaze import drop, into, create_index
 from blaze.utils import assert_allclose
-from blaze.api.resource import resource
+from blaze.resource import resource
 
 
 no_mongoimport = pytest.mark.skipif(raises(OSError,

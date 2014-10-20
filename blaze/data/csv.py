@@ -7,7 +7,7 @@ import bz2
 from functools import partial
 from contextlib import contextmanager
 
-from multipledispatch import dispatch
+from ..dispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, pluck
 from toolz import concat, get, pipe, identity
 from toolz.curried import map, get
@@ -23,7 +23,7 @@ from datashape.predicates import isdimension
 import blaze as bz
 from .pandas_dtype import dshape_to_pandas
 from .core import DataDescriptor
-from ..api.resource import resource
+from ..resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END, builtins, _strtypes, _inttypes
@@ -311,7 +311,6 @@ class CSV(DataDescriptor):
         if header is None:
             header = has_header(sample, encoding=encoding)
         elif isinstance(header, int):
-            dialect['header'] = header
             header = True
         self.header = header
 
@@ -376,6 +375,9 @@ class CSV(DataDescriptor):
                 usecols = get(usecols, self.columns)
             dates = [name for name in dates if name in usecols]
 
+        header = kwargs.pop('header', self.header)
+        header = 0 if self.header else None
+
         result = pd.read_csv(self.path,
                              names=kwargs.pop('names', self.columns),
                              usecols=usecols,
@@ -384,7 +386,7 @@ class CSV(DataDescriptor):
                              dtype=kwargs.pop('dtype', dtypes),
                              parse_dates=kwargs.pop('parse_dates', dates),
                              encoding=kwargs.pop('encoding', self.encoding),
-                             header=0 if self.header else None,
+                             header=header,
                              **merge(kwargs, clean_dialect(self.dialect)))
 
         reorder = get(list(usecols)) if usecols and len(usecols) > 1 else identity

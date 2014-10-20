@@ -10,6 +10,7 @@ from datashape.predicates import isscalar, iscollection
 from .core import common_subexpression
 from .expressions import Expr, Symbol
 
+
 class Reduction(Expr):
     """ A column-wise reduction
 
@@ -31,24 +32,32 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = '_child', 'axis'
+    __slots__ = '_child', 'axis', 'keepdims'
     _dtype = None
 
-    def __init__(self, _child, axis=None):
+    def __init__(self, _child, axis=None, keepdims=False):
         self._child = _child
+        if axis is None:
+            axis = tuple(range(_child.ndim))
+        if isinstance(axis, (set, list)):
+            axis = tuple(axis)
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+        axis = tuple(sorted(axis))
         self.axis = axis
+        self.keepdims = keepdims
 
     @property
     def dshape(self):
         axis = self.axis
-        if axis == None:
-            return dshape(self._dtype)
-        if isinstance(axis, int):
-            axis = [axis]
-        s = tuple(slice(None) if i not in axis else 0
-                              for i in range(self._child.ndim))
-        ds = self._child.dshape.subshape[s]
-        return DataShape(*(ds.shape + (self._dtype,)))
+        if self.keepdims:
+            shape = tuple(1 if i in self.axis else d
+                          for i, d in enumerate(self._child.shape))
+        else:
+            shape = tuple(d
+                          for i, d in enumerate(self._child.shape)
+                          if i not in self.axis)
+        return DataShape(*(shape + (self._dtype,)))
 
     @property
     def symbol(self):
@@ -110,14 +119,14 @@ class var(Reduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = '_child', 'unbiased', 'axis'
+    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False, axis=None):
-        self._child = child
+    def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        self.axis = axis
+        Reduction.__init__(self, child, *args, **kwargs)
+
 
 class std(Reduction):
     """Standard Deviation
@@ -139,14 +148,14 @@ class std(Reduction):
     --------
     var
     """
-    __slots__ = '_child', 'unbiased', 'axis'
+    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
-    def __init__(self, child, unbiased=False, axis=None):
-        self._child = child
+    def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        self.axis = axis
+        Reduction.__init__(self, child, *args, **kwargs)
+
 
 class count(Reduction):
     """ The number of non-null elements """
@@ -173,19 +182,30 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = '_child', 'names', 'values'
+    __slots__ = '_child', 'names', 'values', 'keepdims'
+
+    def __init__(self, _child, names, values, keepdims=False):
+        self._child = _child
+        self.names = names
+        self.values = values
+        self.keepdims = keepdims
 
     @property
     def dshape(self):
-        return dshape(Record(list(zip(self.names,
-                                      [v._dtype for v in self.values]))))
+        measure = Record(list(zip(self.names,
+                                  [v._dtype for v in self.values])))
+        if self.keepdims:
+            return DataShape(*((1,) * self._child.ndim + (measure,)))
+        else:
+            return DataShape(measure)
 
     def __str__(self):
         return 'summary(' + ', '.join('%s=%s' % (name, str(val))
-                for name, val in zip(self.fields, self.values)) + ')'
+                for name, val in zip(self.fields, self.values)) + \
+                    ', keepdims=%s' % self.keepdims + ')'
 
 
-def summary(**kwargs):
+def summary(keepdims=False, **kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
     values = tuple(map(toolz.second, items))
@@ -199,7 +219,7 @@ def summary(**kwargs):
             else:
                 raise ValueError()
 
-    return Summary(child, names, values)
+    return Summary(child, names, values, keepdims=keepdims)
 
 
 summary.__doc__ = Summary.__doc__

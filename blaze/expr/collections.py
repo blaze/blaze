@@ -6,7 +6,7 @@ from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, Symbol
+from .expressions import Expr, ElemWise, Symbol, label
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
            'union', 'head', 'sort', 'Join', 'join']
@@ -23,7 +23,7 @@ class Sort(Expr):
 
     Some backends support sorting by arbitrary rowwise tables, e.g.
 
-    >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
+    >>> accounts.sort(-accounts.amount) # doctest: +SKIP
     """
     __slots__ = '_child', '_key', 'ascending'
 
@@ -45,6 +45,10 @@ class Sort(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return "%s.sort(%s, ascending=%s)" % (self._child, repr(self._key),
+                self.ascending)
+
 
 def sort(child, key=None, ascending=True):
     """ Sort collection
@@ -55,7 +59,7 @@ def sort(child, key=None, ascending=True):
         Defines by what you want to sort.  Either:
             A single column string, ``t.sort('amount')``
             A list of column strings, ``t.sort(['name', 'amount'])``
-            A Table Expression, ``t.sort(-t['amount'])``
+            A Table Expression, ``t.sort(-t.amount)``
     ascending: bool
         Determines order of the sort
     """
@@ -126,6 +130,9 @@ class Head(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return '%s.head(%d)' % (self._child, self.n)
+
 
 def head(child, n=10):
     return Head(child, n)
@@ -133,8 +140,9 @@ def head(child, n=10):
 head.__doc__ = Head.__doc__
 
 
-def merge(*exprs):
+def merge(*exprs, **kwargs):
     # Get common sub expression
+    exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
     try:
         child = common_subexpression(*exprs)
     except:
@@ -172,25 +180,15 @@ def schema_concat(exprs):
 
 
 class Merge(ElemWise):
-    """ Merge the columns of many Tables together
-
-    Must all descend from same table via ElemWise operations
+    """ Merge many fields together
 
     Examples
     --------
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, x: int, y: real}')
 
-    >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
-
-    >>> merge(accounts, newamount).fields
-    ['name', 'amount', 'new_amount']
-
-    See Also
-    --------
-
-    blaze.expr.collections.Union
-    blaze.expr.collections.Join
+    >>> merge(accounts.name, z=accounts.x + accounts.y).fields
+    ['name', 'z']
     """
     __slots__ = '_child', 'children'
 

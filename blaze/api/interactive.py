@@ -3,26 +3,27 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
     to_numpy_dtype, isdimension, var)
-from datashape.predicates import iscollection, isscalar
+from datashape.predicates import iscollection, isscalar, isrecord
 from pandas import DataFrame, Series
 import itertools
 import numpy as np
 from dynd import nd
+import warnings
 
-from ..expr import TableSymbol, Expr, Symbol
+from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
-from .resource import resource
+from ..resource import resource
 
-__all__ = ['Table', 'compute', 'into']
+__all__ = ['Data', 'Table', 'into', 'to_html']
 
 names = ('_%d' % i for i in itertools.count(1))
 
-class Table(Symbol):
-    """ Table of data
+class Data(Symbol):
+    """ Interactive data
 
-    The ``Table`` object presents a familiar view onto a variety of forms of
+    The ``Data`` object presents a familiar view onto a variety of forms of
     data.  This user-level object provides an interactive experience to using
     Blaze's abstract expressions.
 
@@ -31,22 +32,22 @@ class Table(Symbol):
 
     data: anything
         Any type with ``discover`` and ``compute`` implementations
-    columns: list of strings - optional
-        Column names, will be inferred from datasource if possible
-    schema: string or DataShape - optional
-        Explicit Record containing datatypes and column names
+    fields: list of strings - optional
+        Field or column names, will be inferred from datasource if possible
+    dshape: string or DataShape - optional
+        Datashape describing input data
     name: string - optional
         A name for the table
 
     Examples
     --------
 
-    >>> t = Table([(1, 'Alice', 100),
-    ...            (2, 'Bob', -200),
-    ...            (3, 'Charlie', 300),
-    ...            (4, 'Denis', 400),
-    ...            (5, 'Edith', -500)],
-    ...            columns=['id', 'name', 'balance'])
+    >>> t = Data([(1, 'Alice', 100),
+    ...           (2, 'Bob', -200),
+    ...           (3, 'Charlie', 300),
+    ...           (4, 'Denis', 400),
+    ...           (5, 'Edith', -500)],
+    ...          fields=['id', 'name', 'balance'])
 
     >>> t[t.balance < 0].name
         name
@@ -55,10 +56,16 @@ class Table(Symbol):
     """
     __slots__ = 'data', 'dshape', '_name'
 
-    def __init__(self, data, dshape=None, name=None, columns=None,
-            schema=None):
-        if isinstance(data, str):
-            data = resource(data, schema=schema, dshape=dshape, columns=columns)
+    def __init__(self, data, dshape=None, name=None, fields=None, columns=None,
+            schema=None, **kwargs):
+        if isinstance(data, _strtypes):
+            data = resource(data, schema=schema, dshape=dshape,
+                    columns=columns, **kwargs)
+        if columns:
+            warnings.warn("columns kwarg deprecated.  Use fields instead",
+                          DeprecationWarning)
+        if columns and not fields:
+            fields = columns
         if schema and dshape:
             raise ValueError("Please specify one of schema= or dshape= keyword"
                     " arguments")
@@ -66,27 +73,21 @@ class Table(Symbol):
             dshape = var * schema
         if dshape and isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        if dshape and not isdimension(dshape[0]):
-            dshape = var * dshape
         if not dshape:
             dshape = discover(data)
             types = None
-            if isinstance(dshape[1], Tuple):
-                columns = columns or list(range(len(dshape[1].dshapes)))
+            if isinstance(dshape.measure, Tuple) and fields:
                 types = dshape[1].dshapes
-            if isinstance(dshape[1], Record):
-                columns = columns or dshape[1].names
-                types = dshape[1].types
-            if isinstance(dshape[1], Fixed):
-                types = (dshape[2],) * int(dshape[1])
-            if not types:
-                types = datashape.dshape(dshape[-1])
-            if not columns:
-                raise TypeError("Could not infer column names from data. "
-                                "Please specify column names with `columns=` "
-                                "keyword")
-
-            dshape = dshape[0] * datashape.dshape(Record(list(zip(columns, types))))
+                schema = Record(list(zip(fields, types)))
+                dshape = DataShape(*(dshape.shape + (schema,)))
+            elif isscalar(dshape.measure) and fields:
+                types = (dshape.measure,) * int(dshape[-2])
+                schema = Record(list(zip(fields, types)))
+                dshape = DataShape(*(dshape.shape + (schema,)))
+            elif isrecord(dshape.measure) and fields:
+                types = dshape.measure.types
+                schema = Record(list(zip(fields, types)))
+                dshape = DataShape(*(dshape.shape + (schema,)))
 
         self.dshape = datashape.dshape(dshape)
 
@@ -101,7 +102,7 @@ class Table(Symbol):
 
         self._name = name or next(names)
 
-    def resources(self):
+    def _resources(self):
         return {self: self.data}
 
     @property
@@ -112,15 +113,21 @@ class Table(Symbol):
         for slot, arg in zip(self.__slots__, state):
             setattr(self, slot, arg)
 
+def Table(*args, **kwargs):
+    """ Deprecated, see Data instead """
+    warnings.warn("Table is deprecated, use Data instead",
+                  DeprecationWarning)
+    return Data(*args, **kwargs)
 
-@dispatch(Table, dict)
+
+@dispatch(Data, dict)
 def _subs(o, d):
     return o
 
 
 @dispatch(Expr)
 def compute(expr):
-    resources = expr.resources()
+    resources = expr._resources()
     if not resources:
         raise ValueError("No data resources found")
     else:
@@ -129,7 +136,7 @@ def compute(expr):
 
 def concrete_head(expr, n=10):
     """ Return head of computed expression """
-    if not expr.resources():
+    if not expr._resources():
         raise ValueError("Expression does not contain data resources")
     if iscollection(expr.dshape):
         head = expr.head(n + 1)
@@ -145,7 +152,7 @@ def concrete_head(expr, n=10):
 
 
 def expr_repr(expr, n=10):
-    if not expr.resources():
+    if not expr._resources():
         return str(expr)
 
     result = concrete_head(expr, n)
@@ -160,8 +167,18 @@ def expr_repr(expr, n=10):
         return repr(result) # pragma: no cover
 
 
-def expr_html(expr, n=10):
-    return concrete_head(expr).to_html()
+@dispatch(DataFrame)
+def to_html(df):
+    return df.to_html()
+
+@dispatch(Expr)
+def to_html(expr):
+    return to_html(concrete_head(expr))
+
+
+@dispatch(object)
+def to_html(o):
+    return repr(o)
 
 
 @dispatch(type, Expr)
@@ -200,6 +217,5 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-Expr.to_html = expr_html
-Expr._repr_html_ = expr_html
+Expr._repr_html_ = lambda self: to_html(self)
 Expr.__len__ = table_length

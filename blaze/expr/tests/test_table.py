@@ -96,10 +96,10 @@ def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.fields== ['name', 'amount']
 
-    assert eval(str(t['name'])) == t['name']
-    assert str(t['name']) == "t['name']"
+    assert eval(str(t.name)) == t.name
+    assert str(t.name) == "t.name"
     with pytest.raises(AttributeError):
-        t['name'].balance
+        t.name.balance
     with pytest.raises((NotImplementedError, ValueError)):
         getitem(t, set('balance'))
 
@@ -339,10 +339,9 @@ def test_traverse():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t in list(t._traverse())
 
-    expr = t[t['amount'] < 0]['name']
+    expr = t.amount.sum()
     trav = list(expr._traverse())
-    assert any(t['amount'].isidentical(x) for x in trav)
-    assert any((t['amount'] < 0).isidentical(x) for x in trav)
+    assert builtins.any(t.amount.isidentical(x) for x in trav)
 
 
 def test_unary_ops():
@@ -601,9 +600,9 @@ def test_map_without_any_info():
 
 def test_apply():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    s = Apply(sum, t['amount'], dshape='real')
-    r = Apply(sum, t['amount'], dshape='3 * real')
-    l = Apply(sum, t['amount'])
+    s = Apply(t['amount'], sum, dshape='real')
+    r = Apply(t['amount'], sum, dshape='3 * real')
+    l = Apply(t['amount'], sum)
     assert s.dshape == dshape('real')
     assert r.schema == dshape("float64")
 
@@ -624,22 +623,22 @@ def test_broadcast():
     b = t2['b']
     c = t2['c']
 
-    assert str(broadcast(Add, x, y).expr) == 'x + y'
+    assert str(broadcast(Add, x, y)._expr) == 'x + y'
     assert broadcast(Add, x, y)._child.isidentical(t)
 
     c1 = broadcast(Add, x, y)
     c2 = broadcast(Mult, x, z)
 
-    assert eval_str(broadcast(Eq, c1, c2).expr) == '(x + y) == (x * z)'
+    assert eval_str(broadcast(Eq, c1, c2)._expr) == '(x + y) == (x * z)'
     assert broadcast(Eq, c1, c2)._child.isidentical(t)
 
-    assert str(broadcast(Add, x, 1).expr) == 'x + 1'
+    assert str(broadcast(Add, x, 1)._expr) == 'x + 1'
 
-    assert str(x <= y) == "t['x'] <= t['y']"
-    assert str(x >= y) == "t['x'] >= t['y']"
-    assert str(x | y) == "t['x'] | t['y']"
-    assert str(x.__ror__(y)) == "t['y'] | t['x']"
-    assert str(x.__rand__(y)) == "t['y'] & t['x']"
+    assert str(x <= y) == "t.x <= t.y"
+    assert str(x >= y) == "t.x >= t.y"
+    assert str(x | y) == "t.x | t.y"
+    assert str(x.__ror__(y)) == "t.y | t.x"
+    assert str(x.__rand__(y)) == "t.y & t.x"
 
     with pytest.raises(ValueError):
         broadcast(Add, x, a)
@@ -654,9 +653,9 @@ def test_expr_child():
 def test_TableSymbol_printing_is_legible():
     accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
 
-    expr = (exp(accounts['balance'] * 10)) + accounts['id']
-    assert "exp(accounts['balance'] * 10)" in str(expr)
-    assert "+ accounts['id']" in str(expr)
+    expr = (exp(accounts.balance * 10)) + accounts['id']
+    assert "exp(accounts.balance * 10)" in str(expr)
+    assert "+ accounts.id" in str(expr)
 
 
 def test_merge():
@@ -664,7 +663,7 @@ def test_merge():
     p = TableSymbol('p', '{amount:int}')
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
-    new_amount = (accounts['balance'] * 1.5).label('new')
+    new_amount = (accounts.balance * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
     assert c.fields == ['name', 'balance', 'new']
@@ -790,14 +789,14 @@ def test_serializable():
 def test_table_coercion():
     from datetime import date
     t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
-    assert (t.amount + '10').expr.rhs == 10
+    assert (t.amount + '10')._expr.rhs == 10
 
-    assert (t.timestamp < '2014-12-01').expr.rhs == date(2014, 12, 1)
+    assert (t.timestamp < '2014-12-01')._expr.rhs == date(2014, 12, 1)
 
 
 def test_isnan():
     from blaze import isnan
-    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+    t = TableSymbol('t', '{name: string, amount: real, timestamp: ?date}')
 
     for expr in [t.amount.isnan(), ~t.amount.isnan()]:
         assert eval(str(expr)).isidentical(expr)
@@ -815,17 +814,17 @@ def test_broadcast_naming():
 
 def test_scalar_expr():
     t = TableSymbol('t', '{x: int64, y: int32, z: int64}')
-    x = t.x.expr
-    y = t.y.expr
+    x = t.x._expr
+    y = t.y._expr
     assert 'int64' in str(x.dshape)
     assert 'int32' in str(y.dshape)
 
-    expr = (t.x + 1).expr
+    expr = (t.x + 1)._expr
     assert expr._inputs[0].dshape == x.dshape
     assert expr._inputs[0].isidentical(x)
 
     t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
-    expr = (t.amount + 1).expr
+    expr = (t.amount + 1)._expr
     assert 'int64' in str(expr._inputs[0].dshape)
 
 
@@ -867,7 +866,7 @@ class TestRepr(object):
     def test_partial_lambda(self, t):
         expr = t.amount.map(partial(lambda x, y: x + y, 1))
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=partial(%s, 1), "
                      "_schema=None, _name0=None)" %
                      funcname('test_partial_lambda'))
@@ -875,7 +874,7 @@ class TestRepr(object):
     def test_lambda(self, t):
         expr = t.amount.map(lambda x: x)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=%s, _schema=None, _name0=None)" %
                      funcname('test_lambda'))
 
@@ -884,7 +883,7 @@ class TestRepr(object):
             return x + y
         expr = t.amount.map(partial(myfunc, 1))
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=partial(%s, 1), "
                      "_schema=None, _name0=None)" % funcname('test_partial',
                                                                 'myfunc'))
@@ -892,7 +891,7 @@ class TestRepr(object):
     def test_builtin(self, t):
         expr = t.amount.map(datetime.fromtimestamp)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=datetime.fromtimestamp, _schema=None,"
                      " _name0=None)")
 
@@ -901,7 +900,7 @@ class TestRepr(object):
             return x + 1
         expr = t.amount.map(myfunc)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], "
+        assert s == ("Map(_child=t.amount, "
                      "func=%s, _schema=None,"
                      " _name0=None)" % funcname('test_udf', 'myfunc'))
 
@@ -911,7 +910,7 @@ class TestRepr(object):
         f = partial(partial(myfunc, 2), 1)
         expr = t.amount.map(f)
         s = str(expr)
-        assert s == ("Map(_child=t['amount'], func=partial(partial(%s, 2), 1),"
+        assert s == ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
                      " _schema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
 
@@ -944,3 +943,6 @@ def test_columns_attribute_for_backwards_compatibility():
     t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
 
     assert t.columns == t.fields
+
+    assert 'columns' in dir(t)
+    assert 'columns' not in dir(t.name)

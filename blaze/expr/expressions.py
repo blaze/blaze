@@ -4,8 +4,9 @@ import toolz
 import datashape
 import functools
 from toolz import concat, memoize, partial
+import re
 
-from datashape import dshape, DataShape, Record, Var
+from datashape import dshape, DataShape, Record, Var, Mono
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
@@ -15,7 +16,7 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice']
+           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim']
 
 
 class Expr(Node):
@@ -82,7 +83,7 @@ class Expr(Node):
 
     def __dir__(self):
         result = dir(type(self))
-        if self.fields:
+        if isrecord(self.dshape.measure) and self.fields:
             result.extend(list(self.fields))
 
         d = toolz.merge(schema_methods(self.dshape.measure),
@@ -132,12 +133,14 @@ class Symbol(Expr):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
+        if isinstance(dshape, Mono) and not isinstance(dshape, DataShape):
+            dshape = DataShape(dshape)
         self.dshape = dshape
 
     def __str__(self):
         return self._name
 
-    def resources(self):
+    def _resources(self):
         return dict()
 
 
@@ -170,10 +173,13 @@ class Field(ElemWise):
     __slots__ = '_child', '_name'
 
     def __str__(self):
-        return "%s['%s']" % (self._child, self._name)
+        if re.match('^\w+$', self._name):
+            return '%s.%s' % (self._child, self._name)
+        else:
+            return "%s['%s']" % (self._child, self._name)
 
     @property
-    def expr(self):
+    def _expr(self):
         return Symbol(self._name, datashape.DataShape(self.dshape.measure))
 
     @property
@@ -276,7 +282,7 @@ class Selection(Expr):
 
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
-    >>> deadbeats = accounts[accounts['amount'] < 0]
+    >>> deadbeats = accounts[accounts.amount < 0]
     """
     __slots__ = '_child', 'predicate'
 
@@ -320,10 +326,10 @@ class Label(ElemWise):
 
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 
-    >>> (accounts['amount'] * 100)._name
+    >>> (accounts.amount * 100)._name
     'amount'
 
-    >>> (accounts['amount'] * 100).label('new_amount')._name
+    >>> (accounts.amount * 100).label('new_amount')._name
     'new_amount'
 
     See Also
@@ -348,6 +354,8 @@ class Label(ElemWise):
             raise ValueError("Column Mismatch: %s" % key)
 
 def label(expr, lab):
+    if expr._name == lab:
+        return expr
     return Label(expr, lab)
 label.__doc__ = Label.__doc__
 
@@ -362,7 +370,7 @@ class ReLabel(ElemWise):
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
     dshape("{ name : string, amount : int32 }")
-    >>> accounts.relabel({'amount': 'balance'}).schema
+    >>> accounts.relabel(amount='balance').schema
     dshape("{ name : string, balance : int32 }")
 
     See Also
@@ -380,8 +388,14 @@ class ReLabel(ElemWise):
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self._child.dshape.measure.parameters[0]]))
 
+    def __str__(self):
+        return '%s.relabel(%s)' % (self._child, ', '.join('%s="%s"' % l for l
+            in self.labels))
 
-def relabel(child, labels):
+
+def relabel(child, labels=None, **kwargs):
+    labels = labels or dict()
+    labels = toolz.merge(labels, kwargs)
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):
@@ -403,11 +417,11 @@ class Map(ElemWise):
     >>> from datetime import datetime
 
     >>> t = Symbol('t', 'var * {price: real, time: int64}')  # times as integers
-    >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
+    >>> datetimes = t.time.map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
 
-    >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
+    >>> datetimes = t.time.map(datetime.utcfromtimestamp,
     ...                           schema='{time: datetime}')
 
     See Also
@@ -424,7 +438,7 @@ class Map(ElemWise):
         else:
             raise NotImplementedError("Schema of mapped column not known.\n"
                     "Please specify datashape keyword in .map method.\n"
-                    "Example: t['columnname'].map(function, 'int64')")
+                    "Example: t.columnname.map(function, 'int64')")
 
     def label(self, name):
         assert isscalar(self.dshape.measure)
@@ -456,16 +470,16 @@ class Apply(Expr):
     --------
 
     >>> t = Symbol('t', 'var * {name: string, amount: int}')
-    >>> h = Apply(hash, t)  # Hash value of resultant table
+    >>> h = Apply(t, hash)  # Hash value of resultant table
 
     Optionally provide extra datashape information
 
-    >>> h = Apply(hash, t, dshape='real')
+    >>> h = Apply(t, hash, dshape='real')
 
     Apply brings a function within the expression tree.
     The following transformation is often valid
 
-    Before ``compute(Apply(f, expr), ...)``
+    Before ``compute(Apply(expr, f), ...)``
     After  ``f(compute(expr, ...)``
 
     See Also
@@ -475,7 +489,7 @@ class Apply(Expr):
     """
     __slots__ = '_child', 'func', '_dshape'
 
-    def __init__(self, func, child, dshape=None):
+    def __init__(self, child, func, dshape=None):
         self._child = child
         self.func = func
         self._dshape = dshape
@@ -508,8 +522,13 @@ def shape(expr):
 
     >>> Symbol('s', '3 * 5 * int32').shape
     (3, 5)
+
+    Works on anything discoverable
+
+    >>> shape([[1, 2], [3, 4]])
+    (2, 2)
     """
-    s = list(expr.dshape.shape)
+    s = list(discover(expr).shape)
     for i, elem in enumerate(s):
         try:
             s[i] = int(elem)

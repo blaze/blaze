@@ -27,7 +27,7 @@ countless other projects.
 Presentations
 -------------
 
-* [See previous presentations about Blaze](http://blaze.pydata.org/presentations)
+* `See previous presentations about Blaze`_
 
 
 Under Development
@@ -43,13 +43,13 @@ Index
 .. toctree::
    :maxdepth: 1
 
-   install
    overview
    quickstart
-   examples
-   data
    expressions
    backends
+   uri
+   interactivity
+   install
    datashape
    server
    api
@@ -62,3 +62,5 @@ Older Versions
 Older versions of these documents can be found here_.
 
 .. _here: ../
+
+.. _`See previous presentations about Blaze`: http://blaze.pydata.org/presentations

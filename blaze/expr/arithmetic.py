@@ -3,13 +3,13 @@ from __future__ import absolute_import, division, print_function
 import operator
 from toolz import first
 import numpy as np
-from datashape import dshape
+from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar
 from datashape import coretypes as ct
 
 from .core import parenthesize, eval_str
-from .expressions import Expr
+from .expressions import Expr, shape
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
@@ -32,6 +32,37 @@ class BinOp(Expr):
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
 
+
+def maxvar(L):
+    """
+
+    >>> maxvar([1, 2, var])
+    Var()
+
+    >>> maxvar([1, 2, 3])
+    3
+    """
+    if var in L:
+        return var
+    else:
+        return max(L)
+
+
+def maxshape(shapes):
+    """
+
+    >>> maxshape([(10, 1), (1, 10), ()])
+    (10, 10)
+    """
+    shapes = [shape for shape in shapes if shape]
+    if not shapes:
+        return ()
+    if len(set(map(len, shapes))) != 1:
+        raise ValueError("Only support arithmetic on expressions with equal "
+                "number of dimensions.")
+    return tuple(map(maxvar, zip(*shapes)))
+
+
 class UnaryOp(Expr):
     __slots__ = '_child',
 
@@ -49,10 +80,11 @@ class UnaryOp(Expr):
 class Arithmetic(BinOp):
     """ Super class for arithmetic operators like add or mul """
     _dtype = 'real'
+
     @property
     def dshape(self):
         # TODO: better inference.  e.g. int + int -> int
-        return dshape(self._dtype)
+        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) + (self._dtype,)))
 
 
 class Add(Arithmetic):
@@ -205,10 +237,8 @@ def _rmod(self, other):
     return Mod(scalar_coerce(self.dshape, other), self)
 
 
-class Relational(BinOp):
-    @property
-    def dshape(self):
-        return dshape('bool')
+class Relational(Arithmetic):
+    _dtype = 'bool'
 
 
 class Eq(Relational):
@@ -259,7 +289,7 @@ class Not(UnaryOp):
 
     @property
     def dshape(self):
-        return dshape('bool')
+        return DataShape(*(shape(self._child) + ('bool',)))
 
 
 def _eq(self, other):

@@ -16,9 +16,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> # Server code, run this once.  Leave running.
 
    >>> from blaze import *
-   >>> csv = CSV('examples/data/iris.csv')
-   >>> csv.schema
-   dshape("{ sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }")
+   >>> csv = resource('blaze/examples/data/iris.csv')
    >>> Table(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -160,10 +158,9 @@ do work for us
    # Client code, run this in a separate process from the Server
 
    from blaze import *
-   from blaze.server import ExprClient
-   ec = ExprClient('http://localhost:6363', 'iris')
+   c = Client('http://localhost:6363', 'iris')
 
-   t = Table(ec)
+   t = Table(c)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -177,13 +174,13 @@ do work for us
    9            4.9          3.1           1.5          0.1  Iris-setosa
    ...
 
-   by(t, t.species, min=t.petal_length.min(), max=t.petal_length.max())
+   by(t.species, min=t.petal_length.min(), max=t.petal_length.max())
               species  max  min
    0   Iris-virginica  6.9  4.5
    1      Iris-setosa  1.9  1.0
    2  Iris-versicolor  5.1  3.0
 
-We interact on the client machine through the ``ExprClient`` data object but
+We interact on the client machine through the ``Client`` data object but
 computations on this object cause communications through the web API, resulting
 in seemlessly interactive remote computation.
 

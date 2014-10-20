@@ -1,4 +1,8 @@
-<a href='https://coveralls.io/r/ContinuumIO/blaze'><img src='https://coveralls.io/repos/ContinuumIO/blaze/badge.png' alt='Coverage Status' /></a>
+[![Build
+Status](https://travis-ci.org/ContinuumIO/blaze.png)](https://travis-ci.org/ContinuumIO/blaze)
+[![Coverage
+Status](https://coveralls.io/repos/ContinuumIO/blaze/badge.png)](https://coveralls.io/r/ContinuumIO/blaze)
+
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
 </p>
@@ -14,9 +18,9 @@ Example
 Blaze separates the computations that we want to perform:
 
 ```Python
->>> accounts = TableSymbol('accounts', '{id: int, name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {id: int, name: string, amount: int}')
 
->>> deadbeats = accounts[accounts['amount'] < 0]['name']
+>>> deadbeats = accounts[accounts.amount < 0].name
 ```
 
 From the representation of data

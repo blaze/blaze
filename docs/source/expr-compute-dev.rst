@@ -14,28 +14,31 @@ Blaze represents expressions as Python objects.  Classes include
 
 - **Symbol**: leaf expression, ``t``
 - **Projection**: subset of columns, ``t[['name', 'amount']]``
-- **Selection**: subset of rows ``t[t['amount'] < 0]``
-- **Field**: single column of table or field of record dataset t['name']
-- **Broadcast**: a scalar expression broadcast to a collection, ``t['amount'] + 1``
-- **Join**: join two tables on shared columns, ``join(t, s, 'id')``
-- **Reduction**: perform a sum or min or max on a table, ``t['amount'].sum()``
-- **By**: split-apply-combine operation, by(t['name'], ``t['amount'].sum())``
-- **Also**: ``Sort, Distinct, Head, Label, Map, Merge``
+- **Selection**: subset of rows ``t[t.amount < 0]``
+- **Field**: single column of data or field of record dataset ``t.name``
+- **Broadcast**: a scalar expression broadcast to a collection, ``t.amount + 1``
+- **Join**: join two expressions on shared fields , ``join(t, s, 'id')``
+- **Reduction**: perform a sum or min or max on a collection, ``t.amount.sum()``
+- **By**: split-apply-combine operation, ``by(t.name, total=t.amount.sum())``
+- **Also**: ``Sort, Distinct, Head, Label, Map, Merge, ...``
 
 In each case an operation (like ``Selection``) is a Python class.  Each
 expression defines a fixed set of fields in the ``__slots__`` attribute
 
 .. code-block:: python
 
+   class Selection(Expr):
+       __slots__ = '_child', 'predicate'
+
    class Field(ElemWise):
-       __slots__ = 'child', 'fieldname'
+       __slots__ = '_child', 'fieldname'
 
 
 To create a node in the tree explicitly we create a Python object of this class
 
 .. code-block:: python
 
-   >>> from blaze import *
+   >>> from blaze.expr import *
    >>> t = Symbol('t', 'var * {id: int, name: string, amount: int}')
    >>> amounts = Field(t, 'amount')
 
@@ -77,7 +80,8 @@ Blaze expressions adhere to the following properties:
     ``Join`` class has an analagous ``join`` function that should be used by
     users.  Same with the internal ``By`` class as the user-level ``by``
     function.
-4.  They can compute their datashape ``dshape``.
+4.  They can compute their datashape ``.dshape`` given the datashape of their
+    children and their arguments.
 
 
 Organization
@@ -116,7 +120,7 @@ and a mapping of Symbols to data like the following:
 
 .. code-block:: python
 
-   >>> d = {t: data}
+   >>> namespace = {t: data}
 
 then we need to evaluate the intent of the expression on the data.  We do this
 in a step-by-step system outlined by various ``compute`` functions.  The user
@@ -124,18 +128,19 @@ experience is as follows
 
 .. code-block:: python
 
-   >>> list(compute(deadbeats, d))
+   >>> from blaze import compute
+   >>> list(compute(deadbeats, namespace))
    ['Bob']
 
 But internally ``compute`` traverses our expression from the leaves (like
 ``t``) on up, transforming ``data`` as it goes.  At each step it looks at a
-node in the Blaze expression graph like
+node in the Blaze expression graph like the following:
 
 .. code-block:: python
 
-   >>> selection_t = t[t['amount'] < 0]
+   >>> selection_t = t[t.amount < 0]
 
-and transforms the data appropriately, like
+and transforms the data appropriately, like the following:
 
 .. code-block:: python
 

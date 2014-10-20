@@ -6,13 +6,13 @@ from .data.sql import SQL, dispatch
 from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
 from .data.sql import SQL, dispatch
 from .compatibility import basestring
-from .api.resource import resource
+from .resource import resource
 from toolz import first
 
 
 import sqlalchemy as sa
 
-__all__ = ['compute_up', 'SQL']
+__all__ = 'SQL',
 
 
 @dispatch((Field, Projection, Expr, UnaryOp), SQL)
