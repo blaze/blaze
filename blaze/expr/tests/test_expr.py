@@ -48,3 +48,9 @@ def test_label():
     assert e._name == 'e'
     assert label(e, 'foo')._name == 'foo'
     assert label(e, 'e').isidentical(e)
+
+
+def test_fields_with_spaces():
+    e = Symbol('e', '{x: int, "a b": int}')
+    assert isinstance(e['a b'], Field)
+    assert 'a b' not in dir(e)
