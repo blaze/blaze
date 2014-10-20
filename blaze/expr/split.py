@@ -1,3 +1,41 @@
+"""
+Expression splitting for chunked computation
+
+To evaluate an expression on a large dataset we may need to chunk that dataset
+into pieces and evaluate on each of the pieces individually.  This module
+contains logic to break up an expression-to-be-evaluated-on-the-entire-array
+into
+
+1.  An expression to be evaluated on each chunk of the data
+2.  An expression to be evaluated on the concatenated intermediate results
+
+As an example, consider counting the number of non-null elements in a large
+list.  We have the following recipe
+
+1.  Break the large collection into chunks, each of which fits comfortably into
+    memory
+2.  For each chunk, call compute chunk.count()
+3.  Gather all of these results into a single list (which hopefully fits in
+    memory)
+4.  for this aggregate, compute aggregate.sum()
+
+And so, given this expression
+
+    expr -> expr.count()
+
+We needed the following expressions
+
+    chunk -> chunk.count()
+    agg -> agg.sum()
+
+This module performs this transformation for a wide array of chunkable
+expressions.  It supports elementwise operations, reductions,
+split-apply-combine, and selections.  It notably does not support sorting,
+joining, or slicing.
+
+If explicit chunksizes are given it can also reason about the size and shape of
+the intermediate aggregate.  It can also do this in N-Dimensions.
+"""
 from __future__ import absolute_import, division, print_function
 
 from .core import *
