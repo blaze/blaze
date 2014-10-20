@@ -5,7 +5,7 @@ import blaze
 from collections import Iterator
 from flask import Flask, request, jsonify, json
 from dynd import nd
-from cytoolz import first
+from cytoolz import first, merge, valmap
 from functools import partial, wraps
 from blaze import into, compute
 from blaze.compute import compute_up
@@ -265,4 +265,31 @@ def comp(datasets, name):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
+                    'data': result})
+
+
+
+@route('/compute.json', methods=['POST', 'PUT', 'GET'])
+def compserver(datasets):
+    if request.headers['content-type'] != 'application/json':
+        return ("Expected JSON data", 404)
+    try:
+        data = json.loads(request.data)
+    except ValueError:
+        return ("Bad JSON.  Got %s " % request.data, 404)
+
+    ns = valmap(discover, datasets)
+    if 'namespace' in data:
+        ns = merge(ns, data['namespace'])
+
+    expr = from_tree(data['expr'], namespace=ns)
+
+
+    compute_ns = dict((Symbol(name, ns[name]), datasets[name])
+                        for name in datasets)
+    result = compute(expr, compute_ns)
+    if iscollection(expr.dshape):
+        result = into(list, result)
+
+    return jsonify({'datashape': str(expr.dshape),
                     'data': result})

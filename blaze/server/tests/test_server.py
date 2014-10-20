@@ -7,7 +7,7 @@ from datetime import datetime
 from pandas import DataFrame
 
 from blaze.utils import example
-from blaze import discover, Symbol, by, CSV, compute
+from blaze import discover, Symbol, by, CSV, compute, join, into
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.index import emit_index
 
@@ -83,7 +83,6 @@ def test_from_tree_is_robust_to_unnecessary_namespace():
 
     tree = to_tree(expr)  # don't use namespace
 
-    assert from_tree(tree, {'t': t}) is 0
     assert from_tree(tree, {'t': t}).isidentical(expr)
 
 
@@ -170,3 +169,20 @@ def test_compute_column_wise(iris_server):
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
     assert list(map(tuple, result)) == list(map(tuple, expected))
+
+
+def test_multi_expression_compute():
+    a = Symbol('accounts', discover(accounts))
+    c = Symbol('cities', discover(cities))
+
+    expr = join(a, c)
+
+    resp = test.post('/compute.json',
+                     data=json.dumps({'expr': to_tree(expr)}),
+                     content_type='application/json')
+
+    assert 'OK' in resp.status
+    result = json.loads(resp.data)['data']
+    expected = compute(expr, {a: accounts, c: cities})
+
+    assert list(map(tuple, result))== into(list, expected)
