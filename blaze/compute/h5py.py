@@ -42,7 +42,6 @@ def compute_down(expr, data, **kwargs):
     The expression must contain some sort of Reduction.  Both the intermediate
     result and the final result are assumed to fit into memory
     """
-    Pulls a chunk into memory,
     leaf = expr._leaves()[0]
     if not any(isinstance(node, Reduction) for node in path(expr, leaf)):
         raise MDNotImplementedError()
