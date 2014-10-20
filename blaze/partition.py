@@ -2,13 +2,19 @@ from .dispatch import dispatch
 
 import numpy as np
 from math import ceil
+import h5py
+import toolz
 
-@dispatch(np.ndarray, object)
+Array = (np.ndarray, h5py.Dataset)
+
+
+
+@dispatch(Array, object)
 def partition_get(data, part, blockshape=None):
     return data[part]
 
 
-@dispatch(np.ndarray, object, object)
+@dispatch(Array, object, object)
 def partition_set(data, part, value, blockshape=None):
     data[part] = value
     return data
@@ -57,7 +63,7 @@ def slicesnd(shape, blockshape):
                                      for l in local]
 
 
-@dispatch(np.ndarray)
+@dispatch(Array)
 def partitions(data, blockshape=None):
     return slicesnd(data.shape, blockshape)
 
@@ -71,6 +77,6 @@ def flatten(x):
     [1, 2, 3, 4]
     """
     if isinstance(x[0], list):
-        return list(concat(x))
+        return list(toolz.concat(x))
     else:
         return x
