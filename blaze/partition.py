@@ -16,7 +16,7 @@ def partition_get(data, part, blockshape=None):
 
 @dispatch(Array, object, object)
 def partition_set(data, part, value, blockshape=None):
-    data[part] = value
+    data[part] = value.squeeze()
     return data
 
 

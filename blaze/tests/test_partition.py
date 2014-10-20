@@ -25,9 +25,18 @@ def test_partition_get():
 
 def test_partition_set():
     x = np.arange(24).reshape(4, 6)
-    partition_set(x, (slice(0, 2), slice(0, 2)), np.array([[1, 1], [1, 1]]))
-
+    partition_set(x,
+                  (slice(0, 2), slice(0, 2)), np.array([[1, 1], [1, 1]]),
+                  blockshape=(2, 2))
     assert (x[:2, :2] == 1).all()
+
+
+def test_partition_set_1d():
+    x = np.arange(24).reshape(4, 6)
+    partition_set(x,
+                  (slice(0, 4), 0), np.array([[1], [1], [1], [1]]),
+                  blockshape=(4, 1))
+    assert (x[:4, 0] == 1).all()
 
 
 def test_partitions():
