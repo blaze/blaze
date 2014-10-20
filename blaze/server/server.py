@@ -255,8 +255,10 @@ def comp(datasets, name):
         return ("Dataset %s not found" % name, 404)
 
     t = Symbol(name, discover(dset))
+    namespace = data.get('namespace', dict())
+    namespace[name] = t
 
-    expr = from_tree(data['expr'], namespace={name: t})
+    expr = from_tree(data['expr'], namespace=namespace)
 
     result = compute(expr, dset)
     if iscollection(expr.dshape):

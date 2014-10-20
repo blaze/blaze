@@ -7,7 +7,7 @@ from datetime import datetime
 from pandas import DataFrame
 
 from blaze.utils import example
-from blaze import discover, TableSymbol, by, CSV, compute
+from blaze import discover, Symbol, by, CSV, compute
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.index import emit_index
 
@@ -36,12 +36,12 @@ def test_bad_responses():
 
 
 def test_to_from_json():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     assert from_tree(to_tree(t)).isidentical(t)
 
 
 def test_to_tree():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
     expected = {'op': 'sum',
                 'args': [{'op': 'Field',
@@ -61,7 +61,7 @@ def test_to_tree():
 
 
 def test_to_from_tree_namespace():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     expr = t.name
 
     tree = to_tree(expr, names={t: 't'})
@@ -72,7 +72,7 @@ def test_to_from_tree_namespace():
 
 
 def test_compute():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     expr = t.amount.sum()
     query = {'expr': to_tree(expr)}
     expected = 300
@@ -108,9 +108,26 @@ def iris_server():
 iris = CSV(example('iris.csv'))
 
 
+def test_compute_with_variable_in_namespace(iris_server):
+    test = iris_server
+    t = Symbol('t', iris.dshape)
+    pl = Symbol('pl', 'float32')
+    expr = t[t.petal_length > pl].species
+    tree = to_tree(expr, {pl: 'pl'})
+
+    blob = json.dumps({'expr': tree, 'namespace': {'pl': 5}})
+    resp = test.post('/compute/iris.json', data=blob,
+                     content_type='application/json')
+
+    assert 'OK' in resp.status
+    result = json.loads(resp.data)['data']
+    expected = list(compute(expr._subs({pl: 5}), {t: iris}))
+    assert result == expected
+
+
 def test_compute_by_with_summary(iris_server):
     test = iris_server
-    t = TableSymbol('t', iris.dshape)
+    t = Symbol('t', iris.dshape)
     expr = by(t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
@@ -124,7 +141,7 @@ def test_compute_by_with_summary(iris_server):
 
 def test_compute_column_wise(iris_server):
     test = iris_server
-    t = TableSymbol('t', iris.dshape)
+    t = Symbol('t', iris.dshape)
     subexpr = ((t.petal_width / 2 > 0.5) &
                (t.petal_length / 2 > 0.5))
     expr = t[subexpr]
