@@ -35,3 +35,19 @@ def test_datetime_literals():
     f = lambdify([t], t.when > '2000-01-01')
     assert f((1, 0, 3, datetime.datetime(2000, 1, 2))) == True
     assert f((1, 0, 3, datetime.datetime(1999, 1, 2))) == False
+
+
+def test_broadcast_collect():
+    t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
+
+    expr = t.distinct()
+    expr = expr.x + 2*expr.y
+    expr = expr.distinct()
+
+    result = broadcast_collect(expr)
+
+    expected = t.distinct()
+    expected = broadcast(expected.x + 2*expected.y, [expected])
+    expected = expected.distinct()
+
+    assert result.isidentical(expected)
