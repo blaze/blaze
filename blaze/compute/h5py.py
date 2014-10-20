@@ -28,6 +28,21 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Expr, h5py.Dataset)
 def compute_down(expr, data, **kwargs):
+    """ Compute expressions on H5Py datasets by operating on chunks
+
+    This uses blaze.expr.split to break a full-array-computation into a
+    per-chunk computation and a on-aggregate computation.
+
+    This uses blaze.partition to pick out chunks from the h5py dataset, uses
+    compute(numpy) to compute on each chunk and then uses blaze.partition to
+    aggregate these (hopefully smaller) intermediate results into a local
+    numpy array.  It then performs a second operation (again given by
+    blaze.expr.split) on this intermediate aggregate
+
+    The expression must contain some sort of Reduction.  Both the intermediate
+    result and the final result are assumed to fit into memory
+    """
+    Pulls a chunk into memory,
     leaf = expr._leaves()[0]
     if not any(isinstance(node, Reduction) for node in path(expr, leaf)):
         raise MDNotImplementedError()
@@ -50,6 +65,7 @@ def compute_down(expr, data, **kwargs):
 
     # For each partition, compute chunk->chunk_expr
     # Insert into intermediate
+    # This could be parallelized
     for d, i in zip(flatten(data_partitions), flatten(int_partitions)):
         chunk_data = partition_get(data, d, blockshape=chunksize)
         result = compute(chunk_expr, {chunk: chunk_data})
