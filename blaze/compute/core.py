@@ -70,14 +70,17 @@ def top_to_bottom(d, expr):
     if (hasattr(expr, '_leaves') and compute_down.resolve(
             (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr._leaves()))):
         leaves = [d[leaf] for leaf in expr._leaves()]
-        return compute_down(expr, *leaves)
-    else:
-        # Compute children of this expression
-        children = ([top_to_bottom(d, child) for child in expr._inputs]
-                    if hasattr(expr, '_inputs') else [])
+        try:
+            return compute_down(expr, *leaves)
+        except NotImplementedError:
+            pass
 
-        # Compute this expression given the children
-        return compute_up(expr, *children, scope=d)
+    # Compute children of this expression
+    children = ([top_to_bottom(d, child) for child in expr._inputs]
+                if hasattr(expr, '_inputs') else [])
+
+    # Compute this expression given the children
+    return compute_up(expr, *children, scope=d)
 
 
 def bottom_up(d, expr):
