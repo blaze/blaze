@@ -19,6 +19,18 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim']
 
 
+def isvalid_identifier(s):
+    """
+
+    >>> isvalid_identifier('Hello')
+    True
+    >>> isvalid_identifier('Hello world')
+    False
+    >>> isvalid_identifier('Helloworld!')
+    False
+    """
+    return not not re.match('^\w+$', s)
+
 class Expr(Node):
     """
     Symbolic expression of a computation
@@ -90,7 +102,7 @@ class Expr(Node):
                         dshape_methods(self.dshape))
         result.extend(list(d))
 
-        return sorted(set(result))
+        return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
         try:
