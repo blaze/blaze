@@ -82,6 +82,7 @@ class Client(object):
 
         return dshape(data[self.dataname])
 
+
 def ExprClient(*args, **kwargs):
     import warnings
     warnings.warn("Deprecated use `Client` instead", DeprecationWarning)
@@ -99,9 +100,9 @@ def compute_down(expr, ec):
     from ..api import Data
     from ..api import into
     from pandas import DataFrame
-    tree = to_tree(expr)
+    tree = to_tree(expr, {expr._leaves()[0]: ec.dataname})
 
-    r = requests.get('%s/compute/%s.json' % (ec.url, ec.dataname),
+    r = requests.get('%s/compute.json' % ec.url,
                      data = json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 

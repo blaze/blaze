@@ -16,8 +16,8 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> # Server code, run this once.  Leave running.
 
    >>> from blaze import *
-   >>> csv = resource('blaze/examples/data/iris.csv')
-   >>> Table(csv)
+   >>> csv = CSV('blaze/examples/data/iris.csv')
+   >>> Data(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -55,7 +55,7 @@ Interacting with the Web Server from the Client
 ===============================================
 
 Computation is now available on this server at
-``hostname:6363/compute/iris.json``.  To communicate the computation to be done
+``hostname:6363/compute.json``.  To communicate the computation to be done
 we pass Blaze expressions in JSON format through the request.  See the examples
 below.
 
@@ -66,30 +66,28 @@ We can use standard command line tools to interact with this web service::
 
    $ curl \
        -H "Content-Type: application/json" \
-       -d '{"expr": {"op": "Column", "args": ["iris", "species"]}}' \
-       localhost:6363/compute/iris.json
+       -d '{"expr": {"op": "Field", "args": ["iris", "species"]}}' \
+       localhost:6363/compute.json
 
    {
      "data": [
-         "setosa",
-         "setosa",
+         "Iris-setosa",
+         "Iris-setosa",
          ...
          ],
      "datashape": "var * { species : string }",
-     "name": "iris"
    }
 
    $ curl \
        -H "Content-Type: application/json" \
        -d  '{"expr": {"op": "sum", \
-                      "args": [{"op": "Column", \
-                                 "args": ["iris", "petal_Length"]}]}}' \
-       localhost:6363/compute/iris.json
+                      "args": [{"op": "Field", \
+                                "args": ["iris", "petal_Length"]}]}}' \
+       localhost:6363/compute.json
 
    {
      "data": 563.8000000000004,
      "datashape": "{ petal_length_sum : float64 }",
-     "name": "iris"
    }
 
 
@@ -98,7 +96,7 @@ can help you to build them.
 
 
 Using the Python Requests Library
----------------------------------f
+---------------------------------
 
 First we repeat the same experiment as before, this time using the Python
 ``requests`` library instead of the command line tool ``curl``.
@@ -111,17 +109,17 @@ First we repeat the same experiment as before, this time using the Python
    import requests
 
    query = {'expr': {'op': 'sum',
-                     'args': [{'op': 'Column',
+                     'args': [{'op': 'Field',
                                'args': ['iris', 'petal_length']}]}}
 
-   r = requests.get('http://localhost:6363/compute/iris.json',
+   r = requests.get('http://localhost:6363/compute.json',
                    data=json.dumps(query),
                    headers={'Content-Type': 'application/json'})
 
    json.loads(r.content)
-      {u'data': 563.8000000000004,
-       u'datashape': u'{ petal_length_sum : float64 }',
-       u'name': u'iris'}
+
+  {u'data': 563.8000000000004,
+   u'datashape': u'{ petal_length_sum : float64 }'}
 
 Now we use Blaze to generate the query programmatically
 
@@ -129,9 +127,9 @@ Now we use Blaze to generate the query programmatically
 
    >>> from blaze import *
 
-   >>> # Build a TableSymbol like our served iris data
-   >>> schema = "{ sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }"  # matching schema to csv file
-   >>> t = TableSymbol('t', schema)
+   >>> # Build a Symbol like our served iris data
+   >>> dshape= "var * { sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }"  # matching schema to csv file
+   >>> t = Symbol('t', dshape)
    >>> expr = t.petal_length.sum()
 
    >>> from blaze.server import to_tree
@@ -160,7 +158,9 @@ do work for us
    from blaze import *
    c = Client('http://localhost:6363', 'iris')
 
-   t = Table(c)
+   t = Data(c)
+   t
+
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -174,7 +174,8 @@ do work for us
    9            4.9          3.1           1.5          0.1  Iris-setosa
    ...
 
-   by(t.species, min=t.petal_length.min(), max=t.petal_length.max())
+   by(t.species, min=t.petal_length.min(),
+                 max=t.petal_length.max())
               species  max  min
    0   Iris-virginica  6.9  4.5
    1      Iris-setosa  1.9  1.0
