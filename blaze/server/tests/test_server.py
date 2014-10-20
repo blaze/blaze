@@ -43,6 +43,7 @@ def test_bad_responses():
 def test_to_from_json():
     t = Symbol('t', 'var * {name: string, amount: int}')
     assert from_tree(to_tree(t)).isidentical(t)
+    assert from_tree(to_tree(t.amount + 1)).isidentical(t.amount + 1)
 
 
 def test_to_tree():
@@ -74,6 +75,16 @@ def test_to_from_tree_namespace():
 
     new = from_tree(tree, namespace={'t': t})
     assert new.isidentical(expr)
+
+
+def test_from_tree_is_robust_to_unnecessary_namespace():
+    t = Symbol('t', 'var * {name: string, amount: int32}')
+    expr = t.amount + 1
+
+    tree = to_tree(expr)  # don't use namespace
+
+    assert from_tree(tree, {'t': t}) is 0
+    assert from_tree(tree, {'t': t}).isidentical(expr)
 
 
 def test_compute():
