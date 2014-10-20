@@ -59,16 +59,16 @@ def compute_down(expr, data, **kwargs):
     intermediate = np.empty(shape=shape, dtype=dtype)
 
     # Compute partitions
-    data_partitions = partitions(data, blockshape=chunksize)
-    int_partitions = partitions(intermediate, blockshape=chunk_expr.shape)
+    data_partitions = partitions(data, chunksize=chunksize)
+    int_partitions = partitions(intermediate, chunksize=chunk_expr.shape)
 
     # For each partition, compute chunk->chunk_expr
     # Insert into intermediate
     # This could be parallelized
     for d, i in zip(flatten(data_partitions), flatten(int_partitions)):
-        chunk_data = partition_get(data, d, blockshape=chunksize)
+        chunk_data = partition_get(data, d, chunksize=chunksize)
         result = compute(chunk_expr, {chunk: chunk_data})
-        partition_set(intermediate, i, result, blockshape=chunk_expr.shape)
+        partition_set(intermediate, i, result, chunksize=chunk_expr.shape)
 
     # Compute on the aggregate
     return compute(agg_expr, {agg: intermediate})

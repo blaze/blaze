@@ -41,12 +41,12 @@ import toolz
 Array = (np.ndarray, h5py.Dataset)
 
 @dispatch(Array, object)
-def partition_get(data, part, blockshape=None):
+def partition_get(data, part, chunksize=None):
     return data[part]
 
 
 @dispatch(Array, object, object)
-def partition_set(data, part, value, blockshape=None):
+def partition_set(data, part, value, chunksize=None):
     data[part] = value.squeeze()
     return data
 
@@ -76,7 +76,7 @@ def tuplepack(x):
         return (x,)
 
 
-def slicesnd(shape, blockshape):
+def slicesnd(shape, chunksize):
     """
 
     >>> slicesnd((4, 4), (2, 2)) # doctest: +SKIP
@@ -85,18 +85,18 @@ def slicesnd(shape, blockshape):
      [(slice(2, 4, None), slice(0, 2, None)),
       (slice(2, 4, None), slice(2, 4, None))]]
     """
-    local = slices1d(shape[0], blockshape[0])
-    if len(shape) == 1 and len(blockshape) == 1:
+    local = slices1d(shape[0], chunksize[0])
+    if len(shape) == 1 and len(chunksize) == 1:
         return local
     else:
-        other = slicesnd(shape[1:], blockshape[1:])
+        other = slicesnd(shape[1:], chunksize[1:])
         return [[(l,) + tuplepack(o) for o in other]
                                      for l in local]
 
 
 @dispatch(Array)
-def partitions(data, blockshape=None):
-    return slicesnd(data.shape, blockshape)
+def partitions(data, chunksize=None):
+    return slicesnd(data.shape, chunksize)
 
 
 def flatten(x):
