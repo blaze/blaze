@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .core import *
 from .expressions import *
+from .expressions import ndim, shape
 from .reductions import *
 from .split_apply_combine import *
 from .collections import *

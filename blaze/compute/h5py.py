@@ -16,6 +16,7 @@ from ..expr.split import split
 from .core import base, compute
 from ..dispatch import dispatch
 from ..api.into import into
+from ..partition import partitions, partition_get, partition_set
 
 __all__ = []
 

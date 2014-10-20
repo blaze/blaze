@@ -7,8 +7,6 @@ import toolz
 
 Array = (np.ndarray, h5py.Dataset)
 
-
-
 @dispatch(Array, object)
 def partition_get(data, part, blockshape=None):
     return data[part]

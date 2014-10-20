@@ -10,6 +10,8 @@ from blaze.expr import Symbol
 from datashape import discover
 from blaze.utils import tmpfile
 
+from blaze.compute.h5py import *
+
 
 def eq(a, b):
     return (a == b).all()
