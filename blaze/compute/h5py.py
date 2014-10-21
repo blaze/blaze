@@ -65,7 +65,7 @@ def compute_down(expr, data, **kwargs):
     # For each partition, compute chunk->chunk_expr
     # Insert into intermediate
     # This could be parallelized
-    for d, i in zip(flatten(data_partitions), flatten(int_partitions)):
+    for d, i in zip(data_partitions, int_partitions):
         chunk_data = partition_get(data, d, chunksize=chunksize)
         result = compute(chunk_expr, {chunk: chunk_data})
         partition_set(intermediate, i, result, chunksize=chunk_expr.shape)
