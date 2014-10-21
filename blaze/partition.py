@@ -106,8 +106,10 @@ def flatten(x):
     [1]
     >>> flatten([[1, 2], [3, 4]])
     [1, 2, 3, 4]
+    >>> flatten([[[1], [2]], [[3], [4]]])
+    [1, 2, 3, 4]
     """
     if isinstance(x[0], list):
-        return list(toolz.concat(x))
+        return list(toolz.concat(map(flatten, x)))
     else:
         return x
