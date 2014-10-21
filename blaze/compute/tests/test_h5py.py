@@ -69,5 +69,6 @@ def test_mixed(recdata):
     assert eq(compute(expr, recdata), compute(expr, rec))
 
 
-
-# TODO test_uneven_chunk_size
+def test_uneven_chunk_size(data):
+    assert eq(compute(s.sum(axis=1), data, chunksize=(7, 7)),
+              x.sum(axis=1))
