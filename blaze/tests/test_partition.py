@@ -1,4 +1,5 @@
 from blaze.partition import *
+from blaze.expr import shape
 
 import numpy as np
 
@@ -40,38 +41,35 @@ def test_partition_set_1d():
 
 
 def test_partitions():
-    assert partitions(x, chunksize=(1, 6)) == \
-            [[(i, slice(0, 6))] for i in range(4)]
-    assert partitions(x, chunksize=(4, 1)) == \
-            [[(slice(0, 4), i) for i in range(6)]]
-    assert partitions(x, chunksize=(2, 3)) == [
-            [(slice(0, 2), slice(0, 3)), (slice(0, 2), slice(3, 6))],
-            [(slice(2, 4), slice(0, 3)), (slice(2, 4), slice(3, 6))]]
-
-
-def dont_test_partitions_flat():
-    assert partitions(x, chunksize=(2, 3)) == [
+    assert list(partitions(x, chunksize=(1, 6))) == \
+            [(i, slice(0, 6)) for i in range(4)]
+    assert list(partitions(x, chunksize=(4, 1))) == \
+            [(slice(0, 4), i) for i in range(6)]
+    assert list(partitions(x, chunksize=(2, 3))) == [
             (slice(0, 2), slice(0, 3)), (slice(0, 2), slice(3, 6)),
             (slice(2, 4), slice(0, 3)), (slice(2, 4), slice(3, 6))]
 
 
-def test_slicesnd():
-    assert slicesnd((6, 4), (3, 2)) == \
-    [[(slice(0, 3, None), slice(0, 2, None)),
-      (slice(0, 3, None), slice(2, 4, None))],
-     [(slice(3, 6, None), slice(0, 2, None)),
-      (slice(3, 6, None), slice(2, 4, None))]]
+def dont_test_partitions_flat():
+    assert list(partitions(x, chunksize=(2, 3))) == [
+            (slice(0, 2), slice(0, 3)), (slice(0, 2), slice(3, 6)),
+            (slice(2, 4), slice(0, 3)), (slice(2, 4), slice(3, 6))]
 
 
 def test_uneven_partitions():
     x = np.arange(10*12).reshape(10, 12)
-    parts = partitions(x, chunksize=(7, 7))
+    parts = list(partitions(x, chunksize=(7, 7)))
 
-    assert len(parts) == 2
-    assert len(parts[0]) == 2
+    assert len(parts) == 2 * 2
 
-    assert parts == [[(slice(0,  7), slice(0, 7)), (slice(0,  7), slice(7, 12))],
-                     [(slice(7, 10), slice(0, 7)), (slice(7, 10), slice(7, 12))]]
+    assert parts == [(slice(0,  7), slice(0, 7)), (slice(0,  7), slice(7, 12)),
+                     (slice(7, 10), slice(0, 7)), (slice(7, 10), slice(7, 12))]
 
     x = np.arange(20*24).reshape(20, 24)
-    parts = partitions(x, chunksize=(7, 7))
+    parts = list(partitions(x, chunksize=(7, 7)))
+
+
+def test_3d_partitions():
+    x = np.arange(4*4*6).reshape(4, 4, 6)
+    parts = list(partitions(x, chunksize=(2, 2, 3)))
+    assert len(parts) == 2 * 2 * 2

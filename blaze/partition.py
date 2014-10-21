@@ -37,6 +37,7 @@ import numpy as np
 from math import ceil
 import h5py
 import toolz
+import itertools
 
 Array = (np.ndarray, h5py.Dataset)
 
@@ -70,33 +71,16 @@ def slices1d(n, k):
 
 
 def tuplepack(x):
-    if isinstance(x, tuple):
-        return x
+    if isinstance(x, (tuple, list)):
+        return tuple(x)
     else:
         return (x,)
 
 
-def slicesnd(shape, chunksize):
-    """
-
-    >>> slicesnd((4, 4), (2, 2)) # doctest: +SKIP
-    [[(slice(0, 2, None), slice(0, 2, None)),
-      (slice(0, 2, None), slice(2, 4, None))]
-     [(slice(2, 4, None), slice(0, 2, None)),
-      (slice(2, 4, None), slice(2, 4, None))]]
-    """
-    local = slices1d(shape[0], chunksize[0])
-    if len(shape) == 1 and len(chunksize) == 1:
-        return local
-    else:
-        other = slicesnd(shape[1:], chunksize[1:])
-        return [[(l,) + tuplepack(o) for o in other]
-                                     for l in local]
-
-
 @dispatch(Array)
 def partitions(data, chunksize=None):
-    return slicesnd(data.shape, chunksize)
+    per_dim = map(slices1d, data.shape, chunksize)
+    return itertools.product(*per_dim)
 
 
 def flatten(x):
