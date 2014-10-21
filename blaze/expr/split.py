@@ -38,6 +38,11 @@ the intermediate aggregate.  It can also do this in N-Dimensions.
 """
 from __future__ import absolute_import, division, print_function
 
+from toolz import concat
+import datashape
+from datashape.predicates import isscalar
+from math import floor
+
 from .core import *
 from .expressions import *
 from .expressions import ndim, shape
@@ -45,8 +50,6 @@ from .reductions import *
 from .split_apply_combine import *
 from .collections import *
 from .table import *
-import datashape
-from datashape.predicates import isscalar
 from ..dispatch import dispatch
 
 good_to_split = (Reduction, Summary, By, Distinct)
@@ -257,3 +260,28 @@ def dimension_mul(a, b):
     if isinstance(b, Fixed):
         b = int(b)
     return int(a * b)
+
+
+def aggregate_shape(leaf, expr, chunk, chunk_expr):
+    """ The shape of the intermediate aggregate
+
+    >>> leaf = Symbol('leaf', '10 * 10 * int')
+    >>> expr = leaf.sum(axis=0)
+    >>> chunk = Symbol('chunk', '3 * 3 * int') # 3 does not divide 10
+    >>> chunk_expr = chunk.sum(axis=0, keepdims=1)
+
+    >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
+    (4, 10)
+    """
+
+    assert datashape.var not in list(concat(map(shape, [leaf, expr, chunk])))
+    numblocks = [int(floor(l / c)) for l, c in zip(leaf.shape, chunk.shape)]
+    last_chunk_shape = [l % c for l, c in zip(leaf.shape, chunk.shape)]
+
+    last_chunk = Symbol(chunk._name,
+                        DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
+    last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
+
+    return tuple(int(floor(l / c)) * ce + lce
+            for l, c, ce, lce
+            in zip(*map(shape, (leaf, chunk, chunk_expr, last_chunk_expr))))
