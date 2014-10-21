@@ -566,6 +566,24 @@ def test_datetime_access():
                 Series([1, 1, 1])).all()
 
 
+def test_datetime_unique_expr():
+    df = DataFrame({'name': ['Alice', 'Bob', 'Joe'],
+                'when': [datetime(2010, 1, 1, 1, 1, 1)] * 3,
+                'amount': [100, 200, 300],
+                'id': [1, 2, 3]})
+
+    t = Symbol('t', discover(df))
+
+    assert (compute(getattr(t.when, 'dayofweek'), df) == \
+            Series([4, 4, 4])).all()
+    assert (compute(getattr(t.when, 'week'), df) == \
+            Series([53, 53, 53])).all()
+    assert (compute(getattr(t.when, 'dayofyear'), df) == \
+            Series([1, 1, 1])).all()
+    assert (compute(getattr(t.when, 'quarter'), df) == \
+            Series([1, 1, 1])).all()
+
+
 def test_slice():
     assert (compute(t[0], df) == df.iloc[0]).all()
     assert (compute(t[2], df) == df.iloc[2]).all()
