@@ -393,7 +393,7 @@ def get_date_attr(s, attr):
         return getattr(pd.DatetimeIndex(s), attr)
 
 
-@dispatch(DateTime, Series)
+@dispatch((DateTime, DayOfWeek, Week, DayOfYear, Quarter), Series)
 def compute_up(expr, s, **kwargs):
     return get_date_attr(s, expr.attr)
 
