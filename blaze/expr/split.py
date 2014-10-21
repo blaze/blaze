@@ -51,6 +51,7 @@ from .split_apply_combine import *
 from .collections import *
 from .table import *
 from ..dispatch import dispatch
+from ..compatibility import builtins
 
 good_to_split = (Reduction, Summary, By, Distinct)
 can_split = good_to_split + (Selection, ElemWise)
@@ -116,10 +117,8 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
 
     if not agg:
-        blocks_shape = tuple(map(dimension_div, leaf.shape, chunk.shape))
-        agg_shape = tuple(map(dimension_mul, blocks_shape, shape(chunk_expr)))
+        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
-
         agg = Symbol('aggregate', agg_dshape)
 
     agg_expr = _split_agg(center, leaf=leaf, agg=agg)
@@ -273,15 +272,19 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)
     """
+    if datashape.var in concat(map(shape, [leaf, expr, chunk])):
+        return (datashape.var, ) * leaf.ndim
 
-    assert datashape.var not in list(concat(map(shape, [leaf, expr, chunk])))
     numblocks = [int(floor(l / c)) for l, c in zip(leaf.shape, chunk.shape)]
     last_chunk_shape = [l % c for l, c in zip(leaf.shape, chunk.shape)]
 
-    last_chunk = Symbol(chunk._name,
-                        DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
-    last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
+    if builtins.sum(last_chunk_shape) != 0:
+        last_chunk = Symbol(chunk._name,
+                            DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
+        last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
+        last_chunk_shape = last_chunk_expr.shape
+
 
     return tuple(int(floor(l / c)) * ce + lce
             for l, c, ce, lce
-            in zip(*map(shape, (leaf, chunk, chunk_expr, last_chunk_expr))))
+            in zip(leaf.shape, chunk.shape, chunk_expr.shape, last_chunk_shape))
