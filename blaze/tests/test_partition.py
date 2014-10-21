@@ -61,3 +61,17 @@ def test_slicesnd():
       (slice(0, 3, None), slice(2, 4, None))],
      [(slice(3, 6, None), slice(0, 2, None)),
       (slice(3, 6, None), slice(2, 4, None))]]
+
+
+def test_uneven_partitions():
+    x = np.arange(10*12).reshape(10, 12)
+    parts = partitions(x, chunksize=(7, 7))
+
+    assert len(parts) == 2
+    assert len(parts[0]) == 2
+
+    assert parts == [[(slice(0,  7), slice(0, 7)), (slice(0,  7), slice(7, 12))],
+                     [(slice(7, 10), slice(0, 7)), (slice(7, 10), slice(7, 12))]]
+
+    x = np.arange(20*24).reshape(20, 24)
+    parts = partitions(x, chunksize=(7, 7))
