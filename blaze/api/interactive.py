@@ -126,12 +126,12 @@ def _subs(o, d):
 
 
 @dispatch(Expr)
-def compute(expr):
+def compute(expr, **kwargs):
     resources = expr._resources()
     if not resources:
         raise ValueError("No data resources found")
     else:
-        return compute(expr, resources)
+        return compute(expr, resources, **kwargs)
 
 
 def concrete_head(expr, n=10):
