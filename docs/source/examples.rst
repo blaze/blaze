@@ -10,7 +10,8 @@ Combining separate, gzipped csv files.
 
 .. doctest::
 
-   >>> from blaze import *
+   >>> from blaze import into
+   >>> from pandas import DataFrame
    >>> into(DataFrame, 'blaze/examples/data/accounts_*.csv.gz')
       id     name  amount
    0   1    Alice     100
@@ -27,9 +28,9 @@ Split-Apply-Combine
 
 .. doctest::
 
-   >>> from blaze import *
+   >>> from blaze import SQL, Data, by
    >>> sql = SQL('sqlite:///blaze/examples/data/iris.db', 'iris')
-   >>> t = Table(sql)
+   >>> t = Data(sql)
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa

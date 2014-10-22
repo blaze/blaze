@@ -2,7 +2,7 @@
 
 >>> from blaze import *
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
@@ -71,9 +71,9 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._child[c].expr, lower_column(s.c.get(c)))
+    d = dict((t._child[c]._expr, lower_column(s.c.get(c)))
              for c in t._child.fields)
-    result = compute(t.expr, d)
+    result = compute(t._expr, d)
 
     s = copy(s)
     s.append_column(result)
@@ -82,9 +82,9 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    d = dict((t._child[c].expr, lower_column(s.c.get(c)))
+    d = dict((t._child[c]._expr, lower_column(s.c.get(c)))
              for c in t._child.fields)
-    return compute(t.expr, d)
+    return compute(t._expr, d)
 
 
 @dispatch(BinOp, ClauseElement, (ClauseElement, base))

@@ -30,7 +30,7 @@ Using MongoDB query language
 
 Using Blaze
 
->> t = Table(db.mydata)
+>> t = Data(db.mydata)
 >> t[t.amount < 0].name
     name
 0    Bob
@@ -59,7 +59,7 @@ import toolz
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Distinct, ElemWise, By,
-                    TableSymbol, Projection, Field, sum, min, max, Gt, Lt,
+                    Symbol, Projection, Field, sum, min, max, Gt, Lt,
                     Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
                     Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol
                     )
@@ -83,7 +83,7 @@ class MongoQuery(object):
     Parameters
     ----------
     coll: pymongo.collection.Collection
-        A single pymongo collection, holds a table
+        A single pymongo collection
     query: list of dicts
         A query to send to coll.aggregate
 
@@ -127,7 +127,7 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(Broadcast, MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append({'$project': {str(t.expr): compute_sub(t.expr)}})
+    return q.append({'$project': {str(t._expr): compute_sub(t._expr)}})
 
 
 binops = {'+': 'add',
@@ -180,7 +180,7 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(Selection, MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append({'$match': match(t.predicate.expr)})
+    return q.append({'$match': match(t.predicate._expr)})
 
 
 @dispatch(Like, MongoQuery)
@@ -222,7 +222,7 @@ def group_apply(expr):
     """
     Dictionary corresponding to apply part of split-apply-combine operation
 
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> group_apply(accounts.amount.sum())
     {'amount_sum': {'$sum': '$amount'}}
     """
@@ -254,7 +254,7 @@ def group_apply(expr):
                for name, c in zip(names, reducs)]
     key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
     query = dict((k, {key_getter(v): int(isinstance(v, count)) or
-                      compute_sub(v._child.expr)})
+                      compute_sub(v._child._expr)})
                  for k, v, z in values)
     return query
 

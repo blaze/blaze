@@ -22,22 +22,22 @@ def compute_up(c, x, **kwargs):
         return x[c._name]
     if not x.dtype.names and x.shape[1] == len(c._child.fields):
         return x[:, c._child.fields.index(c._name)]
-    raise NotImplementedError()
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(Projection, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if all(col in x.dtype.names for col in t.fields):
+    if x.dtype.names and all(col in x.dtype.names for col in t.fields):
         return x[t.fields]
     if not x.dtype.names and x.shape[1] == len(t._child.fields):
         return x[:, [t._child.fields.index(col) for col in t.fields]]
-    raise NotImplementedError()
+    raise NotImplementedError() # pragma: no cover
 
 
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t._child[c].expr, x[c]) for c in t._child.fields)
-    return compute(t.expr, d)
+    d = dict((t._child[c]._expr, x[c]) for c in t._child.fields)
+    return compute(t._expr, d)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
@@ -63,12 +63,6 @@ def compute_up(t, x, **kwargs):
 @dispatch(USub, np.ndarray)
 def compute_up(t, x, **kwargs):
     return -x
-
-
-@dispatch(Selection, np.ndarray)
-def compute_up(t, x, **kwargs):
-    predicate = compute(t.predicate, {t._child: x})
-    return x[predicate]
 
 
 @dispatch(count, np.ndarray)

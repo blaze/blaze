@@ -6,6 +6,7 @@ from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str, Expr
 from blaze.expr.optimize import lean_projection
 
+from collections import Iterator
 import datashape
 import bcolz
 import math
@@ -14,6 +15,7 @@ from .chunks import ChunkIndexable
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
+from ..api import into
 
 __all__ = ['bcolz']
 
@@ -25,16 +27,23 @@ def discover(data):
     return datashape.from_numpy(data.shape, data.dtype)
 
 
-@dispatch(Selection, (bcolz.ctable, bcolz.carray))
+@dispatch(Selection, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
         return compute_up(expr, data[:], **kwargs)
-    s = eval_str(expr.predicate.expr)
+    s = eval_str(expr.predicate._expr)
     try:
         return data.where(s)
-    except (NotImplementedError, NameError):
+    except (NotImplementedError, NameError, AttributeError):
         # numexpr may not be able to handle the predicate
-        return compute_up(expr, iter(data), **kwargs)
+        return compute_up(expr, into(Iterator, data), **kwargs)
+
+
+@dispatch(Selection, bcolz.ctable)
+def compute_up(expr, data, **kwargs):
+    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+        return compute_up(expr, data[:], **kwargs)
+    return compute_up(expr, into(Iterator, data), **kwargs)
 
 
 @dispatch(Head, (bcolz.carray, bcolz.ctable))

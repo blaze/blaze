@@ -3,9 +3,9 @@ Backends
 ========
 
 Blaze backends include projects like streaming Python, Pandas, SQLAlchemy,
-MongoDB, PyTables, and Spark.  A Blaze expression can run equally well on any
-of these backends, allowing developers to easily transition their computation
-to changing performance needs.
+MongoDB, PyTables, and Spark.  Most Blaze expressions can run well on any of
+these backends, allowing developers to easily transition their computation to
+changing performance needs.
 
 .. raw:: html
 
@@ -14,8 +14,10 @@ to changing performance needs.
 Existing Backends
 =================
 
-Streaming Python via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_
-----------------------------------------------------------------------------------------------------------------------------
+Streaming Python
+----------------
+
+ *via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_*
 
 Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit

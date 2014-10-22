@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableSymbol
+>>> from blaze.expr import Symbol
 >>> from blaze.compute.pandas import compute
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from pandas import DataFrame
@@ -33,7 +33,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol)
 from ..expr import UnaryOp, BinOp
-from ..expr import TableSymbol, common_subexpression
+from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
 from ..compatibility import _inttypes
 
@@ -52,8 +52,8 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
-    d = dict((t._child[c].expr, df[c]) for c in t._child.fields)
-    return compute(t.expr, d)
+    d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
+    return compute(t._expr, d)
 
 
 @dispatch(Broadcast, Series)
@@ -116,16 +116,6 @@ def compute_up(t, gb, **kwargs):
     return gb
 
 
-@dispatch(Reduction, (DataFrame, DataFrameGroupBy))
-def compute_up(t, df, **kwargs):
-    return getattr(df, t.symbol)()
-
-
-@dispatch((std, var), (DataFrame, DataFrameGroupBy))
-def compute_up(t, df, **kwargs):
-    return getattr(df, t.symbol)(ddof=t.unbiased)
-
-
 def post_reduction(result):
     # pandas may return an int, numpy scalar or non scalar here so we need to
     # program defensively so that things are JSON serializable
@@ -137,12 +127,18 @@ def post_reduction(result):
 
 @dispatch(Reduction, (Series, SeriesGroupBy))
 def compute_up(t, s, **kwargs):
-    return post_reduction(getattr(s, t.symbol)())
+    result = post_reduction(getattr(s, t.symbol)())
+    if t.keepdims:
+        result = Series([result], name=s.name)
+    return result
 
 
 @dispatch((std, var), (Series, SeriesGroupBy))
 def compute_up(t, s, **kwargs):
-    return post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
+    result = post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
+    if t.keepdims:
+        result = Series([result], name=s.name)
+    return result
 
 
 @dispatch(Distinct, DataFrame)
@@ -374,8 +370,11 @@ def compute_up(t, example, children, **kwargs):
 
 @dispatch(Summary, DataFrame)
 def compute_up(expr, data, **kwargs):
-    return Series(dict(zip(expr.fields, [compute(val, {expr._child: data})
-                                        for val in expr.values])))
+    values = [compute(val, {expr._child: data}) for val in expr.values]
+    if expr.keepdims:
+        return DataFrame([values], columns=expr.fields)
+    else:
+        return Series(dict(zip(expr.fields, values)))
 
 
 @dispatch(Like, DataFrame)

@@ -5,12 +5,13 @@ import blaze
 from collections import Iterator
 from flask import Flask, request, jsonify, json
 from dynd import nd
-from cytoolz import first
+from cytoolz import first, merge, valmap
 from functools import partial, wraps
-from blaze import into, compute, compute_up
+from blaze import into, compute
+from blaze.compute import compute_up
 from datashape.predicates import iscollection
-from ..api import discover, Table
-from ..expr import Expr, TableSymbol, Selection, Broadcast, Symbol
+from ..api import discover, Data
+from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify
 from .. import expr
 
@@ -77,147 +78,6 @@ def dataset(datasets):
     return jsonify(dict((k, str(discover(v))) for k, v in datasets.items()))
 
 
-@route('/data/<name>.json', methods=['POST', 'PUT', 'GET'])
-def data(datasets, name):
-    """ Basic indexing API
-
-    Allows remote indexing of datasets.  Takes indexing data as JSON
-
-    Takes requests like
-    Example
-    -------
-
-    For the following array:
-
-    [['Alice', 100],
-     ['Bob', 200],
-     ['Charlie', 300]]
-
-    schema = '{name: string, amount: int32}'
-
-    And the following
-
-    url: /data/table-name.json
-    POST-data: {'index': [{'start': 0, 'step': 3}, 'name']}
-
-    and returns responses like
-
-    {"name": "table-name",
-     "index": [0, "name"],
-     "datashape": "3 * string",
-     "data": ["Alice", "Bob", "Charlie"]}
-     """
-
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
-
-    try:
-        dset = datasets[name]
-    except KeyError:
-        return ("Dataset %s not found" % name, 404)
-
-    try:
-        index = parse_index(data['index'])
-    except ValueError:
-        return ("Bad index", 404)
-
-    try:
-        rv = dset[index]
-    except RuntimeError:
-        return ("Bad index: %s" % (str(index)), 404)
-
-    if isinstance(rv, Iterator):
-        rv = list(rv)
-
-    dshape = dset.dshape.subshape[index]
-    rv = json.loads(str(nd.format_json(nd.array(rv, type=str(dshape)),
-                                       tuple=True)))
-
-    response = {'name': name,
-                'index': data['index'],
-                'datashape': str(dshape),
-                'data': rv}
-
-    return jsonify(response)
-
-
-@route('/select/<name>.json', methods=['POST', 'PUT', 'GET'])
-def select(datasets, name):
-    """ Basic Selection API
-
-    Allows remote querying of datasets.  Takes query data as JSON
-
-    Takes requests like
-
-    Example
-    -------
-
-    For the following array:
-
-    [['Alice', 100],
-     ['Bob', 200],
-     ['Charlie', 300]]
-
-    schema = '{name: string, amount: int32}'
-
-    And the following
-
-    url: /select/table-name.json
-    POST-data: {'selection': 'amount >= 200',
-                'columns': 'name'}
-
-    and returns responses like
-
-    {"name": "table-name",
-     ...
-     "datashape": "2 * string",
-     "data": ["Bob", "Charlie"]}
-     """
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
-
-    try:
-        dset = datasets[name]
-    except KeyError:
-        return ("Dataset %s not found" % name, 404)
-    t = TableSymbol('t', dset.schema)
-    dtypes = dict((c, t[c].dshape.measure) for c in t.fields)
-
-    columns = data.get('columns', None)
-    if columns:
-        try:
-            columns = data['columns']
-        except ValueError:
-            return ("Bad columns", 404)
-    try:
-        select = exprify(data['selection'], dtypes)
-    except (ValueError, KeyError):
-        return ("Bad selection", 404)
-
-    expr = Selection(t, Broadcast(t, select))
-    if columns:
-        expr = expr[columns]
-    try:
-        rv = into([], compute(expr, dset))
-    except RuntimeError:
-        return ("Bad selection", 404)
-
-    return jsonify({'name': name,
-                    'columns': expr.fields,
-                    'selection': str(select),
-                    'datashape': str(expr.dshape),
-                    'data': rv})
-
-
-
 def to_tree(expr, names=None):
     """ Represent Blaze expression with core data structures
 
@@ -233,9 +93,9 @@ def to_tree(expr, names=None):
     Examples
     --------
 
-    >>> t = TableSymbol('t', '{x: int32, y: int32}')
+    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
     >>> to_tree(t) # doctest: +SKIP
-    {'op': 'TableSymbol',
+    {'op': 'Symbol',
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
 
 
@@ -245,7 +105,7 @@ def to_tree(expr, names=None):
          {'op': 'Column',
          'args': [
              {
-              'op': 'TableSymbol'
+              'op': 'Symbol'
               'args': ['t', 'var * { x : int32, y : int32 }', False]
              }
              'x']
@@ -253,14 +113,14 @@ def to_tree(expr, names=None):
      }
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
-    below we replace the ``TableSymbol`` node with the string ``'t'``.
+    below we replace the ``Symbol`` node with the string ``'t'``.
 
     >>> tree = to_tree(t.x, names={t: 't'})
     >>> tree # doctest: +SKIP
     {'op': 'Column', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
-    t['x']
+    t.x
 
     See Also
     --------
@@ -273,8 +133,8 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     elif isinstance(expr, Mono):
         return str(expr)
-    elif isinstance(expr, Table):
-        return to_tree(TableSymbol(expr._name, expr.schema), names)
+    elif isinstance(expr, Data):
+        return to_tree(Symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
                 'args': [to_tree(arg, names) for arg in expr._args]}
@@ -294,6 +154,8 @@ def expression_from_name(name):
     import blaze
     if hasattr(blaze, name):
         return getattr(blaze, name)
+    if hasattr(blaze.expr, name):
+        return getattr(blaze.expr, name)
     for signature, func in compute_up.funcs.items():
         try:
             if signature[0].__name__ == name:
@@ -317,10 +179,10 @@ def from_tree(expr, namespace=None):
     Examples
     --------
 
-    >>> t = TableSymbol('t', '{x: int32, y: int32}')
+    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
     >>> tree = to_tree(t)
     >>> tree # doctest: +SKIP
-    {'op': 'TableSymbol',
+    {'op': 'Symbol',
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
 
     >>> from_tree(tree)
@@ -333,7 +195,7 @@ def from_tree(expr, namespace=None):
          {'op': 'Field',
          'args': [
              {
-              'op': 'TableSymbol'
+              'op': 'Symbol'
               'args': ['t', 'var * { x : int32, y : int32 }', False]
              }
              'x']
@@ -341,17 +203,17 @@ def from_tree(expr, namespace=None):
      }
 
     >>> from_tree(tree)
-    sum(_child=t['x'], axis=(0,), keepdims=False)
+    sum(_child=t.x, axis=(0,), keepdims=False)
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
-    below we replace the ``TableSymbol`` node with the string ``'t'``.
+    below we replace the ``Symbol`` node with the string ``'t'``.
 
     >>> tree = to_tree(t.x, names={t: 't'})
     >>> tree # doctest: +SKIP
     {'op': 'Field', 'args': ['t', 'x']}
 
     >>> from_tree(tree, namespace={'t': t})
-    t['x']
+    t.x
 
 
     See Also
@@ -392,13 +254,43 @@ def comp(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
 
-    t = TableSymbol(name, discover(dset))
+    t = Symbol(name, discover(dset))
+    namespace = data.get('namespace', dict())
+    namespace[name] = t
 
-    expr = from_tree(data['expr'], namespace={name: t})
+    expr = from_tree(data['expr'], namespace=namespace)
 
     result = compute(expr, dset)
     if iscollection(expr.dshape):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
+                    'data': result})
+
+
+
+@route('/compute.json', methods=['POST', 'PUT', 'GET'])
+def compserver(datasets):
+    if request.headers['content-type'] != 'application/json':
+        return ("Expected JSON data", 404)
+    try:
+        data = json.loads(request.data)
+    except ValueError:
+        return ("Bad JSON.  Got %s " % request.data, 404)
+
+
+    tree_ns = dict((name, Symbol(name, discover(datasets[name])))
+                    for name in datasets)
+    if 'namespace' in data:
+        tree_ns = merge(tree_ns, data['namespace'])
+
+    expr = from_tree(data['expr'], namespace=tree_ns)
+
+    compute_ns = dict((Symbol(name, discover(datasets[name])), datasets[name])
+                        for name in datasets)
+    result = compute(expr, compute_ns)
+    if iscollection(expr.dshape):
+        result = into(list, result)
+
+    return jsonify({'datashape': str(expr.dshape),
                     'data': result})

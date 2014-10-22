@@ -7,137 +7,47 @@ from datetime import datetime
 from pandas import DataFrame
 
 from blaze.utils import example
-from blaze import discover, TableSymbol, by, CSV, compute
+from blaze import discover, Symbol, by, CSV, compute, join, into
 from blaze.server.server import Server, to_tree, from_tree
-from blaze.data.python import Python
 from blaze.server.index import emit_index
 
 
+accounts = DataFrame([['Alice', 100], ['Bob', 200]],
+                     columns=['name', 'amount'])
 
-accounts = Python([['Alice', 100], ['Bob', 200]],
-                  schema='{name: string, amount: int32}')
-
-df = DataFrame([['Alice', 100], ['Bob', 200]],
-               columns=['name', 'amount'])
-
-cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
-                  schema='{name: string, city: string}')
-
-pairs = Python([(1, 2), (2, 1), (3, 4), (4, 3)],
-               schema='{x: int, y: int}')
-
-times = Python([(1, datetime(2012, 1, 1, 12, 0, 0)),
-                (2, datetime(2013, 1, 1, 12, 0, 0))],
-               schema='{x: int, y: datetime}')
+cities = DataFrame([['Alice', 'NYC'], ['Bob', 'LA']],
+                   columns=['name', 'city'])
 
 server = Server(datasets={'accounts': accounts,
-                          'accounts_df': df,
-                          'cities': cities,
-                          'pairs': pairs,
-                          'times': times})
+                          'cities': cities})
 
 test = server.app.test_client()
 
 
-def test_full_response():
-    py_index = (slice(0, None), 'name')
-    json_index = [{'start': 0, 'stop': None}, 'name']
-
-    response = test.post('/data/accounts.json',
-                         data = json.dumps({'index': emit_index(py_index)}),
-                         content_type='application/json')
-
-    print(response.data)
-    assert json.loads(response.data) == \
-            {'name': 'accounts',
-             'datashape': "var * string",
-             'index': json_index,
-             'data': ['Alice', 'Bob']}
-
-
 def test_datasets():
     response = test.get('/datasets.json')
-    assert json.loads(response.data) == {'accounts': str(accounts.dshape),
-                                         'accounts_df': str(discover(df)),
-                                         'cities': str(cities.dshape),
-                                         'pairs': str(pairs.dshape),
-                                         'times': str(times.dshape)}
-
-
-def test_data():
-    pairs = [(0, ['Alice', 100]),
-             ((0, 0), 'Alice'),
-             ((0, 'name'), 'Alice'),
-             ((slice(0, None), 'name'), ['Alice', 'Bob'])]
-
-
-    for ind, expected in pairs:
-        index = {'index': emit_index(ind)}
-
-        response = test.post('/data/accounts.json',
-                             data = json.dumps(index),
-                             content_type='application/json')
-        assert 'OK' in response.status
-
-        if not json.loads(response.data)['data'] == expected:
-            print(json.loads(response.data)['data'])
-            print(expected)
-        assert json.loads(response.data)['data'] == expected
+    assert json.loads(response.data) == {'accounts': str(discover(accounts)),
+                                         'cities': str(discover(cities))}
 
 
 def test_bad_responses():
-
-    assert 'OK' not in test.post('/data/accounts.json',
+    assert 'OK' not in test.post('/compute/accounts.json',
                                  data = json.dumps(500),
                                  content_type='application/json').status
-    assert 'OK' not in test.post('/data/non-existent-table.json',
+    assert 'OK' not in test.post('/compute/non-existent-table.json',
                                  data = json.dumps(0),
                                  content_type='application/json').status
-    assert 'OK' not in test.post('/data/accounts.json').status
-
-
-def test_datetimes():
-    query = {'index': 1}
-    response = test.post('/data/times.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-
-    assert 'OK' in response.status
-    result = json.loads(response.data)['data']
-    assert result[0] == 2
-    assert '2013' in result[1]
-
-
-def test_selection():
-    query = {'selection': 'x > y'}
-    expected = [[2, 1], [4, 3]]
-
-    response = test.post('/select/pairs.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-    assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
-
-
-def test_selection_on_columns():
-    query = {'selection': 'city == "LA"',
-             'columns': 'name'}
-    expected = ['Bob']
-
-    response = test.post('/select/cities.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-    assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
+    assert 'OK' not in test.post('/compute/accounts.json').status
 
 
 def test_to_from_json():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     assert from_tree(to_tree(t)).isidentical(t)
+    assert from_tree(to_tree(t.amount + 1)).isidentical(t.amount + 1)
 
 
 def test_to_tree():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
     expected = {'op': 'sum',
                 'args': [{'op': 'Field',
@@ -157,7 +67,7 @@ def test_to_tree():
 
 
 def test_to_from_tree_namespace():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     expr = t.name
 
     tree = to_tree(expr, names={t: 't'})
@@ -167,13 +77,22 @@ def test_to_from_tree_namespace():
     assert new.isidentical(expr)
 
 
+def test_from_tree_is_robust_to_unnecessary_namespace():
+    t = Symbol('t', 'var * {name: string, amount: int32}')
+    expr = t.amount + 1
+
+    tree = to_tree(expr)  # don't use namespace
+
+    assert from_tree(tree, {'t': t}).isidentical(expr)
+
+
 def test_compute():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     expr = t.amount.sum()
     query = {'expr': to_tree(expr)}
     expected = 300
 
-    response = test.post('/compute/accounts_df.json',
+    response = test.post('/compute/accounts.json',
                          data = json.dumps(query),
                          content_type='application/json')
 
@@ -183,10 +102,10 @@ def test_compute():
 
 def test_compute_with_namespace():
     query = {'expr': {'op': 'Field',
-                      'args': ['accounts_df', 'name']}}
+                      'args': ['accounts', 'name']}}
     expected = ['Alice', 'Bob']
 
-    response = test.post('/compute/accounts_df.json',
+    response = test.post('/compute/accounts.json',
                          data = json.dumps(query),
                          content_type='application/json')
 
@@ -201,14 +120,29 @@ def iris_server():
     return server.app.test_client()
 
 
-@pytest.fixture
-def iris():
-    return CSV(example('iris.csv'))
+iris = CSV(example('iris.csv'))
 
 
-def test_compute_by_with_summary(iris_server, iris):
+def test_compute_with_variable_in_namespace(iris_server):
     test = iris_server
-    t = TableSymbol('t', iris.dshape)
+    t = Symbol('t', iris.dshape)
+    pl = Symbol('pl', 'float32')
+    expr = t[t.petal_length > pl].species
+    tree = to_tree(expr, {pl: 'pl'})
+
+    blob = json.dumps({'expr': tree, 'namespace': {'pl': 5}})
+    resp = test.post('/compute/iris.json', data=blob,
+                     content_type='application/json')
+
+    assert 'OK' in resp.status
+    result = json.loads(resp.data)['data']
+    expected = list(compute(expr._subs({pl: 5}), {t: iris}))
+    assert result == expected
+
+
+def test_compute_by_with_summary(iris_server):
+    test = iris_server
+    t = Symbol('t', iris.dshape)
     expr = by(t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
@@ -220,9 +154,9 @@ def test_compute_by_with_summary(iris_server, iris):
     assert result == list(map(list, expected))
 
 
-def test_compute_column_wise(iris_server, iris):
+def test_compute_column_wise(iris_server):
     test = iris_server
-    t = TableSymbol('t', iris.dshape)
+    t = Symbol('t', iris.dshape)
     subexpr = ((t.petal_width / 2 > 0.5) &
                (t.petal_length / 2 > 0.5))
     expr = t[subexpr]
@@ -235,3 +169,20 @@ def test_compute_column_wise(iris_server, iris):
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
     assert list(map(tuple, result)) == list(map(tuple, expected))
+
+
+def test_multi_expression_compute():
+    a = Symbol('accounts', discover(accounts))
+    c = Symbol('cities', discover(cities))
+
+    expr = join(a, c)
+
+    resp = test.post('/compute.json',
+                     data=json.dumps({'expr': to_tree(expr)}),
+                     content_type='application/json')
+
+    assert 'OK' in resp.status
+    result = json.loads(resp.data)['data']
+    expected = compute(expr, {a: accounts, c: cities})
+
+    assert list(map(tuple, result))== into(list, expected)
