@@ -480,4 +480,4 @@ def test_delayed_bad_datashape():
 def test_delayed_bad_datashape_with_bad_datetimes():
     with filetext('a,b\n1,10-10-2000\n1,10-10-2000') as fn:
         with pytest.raises(ValueError):
-            csv = CSV(fn, nrows_discovery=2)
+            csv = CSV(fn)

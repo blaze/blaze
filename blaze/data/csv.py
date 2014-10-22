@@ -11,6 +11,7 @@ from ..dispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, pluck
 from toolz import concat, get, pipe, identity, take
 from toolz.curried import map, get
+from dynd import nd
 
 import pandas as pd
 
@@ -324,8 +325,9 @@ class CSV(DataDescriptor):
 
         if 'w' not in mode:
             try:
-                coerce(schema, list(take(10, self._iter(chunksize=10))))
-            except ValueError as e:
+                nd.array(list(take(10, self._iter(chunksize=10))),
+                         dtype=schema)
+            except TypeError as e:
                 raise ValueError("Automatic datashape discovery failed\n"
                         "Discovered the following datashape: %s\n"
                         "But DyND generated the following error: %s\n"
