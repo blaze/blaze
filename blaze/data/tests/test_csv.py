@@ -468,9 +468,16 @@ def test_string_dataset(tmpcsv):
 
 
 def test_delayed_bad_datashape():
-    with filetext('a,b\n1,1\n1,2\n1,3.14') as fn:
+    text = 'a,b\n' + '\n'.join(['1,2']*20) + '\n1,3.14'
+    with filetext(text) as fn:
         csv = CSV(fn, nrows_discovery=2)
         assert csv.schema == dshape('{a: int64, b: int64}')
 
         with pytest.raises(ValueError):
             list(csv)
+
+
+def test_delayed_bad_datashape_with_bad_datetimes():
+    with filetext('a,b\n1,10-10-2000\n1,10-10-2000') as fn:
+        with pytest.raises(ValueError):
+            csv = CSV(fn, nrows_discovery=2)
