@@ -334,7 +334,7 @@ class CSV(DataDescriptor):
                         "Consider providing type hints using "
                         "typehints={'column-name': 'type'}\n"
                         "like typehints={'start-time': 'string'}"
-                        % (schema, e.message))
+                        % (schema, e.args[0]))
 
 
     def get_py(self, key):

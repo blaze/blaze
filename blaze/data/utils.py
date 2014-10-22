@@ -33,7 +33,7 @@ def coerce(dshape, item):
                 "DyND failed to parse data with the following datashape: %s\n"
                 "Produced the following error: %s\n"
                 "Consider providing a more general datashape with "
-                "keyword dshape=" % (dshape, e.message))
+                "keyword dshape=" % (dshape, e.args[0]))
 
 
 @dispatch(_strtypes, Iterator)
