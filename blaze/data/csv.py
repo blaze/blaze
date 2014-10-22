@@ -327,7 +327,7 @@ class CSV(DataDescriptor):
             try:
                 nd.array(list(take(10, self._iter(chunksize=10))),
                          dtype=str(schema))
-            except TypeError as e:
+            except (ValueError, TypeError) as e:
                 raise ValueError("Automatic datashape discovery failed\n"
                         "Discovered the following datashape: %s\n"
                         "But DyND generated the following error: %s\n"
