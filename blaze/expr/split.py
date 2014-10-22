@@ -166,7 +166,6 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
                    **dict((name, split(leaf, val, chunk=chunk,
                                        keepdims=False)[0][1])
                             for name, val in zip(expr.fields, expr.values)))
-    return chunk_expr
 
 
 @dispatch(Summary)
@@ -272,7 +271,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)
     """
-    if datashape.var in concat(map(shape, [leaf, expr, chunk])):
+    if datashape.var in concat(map(shape, [leaf, expr, chunk, chunk_expr])):
         return (datashape.var, ) * leaf.ndim
 
     numblocks = [int(floor(l / c)) for l, c in zip(leaf.shape, chunk.shape)]
@@ -287,4 +286,4 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
 
     return tuple(int(floor(l / c)) * ce + lce
             for l, c, ce, lce
-            in zip(leaf.shape, chunk.shape, chunk_expr.shape, last_chunk_shape))
+            in zip(shape(leaf), shape(chunk), shape(chunk_expr), last_chunk_shape))

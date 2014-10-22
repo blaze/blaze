@@ -159,3 +159,13 @@ def test_nd_chunk_axis_args():
 
     assert agg.shape == (6, 16)
     assert agg_expr.isidentical(agg.sum(axis=0))
+
+
+def test_agg_shape_in_tabular_case_with_explicit_chunk():
+    t = Symbol('t', '1000 * {name: string, amount: int, id: int}')
+    c = Symbol('chunk', 100 * t.schema)
+
+    expr = by(t.name, total=t.amount.sum())
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, expr, chunk=c)
+
+    assert agg.dshape == dshape('var * {name: string, total: int}')
