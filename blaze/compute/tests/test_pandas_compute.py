@@ -565,15 +565,6 @@ def test_datetime_access():
         assert (compute(getattr(t.when, attr), df) == \
                 Series([1, 1, 1])).all()
 
-
-def test_datetime_unique_expr():
-    df = DataFrame({'name': ['Alice', 'Bob', 'Joe'],
-                'when': [datetime(2010, 1, 1, 1, 1, 1)] * 3,
-                'amount': [100, 200, 300],
-                'id': [1, 2, 3]})
-
-    t = Symbol('t', discover(df))
-
     assert (compute(getattr(t.when, 'dayofweek'), df) == \
             Series([4, 4, 4])).all()
     assert (compute(getattr(t.when, 'week'), df) == \

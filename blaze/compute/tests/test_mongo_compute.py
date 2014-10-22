@@ -334,6 +334,16 @@ def test_datetime_access(date_data):
 
     py_data = into(list, date_data) # a python version of the collection
 
-    for attr in ['day', 'minute', 'second', 'year']:
+    for attr in ['day', 'minute', 'second', 'year', 'year', 'month', 'day',
+            'hour', 'minute', 'second', 'millisecond']:
         assert list(compute(getattr(t.when, attr), date_data)) == \
                 list(compute(getattr(t.when, attr), py_data))
+
+
+def test_datetime_extended_methods(date_data):
+    t = Symbol('t',
+            'var * {amount: float64, id: int64, name: string, when: datetime}')
+
+    assert list(compute(getattr(t.when, 'week'), date_data)) == [0,0,0]
+    assert list(compute(getattr(t.when, 'dayofyear'), date_data)) == [1,1,1]
+    assert list(compute(getattr(t.when, 'dayofweek'), date_data)) == [6,6,6]
