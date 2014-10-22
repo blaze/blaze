@@ -326,7 +326,7 @@ class CSV(DataDescriptor):
         if 'w' not in mode:
             try:
                 nd.array(list(take(10, self._iter(chunksize=10))),
-                         dtype=schema)
+                         dtype=str(schema))
             except TypeError as e:
                 raise ValueError("Automatic datashape discovery failed\n"
                         "Discovered the following datashape: %s\n"
