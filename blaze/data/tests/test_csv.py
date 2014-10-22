@@ -465,3 +465,12 @@ def test_string_dataset(tmpcsv):
     t = Table(csv)
     x = into(list, t)
     assert x == [('a', 'b', 2.0), ('c', '1999', 3.0), ('d', '3.0', 4.0)]
+
+
+def test_delayed_bad_datashape():
+    with filetext('a,b\n1,1\n1,2\n1,3.14') as fn:
+        csv = CSV(fn, nrows_discovery=2)
+        assert csv.schema == dshape('{a: int64, b: int64}')
+
+        with pytest.raises(ValueError):
+            list(csv)
