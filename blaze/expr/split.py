@@ -281,7 +281,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
         last_chunk = Symbol(chunk._name,
                             DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
         last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
-        last_chunk_shape = last_chunk_expr.shape
+        last_chunk_shape = shape(last_chunk_expr)
 
 
     return tuple(int(floor(l / c)) * ce + lce
