@@ -283,8 +283,6 @@ class Slice(Expr):
         else:
             return '%s[%s]' % (self._child, self._index)
 
-    __repr__ = __str__
-
 
 class Selection(Expr):
     """ Filter elements of expression based on predicate
@@ -556,7 +554,7 @@ def ndim(expr):
     >>> Symbol('s', '3 * var * int32').ndim
     2
     """
-    return len(expr.shape)
+    return len(shape(expr))
 
 
 dshape_method_list.extend([
