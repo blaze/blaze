@@ -22,7 +22,7 @@ __all__ = ['bcolz']
 COMFORTABLE_MEMORY_SIZE = 1e9
 
 
-@dispatch(bcolz.ctable)
+@dispatch((bcolz.carray, bcolz.ctable))
 def discover(data):
     return datashape.from_numpy(data.shape, data.dtype)
 

@@ -1,14 +1,57 @@
+"""
+Expression splitting for chunked computation
+
+To evaluate an expression on a large dataset we may need to chunk that dataset
+into pieces and evaluate on each of the pieces individually.  This module
+contains logic to break up an expression-to-be-evaluated-on-the-entire-array
+into
+
+1.  An expression to be evaluated on each chunk of the data
+2.  An expression to be evaluated on the concatenated intermediate results
+
+As an example, consider counting the number of non-null elements in a large
+list.  We have the following recipe
+
+1.  Break the large collection into chunks, each of which fits comfortably into
+    memory
+2.  For each chunk, call compute chunk.count()
+3.  Gather all of these results into a single list (which hopefully fits in
+    memory)
+4.  for this aggregate, compute aggregate.sum()
+
+And so, given this expression
+
+    expr -> expr.count()
+
+We needed the following expressions
+
+    chunk -> chunk.count()
+    agg -> agg.sum()
+
+This module performs this transformation for a wide array of chunkable
+expressions.  It supports elementwise operations, reductions,
+split-apply-combine, and selections.  It notably does not support sorting,
+joining, or slicing.
+
+If explicit chunksizes are given it can also reason about the size and shape of
+the intermediate aggregate.  It can also do this in N-Dimensions.
+"""
 from __future__ import absolute_import, division, print_function
+
+from toolz import concat
+import datashape
+from datashape.predicates import isscalar
+from math import floor
 
 from .core import *
 from .expressions import *
+from .expressions import ndim, shape
 from .reductions import *
 from .split_apply_combine import *
 from .collections import *
 from .table import *
-import datashape
-from datashape.predicates import isscalar
 from ..dispatch import dispatch
+from ..compatibility import builtins
 
 good_to_split = (Reduction, Summary, By, Distinct)
 can_split = good_to_split + (Selection, ElemWise)
@@ -74,10 +117,8 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
 
     if not agg:
-        blocks_shape = tuple(map(dimension_div, leaf.shape, chunk.shape))
-        agg_shape = tuple(map(dimension_mul, blocks_shape, shape(chunk_expr)))
+        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
-
         agg = Symbol('aggregate', agg_dshape)
 
     agg_expr = _split_agg(center, leaf=leaf, agg=agg)
@@ -125,7 +166,6 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
                    **dict((name, split(leaf, val, chunk=chunk,
                                        keepdims=False)[0][1])
                             for name, val in zip(expr.fields, expr.values)))
-    return chunk_expr
 
 
 @dispatch(Summary)
@@ -218,3 +258,32 @@ def dimension_mul(a, b):
     if isinstance(b, Fixed):
         b = int(b)
     return int(a * b)
+
+
+def aggregate_shape(leaf, expr, chunk, chunk_expr):
+    """ The shape of the intermediate aggregate
+
+    >>> leaf = Symbol('leaf', '10 * 10 * int')
+    >>> expr = leaf.sum(axis=0)
+    >>> chunk = Symbol('chunk', '3 * 3 * int') # 3 does not divide 10
+    >>> chunk_expr = chunk.sum(axis=0, keepdims=1)
+
+    >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
+    (4, 10)
+    """
+    if datashape.var in concat(map(shape, [leaf, expr, chunk, chunk_expr])):
+        return (datashape.var, ) * leaf.ndim
+
+    numblocks = [int(floor(l / c)) for l, c in zip(leaf.shape, chunk.shape)]
+    last_chunk_shape = [l % c for l, c in zip(leaf.shape, chunk.shape)]
+
+    if builtins.sum(last_chunk_shape) != 0:
+        last_chunk = Symbol(chunk._name,
+                            DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
+        last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
+        last_chunk_shape = shape(last_chunk_expr)
+
+
+    return tuple(int(floor(l / c)) * ce + lce
+            for l, c, ce, lce
+            in zip(shape(leaf), shape(chunk), shape(chunk_expr), last_chunk_shape))

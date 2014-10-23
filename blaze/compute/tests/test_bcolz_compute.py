@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-from datashape import discover
+from datashape import discover, dshape
 bcolz = pytest.importorskip('bcolz')
 
 import numpy as np
@@ -20,6 +20,12 @@ t = Symbol('t', 'var * {a: int32, b: float64}')
 to = Symbol('to', 'var * {a: int32, b: float64}')
 bo = bcolz.ctable([[1, 2, 3], [1., 2., np.nan]],
                   names=['a', 'b'])
+
+
+def test_discover():
+    assert discover(b) == dshape('3 * {a: int64, b: float64}')
+    assert discover(b['a']) == dshape('3 * int64')
+
 
 def test_chunks():
     assert len(list(chunks(b, chunksize=2))) == 2
