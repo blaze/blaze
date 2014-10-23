@@ -633,7 +633,7 @@ def test_datetime_access():
     assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
 
 
-def test_unique_datetime_expressions():
+def test_extended_datetime_expressions():
     dates = list([[x, datetime(2000, x, 1, 1, 1, 1)] for x in range(1, 13)])
     s = Symbol('s', 'var * {id: int32, when: datetime}')
     assert list(compute(s.when.dayofweek, dates)) == [5, 1, 2, 5, 0, 3, 5, 1, 4,
