@@ -60,7 +60,7 @@ def compute_down(expr):
     return expr
 
 
-def top_to_bottom(d, expr):
+def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
@@ -68,16 +68,21 @@ def top_to_bottom(d, expr):
 
     # See if we have a direct computation path
     if (hasattr(expr, '_leaves') and compute_down.resolve(
-            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr._leaves()))):
+            (type(expr),) + tuple([type(d.get(leaf)) for leaf in expr._leaves()]))):
         leaves = [d[leaf] for leaf in expr._leaves()]
-        return compute_down(expr, *leaves)
-    else:
-        # Compute children of this expression
-        children = ([top_to_bottom(d, child) for child in expr._inputs]
+        try:
+            return compute_down(expr, *leaves, **kwargs)
+        except NotImplementedError:
+            pass
+
+    # Otherwise...
+    # Compute children of this expression
+    children = ([top_to_bottom(d, child, **kwargs)
+                    for child in expr._inputs]
                     if hasattr(expr, '_inputs') else [])
 
-        # Compute this expression given the children
-        return compute_up(expr, *children, scope=d)
+    # Compute this expression given the children
+    return compute_up(expr, *children, scope=d, **kwargs)
 
 
 def bottom_up(d, expr):
@@ -151,7 +156,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d):
+def compute(expr, d, **kwargs):
     """ Compute expression against data sources
 
     >>> t = Symbol('t', 'var * {name: string, balance: int}')
@@ -168,7 +173,7 @@ def compute(expr, d):
         expr4 = optimize(expr3, *[v for e, v in d2.items() if e in expr3])
     except NotImplementedError:
         expr4 = expr3
-    result = top_to_bottom(d2, expr4)
+    result = top_to_bottom(d2, expr4, **kwargs)
     return post_compute(expr4, result, d2)
 
 
