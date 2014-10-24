@@ -67,7 +67,7 @@ def path_split(leaf, expr):
     sum(t.amount)
 
     >>> path_split(t, t.amount.distinct().sort())
-    Distinct(_child=t.amount)
+    distinct(t.amount)
     """
     last = None
     for node in list(path(expr, leaf))[:-1][::-1]:
