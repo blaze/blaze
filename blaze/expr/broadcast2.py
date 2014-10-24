@@ -4,8 +4,10 @@ import itertools
 from toolz import curry
 
 from .expressions import *
-from .expressions import Field
+from .expressions import Field, Map
 from .arithmetic import maxshape, Arithmetic, Add
+from .math import Math
+from .datetime import DateTime
 
 __all__ = ['broadcast', 'Broadcast', 'scalar_symbols', 'broadcast_collect']
 
@@ -86,10 +88,6 @@ def broadcast_collect(broadcastable_types, expr):
                 for child in expr._inputs]
     return expr._subs(dict(zip(expr._inputs, children)))
 
-
-
-
-
 @curry
 def leaves_of_type(types, expr):
     """ Leaves of an expression skipping all operations of type ``types``
@@ -98,3 +96,32 @@ def leaves_of_type(types, expr):
         return set([expr])
     else:
         return set.union(*map(leaves_of_type(types), expr._inputs))
+
+
+TableBroadcastable = (Field, Arithmetic, Map, DateTime, Math)
+def broadcast_table_collect(expr):
+    if isinstance(expr, Symbol):
+        return expr
+    if not isinstance(expr, TableBroadcastable) or ndim(expr) == 0:
+        children = map(broadcast_table_collect, expr._inputs)
+        return expr._subs(dict(zip(expr._inputs, children)))
+
+    leaves = _table_find_leaves(expr)
+    return broadcast(expr, leaves)
+
+def _table_find_leaves(expr):
+    """ Find extent of broadcast table optimization
+
+    helper to broadcast_table_collect
+    """
+    if not isinstance(expr, TableBroadcastable):
+        return set([expr])
+    leaves = set()
+    for child in expr._inputs:
+        if isinstance(child, TableBroadcastable) and child.shape == expr.shape:
+            leaves |= _table_find_leaves(child)
+        else:
+            leaves.add(child)
+    return leaves
+
+
