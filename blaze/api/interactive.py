@@ -58,7 +58,7 @@ class Data(Symbol):
 
     def __init__(self, data, dshape=None, name=None, fields=None, columns=None,
             schema=None, **kwargs):
-        if isinstance(data, str):
+        if isinstance(data, _strtypes):
             data = resource(data, schema=schema, dshape=dshape,
                     columns=columns, **kwargs)
         if columns:
@@ -126,12 +126,12 @@ def _subs(o, d):
 
 
 @dispatch(Expr)
-def compute(expr):
+def compute(expr, **kwargs):
     resources = expr._resources()
     if not resources:
         raise ValueError("No data resources found")
     else:
-        return compute(expr, resources)
+        return compute(expr, resources, **kwargs)
 
 
 def concrete_head(expr, n=10):

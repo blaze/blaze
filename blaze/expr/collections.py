@@ -102,6 +102,9 @@ class Distinct(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return 'distinct(%s)' % self._child
+
 
 def distinct(expr):
     return Distinct(expr)
