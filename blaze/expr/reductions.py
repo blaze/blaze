@@ -250,5 +250,6 @@ schema_method_list.extend([
     ])
 
 dshape_method_list.extend([
-    (iscollection, set([count, nunique, min, max])),
+    (iscollection, set([count, min, max])),
+    (lambda ds: len(ds.shape) == 1, set([nunique])),
     ])
