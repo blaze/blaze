@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
-    to_numpy_dtype, isdimension, var)
+from datashape import (discover, Tuple, Record, dshape, DataShape,
+                       to_numpy_dtype, var)
 from datashape.predicates import iscollection, isscalar, isrecord
 from pandas import DataFrame, Series
 import itertools
@@ -60,7 +60,11 @@ class Data(Symbol):
             schema=None, **kwargs):
         if isinstance(data, _strtypes):
             data = resource(data, schema=schema, dshape=dshape,
-                    columns=columns, **kwargs)
+                            columns=columns, **kwargs)
+            try:
+                name = data.tablename
+            except AttributeError:
+                pass
         if columns:
             warnings.warn("columns kwarg deprecated.  Use fields instead",
                           DeprecationWarning)

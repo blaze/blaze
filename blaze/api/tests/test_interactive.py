@@ -214,3 +214,8 @@ def test_can_trivially_create_pytables():
 
 def test_data_passes_kwargs_to_resource():
     assert Data(example('iris.csv'), encoding='ascii').data.encoding == 'ascii'
+
+
+def test_data_name_from_resource():
+    d = Data('sqlite:///'+example('iris.db')+'::iris')
+    assert d._name == 'iris'
