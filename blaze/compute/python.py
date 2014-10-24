@@ -58,13 +58,11 @@ Sequence = (tuple, list, Iterator, type(dict().items()))
 
 Broadcastables = (Arithmetic, Field)
 
-from ..expr.broadcast2 import broadcast_collect
+from ..expr.broadcast2 import broadcast_table_collect
 
-"""
 @dispatch(Expr, Sequence)
 def optimize(expr, seq):
-    return broadcast_collect(Broadcastables, expr)
-"""
+    return broadcast_table_collect( expr)
 
 
 def child(x):
@@ -487,6 +485,9 @@ def reduce_by_funcs(t):
 
 @dispatch(By, Sequence)
 def compute_up(t, seq, **kwargs):
+    apply = optimize(t.apply, seq)
+    grouper = optimize(t.grouper, seq)
+    t = By(grouper, apply)
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):
@@ -582,7 +583,7 @@ def compute_up(t, seq, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t._child[t.key])
     else:
-        key = rowfunc(t.key)
+        key = rowfunc(optimize(t.key, seq))
     return sorted(seq,
                   key=key,
                   reverse=not t.ascending)
