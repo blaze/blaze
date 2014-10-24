@@ -70,7 +70,7 @@ def recursive_rowfunc(t, stop):
     funcs = []
     while not t.isidentical(stop):
         funcs.append(rowfunc(t))
-        t = t._child
+        t = child(t)
     return compose(*funcs)
 
 
@@ -139,26 +139,50 @@ def print_python(expr):
         return '%s %s %s' % (parenthesize(print_python(expr.lhs)),
                              expr.symbol,
                              parenthesize(print_python(expr.rhs)))
-    if isinstance(expr, (RealMath, IntegerMath)):
+    if isinstance(expr, (RealMath, IntegerMath, BooleanMath)):
         return '%s(%s)' % (type(expr).__name__,
                            print_python(expr._child))
+    if isinstance(expr, (Millisecond)):
+        return '%s.microsecond // 1000' % (parenthesize(print_python(expr._child)),
+                          type(expr).__name__.lower())
+    if isinstance(expr, (Date, Time)):
+        return '%s.%s()' % (parenthesize(print_python(expr._child)),
+                          type(expr).__name__.lower())
     if isinstance(expr, DateTime):
         return '%s.%s' % (parenthesize(print_python(expr._child)),
                           type(expr).__name__.lower())
+    if isinstance(expr, UnaryOp) and hasattr(expr, 'symbol'):
+        return '%s%s' % (expr.symbol,
+                         parenthesize(print_python(expr._child)))
+    if isinstance(expr, (Label, ReLabel)):
+        return print_python(expr._child)
     raise NotImplementedError()
+
+
+def funcstr(expr):
+    """ Create lambda function string from expression
+
+    >>> t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
+    >>> expr = t.x + t.when.day
+
+    >>> funcstr(expr)
+    'lambda t: t[0] + t[3].day'
+    """
+    if len(expr._leaves()) > 1:
+        raise NotImplementedError("Function strings not defined on multiple leaves")
+
+    leaf = list(expr._leaves())[0]
+
+    return 'lambda %s: %s' % (leaf._name, print_python(expr))
 
 
 @dispatch(Broadcast)
 def rowfunc(t):
-    if sys.version_info[0] == 3:
-        # Python3 doesn't allow argument unpacking
-        # E.g. ``lambda (x, y, z): x + z`` is illegal
-        # Solution: Make ``lambda x, y, z: x + y``, then wrap with ``apply``
-        func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
-        return partial(apply, func)
-    elif sys.version_info[0] == 2:
-        return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+    return eval(funcstr(t._scalar_expr))
 
+@dispatch(Arithmetic)
+def rowfunc(expr):
+    return eval(funcstr(expr))
 
 @dispatch(Map)
 def rowfunc(t):
@@ -236,6 +260,14 @@ def compute_up(t, seq, **kwargs):
 def compute_up(t, seq, **kwargs):
     predicate = rrowfunc(t.predicate, t._child)
     return filter(predicate, seq)
+
+
+@dispatch(Arithmetic, object)
+def compute_up(t, x, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(x, t.rhs)
+    else:
+        return t.op(t.lhs, x)
 
 
 @dispatch(Reduction, Sequence)
@@ -355,6 +387,11 @@ binops = {reductions.sum: (add, add, 0),
           reductions.any: (or_, or_, False),
           reductions.all: (and_, and_, True)}
 
+
+def child(expr):
+    if len(expr._inputs) > 1:
+        raise ValueError()
+    return expr._inputs[0]
 
 def reduce_by_funcs(t):
     """ Create grouping func and binary operator for a by-reduction/summary
