@@ -29,6 +29,10 @@ class Broadcast(Expr):
     def _inputs(self):
         return self._children
 
+    @property
+    def _name(self):
+        return self._scalar_expr._name
+
 
 def scalar_symbols(exprs):
     """
@@ -108,6 +112,7 @@ def broadcast_table_collect(expr):
 
     leaves = _table_find_leaves(expr)
     return broadcast(expr, leaves)
+
 
 def _table_find_leaves(expr):
     """ Find extent of broadcast table optimization

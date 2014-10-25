@@ -117,3 +117,6 @@ def test__table_find_leaves():
     assert first(s).isidentical(t.distinct())
 
 
+def test_broadcast_field():
+    b = Broadcast((x,), (xx,), sin(xx + 1))
+    assert b.fields == sin(xx + 1).fields
