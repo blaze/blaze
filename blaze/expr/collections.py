@@ -272,7 +272,7 @@ def union(*children):
 
 
 def unpack(l):
-    """ Unpack items from collections of length 1
+    """ Unpack items from collections of nelements 1
 
     >>> unpack('hello')
     'hello'
@@ -416,9 +416,34 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 join.__doc__ = Join.__doc__
 
 
+class NElements(Expr):
+    __slots__ = '_child', 'axis'
+
+    @property
+    def schema(self):
+        return dshape('int64')
+
+    @property
+    def dshape(self):
+        return self.schema
+
+
+def nelements(expr, axis=0):
+    """Compute the nelements of a collection
+
+    Examples
+    --------
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, amount: float64}')
+    >>> t[t.amount < 1].nelements()
+    NElements(_child=t[t.amount < 1])
+    """
+    return NElements(expr, axis=axis)
+
+
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([sort, head])),
+    (iscollection, set([sort, head, nelements])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])
