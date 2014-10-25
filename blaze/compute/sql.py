@@ -438,10 +438,11 @@ def compute_up(t, _, children):
 
 
 @dispatch(Summary, Select)
-def compute_up(t, s, **kwargs):
+def compute_up(t, s, scope=None, **kwargs):
     d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
 
-    cols = [compute(val, d).label(name) for name, val in zip(t.fields, t.values)]
+    cols = [compute(val, toolz.merge(scope, d)).label(name)
+                for name, val in zip(t.fields, t.values)]
 
     s = copy(s)
     for c in cols:
