@@ -113,6 +113,7 @@ def compute_up(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
 
+
 @dispatch(USub, (sa.Column, Selectable))
 def compute_up(t, s, **kwargs):
     return -s

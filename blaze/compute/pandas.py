@@ -69,6 +69,14 @@ def compute_up(t, s, **kwargs):
     return compute_up(t, s.to_frame(), **kwargs)
 
 
+@dispatch(BinOp, Series)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
+
+
 @dispatch(BinOp, Series, (Series, base))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
