@@ -46,6 +46,7 @@ from .core import compute, compute_up, optimize
 
 from ..data import DataDescriptor
 from ..data.utils import listpack
+from .pyfunc import lambdify
 
 # Dump exp, log, sin, ... into namespace
 import math
@@ -125,63 +126,9 @@ def rowfunc(t):
     return lambda x: x[index]
 
 
-def parenthesize(s):
-    if ' ' in s:
-        return '(%s)' % s
-    else:
-        return s
-
-
-def print_python(expr):
-    """ Print expression to be evaluated in Python
-
-    >>> from blaze.expr import ceil, sin
-
-    >>> t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
-    >>> print_python(t.x + t.y)
-    't[0] + t[1]'
-    >>> print_python(sin(t.x) > ceil(t.y))
-    'sin(t[0]) > ceil(t[1])'
-
-    >>> print_python(t.when.day + 1)
-    't[3].day + 1'
-    """
-
-    if not isinstance(expr, Expr):
-        return repr(expr)
-    if isinstance(expr, Symbol):
-        return expr._name
-    if isinstance(expr, Field):
-        return '%s[%d]' % (parenthesize(print_python(expr._child)),
-                             expr._child.fields.index(expr._name))
-    if isinstance(expr, Arithmetic):
-        return '%s %s %s' % (parenthesize(print_python(expr.lhs)),
-                             expr.symbol,
-                             parenthesize(print_python(expr.rhs)))
-    if isinstance(expr, (RealMath, IntegerMath)):
-        return '%s(%s)' % (type(expr).__name__,
-                           print_python(expr._child))
-    if isinstance(expr, Date):
-        return '%s.date()' % parenthesize(print_python(expr._child))
-    if isinstance(expr, Time):
-        return '%s.time()' % parenthesize(print_python(expr._child))
-    if isinstance(expr, Millisecond):
-        return '%s.microsecond // 1000' % parenthesize(print_python(expr._child))
-    if isinstance(expr, DateTime):
-        return '%s.%s' % (parenthesize(print_python(expr._child)),
-                          type(expr).__name__.lower())
-    raise NotImplementedError()
-
-def funcstr(t):
-    """ Lambda string for a broadcastable """
-
-    return 'lambda %s: %s' % (', '.join(map(str, t._scalars)),
-                              print_python(t._scalar_expr))
-
-
 @dispatch(Broadcast)
 def rowfunc(t):
-    return eval(funcstr(t))
+    return lambdify(t._scalars, t._scalar_expr)
 
 
 @dispatch(Map)

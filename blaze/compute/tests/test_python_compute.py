@@ -10,7 +10,7 @@ import datashape
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
-                                  reduce_by_funcs)
+                                  reduce_by_funcs, optimize)
 from blaze import dshape, discover
 from blaze.compute.core import compute, compute_up
 from blaze.expr import (Symbol, by, union, merge, join, count, Distinct,
@@ -42,7 +42,7 @@ databig = [['Alice', 'F', 100, 1],
 
 
 def test_dispatched_rowfunc():
-    cw = t['amount'] + 100
+    cw = optimize(t['amount'] + 100, [])
     assert rowfunc(t)(t) == t
     assert rowfunc(cw)(('Alice', 100, 1)) == 200
 
@@ -90,7 +90,8 @@ def test_unary_ops():
 
 
 def test_neg():
-    assert list(compute(-t['amount'], data)) == [-x[1] for x in data]
+    expr = optimize(-t.amount, [])
+    assert list(compute(expr, data)) == [-x[1] for x in data]
 
 
 def test_reductions():
@@ -390,7 +391,7 @@ def test_map_column():
 
 
 def test_map():
-    assert (list(compute(t.map(lambda _, amt, id: amt + id, 'int'), data)) ==
+    assert (list(compute(t.map(lambda tup: tup[1] + tup[2], 'int'), data)) ==
             [x[1] + x[2] for x in data])
 
 
@@ -462,7 +463,8 @@ def test_recursive_rowfunc():
     f = rrowfunc(t['name'], t)
     assert [f(row) for row in data] == [row[0] for row in data]
 
-    f = rrowfunc(t['amount'] + t['id'], t)
+    expr = optimize(t['amount'] + t['id'], [])
+    f = rrowfunc(expr, t)
     assert [f(row) for row in data] == [row[1] + row[2] for row in data]
 
     assert raises(Exception, lambda: rrowfunc(t[t['amount'] < 0]['name'], t))
