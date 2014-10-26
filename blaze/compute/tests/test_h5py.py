@@ -72,3 +72,12 @@ def test_mixed(recdata):
 def test_uneven_chunk_size(data):
     assert eq(compute(s.sum(axis=1), data, chunksize=(7, 7)),
               x.sum(axis=1))
+
+
+def test_nrows_records(recdata):
+    s = Symbol('s', discover(recdata))
+    assert compute(s.nrows(), recdata) == len(recdata)
+
+
+def test_nrows_array(data):
+    assert compute(s.nrows(), data) == len(data)

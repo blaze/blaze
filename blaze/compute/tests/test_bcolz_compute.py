@@ -93,3 +93,7 @@ def test_count_isnan_object():
                    reason="isnan doesn't work on struct/record dtypes")
 def test_count_isnan_struct():
     assert compute(t[~t.b.isnan()].count(), b) == 2  # 3?
+
+
+def test_nrows():
+    assert compute(t.nrows(), b) == len(b)

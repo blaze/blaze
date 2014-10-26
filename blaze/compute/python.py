@@ -26,7 +26,6 @@ import toolz
 import sys
 import math
 import datetime
-from datashape import Record, Tuple
 from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
@@ -39,7 +38,7 @@ from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import eval_str
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
-        Not)
+                    Not, NElements)
 from ..compatibility import builtins, apply, unicode, _inttypes
 from . import core
 from .core import compute, compute_up, optimize
@@ -627,3 +626,11 @@ def compute_up(expr, seq, **kwargs):
     if isinstance(index, slice):
         return itertools.islice(seq, index.start, index.stop, index.step)
     raise NotImplementedError("Only 1d slices supported")
+
+
+@dispatch(NElements, Sequence)
+def compute_up(expr, seq, **kwargs):
+    try:
+        return len(seq)
+    except TypeError:
+        return cytoolz.count(seq)

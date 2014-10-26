@@ -6,7 +6,7 @@ from pandas import DataFrame, Series
 from ..expr import Reduction, Field, Projection, Broadcast, Selection
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
-from ..expr import BinOp, UnaryOp, USub, Not
+from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp
 
 from .core import base, compute
@@ -155,6 +155,11 @@ def compute_up(t, x, **kwargs):
     else:
         df = Series(name=t._child.fields[0])
     return compute_up(t, into(df, x), **kwargs)
+
+
+@dispatch(NRows, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return len(data)
 
 
 @dispatch(np.ndarray)

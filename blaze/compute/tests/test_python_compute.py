@@ -5,14 +5,13 @@ import itertools
 import operator
 import pytest
 from datetime import datetime, date
-from cytoolz import pluck
 import datashape
 from collections import Iterator, Iterable
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
-from blaze import dshape, discover
+from blaze import dshape
 from blaze.compute.core import compute, compute_up, pre_compute
 from blaze.expr import (Symbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, Symbol,
@@ -756,3 +755,12 @@ def test_dicts():
                   compute(expr, {t: iter(d)}))
         assert eq(compute(expr, {t: iter(L)}),
                   compute(expr, {t: L}))
+
+
+def test_nelements_list_tuple():
+    assert compute(t.nelements(), data) == len(data)
+
+
+def test_nelements_iterator():
+    x = (row for row in data)
+    assert compute(t.nelements(), x) == len(data)

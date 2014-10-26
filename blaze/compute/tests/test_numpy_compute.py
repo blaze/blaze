@@ -184,3 +184,8 @@ def test_utcfromtimestamp():
     expected = np.array(['1970-01-01T00:00:00Z', '1970-01-01T00:00:01Z'],
                         dtype='M8[us]')
     assert eq(compute(t.utcfromtimestamp, data), expected)
+                  ax.sum(axis=axis, keepdims=True))
+
+
+def test_nrows():
+    assert compute(t.nrows(), x) == len(x)

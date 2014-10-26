@@ -7,7 +7,8 @@ from datashape import Record, from_numpy, datetime_, date_
 import datashape
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
-                        Symbol, Sort, Reduction, count, Symbol, Slice, Expr)
+                        Symbol, Sort, Reduction, count, Symbol, Slice, Expr,
+                        NElements)
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
 
@@ -144,7 +145,13 @@ from ..expr import Arithmetic, RealMath, USub, Not
 Broadcastable = (Arithmetic, RealMath, Field, Not, USub)
 WantToBroadcast = (Arithmetic, RealMath, Not, USub)
 
+
 @dispatch(Expr, tb.Table)
 def optimize(expr, seq):
     return broadcast_numexpr_collect(expr, Broadcastable=Broadcastable,
-            WantToBroadcast=WantToBroadcast)
+                                     WantToBroadcast=WantToBroadcast)
+
+
+@dispatch(NElements, tb.Table)
+def compute_up(expr, x, **kwargs):
+    return len(x)

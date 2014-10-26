@@ -255,3 +255,7 @@ def test_create_multiple_indexes_fails(pyt):
 def test_create_index_fails(pyt):
     with pytest.raises(AttributeError):
         create_index(pyt, 'no column here!')
+
+
+def test_nrows():
+    assert compute(t.nrows(), x) == len(x)
