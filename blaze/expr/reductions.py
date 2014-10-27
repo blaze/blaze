@@ -2,10 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 from toolz import first
-import datashape
-from datashape import Record, dshape, DataShape
+from datashape import Record, DataShape
 from datashape import coretypes as ct
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import iscollection
 
 from .core import common_subexpression
 from .expressions import Expr, Symbol
@@ -51,12 +50,12 @@ class Reduction(Expr):
     def dshape(self):
         axis = self.axis
         if self.keepdims:
-            shape = tuple(1 if i in self.axis else d
+            shape = tuple(1 if i in axis else d
                           for i, d in enumerate(self._child.shape))
         else:
             shape = tuple(d
                           for i, d in enumerate(self._child.shape)
-                          if i not in self.axis)
+                          if i not in axis)
         return DataShape(*(shape + (self._dtype,)))
 
     @property
@@ -179,6 +178,9 @@ class count(Reduction):
 class nunique(Reduction):
     _dtype = ct.int_
 
+class nrows(Reduction):
+    _dtype = ct.int_
+
 
 class Summary(Expr):
     """ A collection of named reductions
@@ -240,8 +242,7 @@ def summary(keepdims=False, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
-from datashape.predicates import (iscollection, isscalar, isrecord, isboolean,
-        isnumeric)
+from datashape.predicates import iscollection, isboolean, isnumeric
 from .expressions import schema_method_list, dshape_method_list
 
 schema_method_list.extend([

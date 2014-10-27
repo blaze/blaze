@@ -9,7 +9,7 @@ from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
-           'union', 'head', 'sort', 'Join', 'join', 'NRows', 'nrows']
+           'union', 'head', 'sort', 'Join', 'join', 'NElements', 'nelements']
 
 class Sort(Expr):
     """ Table in sorted order
