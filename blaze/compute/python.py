@@ -293,6 +293,14 @@ def compute_up_1d(t, seq, **kwargs):
     return op(seq)
 
 
+@dispatch(nrows, Sequence)
+def compute_up_1d(expr, seq, **kwargs):
+    try:
+        return len(seq)
+    except TypeError:
+        return cytoolz.count(seq)
+
+
 @dispatch(BinOp, numbers.Real, numbers.Real)
 def compute_up(bop, a, b, **kwargs):
     return bop.op(a, b)

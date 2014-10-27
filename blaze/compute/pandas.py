@@ -440,6 +440,6 @@ def compute_up(expr, df, **kwargs):
         raise NotImplementedError()
 
 
-@dispatch(NRows, DataFrame)
+@dispatch(nrows, DataFrame)
 def compute_up(expr, df, **kwargs):
     return df.shape[0]

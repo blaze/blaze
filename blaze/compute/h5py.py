@@ -9,7 +9,7 @@ from ..partition import partitions, partition_get, partition_set, flatten
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, Symbol
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
-from ..expr import BinOp, UnaryOp, USub, Not, NRows
+from ..expr import BinOp, UnaryOp, USub, Not, nrows
 from ..expr import path
 from ..expr.split import split
 
@@ -26,7 +26,7 @@ def compute_up(expr, data, **kwargs):
     return data[expr.index]
 
 
-@dispatch(NRows, h5py.Dataset)
+@dispatch(nrows, h5py.Dataset)
 def compute_up(expr, data, **kwargs):
     return len(data)
 

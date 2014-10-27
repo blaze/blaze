@@ -157,7 +157,7 @@ def compute_up(t, x, **kwargs):
     return compute_up(t, into(df, x), **kwargs)
 
 
-@dispatch(NRows, np.ndarray)
+@dispatch(nrows, np.ndarray)
 def compute_up(expr, data, **kwargs):
     return len(data)
 

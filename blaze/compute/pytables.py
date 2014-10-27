@@ -4,7 +4,6 @@ from functools import partial
 import numpy as np
 import tables as tb
 from datashape import Record, from_numpy, datetime_, date_
-import datashape
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
                         Symbol, Sort, Reduction, count, Symbol, Slice, Expr,
