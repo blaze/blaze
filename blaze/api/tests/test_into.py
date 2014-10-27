@@ -564,3 +564,20 @@ def test_into_filename_filename():
 
 def test_into_curries():
     assert into(list, (1, 2, 3)) == into(list)((1, 2, 3))
+
+
+def test_into_df_with_names_from_series():
+    df = pd.DataFrame(columns=['a'])
+    s = pd.Series([1, 2, 3])
+    assert str(pd.DataFrame(s, columns=df.columns)) == str(into(df, s))
+
+    df = pd.DataFrame()
+    s = pd.Series([1, 2, 3], name='a')
+    assert str(pd.DataFrame(s, columns=['a'])) == str(into(df, s))
+
+    df = pd.DataFrame(columns=['b'])
+    s = pd.Series([1, 2, 3], name='a')
+    assert str(pd.DataFrame(s, columns=df.columns)) == str(into(df, s))
+
+    with pytest.raises(AssertionError):
+        into(pd.DataFrame(columns=list('ab')), s)
