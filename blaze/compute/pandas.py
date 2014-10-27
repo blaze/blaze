@@ -402,7 +402,7 @@ def compute_up(_, s, **kwargs):
     return get_date_attr(s, 'microsecond') // 1000
 
 
-@dispatch(Slice, DataFrame)
+@dispatch(Slice, (DataFrame, Series))
 def compute_up(expr, df, **kwargs):
     index = expr.index
     if isinstance(index, tuple) and len(index) == 1:
