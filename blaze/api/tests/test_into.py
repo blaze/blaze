@@ -506,6 +506,7 @@ def test_datetime_csv_reader_same_as_into():
     assert dtypes.index.tolist() == rhs.index.tolist()
     assert dtypes.tolist() == rhs.tolist()
 
+
 @pytest.mark.xfail(reason="pandas reader uses float64 for ?int64")
 def test_datetime_csv_reader_same_as_into_types():
     csv = CSV(os.path.join(os.path.dirname(__file__),
@@ -518,7 +519,6 @@ def test_datetime_csv_reader_same_as_into_types():
                          index=csv.columns)
     assert dtypes.index.tolist() == expected.index.tolist()
     assert dtypes.tolist() == expected.tolist()
-
 
 
 def test_into_DataFrame_concat():
@@ -570,14 +570,17 @@ def test_into_df_with_names_from_series():
     df = pd.DataFrame(columns=['a'])
     s = pd.Series([1, 2, 3])
     assert str(pd.DataFrame(s, columns=df.columns)) == str(into(df, s))
+    assert str(pd.DataFrame(s, columns=[s.name])) == str(into(pd.DataFrame, s))
 
     df = pd.DataFrame()
     s = pd.Series([1, 2, 3], name='a')
     assert str(pd.DataFrame(s, columns=['a'])) == str(into(df, s))
+    assert str(pd.DataFrame(s, columns=[s.name])) == str(into(pd.DataFrame, s))
 
     df = pd.DataFrame(columns=['b'])
     s = pd.Series([1, 2, 3], name='a')
     assert str(pd.DataFrame(s, columns=df.columns)) == str(into(df, s))
+    assert str(pd.DataFrame(s, columns=[s.name])) == str(into(pd.DataFrame, s))
 
     with pytest.raises(AssertionError):
         into(pd.DataFrame(columns=list('ab')), s)
