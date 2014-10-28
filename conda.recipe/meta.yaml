@@ -24,6 +24,7 @@ requirements:
     - toolz
     - bcolz
     - pytables
+    - psutil
 
 test:
   requires:

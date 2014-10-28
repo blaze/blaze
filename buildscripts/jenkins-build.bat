@@ -25,7 +25,7 @@ REM python version and containing the dependencies.
 SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
 REM TODO: Add cffi to this list once it is added to anaconda windows.
 
-call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py pandas requests pytest toolz cytoolz bcolz pymongo || exit /b 1
+call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py pandas requests pytest toolz cytoolz bcolz pymongo psutil || exit /b 1
 
 
 call C:\Anaconda\Scripts\conda install -p %PYENV_PREFIX% --yes --channel blaze mongodb || exit /b 1

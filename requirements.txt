@@ -13,3 +13,4 @@ xlrd
 requests
 tables
 pymongo
+psutil
