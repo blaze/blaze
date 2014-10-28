@@ -1,11 +1,12 @@
-from blaze.expr import (Expr, Symbol, Field, Arithmetic, RealMath, Map, Not,
+from ..expr import (Expr, Symbol, Field, Arithmetic, RealMath, Map, Not,
         USub, Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin,
         cos, isnan, UnaryOp)
 import datetime
 from datashape import iscollection
 import math
-import toolz
+from toolz import curry
 import itertools
+from ..expr.broadcast import broadcast_collect
 
 
 funcnames = ('func_%d' % i for i in itertools.count())
@@ -66,42 +67,6 @@ def print_numexpr(leaves, expr):
 WantToBroadcast = (Arithmetic, RealMath, Not, USub)
 Broadcastable = (Arithmetic, RealMath, Not, USub)
 
-
-def broadcast_numexpr_collect(expr, Broadcastable=Broadcastable,
-                                    WantToBroadcast=WantToBroadcast):
-    """ Collapse expression down using Broadcast - appropriate for numexpr
-
-    Expressions of type Broadcastables are swallowed into Broadcast
-    operations
-
-    >>> x = Symbol('x', '5 * 3 * int')
-    >>> y = Symbol('y', '5 * 3 * int')
-
-    >>> expr = 2 * x + y
-    >>> broadcast_numexpr_collect(expr)
-    Broadcast(_children=(x, y), _scalars=(x, y), _scalar_expr=(2 * x) + y)
-
-    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
-    >>> expr = (t.x + 2*t.y).distinct()
-
-    >>> broadcast_numexpr_collect(expr)
-    distinct(Broadcast(_children=(t.x, t.y), _scalars=(x, y), _scalar_expr=x + (2 * y)))
-    """
-    if (isinstance(expr, WantToBroadcast) and
-        iscollection(expr.dshape)):
-        leaves = leaves_of_type(Broadcastable, expr)
-        expr = broadcast(expr, sorted(leaves, key=str))
-
-    # Recurse down
-    children = list(map(broadcast_numexpr_collect, expr._inputs))
-    return expr._subs(dict(zip(expr._inputs, children)))
-
-
-@toolz.curry
-def leaves_of_type(types, expr):
-    """ Leaves of an expression skipping all operations of type ``types``
-    """
-    if not isinstance(expr, types):
-        return set([expr])
-    else:
-        return set.union(*map(leaves_of_type(types), expr._inputs))
+broadcast_numexpr_collect = curry(broadcast_collect,
+        Broadcastable=Broadcastable,
+        WantToBroadcast=WantToBroadcast)
