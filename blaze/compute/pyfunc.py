@@ -133,9 +133,11 @@ def lambdify(leaves, expr):
 
 
 Broadcastable = (Arithmetic, Math, Map, Field, DateTime)
+WantToBroadcast = (Arithmetic, Math, Map, DateTime)
 
 
-def broadcast_collect(expr):
+def broadcast_collect(expr, Broadcastable=Broadcastable,
+        WantToBroadcast=WantToBroadcast):
     """ Collapse expression down using Broadcast - Tabular cases only
 
     Expressions of type Broadcastables are swallowed into Broadcast
@@ -147,14 +149,14 @@ def broadcast_collect(expr):
     >>> broadcast_collect(expr)
     distinct(Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * t.y)))
     """
-    if (len(expr._inputs) == 1 and
-        isinstance(expr, Broadcastable) and
+    if (isinstance(expr, WantToBroadcast) and
         iscollection(expr.dshape)):
         leaves = leaves_of_type(Broadcastable, expr)
         expr = broadcast(expr, sorted(leaves, key=str))
 
     # Recurse down
-    children = list(map(broadcast_collect, expr._inputs))
+    children = [broadcast_collect(i, Broadcastable, WantToBroadcast)
+            for i in expr._inputs]
     return expr._subs(dict(zip(expr._inputs, children)))
 
 
