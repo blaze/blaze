@@ -1,7 +1,6 @@
 from blaze.expr import *
-from blaze.expr.broadcast2 import *
-from blaze.expr.broadcast2 import (leaves_of_type, broadcast_collect,
-        broadcast_table_collect, _table_find_leaves)
+from blaze.expr.broadcast import *
+from blaze.expr.broadcast import leaves_of_type, broadcast_collect
 from blaze.compatibility import builtins
 from toolz import isdistinct
 
@@ -60,7 +59,8 @@ def test_optimize_broadcast():
     expr = (t.distinct().x + 1).distinct()
 
     expected = broadcast(t.distinct().x + 1, [t.distinct()]).distinct()
-    result = broadcast_collect((Field, Arithmetic), expr)
+    result = broadcast_collect(expr, Broadcastable=(Field, Arithmetic),
+                                     WantToBroadcast=(Field, Arithmetic))
 
     assert result.isidentical(expected)
 
@@ -76,7 +76,8 @@ def test_leaves_of_type():
 def test_broadcast_collect_doesnt_collect_scalars():
     expr = xx + yy * a
 
-    assert broadcast_collect(Arithmetic, expr).isidentical(expr)
+    assert broadcast_collect(expr, Broadcastable=Arithmetic,
+                                   WantToBroadcast=Arithmetic).isidentical(expr)
 
 
 def test_table_broadcast():
@@ -87,33 +88,21 @@ def test_table_broadcast():
 
     expected = t.distinct()
     expected = broadcast(2 * expected.x + expected.y + 1, [t]).distinct()
-    assert broadcast_table_collect(expr).isidentical(expected)
+    assert broadcast_collect(expr).isidentical(expected)
 
     expr = (t.x + t.y).sum()
-    result = broadcast_table_collect(expr)
+    result = broadcast_collect(expr)
     expected = broadcast(t.x + t.y, [t]).sum()
     assert result.isidentical(expected)
 
 
-def test_table_broadcast_doesnt_affect_scalars():
+def test_broadcast_doesnt_affect_scalars():
     t = Symbol('t', '{x: int, y: int, z: int}')
     expr = (2 * t.x + t.y + 1)
 
-    assert broadcast_table_collect(expr).isidentical(expr)
+    assert broadcast_collect(expr).isidentical(expr)
 
 
-def test__table_find_leaves():
-    t = Symbol('t', 'var * {x: int, y: int, z: int}')
-
-    s = _table_find_leaves(t.x + t.y)
-    assert isinstance(s, set)
-    assert len(s) == 1
-    assert first(s).isidentical(t)
-
-    expr = t.distinct()
-    s = _table_find_leaves(2 * expr.x + expr.y + 1)
-    assert isinstance(s, set)
-    assert len(s) == 1
-    assert first(s).isidentical(t.distinct())
-
-
+def test_full_expr():
+    b = Broadcast((x, y), (xx, yy), xx + yy)
+    assert b._full_expr.isidentical(x + y)

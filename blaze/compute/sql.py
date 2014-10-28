@@ -28,7 +28,7 @@ import toolz
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Field, Broadcast
+from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary, Like
@@ -38,6 +38,7 @@ from .core import compute_up, compute, base
 from ..data.utils import listpack
 
 __all__ = ['sqlalchemy', 'select']
+
 
 
 @dispatch(Projection, Selectable)
@@ -71,9 +72,9 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._child[c]._expr, lower_column(s.c.get(c)))
-             for c in t._child.fields)
-    result = compute(t._expr, d)
+    d = dict((t._scalars[0][c], lower_column(s.c.get(c)))
+             for c in t._scalars[0].fields)
+    result = compute(t._scalar_expr, d)
 
     s = copy(s)
     s.append_column(result)
@@ -82,9 +83,19 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    d = dict((t._child[c]._expr, lower_column(s.c.get(c)))
-             for c in t._child.fields)
-    return compute(t._expr, d)
+    if len(t._children) != 1:
+        raise ValueError()
+    d = dict((t._scalars[0][c], lower_column(s.c.get(c)))
+             for c in t._scalars[0].fields)
+    return compute(t._scalar_expr, d)
+
+
+@dispatch(BinOp, ColumnElement)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
 
 
 @dispatch(BinOp, ColumnElement, (ColumnElement, base))
@@ -101,6 +112,7 @@ def compute_up(t, lhs, rhs, **kwargs):
 def compute_up(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
+
 
 @dispatch(USub, (sa.Column, Selectable))
 def compute_up(t, s, **kwargs):
@@ -426,10 +438,11 @@ def compute_up(t, _, children):
 
 
 @dispatch(Summary, Select)
-def compute_up(t, s, **kwargs):
+def compute_up(t, s, scope=None, **kwargs):
     d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
 
-    cols = [compute(val, d).label(name) for name, val in zip(t.fields, t.values)]
+    cols = [compute(val, toolz.merge(scope, d)).label(name)
+                for name, val in zip(t.fields, t.values)]
 
     s = copy(s)
     for c in cols:

@@ -85,5 +85,5 @@ from datashape.predicates import iscollection
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([count_values])),
+    (lambda ds: len(ds.shape) == 1, set([count_values])),
     ])

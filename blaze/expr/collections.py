@@ -404,5 +404,6 @@ join.__doc__ = Join.__doc__
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([distinct, head, sort, head])),
+    (iscollection, set([sort, head])),
+    (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])

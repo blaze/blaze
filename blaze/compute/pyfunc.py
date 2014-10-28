@@ -1,7 +1,8 @@
 
-from blaze.expr import (Expr, Symbol, Field, Arithmetic, Math,
+from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
         Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
         Map)
+from ..expr.broadcast import broadcast_collect
 import datetime
 from datashape import iscollection
 import math
@@ -89,7 +90,8 @@ def print_python(leaves, expr):
         funcname = next(funcnames)
         return ('%s(%s)' % (funcname, child),
                 toolz.assoc(scope, funcname, expr.func))
-    raise NotImplementedError()
+    raise NotImplementedError("Do not know how to print expression %s to "
+            "Python code" % expr)
 
 
 def funcstr(leaves, expr):
@@ -107,6 +109,10 @@ def funcstr(leaves, expr):
 
     >>> funcstr([t.x, t.y], sin(t.x) + t.y)  # doctest: +SKIP
     ('lambda x, y: math.sin(x) + y', {'math': <module 'math'>})
+
+    >>> from datetime import date
+    >>> funcstr([t.x, t.y, t.when], t.when.date > date(2001, 12, 25)) #doctest: +SKIP
+    ('lambda x, y, when: when.day > datetime.date(2001, 12, 25)', {'datetime': <module 'datetime'>})
     """
     result, scope = print_python(leaves, expr)
 
@@ -130,39 +136,3 @@ def lambdify(leaves, expr):
     """
     s, scope = funcstr(leaves, expr)
     return eval(s, scope)
-
-
-Broadcastable = (Arithmetic, Math, Map, Field, DateTime)
-
-
-def broadcast_collect(expr):
-    """ Collapse expression down using Broadcast - Tabular cases only
-
-    Expressions of type Broadcastables are swallowed into Broadcast
-    operations
-
-    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
-    >>> expr = (t.x + 2*t.y).distinct()
-
-    >>> broadcast_collect(expr)
-    distinct(Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * t.y)))
-    """
-    if (len(expr._inputs) == 1 and
-        isinstance(expr, Broadcastable) and
-        iscollection(expr.dshape)):
-        leaves = leaves_of_type(Broadcastable, expr)
-        expr = broadcast(expr, sorted(leaves, key=str))
-
-    # Recurse down
-    children = list(map(broadcast_collect, expr._inputs))
-    return expr._subs(dict(zip(expr._inputs, children)))
-
-
-@toolz.curry
-def leaves_of_type(types, expr):
-    """ Leaves of an expression skipping all operations of type ``types``
-    """
-    if not isinstance(expr, types):
-        return set([expr])
-    else:
-        return set.union(*map(leaves_of_type(types), expr._inputs))

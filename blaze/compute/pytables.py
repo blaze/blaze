@@ -3,11 +3,11 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 import numpy as np
 import tables as tb
-import datashape as ds
+from datashape import Record, from_numpy, datetime_, date_
+import datashape
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
-                        Symbol, Sort, Reduction, count, Symbol, Slice)
-from blaze.expr import eval_str
+                        Symbol, Sort, Reduction, count, Symbol, Slice, Expr)
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
 
@@ -16,15 +16,15 @@ __all__ = ['drop', 'create_index']
 
 @dispatch(tb.Table)
 def discover(t):
-    return t.shape[0] * ds.Record([[col, discover(getattr(t.cols, col))]
+    return t.shape[0] * Record([[col, discover(getattr(t.cols, col))]
                                    for col in t.colnames])
 
 
 @dispatch(tb.Column)
 def discover(c):
-    dshape = ds.from_numpy(c.shape, c.dtype)
-    return {'time64': ds.datetime_, 'time32': ds.date_}.get(c.type,
-                                                            dshape.subshape[1])
+    dshape = from_numpy(c.shape, c.dtype)
+    return {'time64': datetime_, 'time32': date_}.get(c.type,
+                                                      dshape.subshape[1])
 
 
 @dispatch(tb.Table)
@@ -52,9 +52,14 @@ def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
 
 
 @dispatch(Selection, tb.Table)
-def compute_up(sel, t, **kwargs):
-    s = eval_str(sel.predicate._expr)
-    return t.read_where(s)
+def compute_up(expr, data, **kwargs):
+    predicate = optimize(expr.predicate, data)
+    assert isinstance(predicate, Broadcast)
+
+    s = predicate._scalars[0]
+    cols = [s[field] for field in s.fields]
+    expr_str = print_numexpr(cols, predicate._scalar_expr)
+    return data.read_where(expr_str)
 
 
 @dispatch(Symbol, tb.Table)
@@ -104,9 +109,15 @@ def compute_up(h, t, **kwargs):
 
 
 @dispatch(Broadcast, tb.Table)
-def compute_up(c, t, **kwargs):
-    uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
-    e = tb.Expr(str(c._expr), uservars=uservars, truediv=True)
+def compute_up(expr, data, **kwargs):
+    if len(expr._children) != 1:
+        raise ValueError("Only one child in Broadcast allowed")
+
+    s = expr._scalars[0]
+    cols = [s[field] for field in s.fields]
+    expr_str = print_numexpr(cols, expr._scalar_expr)
+    uservars = {c: getattr(data.cols, c) for c in s.fields}
+    e = tb.Expr(expr_str, uservars=uservars, truediv=True)
     return e.eval()
 
 
@@ -126,3 +137,14 @@ def compute_up(s, t, **kwargs):
 @dispatch(Slice, tb.Table)
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
+
+
+from .numexpr import broadcast_numexpr_collect, print_numexpr
+from ..expr import Arithmetic, RealMath, USub, Not
+Broadcastable = (Arithmetic, RealMath, Field, Not, USub)
+WantToBroadcast = (Arithmetic, RealMath, Not, USub)
+
+@dispatch(Expr, tb.Table)
+def optimize(expr, seq):
+    return broadcast_numexpr_collect(expr, Broadcastable=Broadcastable,
+            WantToBroadcast=WantToBroadcast)
