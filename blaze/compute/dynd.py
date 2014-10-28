@@ -26,14 +26,17 @@ def compute_up(t, x, **kwargs):
     return compute(t._expr, d)
 
 
-@dispatch(BinOp, nd.array, (nd.array, base))
+@dispatch(BinOp, nd.array, nd.array)
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(BinOp, base, nd.array)
-def compute_up(t, lhs, rhs, **kwargs):
-    return t.op(lhs, rhs)
+@dispatch(BinOp, nd.array)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
 
 
 @dispatch(Not, nd.array)
