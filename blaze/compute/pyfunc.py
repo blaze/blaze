@@ -108,6 +108,10 @@ def funcstr(leaves, expr):
 
     >>> funcstr([t.x, t.y], sin(t.x) + t.y)  # doctest: +SKIP
     ('lambda x, y: math.sin(x) + y', {'math': <module 'math'>})
+
+    >>> from datetime import date
+    >>> funcstr([t.x, t.y, t.when], t.when.date > date(2001, 12, 25)) #doctest: +SKIP
+    ('lambda x, y, when: when.day > datetime.date(2001, 12, 25)', {'datetime': <module 'datetime'>})
     """
     result, scope = print_python(leaves, expr)
 
