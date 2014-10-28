@@ -46,7 +46,7 @@ from .core import compute, compute_up, optimize
 
 from ..data import DataDescriptor
 from ..data.utils import listpack
-from .pyfunc import lambdify
+from .pyfunc import lambdify, broadcast_collect
 
 # Dump exp, log, sin, ... into namespace
 import math
@@ -57,13 +57,10 @@ __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
 
-Broadcastables = (Arithmetic, Field)
-
-from ..expr.broadcast import broadcast_table_collect
 
 @dispatch(Expr, Sequence)
 def optimize(expr, seq):
-    return broadcast_table_collect( expr)
+    return broadcast_collect( expr)
 
 
 def child(x):

@@ -6,10 +6,10 @@ from toolz import curry
 from .expressions import *
 from .expressions import Field, Map
 from .arithmetic import maxshape, Arithmetic, Add
-from .math import Math
+from .math import Math, sin
 from .datetime import DateTime
 
-__all__ = ['broadcast', 'Broadcast', 'scalar_symbols', 'broadcast_collect']
+__all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
 
 def broadcast(expr, leaves, scalars=None):
     scalars = scalars or scalar_symbols(leaves)
@@ -93,30 +93,33 @@ def scalar_symbols(exprs):
     return scalars
 
 
-def broadcast_collect(broadcastable_types, expr):
-    """ Collapse expression down using Broadcast
+Broadcastable = (Arithmetic, Math, Map, Field, DateTime)
+WantToBroadcast = (Arithmetic, Math, Map, DateTime)
 
-    Expressions of type Broadcastable_types are swallowed into Broadcast
+
+def broadcast_collect(expr, Broadcastable=Broadcastable,
+                            WantToBroadcast=WantToBroadcast):
+    """ Collapse expression down using Broadcast - Tabular cases only
+
+    Expressions of type Broadcastables are swallowed into Broadcast
     operations
 
-    >>> x = Symbol('x', '5 * 3 * int32')
-    >>> y = Symbol('y', '5 * 3 * int32')
+    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
+    >>> expr = (t.x + 2*t.y).distinct()
 
-    >>> expr = (x + 2*y)
-
-    >>> broadcast_collect((Field, Arithmetic), x + 2*y)
-    Broadcast(_children=(x, y), _scalars=(x, y), _scalar_expr=x + (2 * y))
-
-    >>> broadcast_collect((Field, Add), x + 2*y)
-    Broadcast(_children=(2 * y, x), _scalars=(y, x), _scalar_expr=x + y)
+    >>> broadcast_collect(expr)
+    distinct(Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * t.y)))
     """
-    if isinstance(expr, broadcastable_types) and iscollection(expr.dshape):
-        leaves = leaves_of_type(broadcastable_types, expr)
+    if (isinstance(expr, WantToBroadcast) and
+        iscollection(expr.dshape)):
+        leaves = leaves_of_type(Broadcastable, expr)
         expr = broadcast(expr, sorted(leaves, key=str))
 
-    children = [broadcast_collect(broadcastable_types, child)
-                for child in expr._inputs]
+    # Recurse down
+    children = [broadcast_collect(i, Broadcastable, WantToBroadcast)
+            for i in expr._inputs]
     return expr._subs(dict(zip(expr._inputs, children)))
+
 
 @curry
 def leaves_of_type(types, expr):
@@ -126,33 +129,3 @@ def leaves_of_type(types, expr):
         return set([expr])
     else:
         return set.union(*map(leaves_of_type(types), expr._inputs))
-
-
-TableBroadcastable = (Field, Arithmetic, Map, DateTime, Math)
-def broadcast_table_collect(expr):
-    if isinstance(expr, Symbol):
-        return expr
-    if not isinstance(expr, TableBroadcastable) or ndim(expr) == 0:
-        children = map(broadcast_table_collect, expr._inputs)
-        return expr._subs(dict(zip(expr._inputs, children)))
-
-    leaves = _table_find_leaves(expr)
-    return broadcast(expr, leaves)
-
-
-def _table_find_leaves(expr):
-    """ Find extent of broadcast table optimization
-
-    helper to broadcast_table_collect
-    """
-    if not isinstance(expr, TableBroadcastable):
-        return set([expr])
-    leaves = set()
-    for child in expr._inputs:
-        if isinstance(child, TableBroadcastable) and child.shape == expr.shape:
-            leaves |= _table_find_leaves(child)
-        else:
-            leaves.add(child)
-    return leaves
-
-

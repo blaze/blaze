@@ -116,8 +116,7 @@ class MongoQuery(object):
 def compute_up(e, coll, **kwargs):
     return compute_up(e, MongoQuery(coll, []))
 
-from ..expr.broadcast import broadcast_table_collect
-from .pyfunc import broadcast_collect
+from ..expr.broadcast import broadcast_collect
 
 @dispatch(Expr, (MongoQuery, Collection))
 def optimize(expr, seq):

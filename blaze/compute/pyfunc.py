@@ -1,7 +1,8 @@
 
-from blaze.expr import (Expr, Symbol, Field, Arithmetic, Math,
+from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
         Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
         Map)
+from ..expr.broadcast import broadcast_collect
 import datetime
 from datashape import iscollection
 import math
@@ -130,41 +131,3 @@ def lambdify(leaves, expr):
     """
     s, scope = funcstr(leaves, expr)
     return eval(s, scope)
-
-
-Broadcastable = (Arithmetic, Math, Map, Field, DateTime)
-WantToBroadcast = (Arithmetic, Math, Map, DateTime)
-
-
-def broadcast_collect(expr, Broadcastable=Broadcastable,
-        WantToBroadcast=WantToBroadcast):
-    """ Collapse expression down using Broadcast - Tabular cases only
-
-    Expressions of type Broadcastables are swallowed into Broadcast
-    operations
-
-    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
-    >>> expr = (t.x + 2*t.y).distinct()
-
-    >>> broadcast_collect(expr)
-    distinct(Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * t.y)))
-    """
-    if (isinstance(expr, WantToBroadcast) and
-        iscollection(expr.dshape)):
-        leaves = leaves_of_type(Broadcastable, expr)
-        expr = broadcast(expr, sorted(leaves, key=str))
-
-    # Recurse down
-    children = [broadcast_collect(i, Broadcastable, WantToBroadcast)
-            for i in expr._inputs]
-    return expr._subs(dict(zip(expr._inputs, children)))
-
-
-@toolz.curry
-def leaves_of_type(types, expr):
-    """ Leaves of an expression skipping all operations of type ``types``
-    """
-    if not isinstance(expr, types):
-        return set([expr])
-    else:
-        return set.union(*map(leaves_of_type(types), expr._inputs))

@@ -95,7 +95,7 @@ def resource_sql(uri, table_name, *args, **kwargs):
     return SQL(uri, table_name, *args, **kwargs)
 
 
-from .expr.broadcast import broadcast_table_collect
+from .compute.pyfunc import broadcast_collect
 @dispatch(Expr, (SQL, sa.sql.elements.ClauseElement))
 def optimize(expr, _):
-    return broadcast_table_collect(expr)
+    return broadcast_collect(expr)
