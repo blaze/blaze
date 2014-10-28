@@ -177,59 +177,6 @@ def compute(expr, d, **kwargs):
     return post_compute(expr4, result, d2)
 
 
-def columnwise_funcstr(t, variadic=True, full=False):
-    """Build a string that can be eval'd to return a ``lambda`` expression.
-
-    Parameters
-    ----------
-    t : Broadcast
-        An expression whose leaves (at each application of the returned
-        expression) are all instances of ``ScalarExpression``.
-        For example ::
-
-            t.petal_length / max(t.petal_length)
-
-        is **not** a valid ``Broadcast``, since the expression ::
-
-            max(t.petal_length)
-
-        has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
-        valid ``Broadcast`` expression is ::
-
-            t.petal_length / 4
-
-    Returns
-    -------
-    f : str
-        A string that can be passed to ``eval`` and will return a function that
-        operates on each row and applies a scalar expression to a subset of the
-        columns in each row.
-
-    Examples
-    --------
-    >>> t = Symbol('t', 'var * {x: real, y: real, z: real}')
-    >>> cw = t['x'] + t['z']
-    >>> columnwise_funcstr(cw)
-    'lambda x, z: x + z'
-
-    >>> columnwise_funcstr(cw, variadic=False)
-    'lambda (x, z): x + z'
-
-    >>> columnwise_funcstr(cw, variadic=False, full=True)
-    'lambda (x, y, z): x + z'
-    """
-    if full:
-        columns = t._child.fields
-    else:
-        columns = t.active_columns()
-    if variadic:
-        prefix = 'lambda %s: '
-    else:
-        prefix = 'lambda (%s): '
-
-    return prefix % ', '.join(map(str, columns)) + eval_str(t._expr)
-
-
 @dispatch(Union, (list, tuple))
 def compute_up(t, children, **kwargs):
     return compute_up(t, children[0], tuple(children))
