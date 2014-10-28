@@ -26,8 +26,8 @@ def compute_up(a, **kwargs):
 
 
 @dispatch((list, tuple))
-def compute_up(seq, scope={}, **kwargs):
-    return type(seq)(compute(item, scope, **kwargs) for item in seq)
+def compute_up(seq, scope=None, **kwargs):
+    return type(seq)(compute(item, scope or {}, **kwargs) for item in seq)
 
 
 @dispatch(Expr, object)
