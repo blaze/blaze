@@ -59,6 +59,10 @@ class Broadcast(Expr):
     def _name(self):
         return self._scalar_expr._name
 
+    @property
+    def _full_expr(self):
+        return self._scalar_expr._subs(dict(zip(self._scalars,
+                                                self._children)))
 
 def scalar_symbols(exprs):
     """

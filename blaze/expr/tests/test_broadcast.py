@@ -101,3 +101,8 @@ def test_broadcast_doesnt_affect_scalars():
     expr = (2 * t.x + t.y + 1)
 
     assert broadcast_collect(expr).isidentical(expr)
+
+
+def test_full_expr():
+    b = Broadcast((x, y), (xx, yy), xx + yy)
+    assert b._full_expr.isidentical(x + y)
