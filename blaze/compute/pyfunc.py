@@ -90,7 +90,8 @@ def print_python(leaves, expr):
         funcname = next(funcnames)
         return ('%s(%s)' % (funcname, child),
                 toolz.assoc(scope, funcname, expr.func))
-    raise NotImplementedError()
+    raise NotImplementedError("Do not know how to print expression %s to "
+            "Python code" % expr)
 
 
 def funcstr(leaves, expr):
