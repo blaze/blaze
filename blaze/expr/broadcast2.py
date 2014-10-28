@@ -14,7 +14,9 @@ __all__ = ['broadcast', 'Broadcast', 'scalar_symbols', 'broadcast_collect']
 def broadcast(expr, leaves, scalars=None):
     scalars = scalars or scalar_symbols(leaves)
     assert len(scalars) == len(leaves)
-    return Broadcast(tuple(leaves), tuple(scalars), expr._subs(dict(zip(leaves, scalars))))
+    return Broadcast(tuple(leaves),
+                     tuple(scalars),
+                     expr._subs(dict(zip(leaves, scalars))))
 
 
 class Broadcast(Expr):
