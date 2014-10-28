@@ -20,6 +20,30 @@ def broadcast(expr, leaves, scalars=None):
 
 
 class Broadcast(Expr):
+    """ Fuse scalar expressions over collections
+
+    Given elementwise operations on collections, e.g.
+
+    >>> a = Symbol('a', '100 * int')
+    >>> t = Symbol('t', '100 * {x: int, y: int}')
+
+    >>> expr = sin(a) + t.y**2
+
+    It may be best to represent this as a scalar expression mapped over a
+    collection
+
+    >>> sa = Symbol('a', 'int')
+    >>> st = Symbol('t', '{x: int, y: int}')
+
+    >>> sexpr = sin(sa) + st.y**2
+
+    >>> expr = Broadcast((a, t), (sa, st), sexpr)
+
+    This provides opportunities for optimized computation.
+
+    In practice, expressions are often collected into Broadcast expressions
+    automatically.  This class is mainly intented for internal use.
+    """
     __slots__ = '_children', '_scalars', '_scalar_expr'
 
     @property
