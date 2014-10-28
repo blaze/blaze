@@ -7,7 +7,7 @@ from .strings import *
 from .datetime import *
 from .math import *
 from .arithmetic import *
-from .broadcast2 import *
+from .broadcast import *
 from .collections import *
 from .split_apply_combine import *
 from .reductions import *

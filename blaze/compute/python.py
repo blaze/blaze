@@ -59,7 +59,7 @@ Sequence = (tuple, list, Iterator, type(dict().items()))
 
 Broadcastables = (Arithmetic, Field)
 
-from ..expr.broadcast2 import broadcast_table_collect
+from ..expr.broadcast import broadcast_table_collect
 
 @dispatch(Expr, Sequence)
 def optimize(expr, seq):

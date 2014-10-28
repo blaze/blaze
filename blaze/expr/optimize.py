@@ -2,7 +2,7 @@ from .expressions import *
 from .arithmetic import *
 from .collections import *
 from .split_apply_combine import *
-from .broadcast2 import *
+from .broadcast import *
 from .reductions import *
 from ..dispatch import dispatch
 

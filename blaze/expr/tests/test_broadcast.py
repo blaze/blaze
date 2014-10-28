@@ -1,6 +1,6 @@
 from blaze.expr import *
-from blaze.expr.broadcast2 import *
-from blaze.expr.broadcast2 import (leaves_of_type, broadcast_collect,
+from blaze.expr.broadcast import *
+from blaze.expr.broadcast import (leaves_of_type, broadcast_collect,
         broadcast_table_collect, _table_find_leaves)
 from blaze.compatibility import builtins
 from toolz import isdistinct
