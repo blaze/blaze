@@ -18,8 +18,8 @@ t = Symbol('t', 'var * {a: int32, b: float64}')
 
 
 to = Symbol('to', 'var * {a: int32, b: float64}')
-bo = bcolz.ctable([[1, 2, 3], [1., 2., np.nan]],
-                  names=['a', 'b'])
+bo = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, np.nan)],
+                           dtype=[('a', 'i8'), ('b', 'f8')]))
 
 
 def test_discover():
