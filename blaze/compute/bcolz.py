@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import Selection, Head, Field, Projection, ReLabel, ElemWise
+from blaze.expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
+        Arithmetic)
 from blaze.expr import Label, Distinct, By, Reduction, Like, Slice
 from blaze.expr import std, var, count, mean, nunique, sum
 from blaze.expr import eval_str, Expr
@@ -95,7 +96,7 @@ def compute_up(expr, b, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch((ElemWise, Distinct, By, nunique, Like), (bcolz.carray, bcolz.ctable))
+@dispatch((Arithmetic, ElemWise, Distinct, By, nunique, Like), (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
         return compute_up(expr, data[:], **kwargs)

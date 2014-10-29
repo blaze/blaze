@@ -262,14 +262,6 @@ def compute_up(t, seq, **kwargs):
     return filter(predicate, seq)
 
 
-@dispatch(Arithmetic, object)
-def compute_up(t, x, **kwargs):
-    if isinstance(t.lhs, Expr):
-        return t.op(x, t.rhs)
-    else:
-        return t.op(t.lhs, x)
-
-
 @dispatch(Reduction, Sequence)
 def compute_up(t, seq, **kwargs):
     if t.axis != (0,):
