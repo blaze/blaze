@@ -34,6 +34,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
                     Symbol, Slice)
+from ..expr import (DayOfWeek, Week, DayOfYear, Quarter)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import eval_str
@@ -140,6 +141,26 @@ def rowfunc(t):
 @dispatch((Date, Time))
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)()
+
+
+@dispatch(DayOfWeek)
+def rowfunc(t):
+    return lambda row: getattr(row, 'weekday')()
+
+
+@dispatch(Week)
+def rowfunc(t):
+    return lambda row: getattr(row, 'isocalendar')()[1]
+
+
+@dispatch(DayOfYear)
+def rowfunc(t):
+    return lambda row: getattr(row, 'timetuple')().tm_yday
+
+
+@dispatch(Quarter)
+def rowfunc(t):
+    return lambda row: (getattr(row, 'month') - 1) // 3 + 1
 
 
 @dispatch(Millisecond)

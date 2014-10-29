@@ -578,6 +578,15 @@ def test_datetime_access():
         assert (compute(getattr(t.when, attr), df) == \
                 Series([1, 1, 1])).all()
 
+    assert (compute(getattr(t.when, 'dayofweek'), df) == \
+            Series([4, 4, 4])).all()
+    assert (compute(getattr(t.when, 'week'), df) == \
+            Series([53, 53, 53])).all()
+    assert (compute(getattr(t.when, 'dayofyear'), df) == \
+            Series([1, 1, 1])).all()
+    assert (compute(getattr(t.when, 'quarter'), df) == \
+            Series([1, 1, 1])).all()
+
 
 def test_frame_slice():
     assert (compute(t[0], df) == df.iloc[0]).all()

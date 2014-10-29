@@ -32,6 +32,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol)
+from ..expr import (DayOfWeek, Week, DayOfYear, Quarter)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -392,7 +393,7 @@ def get_date_attr(s, attr):
         return getattr(pd.DatetimeIndex(s), attr)
 
 
-@dispatch(DateTime, Series)
+@dispatch((DateTime, DayOfWeek, Week, DayOfYear, Quarter), Series)
 def compute_up(expr, s, **kwargs):
     return get_date_attr(s, expr.attr)
 

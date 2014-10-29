@@ -279,11 +279,15 @@ def compute_up(t, q, **kwargs):
     return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
 
 
+datetime_names = {'day': 'dayOfMonth', 'dayofweek':'dayOfWeek', 
+    'dayofyear': 'dayOfYear'}
+
+
 @dispatch(DateTime, MongoQuery)
 def compute_up(expr, q, **kwargs):
     attr = expr.attr
     d = {'$project': {expr._name:
-                      {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
+                      {'$%s' % datetime_names.get(attr, attr):
                        '$%s' % expr._child._name}}}
     return q.append(d)
 
