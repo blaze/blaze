@@ -15,8 +15,7 @@ def lean_projection(expr):
     t[['a', 'b']].sort('a', ascending=True).b
     """
     fields = expr.fields
-
-    return _lean(expr, fields=expr.fields)[0]
+    return _lean(expr, fields=fields)[0]
 
 
 @dispatch(Symbol)
@@ -93,7 +92,12 @@ def _lean(expr, fields=None):
 
 @dispatch(Reduction)
 def _lean(expr, fields=None):
-    child, child_fields = _lean(expr._child, fields=set())
+    child = expr._child
+    try:
+        fields = child.active_columns()
+    except AttributeError:
+        fields = child.fields
+    child, child_fields = _lean(child, fields=set(filter(None, fields)))
     return expr._subs({expr._child: child}), child_fields
 
 

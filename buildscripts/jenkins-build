@@ -40,7 +40,7 @@ export PYENV_PREFIX=${WORKSPACE}/build/pyenv
     --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} \
     cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools \
     dateutil pip pytables sqlalchemy h5py pandas requests pytest \
-    toolz cytoolz bcolz || exit 1
+    toolz cytoolz bcolz psutil || exit 1
 
 
 export PATH=${PYENV_PREFIX}/bin:${PATH}

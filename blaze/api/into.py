@@ -418,8 +418,10 @@ def into(s, x, **kwargs):
     return pd.Series(numpy_ensure_strings(x), name=s.name)
 
 @dispatch(pd.DataFrame, pd.Series)
-def into(_, df, **kwargs):
-    return pd.DataFrame(df)
+def into(df, s, **kwargs):
+    assert len(df.columns) <= 1, 'DataFrame columns must be empty or length 1'
+    return pd.DataFrame(s, columns=df.columns if len(df.columns) else [s.name])
+
 
 @dispatch(list, pd.Series)
 def into(_, ser, **kwargs):

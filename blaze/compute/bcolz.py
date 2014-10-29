@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 from blaze.expr import Selection, Head, Field, Projection, ReLabel, ElemWise
 from blaze.expr import Label, Distinct, By, Reduction, Like, Slice
 from blaze.expr import std, var, count, mean, nunique, sum
-from blaze.expr import eval_str
+from blaze.expr import eval_str, Expr
+from blaze.expr.optimize import lean_projection
 
 from collections import Iterator
 import datashape
@@ -94,7 +95,7 @@ def compute_up(expr, b, **kwargs):
     raise NotImplementedError()
 
 
-@dispatch((ElemWise, Distinct, By, nunique, Like), bcolz.ctable)
+@dispatch((ElemWise, Distinct, By, nunique, Like), (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
         return compute_up(expr, data[:], **kwargs)
@@ -132,3 +133,8 @@ def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return b[start:stop]
+
+
+@dispatch(Expr, (bcolz.ctable, bcolz.carray))
+def optimize(expr, _):
+    return lean_projection(expr)

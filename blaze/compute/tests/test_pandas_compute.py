@@ -584,9 +584,17 @@ def test_datetime_access():
                 Series([1, 1, 1])).all()
 
 
-def test_slice():
+def test_frame_slice():
     assert (compute(t[0], df) == df.iloc[0]).all()
     assert (compute(t[2], df) == df.iloc[2]).all()
     assert (compute(t[:2], df) == df.iloc[:2]).all().all()
     assert (compute(t[1:3], df) == df.iloc[1:3]).all().all()
     assert (compute(t[1::2], df) == df.iloc[1::2]).all().all()
+
+
+def test_series_slice():
+    assert (compute(t.amount[0], df) == df.amount.iloc[0]).all()
+    assert (compute(t.amount[2], df) == df.amount.iloc[2]).all()
+    assert (compute(t.amount[:2], df) == df.amount.iloc[:2]).all().all()
+    assert (compute(t.amount[1:3], df) == df.amount.iloc[1:3]).all().all()
+    assert (compute(t.amount[1::2], df) == df.amount.iloc[1::2]).all().all()

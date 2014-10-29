@@ -26,7 +26,14 @@ def coerce(dshape, item):
 
 @dispatch(_strtypes, object)
 def coerce(dshape, item):
-    return nd.as_py(nd.array(item, dtype=dshape), tuple=True)
+    try:
+        return nd.as_py(nd.array(item, dtype=dshape), tuple=True)
+    except ValueError as e:
+        raise ValueError("DataShape mismatch.\n"
+                "DyND failed to parse data with the following datashape: %s\n"
+                "Produced the following error: %s\n"
+                "Consider providing a more general datashape with "
+                "keyword dshape=" % (dshape, e.args[0]))
 
 
 @dispatch(_strtypes, Iterator)

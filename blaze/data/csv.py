@@ -9,8 +9,9 @@ from contextlib import contextmanager
 
 from ..dispatch import dispatch
 from cytoolz import partition_all, merge, keyfilter, pluck
-from toolz import concat, get, pipe, identity
+from toolz import concat, get, pipe, identity, take
 from toolz.curried import map, get
+from dynd import nd
 
 import pandas as pd
 
@@ -319,9 +320,22 @@ class CSV(DataDescriptor):
                     header=self.header, typehints=typehints,
                     types=types, columns=columns,
                     nrows_discovery=nrows_discovery)
-
         self._schema = schema
         self.header = header
+
+        if 'w' not in mode:
+            try:
+                nd.array(list(take(10, self._iter(chunksize=10))),
+                         dtype=str(schema))
+            except (ValueError, TypeError) as e:
+                raise ValueError("Automatic datashape discovery failed\n"
+                        "Discovered the following datashape: %s\n"
+                        "But DyND generated the following error: %s\n"
+                        "Consider providing type hints using "
+                        "typehints={'column-name': 'type'}\n"
+                        "like typehints={'start-time': 'string'}"
+                        % (schema, e.args[0]))
+
 
     def get_py(self, key):
         return self._get_py(ordered_index(key, self.dshape))
@@ -396,10 +410,11 @@ class CSV(DataDescriptor):
         else:
             return map(reorder, result)
 
-    def _iter(self, usecols=None):
+    def _iter(self, usecols=None, chunksize=None):
         from blaze.api.into import into
+        chunksize = chunksize or self.chunksize
         dfs = self.pandas_read_csv(usecols=usecols,
-                                   chunksize=self.chunksize,
+                                   chunksize=chunksize,
                                    dtype='O',
                                    parse_dates=[])
         return pipe(dfs, map(partial(pd.DataFrame.fillna, value='')),

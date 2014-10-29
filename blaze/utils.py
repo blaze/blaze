@@ -8,6 +8,7 @@ from itertools import islice
 from contextlib import contextmanager
 from collections import Iterator
 
+import psutil
 import numpy as np
 
 # Imports that replace older utils.
@@ -191,3 +192,7 @@ def assert_allclose(lhs, rhs):
 def example(filename, datapath=os.path.join('examples', 'data')):
     import blaze
     return os.path.join(os.path.dirname(blaze.__file__), datapath, filename)
+
+
+def available_memory():
+    return psutil.virtual_memory().available
