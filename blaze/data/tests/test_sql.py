@@ -7,7 +7,7 @@ import unittest
 import gzip
 
 from blaze.data.sql import SQL, discover, dshape_to_alchemy
-from blaze.utils import raises, filetext
+from blaze.utils import raises, filetext, tmpfile
 from datashape import dshape
 import datashape
 from blaze.compatibility import PY2
@@ -196,3 +196,9 @@ def test_csv_gzip_into_sql():
         csv = CSV(fn, schema=sql.schema)
         into(sql, csv)
         assert list(sql) == list(csv)
+
+
+def test_sql_schema_behavior():
+    with tmpfile('db') as filename:
+        sql = SQL('sqlite:///%s' % filename, 'mydb.accounts',
+                    schema='{name: string, amount: int}')
