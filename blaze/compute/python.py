@@ -536,7 +536,7 @@ def compute_up(t, seq, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t._child[t.key])
     else:
-        key = rowfunc(optimize(t.key, seq))
+        key = rrowfunc(optimize(t.key, seq), t._child)
     return sorted(seq,
                   key=key,
                   reverse=not t.ascending)
