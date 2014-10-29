@@ -116,7 +116,7 @@ def compute_up(expr, data, **kwargs):
     s = expr._scalars[0]
     cols = [s[field] for field in s.fields]
     expr_str = print_numexpr(cols, expr._scalar_expr)
-    uservars = {c: getattr(data.cols, c) for c in s.fields}
+    uservars = dict((c, getattr(data.cols, c)) for c in s.fields)
     e = tb.Expr(expr_str, uservars=uservars, truediv=True)
     return e.eval()
 

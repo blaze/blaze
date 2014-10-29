@@ -137,7 +137,7 @@ def compute_up(t, q, **kwargs):
 @dispatch(Broadcast, MongoQuery)
 def compute_up(t, q, **kwargs):
     s = t._scalars[0]
-    d = {s[c]: Symbol(c, s[c].dshape.measure) for c in s.fields}
+    d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
     expr = t._scalar_expr._subs(d)
     name = expr._name or 'expr_%d' % abs(hash(expr))
     return q.append({'$project': {name: compute_sub(expr)}})
@@ -203,7 +203,7 @@ def compute_up(expr, data, **kwargs):
     assert isinstance(predicate, Broadcast)
 
     s = predicate._scalars[0]
-    d = {s[c]: Symbol(c, s[c].dshape.measure) for c in s.fields}
+    d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
     expr = predicate._scalar_expr._subs(d)
     return data.append({'$match': match(expr)})
 
@@ -274,7 +274,7 @@ reductions = {mean: '$avg', count: '$sum', max: '$max', min: '$min', sum: '$sum'
 def scalar_expr(expr):
     if isinstance(expr, Broadcast):
         s = expr._scalars[0]
-        d = {s[c]: Symbol(c, s[c].dshape.measure) for c in s.fields}
+        d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
         return expr._scalar_expr._subs(d)
     elif isinstance(expr, Field):
         return Symbol(expr._name, expr.dshape.measure)
