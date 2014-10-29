@@ -139,7 +139,7 @@ def compute_up(t, q, **kwargs):
     s = t._scalars[0]
     d = {s[c]: Symbol(c, s[c].dshape.measure) for c in s.fields}
     expr = t._scalar_expr._subs(d)
-    name = expr._name or 'expr_%d' % hash(expr)
+    name = expr._name or 'expr_%d' % abs(hash(expr))
     return q.append({'$project': {name: compute_sub(expr)}})
 
 
