@@ -20,6 +20,8 @@ import numpy as np
 import pandas as pd
 import tables as tb
 
+
+from ..data.meta import Concat
 from ..compute.chunks import ChunkIterator, chunks
 from ..compatibility import map
 from ..dispatch import dispatch
