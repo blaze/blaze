@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import logging
-
 from dynd import nd
 from pandas import DataFrame
 import h5py
@@ -65,11 +63,6 @@ except ImportError:
     pass
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
-
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
-
 
 inf = float('inf')
 nan = float('nan')
