@@ -1,4 +1,5 @@
 from blaze.compute.pyfunc import *
+from blaze.compute.pyfunc import _print_python
 import datetime
 
 t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
@@ -29,6 +30,11 @@ def test_map():
 def test_math():
     f = lambdify([t], t.x + cos(t.y))
     assert f((1, 0, 3, 4)) == 1 + math.cos(0.0)
+
+
+def test_datetime_literals_and__print_python():
+    _print_python(datetime.date(2000, 1, 1)) == \
+            'datetime.date(2000, 1, 1)', {'datetime': datetime}
 
 
 def test_datetime_literals():

@@ -632,8 +632,6 @@ def test_datetime_comparison():
     assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
 
 
-
-
 def test_datetime_access():
     data = [['Alice', 100, 1, datetime(2000, 1, 1, 1, 1, 1)],
             ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
