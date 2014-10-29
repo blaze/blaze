@@ -327,20 +327,6 @@ datetime_terms = {Day: 'dayOfMonth',
                   Minute: 'minute',
                   Second: 'second'}
 
-@dispatch(DateTime, MongoQuery)
-def compute_up(expr, q, **kwargs):
-    attr = expr.attr
-    d = {'$project': {expr._name:
-                      {'$%s' % datetime_terms.get(attr, attr):
-                       '$%s' % expr._child._name}}}
-    return q.append(d)
-
-
-@dispatch((Date, Time, Microsecond), MongoQuery)
-def compute_up(expr, q, **kwargs):
-    raise NotImplementedError('MongoDB does not support the %r field' %
-                              type(expr).__name__.lower())
-
 
 @dispatch(Expr, Collection, dict)
 def post_compute(e, c, d):
