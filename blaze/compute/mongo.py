@@ -64,6 +64,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol,
                     Arithmetic
                     )
+from ..expr.datetime import Day, Month, Year, Minute, Second
 from .. import expr
 from ..compatibility import _strtypes
 
@@ -138,7 +139,8 @@ def compute_up(t, q, **kwargs):
     s = t._scalars[0]
     d = {s[c]: Symbol(c, s[c].dshape.measure) for c in s.fields}
     expr = t._scalar_expr._subs(d)
-    return q.append({'$project': {str(expr): compute_sub(expr)}})
+    name = expr._name or 'expr_%d' % hash(expr)
+    return q.append({'$project': {name: compute_sub(expr)}})
 
 
 binops = {'+': 'add',
@@ -171,17 +173,23 @@ def compute_sub(t):
     ((s * 2) + s) - 1
     >>> compute_sub(expr)
     {'$subtract': [{'$add': [{'$multiply': ['$s', 2]}, '$s']}, 1]}
+
+    >>> when = Symbol('when', 'datetime')
+    >>> compute_sub(s + when.day)
+    {'$add': ['$s', {'$dayOfMonth': '$when'}]}
     """
     if isinstance(t, _strtypes + (Symbol,)):
         return '$%s' % t
     elif isinstance(t, numbers.Number):
         return t
-    try:
+    elif isinstance(t, Arithmetic) and hasattr(t, 'symbol') and t.symbol in binops:
         op = binops[t.symbol]
-    except KeyError:
-        raise NotImplementedError('Arithmetic operation %r not implemented in '
-                                  'MongoDB' % t.symbol)
-    return {compute_sub(op): [compute_sub(t.lhs), compute_sub(t.rhs)]}
+        return {'$%s' % op: [compute_sub(t.lhs), compute_sub(t.rhs)]}
+    elif isinstance(t, tuple(datetime_terms)):
+        op = datetime_terms[type(t)]
+        return {'$%s' % op: compute_sub(t._child)}
+
+    raise NotImplementedError('Operation %s not supported' % type(t).__name__)
 
 
 @dispatch((Projection, Field), MongoQuery)
@@ -313,7 +321,11 @@ def compute_up(t, q, **kwargs):
     return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
 
 
-datetime_terms = {'day': 'dayOfMonth'}
+datetime_terms = {Day: 'dayOfMonth',
+                  Month: 'month',
+                  Year: 'year',
+                  Minute: 'minute',
+                  Second: 'second'}
 
 @dispatch(DateTime, MongoQuery)
 def compute_up(expr, q, **kwargs):

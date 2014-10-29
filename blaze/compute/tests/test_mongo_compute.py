@@ -315,6 +315,6 @@ def test_datetime_access(date_data):
 
     py_data = into(list, date_data) # a python version of the collection
 
-    for attr in ['day', 'minute', 'second', 'year']:
+    for attr in ['day', 'minute', 'second', 'year', 'month']:
         assert list(compute(getattr(t.when, attr), date_data)) == \
                 list(compute(getattr(t.when, attr), py_data))
