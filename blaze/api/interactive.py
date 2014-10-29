@@ -34,6 +34,9 @@ try:
     not_an_iterator.append(pymongo.collection.Collection)
 except ImportError:
     pass
+from ..compute.chunks import ChunkIterator
+not_an_iterator.append(ChunkIterator)
+
 
 class Data(Symbol):
     """ Interactive data
