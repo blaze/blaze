@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+from functools import partial
 from dynd import nd
 import datashape
 import sys
@@ -8,9 +9,10 @@ from functools import partial
 from datashape import dshape, Record, to_numpy_dtype, Option
 from datashape.predicates import isscalar
 import toolz
-from toolz import concat, partition_all, first, merge
-from cytoolz import pluck
+from toolz import concat, partition_all, valmap, first, merge
+from cytoolz import pluck, compose
 import copy
+import sys
 from datetime import datetime
 from numbers import Number
 from collections import Iterable, Iterator
@@ -18,8 +20,10 @@ import numpy as np
 import pandas as pd
 import tables as tb
 
-from ..compute.chunks import ChunkIterator, chunks
+
 from ..data.meta import Concat
+from ..compute.chunks import ChunkIterator, chunks
+from ..compatibility import map
 from ..dispatch import dispatch
 from .. import expr
 from ..expr import Expr, Projection, Field, Symbol
@@ -87,6 +91,16 @@ except ImportError:
     JSON = type(None)
     JSON_STREAMING = type(None)
     Excel = type(None)
+
+try:
+    from rethinkdb.ast import Table as RqlTable, RqlQuery
+    from rethinkdb.net import Cursor as RqlCursor
+    from blaze.compute.rethink import RTable
+except ImportError:
+    RqlTable = type(None)
+    RqlQuery = type(None)
+    RTable = type(None)
+
 
 @dispatch(type, object)
 def into(a, b, **kwargs):
@@ -1013,6 +1027,7 @@ def into(a, b, **kwargs):
     a.extend(into(list,b))
     return a
 
+
 @dispatch(Number, Number)
 def into(a, b, **kwargs):
     if not isinstance(a, type):
@@ -1039,3 +1054,30 @@ def into(a, **kwargs):
 def into(a, b, **kwargs):
     into(a, into(Iterator, b, **kwargs))
     return a
+
+
+@dispatch(RqlTable, (RqlTable, list))
+def into(t, r):
+    return t.insert(r)
+
+
+@dispatch(RqlTable, RqlCursor)
+def into(t, rc):
+    return into(t, list(rc))
+
+
+@dispatch(RqlTable, np.recarray)
+def into(t, a):
+    rec_list = list(map(partial(compose(dict, zip), a.dtype.fields.keys()), a))
+    return into(t, rec_list)
+
+
+@dispatch(RTable, RTable)
+def into(r1, r2):
+    return into(r1, r2.t)
+
+
+@dispatch(RTable, (RqlTable, list, np.recarray, RqlCursor))
+def into(r, o):
+    into(r.t, o).run(r.conn)
+    return r

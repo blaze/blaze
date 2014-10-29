@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
 import logging
 
 from dynd import nd
@@ -61,8 +62,10 @@ except ImportError:
     pass
 try:
     from .pytables import *
+    from .compute.rethink import *
 except ImportError:
     pass
+
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
 
