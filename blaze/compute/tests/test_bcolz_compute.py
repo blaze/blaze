@@ -11,13 +11,13 @@ from blaze.expr import Symbol
 from blaze.compute.core import compute
 
 
-b = bcolz.ctable([[1, 2, 3], [1., 2., 3.]],
-                 names=['a', 'b'])
+b = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, 3.)],
+                          dtype=[('a', 'i8'), ('b', 'f8')]))
 
-t = Symbol('t', 'var * {a: int32, b: float64}')
+t = Symbol('t', 'var * {a: int64, b: float64}')
 
 
-to = Symbol('to', 'var * {a: int32, b: float64}')
+to = Symbol('to', 'var * {a: int64, b: float64}')
 bo = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, np.nan)],
                            dtype=[('a', 'i8'), ('b', 'f8')]))
 
