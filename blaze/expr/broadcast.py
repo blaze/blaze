@@ -19,7 +19,7 @@ def broadcast(expr, leaves, scalars=None):
                      expr._subs(dict(zip(leaves, scalars))))
 
 
-class Broadcast(Expr):
+class Broadcast(ElemWise):
     """ Fuse scalar expressions over collections
 
     Given elementwise operations on collections, e.g.
