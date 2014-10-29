@@ -695,3 +695,25 @@ def test_slice():
     assert compute(t[0], data) == data[0]
     assert list(compute(t[:2], data)) == list(data[:2])
     assert list(compute(t.name[:2], data)) == [data[0][0], data[1][0]]
+
+
+def test_multi_dataset_broadcast():
+    x = Symbol('x', '3 * int')
+    y = Symbol('y', '3 * int')
+
+    a = [1, 2, 3]
+    b = [10, 20, 30]
+
+    assert list(compute(x + y, {x: a, y: b})) == [11, 22, 33]
+    assert list(compute(2*x + (y + 1), {x: a, y: b})) == [13, 25, 37]
+
+
+@pytest.mark.xfail(reason="Optimize doesn't create multi-table-broadcasts")
+def test_multi_dataset_broadcast_with_Record_types():
+    x = Symbol('x', '3 * {p: int, q: int}')
+    y = Symbol('y', '3 * int')
+
+    a = [(1, 1), (2, 2), (3, 3)]
+    b = [10, 20, 30]
+
+    assert list(compute(x.p + x.q + y, {x: iter(a), y: iter(b)})) == [12, 24, 36]
