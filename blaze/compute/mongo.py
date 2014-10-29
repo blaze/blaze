@@ -71,6 +71,9 @@ from ..dispatch import dispatch
 
 __all__ = ['MongoQuery']
 
+@dispatch(Expr, Collection)
+def pre_compute(expr, data):
+    return data
 
 class MongoQuery(object):
     """

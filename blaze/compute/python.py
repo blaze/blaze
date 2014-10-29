@@ -19,7 +19,7 @@ import re
 from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
-from cytoolz import groupby, reduceby, unique, take, concat, first, nth
+from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
 import cytoolz
 import toolz
 import sys
@@ -33,7 +33,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice)
+                    Symbol, Slice, Expr)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import eval_str
@@ -53,6 +53,21 @@ from math import *
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
+
+@dispatch(Expr, Sequence)
+def pre_compute(expr, seq):
+    try:
+        if isinstance(seq, Iterator):
+            first = next(seq)
+            seq = concat([[first], seq])
+        else:
+            first = next(iter(seq))
+    except StopIteration:
+        return []
+    if isinstance(first, dict):
+        return pluck(expr.fields, seq)
+    else:
+        return seq
 
 
 def recursive_rowfunc(t, stop):
