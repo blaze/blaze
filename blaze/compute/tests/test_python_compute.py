@@ -719,3 +719,9 @@ def test_dicts():
     for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
         assert eq(compute(expr, {t: L}),
                   compute(expr, {t: d}))
+
+    for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
+        assert eq(compute(expr, {t: iter(L)}),
+                  compute(expr, {t: iter(d)}))
+        assert eq(compute(expr, {t: iter(L)}),
+                  compute(expr, {t: L}))
