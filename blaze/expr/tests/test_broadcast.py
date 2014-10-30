@@ -106,3 +106,10 @@ def test_broadcast_doesnt_affect_scalars():
 def test_full_expr():
     b = Broadcast((x, y), (xx, yy), xx + yy)
     assert b._full_expr.isidentical(x + y)
+
+
+def test_broadcast_naming():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+
+    for expr in [t.x, t.x + 1]:
+        assert broadcast(expr, [t])._name == 'x'

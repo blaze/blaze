@@ -232,17 +232,6 @@ def test_selection_consistent_children():
     assert list(expr.fields) == ['name']
 
 
-def dont_test_broadcast_syntax():
-    t = TableSymbol('t', '{x: real, y: real, z: real}')
-    x, y, z = t['x'], t['y'], t['z']
-    assert (x + y).active_columns() == ['x', 'y']
-    assert (z + y).active_columns() == ['y', 'z']
-    assert ((z + y) * x).active_columns() == ['x', 'y', 'z']
-
-    expr = (z % x * y + z ** 2 > 0) & (x < 0)
-    assert isinstance(expr, Broadcast)
-
-
 def test_str():
     import re
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -611,39 +600,6 @@ def test_apply():
         l.dshape
 
 
-def dont_test_broadcast():
-    from blaze.expr.arithmetic import Add, Eq, Mult, Le
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
-    t2 = TableSymbol('t', '{a: int, b: int, c: int}')
-    x = t['x']
-    y = t['y']
-    z = t['z']
-    a = t2['a']
-    b = t2['b']
-    c = t2['c']
-
-    assert str(broadcast(Add, x, y)._expr) == 'x + y'
-    assert broadcast(Add, x, y)._child.isidentical(t)
-
-    c1 = broadcast(Add, x, y)
-    c2 = broadcast(Mult, x, z)
-
-    assert eval_str(broadcast(Eq, c1, c2)._expr) == '(x + y) == (x * z)'
-    assert broadcast(Eq, c1, c2)._child.isidentical(t)
-
-    assert str(broadcast(Add, x, 1)._expr) == 'x + 1'
-
-    assert str(x <= y) == "t.x <= t.y"
-    assert str(x >= y) == "t.x >= t.y"
-    assert str(x | y) == "t.x | t.y"
-    assert str(x.__ror__(y)) == "t.y | t.x"
-    assert str(x.__rand__(y)) == "t.y & t.x"
-
-    with pytest.raises(ValueError):
-        broadcast(Add, x, a)
-
-
-@pytest.mark.xfail(reason="Temporary")
 def test_TableSymbol_printing_is_legible():
     accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
 
@@ -797,13 +753,6 @@ def test_isnan():
 
     assert iscollection(t.amount.isnan().dshape)
     assert 'bool' in str(t.amount.isnan().dshape)
-
-
-def dont_test_broadcast_naming():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
-
-    assert t.x._name == 'x'
-    assert (t.x + 1)._name == 'x'
 
 
 def test_distinct_name():

@@ -207,12 +207,6 @@ def scalar_coerce(rec, val):
 @dispatch(ct.DataShape, object)
 def scalar_coerce(ds, val):
     return scalar_coerce(ds.measure, val)
-    if len(ds) == 1:
-        return scalar_coerce(ds[0], val)
-    else:
-        raise TypeError("Trying to coerce dimensional datashape\n"
-                "got dshape: %s\n"
-                "scalar_coerce only intended for scalar values" % ds)
 
 
 @dispatch(object, object)
