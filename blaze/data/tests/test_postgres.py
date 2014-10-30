@@ -68,6 +68,9 @@ def test_sql_schema_behavior():
         sql2 = SQL(url, 'accounts', db='mydb')
         assert list(sql2) == data
 
+        sql3 = SQL(url, 'mydb.accounts')
+        assert list(sql2) == data
+
 
 def test_sql_new_schema():
     with non_existing_schema('mydb2'):
