@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-"""
 import pytest
 
 psycopg2 = pytest.importorskip('psycopg2')
@@ -9,7 +8,6 @@ ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIP
 output = ps.stdout.read()
 num_processes = len(output.splitlines())
 pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
-"""
 
 from blaze import SQL, into, resource
 import sqlalchemy
@@ -18,7 +16,6 @@ from contextlib import contextmanager
 data = [('Alice', 1), ('Bob', 2), ('Charlie', 3)]
 
 url = 'postgresql://localhost/postgres'
-url = 'postgresql://postgres:postgres@localhost'
 engine = sqlalchemy.create_engine(url)
 
 
