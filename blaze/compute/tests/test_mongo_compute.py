@@ -115,10 +115,6 @@ e = Symbol('e', 'var * {time: datetime, x: int}')
 q = MongoQuery('fake', [])
 
 
-def test_symbol_one(bank):
-    assert compute_up(t, bank) == MongoQuery(bank, ())
-
-
 def test_symbol(bank):
     assert compute(t, bank) == list(pluck(['name', 'amount'], bank_raw))
 

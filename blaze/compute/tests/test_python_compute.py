@@ -7,12 +7,13 @@ import pytest
 from datetime import datetime, date
 from cytoolz import pluck
 import datashape
+from collections import Iterator, Iterable
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape, discover
-from blaze.compute.core import compute, compute_up
+from blaze.compute.core import compute, compute_up, pre_compute
 from blaze.expr import (Symbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, Symbol,
                         count, std, head, Symbol)
@@ -717,3 +718,35 @@ def test_multi_dataset_broadcast_with_Record_types():
     b = [10, 20, 30]
 
     assert list(compute(x.p + x.q + y, {x: iter(a), y: iter(b)})) == [12, 24, 36]
+
+
+def eq(a, b):
+    if isinstance(a, (Iterable, Iterator)):
+        a = list(a)
+    if isinstance(b, (Iterable, Iterator)):
+        b = list(b)
+    return a == b
+
+
+def test_dicts():
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+
+    L = [['Alice', 100, 1],
+         ['Bob', 200, 2],
+         ['Alice', 50, 3]]
+
+    d = [{'name': 'Alice', 'amount': 100, 'id': 1},
+         {'name': 'Bob', 'amount': 200, 'id': 2},
+         {'name': 'Alice', 'amount': 50, 'id': 3}]
+
+    assert list(pre_compute(t, d)) == list(map(tuple, L))
+
+    for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
+        assert eq(compute(expr, {t: L}),
+                  compute(expr, {t: d}))
+
+    for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
+        assert eq(compute(expr, {t: iter(L)}),
+                  compute(expr, {t: iter(d)}))
+        assert eq(compute(expr, {t: iter(L)}),
+                  compute(expr, {t: L}))

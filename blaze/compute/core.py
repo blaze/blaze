@@ -113,10 +113,10 @@ def bottom_up(d, expr):
     return result
 
 
-@dispatch(Expr, dict)
-def pre_compute(expr, d):
-    """ Transform expr prior to calling ``compute`` """
-    return expr
+@dispatch(Expr, object)
+def pre_compute(leaf, data):
+    """ Transform data prior to calling ``compute`` """
+    return data
 
 
 @dispatch(Expr, object, dict)
@@ -167,14 +167,14 @@ def compute(expr, d, **kwargs):
     ['Bob', 'Charlie']
     """
     expr2, d2 = swap_resources_into_scope(expr, d)
+    d3 = dict((e, pre_compute(e, dat)) for e, dat in d2.items())
 
-    expr3 = pre_compute(expr2, d2)
     try:
-        expr4 = optimize(expr3, *[v for e, v in d2.items() if e in expr3])
+        expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
     except NotImplementedError:
-        expr4 = expr3
-    result = top_to_bottom(d2, expr4, **kwargs)
-    return post_compute(expr4, result, d2)
+        expr3 = expr2
+    result = top_to_bottom(d3, expr3, **kwargs)
+    return post_compute(expr3, result, d3)
 
 
 @dispatch(Union, (list, tuple))

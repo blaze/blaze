@@ -37,9 +37,11 @@ import pandas as pd
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor
 from ..expr.split import split
+from ..expr import Expr
 
 __all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk',
            'chunks', 'into']
+
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -83,6 +85,12 @@ class ChunkIndexable(ChunkIterable):
                     yield get_chunk(self.seq, i, **self.kwargs)
                 except IndexError:
                     raise StopIteration()
+
+
+@dispatch(Expr, ChunkIterator)
+def pre_compute(expr, data):
+    return data
+
 
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),

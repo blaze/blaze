@@ -20,7 +20,7 @@ import re
 from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
-from cytoolz import groupby, reduceby, unique, take, concat, first, nth
+from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
 import cytoolz
 import toolz
 import sys
@@ -56,6 +56,21 @@ from math import *
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
+
+@dispatch(Expr, Sequence)
+def pre_compute(expr, seq):
+    try:
+        if isinstance(seq, Iterator):
+            first = next(seq)
+            seq = concat([[first], seq])
+        else:
+            first = next(iter(seq))
+    except StopIteration:
+        return []
+    if isinstance(first, dict):
+        return pluck(expr.fields, seq)
+    else:
+        return seq
 
 
 @dispatch(Expr, Sequence)

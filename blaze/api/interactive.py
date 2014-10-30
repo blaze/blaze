@@ -9,6 +9,7 @@ import itertools
 import numpy as np
 from dynd import nd
 import warnings
+from collections import Iterator
 
 from ..expr import Expr, Symbol
 from ..dispatch import dispatch
@@ -19,6 +20,23 @@ from ..resource import resource
 __all__ = ['Data', 'Table', 'into', 'to_html']
 
 names = ('_%d' % i for i in itertools.count(1))
+
+
+not_an_iterator = []
+
+try:
+    import bcolz
+    not_an_iterator.append(bcolz.carray)
+except ImportError:
+    pass
+try:
+    import pymongo
+    not_an_iterator.append(pymongo.collection.Collection)
+except ImportError:
+    pass
+from ..compute.chunks import ChunkIterator
+not_an_iterator.append(ChunkIterator)
+
 
 class Data(Symbol):
     """ Interactive data
@@ -61,6 +79,9 @@ class Data(Symbol):
         if isinstance(data, _strtypes):
             data = resource(data, schema=schema, dshape=dshape,
                     columns=columns, **kwargs)
+        if (isinstance(data, Iterator) and
+                not isinstance(data, tuple(not_an_iterator))):
+            data = tuple(data)
         if columns:
             warnings.warn("columns kwarg deprecated.  Use fields instead",
                           DeprecationWarning)

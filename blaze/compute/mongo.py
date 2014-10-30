@@ -73,6 +73,10 @@ from ..dispatch import dispatch
 
 __all__ = ['MongoQuery']
 
+@dispatch(Expr, Collection)
+def pre_compute(expr, data):
+    return MongoQuery(data, [])
+
 
 class MongoQuery(object):
     """
@@ -110,23 +114,11 @@ class MongoQuery(object):
         return hash((type(self), self.info()))
 
 
-@dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Distinct, ElemWise, Arithmetic, By, Like, DateTime,
-           Field, Broadcast),
-          Collection)
-def compute_up(e, coll, **kwargs):
-    return compute_up(e, MongoQuery(coll, []))
-
 from ..expr.broadcast import broadcast_collect
 
 @dispatch(Expr, (MongoQuery, Collection))
 def optimize(expr, seq):
     return broadcast_collect( expr)
-
-
-@dispatch(Symbol, Collection)
-def compute_up(t, coll, **kwargs):
-    return MongoQuery(coll, [])
 
 
 @dispatch(Head, MongoQuery)
