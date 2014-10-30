@@ -61,7 +61,8 @@ def print_numexpr(leaves, expr):
     if isinstance(expr, isnan):
         child = print_numexpr(leaves, expr._child)
         return '%s != %s' % (parenthsize(child), parenthesize(child))
-    raise NotImplementedError()
+    raise NotImplementedError("Operation %s not supported by numexpr" %
+            type(expr).__name__)
 
 
 WantToBroadcast = (Arithmetic, RealMath, Not, USub)
