@@ -214,3 +214,11 @@ def test_can_trivially_create_pytables():
 
 def test_data_passes_kwargs_to_resource():
     assert Data(example('iris.csv'), encoding='ascii').data.encoding == 'ascii'
+
+
+def test_data_on_iterator_refies_data():
+    data = [1, 2, 3]
+    d = Data(iter(data))
+
+    assert into(list, d) == data
+    assert into(list, d) == data
