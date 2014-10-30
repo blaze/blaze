@@ -151,6 +151,7 @@ class SQL(DataDescriptor):
     >>> dd.extend([('Alice', 100), ('Bob', 200)])
 
     Select all from table
+
     >>> list(dd) # doctest: +SKIP
     [('Alice', 100), ('Bob', 200)]
 
@@ -168,6 +169,8 @@ class SQL(DataDescriptor):
         or SQLAlchemy engine
     table : string
         The name of the table
+    db : string (optional)
+        The name of the database/schema
     schema : string, list of Columns
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
