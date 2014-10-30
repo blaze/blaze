@@ -148,3 +148,10 @@ The full pipeline looks like the following
 
 This is outlined in ``blaze/compute/core.py`` in the functions ``compute(Expr,
 dict)`` and ``top_to_bottom``.
+
+
+History
+-------
+
+This design is ad-hoc.  Each of the stages listed above arose from need, not
+from principled fore-thought.  Undoubtedly this system could be improved.
