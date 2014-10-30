@@ -7,7 +7,7 @@ import datashape
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
         'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
         'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-        'time']
+        'time', 'UTCFromTimestamp']
 
 class DateTime(ElemWise):
     """ Superclass for datetime accessors """
