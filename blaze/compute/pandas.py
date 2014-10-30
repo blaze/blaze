@@ -31,7 +31,8 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
-                    ElemWise, DateTime, Millisecond, Expr, Symbol)
+                    ElemWise, DateTime, Millisecond, Expr, Symbol,
+                    UTCFromTimestamp)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -411,6 +412,11 @@ def get_date_attr(s, attr):
 @dispatch(DateTime, Series)
 def compute_up(expr, s, **kwargs):
     return get_date_attr(s, expr.attr)
+
+
+@dispatch(UTCFromTimestamp, Series)
+def compute_up(expr, s, **kwargs):
+    return pd.datetools.to_datetime(s*1e9, utc=True)
 
 
 @dispatch(Millisecond, Series)
