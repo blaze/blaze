@@ -96,7 +96,9 @@ class Expr(Node):
     def __iter__(self):
         raise NotImplementedError(
                 'Iteration over expressions is not supported.\n'
-                'Iterate over slices instead, e.g. expr[:100]')
+                'Iterate over computed result instead, e.g. \n'
+                "\titer(expr)           # don't do this\n"
+                "\titer(compute(expr))  # do this instead")
 
     def __dir__(self):
         result = dir(type(self))
