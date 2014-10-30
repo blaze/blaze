@@ -11,7 +11,7 @@ num_processes = len(output.splitlines())
 pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
 """
 
-from blaze import SQL, into
+from blaze import SQL, into, resource
 import sqlalchemy
 from contextlib import contextmanager
 
@@ -80,3 +80,10 @@ def test_sql_new_schema():
 
         sql2 = SQL(url, 'accounts', db='mydb2')
         assert list(sql2) == data
+
+
+def test_resource_specifying_database_name():
+    with existing_schema('mydb'):
+        sql = resource(url + '::mydb.accounts', schema='{name: string, value: int}')
+        assert isinstance(sql, SQL)
+        assert sql.table.schema == 'mydb'
