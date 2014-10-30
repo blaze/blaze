@@ -219,7 +219,16 @@ class SQL(DataDescriptor):
 
         self._schema = datashape.dshape(schema)
         self.table = table
-        metadata.create_all(engine)
+
+        try:
+            metadata.create_all(engine)
+        except sqlalchemy.exc.ProgrammingError:  # Maybe db does not exist
+            if not self.dbname:
+                raise
+            # Create schema/db
+            statement = sqlalchemy.schema.CreateSchema(self.dbname)
+            engine.execute(statement)
+            metadata.create_all(engine)
 
     def _iter(self):
         with self.engine.connect() as conn:

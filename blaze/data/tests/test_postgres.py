@@ -23,7 +23,7 @@ engine = sqlalchemy.create_engine(url)
 
 
 @contextmanager
-def schema(name):
+def existing_schema(name):
     create = sqlalchemy.schema.CreateSchema(name)
     try:
         engine.execute(create)
@@ -42,11 +42,38 @@ def schema(name):
         engine.execute(drop)
 
 
+@contextmanager
+def non_existing_schema(name):
+    try:
+        yield
+    finally:
+        metadata = sqlalchemy.MetaData()
+        metadata.reflect(engine, schema=name)
+        for t in metadata.tables.values():
+            t.drop(bind=engine)
+
+        try:
+            drop = sqlalchemy.schema.DropSchema(name)
+            engine.execute(drop)
+        except:
+            pass
+
+
 def test_sql_schema_behavior():
-    with schema('mydb'):
+    with existing_schema('mydb'):
         sql = SQL(url, 'accounts', db='mydb', schema='{name: string, value: int}')
         into(sql, data)
         assert engine.has_table('accounts', schema='mydb')
 
         sql2 = SQL(url, 'accounts', db='mydb')
+        assert list(sql2) == data
+
+
+def test_sql_new_schema():
+    with non_existing_schema('mydb2'):
+        sql = SQL(url, 'accounts', db='mydb2', schema='{name: string, value: int}')
+        into(sql, data)
+        assert engine.has_table('accounts', schema='mydb2')
+
+        sql2 = SQL(url, 'accounts', db='mydb2')
         assert list(sql2) == data
