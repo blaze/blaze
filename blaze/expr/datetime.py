@@ -89,14 +89,21 @@ class Microsecond(DateTime):
 def microsecond(expr):
     return Microsecond(expr)
 
+class UTCFromTimestamp(DateTime):
+    _dtype = datashape.datetime_
+
+def utcfromtimestamp(expr):
+    return UTCFromTimestamp(expr)
+
 
 from .expressions import schema_method_list, method_properties
-from datashape.predicates import isdatelike
+from datashape.predicates import isdatelike, isnumeric
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
-                      millisecond, microsecond]))
+                      millisecond, microsecond])),
+    (isnumeric, set([utcfromtimestamp]))
     ])
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,
-                          microsecond, date, time])
+                          microsecond, date, time, utcfromtimestamp])
