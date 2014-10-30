@@ -66,14 +66,14 @@ following:
     ``post_compute(expr, data) -> data``
 4.  Process a leaf of the tree in a bottom up fashion as described above.
     ``compute_up(expr, data) -> data``
-4.  Process large chunks of the tree at once, rather than always start from the
+5.  Process large chunks of the tree at once, rather than always start from the
     bottom. ``compute_down(expr, data) -> data``
 
 Each of these steps is critical to one backend or another.  We describe each in
 turn and then give the complete picture of the entire pipeline.
 
-``optimize``
-------------
+``optimize :: expr, data -> expr``
+---------------------------------
 
 Optimize takes an expression and some data and changes the expression based on
 the data type.
@@ -85,8 +85,8 @@ we insert ``Broadcast`` operations to perform loop fusion.
 This function is applied throughout the tree at the top-most point at which it
 is applicable.  It is not applied at leaves which have little to optimize.
 
-``pre_compute``
----------------
+``pre_compute :: expr, data -> data``
+-------------------------------------
 
 Pre-compute is applied to leaf data elements prior to any computation
 (``xdata`` and ``ydata`` in the example above).  It might be used for example,
@@ -98,8 +98,8 @@ case we are in and normalizes to sequences of tuples.  This pre-computation
 allows the rest of the Python backend to make useful assumptions.
 
 
-``post_compute``
-----------------
+``post_compute :: expr, data -> data``
+--------------------------------------
 
 Post-compute finishes a computation.  It is handed the data after all
 computation has been done.
@@ -108,8 +108,8 @@ For example, in the case of SQLAlchemy queries the ``post_compute`` function
 actually sends the query to the SQL engine and collects results.
 
 
-``compute_up``
---------------
+``compute_up :: expr, data -> data``
+------------------------------------
 
 Compute up walks the expression tree bottom up and processes data step by step.
 
@@ -117,8 +117,8 @@ Compute up is the most prolific function in the computation pipeline and
 encodes most of the logic.
 
 
-``compute_down``
-----------------
+``compute_down :: expr, data -> data``
+--------------------------------------
 
 In some cases we want to process large chunks of the expression tree at once.
 Compute-down operates on the tree top-down, being given the root node / full
