@@ -71,6 +71,10 @@ from ..dispatch import dispatch
 
 __all__ = ['MongoQuery']
 
+@dispatch(Expr, Collection)
+def pre_compute(expr, data):
+    return MongoQuery(data, [])
+
 
 class MongoQuery(object):
     """
@@ -106,13 +110,6 @@ class MongoQuery(object):
 
     def __hash__(self):
         return hash((type(self), self.info()))
-
-
-@dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Distinct, ElemWise, By, Like, DateTime, Field),
-          Collection)
-def compute_up(e, coll, **kwargs):
-    return compute_up(e, MongoQuery(coll, []))
 
 
 @dispatch(Symbol, Collection)

@@ -222,3 +222,10 @@ def test_data_on_iterator_refies_data():
 
     assert into(list, d) == data
     assert into(list, d) == data
+
+
+def test_Data_on_json_is_concrete():
+    d = Data(example('accounts-streaming.json'))
+
+    assert compute(d.amount.sum()) == 100 - 200 + 300 + 400 - 500
+    assert compute(d.amount.sum()) == 100 - 200 + 300 + 400 - 500

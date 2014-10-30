@@ -9,7 +9,7 @@ from .resource import resource
 __all__ = 'resource',
 
 @resource.register('.*\.json')
-def resource_json(uri, open=open):
+def resource_json(uri, open=open, **kwargs):
     f = open(uri)
     try:
         data = json.load(f)
@@ -22,5 +22,5 @@ def resource_json(uri, open=open):
 
 
 @resource.register('.*\.json.gz')
-def resource_json_gzip(uri):
+def resource_json_gzip(uri, **kwargs):
     return resource_json(uri, open=partial(gzip.open, mode='rt'))
