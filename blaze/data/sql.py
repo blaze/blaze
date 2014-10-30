@@ -180,18 +180,26 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-    def __init__(self, engine, tablename, primary_key='', schema=None, **kwargs):
+    def __init__(self, engine, tablename, primary_key='', schema=None, db=None, **kwargs):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
-        self.schemaname = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
-        self.tablename = tablename.split('.')[-1]
+        if not db and '.' in tablename:
+            self.dbname = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
+            self.tablename = tablename.split('.')[-1]
+        else:
+            self.dbname = db
+            self.tablename = tablename
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
 
-        if engine.has_table(self.tablename, schema=self.schemaname):
-            metadata.reflect(engine, schema=self.schemaname)
-            table = metadata.tables[tablename]
+        if engine.has_table(self.tablename, schema=self.dbname):
+            metadata.reflect(engine, schema=self.dbname)
+            if self.dbname:
+                name = self.dbname + '.' + self.tablename
+            else:
+                name = self.tablename
+            table = metadata.tables[name]
             engine_schema = discover(table).subshape[0]
             # if schema and dshape(schema) != engine_schema:
                 # raise ValueError("Mismatched schemas:\n"
@@ -204,7 +212,7 @@ class SQL(DataDescriptor):
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-            table = sql.Table(tablename, metadata, *columns)
+            table = sql.Table(tablename, metadata, *columns, schema=self.dbname)
         else:
             raise ValueError('Must provide schema or point to valid table. '
                              'Table %s does not exist' % tablename)

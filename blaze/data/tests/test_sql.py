@@ -196,9 +196,3 @@ def test_csv_gzip_into_sql():
         csv = CSV(fn, schema=sql.schema)
         into(sql, csv)
         assert list(sql) == list(csv)
-
-
-def test_sql_schema_behavior():
-    with tmpfile('db') as filename:
-        sql = SQL('sqlite:///%s' % filename, 'mydb.accounts',
-                    schema='{name: string, amount: int}')

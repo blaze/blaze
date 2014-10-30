@@ -1,0 +1,52 @@
+from __future__ import absolute_import, division, print_function
+
+"""
+import pytest
+
+psycopg2 = pytest.importorskip('psycopg2')
+import subprocess
+ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
+output = ps.stdout.read()
+num_processes = len(output.splitlines())
+pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
+"""
+
+from blaze import SQL, into
+import sqlalchemy
+from contextlib import contextmanager
+
+data = [('Alice', 1), ('Bob', 2), ('Charlie', 3)]
+
+url = 'postgresql://localhost/postgres'
+url = 'postgresql://postgres:postgres@localhost'
+engine = sqlalchemy.create_engine(url)
+
+
+@contextmanager
+def schema(name):
+    create = sqlalchemy.schema.CreateSchema(name)
+    try:
+        engine.execute(create)
+    except:
+        pass
+
+    try:
+        yield
+    finally:
+        metadata = sqlalchemy.MetaData()
+        metadata.reflect(engine, schema=name)
+        for t in metadata.tables.values():
+            t.drop(bind=engine)
+
+        drop = sqlalchemy.schema.DropSchema(name)
+        engine.execute(drop)
+
+
+def test_sql_schema_behavior():
+    with schema('mydb'):
+        sql = SQL(url, 'accounts', db='mydb', schema='{name: string, value: int}')
+        into(sql, data)
+        assert engine.has_table('accounts', schema='mydb')
+
+        sql2 = SQL(url, 'accounts', db='mydb')
+        assert list(sql2) == data
