@@ -31,8 +31,6 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.5 documentation" href="index.html" />
-    <link rel="next" title="Expressions" href="expressions.html" />
-    <link rel="prev" title="Examples" href="examples.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -227,7 +225,8 @@ and offers various forms of compression for binary data.</p>
 <p>Directories of files are supported with meta descriptors <tt class="docutils literal"><span class="pre">Stack</span></tt> and
 <tt class="docutils literal"><span class="pre">Concat</span></tt> which allow you to treat directories of files as a single, indexable
 data source.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.data</span> <span class="kn">import</span> <span class="n">Stack</span><span class="p">,</span> <span class="n">Concat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts*.csv&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">csvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">CSV</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">]</span>
 

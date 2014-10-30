@@ -152,6 +152,7 @@ data source.
 
 .. code-block:: python
 
+   >>> from blaze.data import Stack, Concat
    >>> from glob import glob
    >>> filenames = glob('blaze/examples/data/accounts*.csv')
    >>> csvs = [CSV(filename) for filename in filenames]

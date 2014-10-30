@@ -87,6 +87,7 @@
 <li><a class="reference internal" href="#setting-up-a-blaze-server">Setting up a Blaze Server</a></li>
 <li><a class="reference internal" href="#interacting-with-the-web-server-from-the-client">Interacting with the Web Server from the Client</a><ul>
 <li><a class="reference internal" href="#using-curl">Using <tt class="docutils literal"><span class="pre">curl</span></tt></a></li>
+<li><a class="reference internal" href="#using-the-python-requests-library">Using the Python Requests Library</a></li>
 <li><a class="reference internal" href="#fully-interactive-python-to-python-remote-work">Fully Interactive Python-to-Python Remote work</a></li>
 </ul>
 </li>
@@ -110,8 +111,8 @@ simple REST-ful API.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Server code, run this once.  Leave running.</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">resource</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/iris.csv&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Table</span><span class="p">(</span><span class="n">csv</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/iris.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Data</span><span class="p">(</span><span class="n">csv</span><span class="p">)</span>
 <span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
 <span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
 <span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
@@ -145,7 +146,7 @@ as a service from a variety of applications.</p>
 <div class="section" id="interacting-with-the-web-server-from-the-client">
 <h2>Interacting with the Web Server from the Client<a class="headerlink" href="#interacting-with-the-web-server-from-the-client" title="Permalink to this headline">¶</a></h2>
 <p>Computation is now available on this server at
-<tt class="docutils literal"><span class="pre">hostname:6363/compute/iris.json</span></tt>.  To communicate the computation to be done
+<tt class="docutils literal"><span class="pre">hostname:6363/compute.json</span></tt>.  To communicate the computation to be done
 we pass Blaze expressions in JSON format through the request.  See the examples
 below.</p>
 <div class="section" id="using-curl">
@@ -153,64 +154,63 @@ below.</p>
 <p>We can use standard command line tools to interact with this web service:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ curl \
     -H &quot;Content-Type: application/json&quot; \
-    -d &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;Column&quot;, &quot;args&quot;: [&quot;iris&quot;, &quot;species&quot;]}}&#39; \
-    localhost:6363/compute/iris.json
+    -d &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;Field&quot;, &quot;args&quot;: [&quot;iris&quot;, &quot;species&quot;]}}&#39; \
+    localhost:6363/compute.json
 
 {
   &quot;data&quot;: [
-      &quot;setosa&quot;,
-      &quot;setosa&quot;,
+      &quot;Iris-setosa&quot;,
+      &quot;Iris-setosa&quot;,
       ...
       ],
   &quot;datashape&quot;: &quot;var * { species : string }&quot;,
-  &quot;name&quot;: &quot;iris&quot;
 }
 
 $ curl \
     -H &quot;Content-Type: application/json&quot; \
     -d  &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;sum&quot;, \
-                   &quot;args&quot;: [{&quot;op&quot;: &quot;Column&quot;, \
-                              &quot;args&quot;: [&quot;iris&quot;, &quot;petal_Length&quot;]}]}}&#39; \
-    localhost:6363/compute/iris.json
+                   &quot;args&quot;: [{&quot;op&quot;: &quot;Field&quot;, \
+                             &quot;args&quot;: [&quot;iris&quot;, &quot;petal_Length&quot;]}]}}&#39; \
+    localhost:6363/compute.json
 
 {
   &quot;data&quot;: 563.8000000000004,
   &quot;datashape&quot;: &quot;{ petal_length_sum : float64 }&quot;,
-  &quot;name&quot;: &quot;iris&quot;
 }
 </pre></div>
 </div>
 <p>Constructing these queries can be difficult to do by hand, fortunately Blaze
 can help you to build them.</p>
-<p>Using the Python Requests Library
-&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;f</p>
+</div>
+<div class="section" id="using-the-python-requests-library">
+<h3>Using the Python Requests Library<a class="headerlink" href="#using-the-python-requests-library" title="Permalink to this headline">¶</a></h3>
 <p>First we repeat the same experiment as before, this time using the Python
 <tt class="docutils literal"><span class="pre">requests</span></tt> library instead of the command line tool <tt class="docutils literal"><span class="pre">curl</span></tt>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Client code, run this in a separate process from the Server</span>
+<div class="highlight-python"><div class="highlight"><pre> <span class="c"># Client code, run this in a separate process from the Server</span>
 
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">requests</span>
+ <span class="kn">import</span> <span class="nn">json</span>
+ <span class="kn">import</span> <span class="nn">requests</span>
 
-<span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;expr&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;sum&#39;</span><span class="p">,</span>
-                  <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;Column&#39;</span><span class="p">,</span>
-                            <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;iris&#39;</span><span class="p">,</span> <span class="s">&#39;petal_length&#39;</span><span class="p">]}]}}</span>
+ <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;expr&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;sum&#39;</span><span class="p">,</span>
+                   <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;Field&#39;</span><span class="p">,</span>
+                             <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;iris&#39;</span><span class="p">,</span> <span class="s">&#39;petal_length&#39;</span><span class="p">]}]}}</span>
 
-<span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:6363/compute/iris.json&#39;</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
-                <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s">&#39;application/json&#39;</span><span class="p">})</span>
+ <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:6363/compute.json&#39;</span><span class="p">,</span>
+                 <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
+                 <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s">&#39;application/json&#39;</span><span class="p">})</span>
 
-<span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
-   <span class="p">{</span><span class="s">u&#39;data&#39;</span><span class="p">:</span> <span class="mf">563.8000000000004</span><span class="p">,</span>
-    <span class="s">u&#39;datashape&#39;</span><span class="p">:</span> <span class="s">u&#39;{ petal_length_sum : float64 }&#39;</span><span class="p">,</span>
-    <span class="s">u&#39;name&#39;</span><span class="p">:</span> <span class="s">u&#39;iris&#39;</span><span class="p">}</span>
+ <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+<span class="p">{</span><span class="s">u&#39;data&#39;</span><span class="p">:</span> <span class="mf">563.8000000000004</span><span class="p">,</span>
+ <span class="s">u&#39;datashape&#39;</span><span class="p">:</span> <span class="s">u&#39;{ petal_length_sum : float64 }&#39;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Now we use Blaze to generate the query programmatically</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="c"># Build a TableSymbol like our served iris data</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">schema</span> <span class="o">=</span> <span class="s">&quot;{ sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }&quot;</span>  <span class="c"># matching schema to csv file</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Build a Symbol like our served iris data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dshape</span><span class="o">=</span> <span class="s">&quot;var * { sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }&quot;</span>  <span class="c"># matching schema to csv file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="n">dshape</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.server</span> <span class="kn">import</span> <span class="n">to_tree</span>
@@ -235,7 +235,9 @@ do work for us</p>
 <span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="s">&#39;http://localhost:6363&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">)</span>
 
-<span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="n">t</span>
+
     <span class="n">sepal_length</span>  <span class="n">sepal_width</span>  <span class="n">petal_length</span>  <span class="n">petal_width</span>      <span class="n">species</span>
 <span class="mi">0</span>            <span class="mf">5.1</span>          <span class="mf">3.5</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
 <span class="mi">1</span>            <span class="mf">4.9</span>          <span class="mf">3.0</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
@@ -249,7 +251,8 @@ do work for us</p>
 <span class="mi">9</span>            <span class="mf">4.9</span>          <span class="mf">3.1</span>           <span class="mf">1.5</span>          <span class="mf">0.1</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
 <span class="o">...</span>
 
-<span class="n">by</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="nb">max</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="n">by</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+              <span class="nb">max</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
            <span class="n">species</span>  <span class="nb">max</span>  <span class="nb">min</span>
 <span class="mi">0</span>   <span class="n">Iris</span><span class="o">-</span><span class="n">virginica</span>  <span class="mf">6.9</span>  <span class="mf">4.5</span>
 <span class="mi">1</span>      <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>  <span class="mf">1.9</span>  <span class="mf">1.0</span>

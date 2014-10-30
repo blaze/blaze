@@ -31,6 +31,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.5 documentation" href="index.html" />
+    <link rel="next" title="Computation Pipeline" href="computation.html" />
     <link rel="prev" title="Developer Workflow" href="dev_workflow.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -126,7 +127,7 @@ expression defines a fixed set of fields in the <tt class="docutils literal"><sp
 </pre></div>
 </div>
 <p>To create a node in the tree explicitly we create a Python object of this class</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.expr</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;var * {id: int, name: string, amount: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">amounts</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s">&#39;amount&#39;</span><span class="p">)</span>
 </pre></div>
@@ -200,7 +201,8 @@ specialized operations for particular domains.</li>
 <p>then we need to evaluate the intent of the expression on the data.  We do this
 in a step-by-step system outlined by various <tt class="docutils literal"><span class="pre">compute</span></tt> functions.  The user
 experience is as follows</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">compute</span><span class="p">(</span><span class="n">deadbeats</span><span class="p">,</span> <span class="n">namespace</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">compute</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">compute</span><span class="p">(</span><span class="n">deadbeats</span><span class="p">,</span> <span class="n">namespace</span><span class="p">))</span>
 <span class="go">[&#39;Bob&#39;]</span>
 </pre></div>
 </div>

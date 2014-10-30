@@ -38,7 +38,7 @@ To create a node in the tree explicitly we create a Python object of this class
 
 .. code-block:: python
 
-   >>> from blaze import *
+   >>> from blaze.expr import *
    >>> t = Symbol('t', 'var * {id: int, name: string, amount: int}')
    >>> amounts = Field(t, 'amount')
 
@@ -128,6 +128,7 @@ experience is as follows
 
 .. code-block:: python
 
+   >>> from blaze import compute
    >>> list(compute(deadbeats, namespace))
    ['Bob']
 
