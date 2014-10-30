@@ -35,7 +35,7 @@ except ImportError:
 try:
     from .compute.sparksql import *
     from .sparksql import *
-except ImportError:
+except (ImportError, TypeError):
     pass
 try:
     from .compute.h5py import *

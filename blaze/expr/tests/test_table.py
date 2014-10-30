@@ -15,9 +15,8 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
                         Summary, count, Symbol, Field, discover,
-                        max, min
+                        max, min, label
                         )
-from blaze.expr.broadcast import _expr_child
 from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -231,17 +230,6 @@ def test_selection_consistent_children():
     expr = t['name'][t['amount'] < 0]
 
     assert list(expr.fields) == ['name']
-
-
-def test_broadcast_syntax():
-    t = TableSymbol('t', '{x: real, y: real, z: real}')
-    x, y, z = t['x'], t['y'], t['z']
-    assert (x + y).active_columns() == ['x', 'y']
-    assert (z + y).active_columns() == ['y', 'z']
-    assert ((z + y) * x).active_columns() == ['x', 'y', 'z']
-
-    expr = (z % x * y + z ** 2 > 0) & (x < 0)
-    assert isinstance(expr, Broadcast)
 
 
 def test_str():
@@ -612,44 +600,6 @@ def test_apply():
         l.dshape
 
 
-def test_broadcast():
-    from blaze.expr.arithmetic import Add, Eq, Mult, Le
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
-    t2 = TableSymbol('t', '{a: int, b: int, c: int}')
-    x = t['x']
-    y = t['y']
-    z = t['z']
-    a = t2['a']
-    b = t2['b']
-    c = t2['c']
-
-    assert str(broadcast(Add, x, y)._expr) == 'x + y'
-    assert broadcast(Add, x, y)._child.isidentical(t)
-
-    c1 = broadcast(Add, x, y)
-    c2 = broadcast(Mult, x, z)
-
-    assert eval_str(broadcast(Eq, c1, c2)._expr) == '(x + y) == (x * z)'
-    assert broadcast(Eq, c1, c2)._child.isidentical(t)
-
-    assert str(broadcast(Add, x, 1)._expr) == 'x + 1'
-
-    assert str(x <= y) == "t.x <= t.y"
-    assert str(x >= y) == "t.x >= t.y"
-    assert str(x | y) == "t.x | t.y"
-    assert str(x.__ror__(y)) == "t.y | t.x"
-    assert str(x.__rand__(y)) == "t.y & t.x"
-
-    with pytest.raises(ValueError):
-        broadcast(Add, x, a)
-
-
-def test_expr_child():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
-    w = t['x'].label('w')
-    assert str(_expr_child(w)) == '(x, t)'
-
-
 def test_TableSymbol_printing_is_legible():
     accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
 
@@ -789,9 +739,9 @@ def test_serializable():
 def test_table_coercion():
     from datetime import date
     t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
-    assert (t.amount + '10')._expr.rhs == 10
+    assert (t.amount + '10').rhs == 10
 
-    assert (t.timestamp < '2014-12-01')._expr.rhs == date(2014, 12, 1)
+    assert (t.timestamp < '2014-12-01').rhs == date(2014, 12, 1)
 
 
 def test_isnan():
@@ -803,29 +753,6 @@ def test_isnan():
 
     assert iscollection(t.amount.isnan().dshape)
     assert 'bool' in str(t.amount.isnan().dshape)
-
-
-def test_broadcast_naming():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
-
-    assert t.x._name == 'x'
-    assert (t.x + 1)._name == 'x'
-
-
-def test_scalar_expr():
-    t = TableSymbol('t', '{x: int64, y: int32, z: int64}')
-    x = t.x._expr
-    y = t.y._expr
-    assert 'int64' in str(x.dshape)
-    assert 'int32' in str(y.dshape)
-
-    expr = (t.x + 1)._expr
-    assert expr._inputs[0].dshape == x.dshape
-    assert expr._inputs[0].isidentical(x)
-
-    t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
-    expr = (t.amount + 1)._expr
-    assert 'int64' in str(expr._inputs[0].dshape)
 
 
 def test_distinct_name():

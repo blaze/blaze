@@ -70,6 +70,21 @@ class Reduction(Expr):
         except (AttributeError, ValueError, TypeError):
             return type(self).__name__
 
+    def __str__(self):
+        kwargs = list()
+        if self.keepdims:
+            kwargs.append('keepdims=True')
+        if self.axis != tuple(range(self._child.ndim)):
+            kwargs.append('axis=' + str(self.axis))
+        other = sorted(set(self.__slots__) - set(['_child', 'axis', 'keepdims']))
+        for slot in other:
+            kwargs.append('%s=%s' % (slot, getattr(self, slot)))
+        name = type(self).__name__
+        if kwargs:
+            return '%s(%s, %s)' % (name, self._child, ', '.join(kwargs))
+        else:
+            return '%s(%s)' % (name, self._child)
+
 
 class any(Reduction):
     _dtype = ct.bool_
@@ -235,5 +250,6 @@ schema_method_list.extend([
     ])
 
 dshape_method_list.extend([
-    (iscollection, set([count, nunique, min, max])),
+    (iscollection, set([count, min, max])),
+    (lambda ds: len(ds.shape) == 1, set([nunique])),
     ])

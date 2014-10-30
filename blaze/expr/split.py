@@ -64,10 +64,10 @@ def path_split(leaf, expr):
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     >>> path_split(t, t.amount.sum() + 1)
-    sum(_child=t.amount, axis=(0,), keepdims=False)
+    sum(t.amount)
 
     >>> path_split(t, t.amount.distinct().sort())
-    Distinct(_child=t.amount)
+    distinct(t.amount)
     """
     last = None
     for node in list(path(expr, leaf))[:-1][::-1]:
@@ -105,7 +105,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
-    ((chunk, count(_child=chunk.id, axis=(0,), keepdims=True)), (aggregate, sum(_child=aggregate, axis=(0,), keepdims=False)))
+    ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
     """
     center = path_split(leaf, expr)
     if not chunk:

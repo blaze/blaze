@@ -24,7 +24,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from ..expr import (Symbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
-        nunique)
+        nunique, Arithmetic, Broadcast)
 from .core import compute
 from toolz import partition_all
 from collections import Iterator
@@ -134,7 +134,8 @@ def compute_up(expr, c, **kwargs):
     return df
 
 
-@dispatch((Selection, ElemWise, Label, ReLabel), ChunkIterator)
+@dispatch((Selection, ElemWise, Label, ReLabel, Arithmetic, Broadcast),
+          ChunkIterator)
 def compute_up(expr, c, **kwargs):
     return ChunkIterator(compute_up(expr, chunk) for chunk in c)
 

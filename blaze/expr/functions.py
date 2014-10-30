@@ -30,7 +30,6 @@ from ..compatibility import builtins
 from . import reductions
 from . import math as blazemath
 from .expressions import Expr, Symbol
-from .broadcast import broadcast
 
 
 """
@@ -53,10 +52,7 @@ As well as mathematical functions like the following
 
 @dispatch(Expr)
 def sqrt(expr):
-    if iscollection(expr.dshape):
-        return broadcast(blaze.expr.math.sqrt, expr)
-    else:
-        return blaze.expr.math.sqrt(expr)
+    return blaze.expr.math.sqrt(expr)
 
 @dispatch(np.ndarray)
 def sqrt(x):
@@ -77,21 +73,13 @@ __all__ = math_names + reduction_names
 
 types = {builtins: object,
          np: (np.ndarray, np.number),
-         pymath: Number}
-
-
-def switch(funcname, x):
-    f = getattr(blazemath, funcname)
-    if iscollection(x.dshape):
-        return broadcast(f, x)
-    else:
-        return f(x)
+         pymath: Number,
+         blazemath: Expr,
+         reductions: Expr}
 
 
 for funcname in math_names:  # sin, sqrt, ceil, ...
     d = Dispatcher(funcname)
-
-    d.add((Expr,), curry(switch, funcname))
 
     for module, typ in types.items():
         if hasattr(module, funcname):
@@ -103,8 +91,6 @@ for funcname in math_names:  # sin, sqrt, ceil, ...
 
 for funcname in reduction_names:  # any, all, sum, max, ...
     d = Dispatcher(funcname)
-
-    d.add((Expr,), getattr(reductions, funcname))
 
     for module, typ in types.items():
         if hasattr(module, funcname):

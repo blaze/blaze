@@ -115,10 +115,6 @@ e = Symbol('e', 'var * {time: datetime, x: int}')
 q = MongoQuery('fake', [])
 
 
-def test_symbol_one(bank):
-    assert compute_up(t, bank) == MongoQuery(bank, ())
-
-
 def test_symbol(bank):
     assert compute(t, bank) == list(pluck(['name', 'amount'], bank_raw))
 
@@ -315,6 +311,17 @@ def test_datetime_access(date_data):
 
     py_data = into(list, date_data) # a python version of the collection
 
-    for attr in ['day', 'minute', 'second', 'year']:
+    for attr in ['day', 'minute', 'second', 'year', 'month']:
         assert list(compute(getattr(t.when, attr), date_data)) == \
                 list(compute(getattr(t.when, attr), py_data))
+
+
+def test_datetime_access_and_arithmetic(date_data):
+    t = Symbol('t',
+            'var * {amount: float64, id: int64, name: string, when: datetime}')
+
+    py_data = into(list, date_data) # a python version of the collection
+
+    expr = t.when.day + t.id
+
+    assert list(compute(expr, date_data)) == list(compute(expr, py_data))

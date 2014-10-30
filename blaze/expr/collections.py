@@ -102,6 +102,9 @@ class Distinct(Expr):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return 'distinct(%s)' % self._child
+
 
 def distinct(expr):
     return Distinct(expr)
@@ -401,5 +404,6 @@ join.__doc__ = Join.__doc__
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([distinct, head, sort, head])),
+    (iscollection, set([sort, head])),
+    (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])

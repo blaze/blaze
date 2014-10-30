@@ -45,6 +45,14 @@ def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
+@dispatch(BinOp, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
+
+
 @dispatch(BinOp, base, np.ndarray)
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)

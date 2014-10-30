@@ -1,235 +1,135 @@
-from __future__ import absolute_import, division, print_function
+from datashape import *
+from datashape.predicates import iscollection
+import itertools
+from toolz import curry
 
-from datashape.predicates import iscollection, isscalar, isnumeric
-from toolz import partial, unique, first
-import datashape
-from datashape import dshape, DataShape, Record, Var, Option, Unit
+from .expressions import *
+from .expressions import Field, Map
+from .arithmetic import maxshape, Arithmetic, Add
+from .math import Math, sin
+from .datetime import DateTime
 
-from .expressions import ElemWise, Label, Expr, Symbol, Field
-from .core import eval_str
-from .arithmetic import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod,
-                         Or, And, USub, Not, FloorDiv)
-from . import math
+__all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
 
-__all__ = ['broadcast', 'Broadcast']
+def broadcast(expr, leaves, scalars=None):
+    scalars = scalars or scalar_symbols(leaves)
+    assert len(scalars) == len(leaves)
+    return Broadcast(tuple(leaves),
+                     tuple(scalars),
+                     expr._subs(dict(zip(leaves, scalars))))
 
-def _expr_child(col):
-    """ Expr and child of field
-
-    Examples
-    --------
-
-    >>> accounts = Symbol('accounts',
-    ...                   'var * {name: string, amount: int, id: int}')
-    >>> _expr_child(accounts.name)
-    (name, accounts)
-
-    Helper function for ``broadcast``
-    """
-    if isinstance(col, (Broadcast, Field)):
-        return col._expr, col._child
-    elif isinstance(col, Label):
-        return _expr_child(col._child)
-    else:
-        return col, None
-
-
-def broadcast(op, *column_inputs):
-    """ Broadcast scalar operation across multiple fields
-
-    Parameters
-    ----------
-    op : Scalar Operation like Add, Mult, Sin, Exp
-
-    column_inputs : either Column, Broadcast or constant (like 1, 1.0, '1')
-
-    Examples
-    --------
-
-    >>> accounts = Symbol('accounts',
-    ...                   'var * {name: string, amount: int, id: int}')
-
-    >>> broadcast(Add, accounts.amount, 100)
-    accounts.amount + 100
-
-    Fuses operations down into ScalarExpr level
-
-    >>> broadcast(Mult, 2, (accounts.amount + 100))
-    2 * (accounts.amount + 100)
-    """
-    expr_inputs = []
-    children = set()
-
-    for col in column_inputs:
-        expr, child = _expr_child(col)
-        expr_inputs.append(expr)
-        if child:
-            children.add(child)
-
-    if not len(children) == 1:
-        raise ValueError("All inputs must be from same Table.\n"
-                         "Saw the following tables: %s"
-                         % ', '.join(map(str, children)))
-
-    if hasattr(op, 'op'):
-        expr = op.op(*expr_inputs)
-    else:
-        expr = op(*expr_inputs)
-
-    return Broadcast(first(children), expr)
 
 class Broadcast(ElemWise):
-    """ Apply Scalar Expression onto columns of data
+    """ Fuse scalar expressions over collections
 
-    Parameters
-    ----------
+    Given elementwise operations on collections, e.g.
 
-    child : TableExpr
-    expr : ScalarExpr
-        The names of the varibles within the scalar expr must match the columns
-        of the child.  Use ``Column.scalar_variable`` to generate the
-        appropriate scalar Symbol
+    >>> a = Symbol('a', '100 * int')
+    >>> t = Symbol('t', '100 * {x: int, y: int}')
 
-    Examples
-    --------
+    >>> expr = sin(a) + t.y**2
 
-    >>> from blaze.expr import Symbol, Add
-    >>> accounts = Symbol('accounts',
-    ...                   'var * {name: string, amount: int, id: int}')
+    It may be best to represent this as a scalar expression mapped over a
+    collection
 
-    >>> expr = Add(accounts.amount._expr, 100)
-    >>> Broadcast(accounts, expr)
-    accounts.amount + 100
+    >>> sa = Symbol('a', 'int')
+    >>> st = Symbol('t', '{x: int, y: int}')
 
-    See Also
-    --------
+    >>> sexpr = sin(sa) + st.y**2
 
-    blaze.expr.broadcast.broadcast
+    >>> expr = Broadcast((a, t), (sa, st), sexpr)
+
+    This provides opportunities for optimized computation.
+
+    In practice, expressions are often collected into Broadcast expressions
+    automatically.  This class is mainly intented for internal use.
     """
-    __slots__ = '_child', '_expr'
-
-    @property
-    def _name(self):
-        names = [x._name for x in self._expr._traverse()
-                  if isinstance(x, Symbol)]
-        if len(names) == 1 and not isinstance(self._expr.dshape[0], Record):
-            return names[0]
+    __slots__ = '_children', '_scalars', '_scalar_expr'
 
     @property
     def dshape(self):
-        return DataShape(*(self._child.shape + (self._expr.dshape.measure,)))
+        myshape = maxshape(map(shape, self._children))
+        return DataShape(*(myshape + (self._scalar_expr.schema,)))
 
-    def __str__(self):
-        columns = self.active_columns()
-        newcol = lambda c: "%s.%s" % (self._child, c)
-        return eval_str(self._expr._subs(dict(zip(columns,
-                                                map(newcol, columns)))))
+    @property
+    def _inputs(self):
+        return self._children
 
-    def active_columns(self):
-        return sorted(unique(x._name for x in self._traverse()
-                   if isinstance(x, Symbol) and isscalar(x.dshape)))
+    @property
+    def _name(self):
+        return self._scalar_expr._name
+
+    @property
+    def _full_expr(self):
+        return self._scalar_expr._subs(dict(zip(self._scalars,
+                                                self._children)))
+
+def scalar_symbols(exprs):
+    """
+    Gives a sequence of scalar symbols to mirror these expressions
+
+    Examples
+    --------
+
+    >>> x = Symbol('x', '5 * 3 * int32')
+    >>> y = Symbol('y', '5 * 3 * int32')
+
+    >>> xx, yy = scalar_symbols([x, y])
+
+    >>> xx._name, xx.dshape
+    ('x', dshape("int32"))
+    >>> yy._name, yy.dshape
+    ('y', dshape("int32"))
+    """
+    new_names = ('_%d' % i for i in itertools.count(1))
+
+    scalars = []
+    names = set()
+    for expr in exprs:
+        if expr._name and expr._name not in names:
+            name = expr._name
+            names.add(name)
+        else:
+            name = next(new_names)
+
+        s = Symbol(name, expr.schema)
+        scalars.append(s)
+    return scalars
 
 
-def _eq(self, other):
-    if (isscalar(self.dshape.measure) and
-            (not isinstance(other, Expr)
-                 or isscalar(other.dshape.measure))):
-        return broadcast(Eq, self, other)
+Broadcastable = (Arithmetic, Math, Map, Field, DateTime)
+WantToBroadcast = (Arithmetic, Math, Map, DateTime)
+
+
+def broadcast_collect(expr, Broadcastable=Broadcastable,
+                            WantToBroadcast=WantToBroadcast):
+    """ Collapse expression down using Broadcast - Tabular cases only
+
+    Expressions of type Broadcastables are swallowed into Broadcast
+    operations
+
+    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
+    >>> expr = (t.x + 2*t.y).distinct()
+
+    >>> broadcast_collect(expr)
+    distinct(Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * t.y)))
+    """
+    if (isinstance(expr, WantToBroadcast) and
+        iscollection(expr.dshape)):
+        leaves = leaves_of_type(Broadcastable, expr)
+        expr = broadcast(expr, sorted(leaves, key=str))
+
+    # Recurse down
+    children = [broadcast_collect(i, Broadcastable, WantToBroadcast)
+            for i in expr._inputs]
+    return expr._subs(dict(zip(expr._inputs, children)))
+
+
+@curry
+def leaves_of_type(types, expr):
+    """ Leaves of an expression skipping all operations of type ``types``
+    """
+    if not isinstance(expr, types):
+        return set([expr])
     else:
-        return self.isidentical(other)
-
-def _ne(a, b):
-    return broadcast(Ne, a, b)
-
-def _lt(a, b):
-    return broadcast(Lt, a, b)
-
-def _le(a, b):
-    return broadcast(Le, a, b)
-
-def _gt(a, b):
-    return broadcast(Gt, a, b)
-
-def _ge(a, b):
-    return broadcast(Ge, a, b)
-
-def _add(a, b):
-    return broadcast(Add, a, b)
-
-def _radd(a, b):
-    return broadcast(Add, b, a)
-
-def _mul(a, b):
-    return broadcast(Mult, a, b)
-
-def _rmul(a, b):
-    return broadcast(Mult, b, a)
-
-def _div(a, b):
-    return broadcast(Div, a, b)
-
-def _rdiv(a, b):
-    return broadcast(Div, b, a)
-
-def _floordiv(a, b):
-    return broadcast(FloorDiv, a, b)
-
-def _rfloordiv(a, b):
-    return broadcast(FloorDiv, b, a)
-
-def _sub(a, b):
-    return broadcast(Sub, a, b)
-
-def _rsub(a, b):
-    return broadcast(Sub, b, a)
-
-def _pow(a, b):
-    return broadcast(Pow, a, b)
-
-def _rpow(a, b):
-    return broadcast(Pow, b, a)
-
-def _mod(a, b):
-    return broadcast(Mod, a, b)
-
-def _rmod(a, b):
-    return broadcast(Mod, b, a)
-
-def _or(a, b):
-    return broadcast(Or, a, b)
-
-def _ror(a, b):
-    return broadcast(Or, b, a)
-
-def _and(a, b):
-    return broadcast(And, a, b)
-
-def _rand(a, b):
-    return broadcast(And, b, a)
-
-def _neg(a):
-    return broadcast(USub, a)
-
-def _invert(a):
-    return broadcast(Not, a)
-
-def isnan(expr):
-    return broadcast(math.isnan, expr)
-
-from .expressions import dshape_method_list
-
-def isreal(ds):
-    if isinstance(ds, DataShape) and len(ds) == 1:
-        ds = ds[0]
-    if isinstance(ds, Option):
-        ds = ds.ty
-    return isinstance(ds, Unit) and 'float' in str(ds)
-
-dshape_method_list.extend([
-    (lambda ds: iscollection(ds) and isscalar(ds.measure),
-            set([_eq, _ne, _lt, _le, _gt, _ge, _add, _radd, _mul,
-                 _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
-                _rpow, _mod, _rmod, _or, _ror, _and, _rand, _neg, _invert])),
-    (lambda ds: iscollection(ds) and isreal(ds.measure),
-            set([isnan]))
-    ])
+        return set.union(*map(leaves_of_type(types), expr._inputs))
