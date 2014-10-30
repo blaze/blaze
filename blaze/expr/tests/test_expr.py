@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape
 
 from blaze.expr import *
+from blaze.utils import raises
 
 def test_Symbol():
     e = Symbol('e', '3 * 5 * {name: string, amount: int}')
@@ -54,3 +55,8 @@ def test_fields_with_spaces():
     e = Symbol('e', '{x: int, "a b": int}')
     assert isinstance(e['a b'], Field)
     assert 'a b' not in dir(e)
+
+
+def test_iter_raises_not_implemented_Error():
+    e = Symbol('e', '5 * {x: int, "a b": int}')
+    assert raises(NotImplementedError, lambda: iter(e))

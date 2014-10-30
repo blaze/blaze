@@ -93,6 +93,13 @@ class Expr(Node):
     def __len__(self): # pragma: no cover
         return self._len()
 
+    def __iter__(self):
+        raise NotImplementedError(
+                'Iteration over expressions is not supported.\n'
+                'Iterate over computed result instead, e.g. \n'
+                "\titer(expr)           # don't do this\n"
+                "\titer(compute(expr))  # do this instead")
+
     def __dir__(self):
         result = dir(type(self))
         if isrecord(self.dshape.measure) and self.fields:
