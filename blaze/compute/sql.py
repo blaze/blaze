@@ -308,9 +308,10 @@ def compute_up(t, s, **kwargs):
 @dispatch(nelements, sqlalchemy.Table)
 def compute_up(t, s, **kwargs):
     axis = t.axis
-    if axis is None or axis == (0,):
+    if axis is None or axis == (0,) or axis == 0:
         return s.count()
-    raise ValueError("'axis' argument to  must be (0,) for SQL tables")
+    raise ValueError("'axis' argument to 'nelements' expression must be (0,), 0"
+                     " or None for SQL tables")
 
 
 @dispatch(count, Select)
