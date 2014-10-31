@@ -189,14 +189,26 @@ def test_reductions():
             str(sa.sql.func.avg(s.c.amount))
     assert str(compute(count(t['amount']), s)) == \
             str(sa.sql.func.count(s.c.amount))
-    assert str(compute(nelements(t), s)) == str(s.count())
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
 
 
+def test_nelements_axis_0_or_None():
+    assert str(compute(nelements(t), s)) == str(s.count())
+    assert str(compute(nelements(t, axis=None), s)) == str(s.count())
+    assert str(compute(nelements(t, axis=0), s)) == str(s.count())
+    assert str(compute(nelements(t, axis=(0,)), s)) == str(s.count())
+
+
+def test_nelements_expr():
+    rhs = str(sa.select([s.c.id, s.c.amount]).count())
+    lhs = str(compute(t[['id', 'amount']].nelements(), s))
+    assert lhs == rhs
+
+
 @pytest.mark.xfail(raises=ValueError,
                    reason="We don't support column size yet")
-def test_nelements():
+def test_nelements_axis_1():
     assert str(compute(nelements(t, axis=1), s)) == len(s.columns)
 
 
