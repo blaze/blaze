@@ -186,6 +186,9 @@ def _join_selectables(a, b, condition=None, **kwargs):
 
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
+    lhs = alias(lhs,name='a')
+    rhs = alias(rhs,name='b')
+    
     if isinstance(lhs, Select):
         ldict = dict((c.name, c) for c in lhs.inner_columns)
     else:
