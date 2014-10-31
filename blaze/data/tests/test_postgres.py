@@ -16,6 +16,7 @@ from contextlib import contextmanager
 data = [('Alice', 1), ('Bob', 2), ('Charlie', 3)]
 
 url = 'postgresql://localhost/postgres'
+# url = 'postgresql://postgres:postgres@localhost/postgres'
 engine = sqlalchemy.create_engine(url)
 
 
@@ -57,30 +58,30 @@ def non_existing_schema(name):
 
 
 def test_sql_schema_behavior():
-    with existing_schema('mydb'):
-        sql = SQL(url, 'accounts', db='mydb', schema='{name: string, value: int}')
+    with existing_schema('myschema'):
+        sql = SQL(url, 'accounts', schema_name='myschema', schema='{name: string, value: int}')
         into(sql, data)
-        assert engine.has_table('accounts', schema='mydb')
+        assert engine.has_table('accounts', schema='myschema')
 
-        sql2 = SQL(url, 'accounts', db='mydb')
+        sql2 = SQL(url, 'accounts', schema_name='myschema')
         assert list(sql2) == data
 
-        sql3 = SQL(url, 'mydb.accounts')
+        sql3 = SQL(url, 'myschema.accounts')
         assert list(sql2) == data
 
 
 def test_sql_new_schema():
-    with non_existing_schema('mydb2'):
-        sql = SQL(url, 'accounts', db='mydb2', schema='{name: string, value: int}')
+    with non_existing_schema('myschema2'):
+        sql = SQL(url, 'accounts', schema_name='myschema2', schema='{name: string, value: int}')
         into(sql, data)
-        assert engine.has_table('accounts', schema='mydb2')
+        assert engine.has_table('accounts', schema='myschema2')
 
-        sql2 = SQL(url, 'accounts', db='mydb2')
+        sql2 = SQL(url, 'accounts', schema_name='myschema2')
         assert list(sql2) == data
 
 
 def test_resource_specifying_database_name():
-    with existing_schema('mydb'):
-        sql = resource(url + '::mydb.accounts', schema='{name: string, value: int}')
+    with existing_schema('myschema'):
+        sql = resource(url + '::myschema.accounts', schema='{name: string, value: int}')
         assert isinstance(sql, SQL)
-        assert sql.table.schema == 'mydb'
+        assert sql.table.schema == 'myschema'

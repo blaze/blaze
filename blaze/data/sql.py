@@ -169,8 +169,8 @@ class SQL(DataDescriptor):
         or SQLAlchemy engine
     table : string
         The name of the table
-    db : string (optional)
-        The name of the database/schema
+    schema_name : string (optional)
+        The name of the SQL database schema (not to be confused with the dshape)
     schema : string, list of Columns
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
@@ -183,23 +183,24 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-    def __init__(self, engine, tablename, primary_key='', schema=None, db=None, **kwargs):
+    def __init__(self, engine, tablename, primary_key='', schema=None,
+            schema_name=None, **kwargs):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
-        if not db and '.' in tablename:
-            self.dbname = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
+        if not schema_name and '.' in tablename:
+            self.schema_name = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
             self.tablename = tablename.split('.')[-1]
         else:
-            self.dbname = db
+            self.schema_name = schema_name
             self.tablename = tablename
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
 
-        if engine.has_table(self.tablename, schema=self.dbname):
-            metadata.reflect(engine, schema=self.dbname)
-            if self.dbname:
-                name = self.dbname + '.' + self.tablename
+        if engine.has_table(self.tablename, schema=self.schema_name):
+            metadata.reflect(engine, schema=self.schema_name)
+            if self.schema_name:
+                name = self.schema_name + '.' + self.tablename
             else:
                 name = self.tablename
             table = metadata.tables[name]
@@ -215,7 +216,7 @@ class SQL(DataDescriptor):
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-            table = sql.Table(tablename, metadata, *columns, schema=self.dbname)
+            table = sql.Table(tablename, metadata, *columns, schema=self.schema_name)
         else:
             raise ValueError('Must provide schema or point to valid table. '
                              'Table %s does not exist' % tablename)
@@ -226,10 +227,10 @@ class SQL(DataDescriptor):
         try:
             metadata.create_all(engine)
         except sqlalchemy.exc.ProgrammingError:  # Maybe db does not exist
-            if not self.dbname:
+            if not self.schema_name:
                 raise
-            # Create schema/db
-            statement = sqlalchemy.schema.CreateSchema(self.dbname)
+            # Create schema
+            statement = sqlalchemy.schema.CreateSchema(self.schema_name)
             engine.execute(statement)
             metadata.create_all(engine)
 
