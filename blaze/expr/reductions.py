@@ -178,7 +178,11 @@ class nunique(Reduction):
     _dtype = ct.int_
 
 class nelements(Reduction):
-    """Compute the nelements of a collection
+    """Compute the number of elements in a collection, including missing values.
+
+    See Also
+    ---------
+    blaze.expr.reductions.count: compute the number of non-null elements
 
     Examples
     --------
