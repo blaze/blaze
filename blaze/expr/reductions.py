@@ -258,8 +258,9 @@ def summary(keepdims=False, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
-from datashape.predicates import iscollection, isboolean, isnumeric, istabular
-from .expressions import schema_method_list, dshape_method_list, method_properties
+from datashape.predicates import iscollection, isboolean, isnumeric, isrecord
+from .expressions import (schema_method_list, dshape_method_list,
+                          method_properties)
 
 schema_method_list.extend([
     (isboolean, set([any, all, sum])),
@@ -268,8 +269,7 @@ schema_method_list.extend([
 
 dshape_method_list.extend([
     (iscollection, set([count, min, max, nelements])),
-    (lambda ds: len(ds.shape) == 1, set([nunique])),
-    (istabular, set([nrows])),
+    (lambda ds: len(ds.shape) == 1, set([nrows, nunique])),
     ])
 
 method_properties.update([nrows])

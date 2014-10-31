@@ -79,6 +79,8 @@ def test_nrows_3D_records(recdata):
     assert not hasattr(s, 'nrows')
 
 
+@pytest.mark.xfail(raises=AttributeError,
+                   reason="We don't support nrows on arrays")
 def test_nrows_array(data):
     assert compute(s.nrows, data) == len(data)
 
