@@ -190,12 +190,8 @@ class nelements(Reduction):
     _dtype = ct.int_
 
 
-class NRows(nelements):
-    _dtype = ct.int_
-
-
 def nrows(expr):
-    return NRows(expr, axis=(0,))
+    return nelements(expr, axis=(0,))
 
 
 class Summary(Expr):
