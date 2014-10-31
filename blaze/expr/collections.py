@@ -92,7 +92,7 @@ class Distinct(Expr):
 
     @property
     def dshape(self):
-        return self._child.dshape
+        return datashape.var * self._child.dshape.measure
 
     @property
     def fields(self):
