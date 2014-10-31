@@ -187,5 +187,9 @@ def test_utcfromtimestamp():
                   ax.sum(axis=axis, keepdims=True))
 
 
+def test_nelements():
+    assert compute(t.nelements(), x) == len(x)
+
+
 def test_nrows():
-    assert compute(t.nrows(), x) == len(x)
+    assert compute(t.nrows, x) == len(x)

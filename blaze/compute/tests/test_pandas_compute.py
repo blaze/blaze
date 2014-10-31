@@ -600,5 +600,6 @@ def test_series_slice():
     assert (compute(t.amount[1::2], df) == df.amount.iloc[1::2]).all().all()
 
 
-def test_nrows():
-    assert compute(t.nrows(), df) == len(df)
+def test_nelements():
+    assert compute(t.nelements(), df) == len(df)
+    assert compute(t.nrows, df) == len(df)

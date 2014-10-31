@@ -7,7 +7,7 @@ from datashape import Record, from_numpy, datetime_, date_
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
                         Symbol, Sort, Reduction, count, Symbol, Slice, Expr,
-                        NElements)
+                        nelements)
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
 
@@ -151,6 +151,6 @@ def optimize(expr, seq):
                                      WantToBroadcast=WantToBroadcast)
 
 
-@dispatch(NElements, tb.Table)
+@dispatch(nelements, tb.Table)
 def compute_up(expr, x, **kwargs):
-    return len(x)
+    return np.prod([x.shape[i] for i in expr.axis or expr.ndim])

@@ -35,7 +35,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
-                    Not, NElements)
+                    Not, nelements)
 from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize
 
@@ -289,7 +289,7 @@ def compute_up_1d(t, seq, **kwargs):
     return op(seq)
 
 
-@dispatch(nrows, Sequence)
+@dispatch(nelements, Sequence)
 def compute_up_1d(expr, seq, **kwargs):
     try:
         return len(seq)
@@ -630,11 +630,3 @@ def compute_up(expr, seq, **kwargs):
     if isinstance(index, slice):
         return itertools.islice(seq, index.start, index.stop, index.step)
     raise NotImplementedError("Only 1d slices supported")
-
-
-@dispatch(NElements, Sequence)
-def compute_up(expr, seq, **kwargs):
-    try:
-        return len(seq)
-    except TypeError:
-        return cytoolz.count(seq)

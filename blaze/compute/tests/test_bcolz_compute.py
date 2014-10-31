@@ -96,4 +96,9 @@ def test_count_isnan_struct():
 
 
 def test_nrows():
-    assert compute(t.nrows(), b) == len(b)
+    assert compute(t.nrows, b) == len(b)
+
+
+def test_nelements():
+    assert compute(t.nelements(axis=0), b) == len(b)
+    assert compute(t.nelements(), b) == len(b)

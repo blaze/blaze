@@ -764,3 +764,15 @@ def test_nelements_list_tuple():
 def test_nelements_iterator():
     x = (row for row in data)
     assert compute(t.nelements(), x) == len(data)
+
+
+def test_nrows():
+    assert compute(t.nrows, data) == len(data)
+    x = (row for row in data)
+    assert compute(t.nrows, x) == len(data)
+
+
+@pytest.mark.xfail(raises=NotImplementedError,
+                   reason="Only 1D reductions allowed")
+def test_nelements_2D():
+    assert compute(t.nelements(axis=1), data) == len(data[0])

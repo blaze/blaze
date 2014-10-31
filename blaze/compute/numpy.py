@@ -157,9 +157,9 @@ def compute_up(t, x, **kwargs):
     return compute_up(t, into(df, x), **kwargs)
 
 
-@dispatch(nrows, np.ndarray)
+@dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    return len(data)
+    return np.prod([data.shape[i] for i in expr.axis or expr.ndim])
 
 
 @dispatch(np.ndarray)

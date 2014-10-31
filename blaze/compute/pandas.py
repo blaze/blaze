@@ -440,6 +440,6 @@ def compute_up(expr, df, **kwargs):
         raise NotImplementedError()
 
 
-@dispatch(nrows, DataFrame)
+@dispatch(nelements, (DataFrame, Series))
 def compute_up(expr, df, **kwargs):
-    return df.shape[0]
+    return np.prod([df.shape[i] for i in (expr.axis or expr.ndim)])

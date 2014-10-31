@@ -258,4 +258,9 @@ def test_create_index_fails(pyt):
 
 
 def test_nrows():
-    assert compute(t.nrows(), x) == len(x)
+    assert compute(t.nrows, x) == len(x)
+
+
+def test_nelements():
+    assert compute(t.nelements(axis=0), x) == len(x)
+    assert compute(t.nelements(), x) == len(x)

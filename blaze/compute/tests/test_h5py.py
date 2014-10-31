@@ -74,10 +74,19 @@ def test_uneven_chunk_size(data):
               x.sum(axis=1))
 
 
-def test_nrows_records(recdata):
+def test_nrows_3D_records(recdata):
     s = Symbol('s', discover(recdata))
-    assert compute(s.nrows(), recdata) == len(recdata)
+    assert not hasattr(s, 'nrows')
 
 
 def test_nrows_array(data):
-    assert compute(s.nrows(), data) == len(data)
+    assert compute(s.nrows, data) == len(data)
+
+
+def test_nelements_records(recdata):
+    s = Symbol('s', discover(recdata))
+    assert compute(s.nelements(), recdata) == np.prod(recdata.shape)
+
+
+def test_nelements_array(data):
+    assert compute(s.nelements(axis=1), data) == data.shape[1]
