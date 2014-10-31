@@ -178,7 +178,17 @@ class count(Reduction):
 class nunique(Reduction):
     _dtype = ct.int_
 
-class nrows(Reduction):
+class nelements(Reduction):
+    """Compute the nelements of a collection
+
+    Examples
+    --------
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, amount: float64}')
+    >>> t[t.amount < 1].nelements()
+    NElements(_child=t[t.amount < 1])
+    """
+    __slots__ = '_child', 'axis'
     _dtype = ct.int_
 
 
@@ -251,6 +261,6 @@ schema_method_list.extend([
     ])
 
 dshape_method_list.extend([
-    (iscollection, set([count, min, max])),
+    (iscollection, set([count, min, max, nelements])),
     (lambda ds: len(ds.shape) == 1, set([nunique])),
     ])
