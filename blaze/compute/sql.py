@@ -305,7 +305,7 @@ def compute_up(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(c)
 
 
-@dispatch(nelements, Selectable)
+@dispatch(nelements, (Select, Selectable))
 def compute_up(t, s, **kwargs):
     axis = t.axis
     if axis is None or axis == (0,) or axis == 0:
