@@ -23,9 +23,7 @@ from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
 import cytoolz
 import toolz
-import sys
 import math
-import datetime
 from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
@@ -33,14 +31,12 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice, Expr, Arithmetic, shape, ndim)
+                    Symbol, Slice, Expr, Arithmetic, ndim)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
-from ..expr import eval_str
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
                     Not, NElements)
 from ..compatibility import builtins, apply, unicode, _inttypes
-from . import core
 from .core import compute, compute_up, optimize
 
 from ..data import DataDescriptor
