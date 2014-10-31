@@ -32,7 +32,7 @@ test:
     - coverage
 
   commands:
-    - py.test -r sxX --doctest-modules --verbose --pyargs blaze docs
+    - py.test -r sxX --doctest-modules --verbose --pyargs blaze
 
 about:
   home: http://blaze.pydata.org
