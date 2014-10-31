@@ -13,7 +13,7 @@ engine:
   - python=3.4
 
 install:
-  - conda config --add channels blaze
+  - conda config --file "$CONDARC" -f --add channels blaze
 
 before_script:
   - python -V
