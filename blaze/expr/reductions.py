@@ -188,7 +188,6 @@ class nelements(Reduction):
     >>> t[t.amount < 1].nelements()
     NElements(_child=t[t.amount < 1])
     """
-    __slots__ = '_child', 'axis'
     _dtype = ct.int_
 
 
