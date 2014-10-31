@@ -4,7 +4,6 @@ import toolz
 from toolz import first
 from datashape import Record, DataShape
 from datashape import coretypes as ct
-from datashape.predicates import iscollection
 
 from .core import common_subexpression
 from .expressions import Expr, Symbol
@@ -186,9 +185,17 @@ class nelements(Reduction):
     >>> from blaze import Symbol
     >>> t = Symbol('t', 'var * {name: string, amount: float64}')
     >>> t[t.amount < 1].nelements()
-    NElements(_child=t[t.amount < 1])
+    nelements(t[t.amount < 1])
     """
     _dtype = ct.int_
+
+
+class NRows(nelements):
+    _dtype = ct.int_
+
+
+def nrows(expr):
+    return NRows(expr, axis=(0,))
 
 
 class Summary(Expr):
@@ -251,8 +258,8 @@ def summary(keepdims=False, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
-from datashape.predicates import iscollection, isboolean, isnumeric
-from .expressions import schema_method_list, dshape_method_list
+from datashape.predicates import iscollection, isboolean, isnumeric, istabular
+from .expressions import schema_method_list, dshape_method_list, method_properties
 
 schema_method_list.extend([
     (isboolean, set([any, all, sum])),
@@ -262,4 +269,7 @@ schema_method_list.extend([
 dshape_method_list.extend([
     (iscollection, set([count, min, max, nelements])),
     (lambda ds: len(ds.shape) == 1, set([nunique])),
+    (istabular, set([nrows])),
     ])
+
+method_properties.update([nrows])
