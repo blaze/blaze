@@ -23,7 +23,6 @@ from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from operator import and_
 import itertools
-from datashape import Record
 from copy import copy
 import toolz
 from multipledispatch import MDNotImplementedError
@@ -32,9 +31,8 @@ from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Union, Summary, Like
+from ..expr import common_subexpression, Union, Summary, Like, nelements
 from ..compatibility import reduce
-from ..utils import unique
 from .core import compute_up, compute, base
 from ..data.utils import listpack
 
@@ -305,6 +303,15 @@ def compute_up(t, s, **kwargs):
         c = list(s.columns)[0]
 
     return sqlalchemy.sql.functions.count(c)
+
+
+@dispatch(nelements, sqlalchemy.Table)
+def compute_up(t, s, **kwargs):
+    axis = t.axis
+    if axis is None or axis == (0,):
+        return s.count()
+    raise ValueError("'axis' argument to  must be (0,) for SQL tables")
+
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):

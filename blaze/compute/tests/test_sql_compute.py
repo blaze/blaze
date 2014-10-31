@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
 from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze.expr import *
 import sqlalchemy
@@ -188,8 +189,16 @@ def test_reductions():
             str(sa.sql.func.avg(s.c.amount))
     assert str(compute(count(t['amount']), s)) == \
             str(sa.sql.func.count(s.c.amount))
+    assert str(compute(nelements(t), s)) == str(s.count())
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
+
+
+@pytest.mark.xfail(raises=ValueError,
+                   reason="We don't support column size yet")
+def test_nelements():
+    assert str(compute(nelements(t, axis=1), s)) == len(s.columns)
+
 
 def test_count_on_table():
     assert normalize(str(select(compute(t.count(), s)))) == normalize("""
