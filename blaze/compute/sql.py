@@ -16,6 +16,7 @@ WHERE accounts.amount < :amount_1
 """
 
 from __future__ import absolute_import, division, print_function
+import operator
 import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql
@@ -307,11 +308,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(nelements, (Select, Selectable))
 def compute_up(t, s, **kwargs):
-    axis = t.axis
-    if axis is None or axis == (0,) or axis == 0:
-        return s.count()
-    raise ValueError("'axis' argument to 'nelements' expression must be (0,), 0"
-                     " or None for SQL tables")
+    dims = s.count().as_scalar(), len(s.c)
+    return reduce(operator.mul, [dims[i] for i in t.axis], 1)
 
 
 @dispatch(count, Select)

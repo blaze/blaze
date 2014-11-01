@@ -194,22 +194,20 @@ def test_reductions():
 
 
 def test_nelements_axis_0_or_None():
-    assert str(compute(nelements(t), s)) == str(s.count())
-    assert str(compute(nelements(t, axis=None), s)) == str(s.count())
-    assert str(compute(nelements(t, axis=0), s)) == str(s.count())
-    assert str(compute(nelements(t, axis=(0,)), s)) == str(s.count())
+    assert str(compute(nelements(t), s)) == str(1 * s.count().as_scalar())
+    assert str(compute(nelements(t, axis=None), s)) == str(len(s.c) * s.count().as_scalar())
+    assert str(compute(nelements(t, axis=0), s)) == str(1 * s.count().as_scalar())
+    assert str(compute(nelements(t, axis=(0,)), s)) == str(1 * s.count().as_scalar())
 
 
 def test_nelements_expr():
-    rhs = str(sa.select([s.c.id, s.c.amount]).count())
+    rhs = str(1 * sa.select([s.c.id, s.c.amount]).count().as_scalar())
     lhs = str(compute(t[['id', 'amount']].nelements(), s))
     assert lhs == rhs
 
 
-@pytest.mark.xfail(raises=ValueError,
-                   reason="We don't support column size yet")
 def test_nelements_axis_1():
-    assert str(compute(nelements(t, axis=1), s)) == len(s.columns)
+    assert str(compute(nelements(t, axis=1), s)) == str(len(s.columns))
 
 
 def test_count_on_table():
