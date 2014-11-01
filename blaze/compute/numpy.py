@@ -159,7 +159,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    return np.prod([data.shape[i] for i in expr.axis or expr.ndim])
+    return np.prod([data.shape[i] for i in expr.axis])
 
 
 @dispatch(np.ndarray)

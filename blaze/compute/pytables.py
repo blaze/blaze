@@ -153,4 +153,4 @@ def optimize(expr, seq):
 
 @dispatch(nelements, tb.Table)
 def compute_up(expr, x, **kwargs):
-    return np.prod([x.shape[i] for i in expr.axis or expr.ndim])
+    return np.prod([x.shape[i] for i in expr.axis])

@@ -442,4 +442,4 @@ def compute_up(expr, df, **kwargs):
 
 @dispatch(nelements, (DataFrame, Series))
 def compute_up(expr, df, **kwargs):
-    return np.prod([df.shape[i] for i in expr.axis or expr.ndim])
+    return np.prod([df.shape[i] for i in expr.axis])
