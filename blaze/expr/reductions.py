@@ -7,6 +7,7 @@ from datashape import coretypes as ct
 
 from .core import common_subexpression
 from .expressions import Expr, Symbol
+from ..compatibility import builtins
 
 
 class Reduction(Expr):
@@ -42,6 +43,9 @@ class Reduction(Expr):
         if not isinstance(axis, tuple):
             axis = (axis,)
         axis = tuple(sorted(axis))
+        if hasattr(_child, 'ndim') and builtins.any(ax >= _child.ndim for ax in
+                                                    axis):
+            raise ValueError("Passed axes %s that are greater than ndim" % axis)
         self.axis = axis
         self.keepdims = keepdims
 
@@ -258,7 +262,7 @@ def summary(keepdims=False, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
-from datashape.predicates import iscollection, isboolean, isnumeric, isrecord
+from datashape.predicates import iscollection, isboolean, isnumeric
 from .expressions import (schema_method_list, dshape_method_list,
                           method_properties)
 
