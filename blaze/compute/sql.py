@@ -21,7 +21,6 @@ import sqlalchemy
 from sqlalchemy import sql
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
-from sqlalchemy.sql.selectable import alias
 from operator import and_
 import itertools
 from datashape import Record
