@@ -7,7 +7,6 @@ import sys
 import shutil
 import textwrap
 from fnmatch import fnmatch
-from toolz import first, partial, complement
 
 from distutils.core import Command, setup
 from distutils.util import convert_path
@@ -32,7 +31,7 @@ def find_packages(where='blaze', exclude=('ez_setup', 'distribute_setup'),
 
     func = lambda x: predicate(x) and not any(fnmatch(x, exc)
                                               for exc in exclude)
-    return list(filter(func, map(first, os.walk(convert_path(where)))))
+    return list(filter(func, [x[0] for x in os.walk(convert_path(where))]))
 
 
 packages = find_packages()

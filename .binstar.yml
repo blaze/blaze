@@ -5,32 +5,23 @@ platform:
   - linux-64
   - linux-32
   - osx-64
+  - win-64
 engine:
   - python=2.6
   - python=2.7
   - python=3.3
   - python=3.4
 
+install:
+  - conda config --file "$CONDARC" -f --add channels blaze
+
 before_script:
   - python -V
 
-script: |
-  CONDA_PY=`python -c 'import sys; sys.stdout.write("{0}{1}".format(sys.version_info[0], sys.version_info[1]))'`
-  CONDA_PY=$CONDA_PY conda build conda.recipe --quiet;
-  echo `uname`;
-  platform=`uname`;
-  arch=`uname -m`
-  if [[ "$arch" == 'x86_64' && "$platform" == 'Linux' ]]; then
-  mkdir -p /opt/anaconda/conda-bld/win-64;
-  conda convert -p win-64 /opt/anaconda/conda-bld/linux-64/blaze*.tar.bz2;
-  filename=`ls win-64/blaze*.tar.bz2 | xargs -n 1 basename`;
-  echo $filename;
-  cp -r win-64/$filename /opt/anaconda/conda-bld/win-64/$filename;
-  fi;
+script:
+  - conda build conda.recipe
 
-build_targets:
-    files: /opt/anaconda/conda-bld/*/blaze*.tar.bz2
-    channels: 'main'
+build_targets: conda
 
 notifications:
   email:

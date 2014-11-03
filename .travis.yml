@@ -37,6 +37,8 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
 
+  - pip install psycopg2
+
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 

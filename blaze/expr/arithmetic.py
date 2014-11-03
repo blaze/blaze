@@ -111,7 +111,7 @@ class UnaryOp(ElemWise):
 
 class Arithmetic(BinOp):
     """ Super class for arithmetic operators like add or mul """
-    _dtype = 'real'
+    _dtype = ct.real
 
     @property
     def dshape(self):
@@ -266,7 +266,7 @@ def _rmod(self, other):
 
 
 class Relational(Arithmetic):
-    _dtype = 'bool'
+    _dtype = ct.bool_
 
 
 class Eq(Relational):
@@ -302,13 +302,13 @@ class Lt(Relational):
 class And(Arithmetic):
     symbol = '&'
     op = operator.and_
-    _dtype = 'bool'
+    _dtype = ct.bool_
 
 
 class Or(Arithmetic):
     symbol = '|'
     op = operator.or_
-    _dtype = 'bool'
+    _dtype = ct.bool_
 
 
 class Not(UnaryOp):
