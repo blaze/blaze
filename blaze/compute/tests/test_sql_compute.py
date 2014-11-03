@@ -67,6 +67,12 @@ def test_arithmetic():
     assert str(compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
     assert str(compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
 
+    assert str(compute(t['amount'] * 2, s)) == str(s.c.amount * 2)
+    assert str(compute(2 * t['amount'], s)) == str(2 * s.c.amount)
+
+    assert (str(compute(~(t['amount'] > 10), s)) ==
+            "~(accounts.amount > :amount_1)")
+
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
 
@@ -288,6 +294,18 @@ def test_by_summary_clean():
 
     assert normalize(str(result)) == normalize(expected)
 
+
+def test_by_summary_single_column():
+    expr = by(t.name, n=t.name.count(), biggest=t.name.max())
+    result = compute(expr, s)
+
+    expected = """
+    SELECT accounts.name, max(accounts.name) AS biggest, count(accounts.name) AS n
+    FROM accounts
+    GROUP BY accounts.name
+    """
+
+    assert normalize(str(result)) == normalize(expected)
 
 
 
