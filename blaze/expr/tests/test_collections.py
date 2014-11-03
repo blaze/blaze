@@ -26,3 +26,12 @@ def test_join_on_same_columns():
     assert isdistinct(c.fields)
     assert len(c.fields) == 5
     assert 'b_y' in c.fields
+
+
+def test_join_on_same_table():
+    a = Symbol('a', 'var * {x: int, y: int}')
+
+    c = join(a, a, 'x')
+
+    assert isdistinct(c.fields)
+    assert len(c.fields) == 3
