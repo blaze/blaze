@@ -184,12 +184,12 @@ class SQL(DataDescriptor):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
-        self.tablename = tablename
+        self.schemaname = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
+        self.tablename = tablename.split('.')[-1]
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
-
-        if engine.has_table(tablename):
-            metadata.reflect(engine)
+        if engine.has_table(self.tablename, schema=self.schemaname):
+            metadata.reflect(engine, schema=self.schemaname)
             table = metadata.tables[tablename]
             engine_schema = discover(table).subshape[0]
             # if schema and dshape(schema) != engine_schema:
