@@ -395,6 +395,18 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
                          "\n\tinner, outer, left, right."
                          "\nGot: %s" % how)
 
+    other_left  = [f for f in lhs.fields if f not in _on_left]
+    other_right = [f for f in rhs.fields if f not in _on_right]
+    overlap = [f for f in other_right if f in other_left]
+    if overlap:
+        leaves = rhs._leaves()
+        if len(leaves) == 1 and isinstance(leaves[0], Symbol):
+            name = leaves[0]._name
+        else:
+            name = 'right'
+        new_overlap = ['%s_%s' % (name, f) for f in overlap]
+        rhs = rhs.relabel(dict(zip(overlap, new_overlap)))
+
     return Join(lhs, rhs, _on_left, _on_right, how)
 
 
