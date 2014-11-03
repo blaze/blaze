@@ -42,6 +42,13 @@ __all__ = ['sqlalchemy', 'select']
 
 
 
+def inner_columns(s):
+    if isinstance(s, sqlalchemy.Table):
+        return s.c
+    if isinstance(s, Selectable):
+        return s.inner_columns
+    raise NotImplementedError()
+
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
@@ -73,8 +80,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], lower_column(s.c.get(c)))
-             for c in t._scalars[0].fields)
+    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+             for i, c in enumerate(t._scalars[0].fields))
     result = compute(t._scalar_expr, d)
 
     s = copy(s)
@@ -86,8 +93,8 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     if len(t._children) != 1:
         raise ValueError()
-    d = dict((t._scalars[0][c], lower_column(s.c.get(c)))
-             for c in t._scalars[0].fields)
+    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+             for i, c in enumerate(t._scalars[0].fields))
     return compute(t._scalar_expr, d)
 
 
@@ -258,12 +265,14 @@ names = {mean: 'avg',
 
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
+    d = dict((t._child[c], list(inner_columns(s))[i])
+            for i, c in enumerate(t._child.fields))
     col = compute(t, d)
 
     s = copy(s)
     s.append_column(col)
     return s.with_only_columns([col])
+
 
 @dispatch(Distinct, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
@@ -458,7 +467,8 @@ def compute_up(t, _, children):
 
 @dispatch(Summary, Select)
 def compute_up(t, s, scope=None, **kwargs):
-    d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
+    d = dict((t._child[c], list(inner_columns(s))[i])
+            for i, c in enumerate(t._child.fields))
 
     cols = [compute(val, toolz.merge(scope, d)).label(name)
                 for name, val in zip(t.fields, t.values)]

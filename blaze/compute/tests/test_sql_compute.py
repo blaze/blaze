@@ -677,3 +677,24 @@ def test_join_on_same_table():
     FROM tab AS tab_left JOIN tab AS tab_right
     ON tab_left.a = tab_right.a
     """)
+
+    expr = join(t, t, 'a').b_left.sum()
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT sum(tab_left.b) as b_left_sum
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)
+
+    expr = join(t, t, 'a')
+    expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT min(tab_right.b) as smallest, sum(tab_left.a) as total
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)
