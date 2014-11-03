@@ -346,6 +346,12 @@ class Join(Expr):
 
         >>> join(t, s, how='left').schema
         dshape("{ name : string, amount : int32, id : ?int32 }")
+
+        Overlapping but non-joined fields append _left, _right
+        >>> a = Symbol('a', 'var * {x: int, y: int}')
+        >>> b = Symbol('b', 'var * {x: int, y: int}')
+        >>> join(a, b, 'x').fields
+        ['x', 'y_left', 'y_right']
         """
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
@@ -357,6 +363,15 @@ class Join(Expr):
 
         right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
                             if name not in self.on_right]
+
+        # Handle overlapping but non-joined case, e.g.
+        left_other  = [name for name, dt in left  if name not in self.on_left]
+        right_other = [name for name, dt in right if name not in self.on_right]
+        overlap = set.intersection(set(left_other), set(right_other))
+        left = [[name+'_left' if name in overlap else name, dt]
+                for name, dt in left]
+        right = [[name+'_right' if name in overlap else name, dt]
+                for name, dt in right]
 
         if self.how in ('right', 'outer'):
             left = [[name, option(dt)] for name, dt in left]
@@ -394,18 +409,6 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
         raise ValueError("How parameter should be one of "
                          "\n\tinner, outer, left, right."
                          "\nGot: %s" % how)
-
-    other_left  = [f for f in lhs.fields if f not in _on_left]
-    other_right = [f for f in rhs.fields if f not in _on_right]
-    overlap = [f for f in other_right if f in other_left]
-    if overlap:
-        leaves = rhs._leaves()
-        if len(leaves) == 1 and isinstance(leaves[0], Symbol):
-            name = leaves[0]._name
-        else:
-            name = 'right'
-        new_overlap = ['%s_%s' % (name, f) for f in overlap]
-        rhs = rhs.relabel(dict(zip(overlap, new_overlap)))
 
     return Join(lhs, rhs, _on_left, _on_right, how)
 

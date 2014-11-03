@@ -25,7 +25,8 @@ def test_join_on_same_columns():
 
     assert isdistinct(c.fields)
     assert len(c.fields) == 5
-    assert 'b_y' in c.fields
+    assert 'y_left' in c.fields
+    assert 'y_right' in c.fields
 
 
 def test_join_on_same_table():
