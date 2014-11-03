@@ -308,8 +308,9 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(nelements, (Select, Selectable))
 def compute_up(t, s, **kwargs):
-    dims = s.count().as_scalar(), len(s.c)
-    return reduce(operator.mul, [dims[i] for i in t.axis], 1)
+    if t.axis != (0,):
+        raise ValueError("Record datashapes only support axis == (0,)")
+    return s.count()
 
 
 @dispatch(count, Select)
