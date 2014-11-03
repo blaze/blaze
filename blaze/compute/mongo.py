@@ -56,6 +56,7 @@ from datashape import Record, Tuple
 from datashape.predicates import isscalar
 from toolz import pluck, first, get
 import toolz
+import datetime
 
 from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Reduction, Head, ReLabel, Distinct, ElemWise, By,
@@ -64,7 +65,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
                     Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol,
                     Arithmetic
                     )
-from ..expr.datetime import Day, Month, Year, Minute, Second
+from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from .. import expr
 from ..compatibility import _strtypes
 
@@ -180,7 +181,9 @@ def compute_sub(t):
     elif isinstance(t, tuple(datetime_terms)):
         op = datetime_terms[type(t)]
         return {'$%s' % op: compute_sub(t._child)}
-
+    elif isinstance(t, UTCFromTimestamp):
+        return {'$add': [datetime.datetime.utcfromtimestamp(0),
+                         {'$multiply': [1000, compute_sub(t._child)]}]}
     raise NotImplementedError('Operation %s not supported' % type(t).__name__)
 
 

@@ -646,6 +646,12 @@ def test_datetime_access():
     assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
 
 
+def test_utcfromtimestamp():
+    t = Symbol('t', '1 * int64')
+    assert list(compute(t.utcfromtimestamp, [0])) == \
+            [datetime(1970, 1, 1, 0, 0)]
+
+
 payments = [{'name': 'Alice', 'payments': [
                 {'amount':  100, 'when': datetime(2000, 1, 1, 1, 1 ,1)},
                 {'amount':  200, 'when': datetime(2000, 2, 2, 2, 2, 2)}

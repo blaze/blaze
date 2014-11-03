@@ -80,6 +80,7 @@ expressions = {
         t[['id', 'amount']]: [x, bc], # bcolz sorting
         t[0]: [sql, mongo],
         t[::2]: [sql, mongo],
+        t.id.utcfromtimestamp: [sql]
         }
 
 base = df

@@ -1,7 +1,7 @@
 
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
         Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
-        Map)
+        Map, UTCFromTimestamp)
 from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
 import datetime
@@ -100,7 +100,13 @@ def _print_python(expr, leaves=None):
 @dispatch(Millisecond)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
-    return ('%s.microsecond // 1000()' % parenthesize(child), scope)
+    return ('%s.microsecond // 1000' % parenthesize(child), scope)
+
+@dispatch(UTCFromTimestamp)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return ('datetime.datetime.utcfromtimestamp(%s)' % parenthesize(child),
+            toolz.merge({'datetime': datetime}, scope))
 
 @dispatch(DateTime)
 def _print_python(expr, leaves=None):

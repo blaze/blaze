@@ -176,3 +176,11 @@ def test_array_reductions_with_keepdims():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:
         assert eq(compute(a.sum(axis=axis, keepdims=True), ax),
                  ax.sum(axis=axis, keepdims=True))
+
+
+def test_utcfromtimestamp():
+    t = Symbol('t', '1 * int64')
+    data = np.array([0, 1])
+    expected = np.array(['1970-01-01T00:00:00Z', '1970-01-01T00:00:01Z'],
+                        dtype='M8[us]')
+    assert eq(compute(t.utcfromtimestamp, data), expected)

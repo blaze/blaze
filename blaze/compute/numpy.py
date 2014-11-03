@@ -7,6 +7,7 @@ from ..expr import Reduction, Field, Projection, Broadcast, Selection
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not
+from ..expr import UTCFromTimestamp
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -118,7 +119,6 @@ def compute_up(t, x, **kwargs):
 def compute_up(t, x, **kwargs):
     return x[:t.n]
 
-
 @dispatch(Label, np.ndarray)
 def compute_up(t, x, **kwargs):
     return np.array(x, dtype=[(t.label, x.dtype.type)])
@@ -134,6 +134,9 @@ def compute_up(t, x, **kwargs):
 def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel._child: x})]
 
+@dispatch(UTCFromTimestamp, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return (data * 1e6).astype('M8[us]')
 
 @dispatch(Union, np.ndarray, tuple)
 def compute_up(expr, example, children, **kwargs):
