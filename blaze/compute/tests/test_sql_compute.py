@@ -658,3 +658,22 @@ def test_selection_of_join():
     SELECT name.name
     FROM name JOIN place ON name.id = place.id
     WHERE place.city = :city_1""")
+
+
+def test_join_on_same_table():
+    metadata = sa.MetaData()
+    T = sa.Table('tab', metadata,
+             sa.Column('a', sa.Integer),
+             sa.Column('b', sa.Integer),
+             )
+
+    t = Symbol('tab', discover(T))
+    expr = join(t, t, 'a')
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT tab_left.a, tab_left.b, tab_right.b
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)

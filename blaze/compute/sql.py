@@ -23,6 +23,7 @@ from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.sql.selectable import alias
 from operator import and_
+import itertools
 from datashape import Record
 from copy import copy
 import toolz
@@ -158,6 +159,16 @@ def select(s):
 def computefull(t, s):
     return select(compute(t, s))
 
+table_names = ('table_%d' % i for i in itertools.count(1))
+
+def name(sel):
+    """ Name of a selectable """
+    if hasattr(sel, 'name'):
+        return sel.name
+    if hasattr(sel, 'froms'):
+        if len(sel.froms) == 1:
+            return name(sel.froms[0])
+    return next(table_names)
 
 @dispatch(Select, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
@@ -187,9 +198,10 @@ def _join_selectables(a, b, condition=None, **kwargs):
 
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
-    lhs = alias(lhs,name='a')
-    rhs = alias(rhs,name='b')
-    
+    if name(lhs) == name(rhs):
+        lhs = lhs.alias('%s_left' % name(lhs))
+        rhs = rhs.alias('%s_right' % name(rhs))
+
     if isinstance(lhs, Select):
         ldict = dict((c.name, c) for c in lhs.inner_columns)
     else:
@@ -198,6 +210,7 @@ def compute_up(t, lhs, rhs, **kwargs):
         rdict = dict((c.name, c) for c in rhs.inner_columns)
     else:
         rdict = rhs.c
+
 
     condition = reduce(and_,
             [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
@@ -216,19 +229,22 @@ def compute_up(t, lhs, rhs, **kwargs):
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
 
-    if isinstance(main, Select):
-        main_cols = main.inner_columns
-    else:
-        main_cols = main.columns
-    if isinstance(other, Select):
-        other_cols = other.inner_columns
-    else:
-        other_cols = other.columns
+    def cols(x):
+        if isinstance(x, Select):
+            return list(x.inner_columns)
+        else:
+            return list(x.columns)
+    main_cols = cols(main)
+    other_cols = cols(other)
+    left_cols = cols(lhs)
+    right_cols = cols(rhs)
 
-    columns = unique(list(main_cols) + list(other_cols),
-                     key=lambda c: c.name)
-    columns = (c for c in columns if c.name in t.fields)
-    columns = sorted(columns, key=lambda c: t.fields.index(c.name))
+    fields = [f.replace('_left', '').replace('_right', '') for f in t.fields]
+    columns = [c for c in main_cols if c.name in t._on_left]
+    columns += [c for c in left_cols if c.name in fields
+                                    and c.name not in t._on_left]
+    columns += [c for c in right_cols if c.name in fields
+                                     and c.name not in t._on_right]
 
     if isinstance(join, Select):
         return join.with_only_columns(columns)
