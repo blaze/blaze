@@ -52,8 +52,6 @@ def inner_columns(s):
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
-    if scope is None:
-        scope = {}
     subexpression = t
     while hasattr(subexpression, '_child'):
         subexpression = subexpression._child
@@ -91,8 +89,6 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    if len(t._children) != 1:
-        raise ValueError()
     d = dict((t._scalars[0][c], list(inner_columns(s))[i])
              for i, c in enumerate(t._scalars[0].fields))
     return compute(t._scalar_expr, d)
