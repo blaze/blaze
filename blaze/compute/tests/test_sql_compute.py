@@ -67,6 +67,12 @@ def test_arithmetic():
     assert str(compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
     assert str(compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
 
+    assert str(compute(t['amount'] * 2, s)) == str(s.c.amount * 2)
+    assert str(compute(2 * t['amount'], s)) == str(2 * s.c.amount)
+
+    assert (str(compute(~(t['amount'] > 10), s)) ==
+            "~(accounts.amount > :amount_1)")
+
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
 
@@ -288,6 +294,18 @@ def test_by_summary_clean():
 
     assert normalize(str(result)) == normalize(expected)
 
+
+def test_by_summary_single_column():
+    expr = by(t.name, n=t.name.count(), biggest=t.name.max())
+    result = compute(expr, s)
+
+    expected = """
+    SELECT accounts.name, max(accounts.name) AS biggest, count(accounts.name) AS n
+    FROM accounts
+    GROUP BY accounts.name
+    """
+
+    assert normalize(str(result)) == normalize(expected)
 
 
 
@@ -658,3 +676,43 @@ def test_selection_of_join():
     SELECT name.name
     FROM name JOIN place ON name.id = place.id
     WHERE place.city = :city_1""")
+
+
+def test_join_on_same_table():
+    metadata = sa.MetaData()
+    T = sa.Table('tab', metadata,
+             sa.Column('a', sa.Integer),
+             sa.Column('b', sa.Integer),
+             )
+
+    t = Symbol('tab', discover(T))
+    expr = join(t, t, 'a')
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT tab_left.a, tab_left.b, tab_right.b
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)
+
+    expr = join(t, t, 'a').b_left.sum()
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT sum(tab_left.b) as b_left_sum
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)
+
+    expr = join(t, t, 'a')
+    expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT min(tab_right.b) as smallest, sum(tab_left.a) as total
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)

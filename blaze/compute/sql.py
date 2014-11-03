@@ -22,6 +22,7 @@ from sqlalchemy import sql
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from operator import and_
+import itertools
 from datashape import Record
 from copy import copy
 import toolz
@@ -41,11 +42,16 @@ __all__ = ['sqlalchemy', 'select']
 
 
 
+def inner_columns(s):
+    if isinstance(s, sqlalchemy.Table):
+        return s.c
+    if isinstance(s, Selectable):
+        return s.inner_columns
+    raise NotImplementedError()
+
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
-    if scope is None:
-        scope = {}
     subexpression = t
     while hasattr(subexpression, '_child'):
         subexpression = subexpression._child
@@ -72,8 +78,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], lower_column(s.c.get(c)))
-             for c in t._scalars[0].fields)
+    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+             for i, c in enumerate(t._scalars[0].fields))
     result = compute(t._scalar_expr, d)
 
     s = copy(s)
@@ -83,10 +89,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    if len(t._children) != 1:
-        raise ValueError()
-    d = dict((t._scalars[0][c], lower_column(s.c.get(c)))
-             for c in t._scalars[0].fields)
+    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+             for i, c in enumerate(t._scalars[0].fields))
     return compute(t._scalar_expr, d)
 
 
@@ -157,6 +161,16 @@ def select(s):
 def computefull(t, s):
     return select(compute(t, s))
 
+table_names = ('table_%d' % i for i in itertools.count(1))
+
+def name(sel):
+    """ Name of a selectable """
+    if hasattr(sel, 'name'):
+        return sel.name
+    if hasattr(sel, 'froms'):
+        if len(sel.froms) == 1:
+            return name(sel.froms[0])
+    return next(table_names)
 
 @dispatch(Select, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
@@ -186,6 +200,10 @@ def _join_selectables(a, b, condition=None, **kwargs):
 
 @dispatch(Join, Selectable, Selectable)
 def compute_up(t, lhs, rhs, **kwargs):
+    if name(lhs) == name(rhs):
+        lhs = lhs.alias('%s_left' % name(lhs))
+        rhs = rhs.alias('%s_right' % name(rhs))
+
     if isinstance(lhs, Select):
         ldict = dict((c.name, c) for c in lhs.inner_columns)
     else:
@@ -194,6 +212,7 @@ def compute_up(t, lhs, rhs, **kwargs):
         rdict = dict((c.name, c) for c in rhs.inner_columns)
     else:
         rdict = rhs.c
+
 
     condition = reduce(and_,
             [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
@@ -212,19 +231,22 @@ def compute_up(t, lhs, rhs, **kwargs):
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
 
-    if isinstance(main, Select):
-        main_cols = main.inner_columns
-    else:
-        main_cols = main.columns
-    if isinstance(other, Select):
-        other_cols = other.inner_columns
-    else:
-        other_cols = other.columns
+    def cols(x):
+        if isinstance(x, Select):
+            return list(x.inner_columns)
+        else:
+            return list(x.columns)
+    main_cols = cols(main)
+    other_cols = cols(other)
+    left_cols = cols(lhs)
+    right_cols = cols(rhs)
 
-    columns = unique(list(main_cols) + list(other_cols),
-                     key=lambda c: c.name)
-    columns = (c for c in columns if c.name in t.fields)
-    columns = sorted(columns, key=lambda c: t.fields.index(c.name))
+    fields = [f.replace('_left', '').replace('_right', '') for f in t.fields]
+    columns = [c for c in main_cols if c.name in t._on_left]
+    columns += [c for c in left_cols if c.name in fields
+                                    and c.name not in t._on_left]
+    columns += [c for c in right_cols if c.name in fields
+                                     and c.name not in t._on_right]
 
     if isinstance(join, Select):
         return join.with_only_columns(columns)
@@ -239,12 +261,14 @@ names = {mean: 'avg',
 
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
+    d = dict((t._child[c], list(inner_columns(s))[i])
+            for i, c in enumerate(t._child.fields))
     col = compute(t, d)
 
     s = copy(s)
     s.append_column(col)
     return s.with_only_columns([col])
+
 
 @dispatch(Distinct, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
@@ -439,7 +463,8 @@ def compute_up(t, _, children):
 
 @dispatch(Summary, Select)
 def compute_up(t, s, scope=None, **kwargs):
-    d = dict((t._child[c], lower_column(s.c.get(c))) for c in t._child.fields)
+    d = dict((t._child[c], list(inner_columns(s))[i])
+            for i, c in enumerate(t._child.fields))
 
     cols = [compute(val, toolz.merge(scope, d)).label(name)
                 for name, val in zip(t.fields, t.values)]
