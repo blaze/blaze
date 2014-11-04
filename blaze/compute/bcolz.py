@@ -124,7 +124,7 @@ def compute_up(expr, x, **kwargs):
 
 @dispatch(nelements, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, x, **kwargs):
-    return np.prod([x.shape[i] for i in expr.axis])
+    return compute_up.dispatch(type(expr), np.ndarray)(expr, x, **kwargs)
 
 
 @dispatch((bcolz.carray, bcolz.ctable))

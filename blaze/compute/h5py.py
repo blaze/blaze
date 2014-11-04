@@ -28,7 +28,7 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(nelements, h5py.Dataset)
 def compute_up(expr, data, **kwargs):
-    return np.prod([data.shape[i] for i in expr.axis])
+    return compute_up.dispatch(type(expr), np.ndarray)(expr, data, **kwargs)
 
 
 @dispatch(Expr, h5py.Dataset)
