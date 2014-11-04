@@ -6,6 +6,7 @@ bcolz = pytest.importorskip('bcolz')
 
 import numpy as np
 
+import blaze as bz
 from blaze.bcolz import into, chunks
 from blaze.expr import Symbol
 from blaze.compute.core import compute

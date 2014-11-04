@@ -91,4 +91,14 @@ def test_nelements_records(recdata):
 
 
 def test_nelements_array(data):
-    assert compute(s.nelements(axis=1), data) == data.shape[1]
+    lhs = compute(s.nelements(axis=1), data)
+    rhs = data.shape[1]
+    np.testing.assert_array_equal(lhs, rhs)
+
+    lhs = compute(s.nelements(axis=0), data)
+    rhs = data.shape[0]
+    np.testing.assert_array_equal(lhs, rhs)
+
+    lhs = compute(s.nelements(axis=(0, 1)), data)
+    rhs = np.prod(data.shape)
+    np.testing.assert_array_equal(lhs, rhs)
