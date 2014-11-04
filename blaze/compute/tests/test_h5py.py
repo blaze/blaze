@@ -87,7 +87,9 @@ def test_nrows_array(data):
 
 def test_nelements_records(recdata):
     s = Symbol('s', discover(recdata))
-    assert compute(s.nelements(), recdata) == recdata.shape[0]
+    assert compute(s.nelements(), recdata) == np.prod(recdata.shape)
+    np.testing.assert_array_equal(compute(s.nelements(axis=0), recdata),
+                                  np.zeros(recdata.shape[1]) + recdata.shape[0])
 
 
 def test_nelements_array(data):
