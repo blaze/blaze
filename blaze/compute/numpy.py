@@ -159,7 +159,18 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    return np.prod([data.shape[i] for i in expr.axis])
+    axis = expr.axis
+    shape = tuple(data.shape[i] for i in range(expr._child.ndim)
+                  if i not in axis)
+    value = np.prod([data.shape[i] for i in axis])
+    result = np.empty(shape)
+    result.fill(value)
+    result = result.astype('int64')
+
+    try:
+        return result.item()
+    except ValueError:
+        return result
 
 
 @dispatch(np.ndarray)
