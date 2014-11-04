@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
 from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze.expr import *
 import sqlalchemy
@@ -190,6 +191,27 @@ def test_reductions():
             str(sa.sql.func.count(s.c.amount))
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
+
+
+def test_nelements():
+    rhs = str(s.count())
+    assert str(compute(t.nelements(), s)) == rhs
+    assert str(compute(t.nelements(axis=None), s)) == rhs
+    assert str(compute(t.nelements(axis=0), s)) == rhs
+    assert str(compute(t.nelements(axis=(0,)), s)) == rhs
+
+
+def test_nelements_subexpr():
+    rhs = str(sa.select([s.c.id, s.c.amount]).count())
+    lhs = str(compute(t[['id', 'amount']].nelements(), s))
+    assert lhs == rhs
+
+
+@pytest.mark.xfail(raises=ValueError, reason="We don't support axis=1 for"
+                   " Record datashapes")
+def test_nelements_axis_1():
+    assert compute(nelements(t, axis=1), s) == len(s.columns)
+
 
 def test_count_on_table():
     assert normalize(str(select(compute(t.count(), s)))) == normalize("""

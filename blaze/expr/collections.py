@@ -6,7 +6,7 @@ from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, Symbol, label
+from .expressions import Expr, ElemWise, label
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
            'union', 'head', 'sort', 'Join', 'join']
@@ -16,7 +16,7 @@ class Sort(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.sort('amount', ascending=False).schema
     dshape("{ name : string, amount : int32 }")
@@ -76,7 +76,7 @@ class Distinct(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = distinct(t)
 
@@ -115,7 +115,7 @@ class Head(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.head(5).dshape
     dshape("5 * { name : string, amount : int32 }")
@@ -187,9 +187,8 @@ class Merge(ElemWise):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, x: int, y: real}')
-
     >>> merge(accounts.name, z=accounts.x + accounts.y).fields
     ['name', 'z']
     """
@@ -233,6 +232,7 @@ class Union(Expr):
 
     Examples
     --------
+    >>> from blaze import Symbol
 
     >>> usa_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> euro_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
@@ -272,7 +272,7 @@ def union(*children):
 
 
 def unpack(l):
-    """ Unpack items from collections of length 1
+    """ Unpack items from collections of nelements 1
 
     >>> unpack('hello')
     'hello'
@@ -297,7 +297,7 @@ class Join(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> names = Symbol('names', 'var * {name: string, id: int}')
     >>> amounts = Symbol('amounts', 'var * {amount: int, id: int}')
 
@@ -337,7 +337,7 @@ class Join(Expr):
 
         Examples
         --------
-
+        >>> from blaze import Symbol
         >>> t = Symbol('t', 'var * {name: string, amount: int}')
         >>> s = Symbol('t', 'var * {name: string, id: int}')
 

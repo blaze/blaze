@@ -80,7 +80,10 @@ expressions = {
         t[['id', 'amount']]: [x, bc], # bcolz sorting
         t[0]: [sql, mongo],
         t[::2]: [sql, mongo],
-        t.id.utcfromtimestamp: [sql]
+        t.id.utcfromtimestamp: [sql],
+        t.distinct().nrows: [],
+        t.nelements(axis=0): [],
+        t.nelements(axis=None): []
         }
 
 base = df

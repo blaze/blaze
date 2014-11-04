@@ -184,3 +184,21 @@ def test_utcfromtimestamp():
     expected = np.array(['1970-01-01T00:00:00Z', '1970-01-01T00:00:01Z'],
                         dtype='M8[us]')
     assert eq(compute(t.utcfromtimestamp, data), expected)
+
+
+def test_nelements_structured_array():
+    assert compute(t.nelements(), x) == len(x)
+
+
+def test_nelements_array():
+    t = Symbol('t', '5 * 4 * 3 * float64')
+    x = np.random.randn(*t.shape)
+    result = compute(t.nelements(axis=(0, 1)), x)
+    np.testing.assert_array_equal(result, np.array([20, 20, 20]))
+
+    result = compute(t.nelements(axis=1), x)
+    np.testing.assert_array_equal(result, 4 * np.ones((5, 3)))
+
+
+def test_nrows():
+    assert compute(t.nrows, x) == len(x)

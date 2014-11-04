@@ -4,13 +4,14 @@ from blaze.expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
         Arithmetic, Broadcast)
 from blaze.expr import Label, Distinct, By, Reduction, Like, Slice
 from blaze.expr import std, var, count, mean, nunique, sum
-from blaze.expr import eval_str, Expr
+from blaze.expr import eval_str, Expr, nelements
 from blaze.expr.optimize import lean_projection
 
 from collections import Iterator
 import datashape
 import bcolz
 import math
+import numpy as np
 from .chunks import ChunkIndexable
 
 
@@ -119,6 +120,11 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Slice, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
+
+
+@dispatch(nelements, (bcolz.carray, bcolz.ctable))
+def compute_up(expr, x, **kwargs):
+    return compute_up.dispatch(type(expr), np.ndarray)(expr, x, **kwargs)
 
 
 @dispatch((bcolz.carray, bcolz.ctable))

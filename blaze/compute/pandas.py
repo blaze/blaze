@@ -32,7 +32,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp)
+                    UTCFromTimestamp, nelements)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -58,6 +58,7 @@ def compute_up(t, data, **kwargs):
     else:
         raise ValueError("Fieldname %s does not match Series name %s"
                 % (t.fields[0], data.name))
+
 
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
@@ -433,10 +434,13 @@ def compute_up(expr, df, **kwargs):
         return df.iloc[index]
     elif isinstance(index, slice):
         if index.stop is not None:
-            return df.iloc[slice(index.start,
-                                index.stop,
-                                index.step)]
+            return df.iloc[index.start:index.stop:index.step]
         else:
             return df.iloc[index]
     else:
         raise NotImplementedError()
+
+
+@dispatch(nelements, (DataFrame, Series))
+def compute_up(expr, df, **kwargs):
+    return df.shape[0]

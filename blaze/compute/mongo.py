@@ -52,21 +52,17 @@ except ImportError:
     Collection = type(None)
 
 import fnmatch
-from datashape import Record, Tuple
 from datashape.predicates import isscalar
 from toolz import pluck, first, get
 import toolz
 import datetime
 
-from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
-                    Reduction, Head, ReLabel, Distinct, ElemWise, By,
-                    Symbol, Projection, Field, sum, min, max, Gt, Lt,
-                    Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
-                    Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol,
-                    Arithmetic
-                    )
+from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
+                    mean, Reduction, Head, ReLabel, Distinct, ElemWise, By,
+                    Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
+                    Eq, Ne, Symbol, And, Or, Summary, Like, Broadcast, DateTime,
+                    Microsecond, Date, Time, Expr, Symbol, Arithmetic)
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
-from .. import expr
 from ..compatibility import _strtypes
 
 from ..dispatch import dispatch
@@ -296,7 +292,7 @@ def group_apply(expr):
     return query
 
 
-@dispatch(count, MongoQuery)
+@dispatch((count, nelements), MongoQuery)
 def compute_up(t, q, **kwargs):
     name = t._name
     return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
