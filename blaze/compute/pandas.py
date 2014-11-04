@@ -59,6 +59,7 @@ def compute_up(t, data, **kwargs):
         raise ValueError("Fieldname %s does not match Series name %s"
                 % (t.fields[0], data.name))
 
+
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
     d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
@@ -442,4 +443,4 @@ def compute_up(expr, df, **kwargs):
 
 @dispatch(nelements, (DataFrame, Series))
 def compute_up(expr, df, **kwargs):
-    return np.prod([df.shape[i] for i in expr.axis])
+    return df.shape[0]

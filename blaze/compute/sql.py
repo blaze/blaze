@@ -308,8 +308,6 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(nelements, (Select, Selectable))
 def compute_up(t, s, **kwargs):
-    if t.axis != (0,):
-        raise ValueError("Record datashapes only support axis == (0,)")
     return s.count()
 
 
