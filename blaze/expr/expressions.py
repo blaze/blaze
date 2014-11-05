@@ -16,7 +16,7 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim']
+           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label']
 
 
 def isvalid_identifier(s):
@@ -92,6 +92,13 @@ class Expr(Node):
 
     def __len__(self): # pragma: no cover
         return self._len()
+
+    def __iter__(self):
+        raise NotImplementedError(
+                'Iteration over expressions is not supported.\n'
+                'Iterate over computed result instead, e.g. \n'
+                "\titer(expr)           # don't do this\n"
+                "\titer(compute(expr))  # do this instead")
 
     def __dir__(self):
         result = dir(type(self))
@@ -362,6 +369,10 @@ class Label(ElemWise):
             return self
         else:
             raise ValueError("Column Mismatch: %s" % key)
+
+    def __str__(self):
+        return "label(%s, '%s')" % (self._child, self.label)
+
 
 def label(expr, lab):
     if expr._name == lab:

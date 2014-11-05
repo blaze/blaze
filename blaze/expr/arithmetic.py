@@ -9,7 +9,7 @@ from datashape.predicates import isscalar
 from datashape import coretypes as ct
 
 from .core import parenthesize, eval_str
-from .expressions import Expr, shape
+from .expressions import Expr, shape, ElemWise
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
@@ -18,7 +18,13 @@ __all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
 Relational Eq Ne Ge Lt Le Gt Gt And Or Not'''.split()
 
 
-class BinOp(Expr):
+def name(o):
+    if hasattr(o, '_name'):
+        return o._name
+    else:
+        return None
+
+class BinOp(ElemWise):
     __slots__ = 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
 
@@ -31,6 +37,24 @@ class BinOp(Expr):
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
+    @property
+    def _name(self):
+        if not isscalar(self.dshape.measure):
+            return None
+        l, r = name(self.lhs), name(self.rhs)
+        if l and not r:
+            return l
+        if r and not l:
+            return r
+
+    @property
+    def _inputs(self):
+        result = []
+        if isinstance(self.lhs, Expr):
+            result.append(self.lhs)
+        if isinstance(self.rhs, Expr):
+            result.append(self.rhs)
+        return tuple(result)
 
 
 def maxvar(L):
@@ -63,7 +87,7 @@ def maxshape(shapes):
     return tuple(map(maxvar, zip(*shapes)))
 
 
-class UnaryOp(Expr):
+class UnaryOp(ElemWise):
     __slots__ = '_child',
 
     def __init__(self, child):
@@ -76,10 +100,18 @@ class UnaryOp(Expr):
     def symbol(self):
         return type(self).__name__
 
+    @property
+    def dshape(self):
+        return DataShape(*(shape(self._child) + (self._dtype,)))
+
+    @property
+    def _name(self):
+        return self._child._name
+
 
 class Arithmetic(BinOp):
     """ Super class for arithmetic operators like add or mul """
-    _dtype = 'real'
+    _dtype = ct.real
 
     @property
     def dshape(self):
@@ -124,14 +156,15 @@ class Mod(Arithmetic):
 
 class USub(UnaryOp):
     op = operator.neg
+    symbol = '-'
 
     def __str__(self):
         return '-%s' % self._child
 
     @property
-    def dshape(self):
+    def _dtype(self):
         # TODO: better inference.  -uint -> int
-        return self._child.dshape
+        return self._child.schema
 
 
 @dispatch(ct.Option, object)
@@ -173,12 +206,7 @@ def scalar_coerce(rec, val):
 
 @dispatch(ct.DataShape, object)
 def scalar_coerce(ds, val):
-    if len(ds) == 1:
-        return scalar_coerce(ds[0], val)
-    else:
-        raise TypeError("Trying to coerce dimensional datashape\n"
-                "got dshape: %s\n"
-                "scalar_coerce only intended for scalar values" % ds)
+    return scalar_coerce(ds.measure, val)
 
 
 @dispatch(object, object)
@@ -238,7 +266,7 @@ def _rmod(self, other):
 
 
 class Relational(Arithmetic):
-    _dtype = 'bool'
+    _dtype = ct.bool_
 
 
 class Eq(Relational):
@@ -274,22 +302,19 @@ class Lt(Relational):
 class And(Arithmetic):
     symbol = '&'
     op = operator.and_
-    _dtype = 'bool'
+    _dtype = ct.bool_
 
 
 class Or(Arithmetic):
     symbol = '|'
     op = operator.or_
-    _dtype = 'bool'
+    _dtype = ct.bool_
 
 
 class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
-
-    @property
-    def dshape(self):
-        return DataShape(*(shape(self._child) + ('bool',)))
+    _dtype = ct.bool_
 
 
 def _eq(self, other):
@@ -333,9 +358,9 @@ BitAnd = And
 BitOr = Or
 
 
-from .expressions import dshape_method_list
+from .expressions import schema_method_list
 
-dshape_method_list.extend([
+schema_method_list.extend([
     (isscalar,
             set([_add, _radd, _mul,
             _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,

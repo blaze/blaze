@@ -151,6 +151,7 @@ class SQL(DataDescriptor):
     >>> dd.extend([('Alice', 100), ('Bob', 200)])
 
     Select all from table
+
     >>> list(dd) # doctest: +SKIP
     [('Alice', 100), ('Bob', 200)]
 
@@ -168,6 +169,8 @@ class SQL(DataDescriptor):
         or SQLAlchemy engine
     table : string
         The name of the table
+    schema_name : string (optional)
+        The name of the SQL database schema (not to be confused with the dshape)
     schema : string, list of Columns
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
@@ -180,17 +183,27 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-    def __init__(self, engine, tablename, primary_key='', schema=None, **kwargs):
+    def __init__(self, engine, tablename, primary_key='', schema=None,
+            schema_name=None, **kwargs):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
-        self.tablename = tablename
+        if not schema_name and '.' in tablename:
+            self.schema_name = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
+            self.tablename = tablename.split('.')[-1]
+        else:
+            self.schema_name = schema_name
+            self.tablename = tablename
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
 
-        if engine.has_table(tablename):
-            metadata.reflect(engine)
-            table = metadata.tables[tablename]
+        if engine.has_table(self.tablename, schema=self.schema_name):
+            metadata.reflect(engine, schema=self.schema_name)
+            if self.schema_name:
+                name = self.schema_name + '.' + self.tablename
+            else:
+                name = self.tablename
+            table = metadata.tables[name]
             engine_schema = discover(table).subshape[0]
             # if schema and dshape(schema) != engine_schema:
                 # raise ValueError("Mismatched schemas:\n"
@@ -203,14 +216,23 @@ class SQL(DataDescriptor):
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-            table = sql.Table(tablename, metadata, *columns)
+            table = sql.Table(tablename, metadata, *columns, schema=self.schema_name)
         else:
             raise ValueError('Must provide schema or point to valid table. '
                              'Table %s does not exist' % tablename)
 
         self._schema = datashape.dshape(schema)
         self.table = table
-        metadata.create_all(engine)
+
+        try:
+            metadata.create_all(engine)
+        except sqlalchemy.exc.ProgrammingError:  # Maybe db does not exist
+            if not self.schema_name:
+                raise
+            # Create schema
+            statement = sqlalchemy.schema.CreateSchema(self.schema_name)
+            engine.execute(statement)
+            metadata.create_all(engine)
 
     def _iter(self):
         with self.engine.connect() as conn:

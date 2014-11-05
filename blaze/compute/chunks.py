@@ -24,7 +24,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from ..expr import (Symbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
-        nunique)
+        nunique, Arithmetic, Broadcast)
 from .core import compute
 from toolz import partition_all
 from collections import Iterator
@@ -37,9 +37,11 @@ import pandas as pd
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor
 from ..expr.split import split
+from ..expr import Expr
 
 __all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk',
            'chunks', 'into']
+
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -84,6 +86,12 @@ class ChunkIndexable(ChunkIterable):
                 except IndexError:
                     raise StopIteration()
 
+
+@dispatch(Expr, ChunkIterator)
+def pre_compute(expr, data):
+    return data
+
+
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
               any: (any, any), all: (all, all)}
@@ -126,7 +134,8 @@ def compute_up(expr, c, **kwargs):
     return df
 
 
-@dispatch((Selection, ElemWise, Label, ReLabel), ChunkIterator)
+@dispatch((Selection, ElemWise, Label, ReLabel, Arithmetic, Broadcast),
+          ChunkIterator)
 def compute_up(expr, c, **kwargs):
     return ChunkIterator(compute_up(expr, chunk) for chunk in c)
 

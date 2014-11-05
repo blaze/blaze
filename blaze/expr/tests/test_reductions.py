@@ -1,4 +1,5 @@
-from blaze.expr import *
+from blaze.expr import Symbol, summary
+from datashape import dshape
 
 
 def test_reduction_dshape():

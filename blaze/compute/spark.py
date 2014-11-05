@@ -46,6 +46,13 @@ except:
     pass
 
 
+from .pyfunc import broadcast_collect
+
+@dispatch(Expr, RDD)
+def optimize(expr, seq):
+    return broadcast_collect( expr)
+
+
 @dispatch(ElemWise, RDD)
 def compute_up(t, rdd, **kwargs):
     func = rowfunc(t)
@@ -54,7 +61,8 @@ def compute_up(t, rdd, **kwargs):
 
 @dispatch(Selection, RDD)
 def compute_up(t, rdd, **kwargs):
-    predicate = rrowfunc(t.predicate, t._child)
+    predicate = optimize(t.predicate, rdd)
+    predicate = rrowfunc(predicate, t._child)
     return rdd.filter(predicate)
 
 
@@ -98,7 +106,8 @@ def compute_up(t, rdd, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t._child[t.key])
     else:
-        key = rrowfunc(t.key, t._child)
+        key = optimize(t.key, rdd)
+        key = rrowfunc(key, t._child)
     return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
@@ -147,6 +156,9 @@ python_reductions = {
 
 @dispatch(By, RDD)
 def compute_up(t, rdd, **kwargs):
+    grouper = optimize(t.grouper, rdd)
+    apply = optimize(t.apply, rdd)
+    t = by(grouper, apply)
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):

@@ -6,6 +6,7 @@ bcolz = pytest.importorskip('bcolz')
 
 import numpy as np
 
+import blaze as bz
 from blaze.bcolz import into, chunks
 from blaze.expr import Symbol
 from blaze.compute.core import compute
@@ -93,3 +94,12 @@ def test_count_isnan_object():
                    reason="isnan doesn't work on struct/record dtypes")
 def test_count_isnan_struct():
     assert compute(t[~t.b.isnan()].count(), b) == 2  # 3?
+
+
+def test_nrows():
+    assert compute(t.nrows, b) == len(b)
+
+
+def test_nelements():
+    assert compute(t.nelements(axis=0), b) == len(b)
+    assert compute(t.nelements(), b) == len(b)

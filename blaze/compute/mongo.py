@@ -52,24 +52,27 @@ except ImportError:
     Collection = type(None)
 
 import fnmatch
-from datashape import Record, Tuple
 from datashape.predicates import isscalar
 from toolz import pluck, first, get
 import toolz
+import datetime
 
-from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
-                    Reduction, Head, ReLabel, Distinct, ElemWise, By,
-                    Symbol, Projection, Field, sum, min, max, Gt, Lt,
-                    Ge, Le, Eq, Ne, Symbol, And, Or, Summary, Like,
-                    Broadcast, DateTime, Microsecond, Date, Time, Expr, Symbol
-                    )
-from .. import expr
+from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
+                    mean, Reduction, Head, ReLabel, Distinct, ElemWise, By,
+                    Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
+                    Eq, Ne, Symbol, And, Or, Summary, Like, Broadcast, DateTime,
+                    Microsecond, Date, Time, Expr, Symbol, Arithmetic)
+from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
 
 from ..dispatch import dispatch
 
 
 __all__ = ['MongoQuery']
+
+@dispatch(Expr, Collection)
+def pre_compute(expr, data):
+    return MongoQuery(data, [])
 
 
 class MongoQuery(object):
@@ -108,16 +111,11 @@ class MongoQuery(object):
         return hash((type(self), self.info()))
 
 
-@dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
-           Head, ReLabel, Distinct, ElemWise, By, Like, DateTime, Field),
-          Collection)
-def compute_up(e, coll, **kwargs):
-    return compute_up(e, MongoQuery(coll, []))
+from ..expr.broadcast import broadcast_collect
 
-
-@dispatch(Symbol, Collection)
-def compute_up(t, coll, **kwargs):
-    return MongoQuery(coll, [])
+@dispatch(Expr, (MongoQuery, Collection))
+def optimize(expr, seq):
+    return broadcast_collect( expr)
 
 
 @dispatch(Head, MongoQuery)
@@ -127,7 +125,11 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(Broadcast, MongoQuery)
 def compute_up(t, q, **kwargs):
-    return q.append({'$project': {str(t._expr): compute_sub(t._expr)}})
+    s = t._scalars[0]
+    d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
+    expr = t._scalar_expr._subs(d)
+    name = expr._name or 'expr_%d' % abs(hash(expr))
+    return q.append({'$project': {name: compute_sub(expr)}})
 
 
 binops = {'+': 'add',
@@ -160,17 +162,25 @@ def compute_sub(t):
     ((s * 2) + s) - 1
     >>> compute_sub(expr)
     {'$subtract': [{'$add': [{'$multiply': ['$s', 2]}, '$s']}, 1]}
+
+    >>> when = Symbol('when', 'datetime')
+    >>> compute_sub(s + when.day)
+    {'$add': ['$s', {'$dayOfMonth': '$when'}]}
     """
     if isinstance(t, _strtypes + (Symbol,)):
         return '$%s' % t
     elif isinstance(t, numbers.Number):
         return t
-    try:
+    elif isinstance(t, Arithmetic) and hasattr(t, 'symbol') and t.symbol in binops:
         op = binops[t.symbol]
-    except KeyError:
-        raise NotImplementedError('Arithmetic operation %r not implemented in '
-                                  'MongoDB' % t.symbol)
-    return {compute_sub(op): [compute_sub(t.lhs), compute_sub(t.rhs)]}
+        return {'$%s' % op: [compute_sub(t.lhs), compute_sub(t.rhs)]}
+    elif isinstance(t, tuple(datetime_terms)):
+        op = datetime_terms[type(t)]
+        return {'$%s' % op: compute_sub(t._child)}
+    elif isinstance(t, UTCFromTimestamp):
+        return {'$add': [datetime.datetime.utcfromtimestamp(0),
+                         {'$multiply': [1000, compute_sub(t._child)]}]}
+    raise NotImplementedError('Operation %s not supported' % type(t).__name__)
 
 
 @dispatch((Projection, Field), MongoQuery)
@@ -179,8 +189,14 @@ def compute_up(t, q, **kwargs):
 
 
 @dispatch(Selection, MongoQuery)
-def compute_up(t, q, **kwargs):
-    return q.append({'$match': match(t.predicate._expr)})
+def compute_up(expr, data, **kwargs):
+    predicate = optimize(expr.predicate, data)
+    assert isinstance(predicate, Broadcast)
+
+    s = predicate._scalars[0]
+    d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
+    expr = predicate._scalar_expr._subs(d)
+    return data.append({'$match': match(expr)})
 
 
 @dispatch(Like, MongoQuery)
@@ -195,12 +211,13 @@ def compute_up(t, q, **kwargs):
     if not isinstance(t.grouper, (Field, Projection)):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
-    names = t.apply.fields
+    apply = optimize(t.apply, q)
+    names = apply.fields
     return MongoQuery(q.coll, q.query +
     ({
         '$group': toolz.merge(
                     {'_id': dict((col, '$'+col) for col in t.grouper.fields)},
-                    group_apply(t.apply)
+                    group_apply(apply)
                     )
      },
      {
@@ -242,7 +259,23 @@ def group_apply(expr):
                               % type(expr).__name__)
 
 
-reductions = {mean: 'avg', count: 'sum', max: 'max', min: 'min'}
+reductions = {mean: '$avg', count: '$sum', max: '$max', min: '$min', sum: '$sum'}
+
+
+def scalar_expr(expr):
+    if isinstance(expr, Broadcast):
+        s = expr._scalars[0]
+        d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
+        return expr._scalar_expr._subs(d)
+    elif isinstance(expr, Field):
+        return Symbol(expr._name, expr.dshape.measure)
+    else:
+        # TODO: This is a hack
+        # broadcast_collect should reach into summary, By, selection
+        # And perform these kinds of optimizations itself
+        expr2 = broadcast_collect(expr)
+        if not expr2.isidentical(expr):
+            return scalar_expr(expr2)
 
 
 @dispatch(Summary)
@@ -252,14 +285,14 @@ def group_apply(expr):
     names = expr.fields
     values = [(name, c, getattr(c._child, 'column', None) or name)
                for name, c in zip(names, reducs)]
-    key_getter = lambda v: '$%s' % reductions.get(type(v), type(v).__name__)
-    query = dict((k, {key_getter(v): int(isinstance(v, count)) or
-                      compute_sub(v._child._expr)})
+
+    query = dict((k, {reductions[type(v)]: 1 if isinstance(v, count)
+                                        else compute_sub(scalar_expr(v._child))})
                  for k, v, z in values)
     return query
 
 
-@dispatch(count, MongoQuery)
+@dispatch((count, nelements), MongoQuery)
 def compute_up(t, q, **kwargs):
     name = t._name
     return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
@@ -279,19 +312,11 @@ def compute_up(t, q, **kwargs):
     return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
 
 
-@dispatch(DateTime, MongoQuery)
-def compute_up(expr, q, **kwargs):
-    attr = expr.attr
-    d = {'$project': {expr._name:
-                      {'$%s' % {'day': 'dayOfMonth'}.get(attr, attr):
-                       '$%s' % expr._child._name}}}
-    return q.append(d)
-
-
-@dispatch((Date, Time, Microsecond), MongoQuery)
-def compute_up(expr, q, **kwargs):
-    raise NotImplementedError('MongoDB does not support the %r field' %
-                              type(expr).__name__.lower())
+datetime_terms = {Day: 'dayOfMonth',
+                  Month: 'month',
+                  Year: 'year',
+                  Minute: 'minute',
+                  Second: 'second'}
 
 
 @dispatch(Expr, Collection, dict)

@@ -1,6 +1,6 @@
-from blaze.expr import *
-from blaze.expr.utils import *
-import numpy as np
+from blaze.expr import Symbol
+from datashape import dshape, isscalar
+
 
 def test_array_dshape():
     x = Symbol('x', '5 * 3 * float32')

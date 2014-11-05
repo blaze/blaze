@@ -31,7 +31,8 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
-                    ElemWise, DateTime, Millisecond, Expr, Symbol)
+                    ElemWise, DateTime, Millisecond, Expr, Symbol,
+                    UTCFromTimestamp, nelements)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -50,6 +51,15 @@ def compute_up(t, df, **kwargs):
     return df[t.fields[0]]
 
 
+@dispatch(Field, Series)
+def compute_up(t, data, **kwargs):
+    if t.fields[0] == data.name:
+        return data
+    else:
+        raise ValueError("Fieldname %s does not match Series name %s"
+                % (t.fields[0], data.name))
+
+
 @dispatch(Broadcast, DataFrame)
 def compute_up(t, df, **kwargs):
     d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
@@ -59,6 +69,14 @@ def compute_up(t, df, **kwargs):
 @dispatch(Broadcast, Series)
 def compute_up(t, s, **kwargs):
     return compute_up(t, s.to_frame(), **kwargs)
+
+
+@dispatch(BinOp, Series)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
 
 
 @dispatch(BinOp, Series, (Series, base))
@@ -397,6 +415,11 @@ def compute_up(expr, s, **kwargs):
     return get_date_attr(s, expr.attr)
 
 
+@dispatch(UTCFromTimestamp, Series)
+def compute_up(expr, s, **kwargs):
+    return pd.datetools.to_datetime(s*1e9, utc=True)
+
+
 @dispatch(Millisecond, Series)
 def compute_up(_, s, **kwargs):
     return get_date_attr(s, 'microsecond') // 1000
@@ -411,10 +434,13 @@ def compute_up(expr, df, **kwargs):
         return df.iloc[index]
     elif isinstance(index, slice):
         if index.stop is not None:
-            return df.iloc[slice(index.start,
-                                index.stop,
-                                index.step)]
+            return df.iloc[index.start:index.stop:index.step]
         else:
             return df.iloc[index]
     else:
         raise NotImplementedError()
+
+
+@dispatch(nelements, (DataFrame, Series))
+def compute_up(expr, df, **kwargs):
+    return df.shape[0]

@@ -6,7 +6,7 @@ from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, Symbol, label
+from .expressions import Expr, ElemWise, label
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
            'union', 'head', 'sort', 'Join', 'join']
@@ -16,7 +16,7 @@ class Sort(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.sort('amount', ascending=False).schema
     dshape("{ name : string, amount : int32 }")
@@ -76,7 +76,7 @@ class Distinct(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = distinct(t)
 
@@ -92,7 +92,7 @@ class Distinct(Expr):
 
     @property
     def dshape(self):
-        return self._child.dshape
+        return datashape.var * self._child.dshape.measure
 
     @property
     def fields(self):
@@ -101,6 +101,9 @@ class Distinct(Expr):
     @property
     def _name(self):
         return self._child._name
+
+    def __str__(self):
+        return 'distinct(%s)' % self._child
 
 
 def distinct(expr):
@@ -112,7 +115,7 @@ class Head(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.head(5).dshape
     dshape("5 * { name : string, amount : int32 }")
@@ -184,9 +187,8 @@ class Merge(ElemWise):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, x: int, y: real}')
-
     >>> merge(accounts.name, z=accounts.x + accounts.y).fields
     ['name', 'z']
     """
@@ -230,6 +232,7 @@ class Union(Expr):
 
     Examples
     --------
+    >>> from blaze import Symbol
 
     >>> usa_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> euro_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
@@ -269,7 +272,7 @@ def union(*children):
 
 
 def unpack(l):
-    """ Unpack items from collections of length 1
+    """ Unpack items from collections of nelements 1
 
     >>> unpack('hello')
     'hello'
@@ -294,7 +297,7 @@ class Join(Expr):
 
     Examples
     --------
-
+    >>> from blaze import Symbol
     >>> names = Symbol('names', 'var * {name: string, id: int}')
     >>> amounts = Symbol('amounts', 'var * {amount: int, id: int}')
 
@@ -334,7 +337,7 @@ class Join(Expr):
 
         Examples
         --------
-
+        >>> from blaze import Symbol
         >>> t = Symbol('t', 'var * {name: string, amount: int}')
         >>> s = Symbol('t', 'var * {name: string, id: int}')
 
@@ -343,6 +346,12 @@ class Join(Expr):
 
         >>> join(t, s, how='left').schema
         dshape("{ name : string, amount : int32, id : ?int32 }")
+
+        Overlapping but non-joined fields append _left, _right
+        >>> a = Symbol('a', 'var * {x: int, y: int}')
+        >>> b = Symbol('b', 'var * {x: int, y: int}')
+        >>> join(a, b, 'x').fields
+        ['x', 'y_left', 'y_right']
         """
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
@@ -354,6 +363,15 @@ class Join(Expr):
 
         right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
                             if name not in self.on_right]
+
+        # Handle overlapping but non-joined case, e.g.
+        left_other  = [name for name, dt in left  if name not in self.on_left]
+        right_other = [name for name, dt in right if name not in self.on_right]
+        overlap = set.intersection(set(left_other), set(right_other))
+        left = [[name+'_left' if name in overlap else name, dt]
+                for name, dt in left]
+        right = [[name+'_right' if name in overlap else name, dt]
+                for name, dt in right]
 
         if self.how in ('right', 'outer'):
             left = [[name, option(dt)] for name, dt in left]
@@ -401,5 +419,6 @@ join.__doc__ = Join.__doc__
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([distinct, head, sort, head])),
+    (iscollection, set([sort, head])),
+    (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])

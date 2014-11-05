@@ -26,8 +26,8 @@ def compute_up(a, **kwargs):
 
 
 @dispatch((list, tuple))
-def compute_up(seq, scope={}, **kwargs):
-    return type(seq)(compute(item, scope, **kwargs) for item in seq)
+def compute_up(seq, scope=None, **kwargs):
+    return type(seq)(compute(item, scope or {}, **kwargs) for item in seq)
 
 
 @dispatch(Expr, object)
@@ -113,10 +113,10 @@ def bottom_up(d, expr):
     return result
 
 
-@dispatch(Expr, dict)
-def pre_compute(expr, d):
-    """ Transform expr prior to calling ``compute`` """
-    return expr
+@dispatch(Expr, object)
+def pre_compute(leaf, data):
+    """ Transform data prior to calling ``compute`` """
+    return data
 
 
 @dispatch(Expr, object, dict)
@@ -167,67 +167,14 @@ def compute(expr, d, **kwargs):
     ['Bob', 'Charlie']
     """
     expr2, d2 = swap_resources_into_scope(expr, d)
+    d3 = dict((e, pre_compute(e, dat)) for e, dat in d2.items())
 
-    expr3 = pre_compute(expr2, d2)
     try:
-        expr4 = optimize(expr3, *[v for e, v in d2.items() if e in expr3])
+        expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
     except NotImplementedError:
-        expr4 = expr3
-    result = top_to_bottom(d2, expr4, **kwargs)
-    return post_compute(expr4, result, d2)
-
-
-def columnwise_funcstr(t, variadic=True, full=False):
-    """Build a string that can be eval'd to return a ``lambda`` expression.
-
-    Parameters
-    ----------
-    t : Broadcast
-        An expression whose leaves (at each application of the returned
-        expression) are all instances of ``ScalarExpression``.
-        For example ::
-
-            t.petal_length / max(t.petal_length)
-
-        is **not** a valid ``Broadcast``, since the expression ::
-
-            max(t.petal_length)
-
-        has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
-        valid ``Broadcast`` expression is ::
-
-            t.petal_length / 4
-
-    Returns
-    -------
-    f : str
-        A string that can be passed to ``eval`` and will return a function that
-        operates on each row and applies a scalar expression to a subset of the
-        columns in each row.
-
-    Examples
-    --------
-    >>> t = Symbol('t', 'var * {x: real, y: real, z: real}')
-    >>> cw = t['x'] + t['z']
-    >>> columnwise_funcstr(cw)
-    'lambda x, z: x + z'
-
-    >>> columnwise_funcstr(cw, variadic=False)
-    'lambda (x, z): x + z'
-
-    >>> columnwise_funcstr(cw, variadic=False, full=True)
-    'lambda (x, y, z): x + z'
-    """
-    if full:
-        columns = t._child.fields
-    else:
-        columns = t.active_columns()
-    if variadic:
-        prefix = 'lambda %s: '
-    else:
-        prefix = 'lambda (%s): '
-
-    return prefix % ', '.join(map(str, columns)) + eval_str(t._expr)
+        expr3 = expr2
+    result = top_to_bottom(d3, expr3, **kwargs)
+    return post_compute(expr3, result, d3)
 
 
 @dispatch(Union, (list, tuple))

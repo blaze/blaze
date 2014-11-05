@@ -5,14 +5,14 @@ import itertools
 import operator
 import pytest
 from datetime import datetime, date
-from cytoolz import pluck
 import datashape
+from collections import Iterator, Iterable
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
-                                  reduce_by_funcs)
-from blaze import dshape, discover
-from blaze.compute.core import compute, compute_up
+                                  reduce_by_funcs, optimize)
+from blaze import dshape
+from blaze.compute.core import compute, compute_up, pre_compute
 from blaze.expr import (Symbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, Symbol,
                         count, std, head, Symbol)
@@ -42,7 +42,7 @@ databig = [['Alice', 'F', 100, 1],
 
 
 def test_dispatched_rowfunc():
-    cw = t['amount'] + 100
+    cw = optimize(t['amount'] + 100, [])
     assert rowfunc(t)(t) == t
     assert rowfunc(cw)(('Alice', 100, 1)) == 200
 
@@ -90,7 +90,8 @@ def test_unary_ops():
 
 
 def test_neg():
-    assert list(compute(-t['amount'], data)) == [-x[1] for x in data]
+    expr = optimize(-t.amount, [])
+    assert list(compute(expr, data)) == [-x[1] for x in data]
 
 
 def test_reductions():
@@ -390,7 +391,7 @@ def test_map_column():
 
 
 def test_map():
-    assert (list(compute(t.map(lambda _, amt, id: amt + id, 'int'), data)) ==
+    assert (list(compute(t.map(lambda tup: tup[1] + tup[2], 'int'), data)) ==
             [x[1] + x[2] for x in data])
 
 
@@ -462,7 +463,8 @@ def test_recursive_rowfunc():
     f = rrowfunc(t['name'], t)
     assert [f(row) for row in data] == [row[0] for row in data]
 
-    f = rrowfunc(t['amount'] + t['id'], t)
+    expr = optimize(t['amount'] + t['id'], [])
+    f = rrowfunc(expr, t)
     assert [f(row) for row in data] == [row[1] + row[2] for row in data]
 
     assert raises(Exception, lambda: rrowfunc(t[t['amount'] < 0]['name'], t))
@@ -630,8 +632,6 @@ def test_datetime_comparison():
     assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
 
 
-
-
 def test_datetime_access():
     data = [['Alice', 100, 1, datetime(2000, 1, 1, 1, 1, 1)],
             ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
@@ -643,6 +643,12 @@ def test_datetime_access():
     assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
     assert list(compute(t.when.second, data)) == [1, 1, 1]
     assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
+
+
+def test_utcfromtimestamp():
+    t = Symbol('t', '1 * int64')
+    assert list(compute(t.utcfromtimestamp, [0])) == \
+            [datetime(1970, 1, 1, 0, 0)]
 
 
 payments = [{'name': 'Alice', 'payments': [
@@ -665,6 +671,7 @@ payments_ordered = [('Alice', [( 100, datetime(2000, 1, 1, 1, 1 ,1)),
 payment_dshape = 'var * {name: string, payments: var * {amount: int32, when: datetime}}'
 
 
+@pytest.mark.xfail(reason="Can't reason about nested broadcasts yet")
 def test_nested():
     t = Symbol('t', payment_dshape)
     assert list(compute(t.name, payments_ordered)) == ['Alice', 'Bob']
@@ -677,6 +684,7 @@ def test_nested():
             [(101, 201), (301, -399, 501)]
 
 
+@pytest.mark.xfail(reason="Can't reason about nested broadcasts yet")
 def test_scalar():
     s = Symbol('s', '{name: string, id: int32, payments: var * {amount: int32, when: datetime}}')
     data = ('Alice', 1, ((100, datetime(2000, 1, 1, 1, 1 ,1)),
@@ -693,3 +701,77 @@ def test_slice():
     assert compute(t[0], data) == data[0]
     assert list(compute(t[:2], data)) == list(data[:2])
     assert list(compute(t.name[:2], data)) == [data[0][0], data[1][0]]
+
+
+def test_multi_dataset_broadcast():
+    x = Symbol('x', '3 * int')
+    y = Symbol('y', '3 * int')
+
+    a = [1, 2, 3]
+    b = [10, 20, 30]
+
+    assert list(compute(x + y, {x: a, y: b})) == [11, 22, 33]
+    assert list(compute(2*x + (y + 1), {x: a, y: b})) == [13, 25, 37]
+
+
+@pytest.mark.xfail(reason="Optimize doesn't create multi-table-broadcasts")
+def test_multi_dataset_broadcast_with_Record_types():
+    x = Symbol('x', '3 * {p: int, q: int}')
+    y = Symbol('y', '3 * int')
+
+    a = [(1, 1), (2, 2), (3, 3)]
+    b = [10, 20, 30]
+
+    assert list(compute(x.p + x.q + y, {x: iter(a), y: iter(b)})) == [12, 24, 36]
+
+
+def eq(a, b):
+    if isinstance(a, (Iterable, Iterator)):
+        a = list(a)
+    if isinstance(b, (Iterable, Iterator)):
+        b = list(b)
+    return a == b
+
+
+def test_dicts():
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+
+    L = [['Alice', 100, 1],
+         ['Bob', 200, 2],
+         ['Alice', 50, 3]]
+
+    d = [{'name': 'Alice', 'amount': 100, 'id': 1},
+         {'name': 'Bob', 'amount': 200, 'id': 2},
+         {'name': 'Alice', 'amount': 50, 'id': 3}]
+
+    assert list(pre_compute(t, d)) == list(map(tuple, L))
+
+    for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
+        assert eq(compute(expr, {t: L}),
+                  compute(expr, {t: d}))
+
+    for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
+        assert eq(compute(expr, {t: iter(L)}),
+                  compute(expr, {t: iter(d)}))
+        assert eq(compute(expr, {t: iter(L)}),
+                  compute(expr, {t: L}))
+
+
+def test_nelements_list_tuple():
+    assert compute(t.nelements(), data) == len(data)
+
+
+def test_nelements_iterator():
+    x = (row for row in data)
+    assert compute(t.nelements(), x) == len(data)
+
+
+def test_nrows():
+    assert compute(t.nrows, data) == len(data)
+    x = (row for row in data)
+    assert compute(t.nrows, x) == len(data)
+
+
+@pytest.mark.xfail(raises=ValueError, reason="Only 1D reductions allowed")
+def test_nelements_2D():
+    assert compute(t.nelements(axis=1), data) == len(data[0])

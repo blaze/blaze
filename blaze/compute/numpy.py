@@ -6,7 +6,8 @@ from pandas import DataFrame, Series
 from ..expr import Reduction, Field, Projection, Broadcast, Selection
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
-from ..expr import BinOp, UnaryOp, USub, Not
+from ..expr import BinOp, UnaryOp, USub, Not, nelements
+from ..expr import UTCFromTimestamp
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -43,6 +44,14 @@ def compute_up(t, x, **kwargs):
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
+
+
+@dispatch(BinOp, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
 
 
 @dispatch(BinOp, base, np.ndarray)
@@ -110,7 +119,6 @@ def compute_up(t, x, **kwargs):
 def compute_up(t, x, **kwargs):
     return x[:t.n]
 
-
 @dispatch(Label, np.ndarray)
 def compute_up(t, x, **kwargs):
     return np.array(x, dtype=[(t.label, x.dtype.type)])
@@ -126,6 +134,9 @@ def compute_up(t, x, **kwargs):
 def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel._child: x})]
 
+@dispatch(UTCFromTimestamp, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return (data * 1e6).astype('M8[us]')
 
 @dispatch(Union, np.ndarray, tuple)
 def compute_up(expr, example, children, **kwargs):
@@ -144,6 +155,22 @@ def compute_up(t, x, **kwargs):
     else:
         df = Series(name=t._child.fields[0])
     return compute_up(t, into(df, x), **kwargs)
+
+
+@dispatch(nelements, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    axis = expr.axis
+    shape = tuple(data.shape[i] for i in range(expr._child.ndim)
+                  if i not in axis)
+    value = np.prod([data.shape[i] for i in axis])
+    result = np.empty(shape)
+    result.fill(value)
+    result = result.astype('int64')
+
+    try:
+        return result.item()
+    except ValueError:
+        return result
 
 
 @dispatch(np.ndarray)

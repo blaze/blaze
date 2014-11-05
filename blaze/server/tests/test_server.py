@@ -4,6 +4,7 @@ import pytest
 
 from flask import json
 from datetime import datetime
+from dynd import nd
 from pandas import DataFrame
 
 from blaze.utils import example
@@ -18,8 +19,13 @@ accounts = DataFrame([['Alice', 100], ['Bob', 200]],
 cities = DataFrame([['Alice', 'NYC'], ['Bob', 'LA']],
                    columns=['name', 'city'])
 
+events = DataFrame([[1, datetime(2000, 1, 1, 12, 0, 0)],
+                    [2, datetime(2000, 1, 2, 12, 0, 0)]],
+                   columns=['value', 'when'])
+
 server = Server(datasets={'accounts': accounts,
-                          'cities': cities})
+                          'cities': cities,
+                          'events': events})
 
 test = server.app.test_client()
 
@@ -27,7 +33,8 @@ test = server.app.test_client()
 def test_datasets():
     response = test.get('/datasets.json')
     assert json.loads(response.data) == {'accounts': str(discover(accounts)),
-                                         'cities': str(discover(cities))}
+                                         'cities': str(discover(cities)),
+                                         'events': str(discover(events))}
 
 
 def test_bad_responses():
@@ -98,6 +105,17 @@ def test_compute():
 
     assert 'OK' in response.status
     assert json.loads(response.data)['data'] == expected
+
+
+def test_get_datetimes():
+    response = test.post('/compute.json',
+                         data=json.dumps({'expr': 'events'}),
+                         content_type='application/json')
+
+    assert 'OK' in response.status
+    data = json.loads(response.data)
+    result = nd.array(data['data'], type=data['datashape'])
+    assert into(list, result) == into(list, events)
 
 
 def test_compute_with_namespace():

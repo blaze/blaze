@@ -7,7 +7,7 @@ import unittest
 import gzip
 
 from blaze.data.sql import SQL, discover, dshape_to_alchemy
-from blaze.utils import raises, filetext
+from blaze.utils import raises, filetext, tmpfile
 from datashape import dshape
 import datashape
 from blaze.compatibility import PY2

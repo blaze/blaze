@@ -58,6 +58,7 @@ What sorts of URI's does Blaze support?
 * SQLAlchemy strings like the following
     * ``sqlite:////absolute/path/to/myfile.db::tablename``
     * ``postgresql://username:password@hostname:port::tablename``
+    * ``postgresql://username:password@hostname:port::database.tablename``
     * ``impala://hostname::tablename`` (uses ``impyla``)
     * *anything supported by SQLAlchemy*
 * MongoDB Connection strings of the following form

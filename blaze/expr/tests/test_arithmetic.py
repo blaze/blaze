@@ -23,3 +23,16 @@ def test_relations_maintain_shape():
 
 def test_relations_are_boolean():
     assert Gt(x, y).schema == dshape('bool')
+
+def test_names():
+    assert Add(x, 1)._name == x._name
+    assert Add(1, x)._name == x._name
+    assert Mult(Add(1, x), 2)._name == x._name
+
+    assert Add(y, x)._name != x._name
+    assert Add(y, x)._name != y._name
+
+def test_inputs():
+    assert (x + y)._inputs == (x, y)
+    assert (x + 1)._inputs == (x,)
+    assert (1 + y)._inputs == (y,)

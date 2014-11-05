@@ -2,13 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 from toolz import first
-import datashape
-from datashape import Record, dshape, DataShape
+from datashape import Record, DataShape
 from datashape import coretypes as ct
-from datashape.predicates import isscalar, iscollection
 
 from .core import common_subexpression
 from .expressions import Expr, Symbol
+from ..compatibility import builtins
 
 
 class Reduction(Expr):
@@ -44,6 +43,9 @@ class Reduction(Expr):
         if not isinstance(axis, tuple):
             axis = (axis,)
         axis = tuple(sorted(axis))
+        if hasattr(_child, 'ndim') and builtins.any(ax >= _child.ndim for ax in
+                                                    axis):
+            raise ValueError("Passed axes %s that are greater than ndim" % axis)
         self.axis = axis
         self.keepdims = keepdims
 
@@ -51,12 +53,12 @@ class Reduction(Expr):
     def dshape(self):
         axis = self.axis
         if self.keepdims:
-            shape = tuple(1 if i in self.axis else d
+            shape = tuple(1 if i in axis else d
                           for i, d in enumerate(self._child.shape))
         else:
             shape = tuple(d
                           for i, d in enumerate(self._child.shape)
-                          if i not in self.axis)
+                          if i not in axis)
         return DataShape(*(shape + (self._dtype,)))
 
     @property
@@ -69,6 +71,21 @@ class Reduction(Expr):
             return self._child._name + '_' + type(self).__name__
         except (AttributeError, ValueError, TypeError):
             return type(self).__name__
+
+    def __str__(self):
+        kwargs = list()
+        if self.keepdims:
+            kwargs.append('keepdims=True')
+        if self.axis != tuple(range(self._child.ndim)):
+            kwargs.append('axis=' + str(self.axis))
+        other = sorted(set(self.__slots__) - set(['_child', 'axis', 'keepdims']))
+        for slot in other:
+            kwargs.append('%s=%s' % (slot, getattr(self, slot)))
+        name = type(self).__name__
+        if kwargs:
+            return '%s(%s, %s)' % (name, self._child, ', '.join(kwargs))
+        else:
+            return '%s(%s)' % (name, self._child)
 
 
 class any(Reduction):
@@ -164,6 +181,26 @@ class count(Reduction):
 class nunique(Reduction):
     _dtype = ct.int_
 
+class nelements(Reduction):
+    """Compute the number of elements in a collection, including missing values.
+
+    See Also
+    ---------
+    blaze.expr.reductions.count: compute the number of non-null elements
+
+    Examples
+    --------
+    >>> from blaze import Symbol
+    >>> t = Symbol('t', 'var * {name: string, amount: float64}')
+    >>> t[t.amount < 1].nelements()
+    nelements(t[t.amount < 1])
+    """
+    _dtype = ct.int_
+
+
+def nrows(expr):
+    return nelements(expr, axis=(0,))
+
 
 class Summary(Expr):
     """ A collection of named reductions
@@ -225,9 +262,9 @@ def summary(keepdims=False, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
-from datashape.predicates import (iscollection, isscalar, isrecord, isboolean,
-        isnumeric)
-from .expressions import schema_method_list, dshape_method_list
+from datashape.predicates import iscollection, isboolean, isnumeric
+from .expressions import (schema_method_list, dshape_method_list,
+                          method_properties)
 
 schema_method_list.extend([
     (isboolean, set([any, all, sum])),
@@ -235,5 +272,8 @@ schema_method_list.extend([
     ])
 
 dshape_method_list.extend([
-    (iscollection, set([count, nunique, min, max])),
+    (iscollection, set([count, min, max, nelements])),
+    (lambda ds: len(ds.shape) == 1, set([nrows, nunique])),
     ])
+
+method_properties.update([nrows])

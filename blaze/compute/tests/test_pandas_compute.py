@@ -290,6 +290,11 @@ def test_sort_on_series_no_warning(recwarn):
     with pytest.raises(AssertionError):
         assert recwarn.pop(FutureWarning)
 
+def test_field_on_series():
+    expr = Symbol('s', 'var * int')
+    data = Series([1, 2, 3, 4], name='s')
+    assert str(compute(expr.s, data)) == str(data)
+
 
 def test_head():
     assert str(compute(t.head(1), df)) == str(df.head(1))
@@ -593,3 +598,8 @@ def test_series_slice():
     assert (compute(t.amount[:2], df) == df.amount.iloc[:2]).all().all()
     assert (compute(t.amount[1:3], df) == df.amount.iloc[1:3]).all().all()
     assert (compute(t.amount[1::2], df) == df.amount.iloc[1::2]).all().all()
+
+
+def test_nelements():
+    assert compute(t.nelements(), df) == len(df)
+    assert compute(t.nrows, df) == len(df)

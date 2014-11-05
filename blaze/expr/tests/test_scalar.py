@@ -242,8 +242,6 @@ def test_scalar_coerce():
     assert scalar_coerce('{x: int}', '1') == 1
     with raises(TypeError):
         scalar_coerce('{x: int, y: int}', '1')
-    with raises(TypeError):
-        scalar_coerce('3 * int', '1')
 
     assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
 

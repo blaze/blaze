@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
 from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze.expr import *
 import sqlalchemy
@@ -66,6 +67,12 @@ def test_arithmetic():
             str(sa.select([s.c.amount + s.c.id]))
     assert str(compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
     assert str(compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
+
+    assert str(compute(t['amount'] * 2, s)) == str(s.c.amount * 2)
+    assert str(compute(2 * t['amount'], s)) == str(2 * s.c.amount)
+
+    assert (str(compute(~(t['amount'] > 10), s)) ==
+            "~(accounts.amount > :amount_1)")
 
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
@@ -185,6 +192,27 @@ def test_reductions():
 
     assert 'amount_sum' == compute(sum(t['amount']), s).name
 
+
+def test_nelements():
+    rhs = str(s.count())
+    assert str(compute(t.nelements(), s)) == rhs
+    assert str(compute(t.nelements(axis=None), s)) == rhs
+    assert str(compute(t.nelements(axis=0), s)) == rhs
+    assert str(compute(t.nelements(axis=(0,)), s)) == rhs
+
+
+def test_nelements_subexpr():
+    rhs = str(sa.select([s.c.id, s.c.amount]).count())
+    lhs = str(compute(t[['id', 'amount']].nelements(), s))
+    assert lhs == rhs
+
+
+@pytest.mark.xfail(raises=ValueError, reason="We don't support axis=1 for"
+                   " Record datashapes")
+def test_nelements_axis_1():
+    assert compute(nelements(t, axis=1), s) == len(s.columns)
+
+
 def test_count_on_table():
     assert normalize(str(select(compute(t.count(), s)))) == normalize("""
     SELECT count(accounts.id) as count_1
@@ -288,6 +316,18 @@ def test_by_summary_clean():
 
     assert normalize(str(result)) == normalize(expected)
 
+
+def test_by_summary_single_column():
+    expr = by(t.name, n=t.name.count(), biggest=t.name.max())
+    result = compute(expr, s)
+
+    expected = """
+    SELECT accounts.name, max(accounts.name) AS biggest, count(accounts.name) AS n
+    FROM accounts
+    GROUP BY accounts.name
+    """
+
+    assert normalize(str(result)) == normalize(expected)
 
 
 
@@ -658,3 +698,43 @@ def test_selection_of_join():
     SELECT name.name
     FROM name JOIN place ON name.id = place.id
     WHERE place.city = :city_1""")
+
+
+def test_join_on_same_table():
+    metadata = sa.MetaData()
+    T = sa.Table('tab', metadata,
+             sa.Column('a', sa.Integer),
+             sa.Column('b', sa.Integer),
+             )
+
+    t = Symbol('tab', discover(T))
+    expr = join(t, t, 'a')
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT tab_left.a, tab_left.b, tab_right.b
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)
+
+    expr = join(t, t, 'a').b_left.sum()
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT sum(tab_left.b) as b_left_sum
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)
+
+    expr = join(t, t, 'a')
+    expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT min(tab_right.b) as smallest, sum(tab_left.a) as total
+    FROM tab AS tab_left JOIN tab AS tab_right
+    ON tab_left.a = tab_right.a
+    """)

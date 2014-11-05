@@ -315,7 +315,7 @@ def path(a, b):
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.amount.sum()
     >>> list(path(expr, t))
-    [sum(_child=t.amount, axis=(0,), keepdims=False), t.amount, t]
+    [sum(t.amount), t.amount, t]
     """
     while not a.isidentical(b):
         yield a

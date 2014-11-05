@@ -72,3 +72,35 @@ def test_mixed(recdata):
 def test_uneven_chunk_size(data):
     assert eq(compute(s.sum(axis=1), data, chunksize=(7, 7)),
               x.sum(axis=1))
+
+
+def test_nrows_3D_records(recdata):
+    s = Symbol('s', discover(recdata))
+    assert not hasattr(s, 'nrows')
+
+
+@pytest.mark.xfail(raises=AttributeError,
+                   reason="We don't support nrows on arrays")
+def test_nrows_array(data):
+    assert compute(s.nrows, data) == len(data)
+
+
+def test_nelements_records(recdata):
+    s = Symbol('s', discover(recdata))
+    assert compute(s.nelements(), recdata) == np.prod(recdata.shape)
+    np.testing.assert_array_equal(compute(s.nelements(axis=0), recdata),
+                                  np.zeros(recdata.shape[1]) + recdata.shape[0])
+
+
+def test_nelements_array(data):
+    lhs = compute(s.nelements(axis=1), data)
+    rhs = data.shape[1]
+    np.testing.assert_array_equal(lhs, rhs)
+
+    lhs = compute(s.nelements(axis=0), data)
+    rhs = data.shape[0]
+    np.testing.assert_array_equal(lhs, rhs)
+
+    lhs = compute(s.nelements(axis=(0, 1)), data)
+    rhs = np.prod(data.shape)
+    np.testing.assert_array_equal(lhs, rhs)
