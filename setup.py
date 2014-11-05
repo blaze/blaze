@@ -131,7 +131,7 @@ def find_data_files(exts, where='blaze'):
                 yield os.path.join(root, f)
 
 
-exts = '*.h5', '*.csv', '*.xls', '*.xlsx', '*.db'
+exts = '*.h5', '*.csv', '*.xls', '*.xlsx', '*.db', '*.json', '*.gz', '*.hdf5'
 package_data = [os.path.join(x.replace('blaze' + os.sep, ''),
                              '*.py') for x in testdirs]
 package_data += [x.replace('blaze' + os.sep, '') for x in find_data_files(exts)]
