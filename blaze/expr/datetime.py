@@ -147,7 +147,7 @@ def truncate(expr, measure, unit):
     >>> s = Symbol('s', 'datetime')
 
     >>> compute(s.truncate(10, 'minutes'),
-    ...         datetime(2000, 06, 25, 12, 35, 10))
+    ...         datetime(2000, 6, 25, 12, 35, 10))
     datetime.datetime(2000, 6, 25, 12, 30)
 
     >>> compute(s.truncate(1, 'week'),
