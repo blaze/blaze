@@ -6,6 +6,7 @@ import operator
 from toolz import compose, identity
 from collections import Iterator
 from datashape import Record, Tuple
+from datashape.predicates import isscalar
 
 from blaze.expr import *
 from blaze.expr import count as Count
