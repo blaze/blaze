@@ -603,3 +603,16 @@ def test_series_slice():
 def test_nelements():
     assert compute(t.nelements(), df) == len(df)
     assert compute(t.nrows, df) == len(df)
+
+
+def test_datetime_truncation():
+    data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
+                  dtype='M8[ns]')
+    s = Symbol('s', 'var * datetime')
+    assert list(compute(s.truncate(20, 'minutes'), data)) == \
+            list(Series(['2000-01-01T12:00:00Z', '2000-06-25T12:20:00Z'],
+                        dtype='M8[ns]'))
+
+    assert list(compute(s.truncate(2, 'weeks'), data)) == \
+            list(Series(['1999-12-23T00:00:00Z', '2000-06-22T00:00:00Z'],
+                        dtype='M8[ns]'))
