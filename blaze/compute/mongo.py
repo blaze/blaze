@@ -62,7 +62,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
                     Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
                     Eq, Ne, Symbol, And, Or, Summary, Like, Broadcast, DateTime,
                     Microsecond, Date, Time, Expr, Symbol, Arithmetic, floor,
-                    ceil)
+                    ceil, FloorDiv)
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
 
@@ -172,6 +172,8 @@ def compute_sub(t):
         return '$%s' % t
     elif isinstance(t, numbers.Number):
         return t
+    elif isinstance(t, FloorDiv):
+        return compute_sub(floor(t.lhs / t.rhs))
     elif isinstance(t, Arithmetic) and hasattr(t, 'symbol') and t.symbol in binops:
         op = binops[t.symbol]
         return {'$%s' % op: [compute_sub(t.lhs), compute_sub(t.rhs)]}

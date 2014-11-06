@@ -163,6 +163,11 @@ def test_columnwise_multiple_operands(points):
     assert set(compute(p.x + p.y - p.z * p.x / 2, points)) == set(expected)
 
 
+def test_arithmetic(points):
+    expr = p.y // p.x
+    assert set(compute(expr, points)) == set(compute(expr, points.find()))
+
+
 def test_columnwise_mod(points):
     expected = [x['x'] % x['y'] - x['z'] * x['x'] / 2 + 1
                 for x in points.find()]
