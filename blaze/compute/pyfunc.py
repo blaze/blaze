@@ -1,9 +1,10 @@
 
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
         Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
-        Map, UTCFromTimestamp)
+        Map, UTCFromTimestamp, DateTimeTruncate)
 from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
+from . import pydatetime
 import datetime
 from datashape import iscollection
 import math
@@ -113,6 +114,13 @@ def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     attr = type(expr).__name__.lower()
     return ('%s.%s' % (parenthesize(child), attr), scope)
+
+@dispatch(DateTimeTruncate)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    scope['truncate'] = pydatetime.truncate
+    return ('truncate(%s, %s, "%s")' % (child, expr.measure, expr.unit),
+            scope)
 
 @dispatch(Map)
 def _print_python(expr, leaves=None):

@@ -31,17 +31,18 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice, Expr, Arithmetic, ndim)
+                    Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
                     Not, nelements)
 from ..compatibility import builtins, apply, unicode, _inttypes
-from .core import compute, compute_up, optimize
+from .core import compute, compute_up, optimize, base
 
 from ..data import DataDescriptor
 from ..data.utils import listpack
 from .pyfunc import lambdify, broadcast_collect
+from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
 import math
@@ -170,6 +171,11 @@ def rowfunc(_):
     return lambda row: getattr(row, 'microsecond') // 1000
 
 
+@dispatch(DateTimeTruncate)
+def rowfunc(expr):
+    return partial(pydatetime.truncate, measure=expr.measure, unit=expr.unit)
+
+
 @dispatch((RealMath, IntegerMath, BooleanMath))
 def rowfunc(expr):
     return getattr(math, type(expr).__name__)
@@ -189,6 +195,11 @@ def rowfunc(expr):
     if not isinstance(expr.rhs, Expr):
         return lambda x: expr.op(x, expr.rhs)
     return expr.op
+
+
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
 
 
 def concat_maybe_tuples(vals):
