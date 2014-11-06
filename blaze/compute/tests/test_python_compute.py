@@ -316,6 +316,11 @@ def test_fancy_sort():
             list(compute(t.sort('amount'), data))[::-1]
 
 
+def test_sort_on_column():
+    assert list(compute(t.name.distinct().sort('name'), data)) == \
+            ['Alice', 'Bob']
+
+
 def test_head():
     assert list(compute(t.head(1), data)) == [data[0]]
 
