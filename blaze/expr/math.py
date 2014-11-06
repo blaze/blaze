@@ -65,10 +65,27 @@ class BooleanMath(Math):
 class isnan(BooleanMath): pass
 
 
-from datashape.predicates import isreal
+def truncate(expr, precision):
+    """ Truncate number to precision
+
+    Example
+    -------
+
+    >>> from blaze import Symbol, compute
+    >>> x = Symbol('x', 'real')
+    >>> compute(x.truncate(10), 123)
+    120
+    >>> compute(x.truncate(0.1), 3.1415)
+    3.1
+    """
+    return expr // precision * precision
+
+
+from datashape.predicates import isreal, isnumeric
 
 from .expressions import schema_method_list
 
 schema_method_list.extend([
-    (isreal, set([isnan]))
+    (isreal, set([isnan])),
+    (isnumeric, set([truncate]))
         ])

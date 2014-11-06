@@ -775,3 +775,9 @@ def test_nrows():
 @pytest.mark.xfail(raises=ValueError, reason="Only 1D reductions allowed")
 def test_nelements_2D():
     assert compute(t.nelements(axis=1), data) == len(data[0])
+
+
+def test_truncate():
+    s = Symbol('x', 'real')
+    assert compute(s.truncate(20), 154) == 140
+    assert compute(s.truncate(0.1), 3.1415) == 3.1
