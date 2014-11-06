@@ -95,6 +95,35 @@ class UTCFromTimestamp(DateTime):
 def utcfromtimestamp(expr):
     return UTCFromTimestamp(expr)
 
+precisions = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second',
+'millisecond', 'microsecond', 'nanosecond']
+
+
+_precision_aliases = {'y': 'year', 'w': 'week', 'd': 'day', 'date': 'day',
+    'h': 'hour', 's': 'second', 'ms': 'millisecond', 'us': 'microsecond',
+    'ns': 'nanosecond'}
+
+def normalize_time_unit(s):
+    """ Normalize time input to one of 'year', 'second', 'millisecond', etc..
+
+    Example
+    -------
+
+    >>> normalize_time_unit('milliseconds')
+    'millisecond'
+    >>> normalize_time_unit('ms')
+    'millisecond'
+    """
+    s = s.lower().strip()
+    if s in precisions:
+        return s
+    if s in _precision_aliases:
+        return _precision_aliases[s]
+    if s[-1] == 's':
+        return normalize_time_unit(s.rstrip('s'))
+
+    raise ValueError("Do not understand time unit %s" % s)
+
 
 from .expressions import schema_method_list, method_properties
 from datashape.predicates import isdatelike, isnumeric
