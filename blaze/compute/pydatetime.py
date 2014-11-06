@@ -156,6 +156,7 @@ def truncate_second(dt, measure):
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
 
+
 def truncate_millisecond(dt, measure):
     """
     Truncate by millisecond
@@ -165,7 +166,7 @@ def truncate_millisecond(dt, measure):
     datetime.datetime(2000, 1, 1, 12, 30, 38, 10000)
     """
     d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
-    seconds = (dt - d).total_seconds() * 1000 // measure * measure / 1000
+    seconds = (dt - d).total_seconds() * 1000 // measure * measure / 1000. + 1e-7
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
 
