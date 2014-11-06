@@ -25,6 +25,7 @@ requirements:
     - bcolz
     - pytables
     - psutil
+    - unittest2 [py26]
 
 test:
   requires:
