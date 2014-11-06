@@ -7,7 +7,7 @@ from ..expr import Reduction, Field, Projection, Broadcast, Selection
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import UTCFromTimestamp
+from ..expr import UTCFromTimestamp, DateTimeTruncate
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -171,6 +171,27 @@ def compute_up(expr, data, **kwargs):
         return result.item()
     except ValueError:
         return result
+
+
+precision_map = {'year': 'M8[Y]',
+                 'month': 'M8[M]',
+                 'week': 'M8[W]',
+                 'day': 'M8[D]',
+                 'hour': 'M8[H]',
+                 'minute': 'M8[m]',
+                 'second': 'M8[s]',
+                 'millisecond': 'M8[ms]',
+                 'microsecond': 'M8[us]',
+                 'nanosecond': 'M8[ns]'}
+
+@dispatch(DateTimeTruncate, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    np_dtype = precision_map[expr.unit]
+    return ((data.astype(np_dtype)
+                 .astype('i8')
+                  // expr.measure
+                  * expr.measure)
+                 .astype(np_dtype))
 
 
 @dispatch(np.ndarray)

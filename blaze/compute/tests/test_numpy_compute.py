@@ -202,3 +202,18 @@ def test_nelements_array():
 
 def test_nrows():
     assert compute(t.nrows, x) == len(x)
+
+
+dts = np.array(['2000-06-25T12:30:04Z', '2000-06-28T12:50:05Z'],
+               dtype='M8[us]')
+
+def test_datetime_truncation():
+    s = Symbol('s', 'var * datetime')
+
+    assert eq(compute(s.truncate(1, 'day'), dts),
+              dts.astype('M8[D]'))
+    assert eq(compute(s.truncate(2, 'seconds'), dts),
+              np.array(['2000-06-25T12:30:04Z', '2000-06-28T12:50:04Z'],
+                       dtype='M8[s]'))
+    assert eq(compute(s.truncate(2, 'weeks'), dts),
+              np.array(['2000-06-22', '2000-06-22'], dtype='M8[D]'))
