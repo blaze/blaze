@@ -1,5 +1,6 @@
 from datetime import datetime, date, timedelta
 from math import floor
+import sys
 
 def identity(x):
     return x
@@ -28,6 +29,17 @@ def assecond(dt):
 def asmillisecond(dt):
     return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute,
             dt.second, dt.microsecond // 1000, tzinfo=dt.tzinfo)
+
+if sys.version_info < (2, 7):
+    def total_seconds(td):
+        """ Total seconds of a timedelta
+
+        For Python 2.6 compatibility
+        """
+        return (td.microseconds + 1e6 * (td.seconds + 24 * 3600 * td.days)) / 1e6
+else:
+    total_seconds = timedelta.total_seconds
+
 
 
 unit_map = {'year': 'asyear',
@@ -115,7 +127,7 @@ def utctotimestamp(dt):
     >>> datetime.utcfromtimestamp(946684800)
     datetime.datetime(2000, 1, 1, 0, 0)
     """
-    return (dt - epoch).total_seconds()
+    return total_seconds(dt - epoch)
 
 
 def truncate_minute(dt, measure):
@@ -152,7 +164,7 @@ def truncate_second(dt, measure):
     datetime.datetime(2000, 1, 1, 12, 30, 30)
     """
     d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
-    seconds = (dt - d).total_seconds() // measure * measure
+    seconds = total_seconds(dt - d) // measure * measure
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
 
@@ -166,7 +178,7 @@ def truncate_millisecond(dt, measure):
     datetime.datetime(2000, 1, 1, 12, 30, 38, 10000)
     """
     d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
-    seconds = (dt - d).total_seconds() * 1000 // measure * measure / 1000. + 1e-7
+    seconds = total_seconds(dt - d) * 1000 // measure * measure / 1000. + 1e-7
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
 
@@ -179,7 +191,7 @@ def truncate_microsecond(dt, measure):
     datetime.datetime(2000, 1, 1, 12, 30, 38, 12300)
     """
     d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
-    seconds = (dt - d).total_seconds() * 1000000 // measure * measure / 1000000
+    seconds = total_seconds(dt - d) * 1000000 // measure * measure / 1000000
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
 
