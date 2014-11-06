@@ -10,7 +10,7 @@ from toolz import pluck, reduceby, groupby
 from blaze import into, compute, compute_up, discover, dshape
 
 from blaze.compute.mongo import MongoQuery
-from blaze.expr import Symbol, by
+from blaze.expr import Symbol, by, floor, ceil
 from blaze.compatibility import xfail
 
 
@@ -325,3 +325,9 @@ def test_datetime_access_and_arithmetic(date_data):
     expr = t.when.day + t.id
 
     assert list(compute(expr, date_data)) == list(compute(expr, py_data))
+
+
+def test_floor_ceil(bank):
+    t = Symbol('t', discover(bank))
+    assert set(compute(200 * floor(t.amount / 200), bank)) == set([0, 200])
+    assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])
