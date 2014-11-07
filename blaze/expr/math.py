@@ -75,7 +75,7 @@ def truncate(expr, precision):
     >>> x = Symbol('x', 'real')
     >>> compute(x.truncate(10), 123)
     120
-    >>> compute(x.truncate(0.1), 3.1415)
+    >>> compute(x.truncate(0.1), 3.1415)  # doctest: +SKIP
     3.1
     """
     return expr // precision * precision
