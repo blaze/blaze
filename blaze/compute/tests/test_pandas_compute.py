@@ -603,3 +603,9 @@ def test_series_slice():
 def test_nelements():
     assert compute(t.nelements(), df) == len(df)
     assert compute(t.nrows, df) == len(df)
+
+
+def test_complex_group_by():
+    expr = by(merge(tbig.amount // 10, tbig.id % 2),
+              count=tbig.name.count())
+    compute(expr, dfbig)  # can we do this?
