@@ -216,4 +216,7 @@ def test_datetime_truncation():
               np.array(['2000-06-25T12:30:04Z', '2000-06-28T12:50:04Z'],
                        dtype='M8[s]'))
     assert eq(compute(s.truncate(2, 'weeks'), dts),
-              np.array(['2000-06-22', '2000-06-22'], dtype='M8[D]'))
+              np.array(['2000-06-19', '2000-06-19'], dtype='M8[D]'))
+
+    from blaze import into
+    assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 1

@@ -187,11 +187,24 @@ precision_map = {'year': 'M8[Y]',
 @dispatch(DateTimeTruncate, np.ndarray)
 def compute_up(expr, data, **kwargs):
     np_dtype = precision_map[expr.unit]
-    return ((data.astype(np_dtype)
-                 .astype('i8')
-                  // expr.measure
-                  * expr.measure)
-                 .astype(np_dtype))
+    if expr.unit in ['day', 'week']:
+        if expr.unit == 'day':
+            measure = expr.measure
+        else:
+            measure = expr.measure * 7
+        return (((data.astype('M8[D]')
+                      .astype('i8')
+                      + 3)
+                      // measure
+                      *  measure
+                      - 3)
+                     .astype('M8[D]'))
+    else:
+        return ((data.astype(np_dtype)
+                     .astype('i8')
+                     // expr.measure
+                     * expr.measure)
+                     .astype(np_dtype))
 
 
 @dispatch(np.ndarray)
