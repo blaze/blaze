@@ -184,7 +184,7 @@ precision_map = {'year': 'M8[Y]',
                  'microsecond': 'M8[us]',
                  'nanosecond': 'M8[ns]'}
 
-@dispatch(DateTimeTruncate, np.ndarray)
+@dispatch(DateTimeTruncate, (np.ndarray, np.datetime64))
 def compute_up(expr, data, **kwargs):
     np_dtype = precision_map[expr.unit]
     if expr.unit in ['day', 'week']:

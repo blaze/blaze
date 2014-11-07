@@ -250,3 +250,9 @@ def test_month():
                               date(2000, 6, 1),
                               date(2000, 6, 1),
                               date(2000, 5, 1)]))
+
+
+def test_truncate_on_np_datetime64_scalar():
+    s = Symbol('s', 'datetime')
+    data = np.datetime64('2000-01-02T12:30:00Z')
+    assert compute(s.truncate(1, 'day'), data) == data.astype('M8[D]')
