@@ -2,9 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import pytest
+from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import Symbol, union, by, exp, Symbol
+from blaze import into
 from datashape import discover
 
 
@@ -206,9 +208,9 @@ def test_nrows():
 
 dts = np.array(['2000-06-25T12:30:04Z', '2000-06-28T12:50:05Z'],
                dtype='M8[us]')
+s = Symbol('s', 'var * datetime')
 
 def test_datetime_truncation():
-    s = Symbol('s', 'var * datetime')
 
     assert eq(compute(s.truncate(1, 'day'), dts),
               dts.astype('M8[D]'))
@@ -218,5 +220,33 @@ def test_datetime_truncation():
     assert eq(compute(s.truncate(2, 'weeks'), dts),
               np.array(['2000-06-19', '2000-06-19'], dtype='M8[D]'))
 
-    from blaze import into
     assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 1
+
+
+
+def test_hour():
+    dts = [datetime(2000, 6, 20,  1, 00, 00),
+           datetime(2000, 6, 20, 12, 59, 59),
+           datetime(2000, 6, 20, 12, 00, 00),
+           datetime(2000, 6, 20, 11, 59, 59)]
+    dts = into(np.ndarray, dts)
+
+    assert eq(compute(s.truncate(1, 'hour'), dts),
+            into(np.ndarray, [datetime(2000, 6, 20,  1, 0),
+                              datetime(2000, 6, 20, 12, 0),
+                              datetime(2000, 6, 20, 12, 0),
+                              datetime(2000, 6, 20, 11, 0)]))
+
+
+def test_month():
+    dts = [datetime(2000, 7, 1),
+           datetime(2000, 6, 30),
+           datetime(2000, 6, 1),
+           datetime(2000, 5, 31)]
+    dts = into(np.ndarray, dts)
+
+    assert eq(compute(s.truncate(1, 'month'), dts),
+            into(np.ndarray, [date(2000, 7, 1),
+                              date(2000, 6, 1),
+                              date(2000, 6, 1),
+                              date(2000, 5, 1)]))
