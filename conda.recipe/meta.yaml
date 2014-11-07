@@ -33,7 +33,7 @@ test:
     - coverage
 
   commands:
-    - py.test -r sxX --doctest-modules --verbose --pyargs blaze
+    - python -c 'import blaze; blaze.test()'
 
 about:
   home: http://blaze.pydata.org
