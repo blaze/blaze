@@ -144,6 +144,12 @@ head.__doc__ = Head.__doc__
 
 
 def merge(*exprs, **kwargs):
+    if len(exprs) + len(kwargs) == 1:
+        if exprs:
+            return exprs[0]
+        if kwargs:
+            [(k, v)] = kwargs.items()
+            return v.label(k)
     # Get common sub expression
     exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
     try:

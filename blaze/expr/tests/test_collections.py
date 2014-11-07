@@ -13,6 +13,10 @@ def test_merge():
     assert expr.y.isidentical(e.x.label('y'))
 
 
+def test_merge_on_single_argument_is_noop():
+    assert merge(t.name).isidentical(t.name)
+
+
 def test_distinct():
     assert '5' not in str(t.distinct().dshape)
 
