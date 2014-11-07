@@ -614,5 +614,5 @@ def test_datetime_truncation():
                         dtype='M8[ns]'))
 
     assert list(compute(s.truncate(2, 'weeks'), data)) == \
-            list(Series(['1999-12-23T00:00:00Z', '2000-06-22T00:00:00Z'],
+            list(Series(['1999-12-20T00:00:00Z', '2000-06-19T00:00:00Z'],
                         dtype='M8[ns]'))
