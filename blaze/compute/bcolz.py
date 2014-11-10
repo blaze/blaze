@@ -1,11 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
+from multipledispatch import MDNotImplementedError
 from blaze.expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
-        Arithmetic, Broadcast)
-from blaze.expr import Label, Distinct, By, Reduction, Like, Slice
-from blaze.expr import std, var, count, mean, nunique, sum
-from blaze.expr import eval_str, Expr, nelements
-from blaze.expr.optimize import lean_projection
+        Arithmetic, Broadcast, Symbol)
+from ..expr import Label, Distinct, By, Reduction, Like, Slice
+from ..expr import std, var, count, mean, nunique, sum
+from ..expr import eval_str, Expr, nelements
+from ..expr import path
+from ..expr.optimize import lean_projection
+from .core import compute
 
 from collections import Iterator
 import datashape
@@ -27,6 +30,22 @@ COMFORTABLE_MEMORY_SIZE = 1e9
 @dispatch((bcolz.carray, bcolz.ctable))
 def discover(data):
     return datashape.from_numpy(data.shape, data.dtype)
+
+
+Cheap = (Head, ElemWise, Selection, Distinct, Symbol)
+
+@dispatch(Head, (bcolz.ctable, bcolz.carray))
+def compute_down(expr, data, **kwargs):
+    """ Cheap and simple computation in simple case
+
+    If we're given a head and the entire expression is cheap to do (e.g.
+    elemwises, selections, ...) then compute on data directly, without
+    parallelism"""
+    leaf = expr._leaves()[0]
+    if all(isinstance(e, Cheap) for e in path(leaf, expr)):
+        return compute(expr, {leaf: iter(data)}, **kwargs)
+    else:
+        raise MDNotImplementedError()
 
 
 @dispatch(Selection, bcolz.ctable)
