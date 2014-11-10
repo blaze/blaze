@@ -194,9 +194,13 @@ def get_grouper(c, grouper, df):
     return grouper
 
 
-@dispatch(By, (ElemWise, Series), NDFrame)
+@dispatch(By, Expr, NDFrame)
 def get_grouper(c, grouper, df):
-    return compute(grouper, {c._child: df})
+    g = compute(grouper, {c._child: df})
+    if isinstance(g, Series):
+        return g
+    if isinstance(g, DataFrame):
+        return [g[c] for c in g.columns]
 
 
 @dispatch(By, (Field, Projection), NDFrame)

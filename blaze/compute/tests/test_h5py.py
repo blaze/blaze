@@ -20,13 +20,30 @@ def eq(a, b):
 x = np.arange(20*24, dtype='f4').reshape((20, 24))
 
 @pytest.yield_fixture
-def data():
+def file():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
                                    fillvalue=0.0, chunks=(4, 6))
         d[:] = x
+        yield f
+        f.close()
+
+@pytest.yield_fixture
+def data(file):
+    yield file['/x']
+
+
+@pytest.yield_fixture
+def data_1d_chunks():
+    with tmpfile('.h5') as filename:
+        f = h5py.File(filename)
+        d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
+                                   fillvalue=0.0, chunks=(1, 24))
+        d[:] = x
+
         yield d
+
         f.close()
 
 
@@ -104,3 +121,30 @@ def test_nelements_array(data):
     lhs = compute(s.nelements(axis=(0, 1)), data)
     rhs = np.prod(data.shape)
     np.testing.assert_array_equal(lhs, rhs)
+
+def test_field_access_on_file(file):
+    s = Symbol('s', '{x: 20 * 24 * float32}')
+    d = compute(s.x, file)
+    assert isinstance(d, h5py.Dataset)
+    assert eq(d[:], x)
+
+
+def test_field_access_on_group(file):
+    s = Symbol('s', '{x: 20 * 24 * float32}')
+    d = compute(s.x, file['/'])
+    assert isinstance(d, h5py.Dataset)
+    assert eq(d[:], x)
+
+def test_compute_on_file(file):
+    s = Symbol('s', discover(file))
+
+    assert eq(compute(s.x.sum(axis=1), file),
+              x.sum(axis=1))
+
+    assert eq(compute(s.x.sum(), file, chunksize=(4, 6)),
+              x.sum())
+
+
+def test_compute_on_1d_chunks(data_1d_chunks):
+    assert eq(compute(s.sum(), data_1d_chunks),
+              x.sum())
