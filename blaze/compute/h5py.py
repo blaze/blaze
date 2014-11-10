@@ -20,9 +20,16 @@ from ..partition import partitions, partition_get, partition_set
 
 __all__ = []
 
+
+@dispatch(Symbol, (h5py.File, h5py.Group, h5py.Dataset))
+def compute_up(expr, data, **kwargs):
+    return data
+
+
 @dispatch(Field, (h5py.File, h5py.Group))
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
+
 
 @dispatch(Slice, h5py.Dataset)
 def compute_up(expr, data, **kwargs):
@@ -32,6 +39,21 @@ def compute_up(expr, data, **kwargs):
 @dispatch(nelements, h5py.Dataset)
 def compute_up(expr, data, **kwargs):
     return compute_up.dispatch(type(expr), np.ndarray)(expr, data, **kwargs)
+
+
+@dispatch(Expr, (h5py.File, h5py.Group))
+def compute_down(expr, data, **kwargs):
+    leaf = expr._leaves()[0]
+    p = list(path(expr, leaf))[::-1][1:]
+    if not p:
+        return data
+    for e in p:
+        data = compute_up(e, data)
+        if not isinstance(data, (h5py.File, h5py.Group)):
+            break
+
+    expr2 = expr._subs({e: Symbol('leaf', e.dshape)})
+    return compute_down(expr2, data, **kwargs)
 
 
 @dispatch(Expr, h5py.Dataset)

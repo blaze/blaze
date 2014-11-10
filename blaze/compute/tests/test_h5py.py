@@ -122,3 +122,12 @@ def test_field_access_on_group(file):
     d = compute(s.x, file['/'])
     assert isinstance(d, h5py.Dataset)
     assert eq(d[:], x)
+
+def test_compute_on_file(file):
+    s = Symbol('s', discover(file))
+
+    assert eq(compute(s.x.sum(axis=1), file),
+              x.sum(axis=1))
+
+    assert eq(compute(s.x.sum(), file, chunksize=(4, 6)),
+              x.sum())
