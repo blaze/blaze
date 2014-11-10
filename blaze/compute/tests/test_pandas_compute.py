@@ -317,14 +317,11 @@ def test_relabel_series():
     assert result.name == 'NAME'
 
 
-@pytest.fixture
-def tframe():
-    ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
-    df = DataFrame({'timestamp': ts})
-    return df
+ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
+tframe = DataFrame({'timestamp': ts})
 
 
-def test_map_with_rename(tframe):
+def test_map_with_rename():
     t = Symbol('s', discover(tframe))
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
@@ -332,7 +329,7 @@ def test_map_with_rename(tframe):
 
 
 @pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
-def test_multiple_renames_on_series_fails(tframe):
+def test_multiple_renames_on_series_fails():
     t = Symbol('s', discover(tframe))
     expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
     with pytest.raises(ValueError):
@@ -603,3 +600,9 @@ def test_series_slice():
 def test_nelements():
     assert compute(t.nelements(), df) == len(df)
     assert compute(t.nrows, df) == len(df)
+
+
+def test_complex_group_by():
+    expr = by(merge(tbig.amount // 10, tbig.id % 2),
+              count=tbig.name.count())
+    compute(expr, dfbig)  # can we do this?
