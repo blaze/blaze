@@ -119,16 +119,13 @@ class Expr(Node):
     def __dir__(self):
         result = dir(type(self))
         if isrecord(self.dshape.measure) and self.fields:
-            result.extend(list(self.fields))
+            result.extend(list(map(valid_identifier, self.fields)))
 
         d = toolz.merge(schema_methods(self.dshape.measure),
                         dshape_methods(self.dshape))
         result.extend(list(d))
 
-        return pipe(result, map(valid_identifier),
-                            filter(isvalid_identifier),
-                            set,
-                            sorted)
+        return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
         try:
