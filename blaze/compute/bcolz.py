@@ -84,17 +84,26 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(sum, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
-    return data.sum()
+    result = data.sum()
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(count, (bcolz.ctable, bcolz.carray))
 def compute_up(expr, data, **kwargs):
-    return len(data)
+    result = len(data)
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(mean, bcolz.carray)
 def compute_up(expr, ba, **kwargs):
-    return ba.sum() / ba.len
+    result = ba.sum() / ba.len
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(var, bcolz.carray)
@@ -102,13 +111,19 @@ def compute_up(expr, ba, chunksize=2**20, **kwargs):
     n = ba.len
     E_X_2 = builtins.sum((chunk * chunk).sum() for chunk in chunks(ba))
     E_X = float(ba.sum())
-    return (E_X_2 - (E_X * E_X) / n) / (n - expr.unbiased)
+    result = (E_X_2 - (E_X * E_X) / n) / (n - expr.unbiased)
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(std, bcolz.carray)
 def compute_up(expr, ba, **kwargs):
     result = compute_up(expr._child.var(unbiased=expr.unbiased), ba, **kwargs)
-    return math.sqrt(result)
+    result = math.sqrt(result)
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch((ReLabel, Label), (bcolz.carray, bcolz.ctable))
@@ -126,14 +141,20 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(nunique, bcolz.carray)
 def compute_up(expr, data, **kwargs):
-    return len(set(data))
+    result = len(set(data))
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(Reduction, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
-        return compute_up(expr, data[:], **kwargs)
-    return compute_up(expr, ChunkIndexable(data), **kwargs)
+        result = compute_up(expr, data[:], **kwargs)
+    result = compute_up(expr, ChunkIndexable(data), **kwargs)
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(Slice, (bcolz.carray, bcolz.ctable))
@@ -143,7 +164,10 @@ def compute_up(expr, x, **kwargs):
 
 @dispatch(nelements, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, x, **kwargs):
-    return compute_up.dispatch(type(expr), np.ndarray)(expr, x, **kwargs)
+    result = compute_up.dispatch(type(expr), np.ndarray)(expr, x, **kwargs)
+    if expr.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch((bcolz.carray, bcolz.ctable))

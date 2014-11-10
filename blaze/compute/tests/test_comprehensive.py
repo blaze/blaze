@@ -53,6 +53,8 @@ expressions = {
         t['id']: [],
         t.id.max(): [],
         t.amount.sum(): [],
+        t.amount.sum(keepdims=True): [],
+        t.amount.count(keepdims=True): [],
         t.amount.head(): [],
         t.amount + 1: [mongo],
         sin(t.amount): [sql, mongo], # sqlite doesn't support trig
