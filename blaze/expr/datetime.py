@@ -152,7 +152,7 @@ def truncate(expr, *args, **kwargs):
 
     >>> expr = s.truncate(1, 'week')
     >>> compute(expr, datetime(2000, 6, 25, 12, 35, 10))
-    datetime.date(2000, 6, 19)
+    datetime.date(2000, 6, 25)
 
     Alternatively use keyword arguments to specify unit and measure
 
