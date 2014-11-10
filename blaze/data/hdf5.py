@@ -5,7 +5,7 @@ from itertools import chain
 import h5py
 from dynd import nd
 import datashape
-from datashape import var, dshape
+from datashape import var, dshape, DataShape, Record
 from toolz.curried import pipe, concat, map, partial
 
 from ..dispatch import dispatch
@@ -18,6 +18,11 @@ h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
 
 __all__ = ['HDF5', 'discover']
+
+
+@dispatch((h5py.Group, h5py.File))
+def discover(g):
+    return DataShape(Record([[k, discover(v)] for k, v in g.items()]))
 
 
 @dispatch(h5py.Dataset)

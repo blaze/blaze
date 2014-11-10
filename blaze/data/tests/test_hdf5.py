@@ -213,10 +213,14 @@ class TestTypes(MakeFile):
 
 class TestDiscovery(MakeFile):
     def test_discovery(self):
-        dd = HDF5(self.filename, 'data',
+        dd = HDF5(self.filename, '/data',
                   schema='2 * int32')
         dd.extend([(1, 2), (2, 3), (4, 5)])
         with h5py.File(dd.path) as f:
+            self.assertEqual(discover(f),
+                    dshape('{data: 3 * 2 * int32}'))
+            self.assertEqual(discover(f['/']),
+                    dshape('{data: 3 * 2 * int32}'))
             d = f.get(dd.datapath)
             self.assertEqual(discover(d),
                              dshape('3 * 2 * int32'))

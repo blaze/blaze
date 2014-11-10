@@ -48,12 +48,14 @@ def partition_get(data, part, chunksize=None):
 
 
 @dispatch(Array, object, object)
-def partition_set(data, part, value, chunksize=None):
-    data[part] = value.squeeze()
+def partition_set(data, part, value, chunksize=None, keepdims=True):
+    if not keepdims and 1 in value.shape:
+        value = value.squeeze()
+    data[part] = value
     return data
 
 
-def slices1d(n, k):
+def slices1d(n, k, keepdims=False):
     """
 
     >>> slices1d(10, 5)
@@ -62,10 +64,15 @@ def slices1d(n, k):
     >>> slices1d(10, 6)
     [slice(0, 6, None), slice(6, 10, None)]
 
+    Ordinarily single dimensions are flattened down
     >>> slices1d(10, 1)
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    Reverse this behavior with the keepdims keyword argument
+    >>> slices1d(3, 1, keepdims=True)
+    [slice(0, 1, None), slice(1, 2, None), slice(2, 3, None)]
     """
-    if k == 1:
+    if k == 1 and not keepdims:
         return list(range(n))
     return [slice(k*i, min(k*(i + 1), n)) for i in range(int(ceil(float(n)/k)))]
 
@@ -79,8 +86,9 @@ def tuplepack(x):
 
 
 @dispatch(Array)
-def partitions(data, chunksize=None):
-    per_dim = map(slices1d, data.shape, chunksize)
+def partitions(data, chunksize=None, keepdims=False):
+    per_dim = [slices1d(s, c, keepdims=keepdims)
+                    for s, c in zip(data.shape, chunksize)]
     return itertools.product(*per_dim)
 
 
