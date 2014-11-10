@@ -29,10 +29,22 @@ def file():
         yield f
         f.close()
 
-
 @pytest.yield_fixture
 def data(file):
     yield file['/x']
+
+
+@pytest.yield_fixture
+def data_1d_chunks():
+    with tmpfile('.h5') as filename:
+        f = h5py.File(filename)
+        d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
+                                   fillvalue=0.0, chunks=(1, 24))
+        d[:] = x
+
+        yield d
+
+        f.close()
 
 
 rec = np.empty(shape=(20, 24), dtype=[('x', 'i4'), ('y', 'i4')])
@@ -130,4 +142,9 @@ def test_compute_on_file(file):
               x.sum(axis=1))
 
     assert eq(compute(s.x.sum(), file, chunksize=(4, 6)),
+              x.sum())
+
+
+def test_compute_on_1d_chunks(data_1d_chunks):
+    assert eq(compute(s.sum(), data_1d_chunks),
               x.sum())

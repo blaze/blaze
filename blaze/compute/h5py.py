@@ -89,8 +89,9 @@ def compute_down(expr, data, **kwargs):
     intermediate = np.empty(shape=shape, dtype=dtype)
 
     # Compute partitions
-    data_partitions = partitions(data, chunksize=chunksize)
-    int_partitions = partitions(intermediate, chunksize=chunk_expr.shape)
+    data_partitions = partitions(data, chunksize=chunksize, keepdims=True)
+    int_partitions = partitions(intermediate, chunksize=chunk_expr.shape,
+            keepdims=True)
 
     # For each partition, compute chunk->chunk_expr
     # Insert into intermediate
@@ -98,7 +99,9 @@ def compute_down(expr, data, **kwargs):
     for d, i in zip(data_partitions, int_partitions):
         chunk_data = partition_get(data, d, chunksize=chunksize)
         result = compute(chunk_expr, {chunk: chunk_data})
-        partition_set(intermediate, i, result, chunksize=chunk_expr.shape)
+        partition_set(intermediate, i, result,
+                      chunksize=chunk_expr.shape,
+                      keepdims=True)
 
     # Compute on the aggregate
     return compute(agg_expr, {agg: intermediate})

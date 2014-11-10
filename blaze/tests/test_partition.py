@@ -36,7 +36,8 @@ def test_partition_set_1d():
     x = np.arange(24).reshape(4, 6)
     partition_set(x,
                   (slice(0, 4), 0), np.array([[1], [1], [1], [1]]),
-                  chunksize=(4, 1))
+                  chunksize=(4, 1),
+                  keepdims=False)
     assert (x[:4, 0] == 1).all()
 
 

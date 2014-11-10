@@ -48,8 +48,10 @@ def partition_get(data, part, chunksize=None):
 
 
 @dispatch(Array, object, object)
-def partition_set(data, part, value, chunksize=None):
-    data[part] = value.squeeze()
+def partition_set(data, part, value, chunksize=None, keepdims=True):
+    if not keepdims and 1 in value.shape:
+        value = value.squeeze()
+    data[part] = value
     return data
 
 
