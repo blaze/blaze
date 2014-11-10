@@ -1,5 +1,5 @@
 from blaze.compute.pydatetime import truncate
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 def test_hour():
     dts = [datetime(2000, 6, 20,  1, 00, 00),
@@ -25,3 +25,10 @@ def test_month():
              date(2000, 6, 1),
              date(2000, 6, 1),
              date(2000, 5, 1),]
+
+
+def test_week():
+    d = date(2014, 11, 8)
+    assert truncate(d, 1, 'week').isoweekday() == 7
+    assert (d - truncate(d, 1, 'week')) < timedelta(days=7)
+    assert (d - truncate(d, 1, 'week')) > timedelta(days=0)
