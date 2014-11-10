@@ -42,7 +42,7 @@ def compute_down(expr, data, **kwargs):
     elemwises, selections, ...) then compute on data directly, without
     parallelism"""
     leaf = expr._leaves()[0]
-    if all(isinstance(e, Cheap) for e in path(leaf, expr)):
+    if all(isinstance(e, Cheap) for e in path(expr, leaf)):
         return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
     else:
         raise MDNotImplementedError()
