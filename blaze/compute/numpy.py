@@ -194,10 +194,10 @@ def compute_up(expr, data, **kwargs):
             measure = expr.measure * 7
         return (((data.astype('M8[D]')
                       .astype('i8')
-                      + 3)
+                      + 4)
                       // measure
                       *  measure
-                      - 3)
+                      - 4)
                      .astype('M8[D]'))
     else:
         return ((data.astype(np_dtype)
