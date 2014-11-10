@@ -81,7 +81,11 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(nunique, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return len(np.unique(x))
+    assert t.axis == tuple(range(t.ndim))
+    result = len(np.unique(x))
+    if t.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(Reduction, np.ndarray)
