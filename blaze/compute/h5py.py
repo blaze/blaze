@@ -20,6 +20,9 @@ from ..partition import partitions, partition_get, partition_set
 
 __all__ = []
 
+@dispatch(Field, (h5py.File, h5py.Group))
+def compute_up(expr, data, **kwargs):
+    return data[expr._name]
 
 @dispatch(Slice, h5py.Dataset)
 def compute_up(expr, data, **kwargs):
