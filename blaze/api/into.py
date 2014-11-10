@@ -1023,6 +1023,31 @@ def into(a, b, **kwargs):
     return a(b)
 
 
+@dispatch(np.datetime64, (datetime, np.datetime64))
+def into(_, b, **kwargs):
+    return np.datetime64(b)
+
+
+@dispatch(np.datetime64, pd.Timestamp)
+def into(_, b, **kwargs):
+    return b.asm8
+
+
+@dispatch(pd.Timestamp, (datetime, np.datetime64, pd.Timestamp))
+def into(_, b, **kwargs):
+    return pd.Timestamp(b)
+
+
+@dispatch(datetime, pd.Timestamp)
+def into(_, b, **kwargs):
+    return b.to_pydatetime()
+
+
+@dispatch(datetime, np.datetime64)
+def into(_, b, **kwargs):
+    return b.item()
+
+
 @dispatch(object)
 def into(a, **kwargs):
     """ Curried into function
