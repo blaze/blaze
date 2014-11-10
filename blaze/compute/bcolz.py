@@ -43,7 +43,7 @@ def compute_down(expr, data, **kwargs):
     parallelism"""
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(leaf, expr)):
-        return compute(expr, {leaf: iter(data)}, **kwargs)
+        return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
     else:
         raise MDNotImplementedError()
 
@@ -136,7 +136,7 @@ def compute_up(expr, b, **kwargs):
 def compute_up(expr, data, **kwargs):
     if data.nbytes < COMFORTABLE_MEMORY_SIZE:
         return compute_up(expr, data[:], **kwargs)
-    return compute_up(expr, iter(data), **kwargs)
+    return compute_up(expr, into(Iterator, data), **kwargs)
 
 
 @dispatch(nunique, bcolz.carray)
