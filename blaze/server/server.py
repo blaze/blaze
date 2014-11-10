@@ -3,9 +3,10 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 from collections import Iterator
+import socket
 from flask import Flask, request, jsonify, json
 from dynd import nd
-from cytoolz import first, merge, valmap
+from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps
 from blaze import into, compute
 from blaze.compute import compute_up
@@ -42,7 +43,7 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'datasets'
+    __slots__ = 'app', 'datasets', 'port'
 
     def __init__(self, datasets=None):
         app = self.app = Flask('blaze.server.server')
@@ -61,7 +62,12 @@ class Server(object):
 
     def run(self, *args, **kwargs):
         port = kwargs.pop('port', DEFAULT_PORT)
-        return self.app.run(*args, port=port, **kwargs)
+        self.port = port
+        try:
+            self.app.run(*args, port=port, **kwargs)
+        except socket.error:
+            print("\tOops, couldn't connect on port %d.  Is it busy?" % port)
+            self.run(*args, **assoc(kwargs, 'port', port + 1))
 
 
 routes = list()

@@ -54,6 +54,11 @@ def test_resource_default_port():
     assert discover(ec) == discover(df)
 
 
+def test_resource_non_default_port():
+    ec = resource('blaze://localhost:6364', 'accounts')
+    assert ec.url == 'http://localhost:6364'
+
+
 def test_resource_all_in_one():
     ec = resource('blaze://localhost:6363::accounts')
     assert discover(ec) == discover(df)

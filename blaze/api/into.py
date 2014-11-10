@@ -183,9 +183,12 @@ def into(a, b, **kwargs):
     if isinstance(first, datetime):
         b = map(np.datetime64, b)
     if isinstance(first, (list, tuple)):
+        if 'dtype' in kwargs:
+            dtype = kwargs.pop('dtype')
+        else:
+            dtype = dtype_from_tuple(first)
         return np.rec.fromrecords([tuple(x) for x in b],
-                                  dtype=kwargs.pop('dtype',
-                                                   dtype_from_tuple(first)),
+                                  dtype=dtype,
                                   **kwargs)
     elif hasattr(first, 'values'):
         #detecting sqlalchemy.engine.result.RowProxy types and similar
