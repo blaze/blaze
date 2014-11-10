@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 import toolz
 import datashape
 import functools
-from toolz import concat, memoize, partial
+from toolz import concat, memoize, partial, pipe
+from toolz.curried import map, filter
 import re
 
 from datashape import dshape, DataShape, Record, Var, Mono
@@ -30,6 +31,21 @@ def isvalid_identifier(s):
     False
     """
     return not not re.match('^\w+$', s)
+
+def valid_identifier(s):
+    """
+
+    >>> valid_identifier('hello')
+    'hello'
+    >>> valid_identifier('hello world')
+    'hello_world'
+    >>> print(valid_identifier(None))
+    None
+    """
+    if isinstance(s, _strtypes):
+        return s.replace(' ', '_')
+    return s
+
 
 class Expr(Node):
     """
@@ -109,17 +125,22 @@ class Expr(Node):
                         dshape_methods(self.dshape))
         result.extend(list(d))
 
-        return sorted(set(filter(isvalid_identifier, result)))
+        return pipe(result, map(valid_identifier),
+                            filter(isvalid_identifier),
+                            set,
+                            sorted)
 
     def __getattr__(self, key):
         try:
             return object.__getattribute__(self, key)
         except AttributeError:
-            if self.fields and key in self.fields:
+            fields = dict(zip(map(valid_identifier, self.fields),
+                              self.fields))
+            if self.fields and key in fields:
                 if isscalar(self.dshape.measure): # t.foo.foo is t.foo
                     return self
                 else:
-                    return self[key]
+                    return self[fields[key]]
             d = toolz.merge(schema_methods(self.dshape.measure),
                             dshape_methods(self.dshape))
             if key in d:
@@ -583,4 +604,3 @@ method_properties.update([shape, ndim])
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
-
