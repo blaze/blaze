@@ -18,7 +18,9 @@ Example
 Blaze separates the computations that we want to perform:
 
 ```Python
->>> accounts = Symbol('accounts', 'var * {id: int, name: string, amount: int}')
+>>> from blaze import *
+
+>>> accounts = TableSymbol('accounts', 'var * {id: int, name: string, amount: int}')
 
 >>> deadbeats = accounts[accounts.amount < 0].name
 ```
