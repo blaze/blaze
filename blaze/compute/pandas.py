@@ -32,7 +32,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp, nelements)
+                    UTCFromTimestamp, nelements, DateTimeTruncate)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -241,7 +241,7 @@ def compute_by(t, s, g, df):
 
     d = defaultdict(list)
     for name, v in zip(names, s.values):
-        d[name].append(getattr(Series, v.symbol))
+        d[name].append(v.symbol)
 
     result = groups.agg(dict(d))
 
@@ -448,3 +448,13 @@ def compute_up(expr, df, **kwargs):
 @dispatch(nelements, (DataFrame, Series))
 def compute_up(expr, df, **kwargs):
     return df.shape[0]
+
+
+units_map = {'year': 'Y', 'month': 'M', 'week': 'W', 'day': 'D', 'hour': 'h',
+'minute': 'm', 'second': 's', 'millisecond': 'ms', 'microsecond': 'us',
+'nanosecond': 'ns'}
+
+@dispatch(DateTimeTruncate, Series)
+def compute_up(expr, data, **kwargs):
+    from blaze import into, np
+    return Series(compute_up(expr, into(np.ndarray, data), **kwargs))

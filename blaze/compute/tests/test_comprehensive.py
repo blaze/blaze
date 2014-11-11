@@ -53,6 +53,10 @@ expressions = {
         t['id']: [],
         t.id.max(): [],
         t.amount.sum(): [],
+        t.amount.sum(keepdims=True): [],
+        t.amount.count(keepdims=True): [],
+        t.amount.nunique(keepdims=True): [mongo],
+        t.amount.nunique(): [],
         t.amount.head(): [],
         t.amount + 1: [mongo],
         sin(t.amount): [sql, mongo], # sqlite doesn't support trig
@@ -83,7 +87,8 @@ expressions = {
         t.id.utcfromtimestamp: [sql],
         t.distinct().nrows: [],
         t.nelements(axis=0): [],
-        t.nelements(axis=None): []
+        t.nelements(axis=None): [],
+        t.amount.truncate(200): [sql]
         }
 
 base = df

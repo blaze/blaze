@@ -68,7 +68,6 @@ def test_split_reasons_correctly_about_aggregate_shape():
     assert agg.shape == (10, 2000)
 
 
-
 def test_distinct():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, count(t.amount.distinct()))
 
@@ -169,3 +168,13 @@ def test_agg_shape_in_tabular_case_with_explicit_chunk():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, expr, chunk=c)
 
     assert agg.dshape == dshape('var * {name: string, total: int}')
+
+
+def test_reductions():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.nunique())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(chunk.amount.distinct())
+
+    assert isscalar(agg.dshape.measure)
+    assert agg_expr.isidentical(agg.distinct().count())

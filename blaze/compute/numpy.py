@@ -3,11 +3,11 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame, Series
 
-from ..expr import Reduction, Field, Projection, Broadcast, Selection
+from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import UTCFromTimestamp
+from ..expr import UTCFromTimestamp, DateTimeTruncate
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -76,12 +76,16 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return pd.notnull(x).sum()
+    return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return len(np.unique(x))
+    assert t.axis == tuple(range(ndim(t._child)))
+    result = len(np.unique(x))
+    if t.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(Reduction, np.ndarray)
@@ -160,7 +164,7 @@ def compute_up(t, x, **kwargs):
 @dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
     axis = expr.axis
-    shape = tuple(data.shape[i] for i in range(expr._child.ndim)
+    shape = tuple(data.shape[i] for i in range(ndim(expr._child))
                   if i not in axis)
     value = np.prod([data.shape[i] for i in axis])
     result = np.empty(shape)
@@ -171,6 +175,40 @@ def compute_up(expr, data, **kwargs):
         return result.item()
     except ValueError:
         return result
+
+
+precision_map = {'year': 'M8[Y]',
+                 'month': 'M8[M]',
+                 'week': 'M8[W]',
+                 'day': 'M8[D]',
+                 'hour': 'M8[h]',
+                 'minute': 'M8[m]',
+                 'second': 'M8[s]',
+                 'millisecond': 'M8[ms]',
+                 'microsecond': 'M8[us]',
+                 'nanosecond': 'M8[ns]'}
+
+@dispatch(DateTimeTruncate, (np.ndarray, np.datetime64))
+def compute_up(expr, data, **kwargs):
+    np_dtype = precision_map[expr.unit]
+    if expr.unit in ['day', 'week']:
+        if expr.unit == 'day':
+            measure = expr.measure
+        else:
+            measure = expr.measure * 7
+        return (((data.astype('M8[D]')
+                      .astype('i8')
+                      + 4)
+                      // measure
+                      *  measure
+                      - 4)
+                     .astype('M8[D]'))
+    else:
+        return ((data.astype(np_dtype)
+                     .astype('i8')
+                     // expr.measure
+                     * expr.measure)
+                     .astype(np_dtype))
 
 
 @dispatch(np.ndarray)
