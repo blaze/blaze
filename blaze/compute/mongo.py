@@ -64,6 +64,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
                     Microsecond, Date, Time, Expr, Symbol, Arithmetic)
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
+from .core import compute
 
 from ..dispatch import dispatch
 
@@ -224,6 +225,14 @@ def compute_up(t, q, **kwargs):
          '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.fields),
                                  dict((name, '$' + name) for name in names))
      }))
+
+
+@dispatch(nunique, MongoQuery)
+def compute_up(t, q, **kwargs):
+    return MongoQuery(q.coll, q.query +
+    ({'$group': {'_id': dict((col, '$'+col) for col in t.fields),
+                 t._name: {'$sum': 1}}},
+     {'$project': {'_id': 0, t._name: 1}}))
 
 
 @dispatch(Distinct, MongoQuery)
