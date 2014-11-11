@@ -8,6 +8,21 @@ build:
 requirements:
   build:
     - python
+    - dynd-python
+    - numpy
+    - multipledispatch
+    - sqlalchemy
+    - pandas
+    - h5py
+    - datashape
+    - flask
+    - requests
+    - cytoolz
+    - toolz
+    - bcolz
+    - pytables
+    - psutil
+    - unittest2 [py26]
 
   run:
     - python
@@ -33,7 +48,7 @@ test:
     - coverage
 
   commands:
-    - py.test -r sxX --doctest-modules --verbose --pyargs blaze
+    - python -c "import blaze; blaze.test()"
 
 about:
   home: http://blaze.pydata.org

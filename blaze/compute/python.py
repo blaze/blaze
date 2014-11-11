@@ -313,6 +313,11 @@ def compute_up_1d(expr, seq, **kwargs):
         return cytoolz.count(seq)
 
 
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
+
+
 @dispatch(BinOp, numbers.Real, numbers.Real)
 def compute_up(bop, a, b, **kwargs):
     return bop.op(a, b)
