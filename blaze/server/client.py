@@ -144,11 +144,12 @@ def compute_down(expr, ec, **kwargs):
 
     return data['data']
 
-@resource.register('blaze://.+::\w+', priority=15)
+@resource.register('blaze://.+::\w+', priority=16)
 def resource_blaze_dataset(uri, **kwargs):
     uri, name = uri.split('::')
     client = resource(uri)
     return ClientDataset(client, name)
+
 
 @resource.register('blaze://.+')
 def resource_blaze(uri, **kwargs):
