@@ -782,6 +782,23 @@ def test_nelements_2D():
     assert compute(t.nelements(axis=1), data) == len(data[0])
 
 
+def test_truncate():
+    s = Symbol('x', 'real')
+    assert compute(s.truncate(20), 154) == 140
+    assert compute(s.truncate(0.1), 3.1415) == 3.1
+
+
+def test_truncate_datetime():
+    s = Symbol('x', 'datetime')
+    assert compute(s.truncate(2, 'days'), datetime(2002, 1, 3, 12, 30)) ==\
+            date(2002, 1, 2)
+
+    s = Symbol('x', 'var * datetime')
+    assert list(compute(s.truncate(2, 'days'),
+                        [datetime(2002, 1, 3, 12, 30)])) ==\
+            [date(2002, 1, 2)]
+
+
 def test_compute_up_on_base():
     d = datetime.now()
     s = Symbol('s', 'datetime')

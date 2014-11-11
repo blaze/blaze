@@ -159,9 +159,19 @@ def into(a, b, **kwargs):
 
 
 def dtype_from_tuple(t):
+    """ Get numpy datatype from a python tuple
+
+    >>> dtype_from_tuple(('Alice', 100))
+    dtype([('f0', 'O'), ('f1', '<i8')])
+    >>> dtype_from_tuple((1, 2))
+    dtype([('f0', '<i8'), ('f1', '<i8')])
+    """
     dshape = discover(t)
     names = ['f%d' % i for i in range(len(t))]
-    types = [x.measure.to_numpy_dtype() for x in dshape.measure.dshapes]
+    if isinstance(dshape.measure, datashape.Tuple):
+        types = [x.measure.to_numpy_dtype() for x in dshape.measure.dshapes]
+    else:
+        types = [dshape.measure.to_numpy_dtype()] * int(dshape[0])
     return np.dtype(list(zip(names, types)))
 
 

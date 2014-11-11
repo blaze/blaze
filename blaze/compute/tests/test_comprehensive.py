@@ -87,7 +87,8 @@ expressions = {
         t.id.utcfromtimestamp: [sql],
         t.distinct().nrows: [],
         t.nelements(axis=0): [],
-        t.nelements(axis=None): []
+        t.nelements(axis=None): [],
+        t.amount.truncate(200): [sql]
         }
 
 base = df

@@ -7,7 +7,7 @@ import datashape
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
         'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
         'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-        'time', 'UTCFromTimestamp']
+        'time', 'UTCFromTimestamp', 'DateTimeTruncate']
 
 class DateTime(ElemWise):
     """ Superclass for datetime accessors """
@@ -95,13 +95,85 @@ class UTCFromTimestamp(DateTime):
 def utcfromtimestamp(expr):
     return UTCFromTimestamp(expr)
 
+units = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second',
+'millisecond', 'microsecond', 'nanosecond']
+
+
+_unit_aliases = {'y': 'year', 'w': 'week', 'd': 'day', 'date': 'day',
+    'h': 'hour', 's': 'second', 'ms': 'millisecond', 'us': 'microsecond',
+    'ns': 'nanosecond'}
+
+def normalize_time_unit(s):
+    """ Normalize time input to one of 'year', 'second', 'millisecond', etc..
+
+    Example
+    -------
+
+    >>> normalize_time_unit('milliseconds')
+    'millisecond'
+    >>> normalize_time_unit('ms')
+    'millisecond'
+    """
+    s = s.lower().strip()
+    if s in units:
+        return s
+    if s in _unit_aliases:
+        return _unit_aliases[s]
+    if s[-1] == 's':
+        return normalize_time_unit(s.rstrip('s'))
+
+    raise ValueError("Do not understand time unit %s" % s)
+
+
+class DateTimeTruncate(DateTime):
+    __slots__ = '_child', 'measure', 'unit'
+
+    @property
+    def _dtype(self):
+        if units.index('day') >= units.index(self.unit):
+            return datashape.date_
+        else:
+            return datashape.datetime_
+
+
+def truncate(expr, *args, **kwargs):
+    """ Truncate datetime expression
+
+    Example
+    -------
+
+    >>> from blaze import Symbol, compute
+    >>> from datetime import datetime
+    >>> s = Symbol('s', 'datetime')
+
+    >>> expr = s.truncate(10, 'minutes')
+    >>> compute(expr, datetime(2000, 6, 25, 12, 35, 10))
+    datetime.datetime(2000, 6, 25, 12, 30)
+
+    >>> expr = s.truncate(1, 'week')
+    >>> compute(expr, datetime(2000, 6, 25, 12, 35, 10))
+    datetime.date(2000, 6, 25)
+
+    Alternatively use keyword arguments to specify unit and measure
+
+    >>> # expr = s.truncate(2, 'weeks')
+    >>> expr = s.truncate(weeks=2)
+    """
+    if args:
+        assert not kwargs
+        measure, unit = args
+    if kwargs:
+        assert not args
+        [(unit, measure)] = kwargs.items()
+    return DateTimeTruncate(expr, measure, normalize_time_unit(unit))
+
 
 from .expressions import schema_method_list, method_properties
 from datashape.predicates import isdatelike, isnumeric
 
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
-                      millisecond, microsecond])),
+                      millisecond, microsecond, truncate])),
     (isnumeric, set([utcfromtimestamp]))
     ])
 
