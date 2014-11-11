@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape.predicates import isscalar
 import sqlalchemy
+from sqlalchemy import Table, MetaData
 from sqlalchemy.engine import Engine
 from toolz import first, keyfilter
 
@@ -36,6 +37,18 @@ def compute_up(t, lhs, rhs, **kwargs):
     return compute_up(t, lhs.table, rhs.table, **kwargs)
 
 
+def engine_of(x):
+    if isinstance(x, Engine):
+        return x
+    if isinstance(x, SQL):
+        return x.engine
+    if isinstance(x, MetaData):
+        return x.bind
+    if isinstance(x, Table):
+        return x.metadata.bind
+    raise NotImplementedError("Can't deterimine engine of %s" % x)
+
+
 @dispatch(Expr, sa.sql.ClauseElement, dict)
 def post_compute(expr, query, d):
     """ Execute SQLAlchemy query against SQLAlchemy engines
@@ -45,10 +58,13 @@ def post_compute(expr, query, d):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, (SQL, Engine)) for val in d.values()):
+    if not all(isinstance(val, (SQL, Engine, Table)) for val in d.values()):
         return query
 
-    engines = set([x.engine if isinstance(x, SQL) else x for x in d.values()])
+    engines = set(filter(None, map(engine_of, d.values())))
+
+    if not engines:
+        return query
 
     if len(set(map(str, engines))) != 1:
         raise NotImplementedError("Expected single SQLAlchemy engine")
