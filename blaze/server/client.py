@@ -4,7 +4,7 @@ import requests
 from flask import json
 import flask
 from dynd import nd
-from datashape import dshape
+from datashape import dshape, DataShape, Record
 
 from ..data import DataDescriptor
 from ..data.utils import coerce
@@ -48,28 +48,25 @@ class Client(object):
 
     url: str
         URL of a Blaze server
-    name: str
-        Name of dataset on that server
 
     Examples
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> ec = Client('localhost:6363', 'accounts')
-    >>> t = Data(ec) # doctest: +SKIP
+    >>> c = Client('localhost:6363')
+    >>> t = Data(c) # doctest: +SKIP
 
     See Also
     --------
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'dataname'
-    def __init__(self, url, name, **kwargs):
+    __slots__ = 'url'
+    def __init__(self, url, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
-        self.dataname = name
 
     @property
     def dshape(self):
@@ -80,7 +77,8 @@ class Client(object):
 
         data = json.loads(content(response))
 
-        return dshape(data[self.dataname])
+        return DataShape(Record([[name, dshape(ds)] for name, ds in
+            data.items()]))
 
 
 def ExprClient(*args, **kwargs):
@@ -100,7 +98,8 @@ def compute_down(expr, ec):
     from ..api import Data
     from ..api import into
     from pandas import DataFrame
-    tree = to_tree(expr, {expr._leaves()[0]: ec.dataname})
+    leaf = expr._leaves()[0]
+    tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 
     r = requests.get('%s/compute.json' % ec.url,
                      data = json.dumps({'expr': tree}),
@@ -115,11 +114,11 @@ def compute_down(expr, ec):
 
 
 @resource.register('blaze://.+')
-def resource_blaze(uri, name, **kwargs):
+def resource_blaze(uri, **kwargs):
     uri = uri[len('blaze://'):]
     sp = uri.split('/')
     tld, rest = sp[0], sp[1:]
     if ':' not in tld:
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
-    return Client(uri, name, **kwargs)
+    return Client(uri)
