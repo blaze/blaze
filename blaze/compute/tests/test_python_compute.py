@@ -797,3 +797,9 @@ def test_truncate_datetime():
     assert list(compute(s.truncate(2, 'days'),
                         [datetime(2002, 1, 3, 12, 30)])) ==\
             [date(2002, 1, 2)]
+
+
+def test_compute_up_on_base():
+    d = datetime.now()
+    s = Symbol('s', 'datetime')
+    assert compute(s.minute, d) == d.minute

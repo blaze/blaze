@@ -9,6 +9,7 @@ import tables as tb
 from datashape import dshape
 from datetime import datetime
 import os
+import itertools
 
 from blaze.compute.chunks import ChunkIterator, chunks
 
@@ -590,3 +591,24 @@ def test_into_csv_with_string_specifying_mode():
     with tmpfile(".csv") as filename:
         csv = into(filename, [(1, 2), (3, 4)])
         assert list(csv) == [(1, 2), (3, 4)]
+
+
+def test_into_datetimes():
+    x = pd.Timestamp('now')
+    y = np.datetime64('now')
+    z = datetime.now()
+
+    # we only want a, b where the types of a and b are not the same
+    p = filter(lambda x: type(x[0]) != type(x[1]),
+               itertools.product([x, y, z], [x, y, z]))
+
+    for a, b in p:
+        r = into(a, b)
+        assert isinstance(r, type(a))
+        r = into(b, a)
+        assert isinstance(r, type(b))
+
+
+def test_into_data_reduction():
+    d = Data(pd.DataFrame({'a': pd.date_range(start='now', periods=10).values}))
+    assert isinstance(into(pd.Timestamp, d.a.min()), pd.Timestamp)
