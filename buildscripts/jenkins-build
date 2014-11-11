@@ -111,5 +111,5 @@ echo `ls`
 echo ${BLAZE_VERSION}
 echo ${PYENV_PREFIX}
 # Upload the package to binstar
-~/anaconda/bin/binstar -t ${BINSTAR_BLAZE_AUTH} upload --force blaze*.tar.bz2
+# ~/anaconda/bin/binstar -t ${BINSTAR_BLAZE_AUTH} upload --force blaze*.tar.bz2
 
