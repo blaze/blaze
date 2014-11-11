@@ -786,3 +786,26 @@ def test_compute_field_on_dicts():
     s = Symbol('s', '{x: 3 * int, y: 3 * int}')
     d = {'x': [1, 2, 3], 'y': [4, 5, 6]}
     assert compute(s.x, {s: d}) == [1, 2, 3]
+
+
+def test_truncate():
+    s = Symbol('x', 'real')
+    assert compute(s.truncate(20), 154) == 140
+    assert compute(s.truncate(0.1), 3.1415) == 3.1
+
+
+def test_truncate_datetime():
+    s = Symbol('x', 'datetime')
+    assert compute(s.truncate(2, 'days'), datetime(2002, 1, 3, 12, 30)) ==\
+            date(2002, 1, 2)
+
+    s = Symbol('x', 'var * datetime')
+    assert list(compute(s.truncate(2, 'days'),
+                        [datetime(2002, 1, 3, 12, 30)])) ==\
+            [date(2002, 1, 2)]
+
+
+def test_compute_up_on_base():
+    d = datetime.now()
+    s = Symbol('s', 'datetime')
+    assert compute(s.minute, d) == d.minute

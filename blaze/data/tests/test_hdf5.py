@@ -260,7 +260,7 @@ data = [(1, 32.4, 'Alice'),
 
 x = np.array(data, dtype=[('id', int), ('amount', float), ('name', str, 100)])
 
-schema = dshape("{ id : int64, amount : float64, name : string }")
+schema = dshape("{id : int64, amount: float64, name: string}")
 
 
 @pytest.yield_fixture

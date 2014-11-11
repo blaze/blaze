@@ -2,6 +2,13 @@
 Release Notes
 ======================
 
+
+Release 0.6.6
+-------------
+
+* Not intended for public use, mostly for internal build systems
+* Bugfix
+
 Release 0.6.5
 -------------
 

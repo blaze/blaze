@@ -83,7 +83,7 @@ if pyspark:
         >>> sparksql_to_ds(StructType([  # doctest: +SKIP
         ...                         StructField('name', StringType(), False),
         ...                         StructField('amount', IntegerType(), True)]))
-        dshape("{ name : string, amount : ?int64 }")
+        dshape("{name: string, amount: ?int64}")
         """
         if ss in rev_types:
             return rev_types[ss]

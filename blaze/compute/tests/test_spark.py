@@ -6,6 +6,7 @@ from blaze.compatibility import xfail
 from blaze.expr import *
 from blaze.expr.functions import *
 from datashape.predicates import iscollection
+from datashape import dshape
 
 import pytest
 
@@ -95,6 +96,7 @@ def test_spark_reductions():
 exprs = [
     t['amount'],
     t['amount'] == 100,
+    t['amount'].truncate(150),
     t[t['name'] == 'Alice'],
     t[t['amount'] == 0],
     t[t['amount'] > 150],

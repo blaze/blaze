@@ -254,7 +254,7 @@ def test_csv_into_mongodb_complex(empty_collec):
     this_dir = os.path.dirname(__file__)
     file_name = os.path.join(this_dir, 'dummydata.csv')
 
-    s = "{ Name : string, RegistrationDate : ?datetime, ZipCode : ?int64, Consts : ?float64 }"
+    s = "{Name: string, RegistrationDate: ?datetime, ZipCode: ?int64, Consts: ?float64}"
     csv = CSV(file_name, schema=s)
     coll = empty_collec
     into(coll, csv)

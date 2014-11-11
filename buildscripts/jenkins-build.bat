@@ -83,8 +83,8 @@ call C:\Anaconda\Scripts\conda install --yes binstar || exit 1
 call C:\Anaconda\Scripts\binstar --version
 
 REM Upload the package to binstar
-FOR /F "delims=" %%i IN ('dir /b blaze-*.tar.bz2') DO set PKG_FILE=%%i
-call C:\Anaconda\Scripts\binstar -t %BINSTAR_BLAZE_AUTH% upload --force %PKG_FILE% || exit 1
+REM FOR /F "delims=" %%i IN ('dir /b blaze-*.tar.bz2') DO set PKG_FILE=%%i
+REM call C:\Anaconda\Scripts\binstar -t %BINSTAR_BLAZE_AUTH% upload --force %PKG_FILE% || exit 1
 
 cd ..
 

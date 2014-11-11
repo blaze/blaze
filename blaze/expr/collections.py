@@ -19,7 +19,7 @@ class Sort(Expr):
     >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.sort('amount', ascending=False).schema
-    dshape("{ name : string, amount : int32 }")
+    dshape("{name: string, amount: int32}")
 
     Some backends support sorting by arbitrary rowwise tables, e.g.
 
@@ -118,7 +118,7 @@ class Head(Expr):
     >>> from blaze import Symbol
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.head(5).dshape
-    dshape("5 * { name : string, amount : int32 }")
+    dshape("5 * {name: string, amount: int32}")
     """
     __slots__ = '_child', 'n'
 
@@ -144,6 +144,12 @@ head.__doc__ = Head.__doc__
 
 
 def merge(*exprs, **kwargs):
+    if len(exprs) + len(kwargs) == 1:
+        if exprs:
+            return exprs[0]
+        if kwargs:
+            [(k, v)] = kwargs.items()
+            return v.label(k)
     # Get common sub expression
     exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
     try:
@@ -342,10 +348,10 @@ class Join(Expr):
         >>> s = Symbol('t', 'var * {name: string, id: int}')
 
         >>> join(t, s).schema
-        dshape("{ name : string, amount : int32, id : int32 }")
+        dshape("{name: string, amount: int32, id: int32}")
 
         >>> join(t, s, how='left').schema
-        dshape("{ name : string, amount : int32, id : ?int32 }")
+        dshape("{name: string, amount: int32, id: ?int32}")
 
         Overlapping but non-joined fields append _left, _right
         >>> a = Symbol('a', 'var * {x: int, y: int}')

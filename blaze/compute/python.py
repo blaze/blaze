@@ -21,6 +21,7 @@ from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
+import datetime
 import cytoolz
 import toolz
 import math
@@ -31,17 +32,19 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice, Expr, Arithmetic, ndim)
+                    Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
+                    UTCFromTimestamp)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
                     Not, nelements)
 from ..compatibility import builtins, apply, unicode, _inttypes
-from .core import compute, compute_up, optimize
+from .core import compute, compute_up, optimize, base
 
 from ..data import DataDescriptor
 from ..data.utils import listpack
 from .pyfunc import lambdify, broadcast_collect
+from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
 import math
@@ -159,6 +162,9 @@ def rowfunc(t):
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)
 
+@dispatch(UTCFromTimestamp)
+def rowfunc(t):
+    return datetime.datetime.utcfromtimestamp
 
 @dispatch((Date, Time))
 def rowfunc(t):
@@ -168,6 +174,11 @@ def rowfunc(t):
 @dispatch(Millisecond)
 def rowfunc(_):
     return lambda row: getattr(row, 'microsecond') // 1000
+
+
+@dispatch(DateTimeTruncate)
+def rowfunc(expr):
+    return partial(pydatetime.truncate, measure=expr.measure, unit=expr.unit)
 
 
 @dispatch((RealMath, IntegerMath, BooleanMath))
@@ -189,6 +200,11 @@ def rowfunc(expr):
     if not isinstance(expr.rhs, Expr):
         return lambda x: expr.op(x, expr.rhs)
     return expr.op
+
+
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
 
 
 def concat_maybe_tuples(vals):
@@ -295,6 +311,11 @@ def compute_up_1d(expr, seq, **kwargs):
         return len(seq)
     except TypeError:
         return cytoolz.count(seq)
+
+
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
 
 
 @dispatch(BinOp, numbers.Real, numbers.Real)

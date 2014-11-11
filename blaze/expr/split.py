@@ -160,6 +160,17 @@ def _split_agg(expr, leaf=None, agg=None):
     return agg.distinct()
 
 
+@dispatch(nunique)
+def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
+    return (expr._child
+                ._subs({leaf: chunk})
+                .distinct())
+
+@dispatch(nunique)
+def _split_agg(expr, leaf=None, agg=None):
+    return agg.distinct().count()
+
+
 @dispatch(Summary)
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
     return summary(keepdims=keepdims,
