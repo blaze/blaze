@@ -761,3 +761,18 @@ def test_field_access_on_engines():
     result = compute_up(s.city, engine)
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
+
+
+def test_computation_directly_on_sqlalchemy_Tables():
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    name.create()
+
+    s = Symbol('s', discover(name))
+    result = compute(s.id + 1, name)
+    assert not isinstance(result, sa.sql.Selectable)
+    assert list(result) == []
