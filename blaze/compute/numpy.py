@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame, Series
 
-from ..expr import Reduction, Field, Projection, Broadcast, Selection
+from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
@@ -76,12 +76,16 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return pd.notnull(x).sum()
+    return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return len(np.unique(x))
+    assert t.axis == tuple(range(ndim(t._child)))
+    result = len(np.unique(x))
+    if t.keepdims:
+        result = np.array([result])
+    return result
 
 
 @dispatch(Reduction, np.ndarray)
@@ -160,7 +164,7 @@ def compute_up(t, x, **kwargs):
 @dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
     axis = expr.axis
-    shape = tuple(data.shape[i] for i in range(expr._child.ndim)
+    shape = tuple(data.shape[i] for i in range(ndim(expr._child))
                   if i not in axis)
     value = np.prod([data.shape[i] for i in axis])
     result = np.empty(shape)
