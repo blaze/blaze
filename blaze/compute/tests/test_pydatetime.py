@@ -26,6 +26,9 @@ def test_month():
              date(2000, 6, 1),
              date(2000, 5, 1),]
 
+    assert truncate(datetime(2000, 12, 1), 1, 'month') == \
+            date(2000, 12, 1)
+
 
 def test_week():
     d = date(2014, 11, 8)

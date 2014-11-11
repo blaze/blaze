@@ -79,7 +79,7 @@ def truncate_month(dt, measure):
     """
     months = dt.year * 12 + dt.month
     months = months // measure * measure
-    return date(months // 12, months % 12, 1)
+    return date((months - 1) // 12, (months -1) % 12 + 1, 1)
 
 
 def truncate_day(dt, measure):
