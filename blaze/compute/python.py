@@ -21,6 +21,7 @@ from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
+import datetime
 import cytoolz
 import toolz
 import math
@@ -31,7 +32,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Union, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
-                    Symbol, Slice, Expr, Arithmetic, ndim)
+                    Symbol, Slice, Expr, Arithmetic, ndim, UTCFromTimestamp)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -159,6 +160,9 @@ def rowfunc(t):
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)
 
+@dispatch(UTCFromTimestamp)
+def rowfunc(t):
+    return datetime.datetime.utcfromtimestamp
 
 @dispatch((Date, Time))
 def rowfunc(t):
