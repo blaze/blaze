@@ -1,13 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape.predicates import isscalar
+import sqlalchemy
+from toolz import first
+
 from .compute.sql import select
 from .data.sql import SQL, dispatch
 from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
 from .data.sql import SQL, dispatch
-from .compatibility import basestring
+from .compatibility import basestring, _strtypes
 from .resource import resource
-from toolz import first
 
 
 import sqlalchemy as sa
@@ -82,8 +84,12 @@ def create_index(s, columns, name=None, unique=False):
     sa.Index(*args, unique=unique).create(s.engine)
 
 @resource.register('(sqlite|postgresql|mysql|mysql\+pymysql)://.+')
-def resource_sql(uri, table_name, *args, **kwargs):
-    return SQL(uri, table_name, *args, **kwargs)
+def resource_sql(uri, *args, **kwargs):
+    if args and isinstance(args[0], _strtypes):
+        table_name, args = args[0], args[1:]
+        return SQL(uri, table_name, *args, **kwargs)
+    else:
+        return sqlalchemy.create_engine(uri, *args, **kwargs)
 
 
 @resource.register('impala://.+')

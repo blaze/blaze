@@ -1,5 +1,6 @@
 import pytest
 from sqlalchemy.exc import OperationalError
+import sqlalchemy
 from cytoolz import first
 from blaze.sql import drop, create_index, resource
 from blaze import compute, Table, SQL
@@ -66,7 +67,7 @@ class TestCreateIndex(object):
             create_index(sql, ['x', 'z', 'bizz'], name='idx_name')
 
 
-def test_register(sql):
+def test_resource():
     with tmpfile('.db') as fn:
         uri = 'sqlite:///' + fn
         sql = SQL(uri, 'foo', schema='{x: int, y: int}')
@@ -80,3 +81,12 @@ def test_register(sql):
     assert isinstance(resource('sqlite:///:memory:::foo',
                                schema='{x: int, y: int}'),
                       SQL)
+
+def test_resource_to_engine(sql):
+    with tmpfile('.db') as fn:
+        uri = 'sqlite:///' + fn
+        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
+
+        r = resource(uri)
+        assert isinstance(r, sqlalchemy.engine.Engine)
+        assert r.dialect.name == 'sqlite'
