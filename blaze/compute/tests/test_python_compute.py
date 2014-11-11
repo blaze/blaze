@@ -780,3 +780,9 @@ def test_nrows():
 @pytest.mark.xfail(raises=ValueError, reason="Only 1D reductions allowed")
 def test_nelements_2D():
     assert compute(t.nelements(axis=1), data) == len(data[0])
+
+
+def test_compute_up_on_base():
+    d = datetime.now()
+    s = Symbol('s', 'datetime')
+    assert compute(s.minute, d) == d.minute
