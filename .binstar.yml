@@ -23,7 +23,7 @@ script:
 
 build_targets: conda
 
-iotimeiout: 600
+iotimeout: 600
 
 notifications:
   email:
