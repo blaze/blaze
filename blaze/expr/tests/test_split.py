@@ -3,7 +3,7 @@ from blaze.expr.split import *
 from blaze.api.dplyr import transform
 import datashape
 from datashape import dshape
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, isrecord
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 a = Symbol('a', '1000 * 2000 * {x: float32, y: float32}')
@@ -35,6 +35,20 @@ def test_sum():
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(sum(agg))
+
+
+def test_sum():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.mean())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(keepdims=True, **{
+            t.amount.mean()._name + '_sum': chunk.amount.sum(),
+            t.amount.mean()._name + '_count': chunk.amount.count()
+        }))
+
+    assert isrecord(agg.dshape.measure)
+    assert agg_expr.isidentical(agg[t.amount.mean()._name + '_sum'].sum()
+                              / agg[t.amount.mean()._name + '_count'].sum())
 
 
 def test_sum_with_axis_argument():
