@@ -23,6 +23,8 @@ script:
 
 build_targets: conda
 
+iotimeiout: 600
+
 notifications:
   email:
     recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']
