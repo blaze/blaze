@@ -7,6 +7,7 @@ from toolz import first
 from ..compatibility import basestring
 from ..expr import Expr, Symbol, Symbol, eval_str, Union
 from ..dispatch import dispatch
+from .optimize import optimize_traverse
 
 __all__ = ['compute', 'compute_up']
 
@@ -170,7 +171,7 @@ def compute(expr, d, **kwargs):
     d3 = dict((e, pre_compute(e, dat)) for e, dat in d2.items())
 
     try:
-        expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
+        expr3 = optimize_traverse(optimize, expr2, new=True, scope=d3)
     except NotImplementedError:
         expr3 = expr2
     result = top_to_bottom(d3, expr3, **kwargs)
