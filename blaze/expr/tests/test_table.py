@@ -196,7 +196,7 @@ def test_selection_path_check():
 
 def test_path_issue():
     from blaze.api.dplyr import transform
-    t = TableSymbol('t', "{ topic : string, word : string, result : ?float64}")
+    t = TableSymbol('t', "{topic: string, word: string, result: ?float64}")
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 

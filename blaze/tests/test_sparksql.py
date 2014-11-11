@@ -15,7 +15,7 @@ def test_sparksql_to_ds():
     assert sparksql_to_ds(StructType([
                              StructField('name', StringType(), False),
                              StructField('amount', IntegerType(), True)])) \
-                == dshape("{ name : string, amount : ?int64 }")
+                == dshape("{name: string, amount: ?int64}")
 
 
 def test_ds_to_sparksql():
