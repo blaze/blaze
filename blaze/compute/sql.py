@@ -502,3 +502,10 @@ def compute_up(t, s, **kwargs):
 
     return s.where(reduce(and_,
                           [key.like(pattern) for key, pattern in d.items()]))
+
+
+@dispatch(Field, sqlalchemy.engine.Engine)
+def compute_up(expr, data, **kwargs):
+    metadata = sqlalchemy.MetaData(data)
+    metadata.reflect(data)
+    return metadata.tables[expr._name]

@@ -60,6 +60,15 @@ def test_fields_with_spaces():
     assert e.a_b.isidentical(e['a b'])
 
 
+def test_fields_with_spaces():
+    e = Symbol('e', '{x: int, "a.b": int}')
+    assert isinstance(e['a.b'], Field)
+    assert 'a.b' not in dir(e)
+
+    assert 'a_b' in dir(e)
+    assert e.a_b.isidentical(e['a.b'])
+
+
 def test_iter_raises_not_implemented_Error():
     e = Symbol('e', '5 * {x: int, "a b": int}')
     assert raises(NotImplementedError, lambda: iter(e))

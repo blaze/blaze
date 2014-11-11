@@ -43,7 +43,7 @@ def valid_identifier(s):
     None
     """
     if isinstance(s, _strtypes):
-        return s.replace(' ', '_')
+        return s.replace(' ', '_').replace('.', '_')
     return s
 
 

@@ -140,9 +140,10 @@ def test_discovery_engine():
              'accounts',
              schema='{name: string, amount: int}')
 
-    dshape = discover(dd.engine, 'accounts')
+    assert discover(dd.engine, 'accounts') == dd.dshape
 
-    assert dshape == dd.dshape
+    assert discover(dd.engine) == \
+            dshape('{accounts: var * {name: string, amount: int}}')
 
 
 def test_extend_empty():

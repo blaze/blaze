@@ -1,13 +1,17 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape.predicates import isscalar
+import sqlalchemy
+from sqlalchemy.engine import Engine
+from toolz import first, keyfilter
+
 from .compute.sql import select
 from .data.sql import SQL, dispatch
 from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
 from .data.sql import SQL, dispatch
-from .compatibility import basestring
+from .compatibility import basestring, _strtypes
 from .resource import resource
-from toolz import first
+from .utils import keywords
 
 
 import sqlalchemy as sa
@@ -41,10 +45,10 @@ def post_compute(expr, query, d):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, SQL) for val in d.values()):
+    if not all(isinstance(val, (SQL, Engine)) for val in d.values()):
         return query
 
-    engines = set([dd.engine for dd in d.values()])
+    engines = set([x.engine if isinstance(x, SQL) else x for x in d.values()])
 
     if len(set(map(str, engines))) != 1:
         raise NotImplementedError("Expected single SQLAlchemy engine")
@@ -82,8 +86,14 @@ def create_index(s, columns, name=None, unique=False):
     sa.Index(*args, unique=unique).create(s.engine)
 
 @resource.register('(sqlite|postgresql|mysql|mysql\+pymysql)://.+')
-def resource_sql(uri, table_name, *args, **kwargs):
-    return SQL(uri, table_name, *args, **kwargs)
+def resource_sql(uri, *args, **kwargs):
+    if args and isinstance(args[0], _strtypes):
+        table_name, args = args[0], args[1:]
+        return SQL(uri, table_name, *args, **kwargs)
+    else:
+        kwargs = keyfilter(keywords(sqlalchemy.create_engine).__contains__,
+                           kwargs)
+        return sqlalchemy.create_engine(uri, *args, **kwargs)
 
 
 @resource.register('impala://.+')
