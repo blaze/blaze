@@ -738,3 +738,25 @@ def test_join_on_same_table():
     FROM tab AS tab_left JOIN tab AS tab_right
     ON tab_left.a = tab_right.a
     """)
+
+
+def test_field_access_on_engines():
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    name.create()
+
+    city = sa.Table('city', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('city', sa.String),
+             sa.Column('country', sa.String),
+             )
+    city.create()
+
+    s = Symbol('s', discover(engine))
+    result = compute(s.city, engine)
+    assert isinstance(result, sa.Table)
+    assert result.name == 'city'
