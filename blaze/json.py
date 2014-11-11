@@ -4,6 +4,7 @@ import json
 from toolz import map, partial
 import gzip
 
+from .utils import gzopen
 from .resource import resource
 
 __all__ = 'resource',
@@ -23,4 +24,4 @@ def resource_json(uri, open=open, **kwargs):
 
 @resource.register('.*\.json.gz')
 def resource_json_gzip(uri, **kwargs):
-    return resource_json(uri, open=partial(gzip.open, mode='rt'))
+    return resource_json(uri, open=gzopen)
