@@ -34,6 +34,12 @@ def test_client():
     assert compute(t.accounts.name, c) == ['Alice', 'Bob']
 
 
+def test_compute_with_dataset():
+    c = resource('blaze://localhost:6363::accounts')
+    s = Symbol('s', discover(c))
+
+    assert compute(s.name, c) == ['Alice', 'Bob']
+
 def test_expr_client_interactive():
     c = Client('localhost:6363')
     t = Data(c)
@@ -47,6 +53,11 @@ def test_expr_client_interactive():
 def test_resource():
     c = resource('blaze://localhost:6363')
     assert str(discover(c)) == str(discover({'accounts': df}))
+
+
+def test_resource_with_dataset():
+    c = resource('blaze://localhost:6363::accounts')
+    assert str(discover(c)) == str(discover(df))
 
 
 def test_resource_default_port():

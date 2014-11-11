@@ -8,7 +8,7 @@ from datashape import dshape, DataShape, Record
 
 from ..data import DataDescriptor
 from ..data.utils import coerce
-from ..expr import Expr
+from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .index import emit_index
 from ..resource import resource
@@ -41,7 +41,9 @@ def reason(response):
 
 
 class Client(object):
-    """ Expression Client for Blaze Server
+    """ Client for Blaze Server
+
+    Provides programmatic access to datasets living on Blaze Server
 
     Parameters
     ----------
@@ -81,19 +83,49 @@ class Client(object):
             data.items()]))
 
 
+class ClientDataset(object):
+    """ A dataset residing on a foreign Blaze Server
+
+    Not for public use.  Suggest the use of ``blaze.server.client.Client``
+    class instead.
+
+    This is only used to support backwards compatibility for the syntax
+
+        Data('blaze://hostname::dataname')
+
+    The following behavior is suggested instead
+
+        Data('blaze://hostname').dataname
+    """
+    __slots__ = 'client', 'name'
+    def __init__(self, client, name):
+        self.client = client
+        self.name = name
+
+    @property
+    def dshape(self):
+        return self.client.dshape.measure.dict[self.name]
+
+
 def ExprClient(*args, **kwargs):
     import warnings
     warnings.warn("Deprecated use `Client` instead", DeprecationWarning)
     return Client(*args, **kwargs)
 
 
-@dispatch(Client)
+@dispatch((Client, ClientDataset))
 def discover(ec):
     return ec.dshape
 
 
+@dispatch(Expr, ClientDataset)
+def compute_down(expr, data, **kwargs):
+    s = Symbol('client', discover(data.client))
+    leaf = expr._leaves()[0]
+    return compute_down(expr._subs({leaf: s[data.name]}), data.client, **kwargs)
+
 @dispatch(Expr, Client)
-def compute_down(expr, ec):
+def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     from ..api import Data
     from ..api import into
@@ -112,6 +144,11 @@ def compute_down(expr, ec):
 
     return data['data']
 
+@resource.register('blaze://.+::\w+', priority=15)
+def resource_blaze_dataset(uri, **kwargs):
+    uri, name = uri.split('::')
+    client = resource(uri)
+    return ClientDataset(client, name)
 
 @resource.register('blaze://.+')
 def resource_blaze(uri, **kwargs):
