@@ -83,6 +83,8 @@ def test_repr():
     assert '101' in result
 
     t2 = Data(tuple((i, i**2) for i in range(100)), fields=['x', 'y'])
+    assert t2.dshape == dshape('100 * {x: int64, y: int64}')
+
     result = expr_repr(t2)
     print(result)
     assert len(result.split('\n')) < 20
@@ -229,3 +231,8 @@ def test_Data_on_json_is_concrete():
 
     assert compute(d.amount.sum()) == 100 - 200 + 300 + 400 - 500
     assert compute(d.amount.sum()) == 100 - 200 + 300 + 400 - 500
+
+
+def test_repr_on_nd_array_doesnt_err():
+    d = Data(np.ones((2, 2, 2)))
+    repr(d + 1)

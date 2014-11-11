@@ -11,7 +11,7 @@ from dynd import nd
 import warnings
 from collections import Iterator
 
-from ..expr import Expr, Symbol
+from ..expr import Expr, Symbol, ndim
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -104,7 +104,7 @@ class Data(Symbol):
             elif isscalar(dshape.measure) and fields:
                 types = (dshape.measure,) * int(dshape[-2])
                 schema = Record(list(zip(fields, types)))
-                dshape = DataShape(*(dshape.shape + (schema,)))
+                dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
             elif isrecord(dshape.measure) and fields:
                 types = dshape.measure.types
                 schema = Record(list(zip(fields, types)))
@@ -172,10 +172,7 @@ def concrete_head(expr, n=10):
         return compute(expr)
 
 
-def expr_repr(expr, n=10):
-    if not expr._resources():
-        return str(expr)
-
+def repr_tables(expr, n=10):
     result = concrete_head(expr, n)
 
     if isinstance(result, (DataFrame, Series)):
@@ -186,6 +183,23 @@ def expr_repr(expr, n=10):
         return s
     else:
         return repr(result) # pragma: no cover
+
+
+def expr_repr(expr, n=10):
+    if not expr._resources():
+        return str(expr)
+
+    if ndim(expr) == 0:
+        return repr(compute(expr))
+
+    if ndim(expr) == 1:
+        return repr_tables(expr, 10)
+
+    if ndim(expr) >= 2:
+        return repr(compute(expr))
+
+    raise NotImplementedError()
+
 
 
 @dispatch(DataFrame)
