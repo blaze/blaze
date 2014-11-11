@@ -3,8 +3,6 @@ from __future__ import absolute_import, division, print_function
 import tempfile
 import os
 import inspect
-import sys
-import gzip
 
 from itertools import islice
 from contextlib import contextmanager
@@ -198,7 +196,3 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 def available_memory():
     return psutil.virtual_memory().available
-
-
-def gzopen(fn, mode='r', compresslevel=9):
-    return gzip.open(fn, mode=mode, compresslevel=compresslevel)

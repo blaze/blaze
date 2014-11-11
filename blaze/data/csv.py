@@ -25,7 +25,7 @@ import blaze as bz
 from .pandas_dtype import dshape_to_pandas
 from .core import DataDescriptor
 from ..resource import resource
-from ..utils import nth, nth_list, keywords, gzopen
+from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END, builtins, _strtypes, _inttypes
 from ..compatibility import zip, PY2
@@ -305,7 +305,7 @@ class CSV(DataDescriptor):
 
         self.path = path
         self.mode = mode
-        self.open = {'gz': gzopen, 'bz2': bz2.BZ2File}.get(ext(path), open)
+        self.open = {'gz': gzip.open, 'bz2': bz2.BZ2File}.get(ext(path), open)
         self._abspath = os.path.abspath(path)
         self.chunksize = chunksize
         self.encoding = encoding
@@ -510,4 +510,4 @@ def resource_csv(uri, **kwargs):
 
 @resource.register('.+\.(\wsv|data|txt|dat)\.gz')
 def resource_csv_gz(uri, **kwargs):
-    return CSV(uri, open=gzopen, **kwargs)
+    return CSV(uri, open=gzip.open, **kwargs)
