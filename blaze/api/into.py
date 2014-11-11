@@ -977,9 +977,11 @@ def into(a, b, **kwargs):
     dshape = dshape or discover(b)
     if isinstance(dshape, str):
         dshape = datashape.dshape(dshape)
+    mode = kwargs.pop('mode', 'a')
+    schema = kwargs.pop('schema', dshape.subshape[0])
     target = resource(a, dshape=dshape,
-                         schema=dshape.subshape[0],
-                         mode='a',
+                         schema=schema,
+                         mode=mode,
                          **kwargs)
     return into(target, b, dshape=dshape, **kwargs)
 

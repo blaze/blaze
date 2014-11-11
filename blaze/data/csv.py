@@ -18,7 +18,7 @@ import pandas as pd
 import datashape
 from datashape.discovery import discover, null, unpack
 from datashape import (dshape, Record, Option, Fixed, Unit, Tuple, string,
-                       DataShape)
+                       DataShape, CType)
 from datashape.predicates import isdimension
 
 import blaze as bz
@@ -324,6 +324,11 @@ class CSV(DataDescriptor):
                     header=self.header, typehints=typehints,
                     types=types, columns=columns,
                     nrows_discovery=nrows_discovery)
+
+        if len(schema) == 2 and isinstance(schema.measure, CType):
+            schema = DataShape(Record([['f%d' % i, schema.measure]
+                for i in range(schema[0])]))
+
         self._schema = schema
         self.header = header
 
