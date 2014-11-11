@@ -7,7 +7,7 @@ from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
-from datashape import dshape, var, Record, Option, isdimension
+from datashape import dshape, var, Record, Option, isdimension, DataShape
 from itertools import chain
 import subprocess
 from multipledispatch import MDNotImplementedError
@@ -91,6 +91,13 @@ def discover(engine, tablename):
     table = metadata.tables[tablename]
     return discover(table)
 
+
+@dispatch(sql.engine.base.Engine)
+def discover(engine):
+    metadata = sql.MetaData()
+    metadata.reflect(engine)
+    return DataShape(Record([[name, discover(table)]
+        for name, table in metadata.tables.items()]))
 
 def dshape_to_alchemy(dshape):
     """
