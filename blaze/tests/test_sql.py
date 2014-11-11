@@ -3,7 +3,7 @@ from sqlalchemy.exc import OperationalError
 import sqlalchemy
 from cytoolz import first
 from blaze.sql import drop, create_index, resource
-from blaze import compute, Table, SQL
+from blaze import compute, Table, SQL, Symbol, discover
 from blaze.utils import tmpfile
 
 
@@ -82,7 +82,7 @@ def test_resource():
                                schema='{x: int, y: int}'),
                       SQL)
 
-def test_resource_to_engine(sql):
+def test_resource_to_engine():
     with tmpfile('.db') as fn:
         uri = 'sqlite:///' + fn
         sql = SQL(uri, 'foo', schema='{x: int, y: int}')
@@ -90,3 +90,15 @@ def test_resource_to_engine(sql):
         r = resource(uri)
         assert isinstance(r, sqlalchemy.engine.Engine)
         assert r.dialect.name == 'sqlite'
+
+
+def test_computation_on_engine():
+    with tmpfile('.db') as fn:
+        uri = 'sqlite:///' + fn
+        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
+        sql.extend([(1, 2), (10, 20)])
+
+        r = resource(uri)
+        s = Symbol('s', discover(r))
+
+        assert compute(s.foo.x.max(), r) == 10
