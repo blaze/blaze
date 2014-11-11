@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-from blaze.compute.sql import compute, computefull, select, lower_column
+from blaze.compute.sql import (compute, computefull, select, lower_column,
+        compute_up)
 from blaze.expr import *
 import sqlalchemy
 import sqlalchemy as sa
@@ -757,6 +758,6 @@ def test_field_access_on_engines():
     city.create()
 
     s = Symbol('s', discover(engine))
-    result = compute(s.city, engine)
+    result = compute_up(s.city, engine)
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
