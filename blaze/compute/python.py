@@ -37,7 +37,7 @@ from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
                     Not, nelements)
 from ..compatibility import builtins, apply, unicode, _inttypes
-from .core import compute, compute_up, optimize
+from .core import compute, compute_up, optimize, base
 
 from ..data import DataDescriptor
 from ..data.utils import listpack
@@ -295,6 +295,11 @@ def compute_up_1d(expr, seq, **kwargs):
         return len(seq)
     except TypeError:
         return cytoolz.count(seq)
+
+
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
 
 
 @dispatch(BinOp, numbers.Real, numbers.Real)
