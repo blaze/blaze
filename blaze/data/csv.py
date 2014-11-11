@@ -15,10 +15,10 @@ from dynd import nd
 
 import pandas as pd
 
+import datashape
 from datashape.discovery import discover, null, unpack
 from datashape import (dshape, Record, Option, Fixed, Unit, Tuple, string,
                        DataShape)
-import datashape as ds
 from datashape.predicates import isdimension
 
 import blaze as bz
@@ -36,7 +36,8 @@ import csv
 __all__ = ['CSV', 'drop']
 
 
-numtypes = frozenset(ds.integral.types) | frozenset(ds.floating.types)
+numtypes = (frozenset(datashape.integral.types) |
+            frozenset(datashape.floating.types))
 na_values = frozenset(pd.io.parsers._NA_VALUES)
 
 
@@ -291,10 +292,13 @@ class CSV(DataDescriptor):
     """
     def __init__(self, path, mode='rt', schema=None, columns=None, types=None,
             typehints=None, dialect=None, header=None, open=open,
-            nrows_discovery=50, chunksize=1024,
+            nrows_discovery=50, chunksize=1024, dshape=None,
             encoding=DEFAULT_ENCODING, **kwargs):
         if 'r' in mode and not os.path.isfile(path):
             raise ValueError('CSV file "%s" does not exist' % path)
+
+        if dshape and not schema:
+            schema = datashape.dshape(dshape).subshape[0]
 
         if schema is None and 'w' in mode:
             raise ValueError('Please specify schema for writable CSV file')
