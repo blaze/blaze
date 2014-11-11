@@ -632,3 +632,8 @@ def compute_up(expr, seq, **kwargs):
     if isinstance(index, slice):
         return itertools.islice(seq, index.start, index.stop, index.step)
     raise NotImplementedError("Only 1d slices supported")
+
+
+@dispatch(Field, dict)
+def compute_up(expr, data, **kwargs):
+    return data[expr._name]
