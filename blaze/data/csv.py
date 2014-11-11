@@ -329,8 +329,8 @@ class CSV(DataDescriptor):
                          dtype=str(schema))
             except (ValueError, TypeError) as e:
                 raise ValueError("Automatic datashape discovery failed\n"
-                        "Discovered the following datashape: %s\n"
-                        "But DyND generated the following error: %s\n"
+                        "Discovered the following datashape: \n\t%s\n"
+                        "But DyND generated the following error: \n\t%s\n"
                         "Consider providing type hints using "
                         "typehints={'column-name': 'type'}\n"
                         "like typehints={'start-time': 'string'}"
