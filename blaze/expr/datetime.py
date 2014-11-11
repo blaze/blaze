@@ -136,7 +136,7 @@ class DateTimeTruncate(DateTime):
             return datashape.datetime_
 
 
-def truncate(expr, measure, unit):
+def truncate(expr, *args, **kwargs):
     """ Truncate datetime expression
 
     Example
@@ -146,14 +146,25 @@ def truncate(expr, measure, unit):
     >>> from datetime import datetime
     >>> s = Symbol('s', 'datetime')
 
-    >>> compute(s.truncate(10, 'minutes'),
-    ...         datetime(2000, 6, 25, 12, 35, 10))
+    >>> expr = s.truncate(10, 'minutes')
+    >>> compute(expr, datetime(2000, 6, 25, 12, 35, 10))
     datetime.datetime(2000, 6, 25, 12, 30)
 
-    >>> compute(s.truncate(1, 'week'),
-    ...         datetime(2000, 6, 25, 12, 35, 10))
-    datetime.date(2000, 6, 19)
+    >>> expr = s.truncate(1, 'week')
+    >>> compute(expr, datetime(2000, 6, 25, 12, 35, 10))
+    datetime.date(2000, 6, 25)
+
+    Alternatively use keyword arguments to specify unit and measure
+
+    >>> # expr = s.truncate(2, 'weeks')
+    >>> expr = s.truncate(weeks=2)
     """
+    if args:
+        assert not kwargs
+        measure, unit = args
+    if kwargs:
+        assert not args
+        [(unit, measure)] = kwargs.items()
     return DateTimeTruncate(expr, measure, normalize_time_unit(unit))
 
 

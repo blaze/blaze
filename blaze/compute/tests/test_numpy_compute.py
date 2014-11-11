@@ -218,9 +218,9 @@ def test_datetime_truncation():
               np.array(['2000-06-25T12:30:04Z', '2000-06-28T12:50:04Z'],
                        dtype='M8[s]'))
     assert eq(compute(s.truncate(2, 'weeks'), dts),
-              np.array(['2000-06-19', '2000-06-19'], dtype='M8[D]'))
+              np.array(['2000-06-18', '2000-06-18'], dtype='M8[D]'))
 
-    assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 1
+    assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 7
 
 
 
@@ -256,3 +256,11 @@ def test_truncate_on_np_datetime64_scalar():
     s = Symbol('s', 'datetime')
     data = np.datetime64('2000-01-02T12:30:00Z')
     assert compute(s.truncate(1, 'day'), data) == data.astype('M8[D]')
+
+
+def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
+    s = Symbol('s', 'datetime')
+    n = np.datetime64('2014-11-11')
+    p = datetime(2014, 11, 11)
+    expr = s.truncate(1, 'week')
+    assert compute(expr, n) == compute(expr, p)

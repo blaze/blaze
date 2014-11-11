@@ -97,22 +97,23 @@ def truncate_day(dt, measure):
     days = days // measure * measure
     return date.fromordinal(days)
 
+oneday = timedelta(days=1)
 
 def truncate_week(dt, measure):
     """
     Truncate by weeks
 
-    >>> dt = datetime(2000, 6, 25, 12, 30, 0)
+    >>> dt = datetime(2000, 6, 22, 12, 30, 0)
     >>> truncate_week(dt, 1)
-    datetime.date(2000, 6, 19)
-    >>> truncate_week(dt, 5)
-    datetime.date(2000, 5, 29)
+    datetime.date(2000, 6, 18)
+    >>> truncate_week(dt, 3)
+    datetime.date(2000, 6, 4)
 
-    Weeks are defined by having isoweekday == 1
+    Weeks are defined by having isoweekday == 7 (Sunday)
     >>> truncate_week(dt, 1).isoweekday()
-    1
+    7
     """
-    return asweek(truncate_day(dt, measure * 7))
+    return truncate_day(dt, measure * 7)
 
 
 epoch = datetime.utcfromtimestamp(0)

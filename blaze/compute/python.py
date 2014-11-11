@@ -567,7 +567,9 @@ def compute_up(t, lhs, rhs, **kwargs):
 
 @dispatch(Sort, Sequence)
 def compute_up(t, seq, **kwargs):
-    if isinstance(t.key, (str, unicode, tuple, list)):
+    if isscalar(t._child.dshape.measure) and t.key == t._child._name:
+        key = identity
+    elif isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t._child[t.key])
     else:
         key = rrowfunc(optimize(t.key, seq), t._child)

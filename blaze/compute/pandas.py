@@ -194,9 +194,13 @@ def get_grouper(c, grouper, df):
     return grouper
 
 
-@dispatch(By, (ElemWise, Series), NDFrame)
+@dispatch(By, Expr, NDFrame)
 def get_grouper(c, grouper, df):
-    return compute(grouper, {c._child: df})
+    g = compute(grouper, {c._child: df})
+    if isinstance(g, Series):
+        return g
+    if isinstance(g, DataFrame):
+        return [g[c] for c in g.columns]
 
 
 @dispatch(By, (Field, Projection), NDFrame)
@@ -237,7 +241,7 @@ def compute_by(t, s, g, df):
 
     d = defaultdict(list)
     for name, v in zip(names, s.values):
-        d[name].append(getattr(Series, v.symbol))
+        d[name].append(v.symbol)
 
     result = groups.agg(dict(d))
 

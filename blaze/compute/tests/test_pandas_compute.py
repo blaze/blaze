@@ -317,14 +317,11 @@ def test_relabel_series():
     assert result.name == 'NAME'
 
 
-@pytest.fixture
-def tframe():
-    ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
-    df = DataFrame({'timestamp': ts})
-    return df
+ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
+tframe = DataFrame({'timestamp': ts})
 
 
-def test_map_with_rename(tframe):
+def test_map_with_rename():
     t = Symbol('s', discover(tframe))
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
@@ -332,7 +329,7 @@ def test_map_with_rename(tframe):
 
 
 @pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
-def test_multiple_renames_on_series_fails(tframe):
+def test_multiple_renames_on_series_fails():
     t = Symbol('s', discover(tframe))
     expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
     with pytest.raises(ValueError):
@@ -614,5 +611,11 @@ def test_datetime_truncation():
                         dtype='M8[ns]'))
 
     assert list(compute(s.truncate(2, 'weeks'), data)) == \
-            list(Series(['1999-12-20T00:00:00Z', '2000-06-19T00:00:00Z'],
+            list(Series(['1999-12-19T00:00:00Z', '2000-06-18T00:00:00Z'],
                         dtype='M8[ns]'))
+
+
+def test_complex_group_by():
+    expr = by(merge(tbig.amount // 10, tbig.id % 2),
+              count=tbig.name.count())
+    compute(expr, dfbig)  # can we do this?
