@@ -584,3 +584,9 @@ def test_into_df_with_names_from_series():
 
     with pytest.raises(AssertionError):
         into(pd.DataFrame(columns=list('ab')), s)
+
+
+def test_into_csv_with_string_specifying_mode():
+    with tmpfile(".csv") as filename:
+        csv = into(filename, [(1, 2), (3, 4)])
+        assert list(csv) == [(1, 2), (3, 4)]
