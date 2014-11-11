@@ -782,6 +782,12 @@ def test_nelements_2D():
     assert compute(t.nelements(axis=1), data) == len(data[0])
 
 
+def test_compute_field_on_dicts():
+    s = Symbol('s', '{x: 3 * int, y: 3 * int}')
+    d = {'x': [1, 2, 3], 'y': [4, 5, 6]}
+    assert compute(s.x, {s: d}) == [1, 2, 3]
+
+
 def test_truncate():
     s = Symbol('x', 'real')
     assert compute(s.truncate(20), 154) == 140
