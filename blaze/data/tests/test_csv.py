@@ -99,7 +99,7 @@ def csv_file(buf):
 
 @pytest.fixture
 def schema():
-    return "{ name: string, amount: int }"
+    return "{name: string, amount: int}"
 
 
 @pytest.fixture
@@ -337,7 +337,7 @@ def kv_data():
 
 @pytest.fixture
 def kv_schema():
-    return "{ f0: string, f1: string, f2: int16, f3: bool }"
+    return "{f0: string, f1: string, f2: int16, f3: bool}"
 
 
 @pytest.fixture

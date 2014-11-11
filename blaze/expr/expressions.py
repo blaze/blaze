@@ -241,7 +241,7 @@ class Projection(ElemWise):
     >>> accounts = Symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
-    dshape("{ name : string, amount : int32 }")
+    dshape("{name: string, amount: int32}")
 
     See Also
     --------
@@ -408,9 +408,9 @@ class ReLabel(ElemWise):
 
     >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
-    dshape("{ name : string, amount : int32 }")
+    dshape("{name: string, amount: int32}")
     >>> accounts.relabel(amount='balance').schema
-    dshape("{ name : string, balance : int32 }")
+    dshape("{name: string, balance: int32}")
 
     See Also
     --------
