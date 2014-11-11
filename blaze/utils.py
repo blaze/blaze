@@ -200,9 +200,5 @@ def available_memory():
     return psutil.virtual_memory().available
 
 
-def gzopen(fn, mode=None, compresslevel=9):
-    if 'win' in sys.platform.lower():
-        mode = 'r'
-    else:
-        mode = 'rt'
+def gzopen(fn, mode='r', compresslevel=9):
     return gzip.open(fn, mode=mode, compresslevel=compresslevel)
