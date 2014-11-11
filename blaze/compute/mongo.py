@@ -340,16 +340,16 @@ datetime_terms = {Day: 'dayOfMonth',
                   Second: 'second'}
 
 
-@dispatch(Expr, Collection, dict)
-def post_compute(e, c, d):
+@dispatch(Expr, Collection)
+def post_compute(e, c, scope=None):
     """
     Calling compute on a raw collection?  Compute on an empty MongoQuery.
     """
-    return post_compute(e, MongoQuery(c, ()), d)
+    return post_compute(e, MongoQuery(c, ()), scope=scope)
 
 
-@dispatch(Expr, MongoQuery, dict)
-def post_compute(e, q, d):
+@dispatch(Expr, MongoQuery)
+def post_compute(e, q, scope=None):
     """
     Execute a query using MongoDB's aggregation pipeline
 
@@ -359,9 +359,9 @@ def post_compute(e, q, d):
 
     http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
-    d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
+    scope = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in e.fields))}
-    q = q.append(d)
+    q = q.append(scope)
 
     if not e.dshape.shape:  # not a collection
         result = q.coll.aggregate(list(q.query))['result'][0]
@@ -378,15 +378,15 @@ def post_compute(e, q, d):
         return list(pluck(e.fields, dicts, default=None))  # dicts -> tuples
 
 
-@dispatch(Broadcast, MongoQuery, dict)
-def post_compute(e, q, d):
+@dispatch(Broadcast, MongoQuery)
+def post_compute(e, q, scope=None):
     """Compute the result of a Broadcast expression.
     """
     columns = dict((col, 1) for qry in q.query
                    for col in qry.get('$project', []))
-    d = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
+    scope = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in columns))}
-    q = q.append(d)
+    q = q.append(scope)
     dicts = q.coll.aggregate(list(q.query))['result']
 
     assert len(columns) == 1

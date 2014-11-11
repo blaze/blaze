@@ -127,8 +127,8 @@ def pre_compute(leaf, data):
     return data
 
 
-@dispatch(Expr, object, dict)
-def post_compute(expr, result, d):
+@dispatch(Expr, object)
+def post_compute(expr, result, scope=None):
     """ Effects after the computation is complete """
     return result
 
@@ -182,4 +182,4 @@ def compute(expr, d, **kwargs):
     except NotImplementedError:
         expr3 = expr2
     result = top_to_bottom(d3, expr3, **kwargs)
-    return post_compute(expr3, result, d3)
+    return post_compute(expr3, result, scope=d3)
