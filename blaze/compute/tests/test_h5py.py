@@ -11,6 +11,7 @@ from datashape import discover
 from blaze.utils import tmpfile
 
 from blaze.compute.h5py import *
+from blaze.compute.h5py import pre_compute, post_compute
 
 
 def eq(a, b):
@@ -154,3 +155,8 @@ def test_arithmetic_on_small_array(data):
 
     assert eq(compute(s + 1, data),
               compute(s + 1, x))
+
+
+def test_pre_compute_doesnt_collapse_slices(data):
+    s = Symbol('s', discover(data))
+    assert pre_compute(s[:5], data) is data

@@ -23,6 +23,10 @@ __all__ = []
 
 
 
+@dispatch(Slice, h5py.Dataset)
+def pre_compute(expr, data):
+    return data
+
 @dispatch(Expr, h5py.Dataset)
 def pre_compute(expr, data):
     nbytes = data.size * data.dtype.alignment
