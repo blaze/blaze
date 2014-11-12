@@ -156,6 +156,13 @@ def test_arithmetic_on_small_array(data):
     assert eq(compute(s + 1, data),
               compute(s + 1, x))
 
+def test_arithmetic_on_small_array_from_file(file):
+    """ Want to make sure that we call pre_compute on Dataset
+        Even when it's not the leaf data input. """
+    s = Symbol('s', discover(file))
+
+    assert eq(compute(s.x + 1, file),
+              x + 1)
 
 def test_pre_compute_doesnt_collapse_slices(data):
     s = Symbol('s', discover(data))

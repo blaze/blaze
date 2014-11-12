@@ -60,6 +60,22 @@ def compute_down(expr):
     return expr
 
 
+def type_change(old, new):
+    """ Was there a significant type change between old and new data?
+
+    >>> type_change([1, 2], [3, 4])
+    False
+    >>> type_change([1, 2], [3, 'Hello'])
+    True
+    >>> type_change([1, 2], [3])
+    True
+    """
+    if len(old) != len(new):
+        return True
+    old_types = list(map(type, old))
+    return not all(map(isinstance, new, old_types))
+
+
 def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
@@ -69,7 +85,8 @@ def top_to_bottom(d, expr, **kwargs):
     if not hasattr(expr, '_leaves'):
         return expr
 
-    data = [d.get(leaf) for leaf in expr._leaves()]
+    leaves = list(expr._leaves())
+    data = [d.get(leaf) for leaf in leaves]
 
     # See if we have a direct computation path with compute_down
     try:
@@ -84,10 +101,11 @@ def top_to_bottom(d, expr, **kwargs):
     else:
         children = []
 
-    input_types = tuple(map(type, data))
-    children = [child if isinstance(child, input_types)
-                      else pre_compute(expr, child)
-                      for child in children]
+    # Did we experience a data type change?
+    if type_change(data, children):
+
+        # If so call pre_compute again
+        children = [pre_compute(expr, child) for child in children]
 
     # Compute this expression given the children
     return compute_up(expr, *children, scope=d, **kwargs)
