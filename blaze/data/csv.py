@@ -183,7 +183,7 @@ def safely_option(ds):
         ds = dshape(ds)
     if isinstance(ds, DataShape) and len(ds) == 1:
         ds = ds[0]
-    if isinstance(ds, Unit) and 'int' in str(ds) or 'date' in str(ds):
+    if isinstance(ds, Unit) and ('int' in str(ds) or 'date' in str(ds)):
         return Option(ds)
     return ds
 
