@@ -4,11 +4,11 @@ import requests
 from flask import json
 import flask
 from dynd import nd
-from datashape import dshape
+from datashape import dshape, DataShape, Record
 
 from ..data import DataDescriptor
 from ..data.utils import coerce
-from ..expr import Expr
+from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .index import emit_index
 from ..resource import resource
@@ -41,35 +41,34 @@ def reason(response):
 
 
 class Client(object):
-    """ Expression Client for Blaze Server
+    """ Client for Blaze Server
+
+    Provides programmatic access to datasets living on Blaze Server
 
     Parameters
     ----------
 
     url: str
         URL of a Blaze server
-    name: str
-        Name of dataset on that server
 
     Examples
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> ec = Client('localhost:6363', 'accounts')
-    >>> t = Data(ec) # doctest: +SKIP
+    >>> c = Client('localhost:6363')
+    >>> t = Data(c) # doctest: +SKIP
 
     See Also
     --------
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'dataname'
-    def __init__(self, url, name, **kwargs):
+    __slots__ = 'url'
+    def __init__(self, url, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
-        self.dataname = name
 
     @property
     def dshape(self):
@@ -80,7 +79,32 @@ class Client(object):
 
         data = json.loads(content(response))
 
-        return dshape(data[self.dataname])
+        return DataShape(Record([[name, dshape(ds)] for name, ds in
+            data.items()]))
+
+
+class ClientDataset(object):
+    """ A dataset residing on a foreign Blaze Server
+
+    Not for public use.  Suggest the use of ``blaze.server.client.Client``
+    class instead.
+
+    This is only used to support backwards compatibility for the syntax
+
+        Data('blaze://hostname::dataname')
+
+    The following behavior is suggested instead
+
+        Data('blaze://hostname').dataname
+    """
+    __slots__ = 'client', 'name'
+    def __init__(self, client, name):
+        self.client = client
+        self.name = name
+
+    @property
+    def dshape(self):
+        return self.client.dshape.measure.dict[self.name]
 
 
 def ExprClient(*args, **kwargs):
@@ -89,18 +113,25 @@ def ExprClient(*args, **kwargs):
     return Client(*args, **kwargs)
 
 
-@dispatch(Client)
+@dispatch((Client, ClientDataset))
 def discover(ec):
     return ec.dshape
 
 
+@dispatch(Expr, ClientDataset)
+def compute_down(expr, data, **kwargs):
+    s = Symbol('client', discover(data.client))
+    leaf = expr._leaves()[0]
+    return compute_down(expr._subs({leaf: s[data.name]}), data.client, **kwargs)
+
 @dispatch(Expr, Client)
-def compute_down(expr, ec):
+def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     from ..api import Data
     from ..api import into
     from pandas import DataFrame
-    tree = to_tree(expr, {expr._leaves()[0]: ec.dataname})
+    leaf = expr._leaves()[0]
+    tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 
     r = requests.get('%s/compute.json' % ec.url,
                      data = json.dumps({'expr': tree}),
@@ -113,13 +144,19 @@ def compute_down(expr, ec):
 
     return data['data']
 
+@resource.register('blaze://.+::\w+', priority=16)
+def resource_blaze_dataset(uri, **kwargs):
+    uri, name = uri.split('::')
+    client = resource(uri)
+    return ClientDataset(client, name)
+
 
 @resource.register('blaze://.+')
-def resource_blaze(uri, name, **kwargs):
+def resource_blaze(uri, **kwargs):
     uri = uri[len('blaze://'):]
     sp = uri.split('/')
     tld, rest = sp[0], sp[1:]
     if ':' not in tld:
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
-    return Client(uri, name, **kwargs)
+    return Client(uri)
