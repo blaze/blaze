@@ -77,9 +77,10 @@ def top_to_bottom(d, expr, **kwargs):
 
     # Otherwise...
     # Compute children of this expression
-    children = ([top_to_bottom(d, child, **kwargs)
-                    for child in expr._inputs]
-                    if hasattr(expr, '_inputs') else [])
+    if hasattr(expr, '_inputs'):
+        children = [top_to_bottom(d, child, **kwargs) for child in expr._inputs]
+    else:
+        children = []
 
     # Compute this expression given the children
     return compute_up(expr, *children, scope=d, **kwargs)
