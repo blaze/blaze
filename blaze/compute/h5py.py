@@ -22,13 +22,14 @@ from ..utils import available_memory
 __all__ = []
 
 
-
 @dispatch(Slice, h5py.Dataset)
 def pre_compute(expr, data):
+    """ Don't push slices into memory, they're about to come in anyway """
     return data
 
 @dispatch(Expr, h5py.Dataset)
 def pre_compute(expr, data):
+    """ Bring dataset into memory if it's small relative to memory """
     nbytes = data.size * data.dtype.alignment
     comfortable_memory = available_memory() / 4
 
@@ -39,6 +40,7 @@ def pre_compute(expr, data):
 
 @dispatch(Expr, h5py.Dataset)
 def post_compute(expr, data, scope=None):
+    """ Bring dataset into memory if it's small relative to memory """
     nbytes = data.size * data.dtype.alignment
     comfortable_memory = available_memory() / 4
 
