@@ -148,3 +148,9 @@ def test_compute_on_file(file):
 def test_compute_on_1d_chunks(data_1d_chunks):
     assert eq(compute(s.sum(), data_1d_chunks),
               x.sum())
+
+def test_arithmetic_on_small_array(data):
+    s = Symbol('s', discover(data))
+
+    assert eq(compute(s + 1, data),
+              compute(s + 1, x))

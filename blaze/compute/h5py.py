@@ -17,9 +17,31 @@ from .core import base, compute
 from ..dispatch import dispatch
 from ..api.into import into
 from ..partition import partitions, partition_get, partition_set
+from ..utils import available_memory
 
 __all__ = []
 
+
+
+@dispatch(Expr, h5py.Dataset)
+def pre_compute(expr, data):
+    nbytes = data.size * data.dtype.alignment
+    comfortable_memory = available_memory() / 4
+
+    if nbytes < comfortable_memory:
+        return data.value
+    else:
+        return data
+
+@dispatch(Expr, h5py.Dataset)
+def post_compute(expr, data, scope=None):
+    nbytes = data.size * data.dtype.alignment
+    comfortable_memory = available_memory() / 4
+
+    if nbytes < comfortable_memory:
+        return data.value
+    else:
+        return data
 
 @dispatch(Symbol, (h5py.File, h5py.Group, h5py.Dataset))
 def compute_up(expr, data, **kwargs):
