@@ -66,12 +66,15 @@ def top_to_bottom(d, expr, **kwargs):
     if expr in d:
         return d[expr]
 
-    # See if we have a direct computation path
-    if (hasattr(expr, '_leaves') and compute_down.resolve(
-            (type(expr),) + tuple([type(d.get(leaf)) for leaf in expr._leaves()]))):
-        leaves = [d[leaf] for leaf in expr._leaves()]
+    if not hasattr(expr, '_leaves'):
+        return expr
+
+    data = [d.get(leaf) for leaf in expr._leaves()]
+
+    # See if we have a direct computation path with compute_down
+    if compute_down.dispatch(type(expr), *map(type, data)):
         try:
-            return compute_down(expr, *leaves, **kwargs)
+            return compute_down(expr, *data, **kwargs)
         except NotImplementedError:
             pass
 
