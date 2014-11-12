@@ -75,7 +75,7 @@ We can use standard command line tools to interact with this web service::
          "Iris-setosa",
          ...
          ],
-     "datashape": "var * { species : string }",
+     "datashape": "var * {species: string}",
    }
 
    $ curl \
@@ -87,7 +87,7 @@ We can use standard command line tools to interact with this web service::
 
    {
      "data": 563.8000000000004,
-     "datashape": "{ petal_length_sum : float64 }",
+     "datashape": "{petal_length_sum: float64}",
    }
 
 
@@ -119,7 +119,7 @@ First we repeat the same experiment as before, this time using the Python
    json.loads(r.content)
 
   {u'data': 563.8000000000004,
-   u'datashape': u'{ petal_length_sum : float64 }'}
+   u'datashape': u'{petal_length_sum: float64}'}
 
 Now we use Blaze to generate the query programmatically
 
@@ -128,7 +128,7 @@ Now we use Blaze to generate the query programmatically
    >>> from blaze import *
 
    >>> # Build a Symbol like our served iris data
-   >>> dshape= "var * { sepal_length : float64, sepal_width : float64, petal_length : float64, petal_width : float64, species : string }"  # matching schema to csv file
+   >>> dshape= "var * {sepal_length: float64, sepal_width: float64, petal_length: float64, petal_width: float64, species: string}"  # matching schema to csv file
    >>> t = Symbol('t', dshape)
    >>> expr = t.petal_length.sum()
 

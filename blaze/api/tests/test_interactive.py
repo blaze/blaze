@@ -31,7 +31,7 @@ t = Data(data, columns=['name', 'amount'])
 def test_table_raises_on_inconsistent_inputs():
     with pytest.raises(ValueError):
         t = Data(data, schema='{name: string, amount: float32}',
-            dshape=dshape("{ name : string, amount : float32 }"))
+            dshape=dshape("{name: string, amount: float32}"))
 
 
 def test_resources():

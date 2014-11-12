@@ -7,7 +7,7 @@ from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
-from datashape import dshape, var, Record, Option, isdimension
+from datashape import dshape, var, Record, Option, isdimension, DataShape
 from itertools import chain
 import subprocess
 from multipledispatch import MDNotImplementedError
@@ -53,6 +53,7 @@ revtypes.update({sql.types.VARCHAR: 'string',
                  sql.types.DATE: 'date',
                  sql.types.BIGINT: 'int64',
                  sql.types.INTEGER: 'int',
+                 sql.types.BIGINT: 'int64',
                  sql.types.Float: 'float64'})
 
 
@@ -90,6 +91,25 @@ def discover(engine, tablename):
     metadata.reflect(engine)
     table = metadata.tables[tablename]
     return discover(table)
+
+
+@dispatch(sql.engine.base.Engine)
+def discover(engine):
+    metadata = sql.MetaData()
+    metadata.reflect(engine)
+    pairs = []
+    for name, table in metadata.tables.items():
+        try:
+            pairs.append([name, discover(table)])
+        except sqlalchemy.exc.CompileError as e:
+            print("Can not discover type of table %s.\n" % name +
+                "SQLAlchemy provided this error message:\n\t%s" % e.message +
+                "\nSkipping.")
+        except NotImplementedError as e:
+            print("Blaze does not understand a SQLAlchemy type.\n"
+                "Blaze provided the following error:\n\t%s" % e.message +
+                "\nSkipping.")
+    return DataShape(Record(pairs))
 
 
 def dshape_to_alchemy(dshape):
