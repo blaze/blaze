@@ -30,7 +30,7 @@ from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, std, var, Like, Slice,
+                    Map, Apply, Merge, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
                     UTCFromTimestamp, nelements, DateTimeTruncate)
 from ..expr import UnaryOp, BinOp
@@ -383,11 +383,6 @@ def compute_up(t, df, scope=None, **kwargs):
     scope = merge_dicts(scope or {}, {subexpression: df})
     children = [compute(_child, scope) for _child in t.children]
     return pd.concat(children, axis=1)
-
-
-@dispatch(Union, (Series, DataFrame), tuple)
-def compute_up(t, example, children, **kwargs):
-    return pd.concat(children, axis=0)
 
 
 @dispatch(Summary, DataFrame)

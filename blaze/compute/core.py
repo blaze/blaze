@@ -5,7 +5,7 @@ import toolz
 from toolz import first
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, Symbol, eval_str, Union
+from ..expr import Expr, Symbol, Symbol, eval_str
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -179,8 +179,3 @@ def compute(expr, d, **kwargs):
         expr3 = expr2
     result = top_to_bottom(d3, expr3, **kwargs)
     return post_compute(expr3, result, d3)
-
-
-@dispatch(Union, (list, tuple))
-def compute_up(t, children, **kwargs):
-    return compute_up(t, children[0], tuple(children))

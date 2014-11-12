@@ -8,8 +8,8 @@ from datashape.predicates import isscalar, iscollection
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
-           'union', 'head', 'sort', 'Join', 'join']
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
+           'head', 'sort', 'Join', 'join']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -231,52 +231,6 @@ class Merge(ElemWise):
         return list(unique(concat(i._leaves() for i in self.children)))
 
 
-class Union(Expr):
-    """ Merge the rows of many Tables together
-
-    Must all have the same schema
-
-    Examples
-    --------
-    >>> from blaze import Symbol
-
-    >>> usa_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
-    >>> euro_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
-
-    >>> all_accounts = union(usa_accounts, euro_accounts)
-    >>> all_accounts.fields
-    ['name', 'amount']
-
-    See Also
-    --------
-
-    blaze.expr.collections.Merge
-    """
-    __slots__ = 'children',
-    __inputs__ = 'children',
-
-    def _subterms(self):
-        yield self
-        for i in self.children:
-            for node in i._subterms():
-                yield node
-
-    @property
-    def dshape(self):
-        return datashape.var * self.children[0].dshape.subshape[0]
-
-    def _leaves(self):
-        return list(unique(concat(i._leaves() for i in self.children)))
-
-
-def union(*children):
-    schemas = set(child.schema for child in children)
-    if len(schemas) != 1:
-        raise ValueError("Inconsistent schemas:\n\t%s" %
-                            '\n\t'.join(map(str, schemas)))
-    return Union(children)
-
-
 def unpack(l):
     """ Unpack items from collections of nelements 1
 
@@ -318,7 +272,6 @@ class Join(Expr):
     --------
 
     blaze.expr.collections.Merge
-    blaze.expr.collections.Union
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'

@@ -10,7 +10,7 @@ from pandas import DataFrame, Series
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
 from blaze.expr import Symbol, join, by, summary, Distinct
-from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
+from blaze.expr import (merge, exp, mean, count, nunique, Apply, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
@@ -395,30 +395,6 @@ def test_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
 
     assert str(compute(expr, df)) == str(df['name'][df['amount'] < 100])
-
-
-def test_union():
-
-    d1 = DataFrame([['Alice', 100, 1],
-                    ['Bob', 200, 2],
-                    ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
-    d2 = DataFrame([['Alice', 100, 4],
-                    ['Bob', 200, 5],
-                    ['Alice', 50, 6]], columns=['name', 'amount', 'id'])
-    d3 = DataFrame([['Alice', 100, 7],
-                    ['Bob', 200, 8],
-                    ['Alice', 50, 9]], columns=['name', 'amount', 'id'])
-
-    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
-    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
-    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
-
-    expr = union(t1, t2, t3)
-
-    result = compute(expr, {t1: d1, t2: d2, t3: d3})
-
-    assert np.all(result.columns == d1.columns)
-    assert set(result['id']) == set(range(1, 10))
 
 
 def test_outer_join():

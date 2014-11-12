@@ -11,7 +11,7 @@ halt_ordering() # Turn off multipledispatch ordering
 from datashape import dshape, discover
 from .expr import (Symbol, TableSymbol)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, union, var)
+        mean, merge, nunique, relabel, selection, sort, summary, var)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *

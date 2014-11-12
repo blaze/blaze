@@ -32,7 +32,7 @@ from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Union, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
 from .core import compute_up, compute, base
 from ..data.utils import listpack
@@ -459,11 +459,6 @@ def compute_up(t, s, **kwargs):
     subexpression = common_subexpression(*t.children)
     children = [compute(child, {subexpression: s}) for child in t.children]
     return select(children)
-
-
-@dispatch(Union, Selectable, tuple)
-def compute_up(t, _, children):
-    return sqlalchemy.union(*children)
 
 
 @dispatch(Summary, Select)

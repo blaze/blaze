@@ -395,23 +395,6 @@ def test_projection_of_selection():
             len(str(compute(t[t['amount'] < 0][['name', 'amount']], s)))
 
 
-def test_union():
-    metadata = sa.MetaData()
-    ts = [Symbol('t_%d' % i, 'var * {name: string, amount: int, id: int}')
-            for i in [1, 2, 3]]
-    ss = [sa.Table('accounts_%d' % i, metadata,
-             sa.Column('name', sa.String),
-             sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True)) for i in [1, 2, 3]]
-
-    expr = union(*ts)
-
-    result = str(select(compute(expr, dict(zip(ts, ss)))))
-
-    assert "SELECT name, amount, id" in str(result)
-    assert "accounts_1 UNION accounts_2 UNION accounts_3" in str(result)
-
-
 def test_outer_join():
     L = Symbol('L', 'var * {id: int, name: string, amount: real}')
     R = Symbol('R', 'var * {city: string, id: int}')

@@ -7,7 +7,7 @@ from datashape import DataShape, to_numpy
 
 from ..partition import partitions, partition_get, partition_set, flatten
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, Symbol
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import path
