@@ -88,9 +88,22 @@ is applicable.  It is not applied at leaves which have little to optimize.
 ``pre_compute :: expr, data -> data``
 -------------------------------------
 
-Pre-compute is applied to leaf data elements prior to any computation
+Pre-compute is applied to leaf data elements prior to computation
 (``xdata`` and ``ydata`` in the example above).  It might be used for example,
 to load data into memory.
+
+We apply ``pre_compute`` both at the beginning of the computation and any time
+that the data *changes type*.  So for example for the dataset::
+
+   data = {'a':  Foo(...)}
+
+If we apply the computation::
+
+   X -> X.a.distinct()
+
+Then as the type changes from ``dict`` to ``Foo`` we will call ``pre_compute`` on the distinct operation and the ``Foo`` object::
+
+    data = pre_compute(Distinct, Foo(...))
 
 A real use case is the streaming Python backend which consumes either sequences
 of tuples or sequences of dicts.  ``precompute(expr, Sequence)`` detects which

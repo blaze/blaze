@@ -72,11 +72,10 @@ def top_to_bottom(d, expr, **kwargs):
     data = [d.get(leaf) for leaf in expr._leaves()]
 
     # See if we have a direct computation path with compute_down
-    if compute_down.dispatch(type(expr), *map(type, data)):
-        try:
-            return compute_down(expr, *data, **kwargs)
-        except NotImplementedError:
-            pass
+    try:
+        return compute_down(expr, *data, **kwargs)
+    except NotImplementedError:
+        pass
 
     # Otherwise...
     # Compute children of this expression
@@ -84,6 +83,11 @@ def top_to_bottom(d, expr, **kwargs):
         children = [top_to_bottom(d, child, **kwargs) for child in expr._inputs]
     else:
         children = []
+
+    input_types = tuple(map(type, data))
+    children = [child if isinstance(child, input_types)
+                      else pre_compute(expr, child)
+                      for child in children]
 
     # Compute this expression given the children
     return compute_up(expr, *children, scope=d, **kwargs)
