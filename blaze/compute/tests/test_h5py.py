@@ -174,8 +174,8 @@ def test_optimize(data):
     assert optimize((s + 1)[:3], data).isidentical(s[:3] + 1)
 
 
-def test_arithmetic_and_then_slicing(file):
-    s = Symbol('s', discover(file))
+def test_arithmetic_and_then_slicing(data):
+    s = Symbol('s', discover(data))
 
-    assert eq(compute((s.x + 1)[0], file, pre_compute=False),
-              x[0] + 1)
+    assert eq(compute((2*s + 1)[0], file, pre_compute=False),
+              2*x[0] + 1)
