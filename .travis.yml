@@ -77,7 +77,9 @@ install:
   # - export PYTHONPATH=$PYTHONPATH:$PWD
   # - popd
   #
-  - pip install cytoolz toolz multipledispatch
+  - pip install git+https://github.com/mrocklin/multipledispatch
+  - pip install git+https://github.com/pytoolz/toolz
+  - pip install git+https://github.com/pytoolz/cytoolz
 
   # Install coveralls
   - pip install coveralls --use-mirrors
