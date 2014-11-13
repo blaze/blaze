@@ -126,6 +126,13 @@ def top_to_bottom(d, expr, optimize=optimize, **kwargs):
         # If so call pre_compute again
         children = [pre_compute(expr, child) for child in children]
 
+        # If so call optimize again
+        if optimize:
+            try:
+                expr = optimize(expr, *children)
+            except NotImplementedError:
+                pass
+
     # Compute this expression given the children
     return compute_up(expr, *children, scope=d, **kwargs)
 
