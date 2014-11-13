@@ -69,6 +69,13 @@ def optimize(expr, data):
         grandchild = child._inputs[0][expr.index]
         grandchild = optimize(grandchild, data)
         return child._subs({child._inputs[0]: grandchild})
+    if isinstance(child, ElemWise) and len(child._inputs) == 2:
+        lhs, rhs = child._inputs
+        lhs = lhs[expr.index]
+        rhs = rhs[expr.index]
+        lhs = optimize(lhs, data)
+        rhs = optimize(rhs, data)
+        return child._subs(dict(zip(child._inputs, (lhs, rhs))))
     else:
         return expr
 

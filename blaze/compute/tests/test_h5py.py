@@ -170,8 +170,11 @@ def test_pre_compute_doesnt_collapse_slices(data):
 
 
 def test_optimize(data):
-    s = Symbol('s', discover(data))
-    assert optimize((s + 1)[:3], data).isidentical(s[:3] + 1)
+    a = Symbol('a', discover(data))
+    b = Symbol('b', discover(data))
+    assert optimize((a + 1)[:3], data).isidentical(a[:3] + 1)
+
+    assert optimize((a + b)[:3], data).isidentical(a[:3] + b[:3])
 
 
 def test_arithmetic_and_then_slicing(data):
