@@ -94,7 +94,7 @@ def type_change(old, new):
     return not all(map(isinstance, new, old_types))
 
 
-def top_to_bottom(d, expr, optimize=optimize, **kwargs):
+def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
@@ -112,10 +112,13 @@ def top_to_bottom(d, expr, optimize=optimize, **kwargs):
     except NotImplementedError:
         pass
 
+    optimize_ = kwargs.get('optimize', optimize)
+    pre_compute_ = kwargs.get('pre_compute', pre_compute)
+
     # Otherwise...
     # Compute children of this expression
     if hasattr(expr, '_inputs'):
-        children = [top_to_bottom(d, child, optimize=optimize, **kwargs)
+        children = [top_to_bottom(d, child, **kwargs)
                         for child in expr._inputs]
     else:
         children = []
@@ -124,12 +127,13 @@ def top_to_bottom(d, expr, optimize=optimize, **kwargs):
     if type_change(data, children):
 
         # If so call pre_compute again
-        children = [pre_compute(expr, child) for child in children]
+        if pre_compute_:
+            children = [pre_compute_(expr, child) for child in children]
 
         # If so call optimize again
-        if optimize:
+        if optimize_:
             try:
-                expr = optimize(expr, *children)
+                expr = optimize_(expr, *children)
             except NotImplementedError:
                 pass
 
@@ -190,7 +194,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, optimize=optimize, **kwargs):
+def compute(expr, d, **kwargs):
     """ Compute expression against data sources
 
     >>> t = Symbol('t', 'var * {name: string, balance: int}')
@@ -200,15 +204,21 @@ def compute(expr, d, optimize=optimize, **kwargs):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
-    expr2, d2 = swap_resources_into_scope(expr, d)
-    d3 = dict((e, pre_compute(e, dat)) for e, dat in d2.items())
+    optimize_ = kwargs.get('optimize', optimize)
+    pre_compute_ = kwargs.get('pre_compute', pre_compute)
 
-    if optimize:
+    expr2, d2 = swap_resources_into_scope(expr, d)
+    if pre_compute_:
+        d3 = dict((e, pre_compute_(e, dat)) for e, dat in d2.items())
+    else:
+        d3 = d2
+
+    if optimize_:
         try:
-            expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
+            expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
         except NotImplementedError:
             expr3 = expr2
     else:
         expr3 = expr2
-    result = top_to_bottom(d3, expr3, optimize=optimize, **kwargs)
+    result = top_to_bottom(d3, expr3, **kwargs)
     return post_compute(expr3, result, scope=d3)
