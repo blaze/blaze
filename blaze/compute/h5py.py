@@ -7,7 +7,7 @@ from datashape import DataShape, to_numpy
 
 from ..partition import partitions, partition_get, partition_set, flatten
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, Symbol
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, ElemWise
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import path
@@ -48,6 +48,29 @@ def post_compute(expr, data, scope=None):
         return data.value
     else:
         return data
+
+@dispatch(Symbol, h5py.Dataset)
+def optimize(expr, data):
+    return expr
+
+@dispatch(Expr, h5py.Dataset)
+def optimize(expr, data):
+    child = optimize(expr._inputs[0], data)
+    if child is expr._inputs[0]:
+        return expr
+    else:
+        return expr._subs({expr._inputs[0]: child})
+
+
+@dispatch(Slice, h5py.Dataset)
+def optimize(expr, data):
+    child = expr._inputs[0]
+    if isinstance(child, ElemWise) and len(child._inputs) == 1:
+        grandchild = child._inputs[0][expr.index]
+        grandchild = optimize(grandchild, data)
+        return child._subs({child._inputs[0]: grandchild})
+    else:
+        return expr
 
 @dispatch(Symbol, (h5py.File, h5py.Group, h5py.Dataset))
 def compute_up(expr, data, **kwargs):

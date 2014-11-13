@@ -11,7 +11,7 @@ from datashape import discover
 from blaze.utils import tmpfile
 
 from blaze.compute.h5py import *
-from blaze.compute.h5py import pre_compute, post_compute
+from blaze.compute.h5py import pre_compute, post_compute, optimize
 
 
 def eq(a, b):
@@ -167,3 +167,15 @@ def test_arithmetic_on_small_array_from_file(file):
 def test_pre_compute_doesnt_collapse_slices(data):
     s = Symbol('s', discover(data))
     assert pre_compute(s[:5], data) is data
+
+
+def test_optimize(data):
+    s = Symbol('s', discover(data))
+    assert optimize((s + 1)[:3], data).isidentical(s[:3] + 1)
+
+
+def test_arithmetic_and_then_slicing(file):
+    s = Symbol('s', discover(file))
+
+    assert eq(compute((s.x + 1)[0], file, pre_compute=False),
+              x[0] + 1)
