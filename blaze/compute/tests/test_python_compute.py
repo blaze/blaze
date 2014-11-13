@@ -716,6 +716,15 @@ def eq(a, b):
     return a == b
 
 
+def test_pre_compute():
+    s = Symbol('s', 'var * {a: int, b: int}')
+    assert pre_compute(s, [(1, 2)]) == [(1, 2)]
+    assert list(pre_compute(s, iter([(1, 2)]))) == [(1, 2)]
+    assert list(pre_compute(s, iter([(1, 2), (3, 4)]))) == [(1, 2), (3, 4)]
+    assert list(pre_compute(s, iter([{'a': 1, 'b': 2},
+                                     {'a': 3, 'b': 4}]))) == [(1, 2), (3, 4)]
+
+
 def test_dicts():
     t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
