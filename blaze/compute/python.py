@@ -657,7 +657,9 @@ def compute_up(expr, seq, **kwargs):
             else:
                 return tail(-index, seq)[0]
     if isinstance(index, slice):
-        if index.start < 0 and index.stop is None and index.step in (1, None):
+        if (index.start and index.start < 0 and
+            index.stop is None and
+            index.step in (1, None)):
             return tail(-index.start, seq)
         else:
             return itertools.islice(seq, index.start, index.stop, index.step)
