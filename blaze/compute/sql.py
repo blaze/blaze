@@ -125,7 +125,7 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, Select)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    predicate = compute(t.predicate, toolz.merge(ns, scope), optimize=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
@@ -134,7 +134,7 @@ def compute_up(t, s, scope=None, **kwargs):
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    predicate = compute(t.predicate, toolz.merge(ns, scope), optimize=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:

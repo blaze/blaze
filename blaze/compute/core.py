@@ -13,6 +13,24 @@ __all__ = ['compute', 'compute_up']
 base = (numbers.Real, basestring, date, datetime)
 
 
+@dispatch(Expr, object)
+def pre_compute(leaf, data):
+    """ Transform data prior to calling ``compute`` """
+    return data
+
+
+@dispatch(Expr, object)
+def post_compute(expr, result, scope=None):
+    """ Effects after the computation is complete """
+    return result
+
+
+@dispatch(Expr, object)
+def optimize(expr, data):
+    """ Optimize expression to be computed on data """
+    return expr
+
+
 @dispatch(object, object)
 def compute_up(a, b, **kwargs):
     raise NotImplementedError("Blaze does not know how to compute "
@@ -76,7 +94,7 @@ def type_change(old, new):
     return not all(map(isinstance, new, old_types))
 
 
-def top_to_bottom(d, expr, **kwargs):
+def top_to_bottom(d, expr, optimize=optimize, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
@@ -97,7 +115,8 @@ def top_to_bottom(d, expr, **kwargs):
     # Otherwise...
     # Compute children of this expression
     if hasattr(expr, '_inputs'):
-        children = [top_to_bottom(d, child, **kwargs) for child in expr._inputs]
+        children = [top_to_bottom(d, child, optimize=optimize, **kwargs)
+                        for child in expr._inputs]
     else:
         children = []
 
@@ -139,24 +158,6 @@ def bottom_up(d, expr):
     return result
 
 
-@dispatch(Expr, object)
-def pre_compute(leaf, data):
-    """ Transform data prior to calling ``compute`` """
-    return data
-
-
-@dispatch(Expr, object)
-def post_compute(expr, result, scope=None):
-    """ Effects after the computation is complete """
-    return result
-
-
-@dispatch(Expr, object)
-def optimize(expr, data):
-    """ Optimize expression to be computed on data """
-    return expr
-
-
 def swap_resources_into_scope(expr, scope):
     """ Translate interactive expressions into normal abstract expressions
 
@@ -182,7 +183,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, **kwargs):
+def compute(expr, d, optimize=optimize, **kwargs):
     """ Compute expression against data sources
 
     >>> t = Symbol('t', 'var * {name: string, balance: int}')
@@ -195,9 +196,12 @@ def compute(expr, d, **kwargs):
     expr2, d2 = swap_resources_into_scope(expr, d)
     d3 = dict((e, pre_compute(e, dat)) for e, dat in d2.items())
 
-    try:
-        expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
-    except NotImplementedError:
+    if optimize:
+        try:
+            expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
+        except NotImplementedError:
+            expr3 = expr2
+    else:
         expr3 = expr2
-    result = top_to_bottom(d3, expr3, **kwargs)
+    result = top_to_bottom(d3, expr3, optimize=optimize, **kwargs)
     return post_compute(expr3, result, scope=d3)
