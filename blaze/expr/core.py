@@ -271,6 +271,9 @@ def subs(o, d):
     >>> subs([1, 2, 3], {2: 'Hello'})
     [1, 'Hello', 3]
     """
+    d = dict((k, v) for k, v in d.items() if k is not v)
+    if not d:
+        return o
     try:
         if o in d:
             d = d.copy()
