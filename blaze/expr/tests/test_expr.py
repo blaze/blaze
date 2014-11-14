@@ -10,6 +10,10 @@ def test_Symbol():
     assert e.shape == (3, 5)
     assert str(e) == 'e'
 
+def test_Symbol_tokens():
+    assert Symbol('x', 'int').isidentical(Symbol('x', 'int'))
+    assert not Symbol('x', 'int').isidentical(Symbol('x', 'int', 1))
+
 def test_Field():
     e = Symbol('e', '3 * 5 * {name: string, amount: int}')
     assert 'name' in dir(e)
