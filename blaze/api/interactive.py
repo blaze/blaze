@@ -238,7 +238,8 @@ def to_html(expr):
     # Tables
     if ndim(expr) == 1:
         return to_html(concrete_head(expr))
-    raise AttributeError()
+
+    return to_html(repr(expr))
 
 
 @dispatch(object)

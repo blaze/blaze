@@ -27,6 +27,7 @@ L = [[1, 'Alice',   100],
 
 t = Data(data, columns=['name', 'amount'])
 
+x = np.ones((2, 2))
 
 def test_table_raises_on_inconsistent_inputs():
     with pytest.raises(ValueError):
@@ -132,6 +133,11 @@ def test_to_html():
     assert to_html(1) == '1'
 
     assert to_html(t.count()) == '2'
+
+def test_to_html_on_arrays():
+    s = to_html(Data(np.ones((2, 2))))
+    assert '1' in s
+    assert 'br>' in s
 
 
 def test_repr_html():
