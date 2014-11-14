@@ -2,7 +2,8 @@ from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
 import toolz
-from toolz import first
+from toolz import first, concat, memoize
+import itertools
 
 from ..compatibility import basestring
 from ..expr import Expr, Symbol, Symbol, eval_str
@@ -94,6 +95,56 @@ def type_change(old, new):
     return not all(map(isinstance, new, old_types))
 
 
+def top_then_bottom_then_top_again_etc(scope, expr, **kwargs):
+    """
+
+    >>> import numpy as np
+
+    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
+    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+
+    >>> e = s.amount.sum() + 1
+    >>> top_then_bottom_then_top_again_etc({s: data}, e)
+    601
+    """
+    # Base case: expression is in dict, return associated data
+    if expr in scope:
+        return scope[expr]
+
+    if not hasattr(expr, '_leaves'):
+        return expr
+
+    leaves = list(expr._leaves())
+    data = [scope.get(leaf) for leaf in leaves]
+
+    # See if we have a direct computation path with compute_down
+    try:
+        return compute_down(expr, *data, **kwargs)
+    except NotImplementedError:
+        pass
+
+    # Compute from the bottom until there is a data type change
+    expr2, data = bottom_up_until_type_break(expr, scope)
+
+    # Re-optimize data and expressions
+    optimize_ = kwargs.get('optimize', optimize)
+    pre_compute_ = kwargs.get('pre_compute', pre_compute)
+    if pre_compute_:
+        data2 = [pre_compute_(expr, child) for child in data]
+    if optimize_:
+        try:
+            expr3 = optimize_(expr2, *data)
+        except NotImplementedError:
+            expr3 = expr2
+    else:
+        expr3 = expr2
+
+    # Repeat
+    scope2 = toolz.merge(scope, dict(zip(expr3._leaves(), data2)))
+    return top_then_bottom_then_top_again_etc(scope2, expr3)
+
+
 def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
@@ -139,6 +190,69 @@ def top_to_bottom(d, expr, **kwargs):
 
     # Compute this expression given the children
     return compute_up(expr, *children, scope=d, **kwargs)
+
+
+_names = ('leaf_%d' % i for i in itertools.count(1))
+
+@memoize
+def name(expr):
+    if expr._name:
+        return expr._name
+    else:
+        return next(_names)
+
+
+def bottom_up_until_type_break(expr, scope):
+    """
+
+    Parameters
+    ----------
+
+    expr: Expression
+
+    *data: Sequence of data corresponding to leaves
+
+    Returns the data and expression at the first major type change
+
+    Examples
+    --------
+
+    >>> import numpy as np
+
+    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
+    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+
+    This computation completes without changing type.  We get back a leaf
+    symbol and a computational result
+
+    >>> e = (s.amount + 1).distinct()
+    >>> bottom_up_until_type_break(e, {s: data})
+    (amount, [array([101, 201, 301], dtype=int32)])
+
+    This computation has a type change midstream, so we stop and get the
+    unfinished computation.
+
+    >>> e = s.amount.sum() + 1
+    >>> bottom_up_until_type_break(e, {s: data})
+    (amount_sum + 1, [600])
+    """
+    if expr in scope:
+        return Symbol(name(expr), expr.dshape), [scope[expr]]
+
+    exprs, data = zip(*[bottom_up_until_type_break(i, scope)
+                         for i in expr._inputs])
+    data = list(concat(data))
+    expr2 = expr._subs(dict(zip(expr._inputs, exprs)))
+
+    leaves = expr._leaves()
+    data_leaves = [scope.get(leaf) for leaf in leaves]
+
+    if type_change(data, data_leaves):
+        return expr._subs(dict(zip(expr._inputs, exprs))), data
+    else:
+        leaf = Symbol(name(expr), expr.dshape)
+        return leaf, [compute_up(expr, *data, scope=scope)]
 
 
 def bottom_up(d, expr):
@@ -220,5 +334,5 @@ def compute(expr, d, **kwargs):
             expr3 = expr2
     else:
         expr3 = expr2
-    result = top_to_bottom(d3, expr3, **kwargs)
+    result = top_then_bottom_then_top_again_etc(d3, expr3, **kwargs)
     return post_compute(expr3, result, scope=d3)
