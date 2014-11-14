@@ -225,7 +225,6 @@ def isidentical(a, b):
     >>> isidentical(1, 1)
     True
 
-
     >>> from blaze.expr import Symbol
     >>> x = Symbol('x', 'int')
     >>> isidentical(x, 1)
