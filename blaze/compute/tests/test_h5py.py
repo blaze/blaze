@@ -180,5 +180,5 @@ def test_optimize(data):
 def test_arithmetic_and_then_slicing(data):
     s = Symbol('s', discover(data))
 
-    assert eq(compute((2*s + 1)[0], file, pre_compute=False),
+    assert eq(compute((2*s + 1)[0], data, pre_compute=False),
               2*x[0] + 1)
