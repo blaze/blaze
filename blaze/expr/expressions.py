@@ -276,6 +276,8 @@ class Projection(ElemWise):
 
 
 def projection(expr, names):
+    if not names:
+        raise ValueError("Projection with no names")
     if not isinstance(names, (tuple, list)):
         raise TypeError("Wanted list of strings, got %s" % names)
     if not set(names).issubset(expr.fields):
