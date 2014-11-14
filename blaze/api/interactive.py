@@ -235,13 +235,20 @@ def to_html(df):
 
 @dispatch(Expr)
 def to_html(expr):
-    return to_html(concrete_head(expr))
+    # Tables
+    if ndim(expr) == 1:
+        return to_html(concrete_head(expr))
+    raise AttributeError()
 
 
 @dispatch(object)
 def to_html(o):
     return repr(o)
 
+
+@dispatch(_strtypes)
+def to_html(o):
+    return o.replace('\n', '<br>')
 
 @dispatch(type, Expr)
 def into(a, b, **kwargs):
