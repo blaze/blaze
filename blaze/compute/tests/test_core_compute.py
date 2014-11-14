@@ -61,6 +61,7 @@ def test_bottom_up_until_type_break():
     assert amount_sum in scope
     assert scope[amount_sum] == 600
 
+    # ensure that we work on binops with one child
     x = Symbol('x', 'real')
     expr, scope = bottom_up_until_type_break(x + x, {x: 1})
     x2 = Symbol('_', 'real')

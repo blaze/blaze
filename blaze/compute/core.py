@@ -113,12 +113,18 @@ def type_change(old, new):
 
 
 def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
-    """
+    """ Compute expression against scope
 
-    Compute expression against scope
+    Does the following interpreter strategy:
 
-    Starts with compute_down from the top.  Then computes up from the leaves
-    until a major type change.  Then tries again at the top, etc..
+    1.  Try compute_down on the entire expression
+    2.  Otherwise compute_up from the leaves until we experience a type change
+        (e.g. data changes from dict -> pandas DataFrame)
+    3.  Re-optimize expression and re-pre-compute data
+    4.  Go to step 1
+
+    Example
+    -------
 
     >>> import numpy as np
 
@@ -129,8 +135,15 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     >>> e = s.amount.sum() + 1
     >>> top_then_bottom_then_top_again_etc(e, {s: data})
     601
+
+    See Also
+    --------
+
+    bottom_up_until_type_break  -- uses this for bottom-up traversal
+    top_to_bottom -- older version
+    bottom_up -- older version still
     """
-    # Base case: expression is in dict, return associated data
+    # 0. Base case: expression is in dict, return associated data
     if expr in scope:
         return scope[expr]
 
@@ -140,22 +153,21 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     leaf_exprs = list(expr._leaves())
     leaf_data = [scope.get(leaf) for leaf in leaf_exprs]
 
-    # See if we have a direct computation path with compute_down
+    # 1. See if we have a direct computation path with compute_down
     try:
         return compute_down(expr, *leaf_data, **kwargs)
     except NotImplementedError:
         pass
 
-    # Compute from the bottom until there is a data type change
+    # 2. Compute from the bottom until there is a data type change
     new_expr, new_scope = bottom_up_until_type_break(expr, scope)
 
-    # Re-optimize data and expressions
+    # 3. Re-optimize data and expressions
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
         new_scope2 = {e: pre_compute(new_expr, datum, scope=new_scope)
                         for e, datum in new_scope.items()}
-        # leaf_data2 = [pre_compute_(expr, child) for child in new_leaf_data]
     else:
         new_scope2 = new_scope
     if optimize_:
@@ -167,7 +179,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     else:
         new_expr2 = new_expr
 
-    # Repeat
+    # 4. Repeat
     return top_then_bottom_then_top_again_etc(new_expr2, new_scope2)
 
 
@@ -268,21 +280,22 @@ def data_leaves(expr, scope):
 
 
 def bottom_up_until_type_break(expr, scope):
-    """
+    """ Traverse bottom up until data changes significantly
 
     Parameters
     ----------
 
     expr: Expression
-
-    *data: Sequence of data corresponding to leaves
+        Expression to compute
+    scope: dict
+        namespace matching leaves of expression to data
 
     Returns
     -------
 
-    expr:
+    expr: Expression
         New expression with lower subtrees replaced with leaves
-    scope:
+    scope: dict
         New scope with entries for those leaves
 
     Examples
@@ -301,26 +314,25 @@ def bottom_up_until_type_break(expr, scope):
     >>> bottom_up_until_type_break(e, {s: data})
     (amount, {amount: array([101, 201, 301], dtype=int32)})
 
-    This computation has a type change midstream, so we stop and get the
-    unfinished computation.
+    This computation has a type change midstream (``list`` to ``int``), so we
+    stop and get the unfinished computation.
 
     >>> e = s.amount.sum() + 1
     >>> bottom_up_until_type_break(e, {s: data})
     (amount_sum + 1, {amount_sum: 600})
-
-    >>> x = Symbol('x', 'int')
-    >>> bottom_up_until_type_break(x + x, {x: 1})  # empty string Symbol-name
-    (_, {_: 2})
     """
+    # 0. Base case.  Return if expression is in scope
     if expr in scope:
         leaf = makeleaf(expr)
         return leaf, {leaf: scope[expr]}
 
     inputs = list(unique(expr._inputs))
 
+    # 1. Recurse down the tree, calling this function on children
+    #    (this is the bottom part of bottom up)
     exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope)
                              for i in inputs])
-    # data = list(concat(data))
+    # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
     new_expr = expr._subs(dict((i, e) for i, e in zip(inputs, exprs)
                                       if not i.isidentical(e)))
@@ -328,11 +340,12 @@ def bottom_up_until_type_break(expr, scope):
     old_expr_leaves = expr._leaves()
     old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
 
-    # If the leaves have change substantially then stop
+    # 3. If the leaves have change substantially then stop
     if type_change(sorted(new_scope.values(), key=type),
                    sorted(old_data_leaves, key=type)):
         return new_expr, new_scope
     else:
+    # 4. Otherwise do some actual work
         leaf = makeleaf(expr)
         _data = [new_scope[i] for i in new_expr._inputs]
         return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope)}
