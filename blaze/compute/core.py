@@ -4,6 +4,7 @@ from datetime import date, datetime
 import toolz
 from toolz import first, concat, memoize
 import itertools
+from collections import Iterator
 
 from ..compatibility import basestring
 from ..expr import Expr, Symbol, Symbol, eval_str
@@ -79,20 +80,36 @@ def compute_down(expr):
     return expr
 
 
+def issubtype(a, b):
+    """ A custom issubclass """
+    if issubclass(a, b):
+        return True
+    if issubclass(a, (tuple, list, set)) and issubclass(b, Iterator):
+        return True
+    if issubclass(b, (tuple, list, set)) and issubclass(a, Iterator):
+        return True
+    return False
+
 def type_change(old, new):
     """ Was there a significant type change between old and new data?
 
     >>> type_change([1, 2], [3, 4])
     False
-    >>> type_change([1, 2], [3, 'Hello'])
+    >>> type_change([1, 2], [3, [1,2,3]])
     True
-    >>> type_change([1, 2], [3])
-    True
+
+    Some special cases exist, like no type change from list to Iterator
+
+    >>> type_change([[1, 2]], [iter([1, 2])])
+    False
     """
+    if all(isinstance(x, base) for x in old + new):
+        return False
     if len(old) != len(new):
         return True
+    new_types = list(map(type, new))
     old_types = list(map(type, old))
-    return not all(map(isinstance, new, old_types))
+    return not all(map(issubtype, new_types, old_types))
 
 
 def top_then_bottom_then_top_again_etc(scope, expr, **kwargs):
@@ -132,6 +149,8 @@ def top_then_bottom_then_top_again_etc(scope, expr, **kwargs):
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
         data2 = [pre_compute_(expr, child) for child in data]
+    else:
+        data2 = data
     if optimize_:
         try:
             expr3 = optimize_(expr2, *data)
@@ -199,7 +218,7 @@ def name(expr):
     if expr._name:
         return expr._name
     else:
-        return next(_names)
+        return ""
 
 
 def bottom_up_until_type_break(expr, scope):
@@ -236,6 +255,10 @@ def bottom_up_until_type_break(expr, scope):
     >>> e = s.amount.sum() + 1
     >>> bottom_up_until_type_break(e, {s: data})
     (amount_sum + 1, [600])
+
+    >>> x = Symbol('x', 'int')
+    >>> bottom_up_until_type_break(x + x, {x: 1})  # empty string Symbolname
+    (, [2])
     """
     if expr in scope:
         return Symbol(name(expr), expr.dshape), [scope[expr]]
@@ -243,13 +266,16 @@ def bottom_up_until_type_break(expr, scope):
     exprs, data = zip(*[bottom_up_until_type_break(i, scope)
                          for i in expr._inputs])
     data = list(concat(data))
-    expr2 = expr._subs(dict(zip(expr._inputs, exprs)))
+    expr2 = expr._subs(dict((i, e) for i, e in zip(expr._inputs, exprs)
+                                   if not i.isidentical(e)))
 
     leaves = expr._leaves()
     data_leaves = [scope.get(leaf) for leaf in leaves]
 
     if type_change(data, data_leaves):
-        return expr._subs(dict(zip(expr._inputs, exprs))), data
+        expr2 = expr._subs(dict((i, e) for i, e in zip(expr._inputs, exprs)
+                                       if not i.isidentical(e)))
+        return expr2, data
     else:
         leaf = Symbol(name(expr), expr.dshape)
         return leaf, [compute_up(expr, *data, scope=scope)]
