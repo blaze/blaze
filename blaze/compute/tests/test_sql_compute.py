@@ -29,7 +29,7 @@ sbig = sa.Table('accountsbig', metadata,
              )
 
 def normalize(s):
-    return ' '.join(s.strip().split()).lower()
+    return ' '.join(s.strip().split()).lower().replace('_', '')
 
 
 def test_table():
