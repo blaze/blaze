@@ -77,7 +77,7 @@ class Node(object):
                                       isinstance(i, Node))))
 
     def isidentical(self, other):
-        return type(self) == type(other) and self._args == other._args
+        return isidentical(self, other)
 
     def __hash__(self):
         return hash((type(self), self._args))
@@ -214,6 +214,17 @@ class Node(object):
     def __invert__(self):
         return self._invert()
 
+
+def isidentical(a, b):
+    """ Strict equality testing
+
+    Different from x == y -> Eq(x, y)
+    """
+    if type(a) != type(b):
+        return False
+    if isinstance(a, Node):
+        return all(map(isidentical, a._args, b._args))
+    return a == b
 
 def get_callable_name(o):
     """Welcome to str inception. Leave your kittens at home.
