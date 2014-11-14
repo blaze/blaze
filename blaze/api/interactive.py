@@ -220,9 +220,13 @@ def expr_repr(expr, n=10):
     dat = expr._resources().values()
     if len(dat) == 1:
         dat = dat[0]
-    return 'Data:       %s\nExpr:       %s\nDataShape:  %s' % (
-            dat, str(expr), short_dshape(expr.dshape, nlines=7))
 
+    s = 'Data:       %s' % dat
+    if not isinstance(expr, Symbol):
+        s += '\nExpr:       %s' % str(expr)
+    s += '\nDataShape:  %s' % short_dshape(expr.dshape, nlines=7)
+
+    return s
 
 
 @dispatch(DataFrame)
