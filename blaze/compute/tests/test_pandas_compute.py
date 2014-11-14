@@ -338,32 +338,32 @@ def test_multiple_renames_on_series_fails():
 
 def test_map_column():
     inc = lambda x: x + 1
-    result = compute(t['amount'].map(inc), df)
+    result = compute(t['amount'].map(inc, 'int'), df)
     expected = df['amount'] + 1
     assert str(result) == str(expected)
 
 
 def test_map():
     f = lambda _, amt, id: amt + id
-    result = compute(t.map(f), df)
+    result = compute(t.map(f, 'real'), df)
     expected = df['amount'] + df['id']
     assert str(result) == str(expected)
 
 
 def test_apply_column():
-    result = compute(Apply(t['amount'], np.sum), df)
+    result = compute(Apply(t['amount'], np.sum, 'real'), df)
     expected = np.sum(df['amount'])
 
     assert str(result) == str(expected)
 
-    result = compute(Apply(t['amount'], builtins.sum), df)
+    result = compute(Apply(t['amount'], builtins.sum, 'real'), df)
     expected = builtins.sum(df['amount'])
 
     assert str(result) == str(expected)
 
 
 def test_apply():
-    result = compute(Apply(t, str), df)
+    result = compute(Apply(t, str, 'string'), df)
     expected = str(df)
 
     assert result == expected
@@ -530,7 +530,7 @@ def test_like():
 
 def test_rowwise_by():
     f = lambda _, id, name: id + len(name)
-    expr = by(t.map(f), t.amount.sum())
+    expr = by(t.map(f, 'int'), t.amount.sum())
 
     df = pd.DataFrame({'id': [1, 1, 2],
                        'name': ['alice', 'wendy', 'bob'],

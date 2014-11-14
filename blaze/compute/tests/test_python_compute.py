@@ -284,7 +284,7 @@ def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
     assert set(compute(Distinct(t), data)) == set(map(tuple, data))
     e = Distinct(t)
-    assert compute(e, []) == ()
+    assert list(compute(e, [])) == []
 
 
 def test_Distinct_count():
