@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
 import toolz
-from toolz import first, concat, memoize
+from toolz import first, concat, memoize, unique
 import itertools
 from collections import Iterator
 
@@ -16,7 +16,7 @@ base = (numbers.Real, basestring, date, datetime)
 
 
 @dispatch(Expr, object)
-def pre_compute(leaf, data):
+def pre_compute(leaf, data, scope=None):
     """ Transform data prior to calling ``compute`` """
     return data
 
@@ -112,8 +112,13 @@ def type_change(old, new):
     return not all(map(issubtype, new_types, old_types))
 
 
-def top_then_bottom_then_top_again_etc(scope, expr, **kwargs):
+def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     """
+
+    Compute expression against scope
+
+    Starts with compute_down from the top.  Then computes up from the leaves
+    until a major type change.  Then tries again at the top, etc..
 
     >>> import numpy as np
 
@@ -122,7 +127,7 @@ def top_then_bottom_then_top_again_etc(scope, expr, **kwargs):
     ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
 
     >>> e = s.amount.sum() + 1
-    >>> top_then_bottom_then_top_again_etc({s: data}, e)
+    >>> top_then_bottom_then_top_again_etc(e, {s: data})
     601
     """
     # Base case: expression is in dict, return associated data
@@ -132,36 +137,38 @@ def top_then_bottom_then_top_again_etc(scope, expr, **kwargs):
     if not hasattr(expr, '_leaves'):
         return expr
 
-    leaves = list(expr._leaves())
-    data = [scope.get(leaf) for leaf in leaves]
+    leaf_exprs = list(expr._leaves())
+    leaf_data = [scope.get(leaf) for leaf in leaf_exprs]
 
     # See if we have a direct computation path with compute_down
     try:
-        return compute_down(expr, *data, **kwargs)
+        return compute_down(expr, *leaf_data, **kwargs)
     except NotImplementedError:
         pass
 
     # Compute from the bottom until there is a data type change
-    expr2, data = bottom_up_until_type_break(expr, scope)
+    new_expr, new_scope = bottom_up_until_type_break(expr, scope)
 
     # Re-optimize data and expressions
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        data2 = [pre_compute_(expr, child) for child in data]
+        new_scope2 = {e: pre_compute(new_expr, datum, scope=new_scope)
+                        for e, datum in new_scope.items()}
+        # leaf_data2 = [pre_compute_(expr, child) for child in new_leaf_data]
     else:
-        data2 = data
+        new_scope2 = new_scope
     if optimize_:
         try:
-            expr3 = optimize_(expr2, *data)
+            new_expr2 = optimize_(new_expr, *[new_scope2[leaf]
+                                              for leaf in new_expr._leaves()])
         except NotImplementedError:
-            expr3 = expr2
+            new_expr2 = new_expr
     else:
-        expr3 = expr2
+        new_expr2 = new_expr
 
     # Repeat
-    scope2 = toolz.merge(scope, dict(zip(expr3._leaves(), data2)))
-    return top_then_bottom_then_top_again_etc(scope2, expr3)
+    return top_then_bottom_then_top_again_etc(new_expr2, new_scope2)
 
 
 def top_to_bottom(d, expr, **kwargs):
@@ -213,12 +220,51 @@ def top_to_bottom(d, expr, **kwargs):
 
 _names = ('leaf_%d' % i for i in itertools.count(1))
 
-@memoize
-def name(expr):
-    if expr._name:
-        return expr._name
-    else:
-        return ""
+_leaf_cache = dict()
+_used_tokens = set()
+def _reset_leaves():
+    _leaf_cache.clear()
+    _used_tokens.clear()
+
+def makeleaf(expr):
+    """ Name of a new leaf replacement for this expression
+
+
+    >>> _reset_leaves()
+
+    >>> t = Symbol('t', '{x: int, y: int, z: int}')
+    >>> makeleaf(t)
+    t
+    >>> makeleaf(t.x)
+    x
+    >>> makeleaf(t.x + 1)
+    x
+    >>> makeleaf(t.x + 1)
+    x
+    >>> makeleaf(t.x).isidentical(makeleaf(t.x + 1))
+    False
+
+    >>> from blaze import sin, cos
+    >>> x = Symbol('x', 'real')
+    >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
+    False
+    """
+    name = expr._name or '_'
+    token = None
+    if expr in _leaf_cache:
+        return _leaf_cache[expr]
+    if (name, token) in _used_tokens:
+        for token in itertools.count():
+            if (name, token) not in _used_tokens:
+                break
+    result = Symbol(name, expr.dshape, token)
+    _used_tokens.add((name, token))
+    _leaf_cache[expr] = result
+    return result
+
+
+def data_leaves(expr, scope):
+    return [scope[leaf] for leaf in expr._leaves()]
 
 
 def bottom_up_until_type_break(expr, scope):
@@ -231,7 +277,13 @@ def bottom_up_until_type_break(expr, scope):
 
     *data: Sequence of data corresponding to leaves
 
-    Returns the data and expression at the first major type change
+    Returns
+    -------
+
+    expr:
+        New expression with lower subtrees replaced with leaves
+    scope:
+        New scope with entries for those leaves
 
     Examples
     --------
@@ -247,38 +299,43 @@ def bottom_up_until_type_break(expr, scope):
 
     >>> e = (s.amount + 1).distinct()
     >>> bottom_up_until_type_break(e, {s: data})
-    (amount, [array([101, 201, 301], dtype=int32)])
+    (amount, {amount: array([101, 201, 301], dtype=int32)})
 
     This computation has a type change midstream, so we stop and get the
     unfinished computation.
 
     >>> e = s.amount.sum() + 1
     >>> bottom_up_until_type_break(e, {s: data})
-    (amount_sum + 1, [600])
+    (amount_sum + 1, {amount_sum: 600})
 
     >>> x = Symbol('x', 'int')
-    >>> bottom_up_until_type_break(x + x, {x: 1})  # empty string Symbolname
-    (, [2])
+    >>> bottom_up_until_type_break(x + x, {x: 1})  # empty string Symbol-name
+    (_, {_: 2})
     """
     if expr in scope:
-        return Symbol(name(expr), expr.dshape), [scope[expr]]
+        leaf = makeleaf(expr)
+        return leaf, {leaf: scope[expr]}
 
-    exprs, data = zip(*[bottom_up_until_type_break(i, scope)
-                         for i in expr._inputs])
-    data = list(concat(data))
-    expr2 = expr._subs(dict((i, e) for i, e in zip(expr._inputs, exprs)
-                                   if not i.isidentical(e)))
+    inputs = list(unique(expr._inputs))
 
-    leaves = expr._leaves()
-    data_leaves = [scope.get(leaf) for leaf in leaves]
+    exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope)
+                             for i in inputs])
+    # data = list(concat(data))
+    new_scope = toolz.merge(new_scopes)
+    new_expr = expr._subs(dict((i, e) for i, e in zip(inputs, exprs)
+                                      if not i.isidentical(e)))
 
-    if type_change(data, data_leaves):
-        expr2 = expr._subs(dict((i, e) for i, e in zip(expr._inputs, exprs)
-                                       if not i.isidentical(e)))
-        return expr2, data
+    old_expr_leaves = expr._leaves()
+    old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
+
+    # If the leaves have change substantially then stop
+    if type_change(sorted(new_scope.values(), key=type),
+                   sorted(old_data_leaves, key=type)):
+        return new_expr, new_scope
     else:
-        leaf = Symbol(name(expr), expr.dshape)
-        return leaf, [compute_up(expr, *data, scope=scope)]
+        leaf = makeleaf(expr)
+        _data = [new_scope[i] for i in new_expr._inputs]
+        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope)}
 
 
 def bottom_up(d, expr):
@@ -344,6 +401,7 @@ def compute(expr, d, **kwargs):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
+    _reset_leaves()
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
 
@@ -360,5 +418,5 @@ def compute(expr, d, **kwargs):
             expr3 = expr2
     else:
         expr3 = expr2
-    result = top_then_bottom_then_top_again_etc(d3, expr3, **kwargs)
+    result = top_then_bottom_then_top_again_etc(expr3, d3, **kwargs)
     return post_compute(expr3, result, scope=d3)
