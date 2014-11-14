@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from toolz import isdistinct, frequencies, concat, unique, get
 import datashape
 from datashape import Option, Record, Unit, dshape, var
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
@@ -33,6 +33,8 @@ class Sort(Expr):
 
     @property
     def key(self):
+        if not self._key:
+            return self._child.fields[0]
         if isinstance(self._key, tuple):
             return list(self._key)
         else:
@@ -63,10 +65,10 @@ def sort(child, key=None, ascending=True):
     ascending: bool
         Determines order of the sort
     """
+    if not isrecord(child.dshape.measure):
+        key = None
     if isinstance(key, list):
         key = tuple(key)
-    if key is None:
-        key = child.fields[0]
     return Sort(child, key, ascending)
 
 
