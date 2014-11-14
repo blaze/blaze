@@ -64,6 +64,7 @@ def test_to_tree():
                                'args': [
                                     't',
                                     'var * { name : string, amount : int32 }',
+                                    None
                                     ]
                                },
                               'amount'
