@@ -20,7 +20,22 @@ def lean_projection(expr):
 
 @dispatch(Symbol)
 def _lean(expr, fields=None):
-    if set(expr.fields).issubset(fields):
+    """
+
+    >>> s = Symbol('s', '{x: int, y: int}')
+    >>> _lean(s, ('x',))
+    (s['x'], ('x',))
+
+    >>> _lean(s, ())
+    (s, ())
+
+    >>> s = Symbol('s', 'int')
+    >>> _lean(s, ())
+    (s, ())
+    >>> _lean(s, ('s',))
+    (s, ())
+    """
+    if not fields or set(expr.fields).issubset(fields):
         return expr, fields
     else:
         return expr[sorted(fields)], fields
