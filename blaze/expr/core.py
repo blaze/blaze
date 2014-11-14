@@ -14,6 +14,8 @@ from ..dispatch import dispatch
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
+base = (numbers.Number,) + _strtypes
+
 class Node(object):
     """ Node in a tree
 
@@ -219,12 +221,30 @@ def isidentical(a, b):
     """ Strict equality testing
 
     Different from x == y -> Eq(x, y)
+
+    >>> isidentical(1, 1)
+    True
+
+
+    >>> from blaze.expr import Symbol
+    >>> x = Symbol('x', 'int')
+    >>> isidentical(x, 1)
+    False
+
+    >>> isidentical(x + 1, x + 1)
+    True
+
+    >>> isidentical(x + 1, x + 2)
+    False
     """
+    if isinstance(a, base) and isinstance(b, base):
+        return a == b
     if type(a) != type(b):
         return False
     if isinstance(a, Node):
         return all(map(isidentical, a._args, b._args))
     return a == b
+
 
 def get_callable_name(o):
     """Welcome to str inception. Leave your kittens at home.
