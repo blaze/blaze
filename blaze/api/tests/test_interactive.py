@@ -164,7 +164,7 @@ def test_table_resource():
 
         t = Data(filename)
         assert isinstance(t.data, CSV)
-        assert list(compute(t)) == list(csv)
+        assert into(list, compute(t)) == list(csv)
 
 
 def test_concretehead_failure():
