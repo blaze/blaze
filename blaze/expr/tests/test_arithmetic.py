@@ -36,3 +36,11 @@ def test_inputs():
     assert (x + y)._inputs == (x, y)
     assert (x + 1)._inputs == (x,)
     assert (1 + y)._inputs == (y,)
+
+
+def test_printing():
+    assert str(-x) == '-x'
+    assert str(-(x + y)) == '-(x + y)'
+
+    assert str(~b) == '~b'
+    assert str(~(b | (x > y))) == '~(b | (x > y))'
