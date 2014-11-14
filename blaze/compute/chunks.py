@@ -88,7 +88,7 @@ class ChunkIndexable(ChunkIterable):
 
 
 @dispatch(Expr, ChunkIterator)
-def pre_compute(expr, data):
+def pre_compute(expr, data, scope=None):
     return data
 
 
