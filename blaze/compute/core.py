@@ -393,11 +393,17 @@ def swap_resources_into_scope(expr, scope):
     >>> t = Data([1, 2, 3], dshape='3 * int', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
     (t.head(2), {t: [1, 2, 3]})
+
+    >>> expr, scope = _
+    >>> scope.keys()[0]._resources()
+    {}
     """
     resources = expr._resources()
     symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
-    scope = toolz.merge(resources, scope)
+    other_scope = dict((k, v) for k, v in scope.items()
+                       if k not in symbol_dict)
+    scope = toolz.merge(resources, other_scope)
     expr = expr._subs(symbol_dict)
 
     return expr, scope
