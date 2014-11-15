@@ -399,6 +399,10 @@ def into(_, ser, **kwargs):
 def into(a, b, **kwargs):
     return into(a, list(b), **kwargs)
 
+@dispatch(Iterator, pd.Series)
+def into(_, s):
+    return iter(into(list, s))
+
 @dispatch(pd.Series, (list, tuple))
 def into(a, b, **kwargs):
     return pd.Series(b, **kwargs)
