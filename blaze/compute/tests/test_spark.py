@@ -106,9 +106,9 @@ exprs = [
     by(t['name'], t['amount'].sum()),
     by(t['name'], (t['amount'] + 1).sum()),
     (t['amount'] * 1).label('foo'),
-    t.map(lambda _, amt, id: amt + id),
+    t.map(lambda tup: tup[1] + tup[2], 'real'),
     t.like(name='Alice'),
-    t['amount'].map(inc)]
+    t['amount'].map(inc, 'int')]
 
 
 def test_spark_basic():
@@ -213,7 +213,7 @@ def test_spark_groupby():
 
 
 def test_spark_multi_level_rowfunc_works():
-    expr = t['amount'].map(lambda x: x + 1)
+    expr = t['amount'].map(lambda x: x + 1, 'int')
 
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
@@ -396,7 +396,7 @@ def test_comprehensive():
             t.head(3): [],
             t.name.distinct(): [],
             t[t.amount > 50]['name']: [],
-            t.id.map(lambda x: x + 1, '{id: int}'): [srdd], # no udfs yet
+            t.id.map(lambda x: x + 1, 'int'): [srdd], # no udfs yet
             t[t.amount > 50]['name']: [],
             by(t.name, t.amount.sum()): [],
             by(t.id, t.id.count()): [],
