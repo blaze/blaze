@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 from datetime import date, datetime
 
 from blaze.compute.core import (compute_up, compute_down, optimize, compute,
-        bottom_up_until_type_break, top_then_bottom_then_top_again_etc)
+        bottom_up_until_type_break, top_then_bottom_then_top_again_etc,
+        swap_resources_into_scope)
 from blaze.expr import by, Symbol, Expr
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
@@ -78,3 +79,15 @@ def test_top_then_bottom_then_top_again_etc():
 
     e = s.amount.sum() + 1
     assert top_then_bottom_then_top_again_etc(e, {s: data}) == 601
+
+
+def test_swap_resources_into_scope():
+
+    from blaze import Data
+    t = Data([1, 2, 3], dshape='3 * int', name='t')
+    expr, scope = swap_resources_into_scope(t.head(2), {t: t.data})
+
+    assert t._resources()
+    assert not expr._resources()
+
+    assert t not in scope

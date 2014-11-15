@@ -403,10 +403,10 @@ def swap_resources_into_scope(expr, scope):
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
     other_scope = dict((k, v) for k, v in scope.items()
                        if k not in symbol_dict)
-    scope = toolz.merge(resources, other_scope)
+    new_scope = toolz.merge(resources, other_scope)
     expr = expr._subs(symbol_dict)
 
-    return expr, scope
+    return expr, new_scope
 
 
 @dispatch(Expr, dict)
