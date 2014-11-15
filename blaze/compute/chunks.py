@@ -102,7 +102,8 @@ def compute_up(expr, c, **kwargs):
     t = Symbol('_', expr._child.dshape)
     a, b = reductions[type(expr)]
 
-    return compute_up(b(t), [compute_up(a(t), chunk) for chunk in c])
+    return compute_up(b(t), [compute_up(a(t), pre_compute(expr, chunk))
+                                for chunk in c])
 
 
 @dispatch(mean, ChunkIterator)
@@ -112,8 +113,8 @@ def compute_up(expr, c, **kwargs):
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_up(expr._child.sum(), chunk)
-        total_count += compute_up(expr._child.count(), chunk)
+        total_sum += compute_up(expr._child.sum(), pre_compute(expr, chunk))
+        total_count += compute_up(expr._child.count(), pre_compute(expr, chunk))
 
     return total_sum / total_count
 
@@ -137,17 +138,20 @@ def compute_up(expr, c, **kwargs):
 @dispatch((Selection, ElemWise, Label, ReLabel, Arithmetic, Broadcast),
           ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    return ChunkIterator(compute_up(expr, chunk) for chunk in c)
+    return ChunkIterator(compute_up(expr, pre_compute(expr, chunk))
+            for chunk in c)
 
 
 @dispatch(Join, ChunkIterable, (ChunkIterable, ChunkIterator))
 def compute_up(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_up(expr, c1, chunk) for chunk in c2)
+    return ChunkIterator(compute_up(expr, c1, pre_compute(expr, chunk))
+            for chunk in c2)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterable)
 def compute_up(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_up(expr, chunk, c2) for chunk in c1)
+    return ChunkIterator(compute_up(expr, pre_compute(expr, chunk), c2)
+            for chunk in c1)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterator)
@@ -159,18 +163,22 @@ dict_items = type(dict().items())
 
 @dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
 def compute_up(expr, other, c, **kwargs):
-    return ChunkIterator(compute_up(expr, other, chunk) for chunk in c)
+    return ChunkIterator(compute_up(expr, other, pre_compute(expr, chunk))
+            for chunk in c)
 
 
 @dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
     DataDescriptor))
 def compute_up(expr, c, other, **kwargs):
-    return ChunkIterator(compute_up(expr, chunk, other) for chunk in c)
+    return ChunkIterator(compute_up(expr, pre_compute(expr, chunk), other)
+            for chunk in c)
 
 
 @dispatch(Distinct, ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    intermediates = concat(into(Iterator, compute_up(expr, chunk)) for chunk in c)
+    intermediates = concat(into(Iterator,
+                                compute_up(expr, pre_compute(expr, chunk)))
+        for chunk in c)
     return unique(intermediates)
 
 
