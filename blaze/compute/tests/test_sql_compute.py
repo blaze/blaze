@@ -107,6 +107,15 @@ def test_join():
     # Schemas match
     assert list(result.c.keys()) == list(joined.fields)
 
+    # test sort on join
+
+    result = compute(joined.sort('amount'), {L: lhs, R: rhs})
+    assert normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name
+    ORDER BY amounts.amount""")
+
+
 
 def test_clean_complex_join():
     metadata = sa.MetaData()

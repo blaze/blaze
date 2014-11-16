@@ -423,7 +423,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
-    col = getattr(s.c, t.key)
+    col = lower_column(getattr(s.c, t.key))
     if not t.ascending:
         col = sqlalchemy.desc(col)
     return select(s).order_by(col)
