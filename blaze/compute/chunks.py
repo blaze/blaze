@@ -26,9 +26,8 @@ from ..expr import (Symbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
         nunique, Arithmetic, Broadcast)
 from .core import compute
-from toolz import partition_all
-from collections import Iterator
-from toolz import concat, first
+from toolz import partition_all, curry, concat, first
+from collections import Iterator, Iterable
 from cytoolz import unique
 from datashape import var, isdimension
 from datashape.predicates import isscalar
@@ -308,6 +307,32 @@ class ChunkList(ChunkIndexable):
 
     def __iter__(self):
         return iter(self.data)
+
+
+def compute_chunk(source, chunk, chunk_expr, index):
+    part = source[index]
+    return compute(chunk_expr, {chunk: part})
+
+
+@dispatch(Expr, ChunkList)
+def compute_down(expr, data, map=map, **kwargs):
+    leaf = expr._leaves()[0]
+
+    (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr)
+
+    indices = list(range(len(data.data)))
+
+    parts = map(curry(compute_chunk, data.data, chunk, chunk_expr),
+                indices)
+
+    if isinstance(parts[0], np.ndarray):
+        intermediate = np.concatenate(parts)
+    elif isinstance(parts[0], pd.DataFrame):
+        intermediate = pd.concat(parts)
+    elif isinstance(parts[0], (Iterable, Iterator)):
+        intermediate = concat(parts)
+
+    return compute(agg_expr, {agg: intermediate})
 
 
 from ..resource import resource
