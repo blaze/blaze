@@ -151,6 +151,20 @@ def _split_agg(expr, leaf=None, agg=None):
     return b(agg, axis=expr.axis, keepdims=expr.keepdims)
 
 
+@dispatch(mean)
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
+    child = expr._subs({leaf: chunk})._child
+    name = child._name
+    return summary(total=child.sum(), count=child.count(), keepdims=keepdims)
+
+@dispatch(mean)
+def _split_agg(expr, leaf=None, agg=None):
+    total = agg.total.sum()
+    count = agg.count.sum()
+
+    return total / count
+
+
 @dispatch(Distinct)
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})

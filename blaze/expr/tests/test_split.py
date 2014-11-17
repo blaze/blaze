@@ -37,18 +37,16 @@ def test_sum():
     assert agg_expr.isidentical(sum(agg))
 
 
-def test_sum():
+def test_mean():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.mean())
 
     assert chunk.schema == t.schema
-    assert chunk_expr.isidentical(summary(keepdims=True, **{
-            t.amount.mean()._name + '_sum': chunk.amount.sum(),
-            t.amount.mean()._name + '_count': chunk.amount.count()
-        }))
+    assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
+                                          count=chunk.amount.count(),
+                                          keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(agg[t.amount.mean()._name + '_sum'].sum()
-                              / agg[t.amount.mean()._name + '_count'].sum())
+    assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
 
 
 def test_sum_with_axis_argument():
