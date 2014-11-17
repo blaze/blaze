@@ -166,8 +166,8 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        new_scope2 = {e: pre_compute(new_expr, datum, scope=new_scope)
-                        for e, datum in new_scope.items()}
+        new_scope2 = dict((e, pre_compute(new_expr, datum, scope=new_scope))
+                        for e, datum in new_scope.items())
     else:
         new_scope2 = new_scope
     if optimize_:
