@@ -3,8 +3,8 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import compute, Table, by, into
-from blaze.expr import Expr, TableSymbol, Field
+from blaze import compute, Data, by, into
+from blaze.expr import Expr, Symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.server.index import parse_index, emit_index
@@ -21,47 +21,58 @@ from blaze.server import client
 client.requests = test # OMG monkey patching
 
 
-def test_expr_client():
-    ec = Client('localhost:6363', 'accounts')
-    assert discover(ec) == discover(df)
+def test_client():
+    c = Client('localhost:6363')
+    assert str(discover(c)) == str(discover({'accounts': df}))
 
-    t = TableSymbol('t', discover(ec))
-    expr = t.amount.sum()
+    t = Symbol('t', discover(c))
+    expr = t.accounts.amount.sum()
 
-    assert compute(expr, ec) == 300
-    assert 'name' in t.fields
-    assert isinstance(t.name, Field)
-    assert compute(t.name, ec) == ['Alice', 'Bob']
+    assert compute(expr, c) == 300
+    assert 'name' in t.accounts.fields
+    assert isinstance(t.accounts.name, Field)
+    assert compute(t.accounts.name, c) == ['Alice', 'Bob']
 
+
+def test_compute_with_dataset():
+    c = resource('blaze://localhost:6363::accounts')
+    s = Symbol('s', discover(c))
+
+    assert compute(s.name, c) == ['Alice', 'Bob']
 
 def test_expr_client_interactive():
-    ec = Client('localhost:6363', 'accounts')
-    t = Table(ec)
+    c = Client('localhost:6363')
+    t = Data(c)
 
-    assert compute(t.name) == ['Alice', 'Bob']
-    assert (into(set, compute(by(t.name, min=t.amount.min(),
-                                         max=t.amount.max()))) ==
-            set([('Alice', 100, 100), ('Bob', 200, 200)]))
+    assert compute(t.accounts.name) == ['Alice', 'Bob']
+    assert (into(set, compute(by(t.accounts.name, min=t.accounts.amount.min(),
+                                                  max=t.accounts.amount.max())))
+            == set([('Alice', 100, 100), ('Bob', 200, 200)]))
 
 
 def test_resource():
-    ec = resource('blaze://localhost:6363', 'accounts')
-    assert discover(ec) == discover(df)
+    c = resource('blaze://localhost:6363')
+    assert str(discover(c)) == str(discover({'accounts': df}))
+
+
+def test_resource_with_dataset():
+    c = resource('blaze://localhost:6363::accounts')
+    assert str(discover(c)) == str(discover(df))
 
 
 def test_resource_default_port():
-    ec = resource('blaze://localhost', 'accounts')
-    assert discover(ec) == discover(df)
+    ec = resource('blaze://localhost')
+    assert str(discover(ec)) == str(discover({'accounts': df}))
 
 
 def test_resource_non_default_port():
-    ec = resource('blaze://localhost:6364', 'accounts')
+    ec = resource('blaze://localhost:6364')
     assert ec.url == 'http://localhost:6364'
 
 
 def test_resource_all_in_one():
-    ec = resource('blaze://localhost:6363::accounts')
-    assert discover(ec) == discover(df)
+    ec = resource('blaze://localhost:6363')
+    assert str(discover(ec)) == str(discover({'accounts': df}))
 
 
 class CustomExpr(Expr):
@@ -78,7 +89,7 @@ def compute_up(expr, data, **kwargs):
 
 
 def test_custom_expressions():
-    ec = Client('localhost:6363', 'accounts')
-    t = TableSymbol('t', discover(ec))
+    ec = Client('localhost:6363')
+    t = Symbol('t', discover(ec))
 
-    assert list(map(tuple, compute(CustomExpr(t), ec))) == into(list, df)
+    assert list(map(tuple, compute(CustomExpr(t.accounts), ec))) == into(list, df)

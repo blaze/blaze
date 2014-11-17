@@ -116,8 +116,9 @@ class TestExprify(object):
     def test_basic_arithmetic(self):
         assert exprify('x + y', self.dtypes).isidentical(self.x + self.y)
 
-        other = isnan(sin(x) + y)
-        assert exprify('isnan(sin(x) + y)', self.dtypes).isidentical(other)
+        expected = isnan(sin(x) + y)
+        result = exprify('isnan(sin(x) + y)', self.dtypes)
+        assert str(expected) == str(result)
 
         # parsed as a Num in Python 2 and a UnaryOp in Python 3
         assert exprify('-1', {}) == -1
@@ -146,8 +147,8 @@ class TestExprify(object):
         assert exprify('(x == 1) | (x == 2)', self.dtypes).isidentical(other)
 
     def test_simple_boolean_not(self):
-        other = ~self.x
-        assert exprify('~x', {'x': 'bool'}).isidentical(other)
+        x = Symbol('x', 'bool')
+        assert exprify('~x', {'x': 'bool'}).isidentical(~x)
 
     def test_literal_string_compare(self):
         other = self.name == "Alice"

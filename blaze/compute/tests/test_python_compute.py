@@ -13,7 +13,7 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (Symbol, by, union, merge, join, count, Distinct,
+from blaze.expr import (Symbol, by, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary, Symbol,
                         count, std, head, Symbol)
 import numpy as np
@@ -284,7 +284,7 @@ def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
     assert set(compute(Distinct(t), data)) == set(map(tuple, data))
     e = Distinct(t)
-    assert compute(e, []) == ()
+    assert list(compute(e, [])) == []
 
 
 def test_Distinct_count():
@@ -401,7 +401,7 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(t['amount'], builtins.sum), data)
+    result = compute(Apply(t['amount'], builtins.sum, 'real'), data)
     expected = compute(t['amount'].sum(), data)
 
     assert result == expected
@@ -409,7 +409,7 @@ def test_apply_column():
 
 def test_apply():
     data2 = tuple(map(tuple, data))
-    assert compute(Apply(t, hash), data2) == hash(data2)
+    assert compute(Apply(t, hash, 'int'), data2) == hash(data2)
 
 
 def test_map_datetime():
@@ -518,28 +518,6 @@ class TestFunctionExpressions(object):
         result = compute(myfunc(s), data)
         expected = myother((math.cos(r) + math.sin(r)) ** 2 / math.pi)
         assert result == expected
-
-
-def test_union():
-    L1 = [['Alice', 100, 1],
-          ['Bob', 200, 2],
-          ['Alice', 50, 3]]
-    L2 = [['Alice', 100, 4],
-          ['Bob', 200, 5],
-          ['Alice', 50, 6]]
-    L3 = [['Alice', 100, 7],
-          ['Bob', 200, 8],
-          ['Alice', 50, 9]]
-
-    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
-    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
-    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
-
-    expr = union(t1, t2, t3)
-
-    result = list(compute(expr, {t1: L1, t2: L2, t3: L3}))
-
-    assert result == L1 + L2 + L3
 
 
 def test_by_groupby_deep():
@@ -736,6 +714,15 @@ def eq(a, b):
     if isinstance(b, (Iterable, Iterator)):
         b = list(b)
     return a == b
+
+
+def test_pre_compute():
+    s = Symbol('s', 'var * {a: int, b: int}')
+    assert pre_compute(s, [(1, 2)]) == [(1, 2)]
+    assert list(pre_compute(s, iter([(1, 2)]))) == [(1, 2)]
+    assert list(pre_compute(s, iter([(1, 2), (3, 4)]))) == [(1, 2), (3, 4)]
+    assert list(pre_compute(s, iter([{'a': 1, 'b': 2},
+                                     {'a': 3, 'b': 4}]))) == [(1, 2), (3, 4)]
 
 
 def test_dicts():

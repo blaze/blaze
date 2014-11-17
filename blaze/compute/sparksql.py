@@ -119,16 +119,16 @@ from .sql import select
 def sql_string(query):
     return pipe(query, select, literalquery, str)
 
-@dispatch(Expr, SparkSQLQuery, dict)
-def post_compute(expr, query, d):
+@dispatch(Expr, SparkSQLQuery)
+def post_compute(expr, query, scope=None):
     result = query.context.sql(sql_string(query.query))
     if iscollection(expr.dshape) and isscalar(expr.dshape.measure):
         result = result.map(lambda x: x[0])
     return result
 
 
-@dispatch(Head, SparkSQLQuery, dict)
-def post_compute(expr, query, d):
+@dispatch(Head, SparkSQLQuery)
+def post_compute(expr, query, scope=None):
     result = query.context.sql(sql_string(query.query))
     if iscollection(expr.dshape) and isscalar(expr.dshape.measure):
         result = result.map(lambda x: x[0])

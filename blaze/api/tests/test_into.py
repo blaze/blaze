@@ -10,6 +10,7 @@ from datashape import dshape
 from datetime import datetime
 import os
 import itertools
+from collections import Iterator
 
 from blaze.compute.chunks import ChunkIterator, chunks
 
@@ -450,6 +451,11 @@ def test_series_single_column():
     expected = pd.DataFrame(data, columns=t.schema.measure.names).name
     assert str(df) == str(expected)
     assert df.name == out_df.name
+
+
+def test_into_iterator_from_Series():
+    L = [1, 2, 3]
+    assert list(into(Iterator, pd.Series(L))) == L
 
 
 def test_into_series_failure():

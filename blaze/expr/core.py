@@ -14,6 +14,8 @@ from ..dispatch import dispatch
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
+base = (numbers.Number,) + _strtypes
+
 class Node(object):
     """ Node in a tree
 
@@ -77,7 +79,7 @@ class Node(object):
                                       isinstance(i, Node))))
 
     def isidentical(self, other):
-        return type(self) == type(other) and self._args == other._args
+        return isidentical(self, other)
 
     def __hash__(self):
         return hash((type(self), self._args))
@@ -215,6 +217,34 @@ class Node(object):
         return self._invert()
 
 
+def isidentical(a, b):
+    """ Strict equality testing
+
+    Different from x == y -> Eq(x, y)
+
+    >>> isidentical(1, 1)
+    True
+
+    >>> from blaze.expr import Symbol
+    >>> x = Symbol('x', 'int')
+    >>> isidentical(x, 1)
+    False
+
+    >>> isidentical(x + 1, x + 1)
+    True
+
+    >>> isidentical(x + 1, x + 2)
+    False
+    """
+    if isinstance(a, base) and isinstance(b, base):
+        return a == b
+    if type(a) != type(b):
+        return False
+    if isinstance(a, Node):
+        return all(map(isidentical, a._args, b._args))
+    return a == b
+
+
 def get_callable_name(o):
     """Welcome to str inception. Leave your kittens at home.
     """
@@ -271,6 +301,9 @@ def subs(o, d):
     >>> subs([1, 2, 3], {2: 'Hello'})
     [1, 'Hello', 3]
     """
+    d = dict((k, v) for k, v in d.items() if k is not v)
+    if not d:
+        return o
     try:
         if o in d:
             d = d.copy()

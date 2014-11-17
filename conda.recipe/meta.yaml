@@ -48,7 +48,7 @@ test:
     - coverage
 
   commands:
-    - python -c "print('A'); import blaze; print('B'); blaze.test()"
+    - python -c "import blaze; blaze.test()"
 
 about:
   home: http://blaze.pydata.org

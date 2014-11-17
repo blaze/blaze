@@ -106,9 +106,9 @@ exprs = [
     by(t['name'], t['amount'].sum()),
     by(t['name'], (t['amount'] + 1).sum()),
     (t['amount'] * 1).label('foo'),
-    t.map(lambda _, amt, id: amt + id),
+    t.map(lambda tup: tup[1] + tup[2], 'real'),
     t.like(name='Alice'),
-    t['amount'].map(inc)]
+    t['amount'].map(inc, 'int')]
 
 
 def test_spark_basic():
@@ -213,7 +213,7 @@ def test_spark_groupby():
 
 
 def test_spark_multi_level_rowfunc_works():
-    expr = t['amount'].map(lambda x: x + 1)
+    expr = t['amount'].map(lambda x: x + 1, 'int')
 
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
@@ -244,31 +244,6 @@ def test_spark_recursive_rowfunc_is_used():
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, rdd).collect()) == set(expected)
-
-
-def test_union():
-    L1 = [['Alice', 100, 1],
-          ['Bob', 200, 2],
-          ['Alice', 50, 3]]
-    L2 = [['Alice', 100, 4],
-          ['Bob', 200, 5],
-          ['Alice', 50, 6]]
-    L3 = [['Alice', 100, 7],
-          ['Bob', 200, 8],
-          ['Alice', 50, 9]]
-    r1 = sc.parallelize(L1)
-    r2 = sc.parallelize(L2)
-    r3 = sc.parallelize(L3)
-
-    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
-    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
-    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
-
-    expr = union(t1, t2, t3)
-
-    result = compute(expr, {t1: r1, t2: r2, t3: r3}).collect()
-
-    assert set(map(tuple, result)) == set(map(tuple, L1 + L2 + L3))
 
 
 def test_spark_outer_join():
@@ -421,7 +396,7 @@ def test_comprehensive():
             t.head(3): [],
             t.name.distinct(): [],
             t[t.amount > 50]['name']: [],
-            t.id.map(lambda x: x + 1, '{id: int}'): [srdd], # no udfs yet
+            t.id.map(lambda x: x + 1, 'int'): [srdd], # no udfs yet
             t[t.amount > 50]['name']: [],
             by(t.name, t.amount.sum()): [],
             by(t.id, t.id.count()): [],

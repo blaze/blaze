@@ -10,7 +10,7 @@ from pandas import DataFrame, Series
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
 from blaze.expr import Symbol, join, by, summary, Distinct
-from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
+from blaze.expr import (merge, exp, mean, count, nunique, Apply, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
@@ -338,32 +338,32 @@ def test_multiple_renames_on_series_fails():
 
 def test_map_column():
     inc = lambda x: x + 1
-    result = compute(t['amount'].map(inc), df)
+    result = compute(t['amount'].map(inc, 'int'), df)
     expected = df['amount'] + 1
     assert str(result) == str(expected)
 
 
 def test_map():
     f = lambda _, amt, id: amt + id
-    result = compute(t.map(f), df)
+    result = compute(t.map(f, 'real'), df)
     expected = df['amount'] + df['id']
     assert str(result) == str(expected)
 
 
 def test_apply_column():
-    result = compute(Apply(t['amount'], np.sum), df)
+    result = compute(Apply(t['amount'], np.sum, 'real'), df)
     expected = np.sum(df['amount'])
 
     assert str(result) == str(expected)
 
-    result = compute(Apply(t['amount'], builtins.sum), df)
+    result = compute(Apply(t['amount'], builtins.sum, 'real'), df)
     expected = builtins.sum(df['amount'])
 
     assert str(result) == str(expected)
 
 
 def test_apply():
-    result = compute(Apply(t, str), df)
+    result = compute(Apply(t, str, 'string'), df)
     expected = str(df)
 
     assert result == expected
@@ -395,30 +395,6 @@ def test_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
 
     assert str(compute(expr, df)) == str(df['name'][df['amount'] < 100])
-
-
-def test_union():
-
-    d1 = DataFrame([['Alice', 100, 1],
-                    ['Bob', 200, 2],
-                    ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
-    d2 = DataFrame([['Alice', 100, 4],
-                    ['Bob', 200, 5],
-                    ['Alice', 50, 6]], columns=['name', 'amount', 'id'])
-    d3 = DataFrame([['Alice', 100, 7],
-                    ['Bob', 200, 8],
-                    ['Alice', 50, 9]], columns=['name', 'amount', 'id'])
-
-    t1 = Symbol('t1', 'var * {name: string, amount: int, id: int}')
-    t2 = Symbol('t2', 'var * {name: string, amount: int, id: int}')
-    t3 = Symbol('t3', 'var * {name: string, amount: int, id: int}')
-
-    expr = union(t1, t2, t3)
-
-    result = compute(expr, {t1: d1, t2: d2, t3: d3})
-
-    assert np.all(result.columns == d1.columns)
-    assert set(result['id']) == set(range(1, 10))
 
 
 def test_outer_join():
@@ -554,7 +530,7 @@ def test_like():
 
 def test_rowwise_by():
     f = lambda _, id, name: id + len(name)
-    expr = by(t.map(f), t.amount.sum())
+    expr = by(t.map(f, 'int'), t.amount.sum())
 
     df = pd.DataFrame({'id': [1, 1, 2],
                        'name': ['alice', 'wendy', 'bob'],
