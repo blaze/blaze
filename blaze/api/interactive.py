@@ -6,6 +6,7 @@ from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
 from datashape.predicates import iscollection, isscalar, isrecord
 from pandas import DataFrame, Series
 import itertools
+from functools import reduce
 import numpy as np
 from dynd import nd
 import warnings

@@ -341,8 +341,9 @@ def bottom_up_until_type_break(expr, scope):
     old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
 
     # 3. If the leaves have change substantially then stop
-    if type_change(sorted(new_scope.values(), key=type),
-                   sorted(old_data_leaves, key=type)):
+    key = lambda x: str(type(x))
+    if type_change(sorted(new_scope.values(), key=key),
+                   sorted(old_data_leaves, key=key)):
         return new_expr, new_scope
     else:
     # 4. Otherwise do some actual work
@@ -395,7 +396,7 @@ def swap_resources_into_scope(expr, scope):
     (t.head(2), {t: [1, 2, 3]})
 
     >>> expr, scope = _
-    >>> scope.keys()[0]._resources()
+    >>> list(scope.keys())[0]._resources()
     {}
     """
     resources = expr._resources()
