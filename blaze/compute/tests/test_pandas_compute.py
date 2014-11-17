@@ -486,6 +486,16 @@ def test_summary():
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
 
 
+def test_summary_on_series():
+    ser = Series([1, 2, 3])
+    s = Symbol('s', '3 * int')
+    expr = summary(max=s.max(), min=s.min())
+    assert compute(expr, ser) == (3, 1)
+
+    expr = summary(max=s.max(), min=s.min(), keepdims=True)
+    assert compute(expr, ser) == [(3, 1)]
+
+
 def test_summary_keepdims():
     expr = summary(count=t.id.count(), sum=t.amount.sum(), keepdims=True)
     expected = DataFrame([[3, 350]], columns=['count', 'sum'])

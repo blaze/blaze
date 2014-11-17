@@ -393,6 +393,12 @@ def compute_up(expr, data, **kwargs):
     else:
         return Series(dict(zip(expr.fields, values)))
 
+@dispatch(Summary, Series)
+def compute_up(expr, data, **kwargs):
+    result = tuple(compute(val, {expr._child: data}) for val in expr.values)
+    if expr.keepdims:
+        result = [result]
+    return result
 
 @dispatch(Like, DataFrame)
 def compute_up(expr, df, **kwargs):
