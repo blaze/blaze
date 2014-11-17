@@ -221,9 +221,10 @@ def compute_up(t, q, **kwargs):
 
 @dispatch(By, MongoQuery)
 def compute_up(t, q, **kwargs):
-    if not isinstance(t.grouper, (Field, Projection)):
+    if not isinstance(t.grouper, (Field, Projection, Symbol)):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
-                "Must be of the form `by(t[columns], t[column].reduction()`")
+                "The grouping element must be a simple Field or Projection\n"
+                "Got %s" % t.grouper)
     apply = optimize(t.apply, q)
     names = apply.fields
     return MongoQuery(q.coll, q.query +
