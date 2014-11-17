@@ -29,3 +29,8 @@ iotimeout: 600
 notifications:
   email:
     recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']
+
+---
+platform: win-32
+engine: python=2.6
+exclude: true
