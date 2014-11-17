@@ -24,8 +24,6 @@ script:
 
 build_targets: conda
 
-iotimeout: 600
-
 notifications:
   email:
     recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']
