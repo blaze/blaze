@@ -33,7 +33,6 @@ Table Expressions
    ReLabel
    Map
    Merge
-   Union
    By
    Join
 

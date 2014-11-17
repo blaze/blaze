@@ -30,7 +30,7 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Union, Summary, Like,
+                    By, Sort, Head, Apply, Summary, Like,
                     DateTime, Date, Time, Millisecond, Symbol, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp)
@@ -56,7 +56,7 @@ __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 Sequence = (tuple, list, Iterator, type(dict().items()))
 
 @dispatch(Expr, Sequence)
-def pre_compute(expr, seq):
+def pre_compute(expr, seq, scope=None):
     try:
         if isinstance(seq, Iterator):
             first = next(seq)
@@ -599,11 +599,6 @@ def compute_up(t, seq, **kwargs):
 @dispatch(Apply, Sequence)
 def compute_up(t, seq, **kwargs):
     return t.func(seq)
-
-
-@dispatch(Union, Sequence, tuple)
-def compute_up(t, example, children, **kwargs):
-    return concat(children)
 
 
 @dispatch(Summary, Sequence)

@@ -2,15 +2,35 @@ from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
 import toolz
-from toolz import first
+from toolz import first, concat, memoize, unique
+import itertools
+from collections import Iterator
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, Symbol, eval_str, Union
+from ..expr import Expr, Symbol, Symbol, eval_str
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
 
 base = (numbers.Real, basestring, date, datetime)
+
+
+@dispatch(Expr, object)
+def pre_compute(leaf, data, scope=None):
+    """ Transform data prior to calling ``compute`` """
+    return data
+
+
+@dispatch(Expr, object)
+def post_compute(expr, result, scope=None):
+    """ Effects after the computation is complete """
+    return result
+
+
+@dispatch(Expr, object)
+def optimize(expr, data):
+    """ Optimize expression to be computed on data """
+    return expr
 
 
 @dispatch(object, object)
@@ -60,29 +80,276 @@ def compute_down(expr):
     return expr
 
 
+def issubtype(a, b):
+    """ A custom issubclass """
+    if issubclass(a, b):
+        return True
+    if issubclass(a, (tuple, list, set)) and issubclass(b, Iterator):
+        return True
+    if issubclass(b, (tuple, list, set)) and issubclass(a, Iterator):
+        return True
+    return False
+
+def type_change(old, new):
+    """ Was there a significant type change between old and new data?
+
+    >>> type_change([1, 2], [3, 4])
+    False
+    >>> type_change([1, 2], [3, [1,2,3]])
+    True
+
+    Some special cases exist, like no type change from list to Iterator
+
+    >>> type_change([[1, 2]], [iter([1, 2])])
+    False
+    """
+    if all(isinstance(x, base) for x in old + new):
+        return False
+    if len(old) != len(new):
+        return True
+    new_types = list(map(type, new))
+    old_types = list(map(type, old))
+    return not all(map(issubtype, new_types, old_types))
+
+
+def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
+    """ Compute expression against scope
+
+    Does the following interpreter strategy:
+
+    1.  Try compute_down on the entire expression
+    2.  Otherwise compute_up from the leaves until we experience a type change
+        (e.g. data changes from dict -> pandas DataFrame)
+    3.  Re-optimize expression and re-pre-compute data
+    4.  Go to step 1
+
+    Example
+    -------
+
+    >>> import numpy as np
+
+    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
+    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+
+    >>> e = s.amount.sum() + 1
+    >>> top_then_bottom_then_top_again_etc(e, {s: data})
+    601
+
+    See Also
+    --------
+
+    bottom_up_until_type_break  -- uses this for bottom-up traversal
+    top_to_bottom -- older version
+    bottom_up -- older version still
+    """
+    # 0. Base case: expression is in dict, return associated data
+    if expr in scope:
+        return scope[expr]
+
+    if not hasattr(expr, '_leaves'):
+        return expr
+
+    leaf_exprs = list(expr._leaves())
+    leaf_data = [scope.get(leaf) for leaf in leaf_exprs]
+
+    # 1. See if we have a direct computation path with compute_down
+    try:
+        return compute_down(expr, *leaf_data, **kwargs)
+    except NotImplementedError:
+        pass
+
+    # 2. Compute from the bottom until there is a data type change
+    new_expr, new_scope = bottom_up_until_type_break(expr, scope)
+
+    # 3. Re-optimize data and expressions
+    optimize_ = kwargs.get('optimize', optimize)
+    pre_compute_ = kwargs.get('pre_compute', pre_compute)
+    if pre_compute_:
+        new_scope2 = dict((e, pre_compute(new_expr, datum, scope=new_scope))
+                        for e, datum in new_scope.items())
+    else:
+        new_scope2 = new_scope
+    if optimize_:
+        try:
+            new_expr2 = optimize_(new_expr, *[new_scope2[leaf]
+                                              for leaf in new_expr._leaves()])
+        except NotImplementedError:
+            new_expr2 = new_expr
+    else:
+        new_expr2 = new_expr
+
+    # 4. Repeat
+    return top_then_bottom_then_top_again_etc(new_expr2, new_scope2)
+
+
 def top_to_bottom(d, expr, **kwargs):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
         return d[expr]
 
-    # See if we have a direct computation path
-    if (hasattr(expr, '_leaves') and compute_down.resolve(
-            (type(expr),) + tuple([type(d.get(leaf)) for leaf in expr._leaves()]))):
-        leaves = [d[leaf] for leaf in expr._leaves()]
-        try:
-            return compute_down(expr, *leaves, **kwargs)
-        except NotImplementedError:
-            pass
+    if not hasattr(expr, '_leaves'):
+        return expr
+
+    leaves = list(expr._leaves())
+    data = [d.get(leaf) for leaf in leaves]
+
+    # See if we have a direct computation path with compute_down
+    try:
+        return compute_down(expr, *data, **kwargs)
+    except NotImplementedError:
+        pass
+
+    optimize_ = kwargs.get('optimize', optimize)
+    pre_compute_ = kwargs.get('pre_compute', pre_compute)
 
     # Otherwise...
     # Compute children of this expression
-    children = ([top_to_bottom(d, child, **kwargs)
-                    for child in expr._inputs]
-                    if hasattr(expr, '_inputs') else [])
+    if hasattr(expr, '_inputs'):
+        children = [top_to_bottom(d, child, **kwargs)
+                        for child in expr._inputs]
+    else:
+        children = []
+
+    # Did we experience a data type change?
+    if type_change(data, children):
+
+        # If so call pre_compute again
+        if pre_compute_:
+            children = [pre_compute_(expr, child) for child in children]
+
+        # If so call optimize again
+        if optimize_:
+            try:
+                expr = optimize_(expr, *children)
+            except NotImplementedError:
+                pass
 
     # Compute this expression given the children
     return compute_up(expr, *children, scope=d, **kwargs)
+
+
+_names = ('leaf_%d' % i for i in itertools.count(1))
+
+_leaf_cache = dict()
+_used_tokens = set()
+def _reset_leaves():
+    _leaf_cache.clear()
+    _used_tokens.clear()
+
+def makeleaf(expr):
+    """ Name of a new leaf replacement for this expression
+
+
+    >>> _reset_leaves()
+
+    >>> t = Symbol('t', '{x: int, y: int, z: int}')
+    >>> makeleaf(t)
+    t
+    >>> makeleaf(t.x)
+    x
+    >>> makeleaf(t.x + 1)
+    x
+    >>> makeleaf(t.x + 1)
+    x
+    >>> makeleaf(t.x).isidentical(makeleaf(t.x + 1))
+    False
+
+    >>> from blaze import sin, cos
+    >>> x = Symbol('x', 'real')
+    >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
+    False
+    """
+    name = expr._name or '_'
+    token = None
+    if expr in _leaf_cache:
+        return _leaf_cache[expr]
+    if (name, token) in _used_tokens:
+        for token in itertools.count():
+            if (name, token) not in _used_tokens:
+                break
+    result = Symbol(name, expr.dshape, token)
+    _used_tokens.add((name, token))
+    _leaf_cache[expr] = result
+    return result
+
+
+def data_leaves(expr, scope):
+    return [scope[leaf] for leaf in expr._leaves()]
+
+
+def bottom_up_until_type_break(expr, scope):
+    """ Traverse bottom up until data changes significantly
+
+    Parameters
+    ----------
+
+    expr: Expression
+        Expression to compute
+    scope: dict
+        namespace matching leaves of expression to data
+
+    Returns
+    -------
+
+    expr: Expression
+        New expression with lower subtrees replaced with leaves
+    scope: dict
+        New scope with entries for those leaves
+
+    Examples
+    --------
+
+    >>> import numpy as np
+
+    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
+    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+
+    This computation completes without changing type.  We get back a leaf
+    symbol and a computational result
+
+    >>> e = (s.amount + 1).distinct()
+    >>> bottom_up_until_type_break(e, {s: data})
+    (amount, {amount: array([101, 201, 301], dtype=int32)})
+
+    This computation has a type change midstream (``list`` to ``int``), so we
+    stop and get the unfinished computation.
+
+    >>> e = s.amount.sum() + 1
+    >>> bottom_up_until_type_break(e, {s: data})
+    (amount_sum + 1, {amount_sum: 600})
+    """
+    # 0. Base case.  Return if expression is in scope
+    if expr in scope:
+        leaf = makeleaf(expr)
+        return leaf, {leaf: scope[expr]}
+
+    inputs = list(unique(expr._inputs))
+
+    # 1. Recurse down the tree, calling this function on children
+    #    (this is the bottom part of bottom up)
+    exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope)
+                             for i in inputs])
+    # 2. Form new (much shallower) expression and new (more computed) scope
+    new_scope = toolz.merge(new_scopes)
+    new_expr = expr._subs(dict((i, e) for i, e in zip(inputs, exprs)
+                                      if not i.isidentical(e)))
+
+    old_expr_leaves = expr._leaves()
+    old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
+
+    # 3. If the leaves have change substantially then stop
+    key = lambda x: str(type(x))
+    if type_change(sorted(new_scope.values(), key=key),
+                   sorted(old_data_leaves, key=key)):
+        return new_expr, new_scope
+    else:
+    # 4. Otherwise do some actual work
+        leaf = makeleaf(expr)
+        _data = [new_scope[i] for i in new_expr._inputs]
+        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope)}
 
 
 def bottom_up(d, expr):
@@ -113,24 +380,6 @@ def bottom_up(d, expr):
     return result
 
 
-@dispatch(Expr, object)
-def pre_compute(leaf, data):
-    """ Transform data prior to calling ``compute`` """
-    return data
-
-
-@dispatch(Expr, object, dict)
-def post_compute(expr, result, d):
-    """ Effects after the computation is complete """
-    return result
-
-
-@dispatch(Expr, object)
-def optimize(expr, data):
-    """ Optimize expression to be computed on data """
-    return expr
-
-
 def swap_resources_into_scope(expr, scope):
     """ Translate interactive expressions into normal abstract expressions
 
@@ -145,14 +394,20 @@ def swap_resources_into_scope(expr, scope):
     >>> t = Data([1, 2, 3], dshape='3 * int', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
     (t.head(2), {t: [1, 2, 3]})
+
+    >>> expr, scope = _
+    >>> list(scope.keys())[0]._resources()
+    {}
     """
     resources = expr._resources()
     symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
-    scope = toolz.merge(resources, scope)
+    other_scope = dict((k, v) for k, v in scope.items()
+                       if k not in symbol_dict)
+    new_scope = toolz.merge(resources, other_scope)
     expr = expr._subs(symbol_dict)
 
-    return expr, scope
+    return expr, new_scope
 
 
 @dispatch(Expr, dict)
@@ -166,17 +421,26 @@ def compute(expr, d, **kwargs):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
+    _reset_leaves()
+    optimize_ = kwargs.get('optimize', optimize)
+    pre_compute_ = kwargs.get('pre_compute', pre_compute)
+    post_compute_ = kwargs.get('post_compute', post_compute)
+
     expr2, d2 = swap_resources_into_scope(expr, d)
-    d3 = dict((e, pre_compute(e, dat)) for e, dat in d2.items())
+    if pre_compute_:
+        d3 = dict((e, pre_compute_(e, dat)) for e, dat in d2.items())
+    else:
+        d3 = d2
 
-    try:
-        expr3 = optimize(expr2, *[v for e, v in d3.items() if e in expr2])
-    except NotImplementedError:
+    if optimize_:
+        try:
+            expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
+        except NotImplementedError:
+            expr3 = expr2
+    else:
         expr3 = expr2
-    result = top_to_bottom(d3, expr3, **kwargs)
-    return post_compute(expr3, result, d3)
+    result = top_then_bottom_then_top_again_etc(expr3, d3, **kwargs)
+    if post_compute_:
+        result = post_compute_(expr3, result, scope=d3)
 
-
-@dispatch(Union, (list, tuple))
-def compute_up(t, children, **kwargs):
-    return compute_up(t, children[0], tuple(children))
+    return result

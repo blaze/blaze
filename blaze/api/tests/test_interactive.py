@@ -27,6 +27,7 @@ L = [[1, 'Alice',   100],
 
 t = Data(data, columns=['name', 'amount'])
 
+x = np.ones((2, 2))
 
 def test_table_raises_on_inconsistent_inputs():
     with pytest.raises(ValueError):
@@ -83,6 +84,8 @@ def test_repr():
     assert '101' in result
 
     t2 = Data(tuple((i, i**2) for i in range(100)), fields=['x', 'y'])
+    assert t2.dshape == dshape('100 * {x: int64, y: int64}')
+
     result = expr_repr(t2)
     print(result)
     assert len(result.split('\n')) < 20
@@ -131,6 +134,11 @@ def test_to_html():
 
     assert to_html(t.count()) == '2'
 
+def test_to_html_on_arrays():
+    s = to_html(Data(np.ones((2, 2))))
+    assert '1' in s
+    assert 'br>' in s
+
 
 def test_repr_html():
     assert '<table' in t._repr_html_()
@@ -156,7 +164,7 @@ def test_table_resource():
 
         t = Data(filename)
         assert isinstance(t.data, CSV)
-        assert list(compute(t)) == list(csv)
+        assert into(list, compute(t)) == list(csv)
 
 
 def test_concretehead_failure():
@@ -229,3 +237,8 @@ def test_Data_on_json_is_concrete():
 
     assert compute(d.amount.sum()) == 100 - 200 + 300 + 400 - 500
     assert compute(d.amount.sum()) == 100 - 200 + 300 + 400 - 500
+
+
+def test_repr_on_nd_array_doesnt_err():
+    d = Data(np.ones((2, 2, 2)))
+    repr(d + 1)

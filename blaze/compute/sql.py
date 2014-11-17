@@ -32,7 +32,7 @@ from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Union, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
 from .core import compute_up, compute, base
 from ..data.utils import listpack
@@ -125,7 +125,7 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, Select)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    predicate = compute(t.predicate, toolz.merge(ns, scope), optimize=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
@@ -134,7 +134,7 @@ def compute_up(t, s, scope=None, **kwargs):
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope))
+    predicate = compute(t.predicate, toolz.merge(ns, scope), optimize=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
@@ -340,7 +340,7 @@ def compute_up(t, s, **kwargs):
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t._child: s})]
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t._child: s}).label(name)
+        reductions = [compute(val, {t._child: s}, post_compute=None).label(name)
                 for val, name in zip(t.apply.values, t.apply.fields)]
 
     return sqlalchemy.select([grouper] + reductions).group_by(grouper)
@@ -356,7 +356,7 @@ def compute_up(t, s, **kwargs):
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t._child: s})]
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t._child: s}).label(name)
+        reductions = [compute(val, {t._child: s}, post_compute=None).label(name)
                 for val, name in zip(t.apply.values, t.apply.fields)]
 
     return sqlalchemy.select(grouper + reductions).group_by(*grouper)
@@ -423,7 +423,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
-    col = getattr(s.c, t.key)
+    col = lower_column(getattr(s.c, t.key))
     if not t.ascending:
         col = sqlalchemy.desc(col)
     return select(s).order_by(col)
@@ -461,17 +461,12 @@ def compute_up(t, s, **kwargs):
     return select(children)
 
 
-@dispatch(Union, Selectable, tuple)
-def compute_up(t, _, children):
-    return sqlalchemy.union(*children)
-
-
 @dispatch(Summary, Select)
 def compute_up(t, s, scope=None, **kwargs):
     d = dict((t._child[c], list(inner_columns(s))[i])
             for i, c in enumerate(t._child.fields))
 
-    cols = [compute(val, toolz.merge(scope, d)).label(name)
+    cols = [compute(val, toolz.merge(scope, d), post_compute=None).label(name)
                 for name, val in zip(t.fields, t.values)]
 
     s = copy(s)
@@ -483,7 +478,7 @@ def compute_up(t, s, scope=None, **kwargs):
 
 @dispatch(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
-    return select([compute(value, {t._child: s}).label(name)
+    return select([compute(value, {t._child: s}, post_compute=None).label(name)
         for value, name in zip(t.values, t.fields)])
 
 

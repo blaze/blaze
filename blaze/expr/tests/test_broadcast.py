@@ -47,7 +47,7 @@ t = Symbol('t', 'var * {x: int, y: int, z: int}')
 
 
 def test_tabular_case():
-    expr = Add(x, Mult(y, 2))
+    expr = t.x + t.y * 2
 
     b = broadcast(expr, [t])
     tt, = b._scalars
@@ -87,7 +87,7 @@ def test_table_broadcast():
     expr = (2 * expr.x + expr.y + 1).distinct()
 
     expected = t.distinct()
-    expected = broadcast(2 * expected.x + expected.y + 1, [t]).distinct()
+    expected = broadcast(2 * expected.x + expected.y + 1, [expected]).distinct()
     assert broadcast_collect(expr).isidentical(expected)
 
     expr = (t.x + t.y).sum()

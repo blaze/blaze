@@ -39,11 +39,15 @@ def valid_identifier(s):
     'hello'
     >>> valid_identifier('hello world')
     'hello_world'
+    >>> valid_identifier('hello.world')
+    'hello_world'
+    >>> valid_identifier('hello-world')
+    'hello_world'
     >>> print(valid_identifier(None))
     None
     """
     if isinstance(s, _strtypes):
-        return s.replace(' ', '_').replace('.', '_')
+        return s.replace(' ', '_').replace('.', '_').replace('-', '_')
     return s
 
 
@@ -163,16 +167,17 @@ class Symbol(Expr):
 
     >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
     """
-    __slots__ = '_name', 'dshape'
+    __slots__ = '_name', 'dshape', '_token'
     __inputs__ = ()
 
-    def __init__(self, name, dshape):
+    def __init__(self, name, dshape, token=None):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
         if isinstance(dshape, Mono) and not isinstance(dshape, DataShape):
             dshape = DataShape(dshape)
         self.dshape = dshape
+        self._token = token
 
     def __str__(self):
         return self._name
@@ -276,6 +281,8 @@ class Projection(ElemWise):
 
 
 def projection(expr, names):
+    if not names:
+        raise ValueError("Projection with no names")
     if not isinstance(names, (tuple, list)):
         raise TypeError("Wanted list of strings, got %s" % names)
     if not set(names).issubset(expr.fields):

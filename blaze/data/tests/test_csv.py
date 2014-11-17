@@ -399,10 +399,10 @@ def test_repr_hdma():
     csv = CSV(example('hmda-small.csv'))
     t = TableSymbol('hmda', csv.schema)
 
-    assert compute(t.head(), csv)
+    assert len(into(list, compute(t.head(), csv))) == 10
 
     columns = ['action_taken_name', 'agency_abbr', 'applicant_ethnicity_name']
-    assert compute(t[columns].head(), csv)
+    assert into(list, compute(t[columns].head(), csv))
 
 
 @pytest.yield_fixture

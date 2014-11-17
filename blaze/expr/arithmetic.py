@@ -159,7 +159,7 @@ class USub(UnaryOp):
     symbol = '-'
 
     def __str__(self):
-        return '-%s' % self._child
+        return '-%s' % parenthesize(eval_str(self._child))
 
     @property
     def _dtype(self):
@@ -315,6 +315,8 @@ class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
     _dtype = ct.bool_
+    def __str__(self):
+        return '~%s' % parenthesize(eval_str(self._child))
 
 
 def _eq(self, other):

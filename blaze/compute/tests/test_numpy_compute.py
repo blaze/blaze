@@ -5,7 +5,7 @@ import pytest
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import Symbol, union, by, exp, Symbol
+from blaze.expr import Symbol, by, exp, Symbol
 from blaze import into
 from datashape import discover
 
@@ -60,21 +60,6 @@ def test_Neg():
 def test_invert_not():
     assert eq(compute(~(t.amount > 0), x),
               ~(x['amount'] > 0))
-
-
-def test_union_1d():
-    t = Symbol('t', 'var * int')
-    x = np.array([1, 2, 3])
-    assert eq(compute(union(t, t), x), np.array([1, 2, 3, 1, 2, 3]))
-
-
-def test_union():
-    result = compute(union(t, t), x)
-    assert result.shape == (x.shape[0] * 2,)
-    assert eq(result[:5], x)
-    assert eq(result[5:], x)
-    result = compute(union(t.id, t.id), x)
-    assert eq(result, np.array([1, 2, 3, 4, 5, 1, 2, 3, 4, 5]))
 
 
 def test_Reductions():
