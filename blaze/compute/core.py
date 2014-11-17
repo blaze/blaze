@@ -423,6 +423,7 @@ def compute(expr, d, **kwargs):
     _reset_leaves()
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
+    post_compute_ = kwargs.get('post_compute', post_compute)
 
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
@@ -438,4 +439,7 @@ def compute(expr, d, **kwargs):
     else:
         expr3 = expr2
     result = top_then_bottom_then_top_again_etc(expr3, d3, **kwargs)
-    return post_compute(expr3, result, scope=d3)
+    if post_compute_:
+        result = post_compute_(expr3, result, scope=d3)
+
+    return result
