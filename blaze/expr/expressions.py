@@ -39,11 +39,15 @@ def valid_identifier(s):
     'hello'
     >>> valid_identifier('hello world')
     'hello_world'
+    >>> valid_identifier('hello.world')
+    'hello_world'
+    >>> valid_identifier('hello-world')
+    'hello_world'
     >>> print(valid_identifier(None))
     None
     """
     if isinstance(s, _strtypes):
-        return s.replace(' ', '_').replace('.', '_')
+        return s.replace(' ', '_').replace('.', '_').replace('-', '_')
     return s
 
 
