@@ -78,9 +78,6 @@ class Server(object):
         All other args and keyword args are passed through to the Flask
         application.  See ``self.app.run`` for more details
         """
-        port=int - a specific port to use, defaults to 6363
-        separate_thread=bool - Specify true
-
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
         separate_thread = kwargs.pop('separate_thread', False)
