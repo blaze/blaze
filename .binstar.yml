@@ -22,6 +22,8 @@ before_script:
 script:
   - conda build conda.recipe
 
+iotimeout: 120
+
 build_targets: conda
 
 notifications:
