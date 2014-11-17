@@ -15,6 +15,7 @@ from ..api import discover, Data
 from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify
 from .. import expr
+from ..utils import example, FunctionRunner
 
 from ..compatibility import map
 from datashape import Mono
@@ -61,8 +62,32 @@ class Server(object):
         return value
 
     def run(self, *args, **kwargs):
+        """ Start serving data
+
+        Parameters
+        ----------
+
+        host : str
+            IPs to allow.  Defaults to localhost.  Set to '0.0.0.0' for public.
+        port : int
+            The port on which to serve the data, defaults to 6363
+        separate_thread : bool
+            Optionally run the server in a separate thread.  Returns thread
+            object
+
+        All other args and keyword args are passed through to the Flask
+        application.  See ``self.app.run`` for more details
+        """
+        port=int - a specific port to use, defaults to 6363
+        separate_thread=bool - Specify true
+
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
+        separate_thread = kwargs.pop('separate_thread', False)
+        if separate_thread:
+            thread = FunctionRunner(self.run, *args, **kwargs)
+            thread.start()
+            return thread
         try:
             self.app.run(*args, port=port, **kwargs)
         except socket.error:

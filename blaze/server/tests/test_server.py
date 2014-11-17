@@ -6,6 +6,7 @@ from flask import json
 from datetime import datetime
 from dynd import nd
 from pandas import DataFrame
+import requests
 
 from blaze.utils import example
 from blaze import discover, Symbol, by, CSV, compute, join, into
@@ -205,3 +206,16 @@ def test_multi_expression_compute():
     expected = compute(expr, {a: accounts, c: cities})
 
     assert list(map(tuple, result))== into(list, expected)
+
+
+def test_run_in_thread():
+    s = Server({'a': [1, 2, 3]})
+    thread = s.run(separate_thread=True)
+
+    try:
+        response = requests.get('http://localhost:%d/datasets.json' % s.port)
+        assert response.ok
+
+        assert json.loads(response.content) == {'a': '3 * int64'}
+    finally:
+        thread._Thread__stop()
