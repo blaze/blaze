@@ -40,7 +40,7 @@ from __future__ import absolute_import, division, print_function
 
 from toolz import concat
 import datashape
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, isrecord
 from math import floor
 
 from .core import *
@@ -187,18 +187,34 @@ def _split_agg(expr, leaf=None, agg=None):
 
 @dispatch(Summary)
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
-    return summary(keepdims=keepdims,
-                   **dict((name, split(leaf, val, chunk=chunk,
+    exprs = [(name, split(leaf, val, chunk=chunk,
                                        keepdims=False)[0][1])
-                            for name, val in zip(expr.fields, expr.values)))
+                            for name, val in zip(expr.fields, expr.values)]
+    d = dict()
+    for name, e in exprs:
+        if isinstance(e, Reduction):
+            d[name] = e
+        elif isinstance(e, Summary):
+            for n, v in zip(e.names, e.values):
+                d[name + '_' + n] = v
+    return summary(keepdims=keepdims, **d)
 
 
 @dispatch(Summary)
 def _split_agg(expr, leaf=None, chunk=None, agg=None, keepdims=True):
-    return summary(**dict((name, split(leaf, val, agg=agg,
-                                       keepdims=False)[1][1]._subs(
-                                                        {agg: agg[name]}))
-                            for name, val in zip(expr.fields, expr.values)))
+    exprs = [(name, split(leaf, val, keepdims=False)[1])
+                for name, val in zip(expr.fields, expr.values)]
+
+    d = dict()
+    for name, (a, ae) in exprs:
+        if isscalar(a.dshape.measure): # For simple reductions
+            d[name] = ae._subs({a: agg[name]})
+        elif isrecord(a.dshape.measure):  # For reductions like mean/var
+            names = ['%s_%s' % (name, field) for field in a.fields]
+            namedict = dict(zip(a.fields, names))
+            d[name] = ae._subs({a: agg[names]})._subs(namedict)
+
+    return summary(**d)
 
 
 @dispatch(By)

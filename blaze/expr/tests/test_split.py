@@ -110,6 +110,20 @@ def test_summary():
     assert agg_expr.isidentical(summary(total=agg.total.sum()))
 
 
+def test_summary_with_mean():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, summary(a=t.amount.count(),
+                                                            b=t.id.mean() + 1))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(a=chunk.amount.count(),
+                                          b_total=chunk.id.sum(),
+                                          b_count=chunk.id.count(), keepdims=True))
+
+    # assert not agg.schema == dshape('{a: int32, b: int32}')
+    assert agg_expr.isidentical(summary(a=agg.a.sum(),
+                                        b=(agg.b_total.sum() / agg.b_count.sum()) + 1))
+
+
 def test_by_sum():
     (chunk, chunk_expr), (agg, agg_expr) = \
             split(t, by(t.name, total=t.amount.sum()))
