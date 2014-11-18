@@ -9,7 +9,7 @@ from ..expr import Label, Distinct, By, Slice
 from ..expr import std, var, count, mean, nunique, sum
 from ..expr import eval_str, Expr
 from ..expr import path
-from ..expr.optimize import lean_projection
+from ..expr.optimize import lean_projection, _lean
 from ..expr.split import split
 from ..partition import partitions, partition_get
 from .core import compute
@@ -34,6 +34,29 @@ COMFORTABLE_MEMORY_SIZE = 1e9
 
 
 @dispatch(Expr, (bcolz.ctable, bcolz.carray))
+def optimize(expr, _):
+    return expr
+    # return lean_projection(expr)  # This is handled in pre_compute
+
+
+@dispatch(Expr, bcolz.ctable)
+def pre_compute(expr, data, scope=None):
+    """ Execute projections immediately
+
+    bcolz is a column-store.  This is free, powerful, and idempotent """
+    expr2, fields = _lean(expr, fields=set(expr.fields))
+    pth = list(path(expr2, expr2._leaves()[0]))[::-1][:2]
+    if len(pth) == 1:
+        return data
+
+    leaf, child = pth
+    if isinstance(child, Projection):
+        return data[child.fields]
+    else:
+        return data
+
+
+@dispatch(Expr, bcolz.carray)
 def pre_compute(expr, data, scope=None):
     return data
 
@@ -42,7 +65,7 @@ def pre_compute(expr, data, scope=None):
 def discover(data):
     return datashape.from_numpy(data.shape, data.dtype)
 
-Cheap = (Head, ElemWise, Selection, Distinct, Symbol)
+Cheap = (Head, ElemWise, Distinct, Symbol)
 
 @dispatch(Head, (bcolz.ctable, bcolz.carray))
 def compute_down(expr, data, **kwargs):
@@ -87,11 +110,6 @@ def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return b[start:stop]
-
-
-@dispatch(Expr, (bcolz.ctable, bcolz.carray))
-def optimize(expr, _):
-    return lean_projection(expr)
 
 
 def compute_chunk(source, chunk, chunk_expr, data_index):

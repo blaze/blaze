@@ -82,8 +82,8 @@ expressions = {
         # by(t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
-        t[0]: [sql, mongo],
-        t[::2]: [sql, mongo],
+        t[0]: [sql, mongo, bc],
+        t[::2]: [sql, mongo, bc],
         t.id.utcfromtimestamp: [sql],
         t.distinct().nrows: [],
         t.nelements(axis=0): [],

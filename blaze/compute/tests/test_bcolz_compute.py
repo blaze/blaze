@@ -9,7 +9,7 @@ import numpy as np
 import blaze as bz
 from blaze.bcolz import into, chunks
 from blaze.expr import Symbol
-from blaze.compute.core import compute
+from blaze.compute.core import compute, pre_compute
 
 
 b = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, 3.)],
@@ -101,3 +101,13 @@ def test_nrows():
 def test_nelements():
     assert compute(t.nelements(axis=0), b) == len(b)
     assert compute(t.nelements(), b) == len(b)
+
+
+def test_pre_compute():
+    b = bcolz.ctable(np.array([(1, 1., 10.), (2, 2., 20.), (3, 3., 30.)],
+                              dtype=[('a', 'i8'), ('b', 'f8'), ('c', 'f8')]))
+
+    s = Symbol('s', discover(b))
+
+    result = pre_compute(s[['a', 'b']], b)
+    assert result.names == ['a', 'b']

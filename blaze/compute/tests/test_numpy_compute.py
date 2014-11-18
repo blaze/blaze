@@ -5,7 +5,7 @@ import pytest
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import Symbol, by, exp, Symbol
+from blaze.expr import Symbol, by, exp
 from blaze import into
 from datashape import discover
 
