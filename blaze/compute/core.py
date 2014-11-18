@@ -345,11 +345,17 @@ def bottom_up_until_type_break(expr, scope):
     if type_change(sorted(new_scope.values(), key=key),
                    sorted(old_data_leaves, key=key)):
         return new_expr, new_scope
-    else:
-    # 4. Otherwise do some actual work
+    # 4. Otherwise try to do some actual work
+    try:
         leaf = makeleaf(expr)
         _data = [new_scope[i] for i in new_expr._inputs]
+    except KeyError:
+        return new_expr, new_scope
+    try:
         return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope)}
+    except NotImplementedError:
+        return new_expr, new_scope
+
 
 
 def bottom_up(d, expr):

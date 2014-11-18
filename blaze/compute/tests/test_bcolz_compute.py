@@ -103,7 +103,7 @@ def test_nelements():
     assert compute(t.nelements(), b) == len(b)
 
 
-def test_pre_compute():
+def dont_test_pre_compute(): # This is no longer desired.  Handled by compute_up
     b = bcolz.ctable(np.array([(1, 1., 10.), (2, 2., 20.), (3, 3., 30.)],
                               dtype=[('a', 'i8'), ('b', 'f8'), ('c', 'f8')]))
 

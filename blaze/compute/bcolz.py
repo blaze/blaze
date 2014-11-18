@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import curry, concat
+from toolz import curry, concat, first
 from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
-        Arithmetic, Broadcast, Symbol)
+        Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply, Reduction)
 from ..expr import Label, Distinct, By, Slice
 from ..expr import std, var, count, mean, nunique, sum
 from ..expr import eval_str, Expr
@@ -35,8 +35,8 @@ COMFORTABLE_MEMORY_SIZE = 1e9
 
 @dispatch(Expr, (bcolz.ctable, bcolz.carray))
 def optimize(expr, _):
+    return lean_projection(expr)  # This is handled in pre_compute
     return expr
-    # return lean_projection(expr)  # This is handled in pre_compute
 
 
 @dispatch(Expr, bcolz.ctable)
@@ -44,14 +44,14 @@ def pre_compute(expr, data, scope=None):
     """ Execute projections immediately
 
     bcolz is a column-store.  This is free, powerful, and idempotent """
-    expr2, fields = _lean(expr, fields=set(expr.fields))
-    pth = list(path(expr2, expr2._leaves()[0]))[::-1][:2]
-    if len(pth) == 1:
-        return data
-
-    leaf, child = pth
-    if isinstance(child, Projection):
-        return data[child.fields]
+    return data
+    expr2 = lean_projection(expr)
+    leaf = expr2._leaves()[0]
+    scions = set(e for e in expr2._traverse()
+                   if isinstance(e, Expr)
+                   and any(i is expr2._leaves()[0] for i in e._inputs))
+    if len(scions) == 1 and isinstance(first(scions), Projection):
+        return data[first(scions).fields]
     else:
         return data
 
@@ -79,6 +79,11 @@ def compute_down(expr, data, **kwargs):
         return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
     else:
         raise MDNotImplementedError()
+
+@dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
+    Selection, ElemWise, Apply, Reduction, Distinct, By), (bcolz.ctable, bcolz.carray))
+def compute_up(expr, data, **kwargs):
+    raise NotImplementedError()
 
 
 @dispatch(Field, bcolz.ctable)
@@ -120,6 +125,15 @@ def compute_chunk(source, chunk, chunk_expr, data_index):
 @dispatch(Expr, (bcolz.carray, bcolz.ctable))
 def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
     leaf = expr._leaves()[0]
+
+    # If the bottom expression is a projection or field then want to do
+    # compute_up first
+    scions = set(e for e in expr._traverse()
+                   if isinstance(e, Expr)
+                   and any(i is expr._leaves()[0] for i in e._inputs))
+    if len(scions) == 1 and isinstance(first(scions), (Field, Projection)):
+        raise NotImplementedError()
+
 
     chunk = Symbol('chunk', chunksize * leaf.schema)
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr, chunk=chunk)

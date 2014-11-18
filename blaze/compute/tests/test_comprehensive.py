@@ -77,7 +77,7 @@ expressions = {
         by(t[['id', 'amount']], total=(t.amount + 1).sum()): [mongo],
         by(t[['id', 'amount']], n=t.name.nunique()): [mongo, bc],
         by(t.id, count=t.amount.count()): [],
-        by(t.id, n=t.id.nunique()): [mongo],
+        by(t.id, n=t.id.nunique()): [mongo, bc],
         # by(t, t.count()): [],
         # by(t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
