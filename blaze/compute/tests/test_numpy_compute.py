@@ -76,6 +76,8 @@ def test_Reductions():
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
 
+def test_reductions_on_recarray():
+    assert compute(t.count(), x) == len(x)
 
 def test_count_nan():
     t = Symbol('t', '3 * ?real')
