@@ -176,7 +176,7 @@ def _split_agg(expr, leaf=None, agg=None):
     n = agg.n.sum()
     denominator = n - 1 if expr.unbiased else n
 
-    return (x2 - x**2) / denominator
+    return (x2 / denominator) - (x / denominator)**2
 
 @dispatch(std)
 def _split_agg(expr, leaf=None, agg=None):
@@ -185,7 +185,8 @@ def _split_agg(expr, leaf=None, agg=None):
     n = agg.n.sum()
     denominator = n - 1 if expr.unbiased else n
 
-    return sqrt((x2 - x**2) / denominator)
+    return sqrt((x2 / denominator) - (x / denominator)**2)
+
 
 @dispatch(Distinct)
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):

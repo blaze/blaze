@@ -59,7 +59,8 @@ def test_var():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical((agg.x2.sum() - agg.x.sum()**2) / agg.n.sum())
+    assert agg_expr.isidentical((agg.x2.sum() / agg.n.sum()
+                              - (agg.x.sum() / agg.n.sum())**2))
 
 def test_std():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.std())
@@ -71,7 +72,8 @@ def test_std():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(sqrt((agg.x2.sum() - agg.x.sum()**2) / agg.n.sum()))
+    assert agg_expr.isidentical(sqrt((agg.x2.sum() / agg.n.sum()
+                                   - (agg.x.sum() / agg.n.sum())**2)))
 
 
 def test_sum_with_axis_argument():
@@ -162,10 +164,13 @@ def test_complex_summaries():
                                           w_x2=(chunk.a**2).sum(),
                                           keepdims=True))
 
-    assert agg_expr.isidentical(summary(e=agg.e.sum(),
-                                        q=agg.q_total.sum() / agg.q_count.sum(),
-                                        w=sqrt(agg.w_x2.sum() - agg.w_x.sum()**2
-                                                / agg.w_n.sum())))
+    expected = summary(e=agg.e.sum(),
+                       q=agg.q_total.sum() / agg.q_count.sum(),
+                       w=sqrt((agg.w_x2.sum() / agg.w_n.sum())
+                            - (agg.w_x.sum() / agg.w_n.sum())**2))
+    assert agg_expr.isidentical(expected)
+
+
 
 
 def test_by_sum():
