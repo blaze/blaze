@@ -130,7 +130,8 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
 
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
-              any: (any, any), all: (all, all)}
+              any: (any, any), all: (all, all),
+              nelements: (nelements, sum)}
 
 @dispatch(Expr)
 def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
