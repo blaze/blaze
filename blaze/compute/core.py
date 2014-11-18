@@ -160,27 +160,27 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         pass
 
     # 2. Compute from the bottom until there is a data type change
-    new_expr, new_scope = bottom_up_until_type_break(expr, scope)
+    expr2, scope2 = bottom_up_until_type_break(expr, scope)
 
     # 3. Re-optimize data and expressions
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        new_scope2 = dict((e, pre_compute(new_expr, datum, scope=new_scope))
-                        for e, datum in new_scope.items())
+        scope3 = dict((e, pre_compute(expr2, datum, scope=scope2))
+                        for e, datum in scope2.items())
     else:
-        new_scope2 = new_scope
-    if optimize_:
-        try:
-            new_expr2 = optimize_(new_expr, *[new_scope2[leaf]
-                                              for leaf in new_expr._leaves()])
-        except NotImplementedError:
-            new_expr2 = new_expr
-    else:
-        new_expr2 = new_expr
+        scope3 = scope2
+    try:
+        expr3 = optimize_(expr2, *[scope3[leaf]
+                                          for leaf in expr2._leaves()])
+        _d = dict(zip(expr2._leaves(), expr3._leaves()))
+        scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
+    except (TypeError, NotImplementedError):
+        expr3 = expr2
+        scope4 = scope3
 
     # 4. Repeat
-    return top_then_bottom_then_top_again_etc(new_expr2, new_scope2)
+    return top_then_bottom_then_top_again_etc(expr3, scope4)
 
 
 def top_to_bottom(d, expr, **kwargs):
@@ -432,15 +432,15 @@ def compute(expr, d, **kwargs):
     else:
         d3 = d2
 
-    if optimize_:
-        try:
-            expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
-        except NotImplementedError:
-            expr3 = expr2
-    else:
+    try:
+        expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
+        _d = dict(zip(expr2._leaves(), expr3._leaves()))
+        d4 = dict((e._subs(_d), d) for e, d in d3.items())
+    except (TypeError, NotImplementedError):
         expr3 = expr2
-    result = top_then_bottom_then_top_again_etc(expr3, d3, **kwargs)
+        d4 = d3
+    result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
-        result = post_compute_(expr3, result, scope=d3)
+        result = post_compute_(expr3, result, scope=d4)
 
     return result
