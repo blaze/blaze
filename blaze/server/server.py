@@ -248,7 +248,7 @@ def from_tree(expr, namespace=None):
 
 
 @route('/compute/<name>.json', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-@crossdomain(origin="*", headers=['content-type'])
+@crossdomain(origin="*", headers=None)
 def comp(datasets, name):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
@@ -278,7 +278,8 @@ def comp(datasets, name):
 
 
 
-@route('/compute.json', methods=['POST', 'PUT', 'GET'])
+@route('/compute.json', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
+@crossdomain(origin="*", headers=None)
 def compserver(datasets):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
@@ -302,4 +303,6 @@ def compserver(datasets):
         result = into(list, result)
 
     return jsonify({'datashape': str(expr.dshape),
-                    'data': result})
+                    'data': result,
+                    'names' : result.columns,
+                })

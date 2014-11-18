@@ -55,14 +55,20 @@ def crossdomain(origin=None, methods=None, headers=None,
                 resp = make_response(f(*args, **kwargs))
             if not attach_to_all and request.method != 'OPTIONS':
                 return resp
-
+            print request.headers
             h = resp.headers
 
             h['Access-Control-Allow-Origin'] = origin
             h['Access-Control-Allow-Methods'] = get_methods()
             h['Access-Control-Max-Age'] = str(max_age)
+            requested_headers = request.headers.get(
+                'Access-Control-Request-Headers'
+            )
             if headers is not None:
                 h['Access-Control-Allow-Headers'] = headers
+            elif requested_headers :
+                h['Access-Control-Allow-Headers'] = requested_headers
+            print h
             return resp
         f.provide_automatic_options = False
         return update_wrapper(wrapped_function, f)
