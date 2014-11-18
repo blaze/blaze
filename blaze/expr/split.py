@@ -162,7 +162,7 @@ def _split_agg(expr, leaf=None, agg=None):
     total = agg.total.sum()
     count = agg.count.sum()
 
-    return total / count
+    return 1.0 * total / count
 
 @dispatch((std, var))
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
@@ -173,19 +173,27 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
 def _split_agg(expr, leaf=None, agg=None):
     x = agg.x.sum()
     x2 = agg.x2.sum()
-    n = agg.n.sum()
-    denominator = n - 1 if expr.unbiased else n
+    n = agg.n.sum() * 1.0
 
-    return (x2 / denominator) - (x / denominator)**2
+    result = (x2 / n) - (x / n)**2
+
+    if expr.unbiased:
+        result = result / (n - 1) * n
+
+    return result
 
 @dispatch(std)
 def _split_agg(expr, leaf=None, agg=None):
     x = agg.x.sum()
     x2 = agg.x2.sum()
-    n = agg.n.sum()
-    denominator = n - 1 if expr.unbiased else n
+    n = agg.n.sum() * 1.0
 
-    return sqrt((x2 / denominator) - (x / denominator)**2)
+    result = (x2 / n) - (x / n)**2
+
+    if expr.unbiased:
+        result = result / (n - 1) * n
+
+    return sqrt(result)
 
 
 @dispatch(Distinct)

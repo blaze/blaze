@@ -46,7 +46,7 @@ def test_mean():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
+    assert agg_expr.isidentical(1.0 * agg.total.sum() / agg.count.sum())
 
 
 def test_var():
@@ -59,8 +59,8 @@ def test_var():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical((agg.x2.sum() / agg.n.sum()
-                              - (agg.x.sum() / agg.n.sum())**2))
+    assert agg_expr.isidentical((agg.x2.sum() / (agg.n.sum() * 1.0)
+                              - (agg.x.sum() / (agg.n.sum() * 1.0))**2))
 
 def test_std():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.std())
@@ -72,8 +72,8 @@ def test_std():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(sqrt((agg.x2.sum() / agg.n.sum()
-                                   - (agg.x.sum() / agg.n.sum())**2)))
+    assert agg_expr.isidentical(sqrt((agg.x2.sum() / (agg.n.sum() * 1.0)
+                                   - (agg.x.sum() / (agg.n.sum() * 1.0))**2)))
 
 
 def test_sum_with_axis_argument():
