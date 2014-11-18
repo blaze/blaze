@@ -177,6 +177,7 @@ def test_utcfromtimestamp():
 
 def test_nelements_structured_array():
     assert compute(t.nelements(), x) == len(x)
+    assert compute(t.nelements(keepdims=True), x) == (len(x),)
 
 
 def test_nelements_array():
