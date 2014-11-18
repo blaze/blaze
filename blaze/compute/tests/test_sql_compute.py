@@ -29,7 +29,7 @@ sbig = sa.Table('accountsbig', metadata,
              )
 
 def normalize(s):
-    return ' '.join(s.strip().split()).lower()
+    return ' '.join(s.strip().split()).lower().replace('_', '')
 
 
 def test_table():
@@ -106,6 +106,15 @@ def test_join():
 
     # Schemas match
     assert list(result.c.keys()) == list(joined.fields)
+
+    # test sort on join
+
+    result = compute(joined.sort('amount'), {L: lhs, R: rhs})
+    assert normalize(str(result)) == normalize("""
+    SELECT amounts.name, amounts.amount, ids.id
+    FROM amounts JOIN ids ON amounts.name = ids.name
+    ORDER BY amounts.amount""")
+
 
 
 def test_clean_complex_join():
@@ -393,23 +402,6 @@ def test_projection_of_selection():
     print(compute(t[t['amount'] < 0][['name', 'amount']], s))
     assert len(str(compute(t[t['amount'] < 0], s))) > \
             len(str(compute(t[t['amount'] < 0][['name', 'amount']], s)))
-
-
-def test_union():
-    metadata = sa.MetaData()
-    ts = [Symbol('t_%d' % i, 'var * {name: string, amount: int, id: int}')
-            for i in [1, 2, 3]]
-    ss = [sa.Table('accounts_%d' % i, metadata,
-             sa.Column('name', sa.String),
-             sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True)) for i in [1, 2, 3]]
-
-    expr = union(*ts)
-
-    result = str(select(compute(expr, dict(zip(ts, ss)))))
-
-    assert "SELECT name, amount, id" in str(result)
-    assert "accounts_1 UNION accounts_2 UNION accounts_3" in str(result)
 
 
 def test_outer_join():

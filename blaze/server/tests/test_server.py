@@ -64,6 +64,7 @@ def test_to_tree():
                                'args': [
                                     't',
                                     'var * { name : string, amount : int32 }',
+                                    None
                                     ]
                                },
                               'amount'
@@ -169,7 +170,7 @@ def test_compute_by_with_summary(iris_server):
     assert 'OK' in resp.status
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
-    assert result == list(map(list, expected))
+    assert result == list(map(list, into(list, expected)))
 
 
 def test_compute_column_wise(iris_server):
@@ -186,7 +187,7 @@ def test_compute_column_wise(iris_server):
     assert 'OK' in resp.status
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
-    assert list(map(tuple, result)) == list(map(tuple, expected))
+    assert list(map(tuple, result)) == into(list, expected)
 
 
 def test_multi_expression_compute():

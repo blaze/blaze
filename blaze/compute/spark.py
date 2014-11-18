@@ -223,8 +223,3 @@ def into(rdd, seq):
 @dispatch(list, RDD)
 def into(seq, rdd):
     return rdd.collect()
-
-
-@dispatch(Union, RDD, tuple)
-def compute_up(t, _, children):
-    return reduce(RDD.union, children)

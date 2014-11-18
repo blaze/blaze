@@ -27,6 +27,10 @@ __all__ = ['bcolz']
 COMFORTABLE_MEMORY_SIZE = 1e9
 
 
+@dispatch(Expr, (bcolz.ctable, bcolz.carray))
+def pre_compute(expr, data, scope=None):
+    return data
+
 @dispatch((bcolz.carray, bcolz.ctable))
 def discover(data):
     return datashape.from_numpy(data.shape, data.dtype)

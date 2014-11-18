@@ -3,13 +3,13 @@ from __future__ import absolute_import, division, print_function
 from toolz import isdistinct, frequencies, concat, unique, get
 import datashape
 from datashape import Option, Record, Unit, dshape, var
-from datashape.predicates import isscalar, iscollection
+from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'Union', 'distinct', 'merge',
-           'union', 'head', 'sort', 'Join', 'join']
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
+           'head', 'sort', 'Join', 'join']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -33,6 +33,8 @@ class Sort(Expr):
 
     @property
     def key(self):
+        if not self._key:
+            return self._child.fields[0]
         if isinstance(self._key, tuple):
             return list(self._key)
         else:
@@ -63,10 +65,10 @@ def sort(child, key=None, ascending=True):
     ascending: bool
         Determines order of the sort
     """
+    if not isrecord(child.dshape.measure):
+        key = None
     if isinstance(key, list):
         key = tuple(key)
-    if key is None:
-        key = child.fields[0]
     return Sort(child, key, ascending)
 
 
@@ -231,52 +233,6 @@ class Merge(ElemWise):
         return list(unique(concat(i._leaves() for i in self.children)))
 
 
-class Union(Expr):
-    """ Merge the rows of many Tables together
-
-    Must all have the same schema
-
-    Examples
-    --------
-    >>> from blaze import Symbol
-
-    >>> usa_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
-    >>> euro_accounts = Symbol('accounts', 'var * {name: string, amount: int}')
-
-    >>> all_accounts = union(usa_accounts, euro_accounts)
-    >>> all_accounts.fields
-    ['name', 'amount']
-
-    See Also
-    --------
-
-    blaze.expr.collections.Merge
-    """
-    __slots__ = 'children',
-    __inputs__ = 'children',
-
-    def _subterms(self):
-        yield self
-        for i in self.children:
-            for node in i._subterms():
-                yield node
-
-    @property
-    def dshape(self):
-        return datashape.var * self.children[0].dshape.subshape[0]
-
-    def _leaves(self):
-        return list(unique(concat(i._leaves() for i in self.children)))
-
-
-def union(*children):
-    schemas = set(child.schema for child in children)
-    if len(schemas) != 1:
-        raise ValueError("Inconsistent schemas:\n\t%s" %
-                            '\n\t'.join(map(str, schemas)))
-    return Union(children)
-
-
 def unpack(l):
     """ Unpack items from collections of nelements 1
 
@@ -318,7 +274,6 @@ class Join(Expr):
     --------
 
     blaze.expr.collections.Merge
-    blaze.expr.collections.Union
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'

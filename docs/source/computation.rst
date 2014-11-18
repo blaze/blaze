@@ -62,11 +62,13 @@ following:
     ``optimize(expr, data) -> expr``
 2.  Modify the data resources before we start execution.
     ``pre_compute(expr, data) -> data``
-3.  Clean up the data result after we complete execution.
+3.  Modify the data resources as they change type throughout the computation
+    ``pre_compute(expr, data) -> data``
+4.  Clean up the data result after we complete execution.
     ``post_compute(expr, data) -> data``
-4.  Process a leaf of the tree in a bottom up fashion as described above.
+5.  Process a leaf of the tree in a bottom up fashion as described above.
     ``compute_up(expr, data) -> data``
-5.  Process large chunks of the tree at once, rather than always start from the
+6.  Process large chunks of the tree at once, rather than always start from the
     bottom. ``compute_down(expr, data) -> data``
 
 Each of these steps is critical to one backend or another.  We describe each in
@@ -88,14 +90,39 @@ is applicable.  It is not applied at leaves which have little to optimize.
 ``pre_compute :: expr, data -> data``
 -------------------------------------
 
-Pre-compute is applied to leaf data elements prior to any computation
+Pre-compute is applied to leaf data elements prior to computation
 (``xdata`` and ``ydata`` in the example above).  It might be used for example,
 to load data into memory.
+
+We apply ``pre_compute`` at two stages of the pipeline
+
+1.  At the beginning of the computation
+2.  Any time that the data significantly *changes type*
+
+So for example for the dataset::
+
+   data = {'my_foo':  Foo(...)}
+
+If we apply the computation::
+
+   X -> X.my_foo.distinct()
+
+Then after the ``X -> X.my_foo`` computation as the type changes from ``dict``
+to ``Foo`` we will call ``pre_compute`` again on the ``Foo`` object with the
+remaining expression::
+
+    data = pre_compute(X.my_foo.distinct(), Foo(...))
 
 A real use case is the streaming Python backend which consumes either sequences
 of tuples or sequences of dicts.  ``precompute(expr, Sequence)`` detects which
 case we are in and normalizes to sequences of tuples.  This pre-computation
 allows the rest of the Python backend to make useful assumptions.
+
+Another use case is computation on CSV files.  If the csv file is small we'd
+like to transform it into a pandas dataframe.  If it is large we'd like to
+transform it into a Python iterator.  This logic can be encoded as a
+``pre_compute`` function and so will be triggered whenever a ``CSV`` object is
+first found.
 
 
 ``post_compute :: expr, data -> data``
@@ -105,7 +132,8 @@ Post-compute finishes a computation.  It is handed the data after all
 computation has been done.
 
 For example, in the case of SQLAlchemy queries the ``post_compute`` function
-actually sends the query to the SQL engine and collects results.
+actually sends the query to the SQL engine and collects results.  This occurs
+only after Blaze finishes translating everything.
 
 
 ``compute_up :: expr, data -> data``
@@ -114,7 +142,13 @@ actually sends the query to the SQL engine and collects results.
 Compute up walks the expression tree bottom up and processes data step by step.
 
 Compute up is the most prolific function in the computation pipeline and
-encodes most of the logic.
+encodes most of the logic.  A brief example
+
+.. code-block:: python
+
+   @dispatch(blaze.expr.Add, np.ndarray, np.ndarray)
+   def compute_up(expr, lhs, rhs):
+       return lhs + rhs
 
 
 ``compute_down :: expr, data -> data``
@@ -140,18 +174,27 @@ Full Pipeline
 The full pipeline looks like the following
 
 1.  ``Pre-compute`` all leaves of data
-2.  ``Optimize`` all appropriate expressions
-3.  Start from the top of the expression tree, calling ``compute_down`` until a
-    match is found
-4.  If no match is found, start from the bottom, calling ``compute_up``
-5.  ``Post-Compute`` on the result
+2.  ``Optimize`` the expression
+3.  Try calling ``compute_down`` on the entire expression tree
+4.  Otherwise, traverse up the tree from the leaves, calling ``compute_up``.
+    Repeat this until the data significantly changes type (e.g. ``list`` to
+    ``int`` after a ``sum`` operation)
+5.  Reevaluate ``optimize`` on the expression and ``pre_compute`` on all of the
+    data elements.
+6.  Go to step 3
+5.  Call ``post_compute`` on the result
 
 This is outlined in ``blaze/compute/core.py`` in the functions ``compute(Expr,
-dict)`` and ``top_to_bottom``.
+dict)`` and ``top_then_bottom_then_top_again_etc``.
 
 
 History
 -------
 
 This design is ad-hoc.  Each of the stages listed above arose from need, not
-from principled fore-thought.  Undoubtedly this system could be improved.
+from principled fore-thought.  Undoubtedly this system could be improved.  In
+particular much of the complexity comes from the fact that ``compute_up/down``
+functions may transform our data arbitrarily.  This, along with various
+particular needs from all of the different data types, forces the
+flip-flopping between top-down and bottom-up traversals.  Please note that
+while this strategy *works well most of the time* pathalogical cases do exist.

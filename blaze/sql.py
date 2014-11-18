@@ -49,8 +49,8 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-@dispatch(Expr, sa.sql.ClauseElement, dict)
-def post_compute(expr, query, d):
+@dispatch(Expr, sa.sql.ClauseElement)
+def post_compute(expr, query, scope=None):
     """ Execute SQLAlchemy query against SQLAlchemy engines
 
     If the result of compute is a SQLAlchemy query then it is likely that the
@@ -58,10 +58,10 @@ def post_compute(expr, query, d):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, (SQL, Engine, Table)) for val in d.values()):
+    if not all(isinstance(val, (SQL, Engine, Table)) for val in scope.values()):
         return query
 
-    engines = set(filter(None, map(engine_of, d.values())))
+    engines = set(filter(None, map(engine_of, scope.values())))
 
     if not engines:
         return query

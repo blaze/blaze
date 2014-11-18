@@ -11,7 +11,7 @@ import datashape
 from datashape.predicates import iscollection, isscalar
 from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
-                        join, cos, by, union, exp, distinct, Apply,
+                        join, cos, by, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
                         Summary, count, Symbol, Field, discover,
@@ -707,19 +707,6 @@ def test_improper_selection():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
 
     assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])
-
-
-def test_union():
-    schema = '{x: int, y: int, z: int}'
-    a = TableSymbol('a', schema)
-    b = TableSymbol('b', schema)
-    c = TableSymbol('c', schema)
-
-    u = union(a, b, c)
-    assert u.schema == a.schema
-
-    assert raises(Exception,
-                  lambda: union(a, TableSymbol('q', '{name: string}')))
 
 
 def test_serializable():

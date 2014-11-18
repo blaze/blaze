@@ -4,7 +4,7 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Union, Expr, Slice
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
@@ -141,11 +141,6 @@ def compute_up(sel, x, **kwargs):
 @dispatch(UTCFromTimestamp, np.ndarray)
 def compute_up(expr, data, **kwargs):
     return (data * 1e6).astype('M8[us]')
-
-@dispatch(Union, np.ndarray, tuple)
-def compute_up(expr, example, children, **kwargs):
-    return np.concatenate(list(children), axis=0)
-
 
 @dispatch(Slice, np.ndarray)
 def compute_up(expr, x, **kwargs):

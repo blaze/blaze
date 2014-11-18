@@ -6,12 +6,13 @@ from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
 from datashape.predicates import iscollection, isscalar, isrecord
 from pandas import DataFrame, Series
 import itertools
+from functools import reduce
 import numpy as np
 from dynd import nd
 import warnings
 from collections import Iterator
 
-from ..expr import Expr, Symbol
+from ..expr import Expr, Symbol, ndim
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
@@ -104,7 +105,7 @@ class Data(Symbol):
             elif isscalar(dshape.measure) and fields:
                 types = (dshape.measure,) * int(dshape[-2])
                 schema = Record(list(zip(fields, types)))
-                dshape = DataShape(*(dshape.shape + (schema,)))
+                dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
             elif isrecord(dshape.measure) and fields:
                 types = dshape.measure.types
                 schema = Record(list(zip(fields, types)))
@@ -172,10 +173,7 @@ def concrete_head(expr, n=10):
         return compute(expr)
 
 
-def expr_repr(expr, n=10):
-    if not expr._resources():
-        return str(expr)
-
+def repr_tables(expr, n=10):
     result = concrete_head(expr, n)
 
     if isinstance(result, (DataFrame, Series)):
@@ -188,19 +186,71 @@ def expr_repr(expr, n=10):
         return repr(result) # pragma: no cover
 
 
+def numel(shape):
+    if var in shape:
+        return None
+    if not shape:
+        return 1
+    return reduce(lambda x, y: x * y, shape, 1)
+
+def short_dshape(ds, nlines=5):
+    s = datashape.coretypes.pprint(ds)
+    lines = s.split('\n')
+    if len(lines) > 5:
+        s = '\n'.join(lines[:nlines]) + '\n  ...'
+    return s
+
+def expr_repr(expr, n=10):
+    # Pure Expressions, not interactive
+    if not expr._resources():
+        return str(expr)
+
+    # Scalars
+    if ndim(expr) == 0 and isscalar(expr.dshape):
+        return repr(compute(expr))
+
+    # Tables
+    if ndim(expr) == 1:
+        return repr_tables(expr, 10)
+
+    # Smallish arrays
+    if ndim(expr) >= 2 and  numel(expr.shape) and numel(expr.shape) < 1000000:
+        return repr(compute(expr))
+
+    # Other
+    dat = expr._resources().values()
+    if len(dat) == 1:
+        dat = dat[0]
+
+    s = 'Data:       %s' % dat
+    if not isinstance(expr, Symbol):
+        s += '\nExpr:       %s' % str(expr)
+    s += '\nDataShape:  %s' % short_dshape(expr.dshape, nlines=7)
+
+    return s
+
+
 @dispatch(DataFrame)
 def to_html(df):
     return df.to_html()
 
 @dispatch(Expr)
 def to_html(expr):
-    return to_html(concrete_head(expr))
+    # Tables
+    if ndim(expr) == 1:
+        return to_html(concrete_head(expr))
+
+    return to_html(repr(expr))
 
 
 @dispatch(object)
 def to_html(o):
     return repr(o)
 
+
+@dispatch(_strtypes)
+def to_html(o):
+    return o.replace('\n', '<br>')
 
 @dispatch(type, Expr)
 def into(a, b, **kwargs):
