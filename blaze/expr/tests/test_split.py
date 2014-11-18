@@ -148,6 +148,25 @@ def test_summary_with_mean():
     assert agg_expr.isidentical(summary(a=agg.a.sum(),
                                         b=(agg.b_total.sum() / agg.b_count.sum()) + 1))
 
+def test_complex_summaries():
+    t = Symbol('t', '100 * {a: int, b: int}')
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, summary(q=t.a.mean(),
+                                                            w=t.a.std(),
+                                                            e=t.a.sum()))
+
+    assert chunk_expr.isidentical(summary(e=chunk.a.sum(),
+                                          q_count=chunk.a.count(),
+                                          q_total=chunk.a.sum(),
+                                          w_n=chunk.a.count(),
+                                          w_x=chunk.a.sum(),
+                                          w_x2=(chunk.a**2).sum(),
+                                          keepdims=True))
+
+    assert agg_expr.isidentical(summary(e=agg.e.sum(),
+                                        q=agg.q_total.sum() / agg.q_count.sum(),
+                                        w=sqrt(agg.w_x2.sum() - agg.w_x.sum()**2
+                                                / agg.w_n.sum())))
+
 
 def test_by_sum():
     (chunk, chunk_expr), (agg, agg_expr) = \
