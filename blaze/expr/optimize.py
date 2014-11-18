@@ -159,6 +159,12 @@ def _lean(expr, fields=None):
     return By(grouper, apply), new_fields
 
 
+@dispatch(Distinct)
+def _lean(expr, fields=None):
+    child, new_fields = _lean(expr._child, fields=expr.fields)
+    return expr._subs({expr._child: child}), new_fields
+
+
 @dispatch(Expr)
 def _lean(expr, fields=None):
     """ Lean projection version of expression

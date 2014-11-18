@@ -51,3 +51,7 @@ def test_elemwise_thats_also_a_column():
     expected = t[['time', 'x']]
     result = lean_projection(expr)
     assert result._child._child._child.isidentical(t[['time', 'x']])
+
+def test_distinct():
+    expr = t.distinct()[['x', 'y']]
+    assert lean_projection(expr).isidentical(expr)
