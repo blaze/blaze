@@ -49,6 +49,31 @@ def test_mean():
     assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
 
 
+def test_var():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.var())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(x=chunk.amount.sum(),
+                                          x2=(chunk.amount**2).sum(),
+                                          n=chunk.amount.count(),
+                                          keepdims=True))
+
+    assert isrecord(agg.dshape.measure)
+    assert agg_expr.isidentical((agg.x2.sum() - agg.x.sum()**2) / agg.n.sum())
+
+def test_std():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.std())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(x=chunk.amount.sum(),
+                                          x2=(chunk.amount**2).sum(),
+                                          n=chunk.amount.count(),
+                                          keepdims=True))
+
+    assert isrecord(agg.dshape.measure)
+    assert agg_expr.isidentical(sqrt((agg.x2.sum() - agg.x.sum()**2) / agg.n.sum()))
+
+
 def test_sum_with_axis_argument():
     chunk = Symbol('chunk', '100 * 100 * {x: float32, y: float32}')
     (chunk, chunk_expr), (agg, agg_expr) = split(a, a.x.sum(axis=0), chunk=chunk)
