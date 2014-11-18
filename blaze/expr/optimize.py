@@ -104,7 +104,7 @@ def _lean(expr, fields=None):
 @dispatch(Like)
 def _lean(expr, fields=None):
     child, new_fields = _lean(expr._child,
-                              fields=fields | set(expr.patterns.keys()))
+                              fields=set(fields) | set(expr.patterns.keys()))
     return expr._subs({expr._child: child}), new_fields
 
 
