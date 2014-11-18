@@ -2,6 +2,30 @@
 Release Notes
 ======================
 
+
+Release 0.6.6
+-------------
+
+* Not intended for public use, mostly for internal build systems
+* Bugfix
+
+Release 0.6.5
+-------------
+
+* Improve uri string handling #715
+* Various bug fixes #715
+
+Release 0.6.4
+-------------
+
+* Back CSV with ``pandas.read_csv``.  Better performance and more robust
+  unicode support but less robust missing value support (some regressions) #597
+* Much improved SQL support #626 #650 #652 #662
+* Server supports remote execution of computations, not just indexing #631
+* Better PyTables and datetime support #608 #639
+* Support SparkSQL #592
+
+
 Release 0.6.3
 -------------
 
@@ -10,7 +34,7 @@ Release 0.6.3
 * Better handling of pandas Series object
 * Better printing of empty results in interactive mode
 * Regex dispatched resource function bound to Table, e.g.
-  >>> Table('/path/to/file.csv')
+   ``Table('/path/to/file.csv')``
 
 
 Release 0.6.2

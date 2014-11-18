@@ -11,7 +11,8 @@ Blaze can be most easily installed from conda_
 
    $ conda install blaze
 
-We also have developer builds hosted on http://binstar.org/blaze
+We also have developer builds hosted on the ``blaze`` binstar channel:
+http://binstar.org/blaze
 
 ::
 
@@ -63,8 +64,7 @@ Dependencies
 * dynd-python_ >= 0.6.4
 * toolz_ >= 0.7.0
 * cytoolz_
-* multipledispatch_ >= 0.4.6
-* unicodecsv_
+* multipledispatch_ >= 0.4.7
 * pandas_
 
 **Optional**
@@ -92,9 +92,7 @@ Dependencies
 .. _toolz: http://toolz.readthedocs.org/
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/
 .. _conda: http://conda.pydata.org/
-.. _unicodecsv: https://github.com/jdunck/python-unicodecsv
 .. _pymongo: http://api.mongodb.org/python/current/
 .. _pytables: http://www.pytables.org/moin
 .. _bcolz: https://github.com/Blosc/bcolz
 .. _flask: http://flask.pocoo.org/
-

@@ -33,7 +33,6 @@ Table Expressions
    ReLabel
    Map
    Merge
-   Union
    By
    Join
 
@@ -50,7 +49,7 @@ Data Server
 .. currentmodule:: blaze.server.client
 
 .. autosummary::
-   ExprClient
+   Client
 
 
 

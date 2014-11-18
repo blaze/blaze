@@ -8,13 +8,13 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze import dshape, Table, discover, transform
-from blaze.expr import TableSymbol, join, by, summary, Distinct
-from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
+from blaze import dshape, discover, transform
+from blaze.expr import Symbol, join, by, summary, Distinct
+from blaze.expr import (merge, exp, mean, count, nunique, Apply, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],
@@ -22,7 +22,7 @@ df = DataFrame([['Alice', 100, 1],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
 
 
-tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Alice', 'F', 100, 3],
@@ -43,21 +43,14 @@ def df_all(a_df, b_df):
     return True
 
 
-def test_series_column():
-    s = Series([1, 2, 3], name='a')
-    t = TableSymbol('t', '{a: int64}')
-    result = compute(t.a, s)
-    pd.util.testing.assert_series_equal(s, result)
-
-
 def test_series_columnwise():
     s = Series([1, 2, 3], name='a')
-    t = TableSymbol('t', '{a: int64}')
+    t = Symbol('t', 'var * {a: int64}')
     result = compute(t.a + 1, s)
     pd.util.testing.assert_series_equal(s + 1, result)
 
 
-def test_table():
+def test_symbol():
     assert str(compute(t, df)) == str(df)
 
 
@@ -88,8 +81,8 @@ def test_join():
     left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
     right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
 
-    L = TableSymbol('L', '{name: string, amount: int}')
-    R = TableSymbol('R', '{name: string, id: int}')
+    L = Symbol('L', 'var * {name: string, amount: int}')
+    R = Symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     assert (dshape(joined.schema) ==
@@ -104,7 +97,7 @@ def test_join():
     print(expected)
     assert str(result) == str(expected)
 
-    assert list(result.columns) == list(joined.columns)
+    assert list(result.columns) == list(joined.fields)
 
 
 def test_multi_column_join():
@@ -117,8 +110,8 @@ def test_multi_column_join():
              (1, 3, 150)]
     right = DataFrame(right, columns=['x', 'y', 'w'])
 
-    L = TableSymbol('L', '{x: int, y: int, z: int}')
-    R = TableSymbol('R', '{x: int, y: int, w: int}')
+    L = Symbol('L', 'var * {x: int, y: int, z: int}')
+    R = Symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -132,7 +125,7 @@ def test_multi_column_join():
     print(result)
 
     assert str(result) == str(expected)
-    assert list(result.columns) == list(j.columns)
+    assert list(result.columns) == list(j.fields)
 
 
 def test_unary_op():
@@ -143,8 +136,7 @@ def test_neg():
     assert (compute(-t['amount'], df) == -df['amount']).all()
 
 
-@xfail(not hasattr(Projection, '__neg__'),
-       reason='Projection does not support arithmetic')
+@xfail(reason='Projection does not support arithmetic')
 def test_neg_projection():
     assert (compute(-t[['amount', 'id']], df) == -df[['amount', 'id']]).all()
 
@@ -168,6 +160,13 @@ def test_reductions():
     assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
     assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
+
+
+def test_1d_reductions_keepdims():
+    series = df['amount']
+    for r in [sum, min, max, nunique, count, std, var]:
+        result = compute(r(t.amount, keepdims=True), {t.amount: series})
+        assert type(result) == type(series)
 
 
 def test_distinct():
@@ -218,7 +217,7 @@ def test_by_three():
     expected = DataFrame([['Alice', 'F', 204],
                           ['Drew', 'F', 104],
                           ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
-    expected.columns = expr.columns
+    expected.columns = expr.fields
 
     assert str(result) == str(expected)
 
@@ -245,9 +244,9 @@ def test_join_by_arcs():
                         [3, 1]],
                        columns=['node_out', 'node_id'])
 
-    t_idx = TableSymbol('t_idx', '{name: string, node_id: int32}')
+    t_idx = Symbol('t_idx', 'var * {name: string, node_id: int32}')
 
-    t_arc = TableSymbol('t_arc', '{node_out: int32, node_id: int32}')
+    t_arc = Symbol('t_arc', 'var * {node_out: int32, node_id: int32}')
 
     joined = join(t_arc, t_idx, "node_id")
 
@@ -291,6 +290,11 @@ def test_sort_on_series_no_warning(recwarn):
     with pytest.raises(AssertionError):
         assert recwarn.pop(FutureWarning)
 
+def test_field_on_series():
+    expr = Symbol('s', 'var * int')
+    data = Series([1, 2, 3, 4], name='s')
+    assert str(compute(expr.s, data)) == str(data)
+
 
 def test_head():
     assert str(compute(t.head(1), df)) == str(df.head(1))
@@ -313,55 +317,53 @@ def test_relabel_series():
     assert result.name == 'NAME'
 
 
-@pytest.fixture
-def tframe():
-    ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
-    df = DataFrame({'timestamp': ts})
-    return df
+ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
+tframe = DataFrame({'timestamp': ts})
 
 
-def test_map_with_rename(tframe):
-    t = Table(tframe)
+def test_map_with_rename():
+    t = Symbol('s', discover(tframe))
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
-    assert renamed.columns == ['date']
+    assert renamed.fields == ['date']
 
 
-def test_multiple_renames_on_series_fails(tframe):
-    t = Table(tframe)
+@pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
+def test_multiple_renames_on_series_fails():
+    t = Symbol('s', discover(tframe))
     expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
     with pytest.raises(ValueError):
-        compute(expr)
+        compute(expr, tframe)
 
 
 def test_map_column():
     inc = lambda x: x + 1
-    result = compute(t['amount'].map(inc), df)
+    result = compute(t['amount'].map(inc, 'int'), df)
     expected = df['amount'] + 1
     assert str(result) == str(expected)
 
 
 def test_map():
     f = lambda _, amt, id: amt + id
-    result = compute(t.map(f), df)
+    result = compute(t.map(f, 'real'), df)
     expected = df['amount'] + df['id']
     assert str(result) == str(expected)
 
 
 def test_apply_column():
-    result = compute(Apply(np.sum, t['amount']), df)
+    result = compute(Apply(t['amount'], np.sum, 'real'), df)
     expected = np.sum(df['amount'])
 
     assert str(result) == str(expected)
 
-    result = compute(Apply(builtins.sum, t['amount']), df)
+    result = compute(Apply(t['amount'], builtins.sum, 'real'), df)
     expected = builtins.sum(df['amount'])
 
     assert str(result) == str(expected)
 
 
 def test_apply():
-    result = compute(Apply(str, t), df)
+    result = compute(Apply(t, str, 'string'), df)
     expected = str(df)
 
     assert result == expected
@@ -395,30 +397,6 @@ def test_selection_out_of_order():
     assert str(compute(expr, df)) == str(df['name'][df['amount'] < 100])
 
 
-def test_union():
-
-    d1 = DataFrame([['Alice', 100, 1],
-                    ['Bob', 200, 2],
-                    ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
-    d2 = DataFrame([['Alice', 100, 4],
-                    ['Bob', 200, 5],
-                    ['Alice', 50, 6]], columns=['name', 'amount', 'id'])
-    d3 = DataFrame([['Alice', 100, 7],
-                    ['Bob', 200, 8],
-                    ['Alice', 50, 9]], columns=['name', 'amount', 'id'])
-
-    t1 = TableSymbol('t1', '{name: string, amount: int, id: int}')
-    t2 = TableSymbol('t2', '{name: string, amount: int, id: int}')
-    t3 = TableSymbol('t3', '{name: string, amount: int, id: int}')
-
-    expr = union(t1, t2, t3)
-
-    result = compute(expr, {t1: d1, t2: d2, t3: d3})
-
-    assert np.all(result.columns == d1.columns)
-    assert set(result['id']) == set(range(1, 10))
-
-
 def test_outer_join():
     left = [(1, 'Alice', 100),
             (2, 'Bob', 200),
@@ -431,8 +409,8 @@ def test_outer_join():
              ('Moscow', 4)]
     right = DataFrame(right, columns=['city', 'id'])
 
-    L = TableSymbol('L', '{id: int, name: string, amount: real}')
-    R = TableSymbol('R', '{city: string, id: int}')
+    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = Symbol('R', 'var * {city: string, id: int}')
 
     convert = lambda df: set(df.to_records(index=False).tolist())
 
@@ -473,7 +451,7 @@ def test_outer_join():
 
 def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
-    t = TableSymbol('data', dshape='{id:int, value:int}')
+    t = Symbol('data', 'var * {id: int, value: int}')
 
     gby = by(t['id'], t['id'].count())
 
@@ -495,7 +473,7 @@ def test_summary_by():
                            ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
 
 
-@xfail(reason="reduction assumed to be at the end")
+@pytest.mark.xfail(reason="reduction assumed to be at the end")
 def test_summary_by_reduction_arithmetic():
     expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
     assert str(compute(expr, df)) == \
@@ -508,11 +486,17 @@ def test_summary():
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
 
 
+def test_summary_keepdims():
+    expr = summary(count=t.id.count(), sum=t.amount.sum(), keepdims=True)
+    expected = DataFrame([[3, 350]], columns=['count', 'sum'])
+    assert str(compute(expr, df)) == str(expected)
+
+
 def test_dplyr_transform():
     df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
-    t = TableSymbol('t', discover(df))
+    t = Symbol('t', discover(df))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
-                                             schema='{date: datetime}'))
+                                             schema='datetime'))
     lhs = compute(expr, df)
     rhs = pd.concat([df, Series(df.timestamp.map(lambda x: x.date()),
                                 name='date').to_frame()], axis=1)
@@ -523,12 +507,91 @@ def test_nested_transform():
     d = {'timestamp': [1379613528, 1379620047], 'platform': ["Linux",
                                                              "Windows"]}
     df = DataFrame(d)
-    t = TableSymbol('t', discover(df))
+    t = Symbol('t', discover(df))
     t = transform(t, timestamp=t.timestamp.map(datetime.fromtimestamp,
-                                               schema='{timestamp: datetime}'))
+                                               schema='datetime'))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
-                                             schema='{date: datetime}'))
+                                             schema='datetime'))
     result = compute(expr, df)
     df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
     df['date'] = df.timestamp.map(lambda x: x.date())
     assert str(result) == str(df)
+
+
+def test_like():
+    expr = t.like(name='Alice*')
+    expected = DataFrame([['Alice', 100, 1],
+                          ['Alice', 50, 3]],
+                         columns=['name', 'amount', 'id'])
+
+    result = compute(expr, df).reset_index(drop=True)
+    assert (result == expected).all().all()
+
+
+def test_rowwise_by():
+    f = lambda _, id, name: id + len(name)
+    expr = by(t.map(f, 'int'), t.amount.sum())
+
+    df = pd.DataFrame({'id': [1, 1, 2],
+                       'name': ['alice', 'wendy', 'bob'],
+                       'amount': [100, 200, 300.03]})
+    expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=['index',
+                                                              'amount_sum'])
+
+    result = compute(expr, df)
+    assert expected.index.tolist() == result.index.tolist()
+    assert expected.columns.tolist() == result.columns.tolist()
+    assert expected.values.tolist() == result.values.tolist()
+
+
+def test_datetime_access():
+    df = DataFrame({'name': ['Alice', 'Bob', 'Joe'],
+                    'when': [datetime(2010, 1, 1, 1, 1, 1)] * 3,
+                    'amount': [100, 200, 300],
+                    'id': [1, 2, 3]})
+
+    t = Symbol('t', discover(df))
+
+    for attr in ['day', 'month', 'minute', 'second']:
+        assert (compute(getattr(t.when, attr), df) == \
+                Series([1, 1, 1])).all()
+
+
+def test_frame_slice():
+    assert (compute(t[0], df) == df.iloc[0]).all()
+    assert (compute(t[2], df) == df.iloc[2]).all()
+    assert (compute(t[:2], df) == df.iloc[:2]).all().all()
+    assert (compute(t[1:3], df) == df.iloc[1:3]).all().all()
+    assert (compute(t[1::2], df) == df.iloc[1::2]).all().all()
+
+
+def test_series_slice():
+    assert (compute(t.amount[0], df) == df.amount.iloc[0]).all()
+    assert (compute(t.amount[2], df) == df.amount.iloc[2]).all()
+    assert (compute(t.amount[:2], df) == df.amount.iloc[:2]).all().all()
+    assert (compute(t.amount[1:3], df) == df.amount.iloc[1:3]).all().all()
+    assert (compute(t.amount[1::2], df) == df.amount.iloc[1::2]).all().all()
+
+
+def test_nelements():
+    assert compute(t.nelements(), df) == len(df)
+    assert compute(t.nrows, df) == len(df)
+
+
+def test_datetime_truncation():
+    data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
+                  dtype='M8[ns]')
+    s = Symbol('s', 'var * datetime')
+    assert list(compute(s.truncate(20, 'minutes'), data)) == \
+            list(Series(['2000-01-01T12:00:00Z', '2000-06-25T12:20:00Z'],
+                        dtype='M8[ns]'))
+
+    assert list(compute(s.truncate(2, 'weeks'), data)) == \
+            list(Series(['1999-12-19T00:00:00Z', '2000-06-18T00:00:00Z'],
+                        dtype='M8[ns]'))
+
+
+def test_complex_group_by():
+    expr = by(merge(tbig.amount // 10, tbig.id % 2),
+              count=tbig.name.count())
+    compute(expr, dfbig)  # can we do this?

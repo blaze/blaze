@@ -17,45 +17,62 @@ provides a consistent backdrop to build standard interfaces usable by the
 current Python community.
 
 
-Datashape
----------
+Demonstration
+-------------
 
-The type system in Blaze is called Datashape, and generalizes the
-combination of shape and dtype in NumPy. The datashape of an array
-consists of a number of dimensions, followed by an element type.
+Blaze separates the computations that we want to perform:
 
-Data
-----
+.. code-block:: python
 
-Blaze data provides uniform data access.  Blaze allows users to deal with
-CSV, JSON, HDF5, SQL, etc. formats as though they were NumPy arrays.
-Blaze data supports iteration, insertion, and fancy indexing over a variety of
-popular formats.  They provide seemless data migration and robust access for
-computation.  They allow applications to span from local memory to out-of-core
-and distributed storage.
+   >>> from blaze import *
+   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, amount: int}')
 
-Expressions
------------
+   >>> deadbeats = accounts[accounts.amount < 0].name
 
-Blaze expressions describe computational workflows symbolically. They allow
-developers to architect and check their computations rapidly before applying
-them to data.  Their abstract nature allows them to be moved between backends
-as needs change.  Their symbolic expression allows us to analyze and optimize
-them before they ever reach data.
+From the representation of data
 
-Backends
---------
+.. code-block:: python
 
-Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
-Spark.  A Blaze expression can run equally well on any of these backends,
-allowing developers to easily transition their computation to changing
-performance needs.
+   >>> L = [[1, 'Alice',   100],
+   ...      [2, 'Bob',    -200],
+   ...      [3, 'Charlie', 300],
+   ...      [4, 'Denis',   400],
+   ...      [5, 'Edith',  -500]]
 
+Blaze enables users to solve data-oriented problems
 
-Interfaces
-----------
+.. code-block:: python
 
-Blaze interfaces provide interactive Python objects and an intuitive user
-experience.  These high level ``Table`` and ``Array`` objects manage Blaze
-expressions and computations in an interactive session similar to existing
-workflows with Pandas DataFrames and NumPy NDArrays.
+   >>> list(compute(deadbeats, L))
+   ['Bob', 'Edith']
+
+But the separation of expression from data allows us to switch between
+different backends.
+
+Here we solve the same problem using Pandas instead of Pure Python.
+
+.. code-block:: python
+
+   >>> df = DataFrame(L, columns=['id', 'name', 'amount'])
+
+   >>> compute(deadbeats, df)
+   1      Bob
+   4    Edith
+   Name: name, dtype: object
+
+Blaze doesn't compute these results, Blaze intelligently drives other projects
+to compute them instead.  These projects range from simple Pure Python
+iterators to powerful distributed Spark clusters.  Blaze is built to be
+extended to new systems as they evolve.
+
+Scope
+-----
+
+Blaze speaks Python and Pandas as seen above and also several other
+technologies, including NumPy, SQL, Mongo, Spark, PyTables, etc..  Blaze is
+built to make connecting to a new technology easy.
+
+Blaze currently targets database and array technologies used for analytic
+queries.  It strives to orchestrate and provide interfaces on top of and in
+between other computational systems.  We provide performance by providing data
+scientists with intuitive access to a variety of tools.

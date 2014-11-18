@@ -5,19 +5,24 @@ from itertools import chain
 import h5py
 from dynd import nd
 import datashape
-from datashape import var, dshape
+from datashape import var, dshape, DataShape, Record
 from toolz.curried import pipe, concat, map, partial
 
 from ..dispatch import dispatch
 from .core import DataDescriptor
 from ..utils import partition_all, get
 from ..compatibility import _strtypes, unicode
-from ..api.resource import resource
+from ..resource import resource
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
 
 __all__ = ['HDF5', 'discover']
+
+
+@dispatch((h5py.Group, h5py.File))
+def discover(g):
+    return DataShape(Record([[k, discover(v)] for k, v in g.items()]))
 
 
 @dispatch(h5py.Dataset)
@@ -185,12 +190,6 @@ def drop(h):
         del f[h.datapath]
 
 
-@resource.register('.*\.hdf5')
+@resource.register('.+\.hdf5')
 def resource_hdf5(uri, datapath, *args, **kwargs):
-    return HDF5(uri, datapath, *args, **kwargs)
-
-
-@resource.register('.*\.hdf5::.*')
-def resource_hdf5(uri, *args, **kwargs):
-    uri, datapath = uri.rsplit('::', 1)
     return HDF5(uri, datapath, *args, **kwargs)

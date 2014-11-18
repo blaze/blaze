@@ -3,17 +3,28 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 import numpy as np
 import tables as tb
-from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
-                        TableSymbol, Sort, Reduction, count)
-from blaze.expr import eval_str
+from datashape import Record, from_numpy, datetime_, date_
+
+from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
+                        Symbol, Sort, Reduction, count, Symbol, Slice, Expr,
+                        nelements)
 from blaze.compatibility import basestring, map
-from datashape import Record
 from ..dispatch import dispatch
 
 
+__all__ = ['drop', 'create_index']
+
 @dispatch(tb.Table)
 def discover(t):
-    return t.shape[0] * Record([[col, t.coltypes[col]] for col in t.colnames])
+    return t.shape[0] * Record([[col, discover(getattr(t.cols, col))]
+                                   for col in t.colnames])
+
+
+@dispatch(tb.Column)
+def discover(c):
+    dshape = from_numpy(c.shape, c.dtype)
+    return {'time64': datetime_, 'time32': date_}.get(c.type,
+                                                      dshape.subshape[1])
 
 
 @dispatch(tb.Table)
@@ -41,23 +52,28 @@ def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
 
 
 @dispatch(Selection, tb.Table)
-def compute_one(sel, t, **kwargs):
-    s = eval_str(sel.predicate.expr)
-    return t.read_where(s)
+def compute_up(expr, data, **kwargs):
+    predicate = optimize(expr.predicate, data)
+    assert isinstance(predicate, Broadcast)
+
+    s = predicate._scalars[0]
+    cols = [s[field] for field in s.fields]
+    expr_str = print_numexpr(cols, predicate._scalar_expr)
+    return data.read_where(expr_str)
 
 
-@dispatch(TableSymbol, tb.Table)
-def compute_one(ts, t, **kwargs):
+@dispatch(Symbol, tb.Table)
+def compute_up(ts, t, **kwargs):
     return t
 
 
 @dispatch(Reduction, (tb.Column, tb.Table))
-def compute_one(r, c, **kwargs):
-    return compute_one(r, c[:])
+def compute_up(r, c, **kwargs):
+    return compute_up(r, c[:])
 
 
 @dispatch(Projection, tb.Table)
-def compute_one(proj, t, **kwargs):
+def compute_up(proj, t, **kwargs):
     # only options here are
     # read the whole thing in and then select
     # or
@@ -69,7 +85,7 @@ def compute_one(proj, t, **kwargs):
     #
     # TODO: benchmark on big tables because i'm not sure exactly what the
     # implications here are for memory usage
-    columns = proj.columns
+    columns = proj.fields
     dtype = np.dtype([(col, t.dtype[col]) for col in columns])
     out = np.empty(t.shape, dtype=dtype)
     for c in columns:
@@ -77,32 +93,38 @@ def compute_one(proj, t, **kwargs):
     return out
 
 
-@dispatch(Column, tb.Table)
-def compute_one(c, t, **kwargs):
-    return getattr(t.cols, c.column)
+@dispatch(Field, tb.Table)
+def compute_up(c, t, **kwargs):
+    return getattr(t.cols, c._name)
 
 
 @dispatch(count, tb.Column)
-def compute_one(r, c, **kwargs):
+def compute_up(r, c, **kwargs):
     return len(c)
 
 
-@dispatch(Head, tb.Table)
-def compute_one(h, t, **kwargs):
+@dispatch(Head, (tb.Column, tb.Table))
+def compute_up(h, t, **kwargs):
     return t[:h.n]
 
 
-@dispatch(ColumnWise, tb.Table)
-def compute_one(c, t, **kwargs):
-    uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
-    e = tb.Expr(str(c.expr), uservars=uservars, truediv=True)
+@dispatch(Broadcast, tb.Table)
+def compute_up(expr, data, **kwargs):
+    if len(expr._children) != 1:
+        raise ValueError("Only one child in Broadcast allowed")
+
+    s = expr._scalars[0]
+    cols = [s[field] for field in s.fields]
+    expr_str = print_numexpr(cols, expr._scalar_expr)
+    uservars = dict((c, getattr(data.cols, c)) for c in s.fields)
+    e = tb.Expr(expr_str, uservars=uservars, truediv=True)
     return e.eval()
 
 
 @dispatch(Sort, tb.Table)
-def compute_one(s, t, **kwargs):
-    if isinstance(s.key, Column) and s.key.child.isidentical(s.child):
-        key = s.key.name
+def compute_up(s, t, **kwargs):
+    if isinstance(s.key, Field) and s.key._child.isidentical(s._child):
+        key = s.key._name
     else:
         key = s.key
     assert hasattr(t.cols, key), 'Table has no column(s) %s' % s.key
@@ -110,3 +132,25 @@ def compute_one(s, t, **kwargs):
     if s.ascending:
         return result
     return result[::-1]
+
+
+@dispatch(Slice, tb.Table)
+def compute_up(expr, x, **kwargs):
+    return x[expr.index]
+
+
+from .numexpr import broadcast_numexpr_collect, print_numexpr
+from ..expr import Arithmetic, RealMath, USub, Not
+Broadcastable = (Arithmetic, RealMath, Field, Not, USub)
+WantToBroadcast = (Arithmetic, RealMath, Not, USub)
+
+
+@dispatch(Expr, tb.Table)
+def optimize(expr, seq):
+    return broadcast_numexpr_collect(expr, Broadcastable=Broadcastable,
+                                     WantToBroadcast=WantToBroadcast)
+
+
+@dispatch(nelements, tb.Table)
+def compute_up(expr, x, **kwargs):
+    return compute_up.dispatch(type(expr), np.ndarray)(expr, x, **kwargs)

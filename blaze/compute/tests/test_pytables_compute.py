@@ -7,15 +7,14 @@ tb = pytest.importorskip('tables')
 from blaze.compatibility import xfail
 
 import numpy as np
-import tempfile
 
 from blaze.compute.core import compute
-from blaze.expr import TableSymbol
+from blaze.expr import Symbol
 from blaze import drop, discover, create_index
 from blaze.utils import tmpfile
 
 
-t = TableSymbol('t', '{id: int, name: string, amount: int}')
+t = Symbol('t', 'var * {id: int, name: string, amount: int}')
 
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
@@ -65,12 +64,12 @@ def eq(a, b):
 
 def test_discover_datashape(data):
     ds = discover(data)
-    t = TableSymbol('t', dshape=ds)
-    columns = t.columns
+    t = Symbol('t', ds)
+    columns = t.fields
     assert columns is not None
 
 
-def test_table(data):
+def test_symbol(data):
     assert compute(t, data) == data
     assert isinstance(data, tb.Table)
 
@@ -209,6 +208,7 @@ class TestIndexSort(object):
 
 def test_head(data):
     assert eq(compute(t.head(2), data), x[:2])
+    assert eq(compute(t.amount.head(2), data), x['amount'][:2])
 
 
 @pytest.yield_fixture
@@ -255,3 +255,12 @@ def test_create_multiple_indexes_fails(pyt):
 def test_create_index_fails(pyt):
     with pytest.raises(AttributeError):
         create_index(pyt, 'no column here!')
+
+
+def test_nrows():
+    assert compute(t.nrows, x) == len(x)
+
+
+def test_nelements():
+    assert compute(t.nelements(axis=0), x) == len(x)
+    assert compute(t.nelements(), x) == len(x)

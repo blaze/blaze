@@ -1,6 +1,6 @@
 package:
   name: blaze
-  version: "0.6.3"
+  version: "0.6.6"
 
 build:
     number: {{environ.get('BINSTAR_BUILD', 1)}}
@@ -8,6 +8,21 @@ build:
 requirements:
   build:
     - python
+    - dynd-python
+    - numpy
+    - multipledispatch
+    - sqlalchemy
+    - pandas
+    - h5py
+    - datashape
+    - flask
+    - requests
+    - cytoolz
+    - toolz
+    - bcolz
+    - pytables
+    - psutil
+    - unittest2 [py26]
 
   run:
     - python
@@ -22,9 +37,10 @@ requirements:
     - requests
     - cytoolz
     - toolz
-    - unicodecsv
     - bcolz
     - pytables
+    - psutil
+    - unittest2 [py26]
 
 test:
   requires:
@@ -32,7 +48,7 @@ test:
     - coverage
 
   commands:
-    - py.test -r sxX --doctest-modules --verbose --pyargs blaze
+    - python -c "import blaze; blaze.test()"
 
 about:
   home: http://blaze.pydata.org

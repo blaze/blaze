@@ -9,10 +9,10 @@ chunks into memory, performing an in-memory sum on each chunk in turn, and then
 summing the resulting sums.  E.g.
 
     @dispatch(sum, ChunkIterator)
-    def compute_one(expr, chunks):
+    def compute_up(expr, chunks):
         sums = []
         for chunk in chunks:
-            sums.append(compute_one(expr, chunk))
+            sums.append(compute_up(expr, chunk))
         return builtin.sum(sums)
 
 Using tricks like this we can apply the operations from rich in memory backends
@@ -21,22 +21,26 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
-from toolz import map, partition_all, reduce
-import numpy as np
-import math
-from collections import Iterator
-from toolz import concat, first
+import itertools
+from ..expr import (Symbol, Head, Join, Selection, By, Label,
+        ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
+        nunique, Arithmetic, Broadcast)
+from .core import compute
+from toolz import partition_all, curry, concat, first
+from collections import Iterator, Iterable
 from cytoolz import unique
 from datashape import var, isdimension
+from datashape.predicates import isscalar
 import pandas as pd
 
-from ..compatibility import builtins
 from ..dispatch import dispatch
-from .core import compute
 from ..data.core import DataDescriptor
+from ..expr.split import split
+from ..expr import Expr
 
-__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk', 'chunks', 'into']
+__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk',
+           'chunks', 'into']
+
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -81,118 +85,117 @@ class ChunkIndexable(ChunkIterable):
                 except IndexError:
                     raise StopIteration()
 
+
+@dispatch(Expr, ChunkIterator)
+def pre_compute(expr, data, scope=None):
+    return data
+
+
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
               any: (any, any), all: (all, all)}
 
 
 @dispatch(tuple(reductions), ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    t = TableSymbol('_', dshape=expr.child.dshape)
+def compute_up(expr, c, **kwargs):
+    t = Symbol('_', expr._child.dshape)
     a, b = reductions[type(expr)]
 
-    return compute_one(b(t), [compute_one(a(t), chunk) for chunk in c])
+    return compute_up(b(t), [compute_up(a(t), pre_compute(expr, chunk))
+                                for chunk in c])
 
 
 @dispatch(mean, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_up(expr, c, **kwargs):
     total_sum = 0
     total_count = 0
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_one(expr.child.sum(), chunk)
-        total_count += compute_one(expr.child.count(), chunk)
+        total_sum += compute_up(expr._child.sum(), pre_compute(expr, chunk))
+        total_count += compute_up(expr._child.count(), pre_compute(expr, chunk))
 
     return total_sum / total_count
 
 
 @dispatch(Head, ChunkIterator)
-def compute_one(expr, c, **kwargs):
+def compute_up(expr, c, **kwargs):
     c = iter(c)
-    df = into(DataFrame, compute_one(expr, next(c)),
-              columns=expr.columns)
+    df = into(DataFrame, compute_up(expr, next(c)),
+              columns=expr.fields)
     for chunk in c:
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
-                   compute_one(expr.child.head(expr.n - len(df)), chunk),
-                   columns=expr.columns)
+                   compute_up(expr._child.head(expr.n - len(df)), chunk),
+                   columns=expr.fields)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
     return df
 
 
-@dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk) for chunk in c)
+@dispatch((Selection, ElemWise, Label, ReLabel, Arithmetic, Broadcast),
+          ChunkIterator)
+def compute_up(expr, c, **kwargs):
+    return ChunkIterator(compute_up(expr, pre_compute(expr, chunk))
+            for chunk in c)
 
 
 @dispatch(Join, ChunkIterable, (ChunkIterable, ChunkIterator))
-def compute_one(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_one(expr, c1, chunk) for chunk in c2)
+def compute_up(expr, c1, c2, **kwargs):
+    return ChunkIterator(compute_up(expr, c1, pre_compute(expr, chunk))
+            for chunk in c2)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterable)
-def compute_one(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk, c2) for chunk in c1)
+def compute_up(expr, c1, c2, **kwargs):
+    return ChunkIterator(compute_up(expr, pre_compute(expr, chunk), c2)
+            for chunk in c1)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterator)
-def compute_one(expr, c1, c2, **kwargs):
+def compute_up(expr, c1, c2, **kwargs):
     raise NotImplementedError("Can not perform chunked join of "
             "two chunked iterators")
 
 dict_items = type(dict().items())
 
 @dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
-def compute_one(expr, other, c, **kwargs):
-    return ChunkIterator(compute_one(expr, other, chunk) for chunk in c)
+def compute_up(expr, other, c, **kwargs):
+    return ChunkIterator(compute_up(expr, other, pre_compute(expr, chunk))
+            for chunk in c)
 
 
 @dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
     DataDescriptor))
-def compute_one(expr, c, other, **kwargs):
-    return ChunkIterator(compute_one(expr, chunk, other) for chunk in c)
+def compute_up(expr, c, other, **kwargs):
+    return ChunkIterator(compute_up(expr, pre_compute(expr, chunk), other)
+            for chunk in c)
 
 
 @dispatch(Distinct, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    intermediates = concat(into(Iterator, compute_one(expr, chunk)) for chunk in c)
+def compute_up(expr, c, **kwargs):
+    intermediates = concat(into(Iterator,
+                                compute_up(expr, pre_compute(expr, chunk)))
+        for chunk in c)
     return unique(intermediates)
 
 
 @dispatch(nunique, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    dist = compute_one(expr.child.distinct(), c)
-    return compute_one(expr.child.count(), dist)
+def compute_up(expr, c, **kwargs):
+    dist = compute_up(expr._child.distinct(), c)
+    return compute_up(expr._child.count(), dist)
 
 
 @dispatch(By, ChunkIterator)
-def compute_one(expr, c, **kwargs):
-    if not isinstance(expr.apply, tuple(reductions)):
-        raise NotImplementedError("Chunked split-apply-combine only "
-                "implemented for simple reductions")
-
-    a, b = reductions[type(expr.apply)]
-
-    perchunk = by(expr.grouper, a(expr.apply.child))
+def compute_up(expr, c, **kwargs):
+    (chunkleaf, chunkexpr), (aggleaf, aggexpr) = split(expr._child, expr)
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_one(perchunk, chunk))
-                          for chunk in c)
+    intermediate = list(concat(into([], compute(chunkexpr, {chunkleaf: chunk}))
+                          for chunk in c))
 
-    # Form computation to do on the concatenated union
-    t = TableSymbol('_chunk', perchunk.schema)
-
-    apply_cols = expr.apply.dshape[0].names
-    if expr.apply.child.iscolumn:
-        apply_cols = apply_cols[0]
-
-    group = by(t[expr.grouper.columns],
-               b(t[apply_cols]))
-
-    return compute_one(group, intermediate)
+    return compute(aggexpr, {aggleaf: intermediate})
 
 
 @dispatch(object)
@@ -207,7 +210,7 @@ def chunks(seq, chunksize=None):
     *  They should cover the dataset
     *  They should not overlap
     *  They should honor order if the underlying dataset is ordered
-    *  Has appropriate implementations for ``discover``, ``compute_one``,
+    *  Has appropriate implementations for ``discover``, ``compute_up``,
        and  ``into``
 
     Example
@@ -241,7 +244,7 @@ def get_chunk(data, i, chunksize=None):
     *  They should cover the dataset
     *  They should not overlap
     *  They should honor order if the underlying dataset is ordered
-    *  Has appropriate implementations for ``discover``, ``compute_one``,
+    *  Has appropriate implementations for ``discover``, ``compute_up``,
        and  ``into``
 
     Example
@@ -306,10 +309,43 @@ class ChunkList(ChunkIndexable):
         return iter(self.data)
 
 
-from ..api.resource import resource
+def compute_chunk(source, chunk, chunk_expr, index):
+    part = source[index]
+    return compute(chunk_expr, {chunk: part})
+
+
+@dispatch(Expr, ChunkList)
+def compute_down(expr, data, map=map, **kwargs):
+    leaf = expr._leaves()[0]
+
+    (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr)
+
+    indices = list(range(len(data.data)))
+
+    parts = map(curry(compute_chunk, data.data, chunk, chunk_expr),
+                indices)
+
+    if isinstance(parts[0], np.ndarray):
+        intermediate = np.concatenate(parts)
+    elif isinstance(parts[0], pd.DataFrame):
+        intermediate = pd.concat(parts)
+    elif isinstance(parts[0], (Iterable, Iterator)):
+        intermediate = concat(parts)
+
+    return compute(agg_expr, {agg: intermediate})
+
+
+from ..resource import resource
 from glob import glob
 
 @resource.register('.*\*.*', priority=14)
 def resource_glob(uri, **kwargs):
     uris = sorted(glob(uri))
+
+    first = resource(uris[0], **kwargs)
+    if hasattr(first, 'dshape'):
+        kwargs['dshape'] = first.dshape
+    if hasattr(first, 'schema'):
+        kwargs['schema'] = first.schema
+
     return ChunkList([resource(uri, **kwargs) for uri in uris])

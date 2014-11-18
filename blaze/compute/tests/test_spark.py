@@ -1,9 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.spark import *
-from blaze.compute import compute, compute_one
+from blaze import into
+from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
+from blaze.expr.functions import *
+from datashape.predicates import iscollection
+from datashape import dshape
 
 import pytest
 
@@ -14,16 +17,20 @@ data = [['Alice', 100, 1],
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
 
+from pandas import DataFrame
+df = DataFrame(data, columns=['name', 'amount', 'id'])
 
 pyspark = pytest.importorskip('pyspark')
+
+from pyspark import RDD
 sc = pyspark.SparkContext("local", "Simple App")
 rdd = sc.parallelize(data)
 rdd2 = sc.parallelize(data2)
 
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
-t2 = TableSymbol('t2', '{name: string, city: string}')
+t2 = Symbol('t2', 'var * {name: string, city: string}')
 
 #Web Commons Graph Example data
 data_idx = [['A', 1],
@@ -34,11 +41,11 @@ data_arc = [[1, 3],
             [2, 3],
             [3, 1]]
 
-t_idx = TableSymbol('idx', '{name: string, node_id: int32}')
+t_idx = Symbol('idx', 'var * {name: string, node_id: int32}')
 
-t_arc = TableSymbol('arc', '{node_out: int32, node_id: int32}')
+t_arc = Symbol('arc', 'var * {node_out: int32, node_id: int32}')
 
-def test_spark_table():
+def test_spark_symbol():
     assert compute(t, rdd) == rdd
 
 
@@ -89,6 +96,7 @@ def test_spark_reductions():
 exprs = [
     t['amount'],
     t['amount'] == 100,
+    t['amount'].truncate(150),
     t[t['name'] == 'Alice'],
     t[t['amount'] == 0],
     t[t['amount'] > 150],
@@ -98,8 +106,9 @@ exprs = [
     by(t['name'], t['amount'].sum()),
     by(t['name'], (t['amount'] + 1).sum()),
     (t['amount'] * 1).label('foo'),
-    t.map(lambda _, amt, id: amt + id),
-    t['amount'].map(inc)]
+    t.map(lambda tup: tup[1] + tup[2], 'real'),
+    t.like(name='Alice'),
+    t['amount'].map(inc, 'int')]
 
 
 def test_spark_basic():
@@ -121,7 +130,7 @@ def check_exprs_against_python(exprs, data, rdd):
 
 
 def test_spark_big_by():
-    tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+    tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
     big_exprs = [
         by(tbig[['name', 'sex']], tbig['amount'].sum()),
@@ -159,9 +168,9 @@ def test_spark_distinct():
 def test_spark_join():
 
     joined = join(t, t2, 'name')
-    expected = [['Alice', 100, 1, 'Austin'],
-                ['Bob', 200, 2, 'Boston'],
-                ['Alice', 50, 3, 'Austin']]
+    expected = [('Alice', 100, 1, 'Austin'),
+                ('Bob', 200, 2, 'Boston'),
+                ('Alice', 50, 3, 'Austin')]
     result = compute(joined, {t: rdd, t2: rdd2}).collect()
     assert all(i in expected for i in result)
 
@@ -176,8 +185,8 @@ def test_spark_multi_column_join():
     rleft = sc.parallelize(left)
     rright = sc.parallelize(right)
 
-    L = TableSymbol('L', '{x: int, y: int, z: int}')
-    R = TableSymbol('R', '{x: int, y: int, w: int}')
+    L = Symbol('L', 'var * {x: int, y: int, z: int}')
+    R = Symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -187,7 +196,7 @@ def test_spark_multi_column_join():
                 (1, 3, 5, 150)]
 
     print(result.collect())
-    assert result.collect() == expected
+    assert set(result.collect()) ==  set(expected)
 
 
 def test_spark_groupby():
@@ -204,7 +213,7 @@ def test_spark_groupby():
 
 
 def test_spark_multi_level_rowfunc_works():
-    expr = t['amount'].map(lambda x: x + 1)
+    expr = t['amount'].map(lambda x: x + 1, 'int')
 
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
@@ -237,31 +246,6 @@ def test_spark_recursive_rowfunc_is_used():
     assert set(compute(expr, rdd).collect()) == set(expected)
 
 
-def test_union():
-    L1 = [['Alice', 100, 1],
-          ['Bob', 200, 2],
-          ['Alice', 50, 3]]
-    L2 = [['Alice', 100, 4],
-          ['Bob', 200, 5],
-          ['Alice', 50, 6]]
-    L3 = [['Alice', 100, 7],
-          ['Bob', 200, 8],
-          ['Alice', 50, 9]]
-    r1 = sc.parallelize(L1)
-    r2 = sc.parallelize(L2)
-    r3 = sc.parallelize(L3)
-
-    t1 = TableSymbol('t1', '{name: string, amount: int, id: int}')
-    t2 = TableSymbol('t2', '{name: string, amount: int, id: int}')
-    t3 = TableSymbol('t3', '{name: string, amount: int, id: int}')
-
-    expr = union(t1, t2, t3)
-
-    result = compute(expr, {t1: r1, t2: r2, t3: r3}).collect()
-
-    assert set(map(tuple, result)) == set(map(tuple, L1 + L2 + L3))
-
-
 def test_spark_outer_join():
     left = [(1, 'Alice', 100),
             (2, 'Bob', 200),
@@ -273,8 +257,8 @@ def test_spark_outer_join():
              ('Moscow', 4)]
     right = sc.parallelize(right)
 
-    L = TableSymbol('L', '{id: int, name: string, amount: real}')
-    R = TableSymbol('R', '{city: string, id: int}')
+    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = Symbol('R', 'var * {city: string, id: int}')
 
     assert set(compute(join(L, R), {L: left, R: right}).collect()) == set(
             [(1, 'Alice', 100, 'NYC'),
@@ -302,3 +286,139 @@ def test_spark_outer_join():
              (3, None, None, 'LA'),
              (4, 'Dennis', 400, 'Moscow')])
     """
+
+def test_discover():
+    assert discover(rdd).subshape[0] == discover(data).subshape[0]
+
+### SparkSQL
+
+from pyspark.sql import SchemaRDD, SQLContext
+sqlContext = SQLContext(sc)
+
+
+def test_into_SparkSQL_from_PySpark():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert isinstance(srdd, SchemaRDD)
+
+    assert into(list, rdd) == into(list, srdd)
+
+def test_into_sparksql_from_other():
+    srdd = into(sqlContext, df)
+    assert isinstance(srdd, SchemaRDD)
+    assert into(list, srdd) == into(list, df)
+
+
+def test_SparkSQL_discover():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert discover(srdd).subshape[0] == \
+            dshape('{name: string, amount: int64, id: int64}')
+
+
+def test_sparksql_compute():
+    srdd = into(sqlContext, data, schema=t.schema)
+    assert compute_up(t, srdd).context == sqlContext
+    assert discover(compute_up(t, srdd).query).subshape[0] == \
+            dshape('{name: string, amount: int64, id: int64}')
+
+    assert isinstance(compute(t[['name', 'amount']], srdd),
+                      SchemaRDD)
+
+    assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
+
+    assert isinstance(compute(t[['name', 'amount']].head(2), srdd),
+                     (tuple, list))
+
+
+def test_sparksql_with_literals():
+    srdd = into(sqlContext, data, schema=t.schema)
+    expr = t[t.amount >= 100]
+    result = compute(expr, srdd)
+    assert isinstance(result, SchemaRDD)
+    assert set(map(tuple, result.collect())) == \
+            set(map(tuple, compute(expr, data)))
+
+
+def test_sparksql_by_summary():
+    t = Symbol('t', 'var * {name: string, amount: int64, id: int64}')
+    srdd = into(sqlContext, data, schema=t.schema)
+    expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
+    result = compute(expr, srdd)
+    assert result.collect()
+    assert (str(discover(result)).replace('?', '')
+         == str(expr.dshape).replace('?', ''))
+
+
+def test_spqrksql_join():
+    accounts = Symbol('accounts', 'var * {name: string, amount: int64, id: int64}')
+    accounts_rdd = into(sqlContext, data, schema=accounts.schema)
+
+    cities = Symbol('cities', 'var * {name: string, city: string}')
+    cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
+    cities_rdd = into(sqlContext,
+                      cities_data,
+                      schema='{name: string, city: string}')
+
+    expr = join(accounts, cities)
+
+    result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
+
+    assert isinstance(result, SchemaRDD)
+
+    assert (str(discover(result)).replace('?', '') ==
+            str(expr.dshape))
+
+def test_comprehensive():
+    L = [[100, 1, 'Alice'],
+         [200, 2, 'Bob'],
+         [300, 3, 'Charlie'],
+         [400, 4, 'Dan'],
+         [500, 5, 'Edith']]
+
+    df = DataFrame(L, columns=['amount', 'id', 'name'])
+
+    rdd = into(sc, df)
+    srdd = into(sqlContext, df)
+
+    t = Symbol('t', 'var * {amount: int64, id: int64, name: string}')
+
+    expressions = {
+            t: [],
+            t['id']: [],
+            t.id.max(): [],
+            t.amount.sum(): [],
+            t.amount + 1: [],
+            sin(t.amount): [srdd], # sparksql without hiveql doesn't support math
+            exp(t.amount): [srdd], # sparksql without hiveql doesn't support math
+            t.amount > 50: [],
+            t[t.amount > 50]: [],
+            t.sort('name'): [],
+            t.sort('name', ascending=False): [],
+            t.head(3): [],
+            t.name.distinct(): [],
+            t[t.amount > 50]['name']: [],
+            t.id.map(lambda x: x + 1, 'int'): [srdd], # no udfs yet
+            t[t.amount > 50]['name']: [],
+            by(t.name, t.amount.sum()): [],
+            by(t.id, t.id.count()): [],
+            by(t[['id', 'amount']], t.id.count()): [],
+            by(t[['id', 'amount']], (t.amount + 1).sum()): [],
+            by(t[['id', 'amount']], t.name.nunique()): [rdd, srdd],
+            by(t.id, t.amount.count()): [],
+            by(t.id, t.id.nunique()): [rdd, srdd],
+            # by(t, t.count()): [],
+            # by(t.id, t.count()): [df],
+            t[['amount', 'id']]: [],
+            t[['id', 'amount']]: [],
+            }
+
+    for e, exclusions in expressions.items():
+        if rdd not in exclusions:
+            if iscollection(e.dshape):
+                assert into(set, compute(e, rdd)) == into(set, compute(e, df))
+            else:
+                assert compute(e, rdd) == compute(e, df)
+        if srdd not in exclusions:
+            if iscollection(e.dshape):
+                assert into(set, compute(e, srdd)) == into(set, compute(e, df))
+            else:
+                assert compute(e, rdd) == compute(e, df)

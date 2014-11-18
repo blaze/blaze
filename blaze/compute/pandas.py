@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableSymbol
+>>> from blaze.expr import Symbol
 >>> from blaze.compute.pandas import compute
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from pandas import DataFrame
@@ -23,57 +23,74 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
 from toolz import merge as merge_dicts
+import fnmatch
+from datashape.predicates import isscalar
 
 from ..api.into import into
 from ..dispatch import dispatch
-from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
+from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union, TableExpr, std, var)
+                    Map, Apply, Merge, std, var, Like, Slice,
+                    ElemWise, DateTime, Millisecond, Expr, Symbol,
+                    UTCFromTimestamp, nelements, DateTimeTruncate)
 from ..expr import UnaryOp, BinOp
-from ..expr import TableSymbol, common_subexpression
-from .core import compute, compute_one, base
+from ..expr import Symbol, common_subexpression
+from .core import compute, compute_up, base
+from ..compatibility import _inttypes
 
 __all__ = []
 
 
 @dispatch(Projection, DataFrame)
-def compute_one(t, df, **kwargs):
-    return df[list(t.columns)]
+def compute_up(t, df, **kwargs):
+    return df[list(t.fields)]
 
 
-@dispatch(Column, (DataFrame, DataFrameGroupBy))
-def compute_one(t, df, **kwargs):
-    return df[t.columns[0]]
+@dispatch(Field, (DataFrame, DataFrameGroupBy))
+def compute_up(t, df, **kwargs):
+    return df[t.fields[0]]
 
 
-@dispatch(Column, (Series, SeriesGroupBy))
-def compute_one(_, s, **kwargs):
-    return s
+@dispatch(Field, Series)
+def compute_up(t, data, **kwargs):
+    if t.fields[0] == data.name:
+        return data
+    else:
+        raise ValueError("Fieldname %s does not match Series name %s"
+                % (t.fields[0], data.name))
 
 
-@dispatch(ColumnWise, DataFrame)
-def compute_one(t, df, **kwargs):
-    d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
-    return compute(t.expr, d)
+@dispatch(Broadcast, DataFrame)
+def compute_up(t, df, **kwargs):
+    d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
+    return compute(t._expr, d)
 
 
-@dispatch(ColumnWise, Series)
-def compute_one(t, s, **kwargs):
-    return compute_one(t, s.to_frame(), **kwargs)
+@dispatch(Broadcast, Series)
+def compute_up(t, s, **kwargs):
+    return compute_up(t, s.to_frame(), **kwargs)
+
+
+@dispatch(BinOp, Series)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(data, t.rhs)
+    else:
+        return t.op(t.lhs, data)
 
 
 @dispatch(BinOp, Series, (Series, base))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, (Series, base), Series)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, NDFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     f = getattr(t, 'op', getattr(np, t.symbol, None))
     if f is None:
         raise ValueError('%s is not a valid operation on %s objects' %
@@ -82,14 +99,14 @@ def compute_one(t, df, **kwargs):
 
 
 @dispatch(Selection, (Series, DataFrame))
-def compute_one(t, df, **kwargs):
-    predicate = compute(t.predicate, {t.child: df})
+def compute_up(t, df, **kwargs):
+    predicate = compute(t.predicate, {t._child: df})
     return df[predicate]
 
 
-@dispatch(TableSymbol, DataFrame)
-def compute_one(t, df, **kwargs):
-    if not list(t.columns) == list(df.columns):
+@dispatch(Symbol, DataFrame)
+def compute_up(t, df, **kwargs):
+    if not list(t.fields) == list(df.names):
         # TODO also check dtype
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
                          % (t, df))
@@ -97,7 +114,7 @@ def compute_one(t, df, **kwargs):
 
 
 @dispatch(Join, DataFrame, DataFrame)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     """ Join two pandas data frames on arbitrary columns
 
     The approach taken here could probably be improved.
@@ -109,22 +126,12 @@ def compute_one(t, lhs, rhs, **kwargs):
     result = pd.merge(lhs, rhs,
                       left_on=t.on_left, right_on=t.on_right,
                       how=t.how)
-    return result.reset_index()[t.columns]
+    return result.reset_index()[t.fields]
 
 
-@dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
-def compute_one(t, gb, **kwargs):
+@dispatch(Symbol, (DataFrameGroupBy, SeriesGroupBy))
+def compute_up(t, gb, **kwargs):
     return gb
-
-
-@dispatch(Reduction, (DataFrame, DataFrameGroupBy))
-def compute_one(t, df, **kwargs):
-    return getattr(df, t.symbol)()
-
-
-@dispatch((std, var), (DataFrame, DataFrameGroupBy))
-def compute_one(t, df, **kwargs):
-    return getattr(df, t.symbol)(ddof=t.unbiased)
 
 
 def post_reduction(result):
@@ -137,22 +144,28 @@ def post_reduction(result):
 
 
 @dispatch(Reduction, (Series, SeriesGroupBy))
-def compute_one(t, s, **kwargs):
-    return post_reduction(getattr(s, t.symbol)())
+def compute_up(t, s, **kwargs):
+    result = post_reduction(getattr(s, t.symbol)())
+    if t.keepdims:
+        result = Series([result], name=s.name)
+    return result
 
 
 @dispatch((std, var), (Series, SeriesGroupBy))
-def compute_one(t, s, **kwargs):
-    return post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
+def compute_up(t, s, **kwargs):
+    result = post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
+    if t.keepdims:
+        result = Series([result], name=s.name)
+    return result
 
 
 @dispatch(Distinct, DataFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return df.drop_duplicates()
 
 
 @dispatch(Distinct, Series)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     s2 = Series(s.unique())
     s2.name = s.name
     return s2
@@ -173,7 +186,7 @@ def unpack(seq):
     return seq
 
 
-Grouper = Column, ColumnWise, Series, list
+Grouper = ElemWise, Series, list
 
 
 @dispatch(By, list, DataFrame)
@@ -181,20 +194,24 @@ def get_grouper(c, grouper, df):
     return grouper
 
 
-@dispatch(By, (Column, ColumnWise, Series), NDFrame)
+@dispatch(By, Expr, NDFrame)
 def get_grouper(c, grouper, df):
-    return compute(grouper, {c.child: df})
+    g = compute(grouper, {c._child: df})
+    if isinstance(g, Series):
+        return g
+    if isinstance(g, DataFrame):
+        return [g[c] for c in g.columns]
 
 
-@dispatch(By, Projection, NDFrame)
+@dispatch(By, (Field, Projection), NDFrame)
 def get_grouper(c, grouper, df):
-    return grouper.columns
+    return grouper.fields
 
 
 @dispatch(By, Reduction, Grouper, NDFrame)
 def compute_by(t, r, g, df):
-    names = r.dshape[0].names
-    preapply = compute(r.child, {t.child: df})
+    names = [r._name]
+    preapply = compute(r._child, {t._child: df})
 
     # Pandas and Blaze column naming schemes differ
     # Coerce DataFrame column names to match Blaze's names
@@ -202,20 +219,20 @@ def compute_by(t, r, g, df):
     if isinstance(preapply, Series):
         preapply.name = names[0]
     else:
-        preapply.columns = names
+        preapply.names = names
     group_df = concat_nodup(df, preapply)
 
     gb = group_df.groupby(g)
-    groups = gb[names[0] if t.apply.child.iscolumn else names]
+    groups = gb[names[0] if isscalar(t.apply._child.dshape.measure) else names]
 
-    return compute_one(r, groups)  # do reduction
+    return compute_up(r, groups)  # do reduction
 
 
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
-    names = s.names
+    names = s.fields
     preapply = DataFrame(dict(zip(names,
-                                  (compute(v.child, {t.child: df})
+                                  (compute(v._child, {t._child: df})
                                    for v in s.values))))
 
     df2 = concat_nodup(df, preapply)
@@ -224,17 +241,17 @@ def compute_by(t, s, g, df):
 
     d = defaultdict(list)
     for name, v in zip(names, s.values):
-        d[name].append(getattr(Series, v.symbol))
+        d[name].append(v.symbol)
 
     result = groups.agg(dict(d))
 
     # Rearrange columns to match names order
     result = result[sorted(result.columns, key=lambda t: names.index(t[0]))]
-    result.columns = t.apply.names  # flatten down multiindex
+    result.columns = t.apply.fields  # flatten down multiindex
     return result
 
 
-@dispatch(TableExpr, DataFrame)
+@dispatch(Expr, DataFrame)
 def post_compute_by(t, df):
     return df.reset_index(drop=True)
 
@@ -245,7 +262,7 @@ def post_compute_by(t, df):
 
 
 @dispatch(By, NDFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     grouper = get_grouper(t, t.grouper, df)
     result = compute_by(t, t.apply, grouper, df)
     return post_compute_by(t.apply, into(DataFrame, result))
@@ -300,37 +317,37 @@ def concat_nodup(a, b):
 
 
 @dispatch(Sort, DataFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return df.sort(t.key, ascending=t.ascending)
 
 
 @dispatch(Sort, Series)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.order(ascending=t.ascending)
 
 
 @dispatch(Head, (Series, DataFrame))
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return df.head(t.n)
 
 
 @dispatch(Label, DataFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return DataFrame(df, columns=[t.label])
 
 
 @dispatch(Label, Series)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return Series(df, name=t.label)
 
 
 @dispatch(ReLabel, DataFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return df.rename(columns=dict(t.labels))
 
 
 @dispatch(ReLabel, Series)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     labels = t.labels
     if len(labels) > 1:
         raise ValueError('You can only relabel a Series with a single name')
@@ -340,15 +357,15 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Map, DataFrame)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return df.apply(lambda tup: t.func(*tup), axis=1)
 
 
 @dispatch(Map, Series)
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     result = df.map(t.func)
     try:
-        result.name = t.name
+        result.name = t._name
     except NotImplementedError:
         # We don't have a schema, but we should still be able to map
         result.name = df.name
@@ -356,24 +373,83 @@ def compute_one(t, df, **kwargs):
 
 
 @dispatch(Apply, (Series, DataFrame))
-def compute_one(t, df, **kwargs):
+def compute_up(t, df, **kwargs):
     return t.func(df)
 
 
 @dispatch(Merge, NDFrame)
-def compute_one(t, df, scope=None, **kwargs):
+def compute_up(t, df, scope=None, **kwargs):
     subexpression = common_subexpression(*t.children)
     scope = merge_dicts(scope or {}, {subexpression: df})
-    children = [compute(child, scope) for child in t.children]
+    children = [compute(_child, scope) for _child in t.children]
     return pd.concat(children, axis=1)
 
 
-@dispatch(Union, DataFrame, tuple)
-def compute_one(t, example, children, **kwargs):
-    return pd.concat(children, axis=0)
-
-
 @dispatch(Summary, DataFrame)
-def compute_one(expr, data, **kwargs):
-    return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
-                                        for val in expr.values])))
+def compute_up(expr, data, **kwargs):
+    values = [compute(val, {expr._child: data}) for val in expr.values]
+    if expr.keepdims:
+        return DataFrame([values], columns=expr.fields)
+    else:
+        return Series(dict(zip(expr.fields, values)))
+
+
+@dispatch(Like, DataFrame)
+def compute_up(expr, df, **kwargs):
+    arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
+            for name, pattern in expr.patterns.items()]
+    return df[np.logical_and.reduce(arrs)]
+
+
+def get_date_attr(s, attr):
+    try:
+        # new in pandas 0.15
+        return getattr(s.dt, attr)
+    except AttributeError:
+        return getattr(pd.DatetimeIndex(s), attr)
+
+
+@dispatch(DateTime, Series)
+def compute_up(expr, s, **kwargs):
+    return get_date_attr(s, expr.attr)
+
+
+@dispatch(UTCFromTimestamp, Series)
+def compute_up(expr, s, **kwargs):
+    return pd.datetools.to_datetime(s*1e9, utc=True)
+
+
+@dispatch(Millisecond, Series)
+def compute_up(_, s, **kwargs):
+    return get_date_attr(s, 'microsecond') // 1000
+
+
+@dispatch(Slice, (DataFrame, Series))
+def compute_up(expr, df, **kwargs):
+    index = expr.index
+    if isinstance(index, tuple) and len(index) == 1:
+        index = index[0]
+    if isinstance(index, _inttypes):
+        return df.iloc[index]
+    elif isinstance(index, slice):
+        if index.stop is not None:
+            return df.iloc[index.start:index.stop:index.step]
+        else:
+            return df.iloc[index]
+    else:
+        raise NotImplementedError()
+
+
+@dispatch(nelements, (DataFrame, Series))
+def compute_up(expr, df, **kwargs):
+    return df.shape[0]
+
+
+units_map = {'year': 'Y', 'month': 'M', 'week': 'W', 'day': 'D', 'hour': 'h',
+'minute': 'm', 'second': 's', 'millisecond': 'ms', 'microsecond': 'us',
+'nanosecond': 'ns'}
+
+@dispatch(DateTimeTruncate, Series)
+def compute_up(expr, data, **kwargs):
+    from blaze import into, np
+    return Series(compute_up(expr, into(np.ndarray, data), **kwargs))

@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import logging
-
 from dynd import nd
 from pandas import DataFrame
 import h5py
@@ -10,22 +8,38 @@ from multipledispatch import halt_ordering, restart_ordering
 
 halt_ordering() # Turn off multipledispatch ordering
 
-from .expr import *
+from datashape import dshape, discover
+from .expr import (Symbol, TableSymbol)
+from .expr import (by, count, count_values, distinct, head, join, label, like,
+        mean, merge, nunique, relabel, selection, sort, summary, var)
+from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
+        second, time, year)
 from .expr.functions import *
 from .api import *
-from .data.csv import *
-from .data.json import *
-from .data.hdf5 import *
+from .data import CSV, HDF5, SQL, coerce
+from .json import *
+from .resource import *
+# from .compute.csv import *
+from .compute.dynd import *
 from .compute.python import *
-from .data.meta import *
 from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
 from .sql import *
+from .server import *
 
 try:
     from .spark import *
+except ImportError:
+    pass
+try:
+    from .compute.sparksql import *
+    from .sparksql import *
+except (ImportError, TypeError):
+    pass
+try:
+    from .compute.h5py import *
 except ImportError:
     pass
 try:
@@ -33,7 +47,7 @@ try:
 except ImportError:
     pass
 try:
-    from .compute.chunks import *
+    import blaze.compute.chunks
 except ImportError:
     pass
 try:
@@ -44,18 +58,17 @@ try:
     from .mongo import *
 except ImportError:
     pass
+try:
+    from .pytables import *
+except ImportError:
+    pass
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
-
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
-
 
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.6.3'
+__version__ = '0.6.6'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog

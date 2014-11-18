@@ -4,20 +4,22 @@ import requests
 from flask import json
 import flask
 from dynd import nd
-from datashape import dshape
+from datashape import dshape, DataShape, Record
 
-from ..data.core import DataDescriptor
+from ..data import DataDescriptor
 from ..data.utils import coerce
-from ..expr import Expr, TableExpr
+from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .index import emit_index
-from ..api.resource import resource
+from ..resource import resource
 from .server import DEFAULT_PORT
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
 # flask for testing.  Sadly they have different Response objects,
 # hence the dispatched functions
+
+__all__ = 'Client', 'ExprClient'
 
 def content(response):
     if isinstance(response, flask.Response):
@@ -38,75 +40,35 @@ def reason(response):
         return response.reason
 
 
-class Client(DataDescriptor):
-    __slots__ = 'url', '_name'
-    def __init__(self, url, name):
-        self.url = url.strip('/')
-        self._name = name
+class Client(object):
+    """ Client for Blaze Server
 
-    def _get_data(self, key):
-        response = requests.put('%s/data/%s.json' % (self.url, self._name),
-                                data=json.dumps({'index': emit_index(key)}),
-                                headers = {'Content-type': 'application/json',
-                                           'Accept': 'text/plain'})
-        if not ok(response):
-            raise ValueError("Bad Response: %s" % reason(response))
-
-        data = json.loads(content(response))
-
-        return data['datashape'], data['data']
-
-    def get_py(self, key):
-        dshape, data = self._get_data(key)
-        return coerce(dshape, data)
-
-    def get_dynd(self, key):
-        dshape, data = self._get_data(key)
-        return nd.array(data, type=str(dshape))
-
-
-    @property
-    def dshape(self):
-        response = requests.get('%s/datasets.json' % self.url)
-
-        if not ok(response):
-            raise ValueError("Bad Response: %s" % reason(response))
-
-        data = json.loads(content(response))
-
-        return dshape(data[self._name])
-
-
-class ExprClient(object):
-    """ Expression Client for Blaze Server
+    Provides programmatic access to datasets living on Blaze Server
 
     Parameters
     ----------
 
     url: str
         URL of a Blaze server
-    name: str
-        Name of dataset on that server
 
     Examples
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> ec = ExprClient('localhost:6363', 'accounts')
-    >>> t = Table(ec) # doctest: +SKIP
+    >>> c = Client('localhost:6363')
+    >>> t = Data(c) # doctest: +SKIP
 
     See Also
     --------
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'name'
-    def __init__(self, url, name):
+    __slots__ = 'url'
+    def __init__(self, url, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
-        self.name = name
 
     @property
     def dshape(self):
@@ -117,23 +79,61 @@ class ExprClient(object):
 
         data = json.loads(content(response))
 
-        return dshape(data[self.name])
+        return DataShape(Record([[name, dshape(ds)] for name, ds in
+            data.items()]))
 
 
-@dispatch(ExprClient)
+class ClientDataset(object):
+    """ A dataset residing on a foreign Blaze Server
+
+    Not for public use.  Suggest the use of ``blaze.server.client.Client``
+    class instead.
+
+    This is only used to support backwards compatibility for the syntax
+
+        Data('blaze://hostname::dataname')
+
+    The following behavior is suggested instead
+
+        Data('blaze://hostname').dataname
+    """
+    __slots__ = 'client', 'name'
+    def __init__(self, client, name):
+        self.client = client
+        self.name = name
+
+    @property
+    def dshape(self):
+        return self.client.dshape.measure.dict[self.name]
+
+
+def ExprClient(*args, **kwargs):
+    import warnings
+    warnings.warn("Deprecated use `Client` instead", DeprecationWarning)
+    return Client(*args, **kwargs)
+
+
+@dispatch((Client, ClientDataset))
 def discover(ec):
     return ec.dshape
 
 
-@dispatch(Expr, ExprClient)
-def compute_down(expr, ec):
+@dispatch(Expr, ClientDataset)
+def compute_down(expr, data, **kwargs):
+    s = Symbol('client', discover(data.client))
+    leaf = expr._leaves()[0]
+    return compute_down(expr._subs({leaf: s[data.name]}), data.client, **kwargs)
+
+@dispatch(Expr, Client)
+def compute_down(expr, ec, **kwargs):
     from .server import to_tree
-    from ..api import Table
+    from ..api import Data
     from ..api import into
     from pandas import DataFrame
-    tree = to_tree(expr)
+    leaf = expr._leaves()[0]
+    tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 
-    r = requests.get('%s/compute/%s.json' % (ec.url, ec.name),
+    r = requests.get('%s/compute.json' % ec.url,
                      data = json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 
@@ -144,19 +144,19 @@ def compute_down(expr, ec):
 
     return data['data']
 
+@resource.register('blaze://.+::.+', priority=16)
+def resource_blaze_dataset(uri, **kwargs):
+    uri, name = uri.split('::')
+    client = resource(uri)
+    return ClientDataset(client, name)
 
-@resource.register('blaze://.*')
-def resource_blaze(uri, name):
+
+@resource.register('blaze://.+')
+def resource_blaze(uri, **kwargs):
     uri = uri[len('blaze://'):]
     sp = uri.split('/')
     tld, rest = sp[0], sp[1:]
     if ':' not in tld:
         tld = tld + ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
-    return ExprClient(uri, name)
-
-
-@resource.register('blaze://.*::\w*', priority=11)
-def resource_blaze_all(uri):
-    uri, name = uri.rsplit('::', 1)
-    return resource(uri, name)
+    return Client(uri)

@@ -40,7 +40,8 @@ export PYENV_PREFIX=${WORKSPACE}/build/pyenv
     --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} \
     cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools \
     dateutil pip pytables sqlalchemy h5py pandas requests pytest \
-    toolz cytoolz bcolz || exit 1
+    toolz cytoolz bcolz psutil || exit 1
+
 
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
@@ -60,13 +61,9 @@ pushd datashape
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
-# Temporary hack to install blz
-# BLZ needs unittest2 for Python 2.6
+# BColz needs unittest2 for Python 2.6
 if [ "${PYTHON_VERSION}" == "2.6" ]; then
-  pip install unittest2 unicodecsv
-fi
-if [ "${PYTHON_VERSION}" == "2.7" ]; then
-  pip install unicodecsv
+  pip install unittest2
 fi
 
 pip install multipledispatch || exit 1
@@ -75,3 +72,44 @@ pip install multipledispatch || exit 1
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
 py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit 1
+echo `ls`
+echo `git describe --tags --dirty --always --match [0-9]*`
+echo `pwd`
+# Retrieve the version number
+# X.X.X.dev builds
+version=`git describe --tags --dirty --always --match [0-9]*`
+BLAZE_VERSION=`echo $version | tr "-" _`
+echo BLAZE_VERSION, ${BLAZE_VERSION}
+if [ '${BLAZE_VERSION}' == '' ]; then
+    echo Could not determine the blaze version.
+    exit 1
+fi
+
+# Put the conda package by itself in the directory pkgs
+rm -rf pkgs
+mkdir pkgs
+cd pkgs
+if [ `uname` == Darwin ]; then
+ mkdir osx-64
+ cd osx-64
+elif [ `uname -m` == x86_64 ]; then
+ mkdir linux-64
+ cd linux-64
+else
+ mkdir linux-32
+ cd linux-32
+fi
+
+# Make sure binstar is installed in the main environment
+echo Updating binstar...
+~/anaconda/bin/conda install --yes binstar
+~/anaconda/bin/binstar --version
+
+# Create a conda package from the build
+~/anaconda/bin/conda package -p ${PYENV_PREFIX} --pkg-name=blaze --pkg-version=${BLAZE_VERSION}
+echo `ls`
+echo ${BLAZE_VERSION}
+echo ${PYENV_PREFIX}
+# Upload the package to binstar
+# ~/anaconda/bin/binstar -t ${BINSTAR_BLAZE_AUTH} upload --force blaze*.tar.bz2
+

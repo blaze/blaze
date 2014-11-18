@@ -6,7 +6,7 @@ import os
 import sys
 import shutil
 import textwrap
-from fnmatch import fnmatchcase
+from fnmatch import fnmatch
 
 from distutils.core import Command, setup
 from distutils.util import convert_path
@@ -16,28 +16,27 @@ from distutils.util import convert_path
 # Top Level Packages
 #------------------------------------------------------------------------
 
-def find_packages(where='.', exclude=()):
-    out = []
-    stack = [(convert_path(where), '')]
-    while stack:
-        where, prefix = stack.pop(0)
-        for name in os.listdir(where):
-            fn = os.path.join(where,name)
-            if ('.' not in name and os.path.isdir(fn) and
-                os.path.isfile(os.path.join(fn, '__init__.py'))
-            ):
-                out.append(prefix+name)
-                stack.append((fn, prefix+name+'.'))
+def ispackage(x):
+    return os.path.isdir(x) and os.path.exists(os.path.join(x, '__init__.py'))
 
+
+def istestdir(x):
+    return os.path.isdir(x) and not os.path.exists(os.path.join(x, '__init__.py'))
+
+
+def find_packages(where='blaze', exclude=('ez_setup', 'distribute_setup'),
+                  predicate=ispackage):
     if sys.version_info[0] == 3:
-        exclude = exclude + ('*py2only*', )
+        exclude += ('*py2only*', '*__pycache__*')
 
-    for pat in list(exclude) + ['ez_setup', 'distribute_setup']:
-        out = [item for item in out if not fnmatchcase(item, pat)]
+    func = lambda x: predicate(x) and not any(fnmatch(x, exc)
+                                              for exc in exclude)
+    return list(filter(func, [x[0] for x in os.walk(convert_path(where))]))
 
-    return out
 
 packages = find_packages()
+testdirs = find_packages(predicate=(lambda x: istestdir(x) and
+                                    os.path.basename(x) == 'tests'))
 
 #------------------------------------------------------------------------
 # Minimum Versions
@@ -123,16 +122,31 @@ class CleanCommand(Command):
 # Setup
 #------------------------------------------------------------------------
 
-longdesc = open('README.md').read()
+def find_data_files(exts, where='blaze'):
+    exts = tuple(exts)
+    for root, dirs, files in os.walk(where):
+        for f in files:
+            if any(fnmatch(f, pat) for pat in exts):
+                yield os.path.join(root, f)
+
+
+exts = '*.h5', '*.csv', '*.xls', '*.xlsx', '*.db', '*.json', '*.gz', '*.hdf5'
+package_data = [os.path.join(x.replace('blaze' + os.sep, ''),
+                             '*.py') for x in testdirs]
+package_data += [x.replace('blaze' + os.sep, '') for x in find_data_files(exts)]
+
+
+with open('README.md') as f:
+    longdesc = f.read()
+
 
 setup(
     name='blaze',
-    version='0.6.3',
+    version='0.6.6',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',
     long_description=longdesc,
-    data_files=[],
     license='BSD',
     platforms = ['any'],
     classifiers=[
@@ -147,8 +161,7 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    package_data={'blaze': package_data},
     packages=packages,
-    cmdclass = {
-        'clean'     : CleanCommand,
-    }
+    cmdclass={'clean': CleanCommand}
 )

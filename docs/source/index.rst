@@ -24,6 +24,11 @@ This architecture allows a single Blaze code to run against several
 computational backends.  Blaze depends on and exposes the hard work of
 countless other projects.
 
+Presentations
+-------------
+
+* `See previous presentations about Blaze`_
+
 
 Under Development
 -----------------
@@ -38,17 +43,19 @@ Index
 .. toctree::
    :maxdepth: 1
 
-   install
    overview
    quickstart
-   data
    expressions
    backends
+   uri
+   interactivity
+   install
    datashape
    server
    api
    dev_workflow
    expr-compute-dev
+   computation
 
 Older Versions
 ~~~~~~~~~~~~~~
@@ -56,3 +63,5 @@ Older Versions
 Older versions of these documents can be found here_.
 
 .. _here: ../
+
+.. _`See previous presentations about Blaze`: http://blaze.pydata.org/presentations

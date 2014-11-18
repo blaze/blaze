@@ -6,8 +6,12 @@ bcolz = pytest.importorskip('bcolz')
 import numpy as np
 from pandas import DataFrame
 from toolz import count
+import os
+from datashape import discover, dshape
+from collections import Iterator
 
-from blaze.bcolz import into, chunks
+from blaze.bcolz import into, chunks, resource
+from blaze.utils import tmpfile
 
 
 b = bcolz.ctable([[1, 2, 3],
@@ -51,8 +55,11 @@ def test_into_ctable_list():
 
 def test_into_ctable_list_datetimes():
     from datetime import datetime
-    b = into(bcolz.carray, [datetime(2012, 1, 1), datetime(2013, 2, 2)])
+    L = [datetime(2012, 1, 1), datetime(2013, 2, 2)]
+    b = into(bcolz.carray, L)
     assert np.issubdtype(b.dtype, np.datetime64)
+
+    assert list(into(Iterator, b)) == L
 
 
 def test_into_ctable_iterator():
@@ -65,8 +72,10 @@ def test_into_ndarray_carray():
     assert str(into(np.ndarray, b['a'])) == \
             str(np.array([1, 2, 3]))
 
+
 def test_into_list_ctable():
     assert into([], b) == [(1, 1.), (2, 2.), (3, 3.)]
+
 
 def test_into_DataFrame_ctable():
     result = into(DataFrame(), b)
@@ -89,8 +98,8 @@ def test_chunks():
 
 
 def test_into_chunks():
-    from blaze.compute.numpy import chunks, compute_one
-    from blaze.compute.chunks import chunks, compute_one, ChunkIterator
+    from blaze.compute.numpy import chunks, compute_up
+    from blaze.compute.chunks import chunks, compute_up, ChunkIterator
     from blaze import into
     x = np.array([(int(i), float(i)) for i in range(100)],
                  dtype=[('a', np.int32), ('b', np.float32)])
@@ -100,3 +109,32 @@ def test_into_chunks():
     b2 = into(bcolz.ctable, x)
 
     assert str(b1) == str(b2)
+
+
+def test_resource():
+    f = None
+    with tmpfile('.bcolz') as filename:
+        f = filename
+
+    bcolz.ctable(rootdir=f, columns=[[1, 2, 3], [1., 2., 3.]], names=['a', 'b'])
+    bc2 = resource(f)
+
+    assert isinstance(bc2, bcolz.ctable)
+    try:
+        os.remove(f)
+    except OSError:
+        pass
+
+
+def test_resource_works_with_empty_file():
+    f = None
+    with tmpfile('.bcolz') as filename:
+        f = filename
+
+    bc = resource(f, dshape=dshape('{a: int32, b: float64}'))
+    assert len(bc) == 0
+    assert discover(bc).measure == dshape('{a: int32, b: float64}').measure
+    try:
+        os.remove(f)
+    except OSError:
+        pass

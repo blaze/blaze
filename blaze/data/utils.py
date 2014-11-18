@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 from itertools import chain
 from dynd import nd
 from collections import Iterator
-from datashape import dshape, Record, DataShape
-from datashape.predicates import isunit, isdimension
-from toolz import partition_all, partial, map
+from datashape import dshape, Record, DataShape, Mono
+from datashape.predicates import isdimension
+from toolz import partition_all, partial, map, compose, first
 from ..dispatch import dispatch
 
 from ..compatibility import _strtypes
@@ -19,14 +19,21 @@ def validate(schema, item):
         return False
 
 
-@dispatch(DataShape, object)
+@dispatch((DataShape, Mono), object)
 def coerce(dshape, item):
     return coerce(str(dshape), item)
 
 
 @dispatch(_strtypes, object)
 def coerce(dshape, item):
-    return nd.as_py(nd.array(item, dtype=dshape), tuple=True)
+    try:
+        return nd.as_py(nd.array(item, dtype=dshape), tuple=True)
+    except ValueError as e:
+        raise ValueError("DataShape mismatch.\n"
+                "DyND failed to parse data with the following datashape: %s\n"
+                "Produced the following error: %s\n"
+                "Consider providing a more general datashape with "
+                "keyword dshape=" % (dshape, e.args[0]))
 
 
 @dispatch(_strtypes, Iterator)
@@ -153,3 +160,25 @@ def tuplify(x):
         return tuple(map(tuplify, x))
     else:
         return x
+
+
+def listpack(x):
+    """
+
+    >>> listpack(1)
+    [1]
+    >>> listpack((1, 2))
+    [1, 2]
+    >>> listpack([1, 2])
+    [1, 2]
+    """
+    if isinstance(x, tuple):
+        return list(x)
+    elif isinstance(x, list):
+        return x
+    else:
+        return [x]
+
+
+def sort_dtype_items(items, names):
+    return sorted(items, key=compose(names.index, first))

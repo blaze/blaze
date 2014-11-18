@@ -3,7 +3,7 @@
 >>> from blaze import *
 >>> from blaze.compute.core import compute
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -14,43 +14,80 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 import numbers
+import fnmatch
+import operator
+import re
 from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
-from cytoolz import groupby, reduceby, unique, take, concat, first
+from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
+import datetime
 import cytoolz
 import toolz
-import sys
 import math
+from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
-from ..expr.table import TableSymbol
-from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
-                          Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union, Summary)
-from ..expr.table import count, nunique, mean, var, std
-from ..expr import table, eval_str
-from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
-from ..compatibility import builtins, apply, unicode
-from . import core
-from .core import compute, compute_one
+from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
+                    Merge, Join, Selection, Reduction, Distinct,
+                    By, Sort, Head, Apply, Summary, Like,
+                    DateTime, Date, Time, Millisecond, Symbol, ElemWise,
+                    Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
+                    UTCFromTimestamp)
+from ..expr import reductions
+from ..expr import count, nunique, mean, var, std
+from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
+                    Not, nelements)
+from ..compatibility import builtins, apply, unicode, _inttypes
+from .core import compute, compute_up, optimize, base
 
 from ..data import DataDescriptor
+from ..data.utils import listpack
+from .pyfunc import lambdify, broadcast_collect
+from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
 import math
 from math import *
 
 
-__all__ = ['compute', 'compute_one', 'Sequence', 'rowfunc', 'rrowfunc']
+__all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
+
+@dispatch(Expr, Sequence)
+def pre_compute(expr, seq, scope=None):
+    try:
+        if isinstance(seq, Iterator):
+            first = next(seq)
+            seq = concat([[first], seq])
+        else:
+            first = next(iter(seq))
+    except StopIteration:
+        return []
+    if isinstance(first, dict):
+        return pluck(expr.fields, seq)
+    else:
+        return seq
+
+
+@dispatch(Expr, Sequence)
+def optimize(expr, seq):
+    return broadcast_collect( expr)
+
+
+def child(x):
+    if hasattr(x, '_child'):
+        return x._child
+    if hasattr(x, '_inputs') and len(x._inputs) == 1:
+        return x._inputs[0]
+    raise NotImplementedError()
 
 
 def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> expr = accounts['amount'].map(lambda x: x + 1)
     >>> f = recursive_rowfunc(expr, accounts)
 
@@ -62,14 +99,14 @@ def recursive_rowfunc(t, stop):
     funcs = []
     while not t.isidentical(stop):
         funcs.append(rowfunc(t))
-        t = t.child
+        t = child(t)
     return compose(*funcs)
 
 
 rrowfunc = recursive_rowfunc
 
 
-@dispatch(TableSymbol)
+@dispatch(Symbol)
 def rowfunc(t):
     return identity
 
@@ -78,7 +115,7 @@ def rowfunc(t):
 def rowfunc(t):
     """ Rowfunc provides a function that can be mapped onto a sequence.
 
-    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
     >>> f = rowfunc(accounts['amount'])
 
     >>> row = ('Alice', 100)
@@ -89,33 +126,28 @@ def rowfunc(t):
         compute<Rowwise, Sequence>
     """
     from cytoolz.curried import get
-    indices = [t.child.columns.index(col) for col in t.columns]
+    indices = [t._child.fields.index(col) for col in t.fields]
     return get(indices)
 
 
-@dispatch(Column)
+@dispatch(Field)
 def rowfunc(t):
-    if t.child.iscolumn and t.column == t.child.columns[0]:
-        return identity
-    index = t.child.columns.index(t.column)
+    index = t._child.fields.index(t._name)
     return lambda x: x[index]
 
 
-@dispatch(ColumnWise)
+@dispatch(Broadcast)
 def rowfunc(t):
-    if sys.version_info[0] == 3:
-        # Python3 doesn't allow argument unpacking
-        # E.g. ``lambda (x, y, z): x + z`` is illegal
-        # Solution: Make ``lambda x, y, z: x + y``, then wrap with ``apply``
-        func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
-        return partial(apply, func)
-    elif sys.version_info[0] == 2:
-        return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+    return lambdify(t._scalars, t._scalar_expr)
 
+
+@dispatch(Arithmetic)
+def rowfunc(expr):
+    return eval(funcstr(expr))
 
 @dispatch(Map)
 def rowfunc(t):
-    if t.child.iscolumn:
+    if isscalar(t._child.dshape.measure):
         return t.func
     else:
         return partial(apply, t.func)
@@ -124,6 +156,55 @@ def rowfunc(t):
 @dispatch((Label, ReLabel))
 def rowfunc(t):
     return identity
+
+
+@dispatch(DateTime)
+def rowfunc(t):
+    return lambda row: getattr(row, t.attr)
+
+@dispatch(UTCFromTimestamp)
+def rowfunc(t):
+    return datetime.datetime.utcfromtimestamp
+
+@dispatch((Date, Time))
+def rowfunc(t):
+    return lambda row: getattr(row, t.attr)()
+
+
+@dispatch(Millisecond)
+def rowfunc(_):
+    return lambda row: getattr(row, 'microsecond') // 1000
+
+
+@dispatch(DateTimeTruncate)
+def rowfunc(expr):
+    return partial(pydatetime.truncate, measure=expr.measure, unit=expr.unit)
+
+
+@dispatch((RealMath, IntegerMath, BooleanMath))
+def rowfunc(expr):
+    return getattr(math, type(expr).__name__)
+
+@dispatch(USub)
+def rowfunc(expr):
+    return operator.neg
+
+@dispatch(Not)
+def rowfunc(expr):
+    return operator.invert
+
+@dispatch(Arithmetic)
+def rowfunc(expr):
+    if not isinstance(expr.lhs, Expr):
+        return lambda x: expr.op(expr.lhs, x)
+    if not isinstance(expr.rhs, Expr):
+        return lambda x: expr.op(x, expr.rhs)
+    return expr.op
+
+
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
 
 
 def concat_maybe_tuples(vals):
@@ -141,41 +222,114 @@ def concat_maybe_tuples(vals):
     return tuple(result)
 
 
+def deepmap(func, *data, **kwargs):
+    """
+
+    >>> inc = lambda x: x + 1
+    >>> list(deepmap(inc, [1, 2], n=1))
+    [2, 3]
+    >>> list(deepmap(inc, [(1, 2), (3, 4)], n=2))
+    [(2, 3), (4, 5)]
+
+    Works on variadic args too
+
+    >>> add = lambda x, y: x + y
+    >>> list(deepmap(add, [1, 2], [10, 20], n=1))
+    [11, 22]
+    """
+    n = kwargs.pop('n', 1)
+    if n == 0:
+        return func(*data)
+    if n == 1:
+        return map(func, *data)
+    else:
+        return map(compose(tuple, partial(deepmap, func, n=n-1)), *data)
+
+
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = [rrowfunc(child, t.child) for child in t.children]
+    funcs = [rrowfunc(_child, t._child) for _child in t.children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
-@dispatch(RowWise, Sequence)
-def compute_one(t, seq, **kwargs):
-    return map(rowfunc(t), seq)
+@dispatch(ElemWise, Sequence)
+def compute_up(t, seq, **kwargs):
+    func = rowfunc(t)
+    if iscollection(t._child.dshape):
+        return deepmap(func, seq, n=ndim(child(t)))
+    else:
+        return func(seq)
+
+@dispatch(Broadcast, Sequence)
+def compute_up(t, seq, **kwargs):
+    func = rowfunc(t)
+    return deepmap(func, seq, n=ndim(child(t)))
+
+
+@dispatch(Arithmetic, Sequence + (int, float, bool))
+def compute_up(t, seq, **kwargs):
+    func = rowfunc(t)
+    return deepmap(func, seq, n=ndim(child(t)))
+
+
+@dispatch(Arithmetic, Sequence, Sequence)
+def compute_up(t, a, b, **kwargs):
+    if ndim(t.lhs) != ndim(t.rhs):
+        raise ValueError()
+    # TODO: Tee if necessary
+    func = rowfunc(t)
+    return deepmap(func, a, b, n=ndim(t.lhs))
 
 
 @dispatch(Selection, Sequence)
-def compute_one(t, seq, **kwargs):
-    predicate = rrowfunc(t.predicate, t.child)
+def compute_up(t, seq, **kwargs):
+    predicate = optimize(t.predicate, seq)
+    predicate = rrowfunc(predicate, child(t))
     return filter(predicate, seq)
 
 
 @dispatch(Reduction, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
+    if t.axis != (0,):
+        raise NotImplementedError('Only 1D reductions currently supported')
+    result = compute_up_1d(t, seq, **kwargs)
+    if t.keepdims:
+        return (result,)
+    else:
+        return result
+
+
+@dispatch(Reduction, Sequence)
+def compute_up_1d(t, seq, **kwargs):
     op = getattr(builtins, t.symbol)
     return op(seq)
 
 
+@dispatch(nelements, Sequence)
+def compute_up_1d(expr, seq, **kwargs):
+    try:
+        return len(seq)
+    except TypeError:
+        return cytoolz.count(seq)
+
+
+@dispatch(ElemWise, base)
+def compute_up(expr, data, **kwargs):
+    return rowfunc(expr)(data)
+
+
 @dispatch(BinOp, numbers.Real, numbers.Real)
-def compute_one(bop, a, b, **kwargs):
+def compute_up(bop, a, b, **kwargs):
     return bop.op(a, b)
 
 
 @dispatch(UnaryOp, numbers.Real)
-def compute_one(uop, x, **kwargs):
+def compute_up(uop, x, **kwargs):
     return uop.op(x)
 
 
 @dispatch(RealMath, numbers.Real)
-def compute_one(f, n, **kwargs):
+def compute_up(f, n, **kwargs):
     return getattr(math, type(f).__name__)(n)
 
 
@@ -205,12 +359,12 @@ def _std(seq, unbiased):
 
 
 @dispatch(count, Sequence)
-def compute_one(t, seq, **kwargs):
-    return cytoolz.count(seq)
+def compute_up_1d(t, seq, **kwargs):
+    return cytoolz.count(filter(None, seq))
 
 
 @dispatch(Distinct, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     try:
         row = first(seq)
     except StopIteration:
@@ -224,22 +378,22 @@ def compute_one(t, seq, **kwargs):
 
 
 @dispatch(nunique, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return len(set(seq))
 
 
 @dispatch(mean, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return _mean(seq)
 
 
 @dispatch(var, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return _var(seq, t.unbiased)
 
 
 @dispatch(std, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up_1d(t, seq, **kwargs):
     return _std(seq, t.unbiased)
 
 
@@ -257,13 +411,18 @@ from operator import add, or_, and_
 # binop     :: b, a -> b
 # combiner  :: b, b -> b
 # init      :: b
-binops = {table.sum: (add, add, 0),
-          table.min: (lesser, lesser, 1e250),
-          table.max: (greater, lesser, -1e250),
-          table.count: (countit, add, 0),
-          table.any: (or_, or_, False),
-          table.all: (and_, and_, True)}
+binops = {reductions.sum: (add, add, 0),
+          reductions.min: (lesser, lesser, 1e250),
+          reductions.max: (greater, lesser, -1e250),
+          reductions.count: (countit, add, 0),
+          reductions.any: (or_, or_, False),
+          reductions.all: (and_, and_, True)}
 
+
+def child(expr):
+    if len(expr._inputs) > 1:
+        raise ValueError()
+    return expr._inputs[0]
 
 def reduce_by_funcs(t):
     """ Create grouping func and binary operator for a by-reduction/summary
@@ -286,14 +445,14 @@ def reduce_by_funcs(t):
     several binary operators are juxtaposed together.
 
     See Also:
-        compute_one(By, Sequence)
+        compute_up(By, Sequence)
     """
-    grouper = rrowfunc(t.grouper, t.child)
+    grouper = rrowfunc(t.grouper, t._child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, combiner, initial = binops[type(t.apply)]
-        applier = rrowfunc(t.apply.child, t.child)
+        applier = rrowfunc(t.apply._child, t._child)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
@@ -304,7 +463,7 @@ def reduce_by_funcs(t):
         builtins.all(type(val) in binops for val in t.apply.values)):
 
         binops2, combiners, inits = zip(*[binops[type(v)] for v in t.apply.values])
-        appliers = [rrowfunc(v.child, t.child) for v in t.apply.values]
+        appliers = [rrowfunc(v._child, t._child) for v in t.apply.values]
 
         def binop2(accs, x):
             return tuple(binop(acc, applier(x)) for binop, acc, applier in
@@ -317,44 +476,29 @@ def reduce_by_funcs(t):
 
 
 @dispatch(By, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
+    apply = optimize(t.apply, seq)
+    grouper = optimize(t.grouper, seq)
+    t = By(grouper, apply)
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
                                                 for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
         d = reduceby(grouper, binop, seq, initial)
     else:
-        grouper = rrowfunc(t.grouper, t.child)
+        grouper = rrowfunc(t.grouper, t._child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t._child: v})) for k, v in groups.items())
 
-    if t.grouper.iscolumn:
+    if isscalar(t.grouper.dshape.measure):
         keyfunc = lambda x: (x,)
     else:
         keyfunc = identity
-    if isinstance(t.apply, Reduction):
+    if isscalar(t.apply.dshape.measure):
         valfunc = lambda x: (x,)
     else:
         valfunc = identity
     return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
-
-
-def listpack(x):
-    """
-
-    >>> listpack(1)
-    [1]
-    >>> listpack((1, 2))
-    [1, 2]
-    >>> listpack([1, 2])
-    [1, 2]
-    """
-    if isinstance(x, tuple):
-        return list(x)
-    elif isinstance(x, list):
-        return x
-    else:
-        return [x]
 
 
 def pair_assemble(t):
@@ -363,12 +507,12 @@ def pair_assemble(t):
     This is mindful to shared columns as well as missing records
     """
     from cytoolz import get  # not curried version
-    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+    on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
-    left_self_columns = [t.lhs.columns.index(c) for c in t.lhs.columns
+    left_self_columns = [t.lhs.fields.index(c) for c in t.lhs.fields
                                             if c not in listpack(t.on_left)]
-    right_self_columns = [t.rhs.columns.index(c) for c in t.rhs.columns
+    right_self_columns = [t.rhs.fields.index(c) for c in t.rhs.fields
                                             if c not in listpack(t.on_right)]
     def assemble(pair):
         a, b = pair
@@ -380,12 +524,12 @@ def pair_assemble(t):
         if a is not None:
             left_entries = get(left_self_columns, a)
         else:
-            left_entries = (None,) * (len(t.lhs.columns) - len(on_left))
+            left_entries = (None,) * (len(t.lhs.fields) - len(on_left))
 
         if b is not None:
             right_entries = get(right_self_columns, b)
         else:
-            right_entries = (None,) * (len(t.rhs.columns) - len(on_right))
+            right_entries = (None,) * (len(t.rhs.fields) - len(on_right))
 
         return joined + left_entries + right_entries
 
@@ -393,7 +537,7 @@ def pair_assemble(t):
 
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
 
     Note that a pure streaming Join is challenging/impossible because any row
@@ -403,13 +547,13 @@ def compute_one(t, lhs, rhs, **kwargs):
     As a result this approach compromises and fully realizes the LEFT sequence
     while allowing the RIGHT sequence to stream.  As a result
 
-    Always put your bigger table on the RIGHT side of the Join.
+    Always put your bigger collection on the RIGHT side of the Join.
     """
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)
 
-    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+    on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
     left_default = (None if t.how in ('right', 'outer')
                          else toolz.itertoolz.no_default)
@@ -427,18 +571,20 @@ def compute_one(t, lhs, rhs, **kwargs):
 
 
 @dispatch(Sort, Sequence)
-def compute_one(t, seq, **kwargs):
-    if isinstance(t.key, (str, unicode, tuple, list)):
-        key = rowfunc(t.child[t.key])
+def compute_up(t, seq, **kwargs):
+    if isscalar(t._child.dshape.measure) and t.key == t._child._name:
+        key = identity
+    elif isinstance(t.key, (str, unicode, tuple, list)):
+        key = rowfunc(t._child[t.key])
     else:
-        key = rowfunc(t.key)
+        key = rrowfunc(optimize(t.key, seq), t._child)
     return sorted(seq,
                   key=key,
                   reverse=not t.ascending)
 
 
 @dispatch(Head, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     if t.n < 100:
         return tuple(take(t.n, seq))
     else:
@@ -446,36 +592,64 @@ def compute_one(t, seq, **kwargs):
 
 
 @dispatch((Label, ReLabel), Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return seq
 
 
 @dispatch(Apply, Sequence)
-def compute_one(t, seq, **kwargs):
+def compute_up(t, seq, **kwargs):
     return t.func(seq)
 
 
-@dispatch(Union, Sequence, tuple)
-def compute_one(t, example, children, **kwargs):
-    return concat(children)
-
-
 @dispatch(Summary, Sequence)
-def compute_one(expr, data, **kwargs):
+def compute_up(expr, data, **kwargs):
+    if expr._child.ndim != 1:
+        raise NotImplementedError('Only 1D reductions currently supported')
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        return tuple(compute(val, {expr.child: data})
+        result = tuple(compute(val, {expr._child: data})
                         for val, data in zip(expr.values, datas))
     else:
-        return tuple(compute(val, {expr.child: data})
+        result = tuple(compute(val, {expr._child: data})
                         for val in expr.values)
 
+    if expr.keepdims:
+        return (result,)
+    else:
+        return result
 
-@dispatch(BinOp, object, object)
-def compute_one(expr, x, y, **kwargs):
-    return expr.op(x, y)
+
+def like_regex_predicate(expr):
+    regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
+                    for name, pattern in expr.patterns.items())
+    regex_tup = [regexes.get(name, None) for name in expr.fields]
+    def predicate(tup):
+        for item, regex in zip(tup, regex_tup):
+            if regex and not regex.match(item):
+                return False
+        return True
+
+    return predicate
 
 
-@dispatch(UnaryOp, object)
-def compute_one(expr, x, **kwargs):
-    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
+@dispatch(Like, Sequence)
+def compute_up(expr, seq, **kwargs):
+    predicate = like_regex_predicate(expr)
+    return filter(predicate, seq)
+
+
+@dispatch(Slice, Sequence)
+def compute_up(expr, seq, **kwargs):
+    index = expr.index
+    if isinstance(index, tuple) and len(index) == 1:
+        index = index[0]
+    if isinstance(index, _inttypes):
+        return nth(index, seq)
+    if isinstance(index, slice):
+        return itertools.islice(seq, index.start, index.stop, index.step)
+    raise NotImplementedError("Only 1d slices supported")
+
+
+@dispatch(Field, dict)
+def compute_up(expr, data, **kwargs):
+    return data[expr._name]

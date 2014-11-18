@@ -108,7 +108,7 @@ class SingleTestClass(MakeFile):
 
         result = dd.as_dynd()[-2:, :]
         expected = nd.array([[1, 2, 3],
-                             [4, 5, 6]], dtype='strided * strided * int32')
+                             [4, 5, 6]], dtype='fixed * fixed * int32')
 
         self.assertEquals(nd.as_py(result), nd.as_py(expected))
 
@@ -213,10 +213,14 @@ class TestTypes(MakeFile):
 
 class TestDiscovery(MakeFile):
     def test_discovery(self):
-        dd = HDF5(self.filename, 'data',
+        dd = HDF5(self.filename, '/data',
                   schema='2 * int32')
         dd.extend([(1, 2), (2, 3), (4, 5)])
         with h5py.File(dd.path) as f:
+            self.assertEqual(discover(f),
+                    dshape('{data: 3 * 2 * int32}'))
+            self.assertEqual(discover(f['/']),
+                    dshape('{data: 3 * 2 * int32}'))
             d = f.get(dd.datapath)
             self.assertEqual(discover(d),
                              dshape('3 * 2 * int32'))
@@ -256,7 +260,7 @@ data = [(1, 32.4, 'Alice'),
 
 x = np.array(data, dtype=[('id', int), ('amount', float), ('name', str, 100)])
 
-schema = dshape("{ id : int64, amount : float64, name : string }")
+schema = dshape("{id : int64, amount: float64, name: string}")
 
 
 @pytest.yield_fixture

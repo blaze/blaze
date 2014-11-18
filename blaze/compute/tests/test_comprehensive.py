@@ -4,9 +4,9 @@ import numpy as np
 from pandas import DataFrame
 import numpy as np
 import bcolz
-from blaze.expr import TableSymbol, by, TableExpr
-from blaze.api.into import into
-from blaze.api.table import Table
+from datashape.predicates import isscalar, iscollection, isrecord
+from blaze.expr import Symbol, by
+from blaze.api import Data, into
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 from blaze.sql import SQL
@@ -14,7 +14,7 @@ from blaze.sql import SQL
 
 sources = []
 
-t = TableSymbol('t', '{amount: int64, id: int64, name: string}')
+t = Symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
      [200, 2, 'Bob'],
@@ -53,17 +53,23 @@ expressions = {
         t['id']: [],
         t.id.max(): [],
         t.amount.sum(): [],
+        t.amount.sum(keepdims=True): [],
+        t.amount.count(keepdims=True): [],
+        t.amount.nunique(keepdims=True): [mongo],
+        t.amount.nunique(): [],
+        t.amount.head(): [],
         t.amount + 1: [mongo],
         sin(t.amount): [sql, mongo], # sqlite doesn't support trig
         exp(t.amount): [sql, mongo],
         t.amount > 50: [mongo],
         t[t.amount > 50]: [],
+        t.like(name='Alic*'): [],
         t.sort('name'): [bc],
         t.sort('name', ascending=False): [bc],
         t.head(3): [],
         t.name.distinct(): [],
         t[t.amount > 50]['name']: [], # odd ordering issue
-        t.id.map(lambda x: x + 1, '{id: int}'): [sql, mongo],
+        t.id.map(lambda x: x + 1, schema='int', name='id'): [sql, mongo],
         t[t.amount > 50]['name']: [],
         by(t.name, t.amount.sum()): [],
         by(t.id, t.id.count()): [],
@@ -76,6 +82,13 @@ expressions = {
         # by(t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
+        t[0]: [sql, mongo],
+        t[::2]: [sql, mongo],
+        t.id.utcfromtimestamp: [sql],
+        t.distinct().nrows: [],
+        t.nelements(axis=0): [],
+        t.nelements(axis=None): [],
+        t.amount.truncate(200): [sql]
         }
 
 base = df
@@ -93,18 +106,22 @@ def typename(obj):
 
 def test_base():
     for expr, exclusions in expressions.items():
-        model = compute(expr.subs({t: Table(base, t.schema)}))
+        model = compute(expr._subs({t: Data(base, t.dshape)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
-            T = Table(source)
-            result = into(model, expr.subs({t: T}))
-            if isinstance(expr, TableExpr):
-                if expr.iscolumn:
+            T = Data(source)
+            if iscollection(expr.dshape):
+                result = into(model, expr._subs({t: T}))
+                if isscalar(expr.dshape.measure):
                     assert set(into([], result)) == set(into([], model))
                 else:
                     assert df_eq(result, model)
+            elif isrecord(expr.dshape):
+                result = compute(expr._subs({t: T}))
+                assert into(tuple, result) == into(tuple, model)
             else:
+                result = compute(expr._subs({t: T}))
                 assert result == model

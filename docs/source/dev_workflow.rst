@@ -13,63 +13,28 @@ Installing Development Blaze
 Blaze has a number of dependencies, both due to relying on community projects
 and also because it itself is split among a few projects.
 
-**TL;DR**:  Install `conda_`, then copy-paste the following ::
+Install `conda_`, then copy-paste the following ::
 
-   # Get source
-   git clone https://github.com/ContinuumIO/blaze.git
-   cd blaze
-
-   # Install most of the requirements through conda
-   conda install --yes --file requirements.txt  # Basic requirements
-   conda install --yes -c mwiebe dynd-python    # Development version of DyND
-   conda install --yes unicodecsv               # If on Python 2
+   # Install most of the requirements through the recent conda release
+   conda install --yes blaze
 
    # Some requirements are kept up-to-date on PyPI
    conda install --yes pip
    pip install git+https://github.com/ContinuumIO/datashape.git --upgrade
    pip install toolz cytoolz multipledispatch  --upgrade
 
+   # Get source
+   git clone https://github.com/ContinuumIO/blaze.git
+   cd blaze
+
    # Install and run tests
    python setup.py install                      # Install Blaze
    python -c 'import blaze; blaze.test()'       # Run tests
 
 
-**Detailed Version**:
-
-Get Source:  Fork and clone the Blaze git repository to your local machine (see
-Github Flow below)
-
-::
-
-   git clone git@github.com:ContinuumIO/blaze.git
-   or
-   git clone git@github.com:GITHUB-USERNAME/blaze.git
-
-Install dependencies:  Blaze depends on a number of projects within the larger
-scientific Python ecosystem.  We strongly suggest that you install these
-dependencies using `conda`_, preferably from the `Anaconda`_ download.
-
-::
-
-   conda install --file requirements.txt
-
-It may be that newer versions of these projects have critical updates that have
-not yet reached the main conda channel.  Because of this we recommend
-installing with some additional Binstar channels.
-
-::
-
-   conda install -c mwiebe -c mrocklin --file requirements.txt
-
-If you don't want to use conda that's fine too.  Most of the requirements can
-be installed from PyPI.  A notable exception is `DyND`_ which must be compiled
-from source.
-
-If you use Python 2 you should also include the ``unicodecsv`` module
-
-::
-
-   conda install unicodecsv
+It is possible but challenging to install Blaze without conda.
+Most of the requirements can be installed from PyPI.
+A notable exception is `DyND`_ which must be compiled from source.
 
 .. _DyND: https://github.com/ContinuumIO/dynd-python
 .. _conda: http://conda.pydata.org/
@@ -117,11 +82,15 @@ Python 2 and Python 3 before a merge.
 
 The Travis tests only run on Linux, but Blaze is supported on Linux,
 OS X, and Windows. Internal to Continuum, a `Jenkins`_ server is
-running which builds and tests Blaze on 15 different configurations,
-versions 2.6, 2.7, and 3.3 for different 32-bit and 64-bit versions
-of Linux, OS X, and Windows. That these configurations are all working
-should be verified by someone at Continuum after each merge of a
-pull request.
+running which builds and tests Blaze on the following platforms/versions
+
+*   Python versions 2.6, 2.7, 3.3, 3.4
+*   Operating systems Windows, OS-X, Linux
+*   32-bit and 64-bit
+
+That these configurations are all working should be verified by someone at
+Continuum ideally after each merge of a pull request and certainly before each
+release.
 
 .. _Jenkins: http://jenkins-ci.org/
 

@@ -1,22 +1,21 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from datetime import date, datetime, time
-from decimal import Decimal
 import sys
+import warnings
 from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
-from datashape import dshape, var, Record, Option, isdimension
+from datashape import dshape, var, Record, Option, isdimension, DataShape
 from itertools import chain
-from toolz import first
+import subprocess
+from multipledispatch import MDNotImplementedError
+import gzip
 
 from ..dispatch import dispatch
 from ..utils import partition_all
-from ..compatibility import basestring
 from .core import DataDescriptor
-from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
 from .csv import CSV
 
@@ -54,6 +53,7 @@ revtypes.update({sql.types.VARCHAR: 'string',
                  sql.types.DATE: 'date',
                  sql.types.BIGINT: 'int64',
                  sql.types.INTEGER: 'int',
+                 sql.types.BIGINT: 'int64',
                  sql.types.Float: 'float64'})
 
 
@@ -91,6 +91,25 @@ def discover(engine, tablename):
     metadata.reflect(engine)
     table = metadata.tables[tablename]
     return discover(table)
+
+
+@dispatch(sql.engine.base.Engine)
+def discover(engine):
+    metadata = sql.MetaData()
+    metadata.reflect(engine)
+    pairs = []
+    for name, table in metadata.tables.items():
+        try:
+            pairs.append([name, discover(table)])
+        except sqlalchemy.exc.CompileError as e:
+            print("Can not discover type of table %s.\n" % name +
+                "SQLAlchemy provided this error message:\n\t%s" % e.message +
+                "\nSkipping.")
+        except NotImplementedError as e:
+            print("Blaze does not understand a SQLAlchemy type.\n"
+                "Blaze provided the following error:\n\t%s" % e.message +
+                "\nSkipping.")
+    return DataShape(Record(pairs))
 
 
 def dshape_to_alchemy(dshape):
@@ -131,6 +150,11 @@ def dshape_to_alchemy(dshape):
             return sql.types.Unicode(length=dshape[0].fixlen)
         if 'A' in dshape.encoding:
             return sql.types.String(length=dshape[0].fixlen)
+    if isinstance(dshape, datashape.DateTime):
+        if dshape.tz:
+            return sql.types.DateTime(timezone=True)
+        else:
+            return sql.types.DateTime(timezone=False)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
@@ -147,6 +171,7 @@ class SQL(DataDescriptor):
     >>> dd.extend([('Alice', 100), ('Bob', 200)])
 
     Select all from table
+
     >>> list(dd) # doctest: +SKIP
     [('Alice', 100), ('Bob', 200)]
 
@@ -164,6 +189,8 @@ class SQL(DataDescriptor):
         or SQLAlchemy engine
     table : string
         The name of the table
+    schema_name : string (optional)
+        The name of the SQL database schema (not to be confused with the dshape)
     schema : string, list of Columns
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
@@ -176,17 +203,27 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-    def __init__(self, engine, tablename, primary_key='', schema=None):
+    def __init__(self, engine, tablename, primary_key='', schema=None,
+            schema_name=None, **kwargs):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
-        self.tablename = tablename
+        if not schema_name and '.' in tablename:
+            self.schema_name = tablename.rsplit('.', 1)[0] if ('.' in tablename) else None
+            self.tablename = tablename.split('.')[-1]
+        else:
+            self.schema_name = schema_name
+            self.tablename = tablename
         self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
 
-        if engine.has_table(tablename):
-            metadata.reflect(engine)
-            table = metadata.tables[tablename]
+        if engine.has_table(self.tablename, schema=self.schema_name):
+            metadata.reflect(engine, schema=self.schema_name)
+            if self.schema_name:
+                name = self.schema_name + '.' + self.tablename
+            else:
+                name = self.tablename
+            table = metadata.tables[name]
             engine_schema = discover(table).subshape[0]
             # if schema and dshape(schema) != engine_schema:
                 # raise ValueError("Mismatched schemas:\n"
@@ -199,14 +236,23 @@ class SQL(DataDescriptor):
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-            table = sql.Table(tablename, metadata, *columns)
+            table = sql.Table(tablename, metadata, *columns, schema=self.schema_name)
         else:
             raise ValueError('Must provide schema or point to valid table. '
                              'Table %s does not exist' % tablename)
 
         self._schema = datashape.dshape(schema)
         self.table = table
-        metadata.create_all(engine)
+
+        try:
+            metadata.create_all(engine)
+        except sqlalchemy.exc.ProgrammingError:  # Maybe db does not exist
+            if not self.schema_name:
+                raise
+            # Create schema
+            statement = sqlalchemy.schema.CreateSchema(self.schema_name)
+            engine.execute(statement)
+            metadata.create_all(engine)
 
     def _iter(self):
         with self.engine.connect() as conn:
@@ -280,7 +326,7 @@ class SQL(DataDescriptor):
             return result
 
 @dispatch(SQL, CSV)
-def into(sql, csv, if_exists="replace", **kwargs):
+def into(sql, csv, if_exists="append", **kwargs):
     """
     Parameters
     ----------
@@ -310,6 +356,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #     Specifies copying the OID for each row
 
     """
+    if csv.open == gzip.open:
+        raise MDNotImplementedError()
     dbtype = sql.engine.url.drivername
     db = sql.engine.url.database
     engine = sql.engine
@@ -326,12 +374,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
             if val:
                 return val
         return val
-
-    for k in kwargs.keys():
-        try:
-            dialect_terms[k]
-        except KeyError:
-            raise KeyError(k, " not found in dialect mapping")
 
     format_str = retrieve_kwarg('format_str') or 'csv'
     encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
@@ -400,10 +442,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
     #only works on OSX/Unix
     elif dbtype == 'sqlite':
-        import subprocess
-        if sys.platform == 'win32':
-            print("Windows native sqlite copy is not supported")
-            print("Defaulting to sql.extend() method")
+        if db == ':memory:':
+            sql.extend(csv)
+        elif sys.platform == 'win32':
+            warnings.warn("Windows native sqlite copy is not supported\n"
+                          "Defaulting to sql.extend() method")
             sql.extend(csv)
         else:
             #only to be used when table isn't already created?
@@ -415,7 +458,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
             copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
             copy_cmd = copy_cmd.format(**copy_info)
 
-            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+            ps = subprocess.Popen(copy_cmd, shell=True, stdout=subprocess.PIPE)
             output = ps.stdout.read()
 
     elif dbtype == 'mysql':
@@ -444,11 +487,11 @@ def into(sql, csv, if_exists="replace", **kwargs):
         except MySQLdb.OperationalError as e:
             print("Failed to use MySQL LOAD.\nERR MSG: ", e)
             print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+            raise MDNotImplementedError()
 
     else:
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")
-        sql.extend(csv)
+        raise MDNotImplementedError()
 
     return sql
