@@ -215,7 +215,7 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
 
 @dispatch(nunique)
 def _split_agg(expr, leaf=None, agg=None):
-    return agg.distinct().count()
+    return agg.distinct().count(keepdims=expr.keepdims)
 
 
 @dispatch(Summary)

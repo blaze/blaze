@@ -282,3 +282,13 @@ def test_reductions():
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(agg.distinct().count())
+
+
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, t.amount.nunique(keepdims=True))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(chunk.amount.distinct())
+
+    assert isscalar(agg.dshape.measure)
+    assert agg_expr.isidentical(agg.distinct().count(keepdims=True))
