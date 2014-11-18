@@ -5,6 +5,8 @@ from .split_apply_combine import *
 from .broadcast import *
 from .reductions import *
 from ..dispatch import dispatch
+from datashape.predicates import isscalar
+from multipledispatch import MDNotImplementedError
 
 
 def lean_projection(expr):
@@ -68,6 +70,14 @@ def _lean(expr, fields=None):
 @dispatch(object)
 def _lean(expr, fields=None):
     return expr, fields
+
+@dispatch(ElemWise)
+def _lean(expr, fields=None):
+    if isscalar(expr._child.dshape.measure):
+        child, _ = _lean(expr._child, fields=set(expr._child.fields))
+        return expr._subs({expr._child: child}), set(expr._child.fields)
+    else:
+        raise MDNotImplementedError()
 
 
 @dispatch(Broadcast)

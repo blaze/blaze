@@ -217,7 +217,7 @@ def test_nelements_subexpr():
     assert lhs == rhs
 
 
-@pytest.mark.xfail(raises=ValueError, reason="We don't support axis=1 for"
+@pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
                    " Record datashapes")
 def test_nelements_axis_1():
     assert compute(nelements(t, axis=1), s) == len(s.columns)

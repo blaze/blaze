@@ -19,7 +19,7 @@ from .api import *
 from .data import CSV, HDF5, SQL, coerce
 from .json import *
 from .resource import *
-# from .compute.csv import *
+from .compute.csv import *
 from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *

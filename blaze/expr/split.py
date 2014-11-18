@@ -40,12 +40,13 @@ from __future__ import absolute_import, division, print_function
 
 from toolz import concat
 import datashape
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, isrecord
 from math import floor
 
 from .core import *
 from .expressions import *
 from .expressions import ndim, shape
+from .math import sqrt
 from .reductions import *
 from .split_apply_combine import *
 from .collections import *
@@ -151,6 +152,42 @@ def _split_agg(expr, leaf=None, agg=None):
     return b(agg, axis=expr.axis, keepdims=expr.keepdims)
 
 
+@dispatch(mean)
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
+    child = expr._subs({leaf: chunk})._child
+    return summary(total=child.sum(), count=child.count(), keepdims=keepdims)
+
+@dispatch(mean)
+def _split_agg(expr, leaf=None, agg=None):
+    total = agg.total.sum()
+    count = agg.count.sum()
+
+    return total / count
+
+@dispatch((std, var))
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
+    child = expr._subs({leaf: chunk})._child
+    return summary(x=child.sum(), x2=(child**2).sum(), n=child.count(), keepdims=keepdims)
+
+@dispatch(var)
+def _split_agg(expr, leaf=None, agg=None):
+    x = agg.x.sum()
+    x2 = agg.x2.sum()
+    n = agg.n.sum()
+    denominator = n - 1 if expr.unbiased else n
+
+    return (x2 / denominator) - (x / denominator)**2
+
+@dispatch(std)
+def _split_agg(expr, leaf=None, agg=None):
+    x = agg.x.sum()
+    x2 = agg.x2.sum()
+    n = agg.n.sum()
+    denominator = n - 1 if expr.unbiased else n
+
+    return sqrt((x2 / denominator) - (x / denominator)**2)
+
+
 @dispatch(Distinct)
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
@@ -173,18 +210,34 @@ def _split_agg(expr, leaf=None, agg=None):
 
 @dispatch(Summary)
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
-    return summary(keepdims=keepdims,
-                   **dict((name, split(leaf, val, chunk=chunk,
+    exprs = [(name, split(leaf, val, chunk=chunk,
                                        keepdims=False)[0][1])
-                            for name, val in zip(expr.fields, expr.values)))
+                            for name, val in zip(expr.fields, expr.values)]
+    d = dict()
+    for name, e in exprs:
+        if isinstance(e, Reduction):
+            d[name] = e
+        elif isinstance(e, Summary):
+            for n, v in zip(e.names, e.values):
+                d[name + '_' + n] = v
+    return summary(keepdims=keepdims, **d)
 
 
 @dispatch(Summary)
 def _split_agg(expr, leaf=None, chunk=None, agg=None, keepdims=True):
-    return summary(**dict((name, split(leaf, val, agg=agg,
-                                       keepdims=False)[1][1]._subs(
-                                                        {agg: agg[name]}))
-                            for name, val in zip(expr.fields, expr.values)))
+    exprs = [(name, split(leaf, val, keepdims=False)[1])
+                for name, val in zip(expr.fields, expr.values)]
+
+    d = dict()
+    for name, (a, ae) in exprs:
+        if isscalar(a.dshape.measure): # For simple reductions
+            d[name] = ae._subs({a: agg[name]})
+        elif isrecord(a.dshape.measure):  # For reductions like mean/var
+            names = ['%s_%s' % (name, field) for field in a.fields]
+            namedict = dict(zip(a.fields, names))
+            d[name] = ae._subs({a: agg})._subs(namedict)
+
+    return summary(**d)
 
 
 @dispatch(By)
@@ -216,7 +269,7 @@ def _split_agg(expr, leaf=None, agg=None):
     return agg
 
 
-from datashape import var, Fixed
+from datashape import Fixed
 from math import ceil
 
 def dimension_div(a, b):
@@ -236,8 +289,8 @@ def dimension_div(a, b):
     >>> dimension_div(50, var)
     Var()
     """
-    if a == var or b == var:
-        return var
+    if a == datashape.var or b == datashape.var:
+        return datashape.var
     if isinstance(a, Fixed):
         a = int(a)
     if isinstance(b, Fixed):
@@ -257,13 +310,13 @@ def dimension_mul(a, b):
 
     In the case of datashape.var, we resort to var
     >>> from datashape import var
-    >>> dimension_mul(var, 5)
+    >>> dimension_mul(datashape.var, 5)
     Var()
-    >>> dimension_mul(10, var)
+    >>> dimension_mul(10, datashape.var)
     Var()
     """
-    if a == var or b == var:
-        return var
+    if a == datashape.var or b == datashape.var:
+        return datashape.var
     if isinstance(a, Fixed):
         a = int(a)
     if isinstance(b, Fixed):

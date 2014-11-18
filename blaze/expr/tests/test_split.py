@@ -3,7 +3,7 @@ from blaze.expr.split import *
 from blaze.api.dplyr import transform
 import datashape
 from datashape import dshape
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, isrecord
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 a = Symbol('a', '1000 * 2000 * {x: float32, y: float32}')
@@ -35,6 +35,45 @@ def test_sum():
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(sum(agg))
+
+
+def test_mean():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.mean())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
+                                          count=chunk.amount.count(),
+                                          keepdims=True))
+
+    assert isrecord(agg.dshape.measure)
+    assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
+
+
+def test_var():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.var())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(x=chunk.amount.sum(),
+                                          x2=(chunk.amount**2).sum(),
+                                          n=chunk.amount.count(),
+                                          keepdims=True))
+
+    assert isrecord(agg.dshape.measure)
+    assert agg_expr.isidentical((agg.x2.sum() / agg.n.sum()
+                              - (agg.x.sum() / agg.n.sum())**2))
+
+def test_std():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.std())
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(x=chunk.amount.sum(),
+                                          x2=(chunk.amount**2).sum(),
+                                          n=chunk.amount.count(),
+                                          keepdims=True))
+
+    assert isrecord(agg.dshape.measure)
+    assert agg_expr.isidentical(sqrt((agg.x2.sum() / agg.n.sum()
+                                   - (agg.x.sum() / agg.n.sum())**2)))
 
 
 def test_sum_with_axis_argument():
@@ -96,6 +135,42 @@ def test_summary():
     assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
                                           keepdims=True))
     assert agg_expr.isidentical(summary(total=agg.total.sum()))
+
+
+def test_summary_with_mean():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, summary(a=t.amount.count(),
+                                                            b=t.id.mean() + 1))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(summary(a=chunk.amount.count(),
+                                          b_total=chunk.id.sum(),
+                                          b_count=chunk.id.count(), keepdims=True))
+
+    # assert not agg.schema == dshape('{a: int32, b: int32}')
+    assert agg_expr.isidentical(summary(a=agg.a.sum(),
+                                        b=(agg.b_total.sum() / agg.b_count.sum()) + 1))
+
+def test_complex_summaries():
+    t = Symbol('t', '100 * {a: int, b: int}')
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, summary(q=t.a.mean(),
+                                                            w=t.a.std(),
+                                                            e=t.a.sum()))
+
+    assert chunk_expr.isidentical(summary(e=chunk.a.sum(),
+                                          q_count=chunk.a.count(),
+                                          q_total=chunk.a.sum(),
+                                          w_n=chunk.a.count(),
+                                          w_x=chunk.a.sum(),
+                                          w_x2=(chunk.a**2).sum(),
+                                          keepdims=True))
+
+    expected = summary(e=agg.e.sum(),
+                       q=agg.q_total.sum() / agg.q_count.sum(),
+                       w=sqrt((agg.w_x2.sum() / agg.w_n.sum())
+                            - (agg.w_x.sum() / agg.w_n.sum())**2))
+    assert agg_expr.isidentical(expected)
+
+
 
 
 def test_by_sum():

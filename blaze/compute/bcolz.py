@@ -9,6 +9,7 @@ from ..expr import eval_str, Expr, nelements
 from ..expr import path
 from ..expr.optimize import lean_projection
 from .core import compute
+from ..utils import available_memory
 
 from collections import Iterator
 import datashape
@@ -54,7 +55,7 @@ def compute_down(expr, data, **kwargs):
 
 @dispatch(Selection, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
-    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+    if data.nbytes < available_memory() / 4:
         return compute_up(expr, data[:], **kwargs)
     s = eval_str(expr.predicate._expr)
     try:
@@ -66,7 +67,7 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Selection, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
-    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+    if data.nbytes < available_memory() / 4:
         return compute_up(expr, data[:], **kwargs)
     return compute_up(expr, into(Iterator, data), **kwargs)
 
@@ -138,7 +139,7 @@ def compute_up(expr, b, **kwargs):
 @dispatch((Arithmetic, Broadcast, ElemWise, Distinct, By, nunique, Like),
           (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
-    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+    if data.nbytes < available_memory() / 4:
         return compute_up(expr, data[:], **kwargs)
     return compute_up(expr, into(Iterator, data), **kwargs)
 
@@ -153,7 +154,7 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Reduction, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, data, **kwargs):
-    if data.nbytes < COMFORTABLE_MEMORY_SIZE:
+    if data.nbytes < available_memory() / 4:
         result = compute_up(expr, data[:], **kwargs)
     result = compute_up(expr, ChunkIndexable(data), **kwargs)
     if expr.keepdims:

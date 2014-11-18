@@ -32,6 +32,7 @@ from cytoolz import unique
 from datashape import var, isdimension
 from datashape.predicates import isscalar
 import pandas as pd
+import numpy as np
 
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor
