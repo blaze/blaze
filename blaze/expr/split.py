@@ -45,6 +45,7 @@ from math import floor
 
 from .core import *
 from .expressions import *
+from .strings import Like
 from .expressions import ndim, shape
 from .math import sqrt
 from .reductions import *
@@ -55,7 +56,7 @@ from ..dispatch import dispatch
 from ..compatibility import builtins
 
 good_to_split = (Reduction, Summary, By, Distinct)
-can_split = good_to_split + (Selection, ElemWise)
+can_split = good_to_split + (Like, Selection, ElemWise)
 
 __all__ = ['path_split', 'split']
 
@@ -269,11 +270,11 @@ def _split_agg(expr, leaf=None, agg=None):
     return by(agg_grouper, agg_apply)
 
 
-@dispatch((ElemWise, Selection))
+@dispatch((ElemWise, (Like, Selection)))
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
 
-@dispatch((ElemWise, Selection))
+@dispatch((ElemWise, (Like, Selection)))
 def _split_agg(expr, leaf=None, agg=None):
     return agg
 

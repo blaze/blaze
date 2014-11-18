@@ -229,6 +229,13 @@ def test_embarassing_selection():
     assert agg_expr.isidentical(agg)
 
 
+def test_embarassing_like():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.like(name='Alice*'))
+
+    assert chunk_expr.isidentical(chunk.like(name='Alice*'))
+    assert agg_expr.isidentical(agg)
+
+
 x = Symbol('x', '24 * 16 * int32')
 
 
