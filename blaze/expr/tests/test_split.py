@@ -300,4 +300,5 @@ def test_by_with_single_field_child():
 
     assert chunk_expr.isidentical(by(chunk, total=chunk.sum()))
 
-    assert agg_expr.isidentical(by(agg[agg.fields[0]], total=agg.total.sum()))
+    assert agg_expr.isidentical(by(agg[agg.fields[0]],
+        total=agg.total.sum()).relabel({agg.fields[0]: 'x'}))
