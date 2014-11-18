@@ -292,3 +292,12 @@ def test_reductions():
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(agg.distinct().count(keepdims=True))
+
+
+def test_by_with_single_field_child():
+    x = Symbol('x', 'var * int')
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, by(x, total=x.sum()))
+
+    assert chunk_expr.isidentical(by(chunk, total=chunk.sum()))
+
+    assert agg_expr.isidentical(by(agg[agg.fields[0]], total=agg.total.sum()))

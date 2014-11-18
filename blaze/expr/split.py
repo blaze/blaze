@@ -265,9 +265,9 @@ def _split_agg(expr, leaf=None, agg=None):
     agg_grouper = expr.grouper._subs({leaf: agg})
 
     if isscalar(expr.grouper.dshape.measure):
-        agg_grouper = agg[expr.fields[0]]
+        agg_grouper = agg[agg.fields[0]]
     else:
-        agg_grouper = agg[list(expr.fields[:len(expr.grouper.fields)])]
+        agg_grouper = agg[list(agg.fields[:len(expr.grouper.fields)])]
 
     return by(agg_grouper, agg_apply)
 
