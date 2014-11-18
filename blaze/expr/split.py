@@ -230,6 +230,8 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
         elif isinstance(e, Summary):
             for n, v in zip(e.names, e.values):
                 d[name + '_' + n] = v
+        else:
+            raise NotImplementedError()
     return summary(keepdims=keepdims, **d)
 
 
