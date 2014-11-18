@@ -9,7 +9,7 @@ from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
-from blaze.expr import Symbol, join, by, summary, Distinct
+from blaze.expr import Symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
@@ -160,6 +160,11 @@ def test_reductions():
     assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
     assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
+
+
+def test_reductions_on_dataframes():
+    assert compute(count(t), df) == 3
+    assert shape(compute(count(t, keepdims=True), df)) == (1,)
 
 
 def test_1d_reductions_keepdims():

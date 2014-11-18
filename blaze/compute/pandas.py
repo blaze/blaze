@@ -32,7 +32,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp, nelements, DateTimeTruncate)
+                    UTCFromTimestamp, nelements, DateTimeTruncate, count)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -438,6 +438,14 @@ def compute_up(expr, df, **kwargs):
             return df.iloc[index]
     else:
         raise NotImplementedError()
+
+
+@dispatch(count, DataFrame)
+def compute_up(expr, df, **kwargs):
+    result = df.shape[0]
+    if expr.keepdims:
+        result = Series([result])
+    return result
 
 
 @dispatch(nelements, (DataFrame, Series))
