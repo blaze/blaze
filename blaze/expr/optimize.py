@@ -1,12 +1,15 @@
+
+from datashape.predicates import isscalar
+from multipledispatch import MDNotImplementedError
+
 from .expressions import *
+from .strings import *
 from .arithmetic import *
 from .collections import *
 from .split_apply_combine import *
 from .broadcast import *
 from .reductions import *
 from ..dispatch import dispatch
-from datashape.predicates import isscalar
-from multipledispatch import MDNotImplementedError
 
 
 def lean_projection(expr):
@@ -96,6 +99,13 @@ def _lean(expr, fields=None):
 
     child, _ = _lean(expr._child, fields=fields)
     return expr._subs({expr._child: child}), fields
+
+
+@dispatch(Like)
+def _lean(expr, fields=None):
+    child, new_fields = _lean(expr._child,
+                              fields=fields | set(expr.patterns.keys()))
+    return expr._subs({expr._child: child}), new_fields
 
 
 @dispatch(Sort)

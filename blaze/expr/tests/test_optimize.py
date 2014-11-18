@@ -55,3 +55,10 @@ def test_elemwise_thats_also_a_column():
 def test_distinct():
     expr = t.distinct()[['x', 'y']]
     assert lean_projection(expr).isidentical(expr)
+
+def test_like():
+    t = Symbol('t', 'var * {name: string, x: int, y: int}')
+    expr = t.like(name='Alice').y
+
+    result = lean_projection(expr)
+    assert result._child._child.isidentical(t[['name', 'y']])
