@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import tempfile
 import os
 import inspect
+from threading import Thread
 
 from itertools import islice
 from contextlib import contextmanager
@@ -196,3 +197,38 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 def available_memory():
     return psutil.virtual_memory().available
+
+
+class FunctionRunner(Thread):
+    """ Run a function in a separate thread """
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        Thread.__init__(self)
+
+    def run(self):
+        self.func(*self.args, **self.kwargs)
+
+
+@contextmanager
+def alongside(func, *args, **kwargs):
+    """ Run a function in another thread alongside the context body
+
+    Example
+    -------
+
+    >>> import time
+
+    >>> with alongside(time.sleep, 100): # while time.sleep(100) happens
+    ...     pass                         # Do stuff, finishes fast
+
+    """
+    t = FunctionRunner(func, *args, **kwargs)
+
+    t.start()
+    try:
+        yield
+
+    finally:
+        t._Thread__stop()
