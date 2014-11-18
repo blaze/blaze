@@ -87,6 +87,16 @@ def test_sum_with_axis_argument():
     assert agg_expr.isidentical(agg.sum(axis=0))
 
 
+def test_sum_with_keepdims():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.sum(keepdims=True))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(chunk.amount.sum(keepdims=True))
+
+    assert isscalar(agg.dshape.measure)
+    assert agg_expr.isidentical(sum(agg, keepdims=True))
+
+
 def test_split_reasons_correctly_about_uneven_aggregate_shape():
     x = Symbol('chunk', '10 * 10 * int')
     chunk = Symbol('chunk', '3 * 3 * int')
@@ -191,6 +201,18 @@ def test_by_count():
     assert chunk_expr.isidentical(by(chunk.name, total=chunk.amount.count()))
 
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
+
+
+def test_by_mean():
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, by(t.name, avg=t.amount.mean()))
+
+    assert chunk_expr.isidentical(by(chunk.name,
+                                        avg_total=chunk.amount.sum(),
+                                        avg_count=chunk.amount.count()))
+
+    assert agg_expr.isidentical(by(agg.name,
+        avg=(1.0 * agg.avg_total.sum() / agg.avg_count.sum())))
 
 
 def test_embarassing_rowwise():
