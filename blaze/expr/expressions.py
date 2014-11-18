@@ -442,6 +442,9 @@ class ReLabel(ElemWise):
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
+    labels = dict((k, v) for k, v in labels.items() if k != v)
+    if not labels:
+        return child
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):

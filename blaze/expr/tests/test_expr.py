@@ -38,6 +38,10 @@ def test_relabel():
     e = Symbol('e', '{name: string, amount: int}')
     assert e.relabel(amount='balance').fields == ['name', 'balance']
 
+def test_meaningless_relabel_doesnt_change_input():
+    e = Symbol('e', '{name: string, amount: int}')
+    assert e.relabel(amount='amount').isidentical(e)
+
 
 def test_dir():
     e = Symbol('e', '3 * 5 * {name: string, amount: int, x: real}')
