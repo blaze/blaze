@@ -1,21 +1,26 @@
 from __future__ import absolute_import, division, print_function
 
+from toolz import curry, concat
 from multipledispatch import MDNotImplementedError
-from blaze.expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
+
+from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
         Arithmetic, Broadcast, Symbol)
 from ..expr import Label, Distinct, By, Reduction, Like, Slice
 from ..expr import std, var, count, mean, nunique, sum
 from ..expr import eval_str, Expr, nelements
 from ..expr import path
 from ..expr.optimize import lean_projection
+from ..expr.split import split
+from ..partition import partitions, partition_get
 from .core import compute
 from ..utils import available_memory
 
-from collections import Iterator
+from collections import Iterator, Iterable
 import datashape
 import bcolz
 import math
 import numpy as np
+import pandas as pd
 from .chunks import ChunkIndexable
 
 
@@ -32,10 +37,10 @@ COMFORTABLE_MEMORY_SIZE = 1e9
 def pre_compute(expr, data, scope=None):
     return data
 
+
 @dispatch((bcolz.carray, bcolz.ctable))
 def discover(data):
     return datashape.from_numpy(data.shape, data.dtype)
-
 
 Cheap = (Head, ElemWise, Selection, Distinct, Symbol)
 
@@ -194,3 +199,30 @@ def get_chunk(b, i, chunksize=2**15):
 @dispatch(Expr, (bcolz.ctable, bcolz.carray))
 def optimize(expr, _):
     return lean_projection(expr)
+
+
+def compute_chunk(source, chunk, chunk_expr, data_index):
+    part = source[data_index]
+    return compute(chunk_expr, {chunk: part})
+
+
+@dispatch(Expr, (bcolz.carray, bcolz.ctable))
+def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
+    leaf = expr._leaves()[0]
+
+    chunk = Symbol('chunk', chunksize * leaf.schema)
+    (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr, chunk=chunk)
+
+    data_parts = partitions(data, chunksize=(chunksize,))
+
+    parts = map(curry(compute_chunk, data, chunk, chunk_expr),
+                       data_parts)
+
+    if isinstance(parts[0], np.ndarray):
+        intermediate = np.concatenate(parts)
+    elif isinstance(parts[0], pd.DataFrame):
+        intermediate = pd.concat(parts)
+    elif isinstance(parts[0], Iterable):
+        intermediate = list(concat(parts))
+
+    return compute(agg_expr, {agg: intermediate})

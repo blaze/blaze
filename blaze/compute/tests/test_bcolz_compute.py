@@ -90,10 +90,8 @@ def test_count_isnan_object():
     assert compute(to.a[~to.b.isnan()].count(), bo) == 2
 
 
-@pytest.mark.xfail(raises=TypeError,
-                   reason="isnan doesn't work on struct/record dtypes")
 def test_count_isnan_struct():
-    assert compute(t[~t.b.isnan()].count(), b) == 2  # 3?
+    assert compute(t[~t.b.isnan()].count(), b) == 3
 
 
 def test_nrows():
