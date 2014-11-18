@@ -5,9 +5,9 @@ from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
         Arithmetic, Broadcast, Symbol)
-from ..expr import Label, Distinct, By, Reduction, Like, Slice
+from ..expr import Label, Distinct, By, Slice
 from ..expr import std, var, count, mean, nunique, sum
-from ..expr import eval_str, Expr, nelements
+from ..expr import eval_str, Expr
 from ..expr import path
 from ..expr.optimize import lean_projection
 from ..expr.split import split
@@ -58,30 +58,6 @@ def compute_down(expr, data, **kwargs):
         raise MDNotImplementedError()
 
 
-@dispatch(Selection, bcolz.ctable)
-def compute_up(expr, data, **kwargs):
-    if data.nbytes < available_memory() / 4:
-        return compute_up(expr, data[:], **kwargs)
-    s = eval_str(expr.predicate._expr)
-    try:
-        return data.where(s)
-    except (NotImplementedError, NameError, AttributeError):
-        # numexpr may not be able to handle the predicate
-        return compute_up(expr, into(Iterator, data), **kwargs)
-
-
-@dispatch(Selection, bcolz.ctable)
-def compute_up(expr, data, **kwargs):
-    if data.nbytes < available_memory() / 4:
-        return compute_up(expr, data[:], **kwargs)
-    return compute_up(expr, into(Iterator, data), **kwargs)
-
-
-@dispatch(Head, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, data, **kwargs):
-    return data[:expr.n]
-
-
 @dispatch(Field, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
@@ -92,92 +68,9 @@ def compute_up(expr, data, **kwargs):
     return data[expr.fields]
 
 
-@dispatch(sum, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, data, **kwargs):
-    result = data.sum()
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
-@dispatch(count, (bcolz.ctable, bcolz.carray))
-def compute_up(expr, data, **kwargs):
-    result = len(data)
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
-@dispatch(mean, bcolz.carray)
-def compute_up(expr, ba, **kwargs):
-    result = ba.sum() / ba.len
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
-@dispatch(var, bcolz.carray)
-def compute_up(expr, ba, chunksize=2**20, **kwargs):
-    n = ba.len
-    E_X_2 = builtins.sum((chunk * chunk).sum() for chunk in chunks(ba))
-    E_X = float(ba.sum())
-    result = (E_X_2 - (E_X * E_X) / n) / (n - expr.unbiased)
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
-@dispatch(std, bcolz.carray)
-def compute_up(expr, ba, **kwargs):
-    result = compute_up(expr._child.var(unbiased=expr.unbiased), ba, **kwargs)
-    result = math.sqrt(result)
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
-@dispatch((ReLabel, Label), (bcolz.carray, bcolz.ctable))
-def compute_up(expr, b, **kwargs):
-    raise NotImplementedError()
-
-
-@dispatch((Arithmetic, Broadcast, ElemWise, Distinct, By, nunique, Like),
-          (bcolz.carray, bcolz.ctable))
-def compute_up(expr, data, **kwargs):
-    if data.nbytes < available_memory() / 4:
-        return compute_up(expr, data[:], **kwargs)
-    return compute_up(expr, into(Iterator, data), **kwargs)
-
-
-@dispatch(nunique, bcolz.carray)
-def compute_up(expr, data, **kwargs):
-    result = len(set(data))
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
-@dispatch(Reduction, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, data, **kwargs):
-    if data.nbytes < available_memory() / 4:
-        result = compute_up(expr, data[:], **kwargs)
-    result = compute_up(expr, ChunkIndexable(data), **kwargs)
-    if expr.keepdims:
-        result = np.array([result])
-    return result
-
-
 @dispatch(Slice, (bcolz.carray, bcolz.ctable))
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
-
-
-@dispatch(nelements, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, x, **kwargs):
-    result = compute_up.dispatch(type(expr), np.ndarray)(expr, x, **kwargs)
-    if expr.keepdims:
-        result = np.array([result])
-    return result
 
 
 @dispatch((bcolz.carray, bcolz.ctable))
@@ -224,5 +117,8 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
         intermediate = pd.concat(parts)
     elif isinstance(parts[0], Iterable):
         intermediate = list(concat(parts))
+    else:
+        raise TypeError(
+        "Don't know how to concatenate objects of type %s" % type(parts[0]))
 
     return compute(agg_expr, {agg: intermediate})
