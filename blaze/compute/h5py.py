@@ -10,7 +10,7 @@ from ..expr import Reduction, Field, Projection, Broadcast, Selection, Symbol
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, ElemWise
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import path
+from ..expr import path, shape
 from ..expr.split import split
 
 from .core import base, compute
@@ -53,6 +53,7 @@ def post_compute(expr, data, scope=None):
 def optimize(expr, data):
     return expr
 
+
 @dispatch(Expr, h5py.Dataset)
 def optimize(expr, data):
     child = optimize(expr._inputs[0], data)
@@ -62,14 +63,16 @@ def optimize(expr, data):
         return expr._subs({expr._inputs[0]: child})
 
 
-@dispatch(Slice, h5py.Dataset)
+@dispatch(Slice, (h5py.File, h5py.Group, h5py.Dataset))
 def optimize(expr, data):
     child = expr._inputs[0]
-    if isinstance(child, ElemWise) and len(child._inputs) == 1:
+    if (isinstance(child, ElemWise) and len(child._inputs) == 1
+            and shape(child._inputs[0]) == shape(child)):
         grandchild = child._inputs[0][expr.index]
         grandchild = optimize(grandchild, data)
         return child._subs({child._inputs[0]: grandchild})
-    if isinstance(child, ElemWise) and len(child._inputs) == 2:
+    if (isinstance(child, ElemWise) and len(child._inputs) == 2
+        and shape(child) == shape(expr._inputs[0]) == shape(child._inputs[1])):
         lhs, rhs = child._inputs
         lhs = lhs[expr.index]
         rhs = rhs[expr.index]
