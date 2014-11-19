@@ -605,3 +605,10 @@ def test_complex_group_by():
     expr = by(merge(tbig.amount // 10, tbig.id % 2),
               count=tbig.name.count())
     compute(expr, dfbig)  # can we do this?
+
+
+def test_by_with_complex_summary():
+    expr = by(t.name, total=t.amount.sum() + t.id.sum() - 1, a=t.id.min())
+    result = compute(expr, df)
+    assert list(result.columns) == expr.fields
+    assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
