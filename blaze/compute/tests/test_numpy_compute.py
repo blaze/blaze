@@ -165,12 +165,16 @@ def test_array_reductions_with_keepdims():
         assert eq(compute(a.sum(axis=axis, keepdims=True), ax),
                  ax.sum(axis=axis, keepdims=True))
 
+
 def test_summary_on_ndarray():
     assert compute(summary(total=a.sum(), min=a.min()), ax) == \
             (ax.min(), ax.sum())
-    assert compute(summary(total=a.sum(), min=a.min(), keepdims=True), ax) == \
-            np.array([(ax.min(), ax.sum())],
-                     dtype=[('min', 'f4'), ('total', 'f4')])
+
+    result = compute(summary(total=a.sum(), min=a.min(), keepdims=True), ax)
+    expected = np.array([(ax.min(), ax.sum())],
+                        dtype=[('min', 'f4'), ('total', 'f4')])
+    assert result.ndim == ax.ndim
+    assert eq(expected, result)
 
 
 def test_utcfromtimestamp():

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from pandas import DataFrame, Series
-from datashape import to_numpy_dtype
+from datashape import to_numpy
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
@@ -100,10 +100,13 @@ def compute_up(t, x, **kwargs):
 @dispatch(Summary, np.ndarray)
 def compute_up(expr, data, **kwargs):
     result = tuple(compute(v, data) for v in expr.values)
-    if not expr.keepdims:
-        return result
+    if expr.keepdims:
+        shape, dtype = to_numpy(expr.dshape)
+        holder = np.empty(shape=shape, dtype=dtype)
+        holder[:] = result
+        return holder
     else:
-        return np.array(result, dtype=to_numpy_dtype(expr.dshape))
+        return result
 
 
 @dispatch((std, var), np.ndarray)
