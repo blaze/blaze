@@ -5,7 +5,7 @@ import pytest
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import Symbol, by, exp, Symbol
+from blaze.expr import Symbol, by, exp
 from blaze import into
 from datashape import discover
 
@@ -76,6 +76,8 @@ def test_Reductions():
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
 
+def test_reductions_on_recarray():
+    assert compute(t.count(), x) == len(x)
 
 def test_count_nan():
     t = Symbol('t', '3 * ?real')
@@ -175,6 +177,7 @@ def test_utcfromtimestamp():
 
 def test_nelements_structured_array():
     assert compute(t.nelements(), x) == len(x)
+    assert compute(t.nelements(keepdims=True), x) == (len(x),)
 
 
 def test_nelements_array():

@@ -32,6 +32,7 @@ from cytoolz import unique
 from datashape import var, isdimension
 from datashape.predicates import isscalar
 import pandas as pd
+import numpy as np
 
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor
@@ -322,8 +323,8 @@ def compute_down(expr, data, map=map, **kwargs):
 
     indices = list(range(len(data.data)))
 
-    parts = map(curry(compute_chunk, data.data, chunk, chunk_expr),
-                indices)
+    parts = list(map(curry(compute_chunk, data.data, chunk, chunk_expr),
+                     indices))
 
     if isinstance(parts[0], np.ndarray):
         intermediate = np.concatenate(parts)

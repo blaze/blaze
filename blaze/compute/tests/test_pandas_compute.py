@@ -9,7 +9,7 @@ from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
-from blaze.expr import Symbol, join, by, summary, Distinct
+from blaze.expr import Symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
@@ -160,6 +160,11 @@ def test_reductions():
     assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
     assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
+
+
+def test_reductions_on_dataframes():
+    assert compute(count(t), df) == 3
+    assert shape(compute(count(t, keepdims=True), df)) == (1,)
 
 
 def test_1d_reductions_keepdims():
@@ -486,6 +491,16 @@ def test_summary():
     assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
 
 
+def test_summary_on_series():
+    ser = Series([1, 2, 3])
+    s = Symbol('s', '3 * int')
+    expr = summary(max=s.max(), min=s.min())
+    assert compute(expr, ser) == (3, 1)
+
+    expr = summary(max=s.max(), min=s.min(), keepdims=True)
+    assert compute(expr, ser) == [(3, 1)]
+
+
 def test_summary_keepdims():
     expr = summary(count=t.id.count(), sum=t.amount.sum(), keepdims=True)
     expected = DataFrame([[3, 350]], columns=['count', 'sum'])
@@ -595,3 +610,10 @@ def test_complex_group_by():
     expr = by(merge(tbig.amount // 10, tbig.id % 2),
               count=tbig.name.count())
     compute(expr, dfbig)  # can we do this?
+
+
+def test_by_with_complex_summary():
+    expr = by(t.name, total=t.amount.sum() + t.id.sum() - 1, a=t.id.min())
+    result = compute(expr, df)
+    assert list(result.columns) == expr.fields
+    assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]

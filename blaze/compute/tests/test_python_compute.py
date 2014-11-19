@@ -764,7 +764,7 @@ def test_nrows():
     assert compute(t.nrows, x) == len(data)
 
 
-@pytest.mark.xfail(raises=ValueError, reason="Only 1D reductions allowed")
+@pytest.mark.xfail(raises=Exception, reason="Only 1D reductions allowed")
 def test_nelements_2D():
     assert compute(t.nelements(axis=1), data) == len(data[0])
 

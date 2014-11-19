@@ -66,7 +66,8 @@ def pre_compute(expr, seq, scope=None):
     except StopIteration:
         return []
     if isinstance(first, dict):
-        return pluck(expr.fields, seq)
+        leaf = expr._leaves()[0]
+        return pluck(leaf.fields, seq)
     else:
         return seq
 

@@ -76,7 +76,10 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    if x.dtype.names is None: # scalar dtype
+        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    else:
+        return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
@@ -159,17 +162,18 @@ def compute_up(t, x, **kwargs):
 @dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
     axis = expr.axis
-    shape = tuple(data.shape[i] for i in range(ndim(expr._child))
-                  if i not in axis)
+    if expr.keepdims:
+        shape = tuple(data.shape[i] if i not in axis else 1
+                                    for i in range(ndim(expr._child)))
+    else:
+        shape = tuple(data.shape[i] for i in range(ndim(expr._child))
+                      if i not in axis)
     value = np.prod([data.shape[i] for i in axis])
     result = np.empty(shape)
     result.fill(value)
     result = result.astype('int64')
 
-    try:
-        return result.item()
-    except ValueError:
-        return result
+    return result
 
 
 precision_map = {'year': 'M8[Y]',

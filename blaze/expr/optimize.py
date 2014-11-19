@@ -1,4 +1,9 @@
+
+from datashape.predicates import isscalar
+from multipledispatch import MDNotImplementedError
+
 from .expressions import *
+from .strings import *
 from .arithmetic import *
 from .collections import *
 from .split_apply_combine import *
@@ -69,6 +74,14 @@ def _lean(expr, fields=None):
 def _lean(expr, fields=None):
     return expr, fields
 
+@dispatch(ElemWise)
+def _lean(expr, fields=None):
+    if isscalar(expr._child.dshape.measure):
+        child, _ = _lean(expr._child, fields=set(expr._child.fields))
+        return expr._subs({expr._child: child}), set(expr._child.fields)
+    else:
+        raise MDNotImplementedError()
+
 
 @dispatch(Broadcast)
 def _lean(expr, fields=None):
@@ -86,6 +99,13 @@ def _lean(expr, fields=None):
 
     child, _ = _lean(expr._child, fields=fields)
     return expr._subs({expr._child: child}), fields
+
+
+@dispatch(Like)
+def _lean(expr, fields=None):
+    child, new_fields = _lean(expr._child,
+                              fields=set(fields) | set(expr.patterns.keys()))
+    return expr._subs({expr._child: child}), new_fields
 
 
 @dispatch(Sort)
@@ -147,6 +167,12 @@ def _lean(expr, fields=None):
         apply = apply._subs({expr._child: child})
 
     return By(grouper, apply), new_fields
+
+
+@dispatch(Distinct)
+def _lean(expr, fields=None):
+    child, new_fields = _lean(expr._child, fields=expr.fields)
+    return expr._subs({expr._child: child}), new_fields
 
 
 @dispatch(Expr)
