@@ -144,6 +144,16 @@ def compute_down(expr, ec, **kwargs):
 
     return data['data']
 
+
+@dispatch(list, ClientDataset)
+def into(_, c, **kwargs):
+    r = requests.get('%s/compute.json' % c.client.url,
+                     data = json.dumps({'expr': c.name}),
+                     headers={'Content-Type': 'application/json'})
+    data = json.loads(content(r))
+    return data['data']
+
+
 @resource.register('blaze://.+::.+', priority=16)
 def resource_blaze_dataset(uri, **kwargs):
     uri, name = uri.split('::')
