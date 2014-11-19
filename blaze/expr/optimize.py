@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 
 from datashape.predicates import isscalar
 from multipledispatch import MDNotImplementedError
