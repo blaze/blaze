@@ -5,6 +5,7 @@ from flask import json
 import flask
 from dynd import nd
 from datashape import dshape, DataShape, Record
+from pandas import DataFrame
 
 from ..data import DataDescriptor
 from ..data.utils import coerce
@@ -129,7 +130,6 @@ def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     from ..api import Data
     from ..api import into
-    from pandas import DataFrame
     leaf = expr._leaves()[0]
     tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 
@@ -152,6 +152,10 @@ def into(_, c, **kwargs):
                      headers={'Content-Type': 'application/json'})
     data = json.loads(content(r))
     return data['data']
+
+@dispatch(DataFrame, ClientDataset)
+def into(_, c, **kwargs):
+    return into(DataFrame, into(list, c), columns=c.dshape.measure.names)
 
 
 @resource.register('blaze://.+::.+', priority=16)

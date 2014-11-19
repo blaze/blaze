@@ -55,6 +55,13 @@ def test_clientdataset_into_list():
     assert into(list, a) == [['Alice', 100], ['Bob', 200]]
 
 
+def test_clientdataset_into_list():
+    a = resource('blaze://localhost:6363::accounts')
+
+    assert str(into(DataFrame, a)) == \
+            str(DataFrame([['Alice', 100], ['Bob', 200]],
+                          columns=['name', 'amount']))
+
 def test_resource():
     c = resource('blaze://localhost:6363')
     assert str(discover(c)) == str(discover({'accounts': df}))
