@@ -58,6 +58,17 @@ class By(Expr):
         # TODO: think if this should be generalized
         return var * self.schema
 
+    def __str__(self):
+        s = 'by('
+        s += str(self.grouper) + ', '
+        if isinstance(self.apply, Summary):
+            s += str(self.apply)[len('summary('):-len(')')]
+        else:
+            s += str(self.apply)
+        s += ')'
+        return s
+
+
 @dispatch(Expr, (Summary, Reduction))
 def by(grouper, apply):
     return By(grouper, apply)

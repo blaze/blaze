@@ -486,6 +486,11 @@ def test_by_summary():
 
     assert a.isidentical(b)
 
+def test_by_summary_printing():
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
+    assert str(by(t.name, total=sum(t.amount))) == \
+            'by(t.name, total=sum(t.amount))'
+
 
 def test_by_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
