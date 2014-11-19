@@ -315,7 +315,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
     symbol and a computational result
 
     >>> e = (s.amount + 1).distinct()
-    >>> bottom_up_until_type_break(e, {s: data})
+    >>> bottom_up_until_type_break(e, {s: data}) # doctest: +SKIP
     (amount, {amount: array([101, 201, 301])})
 
     This computation has a type change midstream (``list`` to ``int``), so we
