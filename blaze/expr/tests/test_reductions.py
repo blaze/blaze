@@ -27,6 +27,11 @@ def test_summary_keepdims():
             dshape('1 * 1 * {a: float32, b: float32}')
 
 
+def test_summary_str():
+    x = Symbol('x', '5 * 3 * float32')
+    assert 'keepdims' not in str(summary(a=x.min(), b=x.max()))
+
+
 def test_axis_kwarg_is_normalized_to_tuple():
     x = Symbol('x', '5 * 3 * float32')
     exprs = [x.sum(), x.sum(axis=1), x.sum(axis=[1]), x.std(), x.mean(axis=1)]

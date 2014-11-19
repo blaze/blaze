@@ -236,9 +236,13 @@ class Summary(Expr):
             return DataShape(measure)
 
     def __str__(self):
-        return 'summary(' + ', '.join('%s=%s' % (name, str(val))
-                for name, val in zip(self.fields, self.values)) + \
-                    ', keepdims=%s' % self.keepdims + ')'
+        s = 'summary('
+        s += ', '.join('%s=%s' % (name, str(val))
+                         for name, val in zip(self.fields, self.values))
+        if self.keepdims:
+            s += ', keepdims=True'
+        s += ')'
+        return s
 
 
 def summary(keepdims=False, **kwargs):
