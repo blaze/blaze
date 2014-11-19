@@ -27,6 +27,7 @@ from toolz.curried import pipe, filter, map, concat
 import fnmatch
 from datashape.predicates import isscalar
 import datashape
+import itertools
 
 from ..api.into import into
 from ..dispatch import dispatch
