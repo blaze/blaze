@@ -8,6 +8,7 @@ from threading import Thread
 from itertools import islice
 from contextlib import contextmanager
 from collections import Iterator
+import sys
 
 import psutil
 import numpy as np
@@ -225,10 +226,19 @@ def alongside(func, *args, **kwargs):
 
     """
     t = FunctionRunner(func, *args, **kwargs)
+    t.daemon = True
 
     t.start()
     try:
         yield
 
     finally:
-        t._Thread__stop()
+        thread_stop(t)
+
+if sys.version_info[0] == 2:
+    def thread_stop(thread):
+        thread._Thread__stop()
+elif sys.version_info[0] == 3:
+    def thread_stop(thread):
+        thread._reset_internal_locks(False)
+        thread._stop()

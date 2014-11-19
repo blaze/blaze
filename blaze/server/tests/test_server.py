@@ -8,7 +8,7 @@ from dynd import nd
 from pandas import DataFrame
 import requests
 
-from blaze.utils import example
+from blaze.utils import example, thread_stop
 from blaze import discover, Symbol, by, CSV, compute, join, into
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.index import emit_index
@@ -218,4 +218,4 @@ def test_run_in_thread():
 
         assert json.loads(response.content) == {'a': '3 * int64'}
     finally:
-        thread._Thread__stop()
+        thread_stop(thread)
