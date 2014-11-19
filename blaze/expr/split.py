@@ -45,6 +45,7 @@ from math import floor
 
 from .core import *
 from .expressions import *
+from .strings import Like
 from .expressions import ndim, shape
 from .math import sqrt
 from .reductions import *
@@ -55,7 +56,7 @@ from ..dispatch import dispatch
 from ..compatibility import builtins
 
 good_to_split = (Reduction, Summary, By, Distinct)
-can_split = good_to_split + (Selection, ElemWise)
+can_split = good_to_split + (Like, Selection, ElemWise)
 
 __all__ = ['path_split', 'split']
 
@@ -116,9 +117,11 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
             chunk = Symbol('chunk', datashape.var * leaf.dshape.measure)
 
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
+    chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
+                                            keepdims=True)
 
     if not agg:
-        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr)
+        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
         agg = Symbol('aggregate', agg_dshape)
 
@@ -130,7 +133,8 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
 
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
-              any: (any, any), all: (all, all)}
+              any: (any, any), all: (all, all),
+              nelements: (nelements, sum)}
 
 @dispatch(Expr)
 def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
@@ -162,7 +166,7 @@ def _split_agg(expr, leaf=None, agg=None):
     total = agg.total.sum()
     count = agg.count.sum()
 
-    return total / count
+    return 1.0 * total / count
 
 @dispatch((std, var))
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
@@ -173,19 +177,27 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
 def _split_agg(expr, leaf=None, agg=None):
     x = agg.x.sum()
     x2 = agg.x2.sum()
-    n = agg.n.sum()
-    denominator = n - 1 if expr.unbiased else n
+    n = agg.n.sum() * 1.0
 
-    return (x2 / denominator) - (x / denominator)**2
+    result = (x2 / n) - (x / n)**2
+
+    if expr.unbiased:
+        result = result / (n - 1) * n
+
+    return result
 
 @dispatch(std)
 def _split_agg(expr, leaf=None, agg=None):
     x = agg.x.sum()
     x2 = agg.x2.sum()
-    n = agg.n.sum()
-    denominator = n - 1 if expr.unbiased else n
+    n = agg.n.sum() * 1.0
 
-    return sqrt((x2 / denominator) - (x / denominator)**2)
+    result = (x2 / n) - (x / n)**2
+
+    if expr.unbiased:
+        result = result / (n - 1) * n
+
+    return sqrt(result)
 
 
 @dispatch(Distinct)
@@ -205,7 +217,7 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
 
 @dispatch(nunique)
 def _split_agg(expr, leaf=None, agg=None):
-    return agg.distinct().count()
+    return agg.distinct().count(keepdims=expr.keepdims)
 
 
 @dispatch(Summary)
@@ -220,6 +232,8 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
         elif isinstance(e, Summary):
             for n, v in zip(e.names, e.values):
                 d[name + '_' + n] = v
+        else:
+            raise NotImplementedError()
     return summary(keepdims=keepdims, **d)
 
 
@@ -252,19 +266,23 @@ def _split_agg(expr, leaf=None, agg=None):
     agg_apply = _split_agg(expr.apply, leaf=leaf, agg=agg)
     agg_grouper = expr.grouper._subs({leaf: agg})
 
+    ngroup = len(expr.grouper.fields)
+
     if isscalar(expr.grouper.dshape.measure):
-        agg_grouper = agg[expr.fields[0]]
+        agg_grouper = agg[agg.fields[0]]
     else:
-        agg_grouper = agg[list(expr.fields[:len(expr.grouper.fields)])]
+        agg_grouper = agg[list(agg.fields[:ngroup])]
 
-    return by(agg_grouper, agg_apply)
+    return (by(agg_grouper, agg_apply)
+              .relabel(dict(zip(agg.fields[:ngroup],
+                                expr.fields[:ngroup]))))
 
 
-@dispatch((ElemWise, Selection))
+@dispatch((ElemWise, (Like, Selection)))
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
 
-@dispatch((ElemWise, Selection))
+@dispatch((ElemWise, (Like, Selection)))
 def _split_agg(expr, leaf=None, agg=None):
     return agg
 
@@ -330,7 +348,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     >>> leaf = Symbol('leaf', '10 * 10 * int')
     >>> expr = leaf.sum(axis=0)
     >>> chunk = Symbol('chunk', '3 * 3 * int') # 3 does not divide 10
-    >>> chunk_expr = chunk.sum(axis=0, keepdims=1)
+    >>> chunk_expr = chunk.sum(axis=0, keepdims=True)
 
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)

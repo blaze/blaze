@@ -155,7 +155,10 @@ class Expr(Node):
 
     @property
     def _name(self):
-        pass
+        if (isscalar(self.dshape.measure) and
+                len(self._inputs) == 1 and
+                isscalar(self._child.dshape.measure)):
+            return self._child._name
 
 
 class Symbol(Expr):
@@ -442,6 +445,9 @@ class ReLabel(ElemWise):
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
+    labels = dict((k, v) for k, v in labels.items() if k != v)
+    if not labels:
+        return child
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):

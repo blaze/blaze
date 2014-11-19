@@ -253,7 +253,7 @@ def summary(keepdims=False, **kwargs):
             if len(children) == 1:
                 child = children[0]
             else:
-                raise ValueError()
+                child = common_subexpression(*children)
 
     return Summary(child, names, values, keepdims=keepdims)
 

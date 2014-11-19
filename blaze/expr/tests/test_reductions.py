@@ -32,3 +32,9 @@ def test_axis_kwarg_is_normalized_to_tuple():
     exprs = [x.sum(), x.sum(axis=1), x.sum(axis=[1]), x.std(), x.mean(axis=1)]
     for expr in exprs:
         assert isinstance(expr.axis, tuple)
+
+
+def test_summary_with_multiple_children():
+    t = Symbol('t', 'var * {x: int, y: int, z: int}')
+
+    assert summary(a=t.x.sum() + t.y.sum())._child.isidentical(t)

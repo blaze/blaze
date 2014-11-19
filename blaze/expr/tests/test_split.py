@@ -3,7 +3,7 @@ from blaze.expr.split import *
 from blaze.api.dplyr import transform
 import datashape
 from datashape import dshape
-from datashape.predicates import isscalar, isrecord
+from datashape.predicates import isscalar, isrecord, iscollection
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 a = Symbol('a', '1000 * 2000 * {x: float32, y: float32}')
@@ -46,7 +46,7 @@ def test_mean():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
+    assert agg_expr.isidentical(1.0 * agg.total.sum() / agg.count.sum())
 
 
 def test_var():
@@ -59,8 +59,8 @@ def test_var():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical((agg.x2.sum() / agg.n.sum()
-                              - (agg.x.sum() / agg.n.sum())**2))
+    assert agg_expr.isidentical((agg.x2.sum() / (agg.n.sum() * 1.0)
+                              - (agg.x.sum() / (agg.n.sum() * 1.0))**2))
 
 def test_std():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.std())
@@ -72,8 +72,8 @@ def test_std():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(sqrt((agg.x2.sum() / agg.n.sum()
-                                   - (agg.x.sum() / agg.n.sum())**2)))
+    assert agg_expr.isidentical(sqrt((agg.x2.sum() / (agg.n.sum() * 1.0)
+                                   - (agg.x.sum() / (agg.n.sum() * 1.0))**2)))
 
 
 def test_sum_with_axis_argument():
@@ -85,6 +85,16 @@ def test_sum_with_axis_argument():
 
     assert chunk_expr.isidentical(chunk.x.sum(axis=0, keepdims=True))
     assert agg_expr.isidentical(agg.sum(axis=0))
+
+
+def test_sum_with_keepdims():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.sum(keepdims=True))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(chunk.amount.sum(keepdims=True))
+
+    assert isscalar(agg.dshape.measure)
+    assert agg_expr.isidentical(sum(agg, keepdims=True))
 
 
 def test_split_reasons_correctly_about_uneven_aggregate_shape():
@@ -193,6 +203,18 @@ def test_by_count():
     assert agg_expr.isidentical(by(agg.name, total=agg.total.sum()))
 
 
+def test_by_mean():
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, by(t.name, avg=t.amount.mean()))
+
+    assert chunk_expr.isidentical(by(chunk.name,
+                                        avg_total=chunk.amount.sum(),
+                                        avg_count=chunk.amount.count()))
+
+    assert agg_expr.isidentical(by(agg.name,
+        avg=(1.0 * agg.avg_total.sum() / agg.avg_count.sum())))
+
+
 def test_embarassing_rowwise():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount + 1)
 
@@ -204,6 +226,13 @@ def test_embarassing_selection():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t[t.amount > 0])
 
     assert chunk_expr.isidentical(chunk[chunk.amount > 0])
+    assert agg_expr.isidentical(agg)
+
+
+def test_embarassing_like():
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.like(name='Alice*'))
+
+    assert chunk_expr.isidentical(chunk.like(name='Alice*'))
     assert agg_expr.isidentical(agg)
 
 
@@ -253,3 +282,30 @@ def test_reductions():
 
     assert isscalar(agg.dshape.measure)
     assert agg_expr.isidentical(agg.distinct().count())
+
+
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, t.amount.nunique(keepdims=True))
+
+    assert chunk.schema == t.schema
+    assert chunk_expr.isidentical(chunk.amount.distinct())
+
+    assert isscalar(agg.dshape.measure)
+    assert agg_expr.isidentical(agg.distinct().count(keepdims=True))
+
+
+def test_by_with_single_field_child():
+    x = Symbol('x', 'var * int')
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, by(x, total=x.sum()))
+
+    assert chunk_expr.isidentical(by(chunk, total=chunk.sum()))
+
+    assert agg_expr.isidentical(by(agg[agg.fields[0]],
+        total=agg.total.sum()).relabel({agg.fields[0]: 'x'}))
+
+
+def test_keepdims_equals_true_doesnt_mess_up_agg_shape():
+    x = Symbol('x', '10 * int')
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(), keepdims=False)
+
+    assert iscollection(agg.dshape)

@@ -23,16 +23,19 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
 from toolz import merge as merge_dicts
+from toolz.curried import pipe, filter, map, concat
 import fnmatch
 from datashape.predicates import isscalar
+import datashape
+import itertools
 
 from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, std, var, Like, Slice,
+                    Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp, nelements, DateTimeTruncate)
+                    UTCFromTimestamp, nelements, DateTimeTruncate, count)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -228,27 +231,90 @@ def compute_by(t, r, g, df):
     return compute_up(r, groups)  # do reduction
 
 
+name_dict = dict()
+seen_names = set()
+def _name(expr):
+    """ A unique and deterministic name for an expression """
+    if expr in name_dict:
+        return name_dict[expr]
+    result = base = expr._name or '_'
+    if result in seen_names:
+        for i in itertools.count(1):
+            result = '%s_%d' % (base, i)
+            if result not in seen_names:
+                break
+    # result is an unseen name
+    seen_names.add(result)
+    name_dict[expr] = result
+    return result
+
+
+def fancify_summary(expr):
+    """ Separate a complex summary into two pieces
+
+    Helps pandas compute_by on summaries
+
+    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> one, two, three = fancify_summary(summary(a=t.x.sum(), b=t.x.sum() + t.y.count() - 1))
+
+    A simpler summary with only raw reductions
+    >>> one
+    summary(x_sum=sum(t.x), y_count=count(t.y), keepdims=False)
+
+    A mapping of those names to new leaves to use in another compuation
+    >>> two  # doctest: +SKIP
+    {'x_sum': x_sum, 'y_count': y_count}
+
+    A mapping of computations to do for each column
+    >>> three   # doctest: +SKIP
+    {'a': x_sum, 'b': (x_sum + y_count) - 1}
+
+    In this way, ``compute_by`` is able to do simple pandas reductions using
+    groups.agg(...) and then do columnwise arithmetic afterwards.
+    """
+    seen_names.clear()
+    name_dict.clear()
+    exprs = pipe(expr.values, map(Expr._traverse), concat, filter(lambda x:
+        isinstance(x, Reduction)), set)
+    one = summary(**dict((_name(expr), expr) for expr in exprs))
+
+    two = dict((_name(expr), Symbol(_name(expr), datashape.var * expr.dshape))
+                for expr in exprs)
+
+    d = dict((expr, two[_name(expr)]) for expr in exprs)
+    three = dict((name, value._subs(d)) for name, value in zip(expr.names,
+        expr.values))
+
+    return one, two, three
+
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
-    names = s.fields
+    one, two, three = fancify_summary(s)  # see above
+    names = one.fields
     preapply = DataFrame(dict(zip(names,
-                                  (compute(v._child, {t._child: df})
-                                   for v in s.values))))
+                                  [compute(v._child, {t._child: df})
+                                   for v in one.values])))
 
     df2 = concat_nodup(df, preapply)
 
     groups = df2.groupby(g)
 
     d = defaultdict(list)
-    for name, v in zip(names, s.values):
+    for name, v in zip(names, one.values):
         d[name].append(v.symbol)
+
+    d = dict((name, v.symbol) for name, v in zip(one.names, one.values))
 
     result = groups.agg(dict(d))
 
+    scope = dict((v, result[k]) for k, v in two.items())
+    cols = [compute(expr.label(name), scope) for name, expr in three.items()]
+
+    result2 = pd.concat(cols, axis=1)
+
     # Rearrange columns to match names order
-    result = result[sorted(result.columns, key=lambda t: names.index(t[0]))]
-    result.columns = t.apply.fields  # flatten down multiindex
-    return result
+    result3 = result2[sorted(result2.columns, key=lambda t: s.fields.index(t))]
+    return result3
 
 
 @dispatch(Expr, DataFrame)
@@ -444,6 +510,14 @@ def compute_up(expr, df, **kwargs):
             return df.iloc[index]
     else:
         raise NotImplementedError()
+
+
+@dispatch(count, DataFrame)
+def compute_up(expr, df, **kwargs):
+    result = df.shape[0]
+    if expr.keepdims:
+        result = Series([result])
+    return result
 
 
 @dispatch(nelements, (DataFrame, Series))
