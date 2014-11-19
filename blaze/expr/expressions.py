@@ -155,7 +155,10 @@ class Expr(Node):
 
     @property
     def _name(self):
-        pass
+        if (isscalar(self.dshape.measure) and
+                len(self._inputs) == 1 and
+                isscalar(self._child.dshape.measure)):
+            return self._child._name
 
 
 class Symbol(Expr):

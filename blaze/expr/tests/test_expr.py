@@ -81,3 +81,8 @@ def test_iter_raises_not_implemented_Error():
     e = Symbol('e', '5 * {x: int, "a b": int}')
     assert raises(NotImplementedError, lambda: iter(e))
 
+
+def test_selection_name_matches_child():
+    t = Symbol('t', 'var * {x: int, "a.b": int}')
+    assert t.x[t.x > 0]._name == t.x._name
+    assert t.x[t.x > 0].fields == t.x.fields
