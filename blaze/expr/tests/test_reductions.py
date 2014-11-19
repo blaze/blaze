@@ -27,6 +27,16 @@ def test_summary_keepdims():
             dshape('1 * 1 * {a: float32, b: float32}')
 
 
+def test_summary_axis():
+    x = Symbol('x', '5 * 3 * float32')
+    assert summary(a=x.min(), b=x.max(), axis=0).dshape == \
+            dshape('3 * {a: float32, b: float32}')
+    assert summary(a=x.min(), b=x.max(), axis=1).dshape == \
+            dshape('5 * {a: float32, b: float32}')
+    assert summary(a=x.min(), b=x.max(), axis=1, keepdims=True).dshape == \
+            dshape('5 * 1 * {a: float32, b: float32}')
+
+
 def test_summary_str():
     x = Symbol('x', '5 * 3 * float32')
     assert 'keepdims' not in str(summary(a=x.min(), b=x.max()))
