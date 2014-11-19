@@ -3,7 +3,7 @@ from blaze.expr.split import *
 from blaze.api.dplyr import transform
 import datashape
 from datashape import dshape
-from datashape.predicates import isscalar, isrecord
+from datashape.predicates import isscalar, isrecord, iscollection
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 a = Symbol('a', '1000 * 2000 * {x: float32, y: float32}')
@@ -302,3 +302,10 @@ def test_by_with_single_field_child():
 
     assert agg_expr.isidentical(by(agg[agg.fields[0]],
         total=agg.total.sum()).relabel({agg.fields[0]: 'x'}))
+
+
+def test_keepdims_equals_true_doesnt_mess_up_agg_shape():
+    x = Symbol('x', '10 * int')
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(), keepdims=False)
+
+    assert iscollection(agg.dshape)

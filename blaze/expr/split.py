@@ -117,9 +117,11 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
             chunk = Symbol('chunk', datashape.var * leaf.dshape.measure)
 
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
+    chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
+                                            keepdims=True)
 
     if not agg:
-        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr)
+        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
         agg = Symbol('aggregate', agg_dshape)
 
@@ -346,7 +348,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     >>> leaf = Symbol('leaf', '10 * 10 * int')
     >>> expr = leaf.sum(axis=0)
     >>> chunk = Symbol('chunk', '3 * 3 * int') # 3 does not divide 10
-    >>> chunk_expr = chunk.sum(axis=0, keepdims=1)
+    >>> chunk_expr = chunk.sum(axis=0, keepdims=True)
 
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)
