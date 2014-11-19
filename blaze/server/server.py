@@ -288,7 +288,6 @@ def compserver(datasets):
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 
-
     tree_ns = dict((name, Symbol(name, discover(datasets[name])))
                     for name in datasets)
     if 'namespace' in data:
@@ -304,5 +303,5 @@ def compserver(datasets):
 
     return jsonify({'datashape': str(expr.dshape),
                     'data': result,
-                    'names' : result.columns,
+                    'names' : expr.columns,
                 })
