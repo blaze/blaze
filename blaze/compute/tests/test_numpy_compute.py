@@ -5,10 +5,9 @@ import pytest
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import Symbol, by, exp
+from blaze.expr import Symbol, by, exp, summary
 from blaze import into
 from datashape import discover
-
 
 
 t = Symbol('t', 'var * {id: int, name: string, amount: int}')
@@ -165,6 +164,13 @@ def test_array_reductions_with_keepdims():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:
         assert eq(compute(a.sum(axis=axis, keepdims=True), ax),
                  ax.sum(axis=axis, keepdims=True))
+
+def test_summary_on_ndarray():
+    assert compute(summary(total=a.sum(), min=a.min()), ax) == \
+            (ax.min(), ax.sum())
+    assert compute(summary(total=a.sum(), min=a.min(), keepdims=True), ax) == \
+            np.array([(ax.min(), ax.sum())],
+                     dtype=[('min', 'f4'), ('total', 'f4')])
 
 
 def test_utcfromtimestamp():

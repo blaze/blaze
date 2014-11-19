@@ -2,10 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from pandas import DataFrame, Series
+from datashape import to_numpy_dtype
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
-from ..expr import std, var, count, nunique
+from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 
@@ -94,6 +95,15 @@ def compute_up(t, x, **kwargs):
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
+
+
+@dispatch(Summary, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    result = tuple(compute(v, data) for v in expr.values)
+    if not expr.keepdims:
+        return result
+    else:
+        return np.array(result, dtype=to_numpy_dtype(expr.dshape))
 
 
 @dispatch((std, var), np.ndarray)
