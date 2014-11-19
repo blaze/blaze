@@ -11,7 +11,7 @@ __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
 
 class DateTime(ElemWise):
     """ Superclass for datetime accessors """
-    __slots__ = '_child',
+    __slots__ = '_hash', '_child',
 
     def __str__(self):
         return '%s.%s' % (str(self._child), type(self).__name__.lower())
@@ -126,7 +126,7 @@ def normalize_time_unit(s):
 
 
 class DateTimeTruncate(DateTime):
-    __slots__ = '_child', 'measure', 'unit'
+    __slots__ = '_hash', '_child', 'measure', 'unit'
 
     @property
     def _dtype(self):

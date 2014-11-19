@@ -31,7 +31,7 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = '_child', 'axis', 'keepdims'
+    __slots__ = '_hash', '_child', 'axis', 'keepdims'
     _dtype = None
 
     def __init__(self, _child, axis=None, keepdims=False):
@@ -77,7 +77,7 @@ class Reduction(Expr):
             kwargs.append('keepdims=True')
         if self.axis != tuple(range(self._child.ndim)):
             kwargs.append('axis=' + str(self.axis))
-        other = sorted(set(self.__slots__) - set(['_child', 'axis', 'keepdims']))
+        other = sorted(set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
         for slot in other:
             kwargs.append('%s=%s' % (slot, getattr(self, slot)))
         name = type(self).__name__
@@ -135,7 +135,7 @@ class var(Reduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
+    __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
@@ -164,7 +164,7 @@ class std(Reduction):
     --------
     var
     """
-    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
+    __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
@@ -218,7 +218,7 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = '_child', 'names', 'values', 'keepdims'
+    __slots__ = '_hash', '_child', 'names', 'values', 'keepdims'
 
     def __init__(self, _child, names, values, keepdims=False):
         self._child = _child

@@ -25,7 +25,7 @@ class Sort(Expr):
 
     >>> accounts.sort(-accounts.amount) # doctest: +SKIP
     """
-    __slots__ = '_child', '_key', 'ascending'
+    __slots__ = '_hash', '_child', '_key', 'ascending'
 
     @property
     def dshape(self):
@@ -90,7 +90,7 @@ class Distinct(Expr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
     """
-    __slots__ = '_child',
+    __slots__ = '_hash', '_child',
 
     @property
     def dshape(self):
@@ -122,7 +122,7 @@ class Head(Expr):
     >>> accounts.head(5).dshape
     dshape("5 * {name: string, amount: int32}")
     """
-    __slots__ = '_child', 'n'
+    __slots__ = '_hash', '_child', 'n'
 
     @property
     def dshape(self):
@@ -200,7 +200,7 @@ class Merge(ElemWise):
     >>> merge(accounts.name, z=accounts.x + accounts.y).fields
     ['name', 'z']
     """
-    __slots__ = '_child', 'children'
+    __slots__ = '_hash', '_child', 'children'
 
     @property
     def schema(self):
@@ -275,7 +275,7 @@ class Join(Expr):
 
     blaze.expr.collections.Merge
     """
-    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
+    __slots__ = '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
 
     @property

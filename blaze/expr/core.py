@@ -34,7 +34,7 @@ class Node(object):
     def __init__(self, *args, **kwargs):
         assert frozenset(kwargs).issubset(self.__slots__)
 
-        for slot, arg in zip(self.__slots__, args):
+        for slot, arg in zip(self.__slots__[1:], args):
             setattr(self, slot, arg)
 
         for key, value in kwargs.items():
@@ -42,7 +42,7 @@ class Node(object):
 
     @property
     def _args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__)
+        return tuple(getattr(self, slot) for slot in self.__slots__[1:])
 
     @property
     def _inputs(self):
@@ -82,11 +82,15 @@ class Node(object):
         return isidentical(self, other)
 
     def __hash__(self):
-        return hash((type(self), self._args))
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash((type(self), self._args))
+            return self._hash
 
     def __str__(self):
         rep = ["%s=%s" % (slot, _str(arg))
-               for slot, arg in zip(self.__slots__, self._args)]
+                for slot, arg in zip(self.__slots__[1:], self._args)]
         return "%s(%s)" % (type(self).__name__, ', '.join(rep))
 
     def __repr__(self):

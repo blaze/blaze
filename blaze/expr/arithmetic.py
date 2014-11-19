@@ -25,7 +25,7 @@ def name(o):
         return None
 
 class BinOp(ElemWise):
-    __slots__ = 'lhs', 'rhs'
+    __slots__ = '_hash', 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
@@ -88,7 +88,7 @@ def maxshape(shapes):
 
 
 class UnaryOp(ElemWise):
-    __slots__ = '_child',
+    __slots__ = '_hash', '_child',
 
     def __init__(self, child):
         self._child = child

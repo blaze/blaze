@@ -18,7 +18,7 @@ class Like(Expr):
     >>> list(compute(expr, data))
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
-    __slots__ = '_child', '_patterns'
+    __slots__ = '_hash', '_child', '_patterns'
 
     @property
     def patterns(self):

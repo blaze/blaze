@@ -170,7 +170,7 @@ class Symbol(Expr):
 
     >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
     """
-    __slots__ = '_name', 'dshape', '_token'
+    __slots__ = '_hash', '_name', 'dshape', '_token'
     __inputs__ = ()
 
     def __init__(self, name, dshape, token=None):
@@ -215,7 +215,7 @@ class Field(ElemWise):
     >>> points.x.dshape
     dshape("5 * 3 * int32")
     """
-    __slots__ = '_child', '_name'
+    __slots__ = '_hash', '_child', '_name'
 
     def __str__(self):
         if re.match('^\w+$', self._name):
@@ -256,7 +256,7 @@ class Projection(ElemWise):
 
     blaze.expr.expressions.Field
     """
-    __slots__ = '_child', '_fields'
+    __slots__ = '_hash', '_child', '_fields'
 
     @property
     def fields(self):
@@ -297,7 +297,7 @@ projection.__doc__ = Projection.__doc__
 
 from .utils import hashable_index, replace_slices
 class Slice(Expr):
-    __slots__ = '_child', '_index'
+    __slots__ = '_hash', '_child', '_index'
 
     def __init__(self, child, index):
         self._child = child
@@ -329,7 +329,7 @@ class Selection(Expr):
     ...                   'var * {name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts.amount < 0]
     """
-    __slots__ = '_child', 'predicate'
+    __slots__ = '_hash', '_child', 'predicate'
 
     def __str__(self):
         return "%s[%s]" % (self._child, self.predicate)
@@ -382,7 +382,7 @@ class Label(ElemWise):
 
     blaze.expr.expressions.ReLabel
     """
-    __slots__ = '_child', 'label'
+    __slots__ = '_hash', '_child', 'label'
 
     @property
     def schema(self):
@@ -427,7 +427,7 @@ class ReLabel(ElemWise):
 
     blaze.expr.expressions.Label
     """
-    __slots__ = '_child', 'labels'
+    __slots__ = '_hash', '_child', 'labels'
 
     @property
     def schema(self):
@@ -481,7 +481,7 @@ class Map(ElemWise):
 
     blaze.expr.expresions.Apply
     """
-    __slots__ = '_child', 'func', '_schema', '_name0'
+    __slots__ = '_hash', '_child', 'func', '_schema', '_name0'
 
     @property
     def schema(self):
@@ -539,7 +539,7 @@ class Apply(Expr):
 
     blaze.expr.expressions.Map
     """
-    __slots__ = '_child', 'func', '_dshape'
+    __slots__ = '_hash', '_child', 'func', '_dshape'
 
     def __init__(self, child, func, dshape=None):
         self._child = child
@@ -614,3 +614,19 @@ method_properties.update([shape, ndim])
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
+
+
+"""
+from .core import subs
+@dispatch(Mono, dict)
+def _subs(ds, d):
+    if ds in d:
+        return d[ds]
+    else:
+        old = ds.parameters
+        new = tuple([subs(p, d) for p in old])
+        if old != new:
+            return type(ds)(*new)
+        else:
+            return ds
+"""

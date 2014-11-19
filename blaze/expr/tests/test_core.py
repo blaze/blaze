@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import dshape
 from blaze.expr import *
+from blaze.expr.core import subs
 
 
 def test_subs():
@@ -38,3 +39,25 @@ def test_path():
     expr = join(t, v).amount
     assert list(path(expr, t)) == [join(t, v).amount, join(t, v), t]
     assert list(path(expr, v)) == [join(t, v).amount, join(t, v), v]
+
+
+def test_hash():
+    e = Symbol('e', 'int')
+    assert '_hash' in e.__slots__
+    assert not hasattr(e, '_hash')
+    h = hash(e)
+    assert isinstance(h, int)
+    assert h == hash(e)
+
+    assert hash(Symbol('e', 'int')) == hash(Symbol('e', 'int'))
+
+    f = Symbol('f', 'int')
+    assert hash(e) != hash(f)
+
+    assert hash(e._subs({'e': 'f'})) != hash(e)
+    assert hash(e._subs({'e': 'f'})) == hash(f)
+
+"""
+def test_subs_on_datashape():
+    assert subs(dshape('3 * {foo: int}'), {'foo': 'bar'}) == dshape('3 * {bar: int}')
+"""

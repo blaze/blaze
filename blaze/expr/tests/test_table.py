@@ -582,7 +582,7 @@ def test_map():
 @pytest.mark.xfail(reason="Not sure that we should even support this")
 def test_map_without_any_info():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    assert iscolumn(t['amount'].map(inc))
+    assert iscolumn(t['amount'].map(inc, 'int'))
     assert not iscolumn(t[['name', 'amount']].map(identity))
 
 
@@ -651,7 +651,8 @@ def test_subterms():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     assert list(a._subterms()) == [a]
     assert set(a['x']._subterms()) == set([a, a['x']])
-    assert set(a['x'].map(inc)._subterms()) == set([a, a['x'], a['x'].map(inc)])
+    assert set(a['x'].map(inc, 'int')._subterms()) == \
+            set([a, a['x'], a['x'].map(inc, 'int')])
     assert a in set((a['x'] + 1)._subterms())
 
 
@@ -661,7 +662,7 @@ def test_common_subexpression():
     assert common_subexpression(a).isidentical(a)
     assert common_subexpression(a, a['x']).isidentical(a)
     assert common_subexpression(a['y'] + 1, a['x']).isidentical(a)
-    assert common_subexpression(a['x'].map(inc), a['x']).isidentical(a['x'])
+    assert common_subexpression(a['x'].map(inc, 'int'), a['x']).isidentical(a['x'])
 
 
 def test_schema_of_complex_interaction():

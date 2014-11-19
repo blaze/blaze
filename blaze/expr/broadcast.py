@@ -44,7 +44,7 @@ class Broadcast(ElemWise):
     In practice, expressions are often collected into Broadcast expressions
     automatically.  This class is mainly intented for internal use.
     """
-    __slots__ = '_children', '_scalars', '_scalar_expr'
+    __slots__ = '_hash', '_children', '_scalars', '_scalar_expr'
 
     @property
     def dshape(self):

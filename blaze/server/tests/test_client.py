@@ -76,7 +76,7 @@ def test_resource_all_in_one():
 
 
 class CustomExpr(Expr):
-    __slots__ = '_child',
+    __slots__ = '_hash', '_child'
 
     @property
     def dshape(self):

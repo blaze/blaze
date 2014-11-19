@@ -260,24 +260,24 @@ def into(a, b, **kwargs):
 
 @dispatch(object, Expr)
 def into(a, b, **kwargs):
-    return into(a, compute(b), dshape=kwargs.pop('dshape', b.dshape),
+    return into(a, compute(b, **kwargs), dshape=kwargs.pop('dshape', b.dshape),
                 schema=b.schema, **kwargs)
 
 
 @dispatch(DataFrame, Expr)
 def into(a, b, **kwargs):
-    return into(DataFrame(columns=b.fields), compute(b))
+    return into(DataFrame(columns=b.fields), compute(b, **kwargs))
 
 
 @dispatch(nd.array, Expr)
 def into(a, b, **kwargs):
-    return into(nd.array(), compute(b), dtype=str(b.schema))
+    return into(nd.array(), compute(b, **kwargs), dtype=str(b.schema))
 
 
 @dispatch(np.ndarray, Expr)
 def into(a, b, **kwargs):
     schema = dshape(str(b.schema).replace('?', ''))
-    return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(schema))
+    return into(np.ndarray(0), compute(b, **kwargs), dtype=to_numpy_dtype(schema))
 
 
 def table_length(expr):

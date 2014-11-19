@@ -249,7 +249,7 @@ def _split_agg(expr, leaf=None, chunk=None, agg=None, keepdims=True):
         elif isrecord(a.dshape.measure):  # For reductions like mean/var
             names = ['%s_%s' % (name, field) for field in a.fields]
             namedict = dict(zip(a.fields, names))
-            d[name] = ae._subs({a: agg})._subs(namedict)
+            d[name] = ae._subs(toolz.merge({a: agg}, namedict))
 
     return summary(**d)
 
