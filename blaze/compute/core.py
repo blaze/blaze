@@ -308,14 +308,14 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
 
     >>> s = Symbol('s', 'var * {name: string, amount: int}')
     >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
-    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+    ...                 dtype=[('name', 'S7'), ('amount', 'i8')])
 
     This computation completes without changing type.  We get back a leaf
     symbol and a computational result
 
     >>> e = (s.amount + 1).distinct()
     >>> bottom_up_until_type_break(e, {s: data})
-    (amount, {amount: array([101, 201, 301], dtype=int32)})
+    (amount, {amount: array([101, 201, 301])})
 
     This computation has a type change midstream (``list`` to ``int``), so we
     stop and get the unfinished computation.
