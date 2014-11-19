@@ -481,3 +481,10 @@ def test_delayed_bad_datashape_with_bad_datetimes():
     with filetext('a,b\n1,10-10-2000\n1,10-10-2000') as fn:
         with pytest.raises(ValueError):
             csv = CSV(fn)
+
+def test_write_csv_with_header_emits_header():
+    with tmpfile('.csv') as fn:
+        csv = CSV(fn, header=True, schema='{a: int, b: int}', mode='w')
+        csv.extend([(1, 2), (10, 20)])
+        with open(fn) as f:
+            assert 'a' in f.read()

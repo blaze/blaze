@@ -332,6 +332,10 @@ class CSV(DataDescriptor):
         self._schema = schema
         self.header = header
 
+        if 'w' in mode and header:
+            self._extend([self.columns])
+
+
         if 'w' not in mode:
             try:
                 nd.array(list(take(10, self._iter(chunksize=10))),
