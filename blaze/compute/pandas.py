@@ -303,11 +303,11 @@ def compute_by(t, s, g, df):
     for name, v in zip(names, one.values):
         d[name].append(v.symbol)
 
-    d = {name: v.symbol for name, v in zip(one.names, one.values)}
+    d = dict((name, v.symbol) for name, v in zip(one.names, one.values))
 
     result = groups.agg(dict(d))
 
-    scope = {v: result[k] for k, v in two.items()}
+    scope = dict((v, result[k]) for k, v in two.items())
     cols = [compute(expr.label(name), scope) for name, expr in three.items()]
 
     result2 = pd.concat(cols, axis=1)
