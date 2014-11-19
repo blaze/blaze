@@ -140,8 +140,8 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
 
     data_parts = partitions(data, chunksize=(chunksize,))
 
-    parts = map(curry(compute_chunk, data, chunk, chunk_expr),
-                       data_parts)
+    parts = list(map(curry(compute_chunk, data, chunk, chunk_expr),
+                           data_parts))
 
     if isinstance(parts[0], np.ndarray):
         intermediate = np.concatenate(parts)
