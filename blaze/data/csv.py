@@ -486,7 +486,10 @@ class CSV(DataDescriptor):
         mode = 'ab' if PY2 else 'a'
         newline = dict() if PY2 else dict(newline='')
         dialect = keyfilter(to_csv_kwargs.__contains__, self.dialect)
-        should_write_newline = self.last_char() != os.linesep
+        try:
+            should_write_newline = self.last_char() != os.linesep
+        except:
+            should_write_newline = False
         with csvopen(self, mode=mode, **newline) as f:
             # we have data in the file, append a newline
             if should_write_newline:
