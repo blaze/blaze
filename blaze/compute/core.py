@@ -72,7 +72,7 @@ def compute(expr, o, **kwargs):
 
 
 @dispatch(object)
-def compute_down(expr):
+def compute_down(expr, **kwargs):
     """ Compute the expression on the entire inputs
 
     inputs match up to leaves of the expression
@@ -160,7 +160,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         pass
 
     # 2. Compute from the bottom until there is a data type change
-    expr2, scope2 = bottom_up_until_type_break(expr, scope)
+    expr2, scope2 = bottom_up_until_type_break(expr, scope, **kwargs)
 
     # 3. Re-optimize data and expressions
     optimize_ = kwargs.get('optimize', optimize)
@@ -171,8 +171,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     else:
         scope3 = scope2
     try:
-        expr3 = optimize_(expr2, *[scope3[leaf]
-                                          for leaf in expr2._leaves()])
+        expr3 = optimize_(expr2, *[scope3[leaf] for leaf in expr2._leaves()])
         _d = dict(zip(expr2._leaves(), expr3._leaves()))
         scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
     except (TypeError, NotImplementedError):
@@ -180,7 +179,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         scope4 = scope3
 
     # 4. Repeat
-    return top_then_bottom_then_top_again_etc(expr3, scope4)
+    return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
 def top_to_bottom(d, expr, **kwargs):
@@ -279,7 +278,7 @@ def data_leaves(expr, scope):
     return [scope[leaf] for leaf in expr._leaves()]
 
 
-def bottom_up_until_type_break(expr, scope):
+def bottom_up_until_type_break(expr, scope, **kwargs):
     """ Traverse bottom up until data changes significantly
 
     Parameters
@@ -330,7 +329,7 @@ def bottom_up_until_type_break(expr, scope):
 
     # 1. Recurse down the tree, calling this function on children
     #    (this is the bottom part of bottom up)
-    exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope)
+    exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope, **kwargs)
                              for i in inputs])
     # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
@@ -352,7 +351,8 @@ def bottom_up_until_type_break(expr, scope):
     except KeyError:
         return new_expr, new_scope
     try:
-        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope)}
+        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope,
+                                       **kwargs)}
     except NotImplementedError:
         return new_expr, new_scope
 
