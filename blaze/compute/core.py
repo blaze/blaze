@@ -179,6 +179,10 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         scope4 = scope3
 
     # 4. Repeat
+    if expr.isidentical(expr3):
+        raise NotImplementedError("Don't know how to compute:\n"
+                "expr: %s\n"
+                "data: %s" % (expr3, scope4))
     return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
