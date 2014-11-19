@@ -9,6 +9,7 @@ from dynd import nd
 from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps
 from blaze import into, compute
+from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
 from ..api import discover, Data
@@ -137,6 +138,11 @@ def to_tree(expr, names=None):
         return names[expr]
     if isinstance(expr, tuple):
         return [to_tree(arg, names=names) for arg in expr]
+    if isinstance(expr, expr_utils._slice):
+        return to_tree(expr.as_slice(), names=names)
+    if isinstance(expr, slice):
+        return {'op': 'slice',
+                'args': [to_tree(arg, names=names) for arg in [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, Mono):
         return str(expr)
     elif isinstance(expr, Data):
@@ -229,6 +235,8 @@ def from_tree(expr, namespace=None):
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
+        if 'slice' == op:
+            return slice(*[from_tree(arg, namespace) for arg in args])
         if hasattr(blaze.expr, op):
             cls = getattr(blaze.expr, op)
         else:
