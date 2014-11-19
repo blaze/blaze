@@ -259,7 +259,7 @@ def fancify_summary(expr):
 
     A simpler summary with only raw reductions
     >>> one
-    summary(x_sum=sum(t.x), y_count=count(t.y), keepdims=False)
+    summary(x_sum=sum(t.x), y_count=count(t.y))
 
     A mapping of those names to new leaves to use in another compuation
     >>> two  # doctest: +SKIP
