@@ -262,11 +262,11 @@ def fancify_summary(expr):
     summary(x_sum=sum(t.x), y_count=count(t.y), keepdims=False)
 
     A mapping of those names to new leaves to use in another compuation
-    >>> two  # mapping of new leaves
+    >>> two  # doctest: +SKIP
     {'x_sum': x_sum, 'y_count': y_count}
 
     A mapping of computations to do for each column
-    >>> three  # computations with new leaves mapping to original names
+    >>> three   # doctest: +SKIP
     {'a': x_sum, 'b': (x_sum + y_count) - 1}
 
     In this way, ``compute_by`` is able to do simple pandas reductions using
