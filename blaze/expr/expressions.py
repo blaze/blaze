@@ -173,7 +173,9 @@ class Expr(Node):
             return self._child._name
 
 
-@memoize
+_symbol_cache = dict()
+
+@memoize(cache=_symbol_cache)
 def symbol(name, dshape, token=None):
     return Symbol(name, dshape, token=token)
 
