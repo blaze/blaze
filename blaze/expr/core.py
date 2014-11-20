@@ -42,11 +42,11 @@ class Node(object):
 
     @property
     def _args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__[1:])
+        return tuple([getattr(self, slot) for slot in self.__slots__[1:]])
 
     @property
     def _inputs(self):
-        return tuple(getattr(self, i) for i in self.__inputs__)
+        return tuple([getattr(self, i) for i in self.__inputs__])
 
     def __nonzero__(self): # pragma: no cover
         return True
