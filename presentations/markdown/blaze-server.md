@@ -165,7 +165,7 @@ Generate computations with symbolic Blaze
 
 ```python
 >>> from blaze import *
->>> t = TableSymbol('t', '{ sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }')
+>>> t = Symbol('t', 'var * { sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }')
 
 >>> expr = by(t.species,                # more complex query to send to server
 ...           min=t.petal_length.min(),

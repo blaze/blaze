@@ -40,8 +40,8 @@ dshape("150 * { sepal_length : float64, sepal_width : float64,
 Execute expression against data
 
 ```python
->>> from blaze.expr import TableSymbol
->>> bank = TableSymbol('bank', '{id:int, name:string, balance:int}')
+>>> from blaze.expr import Symbol
+>>> bank = Symbol('bank', 'var * {id:int, name:string, balance:int}')
 
 >>> deadbeats = bank[bank.balance < 0].name
 

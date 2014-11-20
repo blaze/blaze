@@ -15,8 +15,8 @@ In practice, connecting to a new backend takes days, not months.
 Blaze separates our intent:
 
 ```python
->>> from blaze.expr import TableSymbol
->>> bank = TableSymbol('bank', '{id:int, name:string, balance:int}')
+>>> from blaze.expr import Symbol
+>>> bank = Symbol('bank', 'var * {id:int, name:string, balance:int}')
 
 >>> deadbeats = bank[bank.balance < 0].name
 ```
@@ -46,8 +46,8 @@ then combines the two explicitly
 Separating intent from data lets us switch backends
 
 ```python
->>> from blaze.expr import TableSymbol
->>> bank = TableSymbol('bank', '{id:int, name:string, balance:int}')
+>>> from blaze.expr import Symbol
+>>> bank = Symbol('bank', 'var * {id:int, name:string, balance:int}')
 
 >>> deadbeats = bank[bank.balance < 0].name
 ```
@@ -77,8 +77,8 @@ Name: name, dtype: object
 Now we reach out into the ecosystem
 
 ```python
->>> from blaze.expr import TableSymbol
->>> bank = TableSymbol('bank', '{id:int, name:string, balance:int}')
+>>> from blaze.expr import Symbol
+>>> bank = Symbol('bank', 'var * {id:int, name:string, balance:int}')
 
 >>> deadbeats = bank[bank.balance < 0].name
 ```
