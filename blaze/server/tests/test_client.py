@@ -12,8 +12,10 @@ from blaze.server.client import Client, discover, resource, ClientDataset
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
+df2 = DataFrame([['Charlie', 100], ['Dan', 200]],
+                columns=['name', 'amount'])
 
-server = Server(datasets={'accounts': df})
+server = Server(datasets={'accounts': df, 'accounts2': df})
 
 test = server.app.test_client()
 
@@ -23,7 +25,7 @@ client.requests = test # OMG monkey patching
 
 def test_client():
     c = Client('localhost:6363')
-    assert str(discover(c)) == str(discover({'accounts': df}))
+    assert str(discover(c)) == str(discover(server.datasets))
 
     t = Symbol('t', discover(c))
     expr = t.accounts.amount.sum()
@@ -49,6 +51,22 @@ def test_expr_client_interactive():
                                                   max=t.accounts.amount.max())))
             == set([('Alice', 100, 100), ('Bob', 200, 200)]))
 
+def test_compute_client_with_multiple_datasets():
+    c = resource('blaze://localhost:6363')
+    s = Symbol('s', discover(c))
+
+    assert compute(s.accounts.amount.sum() + s.accounts2.amount.sum(),
+                    {s: c}) == 600
+
+def test_compute_multiple_client_datasets():
+    a1 = resource('blaze://localhost:6363::accounts')
+    a2 = resource('blaze://localhost:6363::accounts2')
+    s1 = Symbol('s1', discover(a1))
+    s2 = Symbol('s2', discover(a2))
+
+    assert compute(s1.amount.sum() + s2.amount.sum(),
+            {s1: a1, s2: a2}) == 600
+
 def test_clientdataset_into_list():
     a = resource('blaze://localhost:6363::accounts')
 
@@ -64,7 +82,7 @@ def test_clientdataset_into_list():
 
 def test_resource():
     c = resource('blaze://localhost:6363')
-    assert str(discover(c)) == str(discover({'accounts': df}))
+    assert str(discover(c)) == str(discover(server.datasets))
 
 
 def test_resource_with_dataset():
@@ -74,7 +92,7 @@ def test_resource_with_dataset():
 
 def test_resource_default_port():
     ec = resource('blaze://localhost')
-    assert str(discover(ec)) == str(discover({'accounts': df}))
+    assert str(discover(ec)) == str(discover(server.datasets))
 
 
 def test_resource_non_default_port():
@@ -84,7 +102,7 @@ def test_resource_non_default_port():
 
 def test_resource_all_in_one():
     ec = resource('blaze://localhost:6363')
-    assert str(discover(ec)) == str(discover({'accounts': df}))
+    assert str(discover(ec)) == str(discover(server.datasets))
 
 
 class CustomExpr(Expr):
