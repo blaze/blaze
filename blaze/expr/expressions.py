@@ -11,7 +11,7 @@ from datashape import dshape, DataShape, Record, Var, Mono
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
-from .core import *
+from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
@@ -175,7 +175,17 @@ class Expr(Node):
 
 _symbol_cache = dict()
 
-@memoize(cache=_symbol_cache)
+def _symbol_key(args, kwargs):
+    if len(args) == 2:
+        name, ds = args
+        token = None
+    elif len(args) == 3:
+        name, ds, token = args
+    token = kwargs.get('token', token)
+    ds = dshape(ds)
+    return (name, ds, token)
+
+@memoize(cache=_symbol_cache, key=_symbol_key)
 def symbol(name, dshape, token=None):
     return Symbol(name, dshape, token=token)
 
@@ -206,6 +216,15 @@ class Symbol(Expr):
 
     def _resources(self):
         return dict()
+
+
+@dispatch(Symbol, dict)
+def _subs(o, d):
+    """ Subs symbols using symbol function
+
+    Supports caching"""
+    newargs = [subs(arg, d) for arg in o._args]
+    return symbol(*newargs)
 
 
 class ElemWise(Expr):

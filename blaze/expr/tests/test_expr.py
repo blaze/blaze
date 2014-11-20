@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape
 
 from blaze.expr import *
+from blaze.expr.core import subs
 from blaze.utils import raises
 
 def test_Symbol():
@@ -89,3 +90,12 @@ def test_selection_name_matches_child():
     t = symbol('t', 'var * {x: int, "a.b": int}')
     assert t.x[t.x > 0]._name == t.x._name
     assert t.x[t.x > 0].fields == t.x.fields
+
+
+def test_symbol_subs():
+    assert symbol('e', '{x: int}') is symbol('e', '{x: int}', None)
+    assert symbol('e', '{x: int}') is symbol('e', dshape('{x: int}'))
+    e = symbol('e', '{x: int, y: int}')
+    f = symbol('f', '{x: int, y: int}')
+    d = {'e': 'f'}
+    assert e._subs({'e': 'f'}) is f
