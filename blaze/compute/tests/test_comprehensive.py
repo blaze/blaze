@@ -5,7 +5,7 @@ from pandas import DataFrame
 import numpy as np
 import bcolz
 from datashape.predicates import isscalar, iscollection, isrecord
-from blaze.expr import Symbol, by
+from blaze.expr import symbol, by
 from blaze.api import Data, into
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
@@ -14,7 +14,7 @@ from blaze.sql import SQL
 
 sources = []
 
-t = Symbol('t', 'var * {amount: int64, id: int64, name: string}')
+t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
      [200, 2, 'Bob'],

@@ -16,7 +16,7 @@ from ..dispatch import dispatch
 def lean_projection(expr):
     """ Insert projections to keep dataset as thin as possible
 
-    >>> t = Symbol('t', 'var * {a: int, b: int, c: int, d: int}')
+    >>> t = symbol('t', 'var * {a: int, b: int, c: int, d: int}')
     >>> lean_projection(t.sort('a').b)
     t[['a', 'b']].sort('a', ascending=True).b
     """
@@ -28,14 +28,14 @@ def lean_projection(expr):
 def _lean(expr, fields=None):
     """
 
-    >>> s = Symbol('s', '{x: int, y: int}')
+    >>> s = symbol('s', '{x: int, y: int}')
     >>> _lean(s, ('x',))
     (s['x'], ('x',))
 
     >>> _lean(s, ())
     (s, ())
 
-    >>> s = Symbol('s', 'int')
+    >>> s = symbol('s', 'int')
     >>> _lean(s, ())
     (s, ())
     >>> _lean(s, ('s',))

@@ -9,12 +9,12 @@ from blaze.compatibility import xfail
 import numpy as np
 
 from blaze.compute.core import compute
-from blaze.expr import Symbol
+from blaze.expr import symbol
 from blaze import drop, discover, create_index
 from blaze.utils import tmpfile
 
 
-t = Symbol('t', 'var * {id: int, name: string, amount: int}')
+t = symbol('t', 'var * {id: int, name: string, amount: int}')
 
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
@@ -64,7 +64,7 @@ def eq(a, b):
 
 def test_discover_datashape(data):
     ds = discover(data)
-    t = Symbol('t', ds)
+    t = symbol('t', ds)
     columns = t.fields
     assert columns is not None
 

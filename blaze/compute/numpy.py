@@ -102,8 +102,8 @@ def axify(expr, axis):
 
     Helper function for compute_up(Summary, np.ndarray)
 
-    >>> from blaze import Symbol
-    >>> s = Symbol('s', '10 * 10 * int')
+    >>> from blaze import symbol
+    >>> s = symbol('s', '10 * 10 * int')
     >>> expr = s.sum()
     >>> axify(expr, axis=0)
     sum(s, axis=(0,))

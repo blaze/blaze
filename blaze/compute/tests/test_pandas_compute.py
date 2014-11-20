@@ -9,12 +9,12 @@ from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
-from blaze.expr import Symbol, join, by, summary, Distinct, shape
+from blaze.expr import symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, sum,
                         min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
-t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],
@@ -22,7 +22,7 @@ df = DataFrame([['Alice', 100, 1],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
 
 
-tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
+tbig = symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Alice', 'F', 100, 3],
@@ -45,7 +45,7 @@ def df_all(a_df, b_df):
 
 def test_series_columnwise():
     s = Series([1, 2, 3], name='a')
-    t = Symbol('t', 'var * {a: int64}')
+    t = symbol('t', 'var * {a: int64}')
     result = compute(t.a + 1, s)
     pd.util.testing.assert_series_equal(s + 1, result)
 
@@ -81,8 +81,8 @@ def test_join():
     left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
     right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
 
-    L = Symbol('L', 'var * {name: string, amount: int}')
-    R = Symbol('R', 'var * {name: string, id: int}')
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     assert (dshape(joined.schema) ==
@@ -110,8 +110,8 @@ def test_multi_column_join():
              (1, 3, 150)]
     right = DataFrame(right, columns=['x', 'y', 'w'])
 
-    L = Symbol('L', 'var * {x: int, y: int, z: int}')
-    R = Symbol('R', 'var * {x: int, y: int, w: int}')
+    L = symbol('L', 'var * {x: int, y: int, z: int}')
+    R = symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -249,9 +249,9 @@ def test_join_by_arcs():
                         [3, 1]],
                        columns=['node_out', 'node_id'])
 
-    t_idx = Symbol('t_idx', 'var * {name: string, node_id: int32}')
+    t_idx = symbol('t_idx', 'var * {name: string, node_id: int32}')
 
-    t_arc = Symbol('t_arc', 'var * {node_out: int32, node_id: int32}')
+    t_arc = symbol('t_arc', 'var * {node_out: int32, node_id: int32}')
 
     joined = join(t_arc, t_idx, "node_id")
 
@@ -296,7 +296,7 @@ def test_sort_on_series_no_warning(recwarn):
         assert recwarn.pop(FutureWarning)
 
 def test_field_on_series():
-    expr = Symbol('s', 'var * int')
+    expr = symbol('s', 'var * int')
     data = Series([1, 2, 3, 4], name='s')
     assert str(compute(expr.s, data)) == str(data)
 
@@ -327,7 +327,7 @@ tframe = DataFrame({'timestamp': ts})
 
 
 def test_map_with_rename():
-    t = Symbol('s', discover(tframe))
+    t = symbol('s', discover(tframe))
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
     renamed = result.relabel({'timestamp': 'date'})
     assert renamed.fields == ['date']
@@ -335,7 +335,7 @@ def test_map_with_rename():
 
 @pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
 def test_multiple_renames_on_series_fails():
-    t = Symbol('s', discover(tframe))
+    t = symbol('s', discover(tframe))
     expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
     with pytest.raises(ValueError):
         compute(expr, tframe)
@@ -414,8 +414,8 @@ def test_outer_join():
              ('Moscow', 4)]
     right = DataFrame(right, columns=['city', 'id'])
 
-    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
-    R = Symbol('R', 'var * {city: string, id: int}')
+    L = symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = symbol('R', 'var * {city: string, id: int}')
 
     convert = lambda df: set(df.to_records(index=False).tolist())
 
@@ -456,7 +456,7 @@ def test_outer_join():
 
 def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
-    t = Symbol('data', 'var * {id: int, value: int}')
+    t = symbol('data', 'var * {id: int, value: int}')
 
     gby = by(t['id'], count=t['id'].count())
 
@@ -493,7 +493,7 @@ def test_summary():
 
 def test_summary_on_series():
     ser = Series([1, 2, 3])
-    s = Symbol('s', '3 * int')
+    s = symbol('s', '3 * int')
     expr = summary(max=s.max(), min=s.min())
     assert compute(expr, ser) == (3, 1)
 
@@ -509,7 +509,7 @@ def test_summary_keepdims():
 
 def test_dplyr_transform():
     df = DataFrame({'timestamp': pd.date_range('now', periods=5)})
-    t = Symbol('t', discover(df))
+    t = symbol('t', discover(df))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
                                              schema='datetime'))
     lhs = compute(expr, df)
@@ -522,7 +522,7 @@ def test_nested_transform():
     d = {'timestamp': [1379613528, 1379620047], 'platform': ["Linux",
                                                              "Windows"]}
     df = DataFrame(d)
-    t = Symbol('t', discover(df))
+    t = symbol('t', discover(df))
     t = transform(t, timestamp=t.timestamp.map(datetime.fromtimestamp,
                                                schema='datetime'))
     expr = transform(t, date=t.timestamp.map(lambda x: x.date(),
@@ -565,7 +565,7 @@ def test_datetime_access():
                     'amount': [100, 200, 300],
                     'id': [1, 2, 3]})
 
-    t = Symbol('t', discover(df))
+    t = symbol('t', discover(df))
 
     for attr in ['day', 'month', 'minute', 'second']:
         assert (compute(getattr(t.when, attr), df) == \
@@ -596,7 +596,7 @@ def test_nelements():
 def test_datetime_truncation():
     data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
                   dtype='M8[ns]')
-    s = Symbol('s', 'var * datetime')
+    s = symbol('s', 'var * datetime')
     assert list(compute(s.truncate(20, 'minutes'), data)) == \
             list(Series(['2000-01-01T12:00:00Z', '2000-06-25T12:20:00Z'],
                         dtype='M8[ns]'))

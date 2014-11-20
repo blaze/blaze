@@ -63,7 +63,7 @@ __all__ = ['path_split', 'split']
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
     >>> path_split(t, t.amount.sum() + 1)
     sum(t.amount)
@@ -104,7 +104,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
 
         (chunk, chunk_expr), (aggregate, aggregate_expr)
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
     ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
@@ -114,7 +114,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
         if leaf.ndim > 1:
             raise ValueError("Please provide a chunk symbol")
         else:
-            chunk = Symbol('chunk', datashape.var * leaf.dshape.measure)
+            chunk = symbol('chunk', datashape.var * leaf.dshape.measure)
 
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
     chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
@@ -123,7 +123,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     if not agg:
         agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
-        agg = Symbol('aggregate', agg_dshape)
+        agg = symbol('aggregate', agg_dshape)
 
     agg_expr = _split_agg(center, leaf=leaf, agg=agg)
 
@@ -345,9 +345,9 @@ def dimension_mul(a, b):
 def aggregate_shape(leaf, expr, chunk, chunk_expr):
     """ The shape of the intermediate aggregate
 
-    >>> leaf = Symbol('leaf', '10 * 10 * int')
+    >>> leaf = symbol('leaf', '10 * 10 * int')
     >>> expr = leaf.sum(axis=0)
-    >>> chunk = Symbol('chunk', '3 * 3 * int') # 3 does not divide 10
+    >>> chunk = symbol('chunk', '3 * 3 * int') # 3 does not divide 10
     >>> chunk_expr = chunk.sum(axis=0, keepdims=True)
 
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
@@ -360,7 +360,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     last_chunk_shape = [l % c for l, c in zip(leaf.shape, chunk.shape)]
 
     if builtins.sum(last_chunk_shape) != 0:
-        last_chunk = Symbol(chunk._name,
+        last_chunk = symbol(chunk._name,
                             DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
         last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
         last_chunk_shape = shape(last_chunk_expr)

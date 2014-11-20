@@ -11,7 +11,7 @@ __all__ = ['inject', 'Filter', 'desc', 'select', 'arrange', 'transform',
 def inject(t, ns=None):
     """ Inject columns into local namespace
 
-    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> inject(t)
 
     >>> x
@@ -41,7 +41,7 @@ def arrange(t, *columns):
 def select(t, *columns):
     """ Select columns from table
 
-    >>> t = Symbol('t', 'var * {x: int, y: int, z: int}')
+    >>> t = symbol('t', 'var * {x: int, y: int, z: int}')
     >>> select(t, t.x, t.z)
     t[['x', 'z']]
     """
@@ -51,7 +51,7 @@ def select(t, *columns):
 def transform(t, replace=True, **kwargs):
     """ Add named columns to table
 
-    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> transform(t, xy=t.x + t.y).fields
     ['x', 'y', 'xy']
     """
@@ -70,7 +70,7 @@ class GroupBy(Expr):
 
     To be operated on by ``blaze.dplyr.api.summarize``
 
-    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> g = group_by(t, t.x)
     >>> summarize(g, total=t.y.sum()).fields
     ['x', 'total']

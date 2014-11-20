@@ -42,7 +42,7 @@ def test_path():
 
 
 def test_hash():
-    e = Symbol('e', 'int')
+    e = symbol('e', 'int')
     assert '_hash' in e.__slots__
     assert not hasattr(e, '_hash')
     h = hash(e)
@@ -51,7 +51,7 @@ def test_hash():
 
     assert hash(Symbol('e', 'int')) == hash(Symbol('e', 'int'))
 
-    f = Symbol('f', 'int')
+    f = symbol('f', 'int')
     assert hash(e) != hash(f)
 
     assert hash(e._subs({'e': 'f'})) != hash(e)

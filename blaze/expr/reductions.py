@@ -6,7 +6,7 @@ from datashape import Record, DataShape
 from datashape import coretypes as ct
 
 from .core import common_subexpression
-from .expressions import Expr, Symbol, ndim
+from .expressions import Expr, symbol, ndim
 from ..compatibility import builtins
 
 
@@ -20,7 +20,7 @@ class Reduction(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
     >>> data = [['Alice', 100, 1],
@@ -190,7 +190,7 @@ class nelements(Reduction):
     Examples
     --------
     >>> from blaze import Symbol
-    >>> t = Symbol('t', 'var * {name: string, amount: float64}')
+    >>> t = symbol('t', 'var * {name: string, amount: float64}')
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
     """
@@ -207,7 +207,7 @@ class Summary(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
 
     >>> data = [['Alice', 100, 1],

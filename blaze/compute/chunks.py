@@ -24,7 +24,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from ..expr import (Symbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
-        nunique, Arithmetic, Broadcast)
+        nunique, Arithmetic, Broadcast, symbol)
 from .core import compute
 from toolz import partition_all, curry, concat, first
 from collections import Iterator, Iterable
@@ -99,7 +99,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 @dispatch(tuple(reductions), ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    t = Symbol('_', expr._child.dshape)
+    t = symbol('_', expr._child.dshape)
     a, b = reductions[type(expr)]
 
     return compute_up(b(t), [compute_up(a(t), pre_compute(expr, chunk))

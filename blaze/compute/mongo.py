@@ -60,8 +60,8 @@ import datetime
 from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
                     mean, Reduction, Head, ReLabel, Distinct, ElemWise, By,
                     Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
-                    Eq, Ne, Symbol, And, Or, Summary, Like, Broadcast, DateTime,
-                    Microsecond, Date, Time, Expr, Symbol, Arithmetic, floor,
+                    Eq, Ne, And, Or, Summary, Like, Broadcast, DateTime,
+                    Microsecond, Date, Time, Expr, symbol, Arithmetic, floor,
                     ceil, FloorDiv)
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
@@ -128,7 +128,7 @@ def compute_up(t, q, **kwargs):
 @dispatch(Broadcast, MongoQuery)
 def compute_up(t, q, **kwargs):
     s = t._scalars[0]
-    d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
+    d = dict((s[c], symbol(c, s[c].dshape.measure)) for c in s.fields)
     expr = t._scalar_expr._subs(d)
     name = expr._name or 'expr_%d' % abs(hash(expr))
     return q.append({'$project': {name: compute_sub(expr)}})
@@ -158,14 +158,14 @@ def compute_sub(t):
     Examples
     --------
     >>> from blaze import Symbol
-    >>> s = Symbol('s', 'float64')
+    >>> s = symbol('s', 'float64')
     >>> expr = s * 2 + s - 1
     >>> expr
     ((s * 2) + s) - 1
     >>> compute_sub(expr)
     {'$subtract': [{'$add': [{'$multiply': ['$s', 2]}, '$s']}, 1]}
 
-    >>> when = Symbol('when', 'datetime')
+    >>> when = symbol('when', 'datetime')
     >>> compute_sub(s + when.day)
     {'$add': ['$s', {'$dayOfMonth': '$when'}]}
     """
@@ -207,7 +207,7 @@ def compute_up(expr, data, **kwargs):
     assert isinstance(predicate, Broadcast)
 
     s = predicate._scalars[0]
-    d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
+    d = dict((s[c], symbol(c, s[c].dshape.measure)) for c in s.fields)
     expr = predicate._scalar_expr._subs(d)
     return data.append({'$match': match(expr)})
 
@@ -261,7 +261,7 @@ def group_apply(expr):
     """
     Dictionary corresponding to apply part of split-apply-combine operation
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> group_apply(accounts.amount.sum())
     {'amount_sum': {'$sum': '$amount'}}
     """
@@ -287,10 +287,10 @@ reductions = {mean: '$avg', count: '$sum', max: '$max', min: '$min', sum: '$sum'
 def scalar_expr(expr):
     if isinstance(expr, Broadcast):
         s = expr._scalars[0]
-        d = dict((s[c], Symbol(c, s[c].dshape.measure)) for c in s.fields)
+        d = dict((s[c], symbol(c, s[c].dshape.measure)) for c in s.fields)
         return expr._scalar_expr._subs(d)
     elif isinstance(expr, Field):
-        return Symbol(expr._name, expr.dshape.measure)
+        return symbol(expr._name, expr.dshape.measure)
     else:
         # TODO: This is a hack
         # broadcast_collect should reach into summary, By, selection
@@ -419,8 +419,8 @@ def match(expr):
 
     Examples
     --------
-    >>> x = Symbol('x', 'int32')
-    >>> name = Symbol('name', 'string')
+    >>> x = symbol('x', 'int32')
+    >>> name = symbol('name', 'string')
     >>> match(name == 'Alice')
     {'name': 'Alice'}
     >>> match(x > 10)

@@ -17,7 +17,8 @@ from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label']
+           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label',
+           'symbol']
 
 
 def isvalid_identifier(s):
@@ -161,6 +162,11 @@ class Expr(Node):
             return self._child._name
 
 
+@memoize
+def symbol(name, dshape, token=None):
+    return Symbol(name, dshape, token=token)
+
+
 class Symbol(Expr):
     """
     Symbolic data.  The leaf of a Blaze expression
@@ -168,7 +174,7 @@ class Symbol(Expr):
     Example
     -------
 
-    >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
+    >>> points = symbol('points', '5 * 3 * {x: int, y: int}')
     """
     __slots__ = '_hash', '_name', 'dshape', '_token'
     __inputs__ = ()
@@ -211,7 +217,7 @@ class Field(ElemWise):
     SELECT a
     FROM table
 
-    >>> points = Symbol('points', '5 * 3 * {x: int32, y: int32}')
+    >>> points = symbol('points', '5 * 3 * {x: int32, y: int32}')
     >>> points.x.dshape
     dshape("5 * 3 * int32")
     """
@@ -225,7 +231,7 @@ class Field(ElemWise):
 
     @property
     def _expr(self):
-        return Symbol(self._name, datashape.DataShape(self.dshape.measure))
+        return symbol(self._name, datashape.DataShape(self.dshape.measure))
 
     @property
     def dshape(self):
@@ -246,7 +252,7 @@ class Projection(ElemWise):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts',
+    >>> accounts = symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{name: string, amount: int32}")
@@ -325,7 +331,7 @@ class Selection(Expr):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts',
+    >>> accounts = symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts.amount < 0]
     """
@@ -369,7 +375,7 @@ class Label(ElemWise):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 
     >>> (accounts.amount * 100)._name
     'amount'
@@ -416,7 +422,7 @@ class ReLabel(ElemWise):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
     dshape("{name: string, amount: int32}")
     >>> accounts.relabel(amount='balance').schema
@@ -468,7 +474,7 @@ class Map(ElemWise):
 
     >>> from datetime import datetime
 
-    >>> t = Symbol('t', 'var * {price: real, time: int64}')  # times as integers
+    >>> t = symbol('t', 'var * {price: real, time: int64}')  # times as integers
     >>> datetimes = t.time.map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
@@ -521,7 +527,7 @@ class Apply(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int}')
     >>> h = Apply(t, hash)  # Hash value of resultant table
 
     Optionally provide extra datashape information
@@ -572,7 +578,7 @@ schema_methods = memoize(partial(select_functions, schema_method_list))
 def shape(expr):
     """ Shape of expression
 
-    >>> Symbol('s', '3 * 5 * int32').shape
+    >>> symbol('s', '3 * 5 * int32').shape
     (3, 5)
 
     Works on anything discoverable
@@ -593,7 +599,7 @@ def shape(expr):
 def ndim(expr):
     """ Number of dimensions of expression
 
-    >>> Symbol('s', '3 * var * int32').ndim
+    >>> symbol('s', '3 * var * int32').ndim
     2
     """
     return len(shape(expr))

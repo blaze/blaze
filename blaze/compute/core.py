@@ -8,7 +8,7 @@ import itertools
 from collections import Iterator
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, Symbol, eval_str
+from ..expr import Expr, Symbol, symbol, eval_str
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -57,7 +57,7 @@ def compute(expr, o, **kwargs):
 
     Assumes that only one Symbol exists in expression
 
-    >>> t = Symbol('t', 'var * {name: string, balance: int}')
+    >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -129,7 +129,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
 
     >>> import numpy as np
 
-    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> s = symbol('s', 'var * {name: string, amount: int}')
     >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
     ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
 
@@ -248,7 +248,7 @@ def makeleaf(expr):
 
     >>> _reset_leaves()
 
-    >>> t = Symbol('t', '{x: int, y: int, z: int}')
+    >>> t = symbol('t', '{x: int, y: int, z: int}')
     >>> makeleaf(t)
     t
     >>> makeleaf(t.x)
@@ -261,7 +261,7 @@ def makeleaf(expr):
     False
 
     >>> from blaze import sin, cos
-    >>> x = Symbol('x', 'real')
+    >>> x = symbol('x', 'real')
     >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
     False
     """
@@ -273,7 +273,7 @@ def makeleaf(expr):
         for token in itertools.count():
             if (name, token) not in _used_tokens:
                 break
-    result = Symbol(name, expr.dshape, token)
+    result = symbol(name, expr.dshape, token)
     _used_tokens.add((name, token))
     _leaf_cache[expr] = result
     return result
@@ -307,7 +307,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
 
     >>> import numpy as np
 
-    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> s = symbol('s', 'var * {name: string, amount: int}')
     >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
     ...                 dtype=[('name', 'S7'), ('amount', 'i8')])
 
@@ -411,7 +411,7 @@ def swap_resources_into_scope(expr, scope):
     {}
     """
     resources = expr._resources()
-    symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
+    symbol_dict = dict((t, symbol(t._name, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
     other_scope = dict((k, v) for k, v in scope.items()
                        if k not in symbol_dict)
@@ -425,7 +425,7 @@ def swap_resources_into_scope(expr, scope):
 def compute(expr, d, **kwargs):
     """ Compute expression against data sources
 
-    >>> t = Symbol('t', 'var * {name: string, balance: int}')
+    >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]

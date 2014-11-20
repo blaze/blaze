@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
         Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
-        Map, UTCFromTimestamp, DateTimeTruncate)
+        Map, UTCFromTimestamp, DateTimeTruncate, symbol)
 from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
 from . import pydatetime
@@ -27,7 +27,7 @@ def print_python(leaves, expr):
 
     >>> from blaze.expr import ceil, sin
 
-    >>> t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
+    >>> t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
     >>> print_python([t], t.x + t.y)
     ('t[0] + t[1]', {})
 
@@ -138,7 +138,7 @@ def _print_python(expr, leaves=None):
 def funcstr(leaves, expr):
     """ Lambda string for an expresion
 
-    >>> t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
+    >>> t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
 
     >>> funcstr([t], t.x + t.y)
     ('lambda t: t[0] + t[1]', {})
@@ -166,7 +166,7 @@ def funcstr(leaves, expr):
 def lambdify(leaves, expr):
     """ Lambda for an expresion
 
-    >>> t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
+    >>> t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
     >>> f = lambdify([t], t.x + t.y)
     >>> f((1, 10, 100, ''))
     11

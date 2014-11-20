@@ -8,17 +8,17 @@ import numpy as np
 
 import blaze as bz
 from blaze.bcolz import into, chunks
-from blaze.expr import Symbol
+from blaze.expr import symbol
 from blaze.compute.core import compute, pre_compute
 
 
 b = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, 3.)],
                           dtype=[('a', 'i8'), ('b', 'f8')]))
 
-t = Symbol('t', 'var * {a: int64, b: float64}')
+t = symbol('t', 'var * {a: int64, b: float64}')
 
 
-to = Symbol('to', 'var * {a: int64, b: float64}')
+to = symbol('to', 'var * {a: int64, b: float64}')
 bo = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, np.nan)],
                            dtype=[('a', 'i8'), ('b', 'f8')]))
 
@@ -56,7 +56,7 @@ def test_selection_head():
     b = into(bcolz.ctable,
              ((i, i + 1, float(i)**2) for i in range(10000)),
              names=['a', 'b', 'c'])
-    t = Symbol('t', 'var * {a: int32, b: int32, c: float64}')
+    t = symbol('t', 'var * {a: int32, b: int32, c: float64}')
 
     assert compute((t.a < t.b).all(), b) == True
     assert list(compute(t[t.a < t.b].a.head(10), b)) == list(range(10))
@@ -71,7 +71,7 @@ def test_selection_head():
 
 def test_selection_isnan():
     b = bcolz.ctable([[1, np.nan, 3], [1., 2., np.nan]], names=['a', 'b'])
-    t = Symbol('t', discover(b))
+    t = symbol('t', discover(b))
     lhs = compute(t[t.a.isnan()], b)
     rhs = np.array([(np.nan, 2.0)], dtype=b.dtype)
 
@@ -107,7 +107,7 @@ def dont_test_pre_compute(): # This is no longer desired.  Handled by compute_up
     b = bcolz.ctable(np.array([(1, 1., 10.), (2, 2., 20.), (3, 3., 30.)],
                               dtype=[('a', 'i8'), ('b', 'f8'), ('c', 'f8')]))
 
-    s = Symbol('s', discover(b))
+    s = symbol('s', discover(b))
 
     result = pre_compute(s[['a', 'b']], b)
     assert result.names == ['a', 'b']

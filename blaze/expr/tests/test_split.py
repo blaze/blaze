@@ -6,7 +6,7 @@ from datashape import dshape
 from datashape.predicates import isscalar, isrecord, iscollection
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
-a = Symbol('a', '1000 * 2000 * {x: float32, y: float32}')
+a = symbol('a', '1000 * 2000 * {x: float32, y: float32}')
 
 
 def test_path_split():
@@ -77,7 +77,7 @@ def test_std():
 
 
 def test_sum_with_axis_argument():
-    chunk = Symbol('chunk', '100 * 100 * {x: float32, y: float32}')
+    chunk = symbol('chunk', '100 * 100 * {x: float32, y: float32}')
     (chunk, chunk_expr), (agg, agg_expr) = split(a, a.x.sum(axis=0), chunk=chunk)
 
     assert chunk.schema == a.schema
@@ -98,20 +98,20 @@ def test_sum_with_keepdims():
 
 
 def test_split_reasons_correctly_about_uneven_aggregate_shape():
-    x = Symbol('chunk', '10 * 10 * int')
-    chunk = Symbol('chunk', '3 * 3 * int')
+    x = symbol('chunk', '10 * 10 * int')
+    chunk = symbol('chunk', '3 * 3 * int')
     (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(axis=0),
                                                  chunk=chunk)
     assert agg.shape == (4, 10)
 
 
 def test_split_reasons_correctly_about_aggregate_shape():
-    chunk = Symbol('chunk', '100 * 100 * {x: float32, y: float32}')
+    chunk = symbol('chunk', '100 * 100 * {x: float32, y: float32}')
     (chunk, chunk_expr), (agg, agg_expr) = split(a, a.x.sum(), chunk=chunk)
 
     assert agg.shape == (10, 20)
 
-    chunk = Symbol('chunk', '100 * 100 * {x: float32, y: float32}')
+    chunk = symbol('chunk', '100 * 100 * {x: float32, y: float32}')
     (chunk, chunk_expr), (agg, agg_expr) = split(a, a.x.sum(axis=0), chunk=chunk)
 
     assert agg.shape == (10, 2000)
@@ -161,7 +161,7 @@ def test_summary_with_mean():
                                         b=(agg.b_total.sum() / agg.b_count.sum()) + 1))
 
 def test_complex_summaries():
-    t = Symbol('t', '100 * {a: int, b: int}')
+    t = symbol('t', '100 * {a: int, b: int}')
     (chunk, chunk_expr), (agg, agg_expr) = split(t, summary(q=t.a.mean(),
                                                             w=t.a.std(),
                                                             e=t.a.sum()))
@@ -236,11 +236,11 @@ def test_embarassing_like():
     assert agg_expr.isidentical(agg)
 
 
-x = Symbol('x', '24 * 16 * int32')
+x = symbol('x', '24 * 16 * int32')
 
 
 def test_nd_chunk():
-    c = Symbol('c', '4 * 4 * int32')
+    c = symbol('c', '4 * 4 * int32')
 
     (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(), chunk=c)
 
@@ -252,7 +252,7 @@ def test_nd_chunk():
 
 
 def test_nd_chunk_axis_args():
-    c = Symbol('c', '4 * 4 * int32')
+    c = symbol('c', '4 * 4 * int32')
 
     (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(axis=0), chunk=c)
 
@@ -265,8 +265,8 @@ def test_nd_chunk_axis_args():
 
 
 def test_agg_shape_in_tabular_case_with_explicit_chunk():
-    t = Symbol('t', '1000 * {name: string, amount: int, id: int}')
-    c = Symbol('chunk', 100 * t.schema)
+    t = symbol('t', '1000 * {name: string, amount: int, id: int}')
+    c = symbol('chunk', 100 * t.schema)
 
     expr = by(t.name, total=t.amount.sum())
     (chunk, chunk_expr), (agg, agg_expr) = split(t, expr, chunk=c)
@@ -295,7 +295,7 @@ def test_reductions():
 
 
 def test_by_with_single_field_child():
-    x = Symbol('x', 'var * int')
+    x = symbol('x', 'var * int')
     (chunk, chunk_expr), (agg, agg_expr) = split(x, by(x, total=x.sum()))
 
     assert chunk_expr.isidentical(by(chunk, total=chunk.sum()))
@@ -305,7 +305,7 @@ def test_by_with_single_field_child():
 
 
 def test_keepdims_equals_true_doesnt_mess_up_agg_shape():
-    x = Symbol('x', '10 * int')
+    x = symbol('x', '10 * int')
     (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(), keepdims=False)
 
     assert iscollection(agg.dshape)

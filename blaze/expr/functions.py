@@ -11,7 +11,7 @@ input
 >>> type(sum(np.array([1, 2, 3], dtype=np.int64))).__name__
 'int64'
 
->>> t = Symbol('t', 'var * {x: int, y: int}')
+>>> t = symbol('t', 'var * {x: int, y: int}')
 >>> type(sum(t.x)).__name__
 'sum'
 
@@ -29,7 +29,7 @@ from ..dispatch import dispatch, namespace
 from ..compatibility import builtins
 from . import reductions
 from . import math as blazemath
-from .expressions import Expr, Symbol
+from .expressions import Expr, symbol
 
 
 """

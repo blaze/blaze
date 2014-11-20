@@ -8,8 +8,8 @@ __all__ = ['Like', 'like']
 class Like(Expr):
     """ Filter expression by string comparison
 
-    >>> from blaze import Symbol, like, compute
-    >>> t = Symbol('t', 'var * {name: string, city: string}')
+    >>> from blaze import symbol, like, compute
+    >>> t = symbol('t', 'var * {name: string, city: string}')
     >>> expr = like(t, name='Alice*')
 
     >>> data = [('Alice Smith', 'New York'),

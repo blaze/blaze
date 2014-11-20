@@ -6,11 +6,11 @@ from multipledispatch import MDNotImplementedError
 from datashape import DataShape, to_numpy
 
 from ..partition import partitions, partition_get, partition_set, flatten
-from ..expr import Reduction, Field, Projection, Broadcast, Selection, Symbol
+from ..expr import Reduction, Field, Projection, Broadcast, Selection, symbol
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, ElemWise
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import path, shape
+from ..expr import path, shape, Symbol
 from ..expr.split import split
 
 from .core import base, compute
@@ -113,7 +113,7 @@ def compute_down(expr, data, **kwargs):
         if not isinstance(data, (h5py.File, h5py.Group)):
             break
 
-    expr2 = expr._subs({e: Symbol('leaf', e.dshape)})
+    expr2 = expr._subs({e: symbol('leaf', e.dshape)})
     return compute_down(expr2, data, **kwargs)
 
 
@@ -141,7 +141,7 @@ def compute_down(expr, data, **kwargs):
     chunksize = kwargs.get('chunksize', data.chunks)
 
     # Split expression into per-chunk and on-aggregate pieces
-    chunk = Symbol('chunk', DataShape(*(chunksize + (leaf.dshape.measure,))))
+    chunk = symbol('chunk', DataShape(*(chunksize + (leaf.dshape.measure,))))
     (chunk, chunk_expr), (agg, agg_expr) = \
             split(leaf, expr, chunk=chunk)
 

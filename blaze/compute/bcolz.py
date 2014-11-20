@@ -4,7 +4,8 @@ from toolz import curry, concat, first
 from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
-        Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply, Reduction)
+        Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply, Reduction,
+        symbol)
 from ..expr import Label, Distinct, By, Slice
 from ..expr import std, var, count, mean, nunique, sum
 from ..expr import eval_str, Expr
@@ -120,7 +121,7 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
         raise NotImplementedError()
 
 
-    chunk = Symbol('chunk', chunksize * leaf.schema)
+    chunk = symbol('chunk', chunksize * leaf.schema)
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr, chunk=chunk)
 
     data_parts = partitions(data, chunksize=(chunksize,))

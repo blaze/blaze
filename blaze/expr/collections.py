@@ -16,8 +16,8 @@ class Sort(Expr):
 
     Examples
     --------
-    >>> from blaze import Symbol
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.sort('amount', ascending=False).schema
     dshape("{name: string, amount: int32}")
 
@@ -78,8 +78,8 @@ class Distinct(Expr):
 
     Examples
     --------
-    >>> from blaze import Symbol
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> from blaze import symbol
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = distinct(t)
 
     >>> data = [('Alice', 100, 1),
@@ -117,8 +117,8 @@ class Head(Expr):
 
     Examples
     --------
-    >>> from blaze import Symbol
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.head(5).dshape
     dshape("5 * {name: string, amount: int32}")
     """
@@ -195,8 +195,8 @@ class Merge(ElemWise):
 
     Examples
     --------
-    >>> from blaze import Symbol
-    >>> accounts = Symbol('accounts', 'var * {name: string, x: int, y: real}')
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, x: int, y: real}')
     >>> merge(accounts.name, z=accounts.x + accounts.y).fields
     ['name', 'z']
     """
@@ -259,15 +259,15 @@ class Join(Expr):
 
     Examples
     --------
-    >>> from blaze import Symbol
-    >>> names = Symbol('names', 'var * {name: string, id: int}')
-    >>> amounts = Symbol('amounts', 'var * {amount: int, id: int}')
+    >>> from blaze import symbol
+    >>> names = symbol('names', 'var * {name: string, id: int}')
+    >>> amounts = symbol('amounts', 'var * {amount: int, id: int}')
 
     Join tables based on shared column name
     >>> joined = join(names, amounts, 'id')
 
     Join based on different column names
-    >>> amounts = Symbol('amounts', 'var * {amount: int, acctNumber: int}')
+    >>> amounts = symbol('amounts', 'var * {amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
 
     See Also
@@ -298,9 +298,9 @@ class Join(Expr):
 
         Examples
         --------
-        >>> from blaze import Symbol
-        >>> t = Symbol('t', 'var * {name: string, amount: int}')
-        >>> s = Symbol('t', 'var * {name: string, id: int}')
+        >>> from blaze import symbol
+        >>> t = symbol('t', 'var * {name: string, amount: int}')
+        >>> s = symbol('t', 'var * {name: string, id: int}')
 
         >>> join(t, s).schema
         dshape("{name: string, amount: int32, id: int32}")
@@ -309,8 +309,8 @@ class Join(Expr):
         dshape("{name: string, amount: int32, id: ?int32}")
 
         Overlapping but non-joined fields append _left, _right
-        >>> a = Symbol('a', 'var * {x: int, y: int}')
-        >>> b = Symbol('b', 'var * {x: int, y: int}')
+        >>> a = symbol('a', 'var * {x: int, y: int}')
+        >>> b = symbol('b', 'var * {x: int, y: int}')
         >>> join(a, b, 'x').fields
         ['x', 'y_left', 'y_right']
         """

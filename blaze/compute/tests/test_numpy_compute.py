@@ -5,12 +5,12 @@ import pytest
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import Symbol, by, exp, summary
+from blaze.expr import symbol, by, exp, summary
 from blaze import into
 from datashape import discover, to_numpy
 
 
-t = Symbol('t', 'var * {id: int, name: string, amount: int}')
+t = symbol('t', 'var * {id: int, name: string, amount: int}')
 
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
@@ -82,7 +82,7 @@ def test_reductions_on_recarray():
     assert compute(t.count(), x) == len(x)
 
 def test_count_nan():
-    t = Symbol('t', '3 * ?real')
+    t = symbol('t', '3 * ?real')
     x = np.array([1.0, np.nan, 2.0])
     assert compute(t.count(), x) == 2
 
@@ -94,7 +94,7 @@ def test_Distinct():
                   ('Bob', 100)],
                 dtype=[('name', 'S5'), ('amount', 'i8')])
 
-    t = Symbol('t', 'var * {name: string, amount: int64}')
+    t = symbol('t', 'var * {name: string, amount: int64}')
 
     assert eq(compute(t['name'].distinct(), x),
               np.unique(x['name']))
@@ -156,7 +156,7 @@ def test_slice():
 
 ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
 
-a = Symbol('a', discover(ax))
+a = symbol('a', discover(ax))
 
 def test_array_reductions():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:
@@ -194,7 +194,7 @@ def test_summary_on_ndarray_with_axis():
 
 
 def test_utcfromtimestamp():
-    t = Symbol('t', '1 * int64')
+    t = symbol('t', '1 * int64')
     data = np.array([0, 1])
     expected = np.array(['1970-01-01T00:00:00Z', '1970-01-01T00:00:01Z'],
                         dtype='M8[us]')
@@ -207,7 +207,7 @@ def test_nelements_structured_array():
 
 
 def test_nelements_array():
-    t = Symbol('t', '5 * 4 * 3 * float64')
+    t = symbol('t', '5 * 4 * 3 * float64')
     x = np.random.randn(*t.shape)
     result = compute(t.nelements(axis=(0, 1)), x)
     np.testing.assert_array_equal(result, np.array([20, 20, 20]))
@@ -222,7 +222,7 @@ def test_nrows():
 
 dts = np.array(['2000-06-25T12:30:04Z', '2000-06-28T12:50:05Z'],
                dtype='M8[us]')
-s = Symbol('s', 'var * datetime')
+s = symbol('s', 'var * datetime')
 
 def test_datetime_truncation():
 
@@ -267,13 +267,13 @@ def test_month():
 
 
 def test_truncate_on_np_datetime64_scalar():
-    s = Symbol('s', 'datetime')
+    s = symbol('s', 'datetime')
     data = np.datetime64('2000-01-02T12:30:00Z')
     assert compute(s.truncate(1, 'day'), data) == data.astype('M8[D]')
 
 
 def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
-    s = Symbol('s', 'datetime')
+    s = symbol('s', 'datetime')
     n = np.datetime64('2014-11-11')
     p = datetime(2014, 11, 11)
     expr = s.truncate(1, 'week')

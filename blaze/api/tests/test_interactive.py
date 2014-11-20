@@ -6,7 +6,7 @@ import os
 from blaze.data import CSV
 from blaze.compute.core import compute
 from blaze.compute.python import compute
-from blaze.expr.table import Symbol
+from blaze.expr import symbol
 from datashape import dshape
 from blaze.utils import tmpfile, example
 import pytest
@@ -40,7 +40,7 @@ def test_resources():
 
 
 def test_resources_fail():
-    t = Symbol('t', 'var * {x: int, y: int}')
+    t = symbol('t', 'var * {x: int, y: int}')
     d = t[t['x'] > 100]
     with pytest.raises(ValueError):
         compute(d)
@@ -168,7 +168,7 @@ def test_table_resource():
 
 
 def test_concretehead_failure():
-    t = Symbol('t', 'var * {x:int, y:int}')
+    t = symbol('t', 'var * {x:int, y:int}')
     d = t[t['x'] > 100]
     with pytest.raises(ValueError):
         concrete_head(d)

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from .core import common_subexpression
-from .expressions import Expr, Symbol
+from .expressions import Expr, symbol
 from .reductions import Reduction, Summary, summary
 from ..dispatch import dispatch
 from datashape import dshape, Record, Option, Unit, var
@@ -25,7 +25,7 @@ class By(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = by(t['name'], total=t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],

@@ -142,9 +142,9 @@ def truncate(expr, *args, **kwargs):
     Example
     -------
 
-    >>> from blaze import Symbol, compute
+    >>> from blaze import symbol, compute
     >>> from datetime import datetime
-    >>> s = Symbol('s', 'datetime')
+    >>> s = symbol('s', 'datetime')
 
     >>> expr = s.truncate(10, 'minutes')
     >>> compute(expr, datetime(2000, 6, 25, 12, 35, 10))

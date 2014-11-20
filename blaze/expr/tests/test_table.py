@@ -14,7 +14,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
-                        Summary, count, Symbol, Field, discover,
+                        Summary, count, symbol, Field, discover,
                         max, min, label
                         )
 from blaze.compatibility import PY3, builtins
@@ -487,7 +487,7 @@ def test_by_summary():
     assert a.isidentical(b)
 
 def test_by_summary_printing():
-    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
+    t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
     assert str(by(t.name, total=sum(t.amount))) == \
             'by(t.name, total=sum(t.amount))'
 
@@ -760,7 +760,7 @@ def test_distinct_name():
 def test_leaves():
     t = TableSymbol('t', '{id: int32, name: string}')
     v = TableSymbol('v', '{id: int32, city: string}')
-    x = Symbol('x', 'int32')
+    x = symbol('x', 'int32')
 
     assert t._leaves() == [t]
     assert t.id._leaves() == [t]

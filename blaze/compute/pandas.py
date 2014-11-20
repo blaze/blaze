@@ -3,7 +3,7 @@
 >>> from blaze.expr import Symbol
 >>> from blaze.compute.pandas import compute
 
->>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+>>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from pandas import DataFrame
@@ -37,7 +37,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count)
 from ..expr import UnaryOp, BinOp
-from ..expr import Symbol, common_subexpression
+from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
 from ..compatibility import _inttypes
 
@@ -254,7 +254,7 @@ def fancify_summary(expr):
 
     Helps pandas compute_by on summaries
 
-    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> one, two, three = fancify_summary(summary(a=t.x.sum(), b=t.x.sum() + t.y.count() - 1))
 
     A simpler summary with only raw reductions
@@ -278,7 +278,7 @@ def fancify_summary(expr):
         isinstance(x, Reduction)), set)
     one = summary(**dict((_name(expr), expr) for expr in exprs))
 
-    two = dict((_name(expr), Symbol(_name(expr), datashape.var * expr.dshape))
+    two = dict((_name(expr), symbol(_name(expr), datashape.var * expr.dshape))
                 for expr in exprs)
 
     d = dict((expr, two[_name(expr)]) for expr in exprs)

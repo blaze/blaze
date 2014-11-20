@@ -2,7 +2,7 @@ from blaze.compute.pyfunc import *
 from blaze.compute.pyfunc import _print_python
 import datetime
 
-t = Symbol('t', '{x: int, y: int, z: int, when: datetime}')
+t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
 
 def test_simple():
     f = lambdify([t], t.x + t.y)
@@ -44,7 +44,7 @@ def test_datetime_literals():
 
 
 def test_broadcast_collect():
-    t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
+    t = symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
 
     expr = t.distinct()
     expr = expr.x + 2*expr.y

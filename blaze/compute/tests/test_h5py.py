@@ -6,7 +6,7 @@ import h5py
 import pytest
 
 from blaze import compute
-from blaze.expr import Symbol
+from blaze.expr import symbol
 from datashape import discover
 from blaze.utils import tmpfile
 
@@ -64,7 +64,7 @@ def recdata():
         yield d
         f.close()
 
-s = Symbol('s', discover(x))
+s = symbol('s', discover(x))
 
 
 def test_slicing(data):
@@ -82,7 +82,7 @@ def test_reductions(data):
 
 
 def test_mixed(recdata):
-    s = Symbol('s', discover(recdata))
+    s = symbol('s', discover(recdata))
     expr = (s.x + 1).sum(axis=1)
     assert eq(compute(expr, recdata), compute(expr, rec))
 
@@ -93,7 +93,7 @@ def test_uneven_chunk_size(data):
 
 
 def test_nrows_3D_records(recdata):
-    s = Symbol('s', discover(recdata))
+    s = symbol('s', discover(recdata))
     assert not hasattr(s, 'nrows')
 
 
@@ -104,7 +104,7 @@ def test_nrows_array(data):
 
 
 def test_nelements_records(recdata):
-    s = Symbol('s', discover(recdata))
+    s = symbol('s', discover(recdata))
     assert compute(s.nelements(), recdata) == np.prod(recdata.shape)
     np.testing.assert_array_equal(compute(s.nelements(axis=0), recdata),
                                   np.zeros(recdata.shape[1]) + recdata.shape[0])
@@ -124,20 +124,20 @@ def test_nelements_array(data):
     np.testing.assert_array_equal(lhs, rhs)
 
 def test_field_access_on_file(file):
-    s = Symbol('s', '{x: 20 * 24 * float32}')
+    s = symbol('s', '{x: 20 * 24 * float32}')
     d = compute(s.x, file)
     # assert isinstance(d, h5py.Dataset)
     assert eq(d[:], x)
 
 
 def test_field_access_on_group(file):
-    s = Symbol('s', '{x: 20 * 24 * float32}')
+    s = symbol('s', '{x: 20 * 24 * float32}')
     d = compute(s.x, file['/'])
     # assert isinstance(d, h5py.Dataset)
     assert eq(d[:], x)
 
 def test_compute_on_file(file):
-    s = Symbol('s', discover(file))
+    s = symbol('s', discover(file))
 
     assert eq(compute(s.x.sum(axis=1), file),
               x.sum(axis=1))
@@ -151,7 +151,7 @@ def test_compute_on_1d_chunks(data_1d_chunks):
               x.sum())
 
 def test_arithmetic_on_small_array(data):
-    s = Symbol('s', discover(data))
+    s = symbol('s', discover(data))
 
     assert eq(compute(s + 1, data),
               compute(s + 1, x))
@@ -159,31 +159,31 @@ def test_arithmetic_on_small_array(data):
 def test_arithmetic_on_small_array_from_file(file):
     """ Want to make sure that we call pre_compute on Dataset
         Even when it's not the leaf data input. """
-    s = Symbol('s', discover(file))
+    s = symbol('s', discover(file))
 
     assert eq(compute(s.x + 1, file),
               x + 1)
 
 def test_pre_compute_doesnt_collapse_slices(data):
-    s = Symbol('s', discover(data))
+    s = symbol('s', discover(data))
     assert pre_compute(s[:5], data) is data
 
 
 def test_optimize_slicing(data):
-    a = Symbol('a', discover(data))
-    b = Symbol('b', discover(data))
+    a = symbol('a', discover(data))
+    b = symbol('b', discover(data))
     assert optimize((a + 1)[:3], data).isidentical(a[:3] + 1)
 
     assert optimize((a + b)[:3], data).isidentical(a[:3] + b[:3])
 
 
 def test_optimize_slicing_on_file(file):
-    f = Symbol('f', discover(file))
+    f = symbol('f', discover(file))
     assert optimize((f.x + 1)[:5], file).isidentical(f.x[:5] + 1)
 
 
 def test_arithmetic_and_then_slicing(data):
-    s = Symbol('s', discover(data))
+    s = symbol('s', discover(data))
 
     assert eq(compute((2*s + 1)[0], data, pre_compute=False),
               2*x[0] + 1)

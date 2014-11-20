@@ -10,7 +10,7 @@ from toolz import pluck, reduceby, groupby
 from blaze import into, compute, compute_up, discover, dshape
 
 from blaze.compute.mongo import MongoQuery
-from blaze.expr import Symbol, by, floor, ceil
+from blaze.expr import symbol, by, floor, ceil
 from blaze.compatibility import xfail
 
 
@@ -106,10 +106,10 @@ def events(db):
     coll.drop()
 
 
-t = Symbol('t', 'var * {name: string, amount: int}')
-bigt = Symbol('bigt', 'var * {name: string, amount: int, city: string}')
-p = Symbol('p', 'var * {x: int, y: int, z: int}')
-e = Symbol('e', 'var * {time: datetime, x: int}')
+t = symbol('t', 'var * {name: string, amount: int}')
+bigt = symbol('bigt', 'var * {name: string, amount: int, city: string}')
+p = symbol('p', 'var * {x: int, y: int, z: int}')
+e = symbol('e', 'var * {time: datetime, x: int}')
 
 
 q = MongoQuery('fake', [])
@@ -311,7 +311,7 @@ def test_missing_values(missing_vals):
 
 
 def test_datetime_access(date_data):
-    t = Symbol('t',
+    t = symbol('t',
             'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     py_data = into(list, date_data) # a python version of the collection
@@ -322,7 +322,7 @@ def test_datetime_access(date_data):
 
 
 def test_datetime_access_and_arithmetic(date_data):
-    t = Symbol('t',
+    t = symbol('t',
             'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     py_data = into(list, date_data) # a python version of the collection
@@ -333,6 +333,6 @@ def test_datetime_access_and_arithmetic(date_data):
 
 
 def test_floor_ceil(bank):
-    t = Symbol('t', discover(bank))
+    t = symbol('t', discover(bank))
     assert set(compute(200 * floor(t.amount / 200), bank)) == set([0, 200])
     assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])

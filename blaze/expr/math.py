@@ -71,8 +71,8 @@ def truncate(expr, precision):
     Example
     -------
 
-    >>> from blaze import Symbol, compute
-    >>> x = Symbol('x', 'real')
+    >>> from blaze import symbol, compute
+    >>> x = symbol('x', 'real')
     >>> compute(x.truncate(10), 123)
     120
     >>> compute(x.truncate(0.1), 3.1415)  # doctest: +SKIP

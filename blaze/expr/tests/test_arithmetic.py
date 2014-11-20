@@ -1,11 +1,11 @@
 from blaze.expr import *
 from datashape import dshape
 
-x = Symbol('x', '5 * 3 * int32')
-y = Symbol('y', '5 * 3 * int32')
-a = Symbol('a', 'int32')
+x = symbol('x', '5 * 3 * int32')
+y = symbol('y', '5 * 3 * int32')
+a = symbol('a', 'int32')
 
-b = Symbol('b', '5 * 3 * bool')
+b = symbol('b', '5 * 3 * bool')
 
 def test_arithmetic_dshape_on_collections():
     assert Add(x, y).shape == x.shape == y.shape
