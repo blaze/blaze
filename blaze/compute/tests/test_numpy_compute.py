@@ -7,7 +7,7 @@ from datetime import datetime, date
 from blaze.compute.core import compute, compute_up
 from blaze.expr import Symbol, by, exp, summary
 from blaze import into
-from datashape import discover
+from datashape import discover, to_numpy
 
 
 t = Symbol('t', 'var * {id: int, name: string, amount: int}')
@@ -20,7 +20,10 @@ x = np.array([(1, 'Alice', 100),
             dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
 
 def eq(a, b):
-    return (a == b).all()
+    c = a == b
+    if isinstance(c, np.ndarray):
+        return c.all()
+    return c
 
 
 def test_symbol():
@@ -175,6 +178,19 @@ def test_summary_on_ndarray():
                         dtype=[('min', 'f4'), ('total', 'f4')])
     assert result.ndim == ax.ndim
     assert eq(expected, result)
+
+
+def test_summary_on_ndarray_with_axis():
+    for axis in [0, 1, (1, 0)]:
+        expr = summary(total=a.sum(), min=a.min(), axis=axis)
+        result = compute(expr, ax)
+
+        shape, dtype = to_numpy(expr.dshape)
+        expected = np.empty(shape=shape, dtype=dtype)
+        expected['total'] = ax.sum(axis=axis)
+        expected['min'] = ax.min(axis=axis)
+
+        assert eq(result, expected)
 
 
 def test_utcfromtimestamp():

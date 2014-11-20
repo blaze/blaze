@@ -97,16 +97,29 @@ def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
 
 
+def axify(expr, axis):
+    """ inject axis argument into expression
+
+    Helper function for compute_up(Summary, np.ndarray)
+
+    >>> from blaze import Symbol
+    >>> s = Symbol('s', '10 * 10 * int')
+    >>> expr = s.sum()
+    >>> axify(expr, axis=0)
+    sum(s, axis=(0,))
+    """
+    return type(expr)(expr._child, axis=axis)
+
 @dispatch(Summary, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    result = tuple(compute(v, data) for v in expr.values)
-    if expr.keepdims:
-        shape, dtype = to_numpy(expr.dshape)
-        holder = np.empty(shape=shape, dtype=dtype)
-        holder[:] = result
-        return holder
-    else:
+    shape, dtype = to_numpy(expr.dshape)
+    if shape:
+        result = np.empty(shape=shape, dtype=dtype)
+        for n, v in zip(expr.names, expr.values):
+            result[n] = compute(axify(v, expr.axis), data)
         return result
+    else:
+        return tuple(compute(axify(v, expr.axis), data) for v in expr.values)
 
 
 @dispatch((std, var), np.ndarray)
