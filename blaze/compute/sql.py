@@ -14,8 +14,8 @@ SELECT accounts.name
 FROM accounts
 WHERE accounts.amount < :amount_1
 """
-
 from __future__ import absolute_import, division, print_function
+
 import operator
 import sqlalchemy as sa
 import sqlalchemy

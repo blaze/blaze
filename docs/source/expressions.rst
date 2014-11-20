@@ -63,7 +63,7 @@ split-apply-combine workflows.
 
    >>> by(accounts.name,                 # Splitting/grouping element
    ...    total=accounts.balance.sum())  # Apply and reduction
-   By(grouper=accounts.name, apply=summary(total=sum(accounts.balance), keepdims=False))
+   by(accounts.name, total=sum(accounts.balance))
 
 
 This operation groups the collection by name and then sums the balance of each

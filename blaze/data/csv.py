@@ -183,7 +183,7 @@ def safely_option(ds):
         ds = dshape(ds)
     if isinstance(ds, DataShape) and len(ds) == 1:
         ds = ds[0]
-    if isinstance(ds, Unit) and 'int' in str(ds) or 'date' in str(ds):
+    if isinstance(ds, Unit) and ('int' in str(ds) or 'date' in str(ds)):
         return Option(ds)
     return ds
 
@@ -331,6 +331,10 @@ class CSV(DataDescriptor):
 
         self._schema = schema
         self.header = header
+
+        if 'w' in mode and header:
+            self._extend([self.columns])
+
 
         if 'w' not in mode:
             try:
@@ -482,7 +486,10 @@ class CSV(DataDescriptor):
         mode = 'ab' if PY2 else 'a'
         newline = dict() if PY2 else dict(newline='')
         dialect = keyfilter(to_csv_kwargs.__contains__, self.dialect)
-        should_write_newline = self.last_char() != os.linesep
+        try:
+            should_write_newline = self.last_char() != os.linesep
+        except:
+            should_write_newline = False
         with csvopen(self, mode=mode, **newline) as f:
             # we have data in the file, append a newline
             if should_write_newline:

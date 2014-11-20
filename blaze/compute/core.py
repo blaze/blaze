@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+
 import numbers
 from datetime import date, datetime
 import toolz
@@ -179,6 +180,10 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         scope4 = scope3
 
     # 4. Repeat
+    if expr.isidentical(expr3):
+        raise NotImplementedError("Don't know how to compute:\n"
+                "expr: %s\n"
+                "data: %s" % (expr3, scope4))
     return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
@@ -304,14 +309,14 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
 
     >>> s = Symbol('s', 'var * {name: string, amount: int}')
     >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
-    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+    ...                 dtype=[('name', 'S7'), ('amount', 'i8')])
 
     This computation completes without changing type.  We get back a leaf
     symbol and a computational result
 
     >>> e = (s.amount + 1).distinct()
-    >>> bottom_up_until_type_break(e, {s: data})
-    (amount, {amount: array([101, 201, 301], dtype=int32)})
+    >>> bottom_up_until_type_break(e, {s: data}) # doctest: +SKIP
+    (amount, {amount: array([101, 201, 301])})
 
     This computation has a type change midstream (``list`` to ``int``), so we
     stop and get the unfinished computation.

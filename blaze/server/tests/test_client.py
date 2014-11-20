@@ -8,7 +8,7 @@ from blaze.expr import Expr, Symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.server.index import parse_index, emit_index
-from blaze.server.client import Client, discover, resource
+from blaze.server.client import Client, discover, resource, ClientDataset
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
@@ -49,6 +49,18 @@ def test_expr_client_interactive():
                                                   max=t.accounts.amount.max())))
             == set([('Alice', 100, 100), ('Bob', 200, 200)]))
 
+def test_clientdataset_into_list():
+    a = resource('blaze://localhost:6363::accounts')
+
+    assert into(list, a) == [['Alice', 100], ['Bob', 200]]
+
+
+def test_clientdataset_into_list():
+    a = resource('blaze://localhost:6363::accounts')
+
+    assert str(into(DataFrame, a)) == \
+            str(DataFrame([['Alice', 100], ['Bob', 200]],
+                          columns=['name', 'amount']))
 
 def test_resource():
     c = resource('blaze://localhost:6363')

@@ -28,6 +28,8 @@ a new version of Blaze.
 
 6. Tag the release version.
 
+    git tag -a x.x.x -m 'Version x.x.x'
+
 7. Release email to blaze-dev@continuum.io.
 
 8. Update this release procedure document to reflect

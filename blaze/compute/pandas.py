@@ -35,7 +35,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp, nelements, DateTimeTruncate)
+                    UTCFromTimestamp, nelements, DateTimeTruncate, count)
 from ..expr import UnaryOp, BinOp
 from ..expr import Symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -259,14 +259,14 @@ def fancify_summary(expr):
 
     A simpler summary with only raw reductions
     >>> one
-    summary(x_sum=sum(t.x), y_count=count(t.y), keepdims=False)
+    summary(x_sum=sum(t.x), y_count=count(t.y))
 
     A mapping of those names to new leaves to use in another compuation
-    >>> two  # mapping of new leaves
+    >>> two  # doctest: +SKIP
     {'x_sum': x_sum, 'y_count': y_count}
 
     A mapping of computations to do for each column
-    >>> three  # computations with new leaves mapping to original names
+    >>> three   # doctest: +SKIP
     {'a': x_sum, 'b': (x_sum + y_count) - 1}
 
     In this way, ``compute_by`` is able to do simple pandas reductions using
@@ -303,11 +303,11 @@ def compute_by(t, s, g, df):
     for name, v in zip(names, one.values):
         d[name].append(v.symbol)
 
-    d = {name: v.symbol for name, v in zip(one.names, one.values)}
+    d = dict((name, v.symbol) for name, v in zip(one.names, one.values))
 
     result = groups.agg(dict(d))
 
-    scope = {v: result[k] for k, v in two.items()}
+    scope = dict((v, result[k]) for k, v in two.items())
     cols = [compute(expr.label(name), scope) for name, expr in three.items()]
 
     result2 = pd.concat(cols, axis=1)
@@ -510,6 +510,14 @@ def compute_up(expr, df, **kwargs):
             return df.iloc[index]
     else:
         raise NotImplementedError()
+
+
+@dispatch(count, DataFrame)
+def compute_up(expr, df, **kwargs):
+    result = df.shape[0]
+    if expr.keepdims:
+        result = Series([result])
+    return result
 
 
 @dispatch(nelements, (DataFrame, Series))

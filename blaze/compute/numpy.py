@@ -2,10 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from pandas import DataFrame, Series
+from datashape import to_numpy
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
-from ..expr import std, var, count, nunique
+from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 
@@ -94,6 +95,31 @@ def compute_up(t, x, **kwargs):
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
+
+
+def axify(expr, axis):
+    """ inject axis argument into expression
+
+    Helper function for compute_up(Summary, np.ndarray)
+
+    >>> from blaze import Symbol
+    >>> s = Symbol('s', '10 * 10 * int')
+    >>> expr = s.sum()
+    >>> axify(expr, axis=0)
+    sum(s, axis=(0,))
+    """
+    return type(expr)(expr._child, axis=axis)
+
+@dispatch(Summary, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    shape, dtype = to_numpy(expr.dshape)
+    if shape:
+        result = np.empty(shape=shape, dtype=dtype)
+        for n, v in zip(expr.names, expr.values):
+            result[n] = compute(axify(v, expr.axis), data)
+        return result
+    else:
+        return tuple(compute(axify(v, expr.axis), data) for v in expr.values)
 
 
 @dispatch((std, var), np.ndarray)

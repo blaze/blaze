@@ -36,27 +36,9 @@ COMFORTABLE_MEMORY_SIZE = 1e9
 @dispatch(Expr, (bcolz.ctable, bcolz.carray))
 def optimize(expr, _):
     return lean_projection(expr)  # This is handled in pre_compute
-    return expr
 
 
-@dispatch(Expr, bcolz.ctable)
-def pre_compute(expr, data, scope=None):
-    """ Execute projections immediately
-
-    bcolz is a column-store.  This is free, powerful, and idempotent """
-    return data
-    expr2 = lean_projection(expr)
-    leaf = expr2._leaves()[0]
-    scions = set(e for e in expr2._traverse()
-                   if isinstance(e, Expr)
-                   and any(i is expr2._leaves()[0] for i in e._inputs))
-    if len(scions) == 1 and isinstance(first(scions), Projection):
-        return data[first(scions).fields]
-    else:
-        return data
-
-
-@dispatch(Expr, bcolz.carray)
+@dispatch(Expr, (bcolz.ctable, bcolz.carray))
 def pre_compute(expr, data, scope=None):
     return data
 
@@ -83,6 +65,9 @@ def compute_down(expr, data, **kwargs):
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
     Selection, ElemWise, Apply, Reduction, Distinct, By), (bcolz.ctable, bcolz.carray))
 def compute_up(expr, data, **kwargs):
+    """ This is only necessary because issubclass(bcolz.carray, Iterator)
+
+    So we have to explicitly avoid the streaming Python backend"""
     raise NotImplementedError()
 
 
@@ -128,10 +113,10 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
 
     # If the bottom expression is a projection or field then want to do
     # compute_up first
-    scions = set(e for e in expr._traverse()
+    children = set(e for e in expr._traverse()
                    if isinstance(e, Expr)
                    and any(i is expr._leaves()[0] for i in e._inputs))
-    if len(scions) == 1 and isinstance(first(scions), (Field, Projection)):
+    if len(children) == 1 and isinstance(first(children), (Field, Projection)):
         raise NotImplementedError()
 
 
@@ -140,8 +125,8 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
 
     data_parts = partitions(data, chunksize=(chunksize,))
 
-    parts = map(curry(compute_chunk, data, chunk, chunk_expr),
-                       data_parts)
+    parts = list(map(curry(compute_chunk, data, chunk, chunk_expr),
+                           data_parts))
 
     if isinstance(parts[0], np.ndarray):
         intermediate = np.concatenate(parts)

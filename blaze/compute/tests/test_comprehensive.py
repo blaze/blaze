@@ -78,8 +78,8 @@ expressions = {
         by(t[['id', 'amount']], n=t.name.nunique()): [mongo, bc],
         by(t.id, count=t.amount.count()): [],
         by(t.id, n=t.id.nunique()): [mongo, bc],
-        # by(t, t.count()): [],
-        # by(t.id, t.count()): [df],
+        # by(t, count=t.count()): [],
+        # by(t.id, count=t.count()): [],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
         t[0]: [sql, mongo, bc],

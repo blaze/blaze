@@ -1,4 +1,4 @@
-
+from __future__ import absolute_import, division, print_function
 
 class _slice(object):
     """ A hashable slice object
@@ -29,6 +29,9 @@ class _slice(object):
         return (type(self), self.start, self.stop, self.step) == \
                (type(other), other.start, other.stop, other.step)
 
+    def as_slice(self):
+        return slice(self.start, self.stop, self.step)
+
     __repr__ = __str__
 
 
@@ -53,7 +56,7 @@ def replace_slices(index):
     if isinstance(index, tuple):
         return tuple(map(replace_slices, index))
     elif isinstance(index, _slice):
-        return slice(index.start, index.stop, index.step)
+        return index.as_slice()
     return index
 
 

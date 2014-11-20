@@ -64,7 +64,7 @@ class Node(object):
         >>> t = Symbol('t', 'var * {id: int32, name: string}')
         >>> t._leaves()
         [t]
-        >>> by(t.name, t.id.nunique())._leaves()
+        >>> by(t.name, count=t.id.nunique())._leaves()
         [t]
 
         >>> v = Symbol('v', 'var * {id: int32, city: string}')

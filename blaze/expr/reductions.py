@@ -218,30 +218,40 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = '_hash', '_child', 'names', 'values', 'keepdims'
+    __slots__ = '_hash', '_child', 'names', 'values', 'axis', 'keepdims'
 
-    def __init__(self, _child, names, values, keepdims=False):
+    def __init__(self, _child, names, values, axis=None, keepdims=False):
         self._child = _child
         self.names = names
         self.values = values
         self.keepdims = keepdims
+        self.axis = axis
 
     @property
     def dshape(self):
+        axis = self.axis
+        if self.keepdims:
+            shape = tuple(1 if i in axis else d
+                          for i, d in enumerate(self._child.shape))
+        else:
+            shape = tuple(d
+                          for i, d in enumerate(self._child.shape)
+                          if i not in axis)
         measure = Record(list(zip(self.names,
                                   [v._dtype for v in self.values])))
-        if self.keepdims:
-            return DataShape(*((1,) * self._child.ndim + (measure,)))
-        else:
-            return DataShape(measure)
+        return DataShape(*(shape + (measure,)))
 
     def __str__(self):
-        return 'summary(' + ', '.join('%s=%s' % (name, str(val))
-                for name, val in zip(self.fields, self.values)) + \
-                    ', keepdims=%s' % self.keepdims + ')'
+        s = 'summary('
+        s += ', '.join('%s=%s' % (name, str(val))
+                         for name, val in zip(self.fields, self.values))
+        if self.keepdims:
+            s += ', keepdims=True'
+        s += ')'
+        return s
 
 
-def summary(keepdims=False, **kwargs):
+def summary(keepdims=False, axis=None, **kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
     values = tuple(map(toolz.second, items))
@@ -255,7 +265,13 @@ def summary(keepdims=False, **kwargs):
             else:
                 child = common_subexpression(*children)
 
-    return Summary(child, names, values, keepdims=keepdims)
+    if axis is None:
+        axis = tuple(range(ndim(child)))
+    if isinstance(axis, (set, list)):
+        axis = tuple(axis)
+    if not isinstance(axis, tuple):
+        axis = (axis,)
+    return Summary(child, names, values, keepdims=keepdims, axis=axis)
 
 
 summary.__doc__ = Summary.__doc__

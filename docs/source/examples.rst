@@ -21,7 +21,6 @@ Combining separate, gzipped csv files.
    4   5    Edith     500
 
 
-
 -------------------
 Split-Apply-Combine
 -------------------
@@ -29,8 +28,7 @@ Split-Apply-Combine
 .. doctest::
 
    >>> from blaze import SQL, Data, by
-   >>> sql = SQL('sqlite:///blaze/examples/data/iris.db', 'iris')
-   >>> t = Data(sql)
+   >>> t = Data('sqlite:///blaze/examples/data/iris.db', 'iris')
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -49,5 +47,3 @@ Split-Apply-Combine
    0      Iris-setosa  1.9  1.0
    1  Iris-versicolor  5.1  3.0
    2   Iris-virginica  6.9  4.5
-
-

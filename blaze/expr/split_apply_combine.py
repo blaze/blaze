@@ -26,7 +26,7 @@ class By(Expr):
     --------
 
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
-    >>> e = by(t['name'], t['amount'].sum())
+    >>> e = by(t['name'], total=t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
     ...         ['Bob', 200, 2],
@@ -58,10 +58,26 @@ class By(Expr):
         # TODO: think if this should be generalized
         return var * self.schema
 
-@dispatch(Expr, (Summary, Reduction))
-def by(grouper, apply):
-    return By(grouper, apply)
+    def __str__(self):
+        s = 'by('
+        s += str(self.grouper) + ', '
+        if isinstance(self.apply, Summary):
+            s += str(self.apply)[len('summary('):-len(')')]
+        else:
+            s += str(self.apply)
+        s += ')'
+        return s
 
+@dispatch(Expr, Reduction)
+def by(grouper, s):
+    raise ValueError("This syntax has been removed.\n"
+    "Please name reductions with keyword arguments.\n"
+    "Before:   by(t.name, t.amount.sum())\n"
+    "After:    by(t.name, total=t.amount.sum())")
+
+@dispatch(Expr, Summary)
+def by(grouper, s):
+    return By(grouper, s)
 
 @dispatch(Expr)
 def by(grouper, **kwargs):
