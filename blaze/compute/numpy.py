@@ -77,7 +77,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if x.dtype.names is None: # scalar dtype
+    if np.issubdtype(x.dtype, np.float): # scalar dtype
         return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
     else:
         return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
