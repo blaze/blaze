@@ -10,6 +10,9 @@ def test_Symbol():
     assert e.shape == (3, 5)
     assert str(e) == 'e'
 
+def test_symbol_caches():
+    assert symbol('e', 'int') is symbol('e', 'int')
+
 def test_Symbol_tokens():
     assert symbol('x', 'int').isidentical(Symbol('x', 'int'))
     assert not symbol('x', 'int').isidentical(Symbol('x', 'int', 1))
