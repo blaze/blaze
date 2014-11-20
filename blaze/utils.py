@@ -15,7 +15,6 @@ import numpy as np
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
 from blaze.compatibility import map, zip
 
-
 def nth_list(n, seq):
     """
 

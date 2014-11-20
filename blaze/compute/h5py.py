@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from multipledispatch import MDNotImplementedError
 from datashape import DataShape, to_numpy
+from toolz import curry
 
 from ..partition import partitions, partition_get, partition_set, flatten
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, symbol
@@ -117,8 +118,16 @@ def compute_down(expr, data, **kwargs):
     return compute_down(expr2, data, **kwargs)
 
 
+def compute_chunk(source, target, chunk, chunk_expr, parts):
+    """ Pull out a part, compute it, insert it into the target """
+    source_part, target_part = parts
+    part = source[source_part]
+    result = compute(chunk_expr, {chunk: part})
+    target[target_part] = result
+
+
 @dispatch(Expr, h5py.Dataset)
-def compute_down(expr, data, **kwargs):
+def compute_down(expr, data, map=map, **kwargs):
     """ Compute expressions on H5Py datasets by operating on chunks
 
     This uses blaze.expr.split to break a full-array-computation into a
@@ -150,19 +159,13 @@ def compute_down(expr, data, **kwargs):
     intermediate = np.empty(shape=shape, dtype=dtype)
 
     # Compute partitions
-    data_partitions = partitions(data, chunksize=chunksize, keepdims=True)
-    int_partitions = partitions(intermediate, chunksize=chunk_expr.shape,
-            keepdims=True)
+    source_parts = list(partitions(data, chunksize=chunksize, keepdims=True))
+    target_parts = list(partitions(intermediate, chunksize=chunk_expr.shape,
+                                   keepdims=True))
 
-    # For each partition, compute chunk->chunk_expr
-    # Insert into intermediate
-    # This could be parallelized
-    for d, i in zip(data_partitions, int_partitions):
-        chunk_data = partition_get(data, d, chunksize=chunksize)
-        result = compute(chunk_expr, {chunk: chunk_data})
-        partition_set(intermediate, i, result,
-                      chunksize=chunk_expr.shape,
-                      keepdims=True)
+
+    parts = list(map(curry(compute_chunk, data, intermediate, chunk, chunk_expr),
+                           zip(source_parts, target_parts)))
 
     # Compute on the aggregate
     return compute(agg_expr, {agg: intermediate})
