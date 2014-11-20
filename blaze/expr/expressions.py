@@ -176,11 +176,16 @@ class Expr(Node):
 _symbol_cache = dict()
 
 def _symbol_key(args, kwargs):
+    if len(args) == 1:
+        name, = args
+        ds = None
+        token = None
     if len(args) == 2:
         name, ds = args
         token = None
     elif len(args) == 3:
         name, ds, token = args
+    ds = kwargs.get('dshape', ds)
     token = kwargs.get('token', token)
     ds = dshape(ds)
     return (name, ds, token)
