@@ -370,6 +370,13 @@ def test_sort():
             str(select(s).order_by(sqlalchemy.desc(s.c.amount)))
 
 
+def test_sort_on_distinct():
+    assert normalize(str(compute(t.amount.sort(), s))) == normalize("""
+            SELECT accounts.amount
+            FROM accounts
+            ORDER BY accounts.amount""")
+
+
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
 
