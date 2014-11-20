@@ -277,6 +277,9 @@ def comp(datasets, name):
                     'data': result})
 
 
+@route('/ping')
+def ping(datasets):
+    return 'pong'
 
 @route('/compute.json', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
 @crossdomain(origin="*", headers=None)
