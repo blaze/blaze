@@ -360,10 +360,14 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     last_chunk_shape = [l % c for l, c in zip(leaf.shape, chunk.shape)]
 
     if builtins.sum(last_chunk_shape) != 0:
+        old = last_chunk_shape
         last_chunk = symbol(chunk._name,
                             DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
         last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
         last_chunk_shape = shape(last_chunk_expr)
+        # Keep zeros if they were there before
+        last_chunk_shape = tuple(a if b != 0 else 0 for a, b in
+                                zip(last_chunk_shape, old))
 
 
     return tuple(int(floor(l / c)) * ce + lce

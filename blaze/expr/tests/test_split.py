@@ -104,6 +104,12 @@ def test_split_reasons_correctly_about_uneven_aggregate_shape():
                                                  chunk=chunk)
     assert agg.shape == (4, 10)
 
+    x = symbol('leaf', '1643 * 60 * int')
+    chunk = symbol('chunk', '40 * 60 * int')
+    (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(),
+                                                 chunk=chunk)
+    assert agg.shape == (42, 1)
+
 
 def test_split_reasons_correctly_about_aggregate_shape():
     chunk = symbol('chunk', '100 * 100 * {x: float32, y: float32}')
