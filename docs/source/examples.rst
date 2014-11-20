@@ -28,7 +28,7 @@ Split-Apply-Combine
 .. doctest::
 
    >>> from blaze import SQL, Data, by
-   >>> t = Data('sqlite:///blaze/examples/data/iris.db', 'iris')
+   >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
