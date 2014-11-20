@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
         Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
         Map, UTCFromTimestamp, DateTimeTruncate)
+from ..expr.expressions import valid_identifier
 from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
 from . import pydatetime
@@ -52,7 +53,7 @@ def print_python(leaves, expr):
        A namespace to add to be given to eval
     """
     if isinstance(expr, Expr) and any(expr.isidentical(lf) for lf in leaves):
-        return expr._name, {}
+        return valid_identifier(expr._name), {}
     return _print_python(expr, leaves=leaves)
 
 @dispatch(object)
@@ -65,7 +66,7 @@ def _print_python(expr, leaves=None):
 
 @dispatch(Symbol)
 def _print_python(expr, leaves=None):
-    return expr._name, {}
+    return valid_identifier(expr._name), {}
 
 @dispatch(Field)
 def _print_python(expr, leaves=None):

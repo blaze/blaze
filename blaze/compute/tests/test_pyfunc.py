@@ -57,3 +57,13 @@ def test_broadcast_collect():
     expected = expected.distinct()
 
     assert result.isidentical(expected)
+
+
+def test_pyfunc_works_with_invalid_python_names():
+    x = Symbol('x-y.z', 'int')
+    f = lambdify([x], x + 1)
+    assert f(1) == 2
+
+    t = Symbol('t', '{"x.y": int, "y z": int}')
+    f = lambdify([t], t.x_y + t.y_z)
+    assert f((1, 2)) == 3
