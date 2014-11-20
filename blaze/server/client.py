@@ -119,6 +119,17 @@ def discover(ec):
     return ec.dshape
 
 
+
+
+@dispatch(Expr, ClientDataset, ClientDataset)
+def compute_down(expr, data1, data2, **kwargs):
+    assert data1.client.url == data2.client.url
+    s = Symbol('client', discover(data2.client))
+    leaf1, leaf2 = expr._leaves()
+    d = {leaf1: s[data1.name], leaf2: s[data2.name]}
+    return compute_down(expr._subs(d), data1.client, **kwargs)
+
+
 @dispatch(Expr, ClientDataset)
 def compute_down(expr, data, **kwargs):
     s = Symbol('client', discover(data.client))
