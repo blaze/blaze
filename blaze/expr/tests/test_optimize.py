@@ -14,7 +14,7 @@ def test_lean_projection():
 
 
 def test_lean_projection_by():
-    assert lean_projection(by(t.x, t.y.sum()))._child.isidentical(
+    assert lean_projection(by(t.x, total=t.y.sum()))._child.isidentical(
                     t[['x', 'y']])
 
 

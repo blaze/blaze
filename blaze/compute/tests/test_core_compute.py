@@ -15,7 +15,7 @@ import numpy as np
 def test_errors():
     t = Symbol('t', 'var * {foo: int}')
     with raises(NotImplementedError):
-        compute_up(by(t, t.count()), 1)
+        compute_up(by(t, count=t.count()), 1)
 
 
 def test_optimize():

@@ -193,20 +193,20 @@ def test_distinct():
 
 
 def test_by_one():
-    result = compute(by(t['name'], t['amount'].sum()), df)
+    result = compute(by(t['name'], total=t['amount'].sum()), df)
     expected = df.groupby('name')['amount'].sum().reset_index()
-    expected.columns = ['name', 'amount_sum']
+    expected.columns = ['name', 'total']
 
     assert str(result) == str(expected)
 
 
 def test_by_two():
-    result = compute(by(tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
+    result = compute(by(tbig[['name', 'sex']], total=sum(tbig['amount'])), dfbig)
 
     expected = DataFrame([['Alice', 'F', 200],
                           ['Drew',  'F', 100],
                           ['Drew',  'M', 300]],
-                          columns=['name', 'sex', 'amount_sum'])
+                          columns=['name', 'sex', 'total'])
 
     assert str(result) == str(expected)
 
@@ -214,14 +214,14 @@ def test_by_two():
 def test_by_three():
 
     expr = by(tbig[['name', 'sex']],
-              (tbig['id'] + tbig['amount']).sum())
+              total=(tbig['id'] + tbig['amount']).sum())
 
     result = compute(expr, dfbig)
 
     groups = dfbig.groupby(['name', 'sex'])
     expected = DataFrame([['Alice', 'F', 204],
                           ['Drew', 'F', 104],
-                          ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
+                          ['Drew', 'M', 310]], columns=['name', 'sex', 'total'])
     expected.columns = expr.fields
 
     assert str(result) == str(expected)
@@ -229,11 +229,11 @@ def test_by_three():
 
 def test_by_four():
     t = tbig[['sex', 'amount']]
-    expr = by(t['sex'], t['amount'].max())
+    expr = by(t['sex'], max=t['amount'].max())
     result = compute(expr, dfbig)
 
     expected = DataFrame([['F', 100],
-                          ['M', 200]], columns=['sex', 'amount_max'])
+                          ['M', 200]], columns=['sex', 'max'])
 
     assert str(result) == str(expected)
 
@@ -255,7 +255,7 @@ def test_join_by_arcs():
 
     joined = join(t_arc, t_idx, "node_id")
 
-    want = by(joined['name'], joined['node_id'].count())
+    want = by(joined['name'], count=joined['node_id'].count())
 
     result = compute(want, {t_arc: df_arc, t_idx:df_idx})
 
@@ -263,7 +263,7 @@ def test_join_by_arcs():
 
     expected = result_pandas.groupby('name')['node_id'].count().reset_index()
     assert str(result.values) == str(expected.values)
-    assert list(result.columns) == ['name', 'node_id_count']
+    assert list(result.columns) == ['name', 'count']
 
 
 def test_sort():
@@ -389,9 +389,9 @@ def test_merge():
 
 
 def test_by_nunique():
-    result = compute(by(t['name'], t['id'].nunique()), df)
+    result = compute(by(t['name'], count=t['id'].nunique()), df)
     expected = DataFrame([['Alice', 2], ['Bob', 1]],
-                         columns=['name', 'id_nunique'])
+                         columns=['name', 'count'])
 
     assert str(result) == str(expected)
 
@@ -458,9 +458,9 @@ def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
     t = Symbol('data', 'var * {id: int, value: int}')
 
-    gby = by(t['id'], t['id'].count())
+    gby = by(t['id'], count=t['id'].count())
 
-    expected = DataFrame([[1, 2], [2, 1]], columns=['id', 'id_count'])
+    expected = DataFrame([[1, 2], [2, 1]], columns=['id', 'count'])
     result = compute(gby, {t:df})
 
     assert str(result) == str(expected)
@@ -545,13 +545,13 @@ def test_like():
 
 def test_rowwise_by():
     f = lambda _, id, name: id + len(name)
-    expr = by(t.map(f, 'int'), t.amount.sum())
+    expr = by(t.map(f, 'int'), total=t.amount.sum())
 
     df = pd.DataFrame({'id': [1, 1, 2],
                        'name': ['alice', 'wendy', 'bob'],
                        'amount': [100, 200, 300.03]})
     expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=['index',
-                                                              'amount_sum'])
+                                                              'total'])
 
     result = compute(expr, df)
     assert expected.index.tolist() == result.index.tolist()

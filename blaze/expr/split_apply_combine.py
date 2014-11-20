@@ -26,7 +26,7 @@ class By(Expr):
     --------
 
     >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
-    >>> e = by(t['name'], t['amount'].sum())
+    >>> e = by(t['name'], total=t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
     ...         ['Bob', 200, 2],
@@ -69,10 +69,9 @@ class By(Expr):
         return s
 
 
-@dispatch(Expr, (Summary, Reduction))
-def by(grouper, apply):
-    return By(grouper, apply)
-
+@dispatch(Expr, Summary)
+def by(grouper, s):
+    return By(grouper, s)
 
 @dispatch(Expr)
 def by(grouper, **kwargs):

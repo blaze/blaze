@@ -266,10 +266,10 @@ def test_binary_reductions():
 
 
 def test_by():
-    expr = by(t['name'], t['amount'].sum())
+    expr = by(t['name'], total=t['amount'].sum())
     result = compute(expr, s)
     expected = sa.select([s.c.name,
-                          sa.sql.functions.sum(s.c.amount).label('amount_sum')]
+                          sa.sql.functions.sum(s.c.amount).label('total')]
                          ).group_by(s.c.name)
 
     assert str(result) == str(expected)
@@ -277,14 +277,14 @@ def test_by():
 
 def test_by_head():
     t2 = t.head(100)
-    expr = by(t2['name'], t2['amount'].sum())
+    expr = by(t2['name'], total=t2['amount'].sum())
     result = compute(expr, s)
     # s2 = select(s).limit(100)
     # expected = sa.select([s2.c.name,
     #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
     #                      ).group_by(s2.c.name)
     expected = """
-    SELECT accounts.name, sum(accounts.amount) as amount_sum
+    SELECT accounts.name, sum(accounts.amount) as total
     FROM accounts
     GROUP by accounts.name
     LIMIT :param_1"""
@@ -292,11 +292,11 @@ def test_by_head():
 
 
 def test_by_two():
-    expr = by(tbig[['name', 'sex']], tbig['amount'].sum())
+    expr = by(tbig[['name', 'sex']], total=tbig['amount'].sum())
     result = compute(expr, sbig)
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
-                           sa.sql.functions.sum(sbig.c.amount).label('amount_sum')])
+                           sa.sql.functions.sum(sbig.c.amount).label('total')])
                         .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
@@ -304,13 +304,13 @@ def test_by_two():
 
 def test_by_three():
     result = compute(by(tbig[['name', 'sex']],
-                        (tbig['id'] + tbig['amount']).sum()),
+                        total=(tbig['id'] + tbig['amount']).sum()),
                      sbig)
 
     assert normalize(str(result)) == normalize("""
     SELECT accountsbig.name,
            accountsbig.sex,
-           sum(accountsbig.id + accountsbig.amount) AS sum
+           sum(accountsbig.id + accountsbig.amount) AS total
     FROM accountsbig GROUP BY accountsbig.name, accountsbig.sex
     """)
 
