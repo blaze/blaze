@@ -21,6 +21,8 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'symbol']
 
 
+_attr_cache = dict()
+
 def isvalid_identifier(s):
     """
 
@@ -133,26 +135,35 @@ class Expr(Node):
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
+        if key == '_hash':
+            raise AttributeError()
         try:
-            return object.__getattribute__(self, key)
+            return _attr_cache[(self, key)]
+        except:
+            pass
+        try:
+            result = object.__getattribute__(self, key)
         except AttributeError:
             fields = dict(zip(map(valid_identifier, self.fields),
                               self.fields))
             if self.fields and key in fields:
                 if isscalar(self.dshape.measure): # t.foo.foo is t.foo
-                    return self
+                    result = self
                 else:
-                    return self[fields[key]]
-            d = toolz.merge(schema_methods(self.dshape.measure),
-                            dshape_methods(self.dshape))
-            if key in d:
-                func = d[key]
-                if func in method_properties:
-                    return func(self)
-                else:
-                    return functools.update_wrapper(partial(func, self), func)
+                    result = self[fields[key]]
             else:
-                raise
+                d = toolz.merge(schema_methods(self.dshape.measure),
+                                dshape_methods(self.dshape))
+                if key in d:
+                    func = d[key]
+                    if func in method_properties:
+                        result = func(self)
+                    else:
+                        result = functools.update_wrapper(partial(func, self), func)
+                else:
+                    raise
+        _attr_cache[(self, key)] = result
+        return result
 
     @property
     def _name(self):
