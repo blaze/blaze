@@ -18,7 +18,7 @@ from .core import base, compute
 from ..dispatch import dispatch
 from ..api.into import into
 from ..partition import partitions, partition_get, partition_set
-from ..utils import available_memory
+from ..utils import available_memory, thread_pool
 
 __all__ = []
 
@@ -127,7 +127,7 @@ def compute_chunk(source, target, chunk, chunk_expr, parts):
 
 
 @dispatch(Expr, h5py.Dataset)
-def compute_down(expr, data, map=map, **kwargs):
+def compute_down(expr, data, map=thread_pool.map, **kwargs):
     """ Compute expressions on H5Py datasets by operating on chunks
 
     This uses blaze.expr.split to break a full-array-computation into a

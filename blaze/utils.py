@@ -7,6 +7,8 @@ import inspect
 from itertools import islice
 from contextlib import contextmanager
 from collections import Iterator
+from multiprocessing.pool import ThreadPool
+from multiprocessing import cpu_count
 
 import psutil
 import numpy as np
@@ -14,6 +16,8 @@ import numpy as np
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
 from blaze.compatibility import map, zip
+
+thread_pool = ThreadPool(cpu_count())
 
 def nth_list(n, seq):
     """
