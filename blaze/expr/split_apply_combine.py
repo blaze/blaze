@@ -68,6 +68,12 @@ class By(Expr):
         s += ')'
         return s
 
+@dispatch(Expr, Reduction)
+def by(grouper, s):
+    raise ValueError("This syntax has been removed.\n"
+    "Please name reductions with keyword arguments.\n"
+    "Before:   by(t.name, t.amount.sum())\n"
+    "After:    by(t.name, total=t.amount.sum())")
 
 @dispatch(Expr, Summary)
 def by(grouper, s):
