@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import requests
 from flask import json
 import flask
+from toolz import first
 from dynd import nd
 from datashape import dshape, DataShape, Record
 from pandas import DataFrame
@@ -81,7 +82,7 @@ class Client(object):
         data = json.loads(content(response))
 
         return DataShape(Record([[name, dshape(ds)] for name, ds in
-            data.items()]))
+            sorted(data.items(), key=first)]))
 
 
 class ClientDataset(object):
