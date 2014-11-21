@@ -13,6 +13,8 @@ How do we compute the largest?
 
 <hr>
 
+    >>> from blaze import symbol
+    >>> from blaze.expr.split import split
     >>> x = symbol('x', '1000000000 * int')
     >>> x.max()
 
@@ -94,8 +96,8 @@ Sum the total and count then divide
 <hr>
 
     >>> split(x, x.mean())
-    ((chunk, summary(count=count(chunk), total=sum(chunk))),
-     (aggregate, (1.0 * sum(aggregate.total)) / sum(aggregate.count)))
+    ((chunk,     summary(count=count(chunk), total=sum(chunk))),
+     (aggregate, sum(aggregate.total)) / sum(aggregate.count))
 
 
 ### Number of occurrences by Chunking
@@ -133,12 +135,12 @@ Expr: The variance of their addition
     >>> expr = (points.x + points.y).var(axis=0)
     >>> split(points, expr, chunk=chunk)
     ((chunk,
-      summary(n=count(chunk.x + chunk.y),
-              x=sum(chunk.x + chunk.y),
-              x2=sum((chunk.x + chunk.y) ** 2), keepdims=True)),
+      summary(n  = count( chunk.x + chunk.y ),
+              x  =   sum( chunk.x + chunk.y ),
+              x2 =   sum((chunk.x + chunk.y) ** 2))),
      (aggregate,
-        (sum(aggregate.x2) / (sum(aggregate.n) * 1.0))
-     - ((sum(aggregate.x) / (sum(aggregate.n) * 1.0)) ** 2)))
+        (sum(aggregate.x2) / (sum(aggregate.n)))
+     - ((sum(aggregate.x)  / (sum(aggregate.n))) ** 2)))
 
 Known shapes:
 
