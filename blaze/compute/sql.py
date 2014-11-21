@@ -271,7 +271,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Distinct, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
-    return s.distinct()
+    return s.distinct().label(t._name)
 
 
 @dispatch(Distinct, Select)

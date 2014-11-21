@@ -376,6 +376,12 @@ def test_sort_on_distinct():
             FROM accounts
             ORDER BY accounts.amount""")
 
+    assert normalize(str(compute(t.amount.distinct().sort(), s))) == normalize("""
+            SELECT DISTINCT accounts.amount as amount
+            FROM accounts
+            ORDER BY amount""")
+
+
 
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
