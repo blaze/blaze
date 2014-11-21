@@ -1,6 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
 from ..expr import (Expr, Symbol, Field, Arithmetic, RealMath, Map, Not,
         USub, Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin,
-        cos, isnan, UnaryOp)
+        cos, isnan, UnaryOp, symbol)
 import datetime
 from datashape import iscollection
 import math
@@ -23,7 +25,7 @@ def print_numexpr(leaves, expr):
 
     >>> from blaze.expr import ceil, sin
 
-    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
+    >>> t = symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
     >>> print_numexpr([t], t.x + t.y)
     'x + y'
 

@@ -1,6 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
 from ..dispatch import dispatch
 from ..data.csv import CSV
-from ..expr import Expr, Symbol
+from ..expr import Expr
 from ..utils import available_memory
 import os
 

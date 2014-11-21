@@ -14,7 +14,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         join, cos, by, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
-                        Summary, count, Symbol, Field, discover,
+                        Summary, count, symbol, Field, discover,
                         max, min, label
                         )
 from blaze.compatibility import PY3, builtins
@@ -472,7 +472,7 @@ def test_Distinct():
 
 def test_by():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    r = by(t['name'], sum(t['amount']))
+    r = by(t['name'], total=sum(t['amount']))
 
     print(r.schema)
     assert isinstance(r.schema[0], Record)
@@ -486,14 +486,19 @@ def test_by_summary():
 
     assert a.isidentical(b)
 
+def test_by_summary_printing():
+    t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
+    assert str(by(t.name, total=sum(t.amount))) == \
+            'by(t.name, total=sum(t.amount))'
+
 
 def test_by_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
-    assert len(by(t['id'], t['amount'].sum()).fields) == 2
-    assert len(by(t['id'], t['id'].count()).fields) == 2
-    print(by(t, t.count()).fields)
-    assert len(by(t, t.count()).fields) == 4
+    assert len(by(t['id'], total=t['amount'].sum()).fields) == 2
+    assert len(by(t['id'], count=t['id'].count()).fields) == 2
+    print(by(t, count=t.count()).fields)
+    assert len(by(t, count=t.count()).fields) == 4
 
 
 def test_sort():
@@ -582,7 +587,7 @@ def test_map():
 @pytest.mark.xfail(reason="Not sure that we should even support this")
 def test_map_without_any_info():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    assert iscolumn(t['amount'].map(inc))
+    assert iscolumn(t['amount'].map(inc, 'int'))
     assert not iscolumn(t[['name', 'amount']].map(identity))
 
 
@@ -651,7 +656,8 @@ def test_subterms():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     assert list(a._subterms()) == [a]
     assert set(a['x']._subterms()) == set([a, a['x']])
-    assert set(a['x'].map(inc)._subterms()) == set([a, a['x'], a['x'].map(inc)])
+    assert set(a['x'].map(inc, 'int')._subterms()) == \
+            set([a, a['x'], a['x'].map(inc, 'int')])
     assert a in set((a['x'] + 1)._subterms())
 
 
@@ -661,7 +667,7 @@ def test_common_subexpression():
     assert common_subexpression(a).isidentical(a)
     assert common_subexpression(a, a['x']).isidentical(a)
     assert common_subexpression(a['y'] + 1, a['x']).isidentical(a)
-    assert common_subexpression(a['x'].map(inc), a['x']).isidentical(a['x'])
+    assert common_subexpression(a['x'].map(inc, 'int'), a['x']).isidentical(a['x'])
 
 
 def test_schema_of_complex_interaction():
@@ -684,7 +690,7 @@ def test_iscolumn():
     assert iscolumn((a['x'] + a['y']))
     assert iscolumn(a['x'].distinct())
     assert not iscolumn(a[['x']].distinct())
-    assert not iscolumn(by(a['x'], a['y'].sum()))
+    assert not iscolumn(by(a['x'], total=a['y'].sum()))
     assert iscolumn(a['x'][a['x'] > 1])
     assert not iscolumn(a[['x', 'y']][a['x'] > 1])
     assert iscolumn(a['x'].sort())
@@ -754,11 +760,11 @@ def test_distinct_name():
 def test_leaves():
     t = TableSymbol('t', '{id: int32, name: string}')
     v = TableSymbol('v', '{id: int32, city: string}')
-    x = Symbol('x', 'int32')
+    x = symbol('x', 'int32')
 
     assert t._leaves() == [t]
     assert t.id._leaves() == [t]
-    assert by(t.name, t.id.nunique())._leaves() == [t]
+    assert by(t.name, count=t.id.nunique())._leaves() == [t]
     assert join(t, v)._leaves() == [t, v]
     assert join(v, t)._leaves() == [v, t]
 

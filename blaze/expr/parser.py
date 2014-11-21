@@ -7,7 +7,7 @@ from toolz import merge
 
 from . import arithmetic
 from . import math
-from .expressions import Expr, Symbol
+from .expressions import Expr, symbol
 
 __all__ = ['exprify']
 
@@ -51,7 +51,7 @@ class BlazeParser(ast.NodeVisitor):
         try:
             return self.scope[name]
         except KeyError:
-            return Symbol(name, self.dtypes[name])
+            return symbol(name, self.dtypes[name])
 
     def visit_BinOp(self, node):
         return self.visit(node.op)(self.visit(node.left),

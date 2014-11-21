@@ -2,7 +2,7 @@
 
 >>> from blaze import *
 
->>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+>>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
@@ -14,8 +14,8 @@ SELECT accounts.name
 FROM accounts
 WHERE accounts.amount < :amount_1
 """
-
 from __future__ import absolute_import, division, print_function
+
 import operator
 import sqlalchemy as sa
 import sqlalchemy
@@ -271,7 +271,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Distinct, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
-    return s.distinct()
+    return s.distinct().label(t._name)
 
 
 @dispatch(Distinct, Select)
@@ -419,14 +419,15 @@ def compute_up(t, s, **kwargs):
     return s2.with_only_columns(cols)
 
 
-@dispatch(Sort, Selectable)
+@dispatch(Sort, ClauseElement)
 def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
+    s = select(s)
     col = lower_column(getattr(s.c, t.key))
     if not t.ascending:
         col = sqlalchemy.desc(col)
-    return select(s).order_by(col)
+    return s.order_by(col)
 
 
 @dispatch(Head, Select)

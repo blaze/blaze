@@ -6,6 +6,7 @@ from flask import json
 from datetime import datetime
 from dynd import nd
 from pandas import DataFrame
+from toolz import pipe
 
 from blaze.utils import example
 from blaze import discover, Symbol, by, CSV, compute, join, into
@@ -72,6 +73,13 @@ def test_to_tree():
                         }, [0], False]
                 }
     assert to_tree(expr) == expected
+
+
+def test_to_tree_slice():
+    t = Symbol('t', 'var * {name: string, amount: int32}')
+    expr = t[:5]
+    expr2 = pipe(expr, to_tree, json.dumps, json.loads, from_tree)
+    assert expr.isidentical(expr2)
 
 
 def test_to_from_tree_namespace():

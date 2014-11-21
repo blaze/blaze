@@ -4,19 +4,19 @@ import sys
 
 from blaze.expr.arithmetic import (scalar_coerce, Mult, Add, dshape)
 from blaze.expr.math import sin, cos, isnan, exp, log
-from blaze.expr import Symbol, eval_str, exprify
+from blaze.expr import symbol, eval_str, exprify
 from blaze.compatibility import xfail, basestring, raises
 from datetime import date, datetime
 
-x = Symbol('x', 'real')
-y = Symbol('y', 'real')
+x = symbol('x', 'real')
+y = symbol('y', 'real')
 
 
 def test_basic():
     expr = (x + y) * 3
 
     assert eval(str(expr)).isidentical(expr)
-    assert expr.isidentical(Mult(Add(Symbol('x', 'real'), Symbol('y', 'real')), 3))
+    assert expr.isidentical(Mult(Add(symbol('x', 'real'), symbol('y', 'real')), 3))
 
 
 def test_eval_str():
@@ -33,18 +33,18 @@ def test_eval_str():
 
 
 def test_str():
-    x = Symbol('x', 'real')
+    x = symbol('x', 'real')
     assert str(x + 10) == 'x + 10'
 
 
 def test_invert():
-    x = Symbol('x', 'bool')
+    x = symbol('x', 'bool')
     expr = ~x
     assert expr.op(x).isidentical(expr)
 
 
 def test_boolean_math_has_boolean_methods():
-    x = Symbol('x', '?int')
+    x = symbol('x', '?int')
     expr = ~(isnan(x)) | (x > 0)
 
     assert eval(str(expr)).isidentical(expr)
@@ -63,15 +63,15 @@ def test_Symbol_is_hashable():
 
 
 def test_relationals():
-    x = Symbol('x', 'real')
+    x = symbol('x', 'real')
     for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1, ~x]:
         assert expr.dshape == dshape('bool')
         assert eval(str(expr)) == expr
 
 
 def test_numbers():
-    x = Symbol('x', 'real')
-    y = Symbol('x', 'int')
+    x = symbol('x', 'real')
+    y = symbol('x', 'int')
     for expr in [x + 1, x - 1, x * 1, x + y, x - y, x / y, x * y + x + y,
                  x**y, x**2, 2**x, x % 5, -x,
                  sin(x), cos(x ** 2), exp(log(y))]:
@@ -83,35 +83,35 @@ def test_numbers():
 
 @xfail(reason="TODO")
 def test_neg_dshape_unsigned():
-    y = Symbol('x', 'uint32')
+    y = symbol('x', 'uint32')
     assert (-y).dshape == dshape('int32')
 
 
 @xfail(reason="TODO")
 def test_arithmetic_dshape_inference():
-    x = Symbol('x', 'int')
-    y = Symbol('y', 'int')
+    x = symbol('x', 'int')
+    y = symbol('y', 'int')
     assert (x + y).dshape == dshape('int')
 
 
 def test_date_coercion():
-    d = Symbol('d', 'date')
+    d = symbol('d', 'date')
     expr = d < '2012-01-01'
     assert isinstance(expr.rhs, date)
 
 
 def test_datetime_coercion():
-    d = Symbol('d', 'datetime')
+    d = symbol('d', 'datetime')
     expr = d > '2012-01-01T12:30:00'
     assert isinstance(expr.rhs, datetime)
 
 
 class TestExprify(object):
     dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
-    x = Symbol('x', 'int')
-    y = Symbol('y', 'real')
-    z = Symbol('z', 'int32')
-    name = Symbol('name', 'string')
+    x = symbol('x', 'int')
+    y = symbol('y', 'real')
+    z = symbol('z', 'int32')
+    name = symbol('name', 'string')
 
     def test_basic_arithmetic(self):
         assert exprify('x + y', self.dtypes).isidentical(self.x + self.y)
@@ -147,7 +147,7 @@ class TestExprify(object):
         assert exprify('(x == 1) | (x == 2)', self.dtypes).isidentical(other)
 
     def test_simple_boolean_not(self):
-        x = Symbol('x', 'bool')
+        x = symbol('x', 'bool')
         assert exprify('~x', {'x': 'bool'}).isidentical(~x)
 
     def test_literal_string_compare(self):
@@ -260,18 +260,18 @@ def test_scalar_coerce():
 
 
 def test_scalar_name_dtype():
-    x = Symbol('x', 'int64')
+    x = symbol('x', 'int64')
     assert x._name == 'x'
     assert x.dshape == dshape('int64')
 
 
 def test_scalar_field():
-    x = Symbol('x', '{name: string, amount: int64, when: datetime}')
+    x = symbol('x', '{name: string, amount: int64, when: datetime}')
     assert 'amount' in dir(x)
     assert x.amount.dshape == dshape('int64')
 
 
 def test_scalar_projection():
-    x = Symbol('x', '{name: string, amount: int64, when: datetime}')
+    x = symbol('x', '{name: string, amount: int64, when: datetime}')
     assert x[['amount', 'when']].dshape == \
             dshape('{amount: int64, when: datetime}')

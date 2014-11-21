@@ -53,6 +53,7 @@ revtypes.update({sql.types.VARCHAR: 'string',
                  sql.types.DATE: 'date',
                  sql.types.BIGINT: 'int64',
                  sql.types.INTEGER: 'int',
+                 sql.types.NUMERIC: 'int',  # TODO: extend datashape to decimal
                  sql.types.BIGINT: 'int64',
                  sql.types.Float: 'float64'})
 

@@ -22,7 +22,7 @@ dimensionality and data type to use.
     ...           (3, 'Charlie', 300),
     ...           (4, 'Denis', 400),
     ...           (5, 'Edith', -500)],
-    ...           fields=['id', 'name', 'balance'])
+    ...          fields=['id', 'name', 'balance'])
 
     >>> t
        id     name  balance

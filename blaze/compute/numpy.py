@@ -2,10 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from pandas import DataFrame, Series
+from datashape import to_numpy
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
-from ..expr import std, var, count, nunique
+from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 
@@ -76,7 +77,10 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    if np.issubdtype(x.dtype, np.float): # scalar dtype
+        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    else:
+        return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
@@ -91,6 +95,31 @@ def compute_up(t, x, **kwargs):
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
+
+
+def axify(expr, axis):
+    """ inject axis argument into expression
+
+    Helper function for compute_up(Summary, np.ndarray)
+
+    >>> from blaze import symbol
+    >>> s = symbol('s', '10 * 10 * int')
+    >>> expr = s.sum()
+    >>> axify(expr, axis=0)
+    sum(s, axis=(0,))
+    """
+    return type(expr)(expr._child, axis=axis)
+
+@dispatch(Summary, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    shape, dtype = to_numpy(expr.dshape)
+    if shape:
+        result = np.empty(shape=shape, dtype=dtype)
+        for n, v in zip(expr.names, expr.values):
+            result[n] = compute(axify(v, expr.axis), data)
+        return result
+    else:
+        return tuple(compute(axify(v, expr.axis), data) for v in expr.values)
 
 
 @dispatch((std, var), np.ndarray)
@@ -159,17 +188,18 @@ def compute_up(t, x, **kwargs):
 @dispatch(nelements, np.ndarray)
 def compute_up(expr, data, **kwargs):
     axis = expr.axis
-    shape = tuple(data.shape[i] for i in range(ndim(expr._child))
-                  if i not in axis)
+    if expr.keepdims:
+        shape = tuple(data.shape[i] if i not in axis else 1
+                                    for i in range(ndim(expr._child)))
+    else:
+        shape = tuple(data.shape[i] for i in range(ndim(expr._child))
+                      if i not in axis)
     value = np.prod([data.shape[i] for i in axis])
     result = np.empty(shape)
     result.fill(value)
     result = result.astype('int64')
 
-    try:
-        return result.item()
-    except ValueError:
-        return result
+    return result
 
 
 precision_map = {'year': 'M8[Y]',

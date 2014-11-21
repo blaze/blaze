@@ -11,14 +11,17 @@ from datashape import dshape, DataShape, Record, Var, Mono
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
-from .core import *
+from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label']
+           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label',
+           'symbol']
 
+
+_attr_cache = dict()
 
 def isvalid_identifier(s):
     """
@@ -132,30 +135,64 @@ class Expr(Node):
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
+        if key == '_hash':
+            raise AttributeError()
         try:
-            return object.__getattribute__(self, key)
+            return _attr_cache[(self, key)]
+        except:
+            pass
+        try:
+            result = object.__getattribute__(self, key)
         except AttributeError:
             fields = dict(zip(map(valid_identifier, self.fields),
                               self.fields))
             if self.fields and key in fields:
                 if isscalar(self.dshape.measure): # t.foo.foo is t.foo
-                    return self
+                    result = self
                 else:
-                    return self[fields[key]]
-            d = toolz.merge(schema_methods(self.dshape.measure),
-                            dshape_methods(self.dshape))
-            if key in d:
-                func = d[key]
-                if func in method_properties:
-                    return func(self)
-                else:
-                    return functools.update_wrapper(partial(func, self), func)
+                    result = self[fields[key]]
             else:
-                raise
+                d = toolz.merge(schema_methods(self.dshape.measure),
+                                dshape_methods(self.dshape))
+                if key in d:
+                    func = d[key]
+                    if func in method_properties:
+                        result = func(self)
+                    else:
+                        result = functools.update_wrapper(partial(func, self), func)
+                else:
+                    raise
+        _attr_cache[(self, key)] = result
+        return result
 
     @property
     def _name(self):
-        pass
+        if (isscalar(self.dshape.measure) and
+                len(self._inputs) == 1 and
+                isscalar(self._child.dshape.measure)):
+            return self._child._name
+
+
+_symbol_cache = dict()
+
+def _symbol_key(args, kwargs):
+    if len(args) == 1:
+        name, = args
+        ds = None
+        token = None
+    if len(args) == 2:
+        name, ds = args
+        token = None
+    elif len(args) == 3:
+        name, ds, token = args
+    ds = kwargs.get('dshape', ds)
+    token = kwargs.get('token', token)
+    ds = dshape(ds)
+    return (name, ds, token)
+
+@memoize(cache=_symbol_cache, key=_symbol_key)
+def symbol(name, dshape, token=None):
+    return Symbol(name, dshape, token=token)
 
 
 class Symbol(Expr):
@@ -165,9 +202,9 @@ class Symbol(Expr):
     Example
     -------
 
-    >>> points = Symbol('points', '5 * 3 * {x: int, y: int}')
+    >>> points = symbol('points', '5 * 3 * {x: int, y: int}')
     """
-    __slots__ = '_name', 'dshape', '_token'
+    __slots__ = '_hash', '_name', 'dshape', '_token'
     __inputs__ = ()
 
     def __init__(self, name, dshape, token=None):
@@ -184,6 +221,15 @@ class Symbol(Expr):
 
     def _resources(self):
         return dict()
+
+
+@dispatch(Symbol, dict)
+def _subs(o, d):
+    """ Subs symbols using symbol function
+
+    Supports caching"""
+    newargs = [subs(arg, d) for arg in o._args]
+    return symbol(*newargs)
 
 
 class ElemWise(Expr):
@@ -208,11 +254,11 @@ class Field(ElemWise):
     SELECT a
     FROM table
 
-    >>> points = Symbol('points', '5 * 3 * {x: int32, y: int32}')
+    >>> points = symbol('points', '5 * 3 * {x: int32, y: int32}')
     >>> points.x.dshape
     dshape("5 * 3 * int32")
     """
-    __slots__ = '_child', '_name'
+    __slots__ = '_hash', '_child', '_name'
 
     def __str__(self):
         if re.match('^\w+$', self._name):
@@ -222,7 +268,7 @@ class Field(ElemWise):
 
     @property
     def _expr(self):
-        return Symbol(self._name, datashape.DataShape(self.dshape.measure))
+        return symbol(self._name, datashape.DataShape(self.dshape.measure))
 
     @property
     def dshape(self):
@@ -243,7 +289,7 @@ class Projection(ElemWise):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts',
+    >>> accounts = symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{name: string, amount: int32}")
@@ -253,7 +299,7 @@ class Projection(ElemWise):
 
     blaze.expr.expressions.Field
     """
-    __slots__ = '_child', '_fields'
+    __slots__ = '_hash', '_child', '_fields'
 
     @property
     def fields(self):
@@ -294,7 +340,7 @@ projection.__doc__ = Projection.__doc__
 
 from .utils import hashable_index, replace_slices
 class Slice(Expr):
-    __slots__ = '_child', '_index'
+    __slots__ = '_hash', '_child', '_index'
 
     def __init__(self, child, index):
         self._child = child
@@ -322,11 +368,11 @@ class Selection(Expr):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts',
+    >>> accounts = symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts.amount < 0]
     """
-    __slots__ = '_child', 'predicate'
+    __slots__ = '_hash', '_child', 'predicate'
 
     def __str__(self):
         return "%s[%s]" % (self._child, self.predicate)
@@ -366,7 +412,7 @@ class Label(ElemWise):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 
     >>> (accounts.amount * 100)._name
     'amount'
@@ -379,7 +425,7 @@ class Label(ElemWise):
 
     blaze.expr.expressions.ReLabel
     """
-    __slots__ = '_child', 'label'
+    __slots__ = '_hash', '_child', 'label'
 
     @property
     def schema(self):
@@ -413,7 +459,7 @@ class ReLabel(ElemWise):
     Examples
     --------
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
     dshape("{name: string, amount: int32}")
     >>> accounts.relabel(amount='balance').schema
@@ -424,7 +470,7 @@ class ReLabel(ElemWise):
 
     blaze.expr.expressions.Label
     """
-    __slots__ = '_child', 'labels'
+    __slots__ = '_hash', '_child', 'labels'
 
     @property
     def schema(self):
@@ -442,6 +488,9 @@ class ReLabel(ElemWise):
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
+    labels = dict((k, v) for k, v in labels.items() if k != v)
+    if not labels:
+        return child
     if isinstance(labels, dict):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):
@@ -462,7 +511,7 @@ class Map(ElemWise):
 
     >>> from datetime import datetime
 
-    >>> t = Symbol('t', 'var * {price: real, time: int64}')  # times as integers
+    >>> t = symbol('t', 'var * {price: real, time: int64}')  # times as integers
     >>> datetimes = t.time.map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
@@ -475,7 +524,7 @@ class Map(ElemWise):
 
     blaze.expr.expresions.Apply
     """
-    __slots__ = '_child', 'func', '_schema', '_name0'
+    __slots__ = '_hash', '_child', 'func', '_schema', '_name0'
 
     @property
     def schema(self):
@@ -515,7 +564,7 @@ class Apply(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int}')
     >>> h = Apply(t, hash)  # Hash value of resultant table
 
     Optionally provide extra datashape information
@@ -533,7 +582,7 @@ class Apply(Expr):
 
     blaze.expr.expressions.Map
     """
-    __slots__ = '_child', 'func', '_dshape'
+    __slots__ = '_hash', '_child', 'func', '_dshape'
 
     def __init__(self, child, func, dshape=None):
         self._child = child
@@ -566,7 +615,7 @@ schema_methods = memoize(partial(select_functions, schema_method_list))
 def shape(expr):
     """ Shape of expression
 
-    >>> Symbol('s', '3 * 5 * int32').shape
+    >>> symbol('s', '3 * 5 * int32').shape
     (3, 5)
 
     Works on anything discoverable
@@ -587,7 +636,7 @@ def shape(expr):
 def ndim(expr):
     """ Number of dimensions of expression
 
-    >>> Symbol('s', '3 * var * int32').ndim
+    >>> symbol('s', '3 * var * int32').ndim
     2
     """
     return len(shape(expr))
@@ -608,3 +657,19 @@ method_properties.update([shape, ndim])
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
+
+
+"""
+from .core import subs
+@dispatch(Mono, dict)
+def _subs(ds, d):
+    if ds in d:
+        return d[ds]
+    else:
+        old = ds.parameters
+        new = tuple([subs(p, d) for p in old])
+        if old != new:
+            return type(ds)(*new)
+        else:
+            return ds
+"""

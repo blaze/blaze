@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+
 import numbers
 from datetime import date, datetime
 import toolz
@@ -7,7 +8,7 @@ import itertools
 from collections import Iterator
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, Symbol, eval_str
+from ..expr import Expr, Symbol, symbol, eval_str
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -56,7 +57,7 @@ def compute(expr, o, **kwargs):
 
     Assumes that only one Symbol exists in expression
 
-    >>> t = Symbol('t', 'var * {name: string, balance: int}')
+    >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -72,7 +73,7 @@ def compute(expr, o, **kwargs):
 
 
 @dispatch(object)
-def compute_down(expr):
+def compute_down(expr, **kwargs):
     """ Compute the expression on the entire inputs
 
     inputs match up to leaves of the expression
@@ -128,7 +129,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
 
     >>> import numpy as np
 
-    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> s = symbol('s', 'var * {name: string, amount: int}')
     >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
     ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
 
@@ -160,27 +161,30 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         pass
 
     # 2. Compute from the bottom until there is a data type change
-    new_expr, new_scope = bottom_up_until_type_break(expr, scope)
+    expr2, scope2 = bottom_up_until_type_break(expr, scope, **kwargs)
 
     # 3. Re-optimize data and expressions
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        new_scope2 = dict((e, pre_compute(new_expr, datum, scope=new_scope))
-                        for e, datum in new_scope.items())
+        scope3 = dict((e, pre_compute(expr2, datum, scope=scope2))
+                        for e, datum in scope2.items())
     else:
-        new_scope2 = new_scope
-    if optimize_:
-        try:
-            new_expr2 = optimize_(new_expr, *[new_scope2[leaf]
-                                              for leaf in new_expr._leaves()])
-        except NotImplementedError:
-            new_expr2 = new_expr
-    else:
-        new_expr2 = new_expr
+        scope3 = scope2
+    try:
+        expr3 = optimize_(expr2, *[scope3[leaf] for leaf in expr2._leaves()])
+        _d = dict(zip(expr2._leaves(), expr3._leaves()))
+        scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
+    except (TypeError, NotImplementedError):
+        expr3 = expr2
+        scope4 = scope3
 
     # 4. Repeat
-    return top_then_bottom_then_top_again_etc(new_expr2, new_scope2)
+    if expr.isidentical(expr3):
+        raise NotImplementedError("Don't know how to compute:\n"
+                "expr: %s\n"
+                "data: %s" % (expr3, scope4))
+    return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
 def top_to_bottom(d, expr, **kwargs):
@@ -244,7 +248,7 @@ def makeleaf(expr):
 
     >>> _reset_leaves()
 
-    >>> t = Symbol('t', '{x: int, y: int, z: int}')
+    >>> t = symbol('t', '{x: int, y: int, z: int}')
     >>> makeleaf(t)
     t
     >>> makeleaf(t.x)
@@ -257,7 +261,7 @@ def makeleaf(expr):
     False
 
     >>> from blaze import sin, cos
-    >>> x = Symbol('x', 'real')
+    >>> x = symbol('x', 'real')
     >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
     False
     """
@@ -269,7 +273,7 @@ def makeleaf(expr):
         for token in itertools.count():
             if (name, token) not in _used_tokens:
                 break
-    result = Symbol(name, expr.dshape, token)
+    result = symbol(name, expr.dshape, token)
     _used_tokens.add((name, token))
     _leaf_cache[expr] = result
     return result
@@ -279,7 +283,7 @@ def data_leaves(expr, scope):
     return [scope[leaf] for leaf in expr._leaves()]
 
 
-def bottom_up_until_type_break(expr, scope):
+def bottom_up_until_type_break(expr, scope, **kwargs):
     """ Traverse bottom up until data changes significantly
 
     Parameters
@@ -303,16 +307,16 @@ def bottom_up_until_type_break(expr, scope):
 
     >>> import numpy as np
 
-    >>> s = Symbol('s', 'var * {name: string, amount: int}')
+    >>> s = symbol('s', 'var * {name: string, amount: int}')
     >>> data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
-    ...                 dtype=[('name', 'S7'), ('amount', 'i4')])
+    ...                 dtype=[('name', 'S7'), ('amount', 'i8')])
 
     This computation completes without changing type.  We get back a leaf
     symbol and a computational result
 
     >>> e = (s.amount + 1).distinct()
-    >>> bottom_up_until_type_break(e, {s: data})
-    (amount, {amount: array([101, 201, 301], dtype=int32)})
+    >>> bottom_up_until_type_break(e, {s: data}) # doctest: +SKIP
+    (amount, {amount: array([101, 201, 301])})
 
     This computation has a type change midstream (``list`` to ``int``), so we
     stop and get the unfinished computation.
@@ -330,7 +334,7 @@ def bottom_up_until_type_break(expr, scope):
 
     # 1. Recurse down the tree, calling this function on children
     #    (this is the bottom part of bottom up)
-    exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope)
+    exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope, **kwargs)
                              for i in inputs])
     # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
@@ -345,11 +349,18 @@ def bottom_up_until_type_break(expr, scope):
     if type_change(sorted(new_scope.values(), key=key),
                    sorted(old_data_leaves, key=key)):
         return new_expr, new_scope
-    else:
-    # 4. Otherwise do some actual work
+    # 4. Otherwise try to do some actual work
+    try:
         leaf = makeleaf(expr)
         _data = [new_scope[i] for i in new_expr._inputs]
-        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope)}
+    except KeyError:
+        return new_expr, new_scope
+    try:
+        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope,
+                                       **kwargs)}
+    except NotImplementedError:
+        return new_expr, new_scope
+
 
 
 def bottom_up(d, expr):
@@ -400,7 +411,7 @@ def swap_resources_into_scope(expr, scope):
     {}
     """
     resources = expr._resources()
-    symbol_dict = dict((t, Symbol(t._name, t.dshape)) for t in resources)
+    symbol_dict = dict((t, symbol(t._name, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
     other_scope = dict((k, v) for k, v in scope.items()
                        if k not in symbol_dict)
@@ -414,7 +425,7 @@ def swap_resources_into_scope(expr, scope):
 def compute(expr, d, **kwargs):
     """ Compute expression against data sources
 
-    >>> t = Symbol('t', 'var * {name: string, balance: int}')
+    >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -428,19 +439,19 @@ def compute(expr, d, **kwargs):
 
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
-        d3 = dict((e, pre_compute_(e, dat)) for e, dat in d2.items())
+        d3 = dict((e, pre_compute_(expr2, dat)) for e, dat in d2.items())
     else:
         d3 = d2
 
-    if optimize_:
-        try:
-            expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
-        except NotImplementedError:
-            expr3 = expr2
-    else:
+    try:
+        expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
+        _d = dict(zip(expr2._leaves(), expr3._leaves()))
+        d4 = dict((e._subs(_d), d) for e, d in d3.items())
+    except (TypeError, NotImplementedError):
         expr3 = expr2
-    result = top_then_bottom_then_top_again_etc(expr3, d3, **kwargs)
+        d4 = d3
+    result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
-        result = post_compute_(expr3, result, scope=d3)
+        result = post_compute_(expr3, result, scope=d4)
 
     return result

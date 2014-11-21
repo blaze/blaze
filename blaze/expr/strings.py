@@ -8,8 +8,8 @@ __all__ = ['Like', 'like']
 class Like(Expr):
     """ Filter expression by string comparison
 
-    >>> from blaze import Symbol, like, compute
-    >>> t = Symbol('t', 'var * {name: string, city: string}')
+    >>> from blaze import symbol, like, compute
+    >>> t = symbol('t', 'var * {name: string, city: string}')
     >>> expr = like(t, name='Alice*')
 
     >>> data = [('Alice Smith', 'New York'),
@@ -18,7 +18,7 @@ class Like(Expr):
     >>> list(compute(expr, data))
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
-    __slots__ = '_child', '_patterns'
+    __slots__ = '_hash', '_child', '_patterns'
 
     @property
     def patterns(self):

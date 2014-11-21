@@ -4,13 +4,13 @@ from blaze.expr.broadcast import leaves_of_type, broadcast_collect
 from blaze.compatibility import builtins
 from toolz import isdistinct
 
-x = Symbol('x', '5 * 3 * int32')
-xx = Symbol('xx', 'int32')
+x = symbol('x', '5 * 3 * int32')
+xx = symbol('xx', 'int32')
 
-y = Symbol('y', '5 * 3 * int32')
-yy = Symbol('yy', 'int32')
+y = symbol('y', '5 * 3 * int32')
+yy = symbol('yy', 'int32')
 
-a = Symbol('a', 'int32')
+a = symbol('a', 'int32')
 
 
 def test_broadcast_basic():
@@ -43,7 +43,7 @@ def test_broadcast_function():
     assert b._scalar_expr.isidentical((xx + yy) ** 2)
 
 
-t = Symbol('t', 'var * {x: int, y: int, z: int}')
+t = symbol('t', 'var * {x: int, y: int, z: int}')
 
 
 def test_tabular_case():
@@ -81,7 +81,7 @@ def test_broadcast_collect_doesnt_collect_scalars():
 
 
 def test_table_broadcast():
-    t = Symbol('t', 'var * {x: int, y: int, z: int}')
+    t = symbol('t', 'var * {x: int, y: int, z: int}')
 
     expr = t.distinct()
     expr = (2 * expr.x + expr.y + 1).distinct()
@@ -97,7 +97,7 @@ def test_table_broadcast():
 
 
 def test_broadcast_doesnt_affect_scalars():
-    t = Symbol('t', '{x: int, y: int, z: int}')
+    t = symbol('t', '{x: int, y: int, z: int}')
     expr = (2 * t.x + t.y + 1)
 
     assert broadcast_collect(expr).isidentical(expr)
@@ -109,7 +109,7 @@ def test_full_expr():
 
 
 def test_broadcast_naming():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    t = symbol('t', 'var * {x: int, y: int, z: int}')
 
     for expr in [t.x, t.x + 1]:
         assert broadcast(expr, [t])._name == 'x'

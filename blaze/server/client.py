@@ -3,8 +3,10 @@ from __future__ import absolute_import, division, print_function
 import requests
 from flask import json
 import flask
+from toolz import first
 from dynd import nd
 from datashape import dshape, DataShape, Record
+from pandas import DataFrame
 
 from ..data import DataDescriptor
 from ..data.utils import coerce
@@ -79,7 +81,7 @@ class Client(object):
         data = json.loads(content(response))
 
         return DataShape(Record([[name, dshape(ds)] for name, ds in
-            data.items()]))
+            sorted(data.items(), key=first)]))
 
 
 class ClientDataset(object):
@@ -117,6 +119,17 @@ def discover(ec):
     return ec.dshape
 
 
+
+
+@dispatch(Expr, ClientDataset, ClientDataset)
+def compute_down(expr, data1, data2, **kwargs):
+    assert data1.client.url == data2.client.url
+    s = Symbol('client', discover(data2.client))
+    leaf1, leaf2 = expr._leaves()
+    d = {leaf1: s[data1.name], leaf2: s[data2.name]}
+    return compute_down(expr._subs(d), data1.client, **kwargs)
+
+
 @dispatch(Expr, ClientDataset)
 def compute_down(expr, data, **kwargs):
     s = Symbol('client', discover(data.client))
@@ -128,7 +141,6 @@ def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     from ..api import Data
     from ..api import into
-    from pandas import DataFrame
     leaf = expr._leaves()[0]
     tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
     r = requests.get('%s/compute.json' % ec.url,
@@ -141,6 +153,20 @@ def compute_down(expr, ec, **kwargs):
     data = json.loads(content(r))
 
     return data['data']
+
+
+@dispatch(list, ClientDataset)
+def into(_, c, **kwargs):
+    r = requests.get('%s/compute.json' % c.client.url,
+                     data = json.dumps({'expr': c.name}),
+                     headers={'Content-Type': 'application/json'})
+    data = json.loads(content(r))
+    return data['data']
+
+@dispatch(DataFrame, ClientDataset)
+def into(_, c, **kwargs):
+    return into(DataFrame, into(list, c), columns=c.dshape.measure.names)
+
 
 @resource.register('blaze://.+::.+', priority=16)
 def resource_blaze_dataset(uri, **kwargs):

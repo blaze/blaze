@@ -10,7 +10,7 @@ from toolz import pluck, reduceby, groupby
 from blaze import into, compute, compute_up, discover, dshape
 
 from blaze.compute.mongo import MongoQuery
-from blaze.expr import Symbol, by, floor, ceil
+from blaze.expr import symbol, by, floor, ceil
 from blaze.compatibility import xfail
 
 
@@ -106,10 +106,10 @@ def events(db):
     coll.drop()
 
 
-t = Symbol('t', 'var * {name: string, amount: int}')
-bigt = Symbol('bigt', 'var * {name: string, amount: int, city: string}')
-p = Symbol('p', 'var * {x: int, y: int, z: int}')
-e = Symbol('e', 'var * {time: datetime, x: int}')
+t = symbol('t', 'var * {name: string, amount: int}')
+bigt = symbol('bigt', 'var * {name: string, amount: int, city: string}')
+p = symbol('p', 'var * {x: int, y: int, z: int}')
+e = symbol('e', 'var * {time: datetime, x: int}')
 
 
 q = MongoQuery('fake', [])
@@ -183,20 +183,20 @@ def test_columnwise_pow(points):
 
 
 def test_by_one():
-    assert compute_up(by(t.name, t.amount.sum()), q).query == \
+    assert compute_up(by(t.name, total=t.amount.sum()), q).query == \
             ({'$group': {'_id': {'name': '$name'},
-                         'amount_sum': {'$sum': '$amount'}}},
-             {'$project': {'amount_sum': '$amount_sum', 'name': '$_id.name'}})
+                         'total': {'$sum': '$amount'}}},
+             {'$project': {'total': '$total', 'name': '$_id.name'}})
 
 
 def test_by(bank):
-    assert set(compute(by(t.name, t.amount.sum()), bank)) == \
+    assert set(compute(by(t.name, total=t.amount.sum()), bank)) == \
             set([('Alice', 300), ('Bob', 600)])
-    assert set(compute(by(t.name, t.amount.min()), bank)) == \
+    assert set(compute(by(t.name, min=t.amount.min()), bank)) == \
             set([('Alice', 100), ('Bob', 100)])
-    assert set(compute(by(t.name, t.amount.max()), bank)) == \
+    assert set(compute(by(t.name, max=t.amount.max()), bank)) == \
             set([('Alice', 200), ('Bob', 300)])
-    assert set(compute(by(t.name, t.name.count()), bank)) == \
+    assert set(compute(by(t.name, count=t.name.count()), bank)) == \
             set([('Alice', 2), ('Bob', 3)])
 
 
@@ -218,7 +218,7 @@ def test_sort(bank):
 
 
 def test_by_multi_column(bank):
-    assert set(compute(by(t[['name', 'amount']], t.count()), bank)) == \
+    assert set(compute(by(t[['name', 'amount']], count=t.count()), bank)) == \
             set([(d['name'], d['amount'], 1) for d in bank_raw])
 
 
@@ -311,7 +311,7 @@ def test_missing_values(missing_vals):
 
 
 def test_datetime_access(date_data):
-    t = Symbol('t',
+    t = symbol('t',
             'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     py_data = into(list, date_data) # a python version of the collection
@@ -322,7 +322,7 @@ def test_datetime_access(date_data):
 
 
 def test_datetime_access_and_arithmetic(date_data):
-    t = Symbol('t',
+    t = symbol('t',
             'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     py_data = into(list, date_data) # a python version of the collection
@@ -333,6 +333,6 @@ def test_datetime_access_and_arithmetic(date_data):
 
 
 def test_floor_ceil(bank):
-    t = Symbol('t', discover(bank))
+    t = symbol('t', discover(bank))
     assert set(compute(200 * floor(t.amount / 200), bank)) == set([0, 200])
     assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])

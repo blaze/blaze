@@ -34,7 +34,7 @@ class Node(object):
     def __init__(self, *args, **kwargs):
         assert frozenset(kwargs).issubset(self.__slots__)
 
-        for slot, arg in zip(self.__slots__, args):
+        for slot, arg in zip(self.__slots__[1:], args):
             setattr(self, slot, arg)
 
         for key, value in kwargs.items():
@@ -42,11 +42,11 @@ class Node(object):
 
     @property
     def _args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__)
+        return tuple([getattr(self, slot) for slot in self.__slots__[1:]])
 
     @property
     def _inputs(self):
-        return tuple(getattr(self, i) for i in self.__inputs__)
+        return tuple([getattr(self, i) for i in self.__inputs__])
 
     def __nonzero__(self): # pragma: no cover
         return True
@@ -59,15 +59,15 @@ class Node(object):
 
         All nodes without inputs.  Leaves are returned in order, left to right.
 
-        >>> from blaze.expr import Symbol, join, by
+        >>> from blaze.expr import symbol, join, by
 
-        >>> t = Symbol('t', 'var * {id: int32, name: string}')
+        >>> t = symbol('t', 'var * {id: int32, name: string}')
         >>> t._leaves()
         [t]
-        >>> by(t.name, t.id.nunique())._leaves()
+        >>> by(t.name, count=t.id.nunique())._leaves()
         [t]
 
-        >>> v = Symbol('v', 'var * {id: int32, city: string}')
+        >>> v = symbol('v', 'var * {id: int32, city: string}')
         >>> join(t, v)._leaves()
         [t, v]
         """
@@ -82,11 +82,15 @@ class Node(object):
         return isidentical(self, other)
 
     def __hash__(self):
-        return hash((type(self), self._args))
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash((type(self), self._args))
+            return self._hash
 
     def __str__(self):
         rep = ["%s=%s" % (slot, _str(arg))
-               for slot, arg in zip(self.__slots__, self._args)]
+                for slot, arg in zip(self.__slots__[1:], self._args)]
         return "%s(%s)" % (type(self).__name__, ', '.join(rep))
 
     def __repr__(self):
@@ -104,8 +108,8 @@ class Node(object):
     def _subs(self, d):
         """ Substitute terms in the tree
 
-        >>> from blaze.expr import Symbol
-        >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+        >>> from blaze.expr import symbol
+        >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
         >>> expr = t.amount + 3
         >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t.id + 4)
         True
@@ -225,8 +229,8 @@ def isidentical(a, b):
     >>> isidentical(1, 1)
     True
 
-    >>> from blaze.expr import Symbol
-    >>> x = Symbol('x', 'int')
+    >>> from blaze.expr import symbol
+    >>> x = symbol('x', 'int')
     >>> isidentical(x, 1)
     False
 
@@ -322,8 +326,8 @@ def _subs(o, d):
 def _subs(o, d):
     """
 
-    >>> from blaze.expr import Symbol
-    >>> t = Symbol('t', 'var * {name: string, balance: int}')
+    >>> from blaze.expr import symbol
+    >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
@@ -344,8 +348,8 @@ def _subs(o, d):
 def path(a, b):
     """ A path of nodes from a to b
 
-    >>> from blaze.expr import Symbol
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> from blaze.expr import symbol
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.amount.sum()
     >>> list(path(expr, t))
     [sum(t.amount), t.amount, t]
@@ -367,9 +371,9 @@ def common_subexpression(*exprs):
     Examples
     --------
 
-    >>> from blaze.expr import Symbol, common_subexpression
+    >>> from blaze.expr import symbol, common_subexpression
 
-    >>> t = Symbol('t', 'var * {x: int, y: int}')
+    >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> common_subexpression(t.x, t.y)
     t
     """
@@ -381,8 +385,8 @@ def common_subexpression(*exprs):
 def eval_str(expr):
     """ String suitable for evaluation
 
-    >>> from blaze.expr import Symbol, eval_str
-    >>> x = Symbol('x', 'real')
+    >>> from blaze.expr import symbol, eval_str
+    >>> x = symbol('x', 'real')
     >>> eval_str(2*x + 1)
     '(2 * x) + 1'
 

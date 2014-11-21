@@ -9,7 +9,7 @@ from multipledispatch import halt_ordering, restart_ordering
 halt_ordering() # Turn off multipledispatch ordering
 
 from datashape import dshape, discover
-from .expr import (Symbol, TableSymbol)
+from .expr import (Symbol, TableSymbol, symbol)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
         mean, merge, nunique, relabel, selection, sort, summary, var)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
@@ -19,7 +19,7 @@ from .api import *
 from .data import CSV, HDF5, SQL, coerce
 from .json import *
 from .resource import *
-# from .compute.csv import *
+from .compute.csv import *
 from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *

@@ -31,7 +31,7 @@ abstract algorithms like "copy"
             data = partition_get(in_data, in_key)
             partition_set(out_data, out_key, data)
 """
-from .dispatch import dispatch
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from math import ceil
@@ -39,6 +39,8 @@ import h5py
 import toolz
 import itertools
 import bcolz
+
+from .dispatch import dispatch
 
 Array = (np.ndarray, h5py.Dataset, bcolz.ctable, bcolz.carray)
 

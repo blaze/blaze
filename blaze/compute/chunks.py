@@ -24,7 +24,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from ..expr import (Symbol, Head, Join, Selection, By, Label,
         ElemWise, ReLabel, Distinct, by, min, max, any, all, sum, count, mean,
-        nunique, Arithmetic, Broadcast)
+        nunique, Arithmetic, Broadcast, symbol)
 from .core import compute
 from toolz import partition_all, curry, concat, first
 from collections import Iterator, Iterable
@@ -32,6 +32,7 @@ from cytoolz import unique
 from datashape import var, isdimension
 from datashape.predicates import isscalar
 import pandas as pd
+import numpy as np
 
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor
@@ -98,7 +99,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 @dispatch(tuple(reductions), ChunkIterator)
 def compute_up(expr, c, **kwargs):
-    t = Symbol('_', expr._child.dshape)
+    t = symbol('_', expr._child.dshape)
     a, b = reductions[type(expr)]
 
     return compute_up(b(t), [compute_up(a(t), pre_compute(expr, chunk))
@@ -322,8 +323,8 @@ def compute_down(expr, data, map=map, **kwargs):
 
     indices = list(range(len(data.data)))
 
-    parts = map(curry(compute_chunk, data.data, chunk, chunk_expr),
-                indices)
+    parts = list(map(curry(compute_chunk, data.data, chunk, chunk_expr),
+                     indices))
 
     if isinstance(parts[0], np.ndarray):
         intermediate = np.concatenate(parts)

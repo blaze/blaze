@@ -13,7 +13,7 @@ Continuum Analytics sponsors development on Blaze.
 
 License::
 
-    Copyright (c) 2012, Continuum Analytics, Inc.
+    Copyright (c) 2014, Continuum Analytics, Inc.
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

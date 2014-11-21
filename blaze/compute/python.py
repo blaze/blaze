@@ -3,7 +3,7 @@
 >>> from blaze import *
 >>> from blaze.compute.core import compute
 
->>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+>>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -31,7 +31,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Summary, Like,
-                    DateTime, Date, Time, Millisecond, Symbol, ElemWise,
+                    DateTime, Date, Time, Millisecond, symbol, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp)
 from ..expr import reductions
@@ -66,7 +66,8 @@ def pre_compute(expr, seq, scope=None):
     except StopIteration:
         return []
     if isinstance(first, dict):
-        return pluck(expr.fields, seq)
+        leaf = expr._leaves()[0]
+        return pluck(leaf.fields, seq)
     else:
         return seq
 
@@ -87,7 +88,7 @@ def child(x):
 def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> expr = accounts['amount'].map(lambda x: x + 1)
     >>> f = recursive_rowfunc(expr, accounts)
 
@@ -115,7 +116,7 @@ def rowfunc(t):
 def rowfunc(t):
     """ Rowfunc provides a function that can be mapped onto a sequence.
 
-    >>> accounts = Symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> f = rowfunc(accounts['amount'])
 
     >>> row = ('Alice', 100)

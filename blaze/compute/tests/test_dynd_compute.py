@@ -11,13 +11,13 @@ def eq(a, b):
     return nd.as_py(a) == nd.as_py(b)
 
 
-n = Symbol('n', '3 * 5 * int')
+n = symbol('n', '3 * 5 * int')
 
 nx = nd.array([[ 1,  2,  3,  4,  5],
                [11, 22, 33, 44, 55],
                [21, 22, 23, 24, 25]], type=str(n.dshape))
 
-rec = Symbol('s', '3 * var * {name: string, amount: int}')
+rec = symbol('s', '3 * var * {name: string, amount: int}')
 
 recx = nd.array([[('Alice', 1), ('Bob', 2)],
                  [('Charlie', 3)],

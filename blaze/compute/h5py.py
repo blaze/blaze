@@ -4,20 +4,21 @@ import numpy as np
 import h5py
 from multipledispatch import MDNotImplementedError
 from datashape import DataShape, to_numpy
+from toolz import curry
 
 from ..partition import partitions, partition_get, partition_set, flatten
-from ..expr import Reduction, Field, Projection, Broadcast, Selection, Symbol
+from ..expr import Reduction, Field, Projection, Broadcast, Selection, symbol
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, ElemWise
 from ..expr import std, var, count, nunique
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import path
+from ..expr import path, shape, Symbol
 from ..expr.split import split
 
 from .core import base, compute
 from ..dispatch import dispatch
 from ..api.into import into
 from ..partition import partitions, partition_get, partition_set
-from ..utils import available_memory
+from ..utils import available_memory, thread_pool
 
 __all__ = []
 
@@ -53,6 +54,7 @@ def post_compute(expr, data, scope=None):
 def optimize(expr, data):
     return expr
 
+
 @dispatch(Expr, h5py.Dataset)
 def optimize(expr, data):
     child = optimize(expr._inputs[0], data)
@@ -62,14 +64,16 @@ def optimize(expr, data):
         return expr._subs({expr._inputs[0]: child})
 
 
-@dispatch(Slice, h5py.Dataset)
+@dispatch(Slice, (h5py.File, h5py.Group, h5py.Dataset))
 def optimize(expr, data):
     child = expr._inputs[0]
-    if isinstance(child, ElemWise) and len(child._inputs) == 1:
+    if (isinstance(child, ElemWise) and len(child._inputs) == 1
+            and shape(child._inputs[0]) == shape(child)):
         grandchild = child._inputs[0][expr.index]
         grandchild = optimize(grandchild, data)
         return child._subs({child._inputs[0]: grandchild})
-    if isinstance(child, ElemWise) and len(child._inputs) == 2:
+    if (isinstance(child, ElemWise) and len(child._inputs) == 2
+        and shape(child) == shape(expr._inputs[0]) == shape(child._inputs[1])):
         lhs, rhs = child._inputs
         lhs = lhs[expr.index]
         rhs = rhs[expr.index]
@@ -110,12 +114,20 @@ def compute_down(expr, data, **kwargs):
         if not isinstance(data, (h5py.File, h5py.Group)):
             break
 
-    expr2 = expr._subs({e: Symbol('leaf', e.dshape)})
+    expr2 = expr._subs({e: symbol('leaf', e.dshape)})
     return compute_down(expr2, data, **kwargs)
 
 
+def compute_chunk(source, target, chunk, chunk_expr, parts):
+    """ Pull out a part, compute it, insert it into the target """
+    source_part, target_part = parts
+    part = source[source_part]
+    result = compute(chunk_expr, {chunk: part})
+    target[target_part] = result
+
+
 @dispatch(Expr, h5py.Dataset)
-def compute_down(expr, data, **kwargs):
+def compute_down(expr, data, map=thread_pool.map, **kwargs):
     """ Compute expressions on H5Py datasets by operating on chunks
 
     This uses blaze.expr.split to break a full-array-computation into a
@@ -138,7 +150,7 @@ def compute_down(expr, data, **kwargs):
     chunksize = kwargs.get('chunksize', data.chunks)
 
     # Split expression into per-chunk and on-aggregate pieces
-    chunk = Symbol('chunk', DataShape(*(chunksize + (leaf.dshape.measure,))))
+    chunk = symbol('chunk', DataShape(*(chunksize + (leaf.dshape.measure,))))
     (chunk, chunk_expr), (agg, agg_expr) = \
             split(leaf, expr, chunk=chunk)
 
@@ -147,19 +159,13 @@ def compute_down(expr, data, **kwargs):
     intermediate = np.empty(shape=shape, dtype=dtype)
 
     # Compute partitions
-    data_partitions = partitions(data, chunksize=chunksize, keepdims=True)
-    int_partitions = partitions(intermediate, chunksize=chunk_expr.shape,
-            keepdims=True)
+    source_parts = list(partitions(data, chunksize=chunksize, keepdims=True))
+    target_parts = list(partitions(intermediate, chunksize=chunk_expr.shape,
+                                   keepdims=True))
 
-    # For each partition, compute chunk->chunk_expr
-    # Insert into intermediate
-    # This could be parallelized
-    for d, i in zip(data_partitions, int_partitions):
-        chunk_data = partition_get(data, d, chunksize=chunksize)
-        result = compute(chunk_expr, {chunk: chunk_data})
-        partition_set(intermediate, i, result,
-                      chunksize=chunk_expr.shape,
-                      keepdims=True)
+
+    parts = list(map(curry(compute_chunk, data, intermediate, chunk, chunk_expr),
+                           zip(source_parts, target_parts)))
 
     # Compute on the aggregate
     return compute(agg_expr, {agg: intermediate})

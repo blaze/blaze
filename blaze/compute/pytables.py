@@ -6,7 +6,7 @@ import tables as tb
 from datashape import Record, from_numpy, datetime_, date_
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection,
-                        Symbol, Sort, Reduction, count, Symbol, Slice, Expr,
+                        Symbol, Sort, Reduction, count, symbol, Slice, Expr,
                         nelements)
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch

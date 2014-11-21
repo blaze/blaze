@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from datashape import *
 from datashape.predicates import iscollection
 import itertools
@@ -24,16 +26,16 @@ class Broadcast(ElemWise):
 
     Given elementwise operations on collections, e.g.
 
-    >>> a = Symbol('a', '100 * int')
-    >>> t = Symbol('t', '100 * {x: int, y: int}')
+    >>> a = symbol('a', '100 * int')
+    >>> t = symbol('t', '100 * {x: int, y: int}')
 
     >>> expr = sin(a) + t.y**2
 
     It may be best to represent this as a scalar expression mapped over a
     collection
 
-    >>> sa = Symbol('a', 'int')
-    >>> st = Symbol('t', '{x: int, y: int}')
+    >>> sa = symbol('a', 'int')
+    >>> st = symbol('t', '{x: int, y: int}')
 
     >>> sexpr = sin(sa) + st.y**2
 
@@ -44,7 +46,7 @@ class Broadcast(ElemWise):
     In practice, expressions are often collected into Broadcast expressions
     automatically.  This class is mainly intented for internal use.
     """
-    __slots__ = '_children', '_scalars', '_scalar_expr'
+    __slots__ = '_hash', '_children', '_scalars', '_scalar_expr'
 
     @property
     def dshape(self):
@@ -71,8 +73,8 @@ def scalar_symbols(exprs):
     Examples
     --------
 
-    >>> x = Symbol('x', '5 * 3 * int32')
-    >>> y = Symbol('y', '5 * 3 * int32')
+    >>> x = symbol('x', '5 * 3 * int32')
+    >>> y = symbol('y', '5 * 3 * int32')
 
     >>> xx, yy = scalar_symbols([x, y])
 
@@ -92,7 +94,7 @@ def scalar_symbols(exprs):
         else:
             name = next(new_names)
 
-        s = Symbol(name, expr.schema)
+        s = symbol(name, expr.schema)
         scalars.append(s)
     return scalars
 
@@ -108,7 +110,7 @@ def broadcast_collect(expr, Broadcastable=Broadcastable,
     Expressions of type Broadcastables are swallowed into Broadcast
     operations
 
-    >>> t = Symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
+    >>> t = symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
     >>> expr = (t.x + 2*t.y).distinct()
 
     >>> broadcast_collect(expr)

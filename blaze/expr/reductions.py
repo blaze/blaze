@@ -6,7 +6,7 @@ from datashape import Record, DataShape
 from datashape import coretypes as ct
 
 from .core import common_subexpression
-from .expressions import Expr, Symbol
+from .expressions import Expr, symbol, ndim
 from ..compatibility import builtins
 
 
@@ -20,7 +20,7 @@ class Reduction(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
     >>> data = [['Alice', 100, 1],
@@ -31,7 +31,7 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = '_child', 'axis', 'keepdims'
+    __slots__ = '_hash', '_child', 'axis', 'keepdims'
     _dtype = None
 
     def __init__(self, _child, axis=None, keepdims=False):
@@ -43,9 +43,8 @@ class Reduction(Expr):
         if not isinstance(axis, tuple):
             axis = (axis,)
         axis = tuple(sorted(axis))
-        if hasattr(_child, 'ndim') and builtins.any(ax >= _child.ndim for ax in
-                                                    axis):
-            raise ValueError("Passed axes %s that are greater than ndim" % axis)
+        # if builtins.any(ax >= ndim(_child) for ax in axis):
+        #     raise ValueError("Passed axes %s that are greater than ndim" % axis)
         self.axis = axis
         self.keepdims = keepdims
 
@@ -78,7 +77,7 @@ class Reduction(Expr):
             kwargs.append('keepdims=True')
         if self.axis != tuple(range(self._child.ndim)):
             kwargs.append('axis=' + str(self.axis))
-        other = sorted(set(self.__slots__) - set(['_child', 'axis', 'keepdims']))
+        other = sorted(set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
         for slot in other:
             kwargs.append('%s=%s' % (slot, getattr(self, slot)))
         name = type(self).__name__
@@ -136,7 +135,7 @@ class var(Reduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
+    __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
@@ -165,7 +164,7 @@ class std(Reduction):
     --------
     var
     """
-    __slots__ = '_child', 'unbiased', 'axis', 'keepdims'
+    __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
     _dtype = ct.real
 
@@ -191,7 +190,7 @@ class nelements(Reduction):
     Examples
     --------
     >>> from blaze import Symbol
-    >>> t = Symbol('t', 'var * {name: string, amount: float64}')
+    >>> t = symbol('t', 'var * {name: string, amount: float64}')
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
     """
@@ -208,7 +207,7 @@ class Summary(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
 
     >>> data = [['Alice', 100, 1],
@@ -219,30 +218,40 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = '_child', 'names', 'values', 'keepdims'
+    __slots__ = '_hash', '_child', 'names', 'values', 'axis', 'keepdims'
 
-    def __init__(self, _child, names, values, keepdims=False):
+    def __init__(self, _child, names, values, axis=None, keepdims=False):
         self._child = _child
         self.names = names
         self.values = values
         self.keepdims = keepdims
+        self.axis = axis
 
     @property
     def dshape(self):
+        axis = self.axis
+        if self.keepdims:
+            shape = tuple(1 if i in axis else d
+                          for i, d in enumerate(self._child.shape))
+        else:
+            shape = tuple(d
+                          for i, d in enumerate(self._child.shape)
+                          if i not in axis)
         measure = Record(list(zip(self.names,
                                   [v._dtype for v in self.values])))
-        if self.keepdims:
-            return DataShape(*((1,) * self._child.ndim + (measure,)))
-        else:
-            return DataShape(measure)
+        return DataShape(*(shape + (measure,)))
 
     def __str__(self):
-        return 'summary(' + ', '.join('%s=%s' % (name, str(val))
-                for name, val in zip(self.fields, self.values)) + \
-                    ', keepdims=%s' % self.keepdims + ')'
+        s = 'summary('
+        s += ', '.join('%s=%s' % (name, str(val))
+                         for name, val in zip(self.fields, self.values))
+        if self.keepdims:
+            s += ', keepdims=True'
+        s += ')'
+        return s
 
 
-def summary(keepdims=False, **kwargs):
+def summary(keepdims=False, axis=None, **kwargs):
     items = sorted(kwargs.items(), key=first)
     names = tuple(map(first, items))
     values = tuple(map(toolz.second, items))
@@ -254,9 +263,15 @@ def summary(keepdims=False, **kwargs):
             if len(children) == 1:
                 child = children[0]
             else:
-                raise ValueError()
+                child = common_subexpression(*children)
 
-    return Summary(child, names, values, keepdims=keepdims)
+    if axis is None:
+        axis = tuple(range(ndim(child)))
+    if isinstance(axis, (set, list)):
+        axis = tuple(axis)
+    if not isinstance(axis, tuple):
+        axis = (axis,)
+    return Summary(child, names, values, keepdims=keepdims, axis=axis)
 
 
 summary.__doc__ = Summary.__doc__

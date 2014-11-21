@@ -1,7 +1,7 @@
 from blaze.expr.optimize import lean_projection, _lean
 from blaze.expr import *
 
-t = Symbol('t', 'var * {x: int, y: int, z: int, w: int}')
+t = symbol('t', 'var * {x: int, y: int, z: int, w: int}')
 
 
 def test_lean_on_Symbol():
@@ -14,7 +14,7 @@ def test_lean_projection():
 
 
 def test_lean_projection_by():
-    assert lean_projection(by(t.x, t.y.sum()))._child.isidentical(
+    assert lean_projection(by(t.x, total=t.y.sum()))._child.isidentical(
                     t[['x', 'y']])
 
 
@@ -44,3 +44,21 @@ def test_sort():
 def test_head():
     assert lean_projection(t.sort('x').y.head(5)).isidentical(
                 t[['x','y']].sort('x').y.head(5))
+
+def test_elemwise_thats_also_a_column():
+    t = symbol('t', 'var * {x: int, time: datetime, y: int}')
+    expr = t[t.x > 0].time.truncate(months=1)
+    expected = t[['time', 'x']]
+    result = lean_projection(expr)
+    assert result._child._child._child.isidentical(t[['time', 'x']])
+
+def test_distinct():
+    expr = t.distinct()[['x', 'y']]
+    assert lean_projection(expr).isidentical(expr)
+
+def test_like():
+    t = symbol('t', 'var * {name: string, x: int, y: int}')
+    expr = t.like(name='Alice').y
+
+    result = lean_projection(expr)
+    assert result._child._child.isidentical(t[['name', 'y']])

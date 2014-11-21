@@ -5,7 +5,7 @@ from pandas import DataFrame
 import numpy as np
 import bcolz
 from datashape.predicates import isscalar, iscollection, isrecord
-from blaze.expr import Symbol, by
+from blaze.expr import symbol, by
 from blaze.api import Data, into
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
@@ -14,7 +14,7 @@ from blaze.sql import SQL
 
 sources = []
 
-t = Symbol('t', 'var * {amount: int64, id: int64, name: string}')
+t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
 L = [[100, 1, 'Alice'],
      [200, 2, 'Bob'],
@@ -71,19 +71,19 @@ expressions = {
         t[t.amount > 50]['name']: [], # odd ordering issue
         t.id.map(lambda x: x + 1, schema='int', name='id'): [sql, mongo],
         t[t.amount > 50]['name']: [],
-        by(t.name, t.amount.sum()): [],
-        by(t.id, t.id.count()): [],
-        by(t[['id', 'amount']], t.id.count()): [],
-        by(t[['id', 'amount']], (t.amount + 1).sum()): [mongo],
-        by(t[['id', 'amount']], t.name.nunique()): [mongo],
-        by(t.id, t.amount.count()): [],
-        by(t.id, t.id.nunique()): [mongo],
-        # by(t, t.count()): [],
-        # by(t.id, t.count()): [df],
+        by(t.name, total=t.amount.sum()): [],
+        by(t.id, count=t.id.count()): [],
+        by(t[['id', 'amount']], count=t.id.count()): [],
+        by(t[['id', 'amount']], total=(t.amount + 1).sum()): [mongo],
+        by(t[['id', 'amount']], n=t.name.nunique()): [mongo, bc],
+        by(t.id, count=t.amount.count()): [],
+        by(t.id, n=t.id.nunique()): [mongo, bc],
+        # by(t, count=t.count()): [],
+        # by(t.id, count=t.count()): [],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
-        t[0]: [sql, mongo],
-        t[::2]: [sql, mongo],
+        t[0]: [sql, mongo, bc],
+        t[::2]: [sql, mongo, bc],
         t.id.utcfromtimestamp: [sql],
         t.distinct().nrows: [],
         t.nelements(axis=0): [],

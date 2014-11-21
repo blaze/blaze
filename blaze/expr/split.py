@@ -40,12 +40,14 @@ from __future__ import absolute_import, division, print_function
 
 from toolz import concat
 import datashape
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, isrecord
 from math import floor
 
 from .core import *
 from .expressions import *
+from .strings import Like
 from .expressions import ndim, shape
+from .math import sqrt
 from .reductions import *
 from .split_apply_combine import *
 from .collections import *
@@ -54,14 +56,14 @@ from ..dispatch import dispatch
 from ..compatibility import builtins
 
 good_to_split = (Reduction, Summary, By, Distinct)
-can_split = good_to_split + (Selection, ElemWise)
+can_split = good_to_split + (Like, Selection, ElemWise)
 
 __all__ = ['path_split', 'split']
 
 def path_split(leaf, expr):
     """ Find the right place in the expression tree/line to parallelize
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
     >>> path_split(t, t.amount.sum() + 1)
     sum(t.amount)
@@ -102,7 +104,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
 
         (chunk, chunk_expr), (aggregate, aggregate_expr)
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
     ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
@@ -112,14 +114,16 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
         if leaf.ndim > 1:
             raise ValueError("Please provide a chunk symbol")
         else:
-            chunk = Symbol('chunk', datashape.var * leaf.dshape.measure)
+            chunk = symbol('chunk', datashape.var * leaf.dshape.measure)
 
     chunk_expr = _split_chunk(center, leaf=leaf, chunk=chunk, **kwargs)
+    chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
+                                            keepdims=True)
 
     if not agg:
-        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr)
+        agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
-        agg = Symbol('aggregate', agg_dshape)
+        agg = symbol('aggregate', agg_dshape)
 
     agg_expr = _split_agg(center, leaf=leaf, agg=agg)
 
@@ -129,7 +133,8 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
 
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
-              any: (any, any), all: (all, all)}
+              any: (any, any), all: (all, all),
+              nelements: (nelements, sum)}
 
 @dispatch(Expr)
 def _split(expr, leaf=None, chunk=None, agg=None, keepdims=True):
@@ -151,6 +156,50 @@ def _split_agg(expr, leaf=None, agg=None):
     return b(agg, axis=expr.axis, keepdims=expr.keepdims)
 
 
+@dispatch(mean)
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
+    child = expr._subs({leaf: chunk})._child
+    return summary(total=child.sum(), count=child.count(), keepdims=keepdims)
+
+@dispatch(mean)
+def _split_agg(expr, leaf=None, agg=None):
+    total = agg.total.sum()
+    count = agg.count.sum()
+
+    return 1.0 * total / count
+
+@dispatch((std, var))
+def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
+    child = expr._subs({leaf: chunk})._child
+    return summary(x=child.sum(), x2=(child**2).sum(), n=child.count(), keepdims=keepdims)
+
+@dispatch(var)
+def _split_agg(expr, leaf=None, agg=None):
+    x = agg.x.sum()
+    x2 = agg.x2.sum()
+    n = agg.n.sum() * 1.0
+
+    result = (x2 / n) - (x / n)**2
+
+    if expr.unbiased:
+        result = result / (n - 1) * n
+
+    return result
+
+@dispatch(std)
+def _split_agg(expr, leaf=None, agg=None):
+    x = agg.x.sum()
+    x2 = agg.x2.sum()
+    n = agg.n.sum() * 1.0
+
+    result = (x2 / n) - (x / n)**2
+
+    if expr.unbiased:
+        result = result / (n - 1) * n
+
+    return sqrt(result)
+
+
 @dispatch(Distinct)
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
@@ -168,23 +217,41 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
 
 @dispatch(nunique)
 def _split_agg(expr, leaf=None, agg=None):
-    return agg.distinct().count()
+    return agg.distinct().count(keepdims=expr.keepdims)
 
 
 @dispatch(Summary)
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
-    return summary(keepdims=keepdims,
-                   **dict((name, split(leaf, val, chunk=chunk,
+    exprs = [(name, split(leaf, val, chunk=chunk,
                                        keepdims=False)[0][1])
-                            for name, val in zip(expr.fields, expr.values)))
+                            for name, val in zip(expr.fields, expr.values)]
+    d = dict()
+    for name, e in exprs:
+        if isinstance(e, Reduction):
+            d[name] = e
+        elif isinstance(e, Summary):
+            for n, v in zip(e.names, e.values):
+                d[name + '_' + n] = v
+        else:
+            raise NotImplementedError()
+    return summary(keepdims=keepdims, **d)
 
 
 @dispatch(Summary)
 def _split_agg(expr, leaf=None, chunk=None, agg=None, keepdims=True):
-    return summary(**dict((name, split(leaf, val, agg=agg,
-                                       keepdims=False)[1][1]._subs(
-                                                        {agg: agg[name]}))
-                            for name, val in zip(expr.fields, expr.values)))
+    exprs = [(name, split(leaf, val, keepdims=False)[1])
+                for name, val in zip(expr.fields, expr.values)]
+
+    d = dict()
+    for name, (a, ae) in exprs:
+        if isscalar(a.dshape.measure): # For simple reductions
+            d[name] = ae._subs({a: agg[name]})
+        elif isrecord(a.dshape.measure):  # For reductions like mean/var
+            names = ['%s_%s' % (name, field) for field in a.fields]
+            namedict = dict(zip(a.fields, names))
+            d[name] = ae._subs(toolz.merge({a: agg}, namedict))
+
+    return summary(**d)
 
 
 @dispatch(By)
@@ -199,24 +266,28 @@ def _split_agg(expr, leaf=None, agg=None):
     agg_apply = _split_agg(expr.apply, leaf=leaf, agg=agg)
     agg_grouper = expr.grouper._subs({leaf: agg})
 
+    ngroup = len(expr.grouper.fields)
+
     if isscalar(expr.grouper.dshape.measure):
-        agg_grouper = agg[expr.fields[0]]
+        agg_grouper = agg[agg.fields[0]]
     else:
-        agg_grouper = agg[list(expr.fields[:len(expr.grouper.fields)])]
+        agg_grouper = agg[list(agg.fields[:ngroup])]
 
-    return by(agg_grouper, agg_apply)
+    return (by(agg_grouper, agg_apply)
+              .relabel(dict(zip(agg.fields[:ngroup],
+                                expr.fields[:ngroup]))))
 
 
-@dispatch((ElemWise, Selection))
+@dispatch((ElemWise, (Like, Selection)))
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
 
-@dispatch((ElemWise, Selection))
+@dispatch((ElemWise, (Like, Selection)))
 def _split_agg(expr, leaf=None, agg=None):
     return agg
 
 
-from datashape import var, Fixed
+from datashape import Fixed
 from math import ceil
 
 def dimension_div(a, b):
@@ -236,8 +307,8 @@ def dimension_div(a, b):
     >>> dimension_div(50, var)
     Var()
     """
-    if a == var or b == var:
-        return var
+    if a == datashape.var or b == datashape.var:
+        return datashape.var
     if isinstance(a, Fixed):
         a = int(a)
     if isinstance(b, Fixed):
@@ -257,13 +328,13 @@ def dimension_mul(a, b):
 
     In the case of datashape.var, we resort to var
     >>> from datashape import var
-    >>> dimension_mul(var, 5)
+    >>> dimension_mul(datashape.var, 5)
     Var()
-    >>> dimension_mul(10, var)
+    >>> dimension_mul(10, datashape.var)
     Var()
     """
-    if a == var or b == var:
-        return var
+    if a == datashape.var or b == datashape.var:
+        return datashape.var
     if isinstance(a, Fixed):
         a = int(a)
     if isinstance(b, Fixed):
@@ -274,10 +345,10 @@ def dimension_mul(a, b):
 def aggregate_shape(leaf, expr, chunk, chunk_expr):
     """ The shape of the intermediate aggregate
 
-    >>> leaf = Symbol('leaf', '10 * 10 * int')
+    >>> leaf = symbol('leaf', '10 * 10 * int')
     >>> expr = leaf.sum(axis=0)
-    >>> chunk = Symbol('chunk', '3 * 3 * int') # 3 does not divide 10
-    >>> chunk_expr = chunk.sum(axis=0, keepdims=1)
+    >>> chunk = symbol('chunk', '3 * 3 * int') # 3 does not divide 10
+    >>> chunk_expr = chunk.sum(axis=0, keepdims=True)
 
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)
@@ -289,10 +360,14 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     last_chunk_shape = [l % c for l, c in zip(leaf.shape, chunk.shape)]
 
     if builtins.sum(last_chunk_shape) != 0:
-        last_chunk = Symbol(chunk._name,
+        old = last_chunk_shape
+        last_chunk = symbol(chunk._name,
                             DataShape(*(last_chunk_shape + [chunk.dshape.measure])))
         last_chunk_expr = chunk_expr._subs({chunk: last_chunk})
         last_chunk_shape = shape(last_chunk_expr)
+        # Keep zeros if they were there before
+        last_chunk_shape = tuple(a if b != 0 else 0 for a, b in
+                                zip(last_chunk_shape, old))
 
 
     return tuple(int(floor(l / c)) * ce + lce

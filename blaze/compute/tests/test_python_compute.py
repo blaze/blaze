@@ -13,9 +13,9 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (Symbol, by, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, summary, Symbol,
-                        count, std, head, Symbol)
+from blaze.expr import (symbol, by, merge, join, count, Distinct,
+                        Apply, sum, min, max, any, summary,
+                        count, std, head)
 import numpy as np
 
 from blaze import cos, sin
@@ -23,7 +23,7 @@ from blaze.compatibility import builtins
 from blaze.utils import raises
 
 
-t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
 
 data = [['Alice', 100, 1],
@@ -31,7 +31,7 @@ data = [['Alice', 100, 1],
         ['Alice', 50, 3]]
 
 
-tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
+tbig = symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 
 databig = [['Alice', 'F', 100, 1],
@@ -111,7 +111,7 @@ def test_1d_reductions_keepdims():
 
 
 def test_count():
-    t = Symbol('t', '3 * int')
+    t = symbol('t', '3 * int')
     assert compute(t.count(), [1, None, 2]) == 2
 
 
@@ -152,24 +152,24 @@ def test_std():
 
 def test_by_no_grouper():
     names = t['name']
-    assert set(compute(by(names, names.count()), data)) == \
+    assert set(compute(by(names, count=names.count()), data)) == \
             set([('Alice', 2), ('Bob', 1)])
 
 
 def test_by_one():
-    print(compute(by(t['name'], t['amount'].sum()), data))
-    assert set(compute(by(t['name'], t['amount'].sum()), data)) == \
+    print(compute(by(t['name'], total=t['amount'].sum()), data))
+    assert set(compute(by(t['name'], total=t['amount'].sum()), data)) == \
             set([('Alice', 150), ('Bob', 200)])
 
 
 def test_by_compound_apply():
-    print(compute(by(t['name'], (t['amount'] + 1).sum()), data))
-    assert set(compute(by(t['name'], (t['amount'] + 1).sum()), data)) == \
+    print(compute(by(t['name'], total=(t['amount'] + 1).sum()), data))
+    assert set(compute(by(t['name'], total=(t['amount'] + 1).sum()), data)) == \
             set([('Alice', 152), ('Bob', 201)])
 
 
 def test_by_two():
-    result = compute(by(tbig[['name', 'sex']], tbig['amount'].sum()),
+    result = compute(by(tbig[['name', 'sex']], total=tbig['amount'].sum()),
                      databig)
 
     expected = [('Alice', 'F', 200),
@@ -182,7 +182,7 @@ def test_by_two():
 
 def test_by_three():
     result = compute(by(tbig[['name', 'sex']],
-                        (tbig['id'] + tbig['amount']).sum()),
+                        total=(tbig['id'] + tbig['amount']).sum()),
                      databig)
 
     expected = [('Alice', 'F', 204),
@@ -204,8 +204,8 @@ def test_join():
     left = [['Alice', 100], ['Bob', 200]]
     right = [['Alice', 1], ['Bob', 2]]
 
-    L = Symbol('L', 'var * {name: string, amount: int}')
-    R = Symbol('R', 'var * {name: string, id: int}')
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     assert dshape(joined.schema) == \
@@ -227,8 +227,8 @@ def test_outer_join():
              ('LA', 3),
              ('Moscow', 4)]
 
-    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
-    R = Symbol('R', 'var * {city: string, id: int}')
+    L = symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = symbol('R', 'var * {city: string, id: int}')
 
     assert set(compute(join(L, R), {L: left, R: right})) == set(
             [(1, 'Alice', 100, 'NYC'),
@@ -263,8 +263,8 @@ def test_multi_column_join():
              (1, 3, 50),
              (1, 3, 150)]
 
-    L = Symbol('L', 'var * {x: int, y: int, z: int}')
-    R = Symbol('R', 'var * {x: int, y: int, w: int}')
+    L = symbol('L', 'var * {x: int, y: int, z: int}')
+    R = symbol('R', 'var * {x: int, y: int, w: int}')
 
     j = join(L, R, ['x', 'y'])
 
@@ -289,7 +289,7 @@ def test_Distinct():
 
 def test_Distinct_count():
     t2 = t['name'].distinct()
-    gby = by(t2, t2.count())
+    gby = by(t2, total=t2.count())
     result = set(compute(gby, data))
     assert result == set([('Alice', 1), ('Bob', 1)])
 
@@ -351,9 +351,9 @@ def test_graph_double_join():
     wanted = [['A'],
               ['F']]
 
-    t_idx = Symbol('t_idx', 'var * {name: string, b: int32}')
-    t_arc = Symbol('t_arc', 'var * {a: int32, b: int32}')
-    t_wanted = Symbol('t_wanted', 'var * {name: string}')
+    t_idx = symbol('t_idx', 'var * {name: string, b: int32}')
+    t_arc = symbol('t_arc', 'var * {a: int32, b: int32}')
+    t_wanted = symbol('t_wanted', 'var * {name: string}')
 
     j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
@@ -375,7 +375,7 @@ def test_label():
 
 
 def test_relabel_join():
-    names = Symbol('names', 'var * {first: string, last: string}')
+    names = symbol('names', 'var * {first: string, last: string}')
 
     siblings = join(names.relabel({'first': 'left'}),
                     names.relabel({'first': 'right'}),
@@ -415,7 +415,7 @@ def test_apply():
 def test_map_datetime():
     from datetime import datetime
     data = [['A', 0], ['B', 1]]
-    t = Symbol('t', 'var * {foo: string, datetime: int64}')
+    t = symbol('t', 'var * {foo: string, datetime: int64}')
 
     result = list(compute(t['datetime'].map(datetime.utcfromtimestamp,
     'datetime'), data))
@@ -425,8 +425,8 @@ def test_map_datetime():
 
 
 def test_by_multi_column_grouper():
-    t = Symbol('t', 'var * {x: int, y: int, z: int}')
-    expr = by(t[['x', 'y']], t['z'].count())
+    t = symbol('t', 'var * {x: int, y: int, z: int}')
+    expr = by(t[['x', 'y']], total=t['z'].count())
     data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
 
     print(set(compute(expr, data)))
@@ -476,7 +476,7 @@ def test_recursive_rowfunc():
 
 
 def test_recursive_rowfunc_is_used():
-    expr = by(t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expr = by(t['name'], total=(2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)
@@ -527,17 +527,17 @@ def test_by_groupby_deep():
             (2, 4, '')]
 
     schema = '{x: int, y: int, name: string}'
-    t = Symbol('t', datashape.var * schema)
+    t = symbol('t', datashape.var * schema)
 
     t2 = t[t['name'] != '']
     t3 = merge(t2.x, t2.name)
-    expr = by(t3.name, t3.x.mean())
+    expr = by(t3.name, avg=t3.x.mean())
     result = set(compute(expr, data))
     assert result == set([('Alice', 1.5), ('Bob', 1.0)])
 
 
 def test_by_then_sort_dict_items_sequence():
-    expr = by(tbig.name, tbig.amount.sum()).sort('name')
+    expr = by(tbig.name, total=tbig.amount.sum()).sort('name')
     assert compute(expr, databig)
 
 
@@ -574,8 +574,8 @@ def test_reduction_arithmetic():
 
 
 def test_scalar_arithmetic():
-    x = Symbol('x', 'real')
-    y = Symbol('y', 'real')
+    x = symbol('x', 'real')
+    y = symbol('y', 'real')
     assert compute(x + y, {x: 2, y: 3}) == 5
     assert compute_up(x + y, 2, 3) == 5
     assert compute_up(x * y, 2, 3) == 6
@@ -594,7 +594,7 @@ def test_scalar_arithmetic():
 
 
 def test_like():
-    t = Symbol('t', 'var * {name: string, city: string}')
+    t = symbol('t', 'var * {name: string, city: string}')
     data = [('Alice Smith', 'New York'),
             ('Bob Smith', 'Chicago'),
             ('Alice Walker', 'LA')]
@@ -610,7 +610,7 @@ def test_datetime_comparison():
             ['Bob', date(2000, 2, 2)],
             ['Alice', date(2000, 3, 3)]]
 
-    t = Symbol('t', 'var * {name: string, when: date}')
+    t = symbol('t', 'var * {name: string, when: date}')
 
     assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
 
@@ -620,7 +620,7 @@ def test_datetime_access():
             ['Bob', 200, 2, datetime(2000, 1, 1, 1, 1, 1)],
             ['Alice', 50, 3, datetime(2000, 1, 1, 1, 1, 1)]]
 
-    t = Symbol('t',
+    t = symbol('t',
             'var * {amount: float64, id: int64, name: string, when: datetime}')
 
     assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
@@ -629,7 +629,7 @@ def test_datetime_access():
 
 
 def test_utcfromtimestamp():
-    t = Symbol('t', '1 * int64')
+    t = symbol('t', '1 * int64')
     assert list(compute(t.utcfromtimestamp, [0])) == \
             [datetime(1970, 1, 1, 0, 0)]
 
@@ -656,7 +656,7 @@ payment_dshape = 'var * {name: string, payments: var * {amount: int32, when: dat
 
 @pytest.mark.xfail(reason="Can't reason about nested broadcasts yet")
 def test_nested():
-    t = Symbol('t', payment_dshape)
+    t = symbol('t', payment_dshape)
     assert list(compute(t.name, payments_ordered)) == ['Alice', 'Bob']
 
     assert list(compute(t.payments, payments_ordered)) == \
@@ -669,7 +669,7 @@ def test_nested():
 
 @pytest.mark.xfail(reason="Can't reason about nested broadcasts yet")
 def test_scalar():
-    s = Symbol('s', '{name: string, id: int32, payments: var * {amount: int32, when: datetime}}')
+    s = symbol('s', '{name: string, id: int32, payments: var * {amount: int32, when: datetime}}')
     data = ('Alice', 1, ((100, datetime(2000, 1, 1, 1, 1 ,1)),
                          (200, datetime(2000, 2, 2, 2, 2, 2)),
                          (300, datetime(2000, 3, 3, 3, 3, 3))))
@@ -687,8 +687,8 @@ def test_slice():
 
 
 def test_multi_dataset_broadcast():
-    x = Symbol('x', '3 * int')
-    y = Symbol('y', '3 * int')
+    x = symbol('x', '3 * int')
+    y = symbol('y', '3 * int')
 
     a = [1, 2, 3]
     b = [10, 20, 30]
@@ -699,8 +699,8 @@ def test_multi_dataset_broadcast():
 
 @pytest.mark.xfail(reason="Optimize doesn't create multi-table-broadcasts")
 def test_multi_dataset_broadcast_with_Record_types():
-    x = Symbol('x', '3 * {p: int, q: int}')
-    y = Symbol('y', '3 * int')
+    x = symbol('x', '3 * {p: int, q: int}')
+    y = symbol('y', '3 * int')
 
     a = [(1, 1), (2, 2), (3, 3)]
     b = [10, 20, 30]
@@ -717,7 +717,7 @@ def eq(a, b):
 
 
 def test_pre_compute():
-    s = Symbol('s', 'var * {a: int, b: int}')
+    s = symbol('s', 'var * {a: int, b: int}')
     assert pre_compute(s, [(1, 2)]) == [(1, 2)]
     assert list(pre_compute(s, iter([(1, 2)]))) == [(1, 2)]
     assert list(pre_compute(s, iter([(1, 2), (3, 4)]))) == [(1, 2), (3, 4)]
@@ -726,7 +726,7 @@ def test_pre_compute():
 
 
 def test_dicts():
-    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+    t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
     L = [['Alice', 100, 1],
          ['Bob', 200, 2],
@@ -764,29 +764,29 @@ def test_nrows():
     assert compute(t.nrows, x) == len(data)
 
 
-@pytest.mark.xfail(raises=ValueError, reason="Only 1D reductions allowed")
+@pytest.mark.xfail(raises=Exception, reason="Only 1D reductions allowed")
 def test_nelements_2D():
     assert compute(t.nelements(axis=1), data) == len(data[0])
 
 
 def test_compute_field_on_dicts():
-    s = Symbol('s', '{x: 3 * int, y: 3 * int}')
+    s = symbol('s', '{x: 3 * int, y: 3 * int}')
     d = {'x': [1, 2, 3], 'y': [4, 5, 6]}
     assert compute(s.x, {s: d}) == [1, 2, 3]
 
 
 def test_truncate():
-    s = Symbol('x', 'real')
+    s = symbol('x', 'real')
     assert compute(s.truncate(20), 154) == 140
     assert compute(s.truncate(0.1), 3.1415) == 3.1
 
 
 def test_truncate_datetime():
-    s = Symbol('x', 'datetime')
+    s = symbol('x', 'datetime')
     assert compute(s.truncate(2, 'days'), datetime(2002, 1, 3, 12, 30)) ==\
             date(2002, 1, 2)
 
-    s = Symbol('x', 'var * datetime')
+    s = symbol('x', 'var * datetime')
     assert list(compute(s.truncate(2, 'days'),
                         [datetime(2002, 1, 3, 12, 30)])) ==\
             [date(2002, 1, 2)]
@@ -794,5 +794,5 @@ def test_truncate_datetime():
 
 def test_compute_up_on_base():
     d = datetime.now()
-    s = Symbol('s', 'datetime')
+    s = symbol('s', 'datetime')
     assert compute(s.minute, d) == d.minute

@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
 
-t = Symbol('t', 'var * {name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
 
@@ -19,7 +19,7 @@ s = sa.Table('accounts', metadata,
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
-tbig = Symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
+tbig = symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
 sbig = sa.Table('accountsbig', metadata,
              sa.Column('name', sa.String),
@@ -92,8 +92,8 @@ def test_join():
     expected = select(list(unique(expected.columns, key=lambda c:
         c.name))).select_from(expected)
 
-    L = Symbol('L', 'var * {name: string, amount: int}')
-    R = Symbol('R', 'var * {name: string, id: int}')
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
     result = compute(joined, {L: lhs, R: rhs})
@@ -127,8 +127,8 @@ def test_clean_complex_join():
                    sa.Column('name', sa.String),
                    sa.Column('id', sa.Integer))
 
-    L = Symbol('L', 'var * {name: string, amount: int}')
-    R = Symbol('R', 'var * {name: string, id: int}')
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
 
     joined = join(L[L.amount > 0], R, 'name')
 
@@ -163,8 +163,8 @@ def test_multi_column_join():
                    sa.Column('x', sa.Integer),
                    sa.Column('y', sa.Integer))
 
-    L = Symbol('L', 'var * {x: int, y: int, z: int}')
-    R = Symbol('R', 'var * {w: int, x: int, y: int}')
+    L = symbol('L', 'var * {x: int, y: int, z: int}')
+    R = symbol('R', 'var * {w: int, x: int, y: int}')
     joined = join(L, R, ['x', 'y'])
 
     expected = lhs.join(rhs, (lhs.c.x == rhs.c.x)
@@ -217,7 +217,7 @@ def test_nelements_subexpr():
     assert lhs == rhs
 
 
-@pytest.mark.xfail(raises=ValueError, reason="We don't support axis=1 for"
+@pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
                    " Record datashapes")
 def test_nelements_axis_1():
     assert compute(nelements(t, axis=1), s) == len(s.columns)
@@ -266,10 +266,10 @@ def test_binary_reductions():
 
 
 def test_by():
-    expr = by(t['name'], t['amount'].sum())
+    expr = by(t['name'], total=t['amount'].sum())
     result = compute(expr, s)
     expected = sa.select([s.c.name,
-                          sa.sql.functions.sum(s.c.amount).label('amount_sum')]
+                          sa.sql.functions.sum(s.c.amount).label('total')]
                          ).group_by(s.c.name)
 
     assert str(result) == str(expected)
@@ -277,14 +277,14 @@ def test_by():
 
 def test_by_head():
     t2 = t.head(100)
-    expr = by(t2['name'], t2['amount'].sum())
+    expr = by(t2['name'], total=t2['amount'].sum())
     result = compute(expr, s)
     # s2 = select(s).limit(100)
     # expected = sa.select([s2.c.name,
     #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
     #                      ).group_by(s2.c.name)
     expected = """
-    SELECT accounts.name, sum(accounts.amount) as amount_sum
+    SELECT accounts.name, sum(accounts.amount) as total
     FROM accounts
     GROUP by accounts.name
     LIMIT :param_1"""
@@ -292,11 +292,11 @@ def test_by_head():
 
 
 def test_by_two():
-    expr = by(tbig[['name', 'sex']], tbig['amount'].sum())
+    expr = by(tbig[['name', 'sex']], total=tbig['amount'].sum())
     result = compute(expr, sbig)
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
-                           sa.sql.functions.sum(sbig.c.amount).label('amount_sum')])
+                           sa.sql.functions.sum(sbig.c.amount).label('total')])
                         .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
@@ -304,13 +304,13 @@ def test_by_two():
 
 def test_by_three():
     result = compute(by(tbig[['name', 'sex']],
-                        (tbig['id'] + tbig['amount']).sum()),
+                        total=(tbig['id'] + tbig['amount']).sum()),
                      sbig)
 
     assert normalize(str(result)) == normalize("""
     SELECT accountsbig.name,
            accountsbig.sex,
-           sum(accountsbig.id + accountsbig.amount) AS sum
+           sum(accountsbig.id + accountsbig.amount) AS total
     FROM accountsbig GROUP BY accountsbig.name, accountsbig.sex
     """)
 
@@ -351,8 +351,8 @@ def test_join_projection():
                    sa.Column('name', sa.String),
                    sa.Column('id', sa.Integer))
 
-    L = Symbol('L', 'var * {name: string, amount: int}')
-    R = Symbol('R', 'var * {name: string, id: int}')
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
     want = join(L, R, 'name')[['amount', 'id']]
 
     result = compute(want, {L: lhs, R: rhs})
@@ -368,6 +368,19 @@ def test_sort():
 
     assert str(compute(t.sort('amount', ascending=False), s)) == \
             str(select(s).order_by(sqlalchemy.desc(s.c.amount)))
+
+
+def test_sort_on_distinct():
+    assert normalize(str(compute(t.amount.sort(), s))) == normalize("""
+            SELECT accounts.amount
+            FROM accounts
+            ORDER BY accounts.amount""")
+
+    assert normalize(str(compute(t.amount.distinct().sort(), s))) == normalize("""
+            SELECT DISTINCT accounts.amount as amount
+            FROM accounts
+            ORDER BY amount""")
+
 
 
 def test_head():
@@ -405,8 +418,8 @@ def test_projection_of_selection():
 
 
 def test_outer_join():
-    L = Symbol('L', 'var * {id: int, name: string, amount: real}')
-    R = Symbol('R', 'var * {city: string, id: int}')
+    L = symbol('L', 'var * {id: int, name: string, amount: real}')
+    R = symbol('R', 'var * {city: string, id: int}')
 
     from blaze.sql import SQL
     engine = sa.create_engine('sqlite:///:memory:')
@@ -517,9 +530,9 @@ def test_clean_join():
              sa.Column('b', sa.Integer),
              )
 
-    tcity = Symbol('city', discover(city))
-    tfriends = Symbol('friends', discover(friends))
-    tname = Symbol('name', discover(name))
+    tcity = symbol('city', discover(city))
+    tfriends = symbol('friends', discover(friends))
+    tname = symbol('name', discover(name))
 
     ns = {tname: name, tfriends: friends, tcity: city}
 
@@ -601,8 +614,8 @@ def test_join_complex_clean():
 
     sel = select(name).where(name.c.id > 10)
 
-    tname = Symbol('name', discover(name))
-    tcity = Symbol('city', discover(city))
+    tname = symbol('name', discover(name))
+    tcity = symbol('city', discover(city))
 
     ns = {tname: name, tcity: city}
 
@@ -627,8 +640,8 @@ def test_projection_of_join():
              sa.Column('country', sa.String),
              )
 
-    tname = Symbol('name', discover(name))
-    tcity = Symbol('city', discover(city))
+    tname = symbol('name', discover(name))
+    tcity = symbol('city', discover(city))
 
     expr = join(tname, tcity[tcity.city == 'NYC'], 'id')[['country', 'name']]
 
@@ -652,8 +665,8 @@ def test_lower_column():
              sa.Column('country', sa.String),
              )
 
-    tname = Symbol('name', discover(name))
-    tcity = Symbol('city', discover(city))
+    tname = symbol('name', discover(name))
+    tcity = symbol('city', discover(city))
 
     ns = {tname: name, tcity: city}
 
@@ -678,8 +691,8 @@ def test_selection_of_join():
              sa.Column('country', sa.String),
              )
 
-    tname = Symbol('name', discover(name))
-    tcity = Symbol('city', discover(city))
+    tname = symbol('name', discover(name))
+    tcity = symbol('city', discover(city))
 
     ns = {tname: name, tcity: city}
 
@@ -700,7 +713,7 @@ def test_join_on_same_table():
              sa.Column('b', sa.Integer),
              )
 
-    t = Symbol('tab', discover(T))
+    t = symbol('tab', discover(T))
     expr = join(t, t, 'a')
 
     result = compute(expr, {t: T})
@@ -749,7 +762,7 @@ def test_field_access_on_engines():
              )
     city.create()
 
-    s = Symbol('s', discover(engine))
+    s = symbol('s', discover(engine))
     result = compute_up(s.city, engine)
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
@@ -764,7 +777,7 @@ def test_computation_directly_on_sqlalchemy_Tables():
              )
     name.create()
 
-    s = Symbol('s', discover(name))
+    s = symbol('s', discover(name))
     result = compute(s.id + 1, name)
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []

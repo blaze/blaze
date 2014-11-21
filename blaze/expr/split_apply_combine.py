@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from .core import common_subexpression
-from .expressions import Expr, Symbol
+from .expressions import Expr, symbol
 from .reductions import Reduction, Summary, summary
 from ..dispatch import dispatch
 from datashape import dshape, Record, Option, Unit, var
@@ -25,8 +25,8 @@ class By(Expr):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {name: string, amount: int, id: int}')
-    >>> e = by(t['name'], t['amount'].sum())
+    >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
+    >>> e = by(t['name'], total=t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
     ...         ['Bob', 200, 2],
@@ -37,7 +37,7 @@ class By(Expr):
     [('Alice', 150), ('Bob', 200)]
     """
 
-    __slots__ = 'grouper', 'apply'
+    __slots__ = '_hash', 'grouper', 'apply'
 
     @property
     def _child(self):
@@ -58,10 +58,26 @@ class By(Expr):
         # TODO: think if this should be generalized
         return var * self.schema
 
-@dispatch(Expr, (Summary, Reduction))
-def by(grouper, apply):
-    return By(grouper, apply)
+    def __str__(self):
+        s = 'by('
+        s += str(self.grouper) + ', '
+        if isinstance(self.apply, Summary):
+            s += str(self.apply)[len('summary('):-len(')')]
+        else:
+            s += str(self.apply)
+        s += ')'
+        return s
 
+@dispatch(Expr, Reduction)
+def by(grouper, s):
+    raise ValueError("This syntax has been removed.\n"
+    "Please name reductions with keyword arguments.\n"
+    "Before:   by(t.name, t.amount.sum())\n"
+    "After:    by(t.name, total=t.amount.sum())")
+
+@dispatch(Expr, Summary)
+def by(grouper, s):
+    return By(grouper, s)
 
 @dispatch(Expr)
 def by(grouper, **kwargs):
