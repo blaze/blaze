@@ -306,5 +306,5 @@ def compserver(datasets):
 
     return jsonify({'datashape': str(expr.dshape),
                     'data': result,
-                    'names' : expr.columns,
+                    'names' : expr.fields,
                 })

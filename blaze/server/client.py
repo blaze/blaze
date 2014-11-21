@@ -63,7 +63,6 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url'
     def __init__(self, url, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
@@ -132,7 +131,6 @@ def compute_down(expr, ec, **kwargs):
     from pandas import DataFrame
     leaf = expr._leaves()[0]
     tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
-
     r = requests.get('%s/compute.json' % ec.url,
                      data = json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
