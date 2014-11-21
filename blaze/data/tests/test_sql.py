@@ -127,6 +127,14 @@ def test_discovery():
     assert discover(s) == \
             dshape('var * {name: ?string, amount: ?int32, timestamp: datetime}')
 
+def test_discovery_numeric_column():
+    assert discover(sa.String()) == datashape.string
+    metadata = sa.MetaData()
+    s = sa.Table('name', metadata,
+                 sa.Column('name', sa.types.NUMERIC),)
+
+    assert discover(s)
+
 
 def test_discover_null_columns():
     assert dshape(discover(sa.Column('name', sa.String, nullable=True))) == \
