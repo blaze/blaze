@@ -21,6 +21,23 @@ Blaze expressions enable us to design algorithms.
 
 
 
+## Motivation
+
+NumPy and Pandas serve as the foundation for the PyData stack
+
+... but they are limited to memory
+
+The state of biggish-data analysis is still wild
+
+
+## Approach
+
+* Blaze is a user interface
+* ... and something like a compiler
+* It isn't a database or a pandas replacement
+* It complements databases to helps users connect to pre-existing technologies (SQL, Spark, out-of-core, etc..)
+
+
 ## Play time
 
 *In which we pray to the demo gods*
