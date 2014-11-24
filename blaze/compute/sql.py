@@ -46,7 +46,7 @@ def inner_columns(s):
         return s.c
     if isinstance(s, Selectable):
         return s.inner_columns
-    raise NotImplementedError()
+    raise TypeError()
 
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
@@ -228,7 +228,7 @@ def compute_up(t, lhs, rhs, **kwargs):
         main, other = rhs, lhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
-        raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
+        raise ValueError("SQLAlchemy doesn't support full outer Join")
 
     def cols(x):
         if isinstance(x, Select):
@@ -351,7 +351,7 @@ def compute_up(t, s, **kwargs):
     if isinstance(t.grouper, (Field, Projection)):
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
     else:
-        raise NotImplementedError("Grouper must be a projection, got %s"
+        raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t._child: s})]
@@ -399,7 +399,7 @@ def lower_column(col):
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
     if not isinstance(t.grouper, (Field, Projection)):
-        raise NotImplementedError("Grouper must be a projection, got %s"
+        raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
     if isinstance(t.apply, Reduction):
@@ -422,7 +422,7 @@ def compute_up(t, s, **kwargs):
 @dispatch(Sort, ClauseElement)
 def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
-        raise NotImplementedError("Multi-column sort not yet implemented")
+        raise ValueError("Multi-column sort not yet implemented")
     s = select(s)
     col = lower_column(getattr(s.c, t.key))
     if not t.ascending:
