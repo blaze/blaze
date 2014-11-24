@@ -175,7 +175,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         expr3 = optimize_(expr2, *[scope3[leaf] for leaf in expr2._leaves()])
         _d = dict(zip(expr2._leaves(), expr3._leaves()))
         scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
-    except (TypeError, NotImplementedError):
+    except (NotImplementedError):
         expr3 = expr2
         scope4 = scope3
 
