@@ -1,16 +1,7 @@
+@echo off
 
 SET BLD_DIR=%CD%
 cd /D "%RECIPE_DIR%\.."
-
-"%PYTHON%" setup.py install
-
-REM # X.X.X.dev builds
 FOR /F "delims=" %%i IN ('git describe --tags') DO set BLAZE_VERSION=%%i
-set _result=%BLAZE_VERSION:-=_%
-
-echo %_result%>__conda_version__.txt
-
-copy __conda_version__.txt "%BLD_DIR%"
-
-if errorlevel 1 exit 1
-
+echo.%BLAZE_VERSION% | %PYTHON% .\conda.recipe\version.py > %SRC_DIR%\__conda_version__.txt
+%PYTHON% setup.py --quiet install
