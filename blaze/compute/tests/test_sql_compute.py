@@ -781,3 +781,65 @@ def test_computation_directly_on_sqlalchemy_Tables():
     result = compute(s.id + 1, name)
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
+
+
+def test_aliased_views():
+    sql_bank = sa.Table('bank', sa.MetaData(),
+                     sa.Column('id', sa.Integer),
+                     sa.Column('name', sa.String),
+                     sa.Column('amount', sa.Integer))
+    sql_cities = sa.Table('cities', sa.MetaData(),
+                       sa.Column('name', sa.String),
+                       sa.Column('city', sa.String))
+
+    bank = Symbol('bank', discover(sql_bank))
+    cities = Symbol('cities', discover(sql_cities))
+
+    joined = join(bank, cities)
+    expr = by(joined.city, total=joined.amount.sum())
+    expr2 = by(expr.total, count=expr.city.nunique())
+
+    result = compute(expr2, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT total, count(DISTINCT city) AS count
+    FROM (SELECT cities.city AS city, sum(bank.amount) AS total
+          FROM bank
+          JOIN cities ON bank.name = cities.name
+          GROUP BY cities.city) as XXXXXXX, bank
+    JOIN cities ON bank.name = cities.name
+    GROUP BY total
+    """)
+
+
+'''
+    bank = Symbol('bank', discover(sql_bank))
+    cities = Symbol('cities', discover(sql_cities))
+    j = join(bank, cities)
+    expr = by(j.name, count=j.city.count())
+    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == normalize("""
+            SELECT bank.name, count(cities.city) AS count
+            FROM bank JOIN cities ON bank.name = cities.name
+            GROUP BY bank.name
+            """)
+
+    cities2 = cities.head()
+    j = join(bank, cities2)
+    expr = by(j.name, count=j.city.count())
+    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == normalize("""
+            SELECT bank.name, count(cities.city) AS count
+            FROM bank JOIN cities ON bank.name = cities.name
+            GROUP BY bank.name
+            LIMIT :param_1
+            """)
+
+    sql_friends = sa.Table('friends', sa.MetaData(),
+                       sa.Column('a', sa.String),
+                       sa.Column('b', sa.String))
+    friends = Symbol('friends', discover(sql_friends))
+
+'''
