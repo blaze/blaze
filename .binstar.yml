@@ -34,3 +34,7 @@ notifications:
 platform: win-32
 engine: python=2.6
 exclude: true
+---
+platform: win-64
+engine: python=2.6
+exclude: true
