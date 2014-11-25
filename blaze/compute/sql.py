@@ -406,7 +406,7 @@ def compute_up(t, s, **kwargs):
         raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
-    if s._group_by_clause is None or len(s._group_by_clause) is None:
+    if s._group_by_clause is not None and len(s._group_by_clause):
         s = s.alias(next(aliases))
 
     if isinstance(t.apply, Reduction):
