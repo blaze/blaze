@@ -843,3 +843,11 @@ def test_aliased_views():
     friends = Symbol('friends', discover(sql_friends))
 
 '''
+
+def test_select_field_on_alias():
+    result = compute_up(t.amount, select(s).limit(10).alias('foo'))
+    assert normalize(str(select(result))) == normalize("""
+        SELECT foo.amount
+        FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+              FROM accounts
+              LIMIT :param_1) as foo""")

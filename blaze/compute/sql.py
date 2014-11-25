@@ -42,10 +42,10 @@ __all__ = ['sqlalchemy', 'select']
 
 
 def inner_columns(s):
-    if isinstance(s, sqlalchemy.Table):
-        return s.c
-    if isinstance(s, Selectable):
+    try:
         return s.inner_columns
+    except AttributeError:
+        return s.c
     raise TypeError()
 
 @dispatch(Projection, Selectable)
@@ -70,7 +70,7 @@ def compute_up(t, s, **kwargs):
     return s.with_only_columns(cols)
 
 
-@dispatch(Field, sqlalchemy.Table)
+@dispatch(Field, ClauseElement)
 def compute_up(t, s, **kwargs):
     return s.c.get(t._name)
 
