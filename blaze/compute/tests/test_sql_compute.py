@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import re
 import pytest
 from blaze.compute.sql import (compute, computefull, select, lower_column,
         compute_up)
@@ -29,7 +30,9 @@ sbig = sa.Table('accountsbig', metadata,
              )
 
 def normalize(s):
-    return ' '.join(s.strip().split()).lower().replace('_', '')
+    s2 = ' '.join(s.strip().split()).lower().replace('_', '')
+    s3 = re.sub('alias\d*', 'alias', s2)
+    return s3
 
 
 def test_table():
@@ -284,10 +287,18 @@ def test_by_head():
     #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
     #                      ).group_by(s2.c.name)
     expected = """
+    SELECT alias.name, sum(alias.amount) as total
+    FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS ID
+          FROM accounts
+          LIMIT :param_1) as alias
+    GROUP BY alias.name"""
+
+    expected = """
     SELECT accounts.name, sum(accounts.amount) as total
     FROM accounts
     GROUP by accounts.name
     LIMIT :param_1"""
+
     assert normalize(str(result)) == normalize(str(expected))
 
 

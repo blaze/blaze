@@ -349,6 +349,8 @@ def compute_up(t, s, **kwargs):
 @dispatch(By, ClauseElement)
 def compute_up(t, s, **kwargs):
     if isinstance(t.grouper, (Field, Projection)):
+        # d = dict((c.name, c) for c in inner_columns(s))
+        # grouper = [d[col] for col in t.grouper.fields]
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
     else:
         raise ValueError("Grouper must be a projection, got %s"
@@ -396,11 +398,16 @@ def lower_column(col):
     return old
 
 
+aliases = ('alias_%d' % i for i in itertools.count(1))
+
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
     if not isinstance(t.grouper, (Field, Projection)):
         raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
+
+    if s._group_by_clause is None or len(s._group_by_clause) is None:
+        s = s.alias(next(aliases))
 
     if isinstance(t.apply, Reduction):
         reduction = compute(t.apply, {t._child: s})
@@ -408,7 +415,10 @@ def compute_up(t, s, **kwargs):
     elif isinstance(t.apply, Summary):
         reduction = compute(t.apply, {t._child: s})
 
+    # d = dict((c.name, c) for c in inner_columns(s))
+    # grouper = [d[col] for col in t.grouper.fields]
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
+
     s2 = reduction.group_by(*grouper)
 
     for g in grouper:
