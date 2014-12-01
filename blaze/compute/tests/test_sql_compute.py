@@ -848,10 +848,51 @@ def test_select_field_on_alias():
               LIMIT :param_1) as foo""")
 
 
+@pytest.mark.xfail(raises=Exception,
+        reason="sqlalchemy.join seems to drop unnecessary tables")
 def test_join_on_single_column():
+    expr = join(cities[['name']], bank)
+    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == """
+    SELECT bank.id, bank.name, bank.amount
+    FROM bank join cities ON bank.name = cities.name"""
+
+
     expr = join(bank, cities.name)
     result = compute(expr, {bank: sql_bank, cities: sql_cities})
 
     assert normalize(str(result)) == """
     SELECT bank.id, bank.name, bank.amount
     FROM bank join cities ON bank.name = cities.name"""
+
+
+def test_aliased_views_more():
+    metadata = sa.MetaData()
+    lhs = sa.Table('aaa', metadata,
+                   sa.Column('x', sa.Integer),
+                   sa.Column('y', sa.Integer),
+                   sa.Column('z', sa.Integer))
+
+    rhs = sa.Table('bbb', metadata,
+                   sa.Column('w', sa.Integer),
+                   sa.Column('x', sa.Integer),
+                   sa.Column('y', sa.Integer))
+
+    L = symbol('L', 'var * {x: int, y: int, z: int}')
+    R = symbol('R', 'var * {w: int, x: int, y: int}')
+
+    expr = join(by(L.x, y_total=L.y.sum()),
+                R)
+
+    result = compute(expr, {L: lhs, R: rhs})
+
+    assert normalize(str(result)) == normalize("""
+        SELECT alias.x, alias.y_total, bbb.w, bbb.y
+        FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+              FROM aaa
+              GROUP BY aaa.x) AS alias
+        JOIN bbb ON alias.x = bbb.x """)
+
+
+    joined = join(L, R, ['x', 'y'])

@@ -207,6 +207,9 @@ def compute_up(t, lhs, rhs, **kwargs):
         lhs = lhs.alias('%s_left' % name(lhs))
         rhs = rhs.alias('%s_right' % name(rhs))
 
+    lhs = alias_it(lhs)
+    rhs = alias_it(rhs)
+
     if isinstance(lhs, Select):
         ldict = dict((c.name, c) for c in lhs.inner_columns)
     else:
@@ -251,7 +254,6 @@ def compute_up(t, lhs, rhs, **kwargs):
                                     and c.name not in t._on_left]
     columns += [c for c in right_cols if c.name in fields
                                      and c.name not in t._on_right]
-    import pdb; pdb.set_trace()
 
     if isinstance(join, Select):
         return join.with_only_columns(columns)
@@ -406,14 +408,26 @@ def lower_column(col):
 
 aliases = ('alias_%d' % i for i in itertools.count(1))
 
+@toolz.memoize
+def alias_it(s):
+    """ Alias a Selectable if it has a group by clause """
+    if (hasattr(s, '_group_by_clause') and
+        s._group_by_clause is not None and
+        len(s._group_by_clause)):
+        return s.alias(next(aliases))
+    else:
+        return s
+
+
+
+
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
     if not isinstance(t.grouper, (Field, Projection)):
         raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
-    if s._group_by_clause is not None and len(s._group_by_clause):
-        s = s.alias(next(aliases))
+    s = alias_it(s)
 
     if isinstance(t.apply, Reduction):
         reduction = compute(t.apply, {t._child: s})
