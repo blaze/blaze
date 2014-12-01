@@ -319,11 +319,14 @@ class Join(Expr):
         joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
                         if name in self.on_left]
 
-        left = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+        left = [[name, dt] for name, dt in
+                zip(self.lhs.fields, types_of_fields(self.lhs.fields, self.lhs))
                            if name not in self.on_left]
 
-        right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
-                            if name not in self.on_right]
+        right = [[name, dt] for name, dt in
+                zip(self.rhs.fields, types_of_fields(self.rhs.fields, self.rhs))
+                           if name not in self.on_right]
+
 
         # Handle overlapping but non-joined case, e.g.
         left_other  = [name for name, dt in left  if name not in self.on_left]
@@ -348,6 +351,32 @@ class Join(Expr):
         return var * self.schema
 
 
+def types_of_fields(fields, expr):
+    """ Get the types of fields in an expression
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> expr = symbol('e', 'var * {x: int64, y: float32}')
+    >>> types_of_fields('y', expr)
+    ctype("float32")
+
+    >>> types_of_fields(['y', 'x'], expr)
+    (ctype("float32"), ctype("int64"))
+
+    >>> types_of_fields('x', expr.x)
+    ctype("int64")
+    """
+    if isinstance(expr.dshape.measure, Record):
+        return get(fields, expr.dshape.measure)
+    else:
+        if isinstance(fields, (tuple, list, set)):
+            assert len(fields) == 1
+            fields = fields[0]
+        assert fields == expr._name
+        return expr.dshape.measure
+
+
 def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
@@ -359,7 +388,7 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
         on_left = list(on_left)
     if isinstance(on_right, tuple):
         on_right = list(on_right)
-    if get(on_left, lhs.schema[0]) != get(on_right, rhs.schema[0]):
+    if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)

@@ -40,3 +40,12 @@ def test_join_on_same_table():
 
     assert isdistinct(c.fields)
     assert len(c.fields) == 3
+
+
+def test_join_on_single_column():
+    a = symbol('a', 'var * {x: int, y: int, z: int}')
+    b = symbol('b', 'var * {x: int, y: int, w: int}')
+
+    expr = join(a, b.x)
+
+    assert expr.on_right == 'x'
