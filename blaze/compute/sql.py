@@ -29,7 +29,7 @@ import toolz
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Field, Broadcast, Expr
+from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
@@ -312,16 +312,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    try:
-        c = lower_column(list(s.primary_key)[0])
-    except IndexError:
-        c = lower_column(list(s.columns)[0])
-
-    col = sqlalchemy.func.count(c)
-
-    s = copy(s)
-    s.append_column(col)
-    return s.with_only_columns([col])
+    s2 = s.count()
+    return select([list(inner_columns(s2))[0].label(t._name)])
 
 
 @dispatch(nunique, sqlalchemy.Column)

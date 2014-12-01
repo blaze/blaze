@@ -229,15 +229,25 @@ def test_nelements_axis_1():
 
 
 def test_count_on_table():
-    assert normalize(str(select(compute(t.count(), s)))) == normalize("""
+    result = select(compute(t.count(), s))
+    assert normalize(str(result)) == normalize("""
     SELECT count(accounts.id) as count_1
     FROM accounts""")
 
-    assert normalize(str(select(compute(t[t.amount > 0].count(), s)))) == \
-    normalize("""
-    SELECT count(accounts.id) as count_1
-    FROM accounts
-    WHERE accounts.amount > :amount_1""")
+    result = select(compute(t[t.amount > 0].count(), s))
+    assert (
+        normalize(str(result)) == normalize("""
+        SELECT count(accounts.id) as count_1
+        FROM accounts
+        WHERE accounts.amount > :amount_1""")
+
+        or
+
+        normalize(str(result)) == normalize("""
+        SELECT count(id) as count
+        FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+              FROM accounts
+              WHERE accounts.amount > :amount_1)"""))
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -970,3 +980,30 @@ def test_aliased_views_with_computation():
     b = compute(expr5, {L: sql_aaa, R: sql_bbb})
     assert into(set, a) == into(set, b)
     """
+
+
+def test_distinct_count_on_projection():
+    expr = t[['amount']].distinct().count()
+
+    result = compute(expr, {t: s})
+
+    assert (
+        normalize(str(result)) == normalize("""
+        SELECT count(DISTINCT accounts.amount)
+        FROM accounts""")
+
+        or
+
+        normalize(str(result)) == normalize("""
+        SELECT count(amount) as count
+        FROM (SELECT DISTINCT accounts.amount AS amount
+              FROM accounts)"""))
+
+    # note that id is the primary key
+    expr = t[['amount', 'id']].distinct().count()
+
+    result = compute(expr, {t: s})
+    assert normalize(str(result)) == normalize("""
+        SELECT count(id) as count
+        FROM (SELECT DISTINCT accounts.amount AS amount, accounts.id AS id
+              FROM accounts)""")
