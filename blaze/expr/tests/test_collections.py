@@ -1,5 +1,6 @@
 from blaze.expr import *
 from blaze.expr.collections import *
+from blaze.utils import raises
 from toolz import isdistinct
 
 
@@ -49,3 +50,10 @@ def test_join_on_single_column():
     expr = join(a, b.x)
 
     assert expr.on_right == 'x'
+
+
+def test_raise_error_if_join_on_no_columns():
+    a = symbol('a', 'var * {x: int}')
+    b = symbol('b', 'var * {y: int}')
+
+    assert raises(ValueError, lambda: join(a, b))

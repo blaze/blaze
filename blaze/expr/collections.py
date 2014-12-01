@@ -394,6 +394,10 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                         else on_right)
 
+    if not _on_left or not _on_right:
+        raise ValueError("Can not Join.  No shared columns between %s and %s"%
+                (lhs, rhs))
+
     how = how.lower()
     if how not in ('inner', 'outer', 'left', 'right'):
         raise ValueError("How parameter should be one of "
