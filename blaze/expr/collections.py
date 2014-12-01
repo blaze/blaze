@@ -388,15 +388,15 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
         on_left = list(on_left)
     if isinstance(on_right, tuple):
         on_right = list(on_right)
+    if not on_left or not on_right:
+        raise ValueError("Can not Join.  No shared columns between %s and %s"%
+                (lhs, rhs))
     if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                         else on_right)
 
-    if not _on_left or not _on_right:
-        raise ValueError("Can not Join.  No shared columns between %s and %s"%
-                (lhs, rhs))
 
     how = how.lower()
     if how not in ('inner', 'outer', 'left', 'right'):
