@@ -50,17 +50,8 @@ def inner_columns(s):
 
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    # Walk up the tree to get the original columns
-    subexpression = t
-    while hasattr(subexpression, '_child'):
-        subexpression = subexpression._child
-    csubexpression = compute(subexpression, scope)
-    # Hack because csubexpression may be SQL object
-    if not isinstance(csubexpression, Selectable):
-        csubexpression = csubexpression.table
-    columns = [csubexpression.c.get(col) for col in t.fields]
-
-    return select(s).with_only_columns(columns)
+    d = dict((c.name, c) for c in inner_columns(s))
+    return select(s).with_only_columns([d[field] for field in t.fields])
 
 
 @dispatch((Field, Projection), Select)
