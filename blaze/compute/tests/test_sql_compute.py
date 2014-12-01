@@ -846,3 +846,12 @@ def test_select_field_on_alias():
         FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
               FROM accounts
               LIMIT :param_1) as foo""")
+
+
+def test_join_on_single_column():
+    expr = join(bank, cities.name)
+    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == """
+    SELECT bank.id, bank.name, bank.amount
+    FROM bank join cities ON bank.name = cities.name"""

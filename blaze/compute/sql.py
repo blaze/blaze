@@ -176,7 +176,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
 
-@dispatch(Select, Selectable)
+@dispatch(Select, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(a.froms) > 1:
         raise MDNotImplementedError()
@@ -185,20 +185,24 @@ def _join_selectables(a, b, condition=None, **kwargs):
                 a.froms[0].join(b, condition, **kwargs))
 
 
-@dispatch(Selectable, Select)
+@dispatch(ClauseElement, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(b.froms) > 1:
         raise MDNotImplementedError()
     return b.replace_selectable(b.froms[0],
                 a.join(b.froms[0], condition, **kwargs))
 
-@dispatch(Selectable, Selectable)
+@dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
 
-@dispatch(Join, Selectable, Selectable)
+@dispatch(Join, ClauseElement, ClauseElement)
 def compute_up(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, ColumnElement):
+        lhs = select(lhs)
+    if isinstance(rhs, ColumnElement):
+        rhs = select(rhs)
     if name(lhs) == name(rhs):
         lhs = lhs.alias('%s_left' % name(lhs))
         rhs = rhs.alias('%s_right' % name(rhs))
@@ -207,6 +211,7 @@ def compute_up(t, lhs, rhs, **kwargs):
         ldict = dict((c.name, c) for c in lhs.inner_columns)
     else:
         ldict = lhs.c
+
     if isinstance(rhs, Select):
         rdict = dict((c.name, c) for c in rhs.inner_columns)
     else:
@@ -246,6 +251,7 @@ def compute_up(t, lhs, rhs, **kwargs):
                                     and c.name not in t._on_left]
     columns += [c for c in right_cols if c.name in fields
                                      and c.name not in t._on_right]
+    import pdb; pdb.set_trace()
 
     if isinstance(join, Select):
         return join.with_only_columns(columns)
