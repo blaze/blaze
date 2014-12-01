@@ -9,6 +9,8 @@ import sqlalchemy
 import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
+from pandas import DataFrame
+from blaze import into
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
@@ -894,5 +896,77 @@ def test_aliased_views_more():
               GROUP BY aaa.x) AS alias
         JOIN bbb ON alias.x = bbb.x """)
 
+    expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
 
-    joined = join(L, R, ['x', 'y'])
+    result2 = compute(expr2, {L: lhs, R: rhs})
+
+    assert (
+        normalize(str(result2)) == normalize("""
+            SELECT alias_2.w, count(alias_2.x) as count, sum(alias_2.y_total) as total2
+            FROM (SELECT alias.x, alias.y_total, bbb.w, bbb.y
+                  FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+                        FROM aaa
+                        GROUP BY aaa.x) AS alias
+                  JOIN bbb ON alias.x = bbb.x) AS alias_2
+            GROUP BY alias_2.w""")
+
+        or
+
+        normalize(str(result2)) == normalize("""
+            SELECT bbb.w, count(alias.x) as count, sum(alias.y_total) as total2
+            FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+                  FROM aaa
+                  GROUP BY aaa.x) as alias
+              JOIN bbb ON alias.x = bbb.x
+            GROUP BY bbb.w"""))
+
+
+def test_aliased_views_with_computation():
+    engine = sa.create_engine('sqlite:///:memory:')
+
+    df_aaa = DataFrame({'x': [1, 2, 3, 2, 3],
+                        'y': [2, 1, 2, 3, 1],
+                        'z': [3, 3, 3, 1, 2]})
+    df_bbb = DataFrame({'w': [1, 2, 3, 2, 3],
+                        'x': [2, 1, 2, 3, 1],
+                        'y': [3, 3, 3, 1, 2]})
+
+    df_aaa.to_sql('aaa', engine)
+    df_bbb.to_sql('bbb', engine)
+
+    metadata = sa.MetaData(engine)
+    metadata.reflect()
+
+    sql_aaa = metadata.tables['aaa']
+    sql_bbb = metadata.tables['bbb']
+
+    L = Symbol('aaa', discover(df_aaa))
+    R = Symbol('bbb', discover(df_bbb))
+
+    expr = join(by(L.x, y_total=L.y.sum()),
+                R)
+    a = compute(expr, {L: df_aaa, R: df_bbb})
+    b = compute(expr, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
+    a = compute(expr2, {L: df_aaa, R: df_bbb})
+    b = compute(expr2, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    expr3 = by(expr.x, count=expr.y_total.count())
+    a = compute(expr3, {L: df_aaa, R: df_bbb})
+    b = compute(expr3, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    expr4 = join(expr2, R)
+    a = compute(expr4, {L: df_aaa, R: df_bbb})
+    b = compute(expr4, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    """ # Takes a while
+    expr5 = by(expr4.count, total=(expr4.x + expr4.y).sum())
+    a = compute(expr5, {L: df_aaa, R: df_bbb})
+    b = compute(expr5, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+    """
