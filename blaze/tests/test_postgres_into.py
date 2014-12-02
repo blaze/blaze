@@ -24,6 +24,21 @@ import numpy as np
 url = 'postgresql://localhost/postgres'
 file_name = 'test.csv'
 
+
+try:
+    url = 'postgresql://localhost/postgres'
+    engine = sqlalchemy.create_engine(url)
+    name = 'tmpschema'
+    create = sqlalchemy.schema.CreateSchema(name)
+    engine.execute(create)
+    metadata = sqlalchemy.MetaData()
+    metadata.reflect(engine, schema=name)
+    drop = sqlalchemy.schema.DropSchema(name)
+    engine.execute(drop)
+except sqlalchemy.exc.OperationalError:
+    pytestmark = pytest.mark.skipif(True, reason="Can not connect to postgres")
+
+
 def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
 
