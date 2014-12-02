@@ -185,6 +185,8 @@ def into(a, b, **kwargs):
     if isinstance(first, (list, tuple)):
         if 'dtype' in kwargs:
             dtype = kwargs.pop('dtype')
+        elif 'dshape' in kwargs:
+            dtype = to_numpy_dtype(dshape(kwargs.pop('dshape')))
         else:
             dtype = dtype_from_tuple(first)
         return np.rec.fromrecords([tuple(x) for x in b],
@@ -455,7 +457,13 @@ def into(a, df, **kwargs):
 
 @dispatch(np.ndarray, pd.DataFrame)
 def into(a, df, **kwargs):
-    return df.to_records(index=False)
+    x = df.to_records(index=False)
+    if 'dshape' in kwargs:
+        ds = dshape(kwargs['dshape']).measure
+        dt = to_numpy_dtype(ds)
+        if x.dtype != dt:
+            x = x.astype(dt)
+    return x
 
 
 @dispatch(nd.array)
