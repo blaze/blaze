@@ -20,6 +20,9 @@ from .utils import keywords
 __all__ = ['into', 'bcolz', 'chunks']
 
 
+carray_keywords = set('''cparams dtype dflt expectedlen chunklen rootdir mode
+                        names'''.split())
+
 @dispatch(type, (ctable, carray))
 def into(a, b, **kwargs):
     f = into.dispatch(a, type(b))
@@ -46,26 +49,29 @@ def into(a, b, **kwargs):
 @dispatch(ctable, np.ndarray)
 def into(a, b, **kwargs):
     if isinstance(a, type):
+        kwargs = keyfilter(carray_keywords.__contains__, kwargs)
         return ctable(b, **kwargs)
     else:
         a.append(b)
+        a.flush()
         return a
 
 
 @dispatch(carray, np.ndarray)
 def into(a, b, **kwargs):
     if isinstance(a, type):
-        kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+        kwargs = keyfilter(carray_keywords.__contains__, kwargs)
         return carray(b, **kwargs)
     else:
         a.append(b)
+        a.flush()
         return a
 
 
 @dispatch(carray, (tuple, list))
 def into(a, b, dtype=None, **kwargs):
     x = into(np.ndarray(0), b, dtype=dtype)
-    kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+    kwargs = keyfilter(carray_keywords.__contains__, kwargs)
     return into(a, x, **kwargs)
 
 
@@ -75,6 +81,7 @@ def into(a, b, **kwargs):
         return b
     else:
         a.append(iter(b))
+        a.flush()
         return a
 
 @dispatch(ctable, (tuple, list))
@@ -95,7 +102,7 @@ def into(a, b, names=None, types=None, **kwargs):
 
 @dispatch((carray, ctable), Iterator)
 def into(a, b, **kwargs):
-    kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+    kwargs = keyfilter(carray_keywords.__contains__, kwargs)
     chunks = partition_all(1024, b)
     chunk = next(chunks)
     a = into(a, chunk, **kwargs)
@@ -120,9 +127,14 @@ from .compute.chunks import ChunkIterator, chunks
 @dispatch((carray, ctable), ChunkIterator)
 def into(a, b, **kwargs):
     b = iter(b)
-    a = into(a, next(b), **kwargs)
+    if isinstance(a, type):
+        x = into(np.ndarray, next(b), **kwargs)
+        kwargs2 = keyfilter(carray_keywords.__contains__, kwargs)
+        a = a(x, **kwargs2)
     for chunk in b:
-        a.append(into(np.ndarray(0), chunk))
+        x = into(np.ndarray, chunk, **kwargs)
+        a.append(x)
+        a.flush()
     a.flush()
     return a
 
@@ -137,12 +149,12 @@ def into(a, b, **kwargs):
 @resource.register('.+\.bcolz/?')
 def resource_bcolz(rootdir, **kwargs):
     if os.path.exists(rootdir):
-        kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+        kwargs = keyfilter(carray_keywords.__contains__, kwargs)
         return ctable(rootdir=rootdir, **kwargs)
     else:
         if 'dshape' in kwargs:
             dtype = to_numpy_dtype(kwargs['dshape'])
-            kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+            kwargs = keyfilter(carray_keywords.__contains__, kwargs)
             return ctable(np.empty(0, dtype), rootdir=rootdir, **kwargs)
         else:
             raise ValueError("File does not exist and no `dshape=` given")

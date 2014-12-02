@@ -626,3 +626,12 @@ def test_csv_into_numpy_respects_dshape():
              dshape='var * {id: int32, name: string[7, "ascii"], balance: float32}')
 
     assert x.dtype == [('id', 'i4'), ('name', 'S7'), ('balance', 'f4')]
+
+
+def test_into_bcolz_from_many_csv_files():
+    ds = dshape('var * {id: int32, name: string[7, "ascii"], amount: float32}')
+    from bcolz import ctable
+    b = into(ctable, example('accounts_*.csv'), dshape=ds)
+
+    assert len(b) == 5
+    assert b.dtype == [('id', 'i4'), ('name', 'S7'), ('amount', 'f4')]
