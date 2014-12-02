@@ -1,23 +1,35 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
+import sqlalchemy
+import subprocess
 
 psycopg2 = pytest.importorskip('psycopg2')
-import subprocess
 ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
 output = ps.stdout.read()
 num_processes = len(output.splitlines())
 pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
-
-from blaze import SQL, into, resource
-import sqlalchemy
-from contextlib import contextmanager
 
 data = [('Alice', 1), ('Bob', 2), ('Charlie', 3)]
 
 url = 'postgresql://localhost/postgres'
 # url = 'postgresql://postgres:postgres@localhost/postgres'
 engine = sqlalchemy.create_engine(url)
+
+try:
+    name = 'tmpschema'
+    create = sqlalchemy.schema.CreateSchema(name)
+    engine.execute(create)
+    metadata = sqlalchemy.MetaData()
+    metadata.reflect(engine, schema=name)
+    drop = sqlalchemy.schema.DropSchema(name)
+    engine.execute(drop)
+except sqlalchemy.exc.OperationalError:
+    pytestmark = pytest.mark.skipif(True, reason="Can not connect to postgres")
+
+
+from blaze import SQL, into, resource
+from contextlib import contextmanager
 
 
 @contextmanager
@@ -38,7 +50,6 @@ def existing_schema(name):
 
         drop = sqlalchemy.schema.DropSchema(name)
         engine.execute(drop)
-
 
 @contextmanager
 def non_existing_schema(name):
