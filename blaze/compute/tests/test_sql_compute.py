@@ -209,17 +209,11 @@ def test_reductions():
 
 
 def test_nelements():
-    rhs = str(s.count())
+    rhs = str(compute(t.count(), s))
     assert str(compute(t.nelements(), s)) == rhs
     assert str(compute(t.nelements(axis=None), s)) == rhs
     assert str(compute(t.nelements(axis=0), s)) == rhs
     assert str(compute(t.nelements(axis=(0,)), s)) == rhs
-
-
-def test_nelements_subexpr():
-    rhs = str(sa.select([s.c.id, s.c.amount]).count())
-    lhs = str(compute(t[['id', 'amount']].nelements(), s))
-    assert lhs == rhs
 
 
 @pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
