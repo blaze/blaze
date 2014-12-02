@@ -513,8 +513,13 @@ def compute_up(t, s, **kwargs):
                           [key.like(pattern) for key, pattern in d.items()]))
 
 
+@toolz.memoize
+def table_of_engine(engine, name):
+    metadata = sqlalchemy.MetaData(engine)
+    metadata.reflect(engine)
+    return metadata.tables[name]
+
+
 @dispatch(Field, sqlalchemy.engine.Engine)
 def compute_up(expr, data, **kwargs):
-    metadata = sqlalchemy.MetaData(data)
-    metadata.reflect(data)
-    return metadata.tables[expr._name]
+    return table_of_engine(data, expr._name)
