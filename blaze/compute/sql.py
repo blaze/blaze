@@ -312,7 +312,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    s2 = s.count()
+    s2 = s.alias(next(aliases)).count()
     return select([list(inner_columns(s2))[0].label(t._name)])
 
 
