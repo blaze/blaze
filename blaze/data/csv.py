@@ -416,12 +416,15 @@ class CSV(DataDescriptor):
                              header=header,
                              **merge(kwargs, clean_dialect(self.dialect)))
 
-        reorder = get(list(usecols)) if usecols and len(usecols) > 1 else identity
+        reorder = get(list(usecols)) if usecols and len(usecols) > 1 else None
 
-        if isinstance(result, (pd.Series, pd.DataFrame)):
-            return reorder(result)
+        if reorder:
+            if isinstance(result, (pd.Series, pd.DataFrame)):
+                return reorder(result)
+            else:
+                return map(reorder, result)
         else:
-            return map(reorder, result)
+            return result
 
     def _iter(self, usecols=None, chunksize=None):
         from blaze.api.into import into
