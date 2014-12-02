@@ -366,6 +366,11 @@ def into(_, df, **kwargs):
     return into([], into(np.ndarray(0), df))
 
 
+@dispatch(Iterator, pd.DataFrame)
+def into(_, df, **kwargs):
+    return iter(into(list, df))
+
+
 @dispatch(pd.DataFrame, nd.array)
 def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
