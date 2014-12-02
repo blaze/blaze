@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
 import toolz
-from toolz import first, concat, memoize, unique
+from toolz import first, concat, memoize, unique, assoc
 import itertools
 from collections import Iterator
 
@@ -17,7 +17,7 @@ base = (numbers.Real, basestring, date, datetime)
 
 
 @dispatch(Expr, object)
-def pre_compute(leaf, data, scope=None):
+def pre_compute(leaf, data, scope=None, **kwargs):
     """ Transform data prior to calling ``compute`` """
     return data
 
@@ -167,7 +167,8 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        scope3 = dict((e, pre_compute(expr2, datum, scope=scope2))
+        scope3 = dict((e, pre_compute_(expr2, datum,
+                                       **assoc(kwargs, 'scope', scope2)))
                         for e, datum in scope2.items())
     else:
         scope3 = scope2
@@ -226,7 +227,7 @@ def top_to_bottom(d, expr, **kwargs):
 
         # If so call pre_compute again
         if pre_compute_:
-            children = [pre_compute_(expr, child) for child in children]
+            children = [pre_compute_(expr, child, **kwargs) for child in children]
 
         # If so call optimize again
         if optimize_:
@@ -444,7 +445,7 @@ def compute(expr, d, **kwargs):
 
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
-        d3 = dict((e, pre_compute_(expr2, dat)) for e, dat in d2.items())
+        d3 = dict((e, pre_compute_(expr2, dat, **kwargs)) for e, dat in d2.items())
     else:
         d3 = d2
 
