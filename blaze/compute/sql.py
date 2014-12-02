@@ -305,7 +305,7 @@ def compute_up(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(c)
 
 
-@dispatch(nelements, ClauseElement)
+@dispatch(nelements, (Select, ClauseElement))
 def compute_up(t, s, **kwargs):
     return compute_up(t._child.count(), s)
 
