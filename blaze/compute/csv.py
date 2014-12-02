@@ -2,6 +2,10 @@ from __future__ import absolute_import, division, print_function
 
 import pandas
 import os
+from toolz import curry, concat, map
+import pandas as pd
+import numpy as np
+from collections import Iterator, Iterable
 
 from ..dispatch import dispatch
 from ..data.csv import CSV
@@ -10,11 +14,13 @@ from ..expr.core import path
 from ..utils import available_memory
 from ..expr.split import split
 from ..api.into import into
-from toolz import curry, concat, map
-import pandas as pd
-import numpy as np
-from collections import Iterator, Iterable
 from .core import compute
+from ..expr.optimize import lean_projection
+
+
+@dispatch(Expr, CSV)
+def optimize(expr, _):
+    return lean_projection(expr)  # This is handled in pre_compute
 
 @dispatch(Expr, CSV)
 def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
@@ -27,8 +33,9 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
         kwargs['chunksize'] = chunksize
 
     # Insert projection into read_csv
-    leaf = expr._leaves()[0]
-    pth = list(path(expr, leaf))
+    oexpr = optimize(expr, data)
+    leaf = oexpr._leaves()[0]
+    pth = list(path(oexpr, leaf))
     if len(pth) >= 2 and isinstance(pth[-2], (Projection, Field)):
         kwargs['usecols'] = pth[-2].fields
 

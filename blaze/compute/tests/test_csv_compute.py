@@ -40,3 +40,12 @@ def test_pre_compute_with_projection_projects_on_data_frames():
                          csv, comfortable_memory=10)
     assert set(result.get_chunk().columns) == \
             set(['sepal_length', 'sepal_width'])
+
+
+def test_pre_compute_calls_lean_projection():
+    csv = CSV(example('iris.csv'))
+    s = symbol('s', csv.dshape)
+    result = pre_compute(s.sort('sepal_length').species,
+                         csv, comfortable_memory=10)
+    assert set(result.get_chunk().columns) == \
+            set(['sepal_length', 'species'])
