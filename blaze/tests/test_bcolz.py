@@ -138,3 +138,15 @@ def test_resource_works_with_empty_file():
         os.remove(f)
     except OSError:
         pass
+
+
+def test_into_bcolz_from_many_numpy_arrays():
+    x = np.array([(1, 'Hello'), (2, 'abc')],
+                 dtype=[('num', 'i4'), ('name', 'S5')])
+    b = into(bcolz.ctable, x)
+
+    assert len(b) == len(x)
+
+    b = into(b, x)
+
+    assert len(b) == 2 * len(x)

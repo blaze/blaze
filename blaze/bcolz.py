@@ -45,13 +45,21 @@ def into(a, b, **kwargs):
 
 @dispatch(ctable, np.ndarray)
 def into(a, b, **kwargs):
-    return ctable(b, **kwargs)
+    if isinstance(a, type):
+        return ctable(b, **kwargs)
+    else:
+        a.append(b)
+        return a
 
 
 @dispatch(carray, np.ndarray)
 def into(a, b, **kwargs):
-    kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
-    return carray(b, **kwargs)
+    if isinstance(a, type):
+        kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
+        return carray(b, **kwargs)
+    else:
+        a.append(b)
+        return a
 
 
 @dispatch(carray, (tuple, list))
