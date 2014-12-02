@@ -618,3 +618,20 @@ def test_into_datetimes():
 def test_into_data_reduction():
     d = Data(pd.DataFrame({'a': pd.date_range(start='now', periods=10).values}))
     assert isinstance(into(pd.Timestamp, d.a.min()), pd.Timestamp)
+
+
+def test_csv_into_numpy_respects_dshape():
+    x = into(np.ndarray,
+             example('accounts.csv'),
+             dshape='var * {id: int32, name: string[7, "ascii"], balance: float32}')
+
+    assert x.dtype == [('id', 'i4'), ('name', 'S7'), ('balance', 'f4')]
+
+
+def test_into_bcolz_from_many_csv_files():
+    ds = dshape('var * {id: int32, name: string[7, "ascii"], amount: float32}')
+    from bcolz import ctable
+    b = into(ctable, example('accounts_*.csv'), dshape=ds)
+
+    assert len(b) == 5
+    assert b.dtype == [('id', 'i4'), ('name', 'S7'), ('amount', 'f4')]

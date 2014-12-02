@@ -37,14 +37,13 @@ def test_into_ctable_DataFrame():
                     [2, 'Bob'],
                     [3, 'Charlie']], columns=['id', 'name'])
 
-    b = into(bcolz.ctable, df)
+    ds = dshape('var * {id: int32, name: string[7, "U32"]}')
+    b = into(bcolz.ctable, df, dshape=ds)
 
     assert list(b.names) == list(df.columns)
     assert list(b['id']) == [1, 2, 3]
-    print(b['name'])
-    print(b['name'][0])
-    print(type(b['name'][0]))
     assert list(b['name']) == ['Alice', 'Bob', 'Charlie']
+    assert discover(b).measure == ds.measure
 
 
 def test_into_ctable_list():
@@ -138,3 +137,15 @@ def test_resource_works_with_empty_file():
         os.remove(f)
     except OSError:
         pass
+
+
+def test_into_bcolz_from_many_numpy_arrays():
+    x = np.array([(1, 'Hello'), (2, 'abc')],
+                 dtype=[('num', 'i4'), ('name', 'S5')])
+    b = into(bcolz.ctable, x)
+
+    assert len(b) == len(x)
+
+    b = into(b, x)
+
+    assert len(b) == 2 * len(x)
