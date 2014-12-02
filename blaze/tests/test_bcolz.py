@@ -37,7 +37,7 @@ def test_into_ctable_DataFrame():
                     [2, 'Bob'],
                     [3, 'Charlie']], columns=['id', 'name'])
 
-    ds = dshape('var * {id: int32, name: string[7, "ascii"]}')
+    ds = dshape('var * {id: int32, name: string[7, "U32"]}')
     b = into(bcolz.ctable, df, dshape=ds)
 
     assert list(b.names) == list(df.columns)
