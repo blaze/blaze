@@ -339,7 +339,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(By, ClauseElement)
 def compute_up(t, s, **kwargs):
-    if isinstance(t.grouper, (Field, Projection)):
+    if (isinstance(t.grouper, (Field, Projection)) or
+            t.grouper is t._child):
         # d = dict((c.name, c) for c in inner_columns(s))
         # grouper = [d[col] for col in t.grouper.fields]
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
@@ -402,11 +403,10 @@ def alias_it(s):
         return s
 
 
-
-
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not isinstance(t.grouper, (Field, Projection)):
+    if not (isinstance(t.grouper, (Field, Projection))
+            or t.grouper is t._child):
         raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
