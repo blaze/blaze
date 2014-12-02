@@ -280,6 +280,8 @@ def _str(s):
         return "'%s'" % s
     elif callable(s):
         return get_callable_name(s)
+    elif isinstance(s, Node):
+        return str(s)
     else:
         stream = StringIO()
         pprint(s, stream=stream)

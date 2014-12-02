@@ -305,14 +305,14 @@ def compute_up(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(c)
 
 
-@dispatch(nelements, (Select, Selectable))
+@dispatch(nelements, (Select, ClauseElement))
 def compute_up(t, s, **kwargs):
-    return s.count()
+    return compute_up(t._child.count(), s)
 
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    s2 = s.count()
+    s2 = s.alias(next(aliases)).count()
     return select([list(inner_columns(s2))[0].label(t._name)])
 
 
@@ -339,7 +339,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(By, ClauseElement)
 def compute_up(t, s, **kwargs):
-    if isinstance(t.grouper, (Field, Projection)):
+    if (isinstance(t.grouper, (Field, Projection)) or
+            t.grouper is t._child):
         # d = dict((c.name, c) for c in inner_columns(s))
         # grouper = [d[col] for col in t.grouper.fields]
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
@@ -402,11 +403,10 @@ def alias_it(s):
         return s
 
 
-
-
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not isinstance(t.grouper, (Field, Projection)):
+    if not (isinstance(t.grouper, (Field, Projection))
+            or t.grouper is t._child):
         raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
 
@@ -513,8 +513,13 @@ def compute_up(t, s, **kwargs):
                           [key.like(pattern) for key, pattern in d.items()]))
 
 
+@toolz.memoize
+def table_of_engine(engine, name):
+    metadata = sqlalchemy.MetaData(engine)
+    metadata.reflect(engine)
+    return metadata.tables[name]
+
+
 @dispatch(Field, sqlalchemy.engine.Engine)
 def compute_up(expr, data, **kwargs):
-    metadata = sqlalchemy.MetaData(data)
-    metadata.reflect(data)
-    return metadata.tables[expr._name]
+    return table_of_engine(data, expr._name)

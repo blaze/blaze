@@ -209,17 +209,11 @@ def test_reductions():
 
 
 def test_nelements():
-    rhs = str(s.count())
+    rhs = str(compute(t.count(), s))
     assert str(compute(t.nelements(), s)) == rhs
     assert str(compute(t.nelements(axis=None), s)) == rhs
     assert str(compute(t.nelements(axis=0), s)) == rhs
     assert str(compute(t.nelements(axis=(0,)), s)) == rhs
-
-
-def test_nelements_subexpr():
-    rhs = str(sa.select([s.c.id, s.c.amount]).count())
-    lhs = str(compute(t[['id', 'amount']].nelements(), s))
-    assert lhs == rhs
 
 
 @pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
@@ -244,10 +238,10 @@ def test_count_on_table():
         or
 
         normalize(str(result)) == normalize("""
-        SELECT count(id) as count
+        SELECT count(alias.id) as count
         FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
               FROM accounts
-              WHERE accounts.amount > :amount_1)"""))
+              WHERE accounts.amount > :amount_1) as alias"""))
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -995,15 +989,15 @@ def test_distinct_count_on_projection():
         or
 
         normalize(str(result)) == normalize("""
-        SELECT count(amount) as count
+        SELECT count(alias.amount) as count
         FROM (SELECT DISTINCT accounts.amount AS amount
-              FROM accounts)"""))
+              FROM accounts) as alias"""))
 
     # note that id is the primary key
     expr = t[['amount', 'id']].distinct().count()
 
     result = compute(expr, {t: s})
     assert normalize(str(result)) == normalize("""
-        SELECT count(id) as count
+        SELECT count(alias.id) as count
         FROM (SELECT DISTINCT accounts.amount AS amount, accounts.id AS id
-              FROM accounts)""")
+              FROM accounts) as alias""")
