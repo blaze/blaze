@@ -37,11 +37,13 @@ def test_into_ctable_DataFrame():
                     [2, 'Bob'],
                     [3, 'Charlie']], columns=['id', 'name'])
 
-    b = into(bcolz.ctable, df)
+    ds = dshape('var * {id: int32, name: string[7, "ascii"]}')
+    b = into(bcolz.ctable, df, dshape=ds)
 
     assert list(b.names) == list(df.columns)
     assert list(b['id']) == [1, 2, 3]
     assert list(b['name']) == ['Alice', 'Bob', 'Charlie']
+    assert discover(b).measure == ds.measure
 
 
 def test_into_ctable_list():
