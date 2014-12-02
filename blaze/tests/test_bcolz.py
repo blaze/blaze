@@ -41,9 +41,6 @@ def test_into_ctable_DataFrame():
 
     assert list(b.names) == list(df.columns)
     assert list(b['id']) == [1, 2, 3]
-    print(b['name'])
-    print(b['name'][0])
-    print(type(b['name'][0]))
     assert list(b['name']) == ['Alice', 'Bob', 'Charlie']
 
 
