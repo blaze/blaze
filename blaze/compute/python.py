@@ -56,7 +56,7 @@ __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 Sequence = (tuple, list, Iterator, type(dict().items()))
 
 @dispatch(Expr, Sequence)
-def pre_compute(expr, seq, scope=None):
+def pre_compute(expr, seq, scope=None, **kwargs):
     try:
         if isinstance(seq, Iterator):
             first = next(seq)

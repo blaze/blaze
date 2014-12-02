@@ -40,7 +40,7 @@ def optimize(expr, _):
 
 
 @dispatch(Expr, (bcolz.ctable, bcolz.carray))
-def pre_compute(expr, data, scope=None):
+def pre_compute(expr, data, scope=None, **kwargs):
     return data
 
 
