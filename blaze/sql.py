@@ -121,6 +121,15 @@ def resource_impala(uri, *args, **kwargs):
     return resource_sql(uri, *args, **kwargs)
 
 
+@resource.register('monetdb://.+')
+def resource_monet(uri, *args, **kwargs):
+    try:
+        import monetdb
+    except ImportError:
+        raise ImportError("Please install the `sqlalchemy_monetdb` library")
+    return resource_sql(uri, *args, **kwargs)
+
+
 from .compute.pyfunc import broadcast_collect
 @dispatch(Expr, (SQL, sa.sql.elements.ClauseElement))
 def optimize(expr, _):
