@@ -29,7 +29,7 @@ import toolz
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Field, Broadcast, Expr
+from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
@@ -42,25 +42,16 @@ __all__ = ['sqlalchemy', 'select']
 
 
 def inner_columns(s):
-    if isinstance(s, sqlalchemy.Table):
-        return s.c
-    if isinstance(s, Selectable):
+    try:
         return s.inner_columns
-    raise NotImplementedError()
+    except AttributeError:
+        return s.c
+    raise TypeError()
 
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    # Walk up the tree to get the original columns
-    subexpression = t
-    while hasattr(subexpression, '_child'):
-        subexpression = subexpression._child
-    csubexpression = compute(subexpression, scope)
-    # Hack because csubexpression may be SQL object
-    if not isinstance(csubexpression, Selectable):
-        csubexpression = csubexpression.table
-    columns = [csubexpression.c.get(col) for col in t.fields]
-
-    return select(s).with_only_columns(columns)
+    d = dict((c.name, c) for c in inner_columns(s))
+    return select(s).with_only_columns([d[field] for field in t.fields])
 
 
 @dispatch((Field, Projection), Select)
@@ -70,7 +61,7 @@ def compute_up(t, s, **kwargs):
     return s.with_only_columns(cols)
 
 
-@dispatch(Field, sqlalchemy.Table)
+@dispatch(Field, ClauseElement)
 def compute_up(t, s, **kwargs):
     return s.c.get(t._name)
 
@@ -176,7 +167,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
 
-@dispatch(Select, Selectable)
+@dispatch(Select, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(a.froms) > 1:
         raise MDNotImplementedError()
@@ -185,28 +176,36 @@ def _join_selectables(a, b, condition=None, **kwargs):
                 a.froms[0].join(b, condition, **kwargs))
 
 
-@dispatch(Selectable, Select)
+@dispatch(ClauseElement, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(b.froms) > 1:
         raise MDNotImplementedError()
     return b.replace_selectable(b.froms[0],
                 a.join(b.froms[0], condition, **kwargs))
 
-@dispatch(Selectable, Selectable)
+@dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
 
-@dispatch(Join, Selectable, Selectable)
+@dispatch(Join, ClauseElement, ClauseElement)
 def compute_up(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, ColumnElement):
+        lhs = select(lhs)
+    if isinstance(rhs, ColumnElement):
+        rhs = select(rhs)
     if name(lhs) == name(rhs):
         lhs = lhs.alias('%s_left' % name(lhs))
         rhs = rhs.alias('%s_right' % name(rhs))
+
+    lhs = alias_it(lhs)
+    rhs = alias_it(rhs)
 
     if isinstance(lhs, Select):
         ldict = dict((c.name, c) for c in lhs.inner_columns)
     else:
         ldict = lhs.c
+
     if isinstance(rhs, Select):
         rdict = dict((c.name, c) for c in rhs.inner_columns)
     else:
@@ -228,7 +227,7 @@ def compute_up(t, lhs, rhs, **kwargs):
         main, other = rhs, lhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
-        raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
+        raise ValueError("SQLAlchemy doesn't support full outer Join")
 
     def cols(x):
         if isinstance(x, Select):
@@ -313,16 +312,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    try:
-        c = lower_column(list(s.primary_key)[0])
-    except IndexError:
-        c = lower_column(list(s.columns)[0])
-
-    col = sqlalchemy.func.count(c)
-
-    s = copy(s)
-    s.append_column(col)
-    return s.with_only_columns([col])
+    s2 = s.count()
+    return select([list(inner_columns(s2))[0].label(t._name)])
 
 
 @dispatch(nunique, sqlalchemy.Column)
@@ -349,9 +340,11 @@ def compute_up(t, s, **kwargs):
 @dispatch(By, ClauseElement)
 def compute_up(t, s, **kwargs):
     if isinstance(t.grouper, (Field, Projection)):
+        # d = dict((c.name, c) for c in inner_columns(s))
+        # grouper = [d[col] for col in t.grouper.fields]
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
     else:
-        raise NotImplementedError("Grouper must be a projection, got %s"
+        raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t._child: s})]
@@ -396,11 +389,28 @@ def lower_column(col):
     return old
 
 
+aliases = ('alias_%d' % i for i in itertools.count(1))
+
+@toolz.memoize
+def alias_it(s):
+    """ Alias a Selectable if it has a group by clause """
+    if (hasattr(s, '_group_by_clause') and
+        s._group_by_clause is not None and
+        len(s._group_by_clause)):
+        return s.alias(next(aliases))
+    else:
+        return s
+
+
+
+
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
     if not isinstance(t.grouper, (Field, Projection)):
-        raise NotImplementedError("Grouper must be a projection, got %s"
+        raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
+
+    s = alias_it(s)
 
     if isinstance(t.apply, Reduction):
         reduction = compute(t.apply, {t._child: s})
@@ -408,7 +418,10 @@ def compute_up(t, s, **kwargs):
     elif isinstance(t.apply, Summary):
         reduction = compute(t.apply, {t._child: s})
 
+    # d = dict((c.name, c) for c in inner_columns(s))
+    # grouper = [d[col] for col in t.grouper.fields]
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
+
     s2 = reduction.group_by(*grouper)
 
     for g in grouper:
@@ -422,7 +435,7 @@ def compute_up(t, s, **kwargs):
 @dispatch(Sort, ClauseElement)
 def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
-        raise NotImplementedError("Multi-column sort not yet implemented")
+        raise ValueError("Multi-column sort not yet implemented")
     s = select(s)
     col = lower_column(getattr(s.c, t.key))
     if not t.ascending:

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import re
 import pytest
 from blaze.compute.sql import (compute, computefull, select, lower_column,
         compute_up)
@@ -8,6 +9,8 @@ import sqlalchemy
 import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
+from pandas import DataFrame
+from blaze import into
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
@@ -29,7 +32,9 @@ sbig = sa.Table('accountsbig', metadata,
              )
 
 def normalize(s):
-    return ' '.join(s.strip().split()).lower().replace('_', '')
+    s2 = ' '.join(s.strip().split()).lower().replace('_', '')
+    s3 = re.sub('alias\d*', 'alias', s2)
+    return s3
 
 
 def test_table():
@@ -224,15 +229,25 @@ def test_nelements_axis_1():
 
 
 def test_count_on_table():
-    assert normalize(str(select(compute(t.count(), s)))) == normalize("""
+    result = select(compute(t.count(), s))
+    assert normalize(str(result)) == normalize("""
     SELECT count(accounts.id) as count_1
     FROM accounts""")
 
-    assert normalize(str(select(compute(t[t.amount > 0].count(), s)))) == \
-    normalize("""
-    SELECT count(accounts.id) as count_1
-    FROM accounts
-    WHERE accounts.amount > :amount_1""")
+    result = select(compute(t[t.amount > 0].count(), s))
+    assert (
+        normalize(str(result)) == normalize("""
+        SELECT count(accounts.id) as count_1
+        FROM accounts
+        WHERE accounts.amount > :amount_1""")
+
+        or
+
+        normalize(str(result)) == normalize("""
+        SELECT count(id) as count
+        FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+              FROM accounts
+              WHERE accounts.amount > :amount_1)"""))
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -284,10 +299,18 @@ def test_by_head():
     #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
     #                      ).group_by(s2.c.name)
     expected = """
+    SELECT alias.name, sum(alias.amount) as total
+    FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS ID
+          FROM accounts
+          LIMIT :param_1) as alias
+    GROUP BY alias.name"""
+
+    expected = """
     SELECT accounts.name, sum(accounts.amount) as total
     FROM accounts
     GROUP by accounts.name
     LIMIT :param_1"""
+
     assert normalize(str(result)) == normalize(str(expected))
 
 
@@ -781,3 +804,206 @@ def test_computation_directly_on_sqlalchemy_Tables():
     result = compute(s.id + 1, name)
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
+
+
+sql_bank = sa.Table('bank', sa.MetaData(),
+                 sa.Column('id', sa.Integer),
+                 sa.Column('name', sa.String),
+                 sa.Column('amount', sa.Integer))
+sql_cities = sa.Table('cities', sa.MetaData(),
+                   sa.Column('name', sa.String),
+                   sa.Column('city', sa.String))
+
+bank = Symbol('bank', discover(sql_bank))
+cities = Symbol('cities', discover(sql_cities))
+
+
+def test_aliased_views_with_two_group_bys():
+    expr = by(bank.name, total=bank.amount.sum())
+    expr2 = by(expr.total, count=expr.name.count())
+
+    result = compute(expr2, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT alias.total, count(alias.name) as count
+    FROM (SELECT bank.name AS name, sum(bank.amount) AS total
+          FROM bank
+          GROUP BY bank.name) as alias
+    GROUP BY alias.total
+    """)
+
+
+
+def test_aliased_views_with_join():
+    joined = join(bank, cities)
+    expr = by(joined.city, total=joined.amount.sum())
+    expr2 = by(expr.total, count=expr.city.nunique())
+
+    result = compute(expr2, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT alias.total, count(DISTINCT alias.city) AS count
+    FROM (SELECT cities.city AS city, sum(bank.amount) AS total
+          FROM bank
+          JOIN cities ON bank.name = cities.name
+          GROUP BY cities.city) as alias
+    GROUP BY alias.total
+    """)
+
+
+def test_select_field_on_alias():
+    result = compute_up(t.amount, select(s).limit(10).alias('foo'))
+    assert normalize(str(select(result))) == normalize("""
+        SELECT foo.amount
+        FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+              FROM accounts
+              LIMIT :param_1) as foo""")
+
+
+@pytest.mark.xfail(raises=Exception,
+        reason="sqlalchemy.join seems to drop unnecessary tables")
+def test_join_on_single_column():
+    expr = join(cities[['name']], bank)
+    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == """
+    SELECT bank.id, bank.name, bank.amount
+    FROM bank join cities ON bank.name = cities.name"""
+
+
+    expr = join(bank, cities.name)
+    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+
+    assert normalize(str(result)) == """
+    SELECT bank.id, bank.name, bank.amount
+    FROM bank join cities ON bank.name = cities.name"""
+
+
+def test_aliased_views_more():
+    metadata = sa.MetaData()
+    lhs = sa.Table('aaa', metadata,
+                   sa.Column('x', sa.Integer),
+                   sa.Column('y', sa.Integer),
+                   sa.Column('z', sa.Integer))
+
+    rhs = sa.Table('bbb', metadata,
+                   sa.Column('w', sa.Integer),
+                   sa.Column('x', sa.Integer),
+                   sa.Column('y', sa.Integer))
+
+    L = symbol('L', 'var * {x: int, y: int, z: int}')
+    R = symbol('R', 'var * {w: int, x: int, y: int}')
+
+    expr = join(by(L.x, y_total=L.y.sum()),
+                R)
+
+    result = compute(expr, {L: lhs, R: rhs})
+
+    assert normalize(str(result)) == normalize("""
+        SELECT alias.x, alias.y_total, bbb.w, bbb.y
+        FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+              FROM aaa
+              GROUP BY aaa.x) AS alias
+        JOIN bbb ON alias.x = bbb.x """)
+
+    expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
+
+    result2 = compute(expr2, {L: lhs, R: rhs})
+
+    assert (
+        normalize(str(result2)) == normalize("""
+            SELECT alias_2.w, count(alias_2.x) as count, sum(alias_2.y_total) as total2
+            FROM (SELECT alias.x, alias.y_total, bbb.w, bbb.y
+                  FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+                        FROM aaa
+                        GROUP BY aaa.x) AS alias
+                  JOIN bbb ON alias.x = bbb.x) AS alias_2
+            GROUP BY alias_2.w""")
+
+        or
+
+        normalize(str(result2)) == normalize("""
+            SELECT bbb.w, count(alias.x) as count, sum(alias.y_total) as total2
+            FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+                  FROM aaa
+                  GROUP BY aaa.x) as alias
+              JOIN bbb ON alias.x = bbb.x
+            GROUP BY bbb.w"""))
+
+
+def test_aliased_views_with_computation():
+    engine = sa.create_engine('sqlite:///:memory:')
+
+    df_aaa = DataFrame({'x': [1, 2, 3, 2, 3],
+                        'y': [2, 1, 2, 3, 1],
+                        'z': [3, 3, 3, 1, 2]})
+    df_bbb = DataFrame({'w': [1, 2, 3, 2, 3],
+                        'x': [2, 1, 2, 3, 1],
+                        'y': [3, 3, 3, 1, 2]})
+
+    df_aaa.to_sql('aaa', engine)
+    df_bbb.to_sql('bbb', engine)
+
+    metadata = sa.MetaData(engine)
+    metadata.reflect()
+
+    sql_aaa = metadata.tables['aaa']
+    sql_bbb = metadata.tables['bbb']
+
+    L = Symbol('aaa', discover(df_aaa))
+    R = Symbol('bbb', discover(df_bbb))
+
+    expr = join(by(L.x, y_total=L.y.sum()),
+                R)
+    a = compute(expr, {L: df_aaa, R: df_bbb})
+    b = compute(expr, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
+    a = compute(expr2, {L: df_aaa, R: df_bbb})
+    b = compute(expr2, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    expr3 = by(expr.x, count=expr.y_total.count())
+    a = compute(expr3, {L: df_aaa, R: df_bbb})
+    b = compute(expr3, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    expr4 = join(expr2, R)
+    a = compute(expr4, {L: df_aaa, R: df_bbb})
+    b = compute(expr4, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+
+    """ # Takes a while
+    expr5 = by(expr4.count, total=(expr4.x + expr4.y).sum())
+    a = compute(expr5, {L: df_aaa, R: df_bbb})
+    b = compute(expr5, {L: sql_aaa, R: sql_bbb})
+    assert into(set, a) == into(set, b)
+    """
+
+
+def test_distinct_count_on_projection():
+    expr = t[['amount']].distinct().count()
+
+    result = compute(expr, {t: s})
+
+    assert (
+        normalize(str(result)) == normalize("""
+        SELECT count(DISTINCT accounts.amount)
+        FROM accounts""")
+
+        or
+
+        normalize(str(result)) == normalize("""
+        SELECT count(amount) as count
+        FROM (SELECT DISTINCT accounts.amount AS amount
+              FROM accounts)"""))
+
+    # note that id is the primary key
+    expr = t[['amount', 'id']].distinct().count()
+
+    result = compute(expr, {t: s})
+    assert normalize(str(result)) == normalize("""
+        SELECT count(id) as count
+        FROM (SELECT DISTINCT accounts.amount AS amount, accounts.id AS id
+              FROM accounts)""")

@@ -171,13 +171,18 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
                         for e, datum in scope2.items())
     else:
         scope3 = scope2
-    try:
-        expr3 = optimize_(expr2, *[scope3[leaf] for leaf in expr2._leaves()])
-        _d = dict(zip(expr2._leaves(), expr3._leaves()))
-        scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
-    except (TypeError, NotImplementedError):
+    if optimize_:
+        try:
+            expr3 = optimize_(expr2, *[scope3[leaf] for leaf in expr2._leaves()])
+            _d = dict(zip(expr2._leaves(), expr3._leaves()))
+            scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
+        except NotImplementedError:
+            expr3 = expr2
+            scope4 = scope3
+    else:
         expr3 = expr2
         scope4 = scope3
+
 
     # 4. Repeat
     if expr.isidentical(expr3):
@@ -443,13 +448,18 @@ def compute(expr, d, **kwargs):
     else:
         d3 = d2
 
-    try:
-        expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
-        _d = dict(zip(expr2._leaves(), expr3._leaves()))
-        d4 = dict((e._subs(_d), d) for e, d in d3.items())
-    except (TypeError, NotImplementedError):
+    if optimize_:
+        try:
+            expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
+            _d = dict(zip(expr2._leaves(), expr3._leaves()))
+            d4 = dict((e._subs(_d), d) for e, d in d3.items())
+        except NotImplementedError:
+            expr3 = expr2
+            d4 = d3
+    else:
         expr3 = expr2
         d4 = d3
+
     result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)

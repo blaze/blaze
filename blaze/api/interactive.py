@@ -160,16 +160,18 @@ def concrete_head(expr, n=10):
     """ Return head of computed expression """
     if not expr._resources():
         raise ValueError("Expression does not contain data resources")
-    if iscollection(expr.dshape):
+    if not iscollection(expr.dshape):
+        return compute(expr)
+
+    try:
         head = expr.head(n + 1)
         result = compute(head)
 
-        if not len(result):
+        if len(result) == 0:
             return DataFrame(columns=expr.fields)
 
-        if iscollection(expr.dshape):
-            return into(DataFrame(columns=expr.fields), result)
-    else:
+        return into(DataFrame(columns=expr.fields), result)
+    except:
         return compute(expr)
 
 

@@ -113,6 +113,23 @@ def discover(engine):
     return DataShape(Record(pairs))
 
 
+def dshape_to_table(name, ds, metadata=None):
+    """
+    Create a SQLAlchemy table from a datashape and a name
+
+    >>> dshape_to_table('bank', '{name: string, amount: int}') # doctest: +NORMALIZE_WHITESPACE
+    Table('bank', MetaData(bind=None),
+          Column('name', Text(), table=<bank>, nullable=False),
+          Column('amount', Integer(), table=<bank>, nullable=False),
+          schema=None)
+    """
+
+    if isinstance(ds, _strtypes):
+        ds = dshape(ds)
+    metadata = metadata or sql.MetaData()
+    cols = dshape_to_alchemy(ds)
+    return sql.Table(name, metadata, *cols)
+
 def dshape_to_alchemy(dshape):
     """
 
