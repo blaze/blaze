@@ -247,7 +247,7 @@ class SQL(DataDescriptor):
             self.schema_name = schema_name
             self.tablename = tablename
         self.dbtype = engine.url.drivername
-        metadata = sql.MetaData()
+        metadata = sql.MetaData(engine)
 
         if engine.has_table(self.tablename, schema=self.schema_name):
             metadata.reflect(engine, schema=self.schema_name)
@@ -396,12 +396,18 @@ def into(t, rows, **kwargs):
             conn.execute(t.insert(), chunk)
 
 
-@dispatch(sql.Table, (list, tuple, set))
+@dispatch(sql.Table, (list, tuple, set, DataDescriptor))
 def into(t, rows, **kwargs):
     return into(t, iter(rows), **kwargs)
 
 
 @dispatch(SQL, CSV)
+def into(sql, csv, **kwargs):
+    into(sql.table, csv, **kwargs)
+    return sql
+
+
+@dispatch(sql.Table, CSV)
 def into(sql, csv, if_exists="append", **kwargs):
     """
     Parameters
@@ -434,11 +440,12 @@ def into(sql, csv, if_exists="append", **kwargs):
     """
     if csv.open == gzip.open:
         raise MDNotImplementedError()
-    dbtype = sql.engine.url.drivername
-    db = sql.engine.url.database
-    engine = sql.engine
+    engine = sql.bind
+    dbtype = engine.url.drivername
+    db = engine.url.database
+    tblname = sql.name
+
     abspath = csv._abspath
-    tblname = sql.tablename
 
     # using dialect mappings to support multiple term mapping for similar concepts
     from .dialect_mappings import dialect_terms
@@ -483,19 +490,16 @@ def into(sql, csv, if_exists="append", **kwargs):
         if engine.has_table(tblname):
 
             # drop old table
-            metadata = sqlalchemy.MetaData()
-            metadata.reflect(engine, only=[tblname])
-            t = metadata.tables[tblname]
-            t.drop(engine)
+            sql.drop(engine)
 
             # create a new one
-            sql.table.create(engine)
+            sql.create(engine)
 
 
     if dbtype == 'postgresql':
         import psycopg2
         try:
-            conn = sql.engine.raw_connection()
+            conn = engine.raw_connection()
             cursor = conn.cursor()
 
             #lots of options here to handle formatting
@@ -513,17 +517,17 @@ def into(sql, csv, if_exists="append", **kwargs):
         #not sure about failures yet
         except psycopg2.NotSupportedError as e:
             print("Failed to use POSTGRESQL COPY.\nERR MSG: ", e)
-            print("Defaulting to sql.extend() method")
-            sql.extend(csv)
+            print("Defaulting to stream through Python.")
+            raise MDNotImplementedError()
 
     #only works on OSX/Unix
     elif dbtype == 'sqlite':
         if db == ':memory:':
-            sql.extend(csv)
+            raise MDNotImplementedError()
         elif sys.platform == 'win32':
             warnings.warn("Windows native sqlite copy is not supported\n"
-                          "Defaulting to sql.extend() method")
-            sql.extend(csv)
+                          "Defaulting to stream through Python.")
+            raise MDNotImplementedError()
         else:
             #only to be used when table isn't already created?
             # cmd = """
@@ -540,7 +544,7 @@ def into(sql, csv, if_exists="append", **kwargs):
     elif dbtype == 'mysql':
         import MySQLdb
         try:
-            conn = sql.engine.raw_connection()
+            conn = engine.raw_connection()
             cursor = conn.cursor()
 
             #no null handling
@@ -562,12 +566,12 @@ def into(sql, csv, if_exists="append", **kwargs):
         #not sure about failures yet
         except MySQLdb.OperationalError as e:
             print("Failed to use MySQL LOAD.\nERR MSG: ", e)
-            print("Defaulting to sql.extend() method")
+            print("Defaulting to stream through Python.")
             raise MDNotImplementedError()
 
     else:
         print("Warning! Could not find native copy call")
-        print("Defaulting to sql.extend() method")
+        print("Defaulting to stream through Python.")
         raise MDNotImplementedError()
 
     return sql

@@ -457,7 +457,9 @@ def test_outer_join():
     conn = engine.connect()
 
 
-    query = compute(join(L, R, how='inner'), {L: left.table, R: right.table})
+    query = compute(join(L, R, how='inner'),
+                    {L: left.table, R: right.table},
+                    post_compute=False)
     result = list(map(tuple, conn.execute(query).fetchall()))
 
     assert set(result) == set(
@@ -465,7 +467,9 @@ def test_outer_join():
              (1, 'Alice', 100, 'Boston'),
              (4, 'Dennis', 400, 'Moscow')])
 
-    query = compute(join(L, R, how='left'), {L: left.table, R: right.table})
+    query = compute(join(L, R, how='left'),
+                    {L: left.table, R: right.table},
+                    post_compute=False)
     result = list(map(tuple, conn.execute(query).fetchall()))
 
     assert set(result) == set(
@@ -474,7 +478,9 @@ def test_outer_join():
              (2, 'Bob', 200, None),
              (4, 'Dennis', 400, 'Moscow')])
 
-    query = compute(join(L, R, how='right'), {L: left.table, R: right.table})
+    query = compute(join(L, R, how='right'),
+                    {L: left.table, R: right.table},
+                    post_compute=False)
     print(query)
     result = list(map(tuple, conn.execute(query).fetchall()))
     print(result)
@@ -487,7 +493,9 @@ def test_outer_join():
 
     # SQLAlchemy doesn't support full outer join
     """
-    query = compute(join(L, R, how='outer'), {L: left.table, R: right.table})
+    query = compute(join(L, R, how='outer'),
+                    {L: left.table, R: right.table},
+                    post_compute=False)
     result = list(map(tuple, conn.execute(query).fetchall()))
 
     assert set(result) == set(
