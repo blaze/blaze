@@ -14,6 +14,7 @@ from itertools import chain
 import subprocess
 from multipledispatch import MDNotImplementedError
 import gzip
+from collections import Iterator
 
 from ..dispatch import dispatch
 from ..utils import partition_all
@@ -355,6 +356,50 @@ class SQL(DataDescriptor):
             return next(result)
         else:
             return result
+
+
+@dispatch(Iterator, sql.Table)
+def into(_, t, **kwargs):
+    engine = t.bind
+    with engine.connect() as conn:
+        result = conn.execute(sql.sql.select([t]))
+        for item in result:
+            yield item
+
+
+@dispatch((list, tuple, set), sql.Table)
+def into(a, t, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(into(Iterator, t, **kwargs))
+
+
+@dispatch(sql.Table, Iterator)
+def into(t, rows, **kwargs):
+    assert not isinstance(t, type)
+    rows = iter(rows)
+
+    # We see if the sequence is of tuples or dicts
+    # If tuples then we coerce them to dicts
+    try:
+        row = next(rows)
+    except StopIteration:
+        return
+    rows = chain([row], rows)
+    if isinstance(row, (tuple, list)):
+        names = discover(t).measure.names
+        rows = (dict(zip(names, row)) for row in rows)
+
+    engine = t.bind
+    with engine.connect() as conn:
+        for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
+            conn.execute(t.insert(), chunk)
+
+
+@dispatch(sql.Table, (list, tuple, set))
+def into(t, rows, **kwargs):
+    return into(t, iter(rows), **kwargs)
+
 
 @dispatch(SQL, CSV)
 def into(sql, csv, if_exists="append", **kwargs):

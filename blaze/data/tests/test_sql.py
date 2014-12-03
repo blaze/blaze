@@ -7,7 +7,7 @@ import unittest
 import gzip
 
 from blaze.data.sql import (SQL, discover, dshape_to_alchemy, dshape_to_table,
-        create_from_datashape)
+        create_from_datashape, into)
 from blaze.utils import raises, filetext, tmpfile
 from datashape import dshape
 import datashape
@@ -222,3 +222,23 @@ def test_csv_gzip_into_sql():
         csv = CSV(fn, schema=sql.schema)
         into(sql, csv)
         assert list(sql) == list(csv)
+
+
+def test_into_table_iterator():
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+    t = dshape_to_table('points', '{x: int, y: int}', metadata=metadata)
+    t.create()
+
+    data = [(1, 1), (2, 4), (3, 9)]
+    into(t, data)
+
+    assert into(list, t) == data
+
+
+    t2 = dshape_to_table('points2', '{x: int, y: int}', metadata=metadata)
+    t2.create()
+    data2 = [{'x': 1, 'y': 1}, {'x': 2, 'y': 4}, {'x': 3, 'y': 9}]
+    into(t2, data2)
+
+    assert into(list, t2) == data
