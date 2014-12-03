@@ -6,7 +6,7 @@ from dynd import nd
 import unittest
 import gzip
 
-from blaze.data.sql import SQL, discover, dshape_to_alchemy
+from blaze.data.sql import SQL, discover, dshape_to_alchemy, dshape_to_table
 from blaze.utils import raises, filetext, tmpfile
 from datashape import dshape
 import datashape
@@ -189,6 +189,13 @@ def test_dshape_to_alchemy():
 
     assert dshape_to_alchemy('float32').precision == 24
     assert dshape_to_alchemy('float64').precision == 53
+
+
+def test_dshape_to_table():
+    t = dshape_to_table('bank', '{name: string, amount: int}')
+    assert isinstance(t, sa.Table)
+    assert t.name == 'bank'
+    assert [c.name for c in t.c] == ['name', 'amount']
 
 
 @pytest.mark.xfail(sys.platform == 'win32' and PY2,
