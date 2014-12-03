@@ -1,7 +1,8 @@
 import os
 import pytest
 from blaze.resource import resource, drop, create_index
-from blaze.data import CSV, SQL, HDF5
+from blaze.data import CSV, SQL
+from blaze.h5py import h5py
 from blaze.api.into import into
 
 from unittest import TestCase
@@ -84,8 +85,8 @@ class TestResource(TestCase):
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
             assert isinstance(resource(filename + '::/path/to/data/',
-                                       schema='{a: int, b: int}'),
-                              HDF5)
+                                       dshape='var * {a: int, b: int}'),
+                              h5py.Dataset)
 
 
 class TestInto(TestCase):

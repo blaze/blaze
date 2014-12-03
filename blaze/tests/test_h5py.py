@@ -1,5 +1,5 @@
 
-from blaze import HDF5, discover, into, drop, resource
+from blaze import discover, into, drop, resource
 import h5py
 from contextlib import contextmanager
 from blaze.h5py import *
@@ -45,6 +45,9 @@ def test_hdf5_from_datashape():
         assert 'x' in f
         assert f['y/z'].shape == (3,)
         assert f['y/z'].dtype == 'i4'
+
+        # ensure idempotence
+        f = hdf5_from_datashape(fn, '{x: int32, y: {z: 3 * int32}}')
 
 
 def test_resource():

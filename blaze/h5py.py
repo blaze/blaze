@@ -51,7 +51,7 @@ def dataset_from_dshape(file, datapath, ds, **kwargs):
         kwargs['maxshape'] = kwargs.get('maxshape', (None,) + shape[1:])
 
     kwargs2 = keyfilter(h5py_attributes.__contains__, kwargs)
-    return file.create_dataset(datapath, shape=shape, dtype=dtype, **kwargs2)
+    return file.require_dataset(datapath, shape=shape, dtype=dtype, **kwargs2)
 
 @dispatch(object, (Mono,) + _strtypes)
 def create_from_datashape(o, ds, **kwargs):
@@ -64,7 +64,7 @@ def create_from_datashape(group, ds, name=None, **kwargs):
     assert isrecord(ds)
     for name, sub_ds in ds[0].dict.items():
         if isrecord(sub_ds):
-            g = group.create_group(name)
+            g = group.require_group(name)
             create_from_datashape(g, sub_ds, **kwargs)
         else:
             dataset_from_dshape(file=group.file,
@@ -73,13 +73,15 @@ def create_from_datashape(group, ds, name=None, **kwargs):
 
 
 def hdf5_from_datashape(target, ds, **kwargs):
+    if isinstance(ds, _strtypes):
+        ds = dshape(ds)
     if isinstance(target, _strtypes):
         if '::' in target:
             path, datapath = target.split('::')
         else:
             path, datapath = target, ''
         while datapath:
-            datapath, name = datapath.rsplit('/')
+            datapath, name = datapath.rsplit('/', 1)
             ds = Record([[name, ds]])
         ds = dshape(ds)
         target = h5py.File(path)
@@ -120,8 +122,8 @@ def resource_h5py_file(uri, datapath=None, **kwargs):
     f = h5py.File(uri)
     ds = kwargs.pop('dshape', None)
     if ds:
-        if datapath:
-            uri = uri + '::' + datapath
+        if datapath and datapath != '/':
+            uri = uri + '::' + datapath.rstrip('/')
         f.close()
         f = hdf5_from_datashape(uri, ds, **kwargs)
     if datapath:
