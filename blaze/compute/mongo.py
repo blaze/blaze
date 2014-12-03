@@ -73,7 +73,7 @@ from ..dispatch import dispatch
 __all__ = ['MongoQuery']
 
 @dispatch(Expr, Collection)
-def pre_compute(expr, data, scope=None):
+def pre_compute(expr, data, scope=None, **kwargs):
     return MongoQuery(data, [])
 
 

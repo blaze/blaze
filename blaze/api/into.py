@@ -185,6 +185,8 @@ def into(a, b, **kwargs):
     if isinstance(first, (list, tuple)):
         if 'dtype' in kwargs:
             dtype = kwargs.pop('dtype')
+        elif 'dshape' in kwargs:
+            dtype = to_numpy_dtype(dshape(kwargs.pop('dshape')))
         else:
             dtype = dtype_from_tuple(first)
         return np.rec.fromrecords([tuple(x) for x in b],
@@ -366,6 +368,11 @@ def into(_, df, **kwargs):
     return into([], into(np.ndarray(0), df))
 
 
+@dispatch(Iterator, pd.DataFrame)
+def into(_, df, **kwargs):
+    return iter(into(list, df))
+
+
 @dispatch(pd.DataFrame, nd.array)
 def into(a, b, **kwargs):
     ds = dshape(nd.dshape_of(b))
@@ -455,7 +462,13 @@ def into(a, df, **kwargs):
 
 @dispatch(np.ndarray, pd.DataFrame)
 def into(a, df, **kwargs):
-    return df.to_records(index=False)
+    x = df.to_records(index=False)
+    if 'dshape' in kwargs:
+        ds = dshape(kwargs['dshape']).measure
+        dt = to_numpy_dtype(ds)
+        if x.dtype != dt:
+            x = x.astype(dt)
+    return x
 
 
 @dispatch(nd.array)
@@ -551,9 +564,7 @@ def into(a, b, **kwargs):
 
 @dispatch(ctable, pd.DataFrame)
 def into(a, df, **kwargs):
-    kwargs = toolz.keyfilter(keywords(ctable).__contains__, kwargs)
-    return ctable([fix_len_string_filter(df[c]) for c in df.columns],
-                      names=list(df.columns), **kwargs)
+    return into(a, into(np.ndarray, df, **kwargs), **kwargs)
 
 
 @dispatch(pd.DataFrame, ctable)
