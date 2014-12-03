@@ -3,11 +3,13 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 import warnings
+from toolz import first
 from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension, DataShape
+from datashape.predicates import isrecord
 from itertools import chain
 import subprocess
 from multipledispatch import MDNotImplementedError
@@ -99,7 +101,7 @@ def discover(engine):
     metadata = sql.MetaData()
     metadata.reflect(engine)
     pairs = []
-    for name, table in metadata.tables.items():
+    for name, table in sorted(metadata.tables.items(), key=first):
         try:
             pairs.append([name, discover(table)])
         except sqlalchemy.exc.CompileError as e:
@@ -129,6 +131,17 @@ def dshape_to_table(name, ds, metadata=None):
     metadata = metadata or sql.MetaData()
     cols = dshape_to_alchemy(ds)
     return sql.Table(name, metadata, *cols)
+
+
+@dispatch(sql.engine.base.Engine, DataShape)
+def create_from_datashape(engine, ds, **kwargs):
+    assert isrecord(ds)
+    metadata = sql.MetaData(engine)
+    for name, sub_ds in ds[0].dict.items():
+        t = dshape_to_table(name, sub_ds, metadata=metadata)
+        t.create()
+    return engine
+
 
 def dshape_to_alchemy(dshape):
     """

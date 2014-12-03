@@ -6,7 +6,8 @@ from dynd import nd
 import unittest
 import gzip
 
-from blaze.data.sql import SQL, discover, dshape_to_alchemy, dshape_to_table
+from blaze.data.sql import (SQL, discover, dshape_to_alchemy, dshape_to_table,
+        create_from_datashape)
 from blaze.utils import raises, filetext, tmpfile
 from datashape import dshape
 import datashape
@@ -196,6 +197,15 @@ def test_dshape_to_table():
     assert isinstance(t, sa.Table)
     assert t.name == 'bank'
     assert [c.name for c in t.c] == ['name', 'amount']
+
+
+def test_create_from_datashape():
+    engine = sa.create_engine('sqlite:///:memory:')
+    ds = dshape('''{bank: var * {name: string, amount: int},
+                    points: var * {x: int, y: int}}''')
+    engine = create_from_datashape(engine, ds)
+
+    assert discover(engine) == ds
 
 
 @pytest.mark.xfail(sys.platform == 'win32' and PY2,
