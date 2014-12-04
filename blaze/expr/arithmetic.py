@@ -46,6 +46,8 @@ class BinOp(ElemWise):
             return l
         if r and not l:
             return r
+        if l == r:
+            return l
 
     @property
     def _inputs(self):
