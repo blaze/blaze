@@ -10,9 +10,9 @@ data = [(1, 32.4, 'Alice'),
         (4, -430.0, 'Joe')]
 
 
-x = np.array(data, dtype=[('id', int), ('amount', float), ('name', str, 100)])
+x = np.array(data, dtype=[('id', 'i4'), ('amount', 'f4'), ('name', 'S10')])
 
-ds = dshape("3 * {id : int64, amount: float64, name: string}")
+ds = dshape("3 * {id : int32, amount: float32, name: string[10, 'ascii']}")
 
 
 def eq(a, b):
@@ -52,7 +52,7 @@ def test_hdf5_from_datashape():
 
 def test_resource():
     with h() as f:
-        assert resource(f.filename).keys() == f.keys()
+        assert list(resource(f.filename).keys()) == list(f.keys())
 
 def test_resource_creates_dshape_if_necessary():
     with tmpfile('.hdf5') as fn:
