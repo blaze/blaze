@@ -1,7 +1,8 @@
 
 import pytest
 pyspark = pytest.importorskip('pyspark')
-pyspark = pytest.importorskip('pyspark.sql')
+pytest.importorskip('pyspark.sql')
+pytest.importorskip('blaze.sparksql')
 from pyspark.sql import *
 from blaze.sparksql import sparksql_to_ds, ds_to_sparksql
 from datashape import *

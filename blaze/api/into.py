@@ -1005,7 +1005,7 @@ def into(a, b, **kwargs):
     return into(target, b, dshape=dshape, **kwargs)
 
 @dispatch(Iterator, (list, tuple, set, Iterator))
-def into(a, b):
+def into(a, b, **kwargs):
     return b
 
 @dispatch(pd.DataFrame, Excel)

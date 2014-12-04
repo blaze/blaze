@@ -294,132 +294,134 @@ def test_discover():
 ### SparkSQL
 
 from pyspark.sql import SchemaRDD, SQLContext
-sqlContext = SQLContext(sc)
+
+if issubclass(SQLContext, object):
+    sqlContext = SQLContext(sc)
 
 
-def test_into_SparkSQL_from_PySpark():
-    srdd = into(sqlContext, data, schema=t.schema)
-    assert isinstance(srdd, SchemaRDD)
+    def test_into_SparkSQL_from_PySpark():
+        srdd = into(sqlContext, data, schema=t.schema)
+        assert isinstance(srdd, SchemaRDD)
 
-    assert into(list, rdd) == into(list, srdd)
+        assert into(list, rdd) == into(list, srdd)
 
-def test_into_sparksql_from_other():
-    srdd = into(sqlContext, df)
-    assert isinstance(srdd, SchemaRDD)
-    assert into(list, srdd) == into(list, df)
-
-
-def test_SparkSQL_discover():
-    srdd = into(sqlContext, data, schema=t.schema)
-    assert discover(srdd).subshape[0] == \
-            dshape('{name: string, amount: int64, id: int64}')
+    def test_into_sparksql_from_other():
+        srdd = into(sqlContext, df)
+        assert isinstance(srdd, SchemaRDD)
+        assert into(list, srdd) == into(list, df)
 
 
-def test_sparksql_compute():
-    srdd = into(sqlContext, data, schema=t.schema)
-    assert compute_up(t, srdd).context == sqlContext
-    assert discover(compute_up(t, srdd).query).subshape[0] == \
-            dshape('{name: string, amount: int64, id: int64}')
-
-    assert isinstance(compute(t[['name', 'amount']], srdd),
-                      SchemaRDD)
-
-    assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
-
-    assert isinstance(compute(t[['name', 'amount']].head(2), srdd),
-                     (tuple, list))
+    def test_SparkSQL_discover():
+        srdd = into(sqlContext, data, schema=t.schema)
+        assert discover(srdd).subshape[0] == \
+                dshape('{name: string, amount: int64, id: int64}')
 
 
-def test_sparksql_with_literals():
-    srdd = into(sqlContext, data, schema=t.schema)
-    expr = t[t.amount >= 100]
-    result = compute(expr, srdd)
-    assert isinstance(result, SchemaRDD)
-    assert set(map(tuple, result.collect())) == \
-            set(map(tuple, compute(expr, data)))
+    def test_sparksql_compute():
+        srdd = into(sqlContext, data, schema=t.schema)
+        assert compute_up(t, srdd).context == sqlContext
+        assert discover(compute_up(t, srdd).query).subshape[0] == \
+                dshape('{name: string, amount: int64, id: int64}')
+
+        assert isinstance(compute(t[['name', 'amount']], srdd),
+                          SchemaRDD)
+
+        assert sorted(compute(t.name, srdd).collect()) == ['Alice', 'Alice', 'Bob']
+
+        assert isinstance(compute(t[['name', 'amount']].head(2), srdd),
+                         (tuple, list))
 
 
-def test_sparksql_by_summary():
-    t = symbol('t', 'var * {name: string, amount: int64, id: int64}')
-    srdd = into(sqlContext, data, schema=t.schema)
-    expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
-    result = compute(expr, srdd)
-    assert result.collect()
-    assert (str(discover(result)).replace('?', '')
-         == str(expr.dshape).replace('?', ''))
+    def test_sparksql_with_literals():
+        srdd = into(sqlContext, data, schema=t.schema)
+        expr = t[t.amount >= 100]
+        result = compute(expr, srdd)
+        assert isinstance(result, SchemaRDD)
+        assert set(map(tuple, result.collect())) == \
+                set(map(tuple, compute(expr, data)))
 
 
-def test_spqrksql_join():
-    accounts = symbol('accounts', 'var * {name: string, amount: int64, id: int64}')
-    accounts_rdd = into(sqlContext, data, schema=accounts.schema)
+    def test_sparksql_by_summary():
+        t = symbol('t', 'var * {name: string, amount: int64, id: int64}')
+        srdd = into(sqlContext, data, schema=t.schema)
+        expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
+        result = compute(expr, srdd)
+        assert result.collect()
+        assert (str(discover(result)).replace('?', '')
+             == str(expr.dshape).replace('?', ''))
 
-    cities = symbol('cities', 'var * {name: string, city: string}')
-    cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
-    cities_rdd = into(sqlContext,
-                      cities_data,
-                      schema='{name: string, city: string}')
 
-    expr = join(accounts, cities)
+    def test_spqrksql_join():
+        accounts = symbol('accounts', 'var * {name: string, amount: int64, id: int64}')
+        accounts_rdd = into(sqlContext, data, schema=accounts.schema)
 
-    result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
+        cities = symbol('cities', 'var * {name: string, city: string}')
+        cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
+        cities_rdd = into(sqlContext,
+                          cities_data,
+                          schema='{name: string, city: string}')
 
-    assert isinstance(result, SchemaRDD)
+        expr = join(accounts, cities)
 
-    assert (str(discover(result)).replace('?', '') ==
-            str(expr.dshape))
+        result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
 
-def test_comprehensive():
-    L = [[100, 1, 'Alice'],
-         [200, 2, 'Bob'],
-         [300, 3, 'Charlie'],
-         [400, 4, 'Dan'],
-         [500, 5, 'Edith']]
+        assert isinstance(result, SchemaRDD)
 
-    df = DataFrame(L, columns=['amount', 'id', 'name'])
+        assert (str(discover(result)).replace('?', '') ==
+                str(expr.dshape))
 
-    rdd = into(sc, df)
-    srdd = into(sqlContext, df)
+    def test_comprehensive():
+        L = [[100, 1, 'Alice'],
+             [200, 2, 'Bob'],
+             [300, 3, 'Charlie'],
+             [400, 4, 'Dan'],
+             [500, 5, 'Edith']]
 
-    t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
+        df = DataFrame(L, columns=['amount', 'id', 'name'])
 
-    expressions = {
-            t: [],
-            t['id']: [],
-            t.id.max(): [],
-            t.amount.sum(): [],
-            t.amount + 1: [],
-            sin(t.amount): [srdd], # sparksql without hiveql doesn't support math
-            exp(t.amount): [srdd], # sparksql without hiveql doesn't support math
-            t.amount > 50: [],
-            t[t.amount > 50]: [],
-            t.sort('name'): [],
-            t.sort('name', ascending=False): [],
-            t.head(3): [],
-            t.name.distinct(): [],
-            t[t.amount > 50]['name']: [],
-            t.id.map(lambda x: x + 1, 'int'): [srdd], # no udfs yet
-            t[t.amount > 50]['name']: [],
-            by(t.name, total=t.amount.sum()): [],
-            by(t.id, count=t.id.count()): [],
-            by(t[['id', 'amount']], count=t.id.count()): [],
-            by(t[['id', 'amount']], total=(t.amount + 1).sum()): [],
-            by(t[['id', 'amount']], count=t.name.nunique()): [rdd, srdd],
-            by(t.id, t.amount.count()): [],
-            by(t.id, t.id.nunique()): [rdd, srdd],
-            # by(t, t.count()): [],
-            # by(t.id, t.count()): [df],
-            t[['amount', 'id']]: [],
-            t[['id', 'amount']]: [],
-            }
+        rdd = into(sc, df)
+        srdd = into(sqlContext, df)
 
-    for e, exclusions in expressions.items():
-        if rdd not in exclusions:
-            if iscollection(e.dshape):
-                assert into(set, compute(e, rdd)) == into(set, compute(e, df))
-            else:
-                assert compute(e, rdd) == compute(e, df)
-        if srdd not in exclusions:
-            if iscollection(e.dshape):
-                assert into(set, compute(e, srdd)) == into(set, compute(e, df))
-            else:
-                assert compute(e, rdd) == compute(e, df)
+        t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
+
+        expressions = {
+                t: [],
+                t['id']: [],
+                t.id.max(): [],
+                t.amount.sum(): [],
+                t.amount + 1: [],
+                sin(t.amount): [srdd], # sparksql without hiveql doesn't support math
+                exp(t.amount): [srdd], # sparksql without hiveql doesn't support math
+                t.amount > 50: [],
+                t[t.amount > 50]: [],
+                t.sort('name'): [],
+                t.sort('name', ascending=False): [],
+                t.head(3): [],
+                t.name.distinct(): [],
+                t[t.amount > 50]['name']: [],
+                t.id.map(lambda x: x + 1, 'int'): [srdd], # no udfs yet
+                t[t.amount > 50]['name']: [],
+                by(t.name, total=t.amount.sum()): [],
+                by(t.id, count=t.id.count()): [],
+                by(t[['id', 'amount']], count=t.id.count()): [],
+                by(t[['id', 'amount']], total=(t.amount + 1).sum()): [],
+                by(t[['id', 'amount']], count=t.name.nunique()): [rdd, srdd],
+                by(t.id, t.amount.count()): [],
+                by(t.id, t.id.nunique()): [rdd, srdd],
+                # by(t, t.count()): [],
+                # by(t.id, t.count()): [df],
+                t[['amount', 'id']]: [],
+                t[['id', 'amount']]: [],
+                }
+
+        for e, exclusions in expressions.items():
+            if rdd not in exclusions:
+                if iscollection(e.dshape):
+                    assert into(set, compute(e, rdd)) == into(set, compute(e, df))
+                else:
+                    assert compute(e, rdd) == compute(e, df)
+            if srdd not in exclusions:
+                if iscollection(e.dshape):
+                    assert into(set, compute(e, srdd)) == into(set, compute(e, df))
+                else:
+                    assert compute(e, rdd) == compute(e, df)
