@@ -7,7 +7,7 @@ from sqlalchemy.engine import Engine
 from toolz import first, keyfilter
 
 from .compute.sql import select
-from .data.sql import SQL, dispatch
+from .data.sql import SQL, dispatch, dshape_to_table
 from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
 from .data.sql import SQL, dispatch
 from .compatibility import basestring, _strtypes
@@ -93,6 +93,13 @@ def create_index(s, column, name=None, unique=False):
     sa.Index(name, getattr(s.table.c, column), unique=unique).create(s.engine)
 
 
+@dispatch(sqlalchemy.Table, basestring)
+def create_index(s, column, name=None, unique=False):
+    if name is None:
+        raise ValueError('SQL indexes must have a name')
+    sa.Index(name, getattr(s.c, column), unique=unique).create(s.bind)
+
+
 @dispatch(SQL, list)
 def create_index(s, columns, name=None, unique=False):
     if name is None:
@@ -101,15 +108,35 @@ def create_index(s, columns, name=None, unique=False):
     args += tuple(getattr(s.table.c, column) for column in columns)
     sa.Index(*args, unique=unique).create(s.engine)
 
+
+@dispatch(sqlalchemy.Table, list)
+def create_index(s, columns, name=None, unique=False):
+    if name is None:
+        raise ValueError('SQL indexes must have a name')
+    args = name,
+    args += tuple(getattr(s.c, column) for column in columns)
+    sa.Index(*args, unique=unique).create(s.bind)
+
+
 @resource.register('(sqlite|postgresql|mysql|mysql\+pymysql)://.+')
 def resource_sql(uri, *args, **kwargs):
+    kwargs2 = keyfilter(keywords(sqlalchemy.create_engine).__contains__,
+                       kwargs)
+    engine = sqlalchemy.create_engine(uri, **kwargs2)
     if args and isinstance(args[0], _strtypes):
         table_name, args = args[0], args[1:]
-        return SQL(uri, table_name, *args, **kwargs)
+        metadata = sqlalchemy.MetaData(engine)
+        metadata.reflect()
+        if table_name not in metadata.tables:
+            if 'dshape' in kwargs:
+                t = dshape_to_table(table_name, kwargs['dshape'], metadata)
+                t.create()
+                return t
+            else:
+                raise ValueError("Table does not exist and no dshape provided")
+        return metadata.tables[table_name]
     else:
-        kwargs = keyfilter(keywords(sqlalchemy.create_engine).__contains__,
-                           kwargs)
-        return sqlalchemy.create_engine(uri, *args, **kwargs)
+        return engine
 
 
 @resource.register('impala://.+')

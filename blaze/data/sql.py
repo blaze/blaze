@@ -134,6 +134,10 @@ def dshape_to_table(name, ds, metadata=None):
     return sql.Table(name, metadata, *cols)
 
 
+@dispatch(object, _strtypes)
+def create_from_datashape(o, ds, **kwargs):
+    return create_from_datashape(o, dshape(ds), **kwargs)
+
 @dispatch(sql.engine.base.Engine, DataShape)
 def create_from_datashape(engine, ds, **kwargs):
     assert isrecord(ds)

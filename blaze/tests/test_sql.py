@@ -3,7 +3,8 @@ from sqlalchemy.exc import OperationalError
 import sqlalchemy
 from cytoolz import first
 from blaze.sql import drop, create_index, resource
-from blaze import compute, Table, SQL, Symbol, discover
+from blaze.data.sql import into
+from blaze import compute, Table, SQL, symbol, discover
 from blaze.utils import tmpfile
 
 
@@ -70,23 +71,17 @@ class TestCreateIndex(object):
 def test_resource():
     with tmpfile('.db') as fn:
         uri = 'sqlite:///' + fn
-        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
-        assert isinstance(resource(uri, 'foo'), SQL)
-        assert isinstance(resource(uri + '::foo'), SQL)
+        sql = resource(uri, 'foo', dshape='var * {x: int, y: int}')
+        assert isinstance(sql, sqlalchemy.Table)
+    with tmpfile('.db') as fn:
+        uri = 'sqlite:///' + fn
+        sql = resource(uri + '::' + 'foo', dshape='var * {x: int, y: int}')
+        assert isinstance(sql, sqlalchemy.Table)
 
-    sql = SQL('sqlite:///:memory:', 'foo', schema='{x: int, y: int}')
-    assert isinstance(resource('sqlite:///:memory:', 'foo',
-                               schema='{x: int, y: int}'),
-                      SQL)
-    assert isinstance(resource('sqlite:///:memory:::foo',
-                               schema='{x: int, y: int}'),
-                      SQL)
 
 def test_resource_to_engine():
     with tmpfile('.db') as fn:
         uri = 'sqlite:///' + fn
-        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
-
         r = resource(uri)
         assert isinstance(r, sqlalchemy.engine.Engine)
         assert r.dialect.name == 'sqlite'
@@ -95,10 +90,10 @@ def test_resource_to_engine():
 def test_computation_on_engine():
     with tmpfile('.db') as fn:
         uri = 'sqlite:///' + fn
-        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
-        sql.extend([(1, 2), (10, 20)])
+        sql = resource(uri, 'foo', dshape='var * {x: int, y: int}')
+        into(sql, [(1, 2), (10, 20)])
 
         r = resource(uri)
-        s = Symbol('s', discover(r))
+        s = symbol('s', discover(r))
 
         assert compute(s.foo.x.max(), r) == 10
