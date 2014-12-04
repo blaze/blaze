@@ -21,6 +21,7 @@ from pandas import DataFrame
 df = DataFrame(data, columns=['name', 'amount', 'id'])
 
 pyspark = pytest.importorskip('pyspark')
+pytest.importorskip('pyspark.sql')
 
 from pyspark import RDD
 sc = pyspark.SparkContext("local", "Simple App")

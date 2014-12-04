@@ -31,7 +31,7 @@ from .server import *
 
 try:
     from .spark import *
-except ImportError:
+except (AttributeError, ImportError):
     pass
 try:
     from .compute.sparksql import *

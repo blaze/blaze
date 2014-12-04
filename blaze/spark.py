@@ -2,12 +2,19 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 
 from .compatibility import _strtypes
-from .compute.spark import *
 from .data.utils import coerce
 from .dispatch import dispatch
 from .expr import Expr
 from datashape import discover, var
 from collections import Iterator, Iterable
+
+try:
+    from .compute.spark import *
+except (ImportError, AttributeError):
+    RDD = type(None)
+    SparkContext = type(None)
+    pyspark = None
+    coerce = None
 
 __all__ = ['pyspark', 'coerce']
 

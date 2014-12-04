@@ -29,7 +29,6 @@ from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
-from ..compute.spark import RDD
 
 
 __all__ = ['into', 'discover']
@@ -60,6 +59,11 @@ def into(a, b, **kwargs):
             "\n%s <- %s" % (type(a).__name__, type(b).__name__))
 
 # Optional imports
+
+try:
+    from ..compute.spark import RDD
+except (AttributeError, ImportError):
+    RDD = type(None)
 
 try:
     from bokeh.objects import ColumnDataSource
