@@ -5,17 +5,17 @@ from dynd import nd
 import numpy as np
 import tables as tb
 from pandas import DataFrame
+import sqlalchemy
+from datetime import datetime
+from toolz import pluck
+import os
+import bcolz
 
 from blaze.api.into import into
 from blaze.api.into import degrade_numpy_dtype_to_python, numpy_ensure_bytes
 from blaze.utils import tmpfile
-from blaze import Data
-import bcolz
+from blaze import Data, resource
 from blaze.data import CSV
-from blaze.sql import SQL
-from datetime import datetime
-from toolz import pluck
-import os
 
 dirname = os.path.dirname(__file__)
 
@@ -45,8 +45,8 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                              datetime(2002, 12, 25, 0, 0, 1)], dtype='M8[us]')],
                   names=['amount', 'id', 'name', 'timestamp'])
 
-sql = SQL('sqlite:///:memory:', 'accounts', schema=schema)
-sql.extend(L)
+sql = resource('sqlite:///:memory:::accounts', dshape='var * ' + schema)
+into(sql, L)
 
 data = [(list, L),
         (Data, Data(L, 'var * {amount: int64, id: int64, name: string[7], timestamp: datetime}')),
@@ -55,13 +55,14 @@ data = [(list, L),
         (nd.array, arr),
         (bcolz.ctable, bc),
         (CSV, csv),
-        (SQL, sql)]
+        (sqlalchemy.Table, sql)]
 
 schema_no_date = '{amount: int64, id: int64, name: string[7]}'
-sql_no_date = SQL('sqlite:///:memory:', 'accounts_no_date', schema=schema_no_date)
+sql_no_date = resource('sqlite:///:memory:::accounts_no_date',
+                       dshape='var * ' + schema_no_date)
 
 L_no_date = list(pluck([0, 1, 2], L))
-sql_no_date.extend(L_no_date)
+into(sql_no_date, L_no_date)
 
 no_date = [(list, list(pluck([0, 1, 2], L))),
            (Data, Data(list(pluck([0, 1, 2], L)),
@@ -70,7 +71,7 @@ no_date = [(list, list(pluck([0, 1, 2], L))),
            (np.ndarray, x[['amount', 'id', 'name']]),
            (nd.array, nd.fields(arr, 'amount', 'id', 'name')),
            (bcolz.ctable, bc[['amount', 'id', 'name']]),
-           (SQL, sql_no_date)]
+           (sqlalchemy.Table, sql_no_date)]
 
 
 try:
@@ -112,8 +113,8 @@ def normalize(a):
         a = a.astype(degrade_numpy_dtype_to_python(a.dtype))
     if isinstance(a, bcolz.ctable):
         return normalize(a[:])
-    if isinstance(a, SQL):
-        return list(a)
+    if isinstance(a, sqlalchemy.Table):
+        return into(list, a)
     return (str(a).replace("u'", "'")
                   .replace("(", "[").replace(")", "]")
                   .replace('L', '')
@@ -124,7 +125,7 @@ def test_base():
     """ Test all pairs of base in-memory data structures """
     sources = [v for k, v in data if k not in [list]]
     targets = [v for k, v in data if k not in [Data, Collection, CSV,
-        nd.array, SQL]]
+        nd.array, sqlalchemy.Table]]
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
@@ -133,14 +134,15 @@ def test_into_empty_sql():
     """ Test all sources into empty SQL database """
     sources = [v for k, v in data if k not in [list]]
     for a in sources:
-            sql_empty = SQL('sqlite:///:memory:', 'accounts', schema=sql_schema)
-            assert normalize(into(sql_empty, a)) == normalize(sql)
+        sql_empty = resource('sqlite:///:memory:::accounts',
+                             dshape='var * ' + sql_schema)
+        assert normalize(into(sql_empty, a)) == normalize(sql)
 
 
 def test_expressions():
     sources = [v for k, v in data if k not in [nd.array, CSV, Data]]
     targets = [v for k, v in no_date if k not in
-               [Data, CSV, Collection, nd.array, PyTable, SQL]]
+               [Data, CSV, Collection, nd.array, PyTable, sqlalchemy.Table]]
 
     for a in sources:
         for b in targets:

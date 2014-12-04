@@ -399,6 +399,8 @@ def into(t, rows, **kwargs):
         for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
             conn.execute(t.insert(), chunk)
 
+    return t
+
 
 @dispatch(sql.Table, (list, tuple, set, DataDescriptor))
 def into(t, rows, **kwargs):
