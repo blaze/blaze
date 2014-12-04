@@ -6,8 +6,9 @@ from dynd import nd
 import unittest
 import gzip
 
-from blaze.data.sql import (SQL, discover, dshape_to_alchemy, dshape_to_table,
+from blaze.data.sql import (discover, dshape_to_alchemy, dshape_to_table,
         create_from_datashape, into)
+from blaze.sql import resource
 from blaze.utils import raises, filetext, tmpfile
 from datashape import dshape
 import datashape
@@ -22,99 +23,24 @@ class SingleTestClass(unittest.TestCase):
 
     def tearDown(self):
         pass
-        # How do I clean up an engine?
-
-    def test_setup_with_uri(self):
-        dd = SQL('sqlite:///:memory:',
-                 'accounts',
-                 schema='{name: string, amount: int}')
 
     def test_can_connect(self):
         with self.engine.connect() as conn:
             assert not conn.closed
         assert conn.closed
 
-    def test_table_creation(self):
-        dd = SQL(self.engine, 'testtable',
-                              schema='{name: string, amount: int}',
-                              primary_key='name')
-        assert self.engine.has_table('testtable')
 
+@pytest.mark.xfail(True, reason='Can not assert type after the fact')
+def test_inconsistent_schemas():
+    with tmpfile('.db') as fn:
+        t = resource('sqlite:///' + fn + '::badtable',
+                     dshape='var * {name: string, amount: string}')
+        into(t, [('Alice', '100'), ('Bob', '200')])
 
-        assert dd.table.columns.get('name').primary_key
-        assert not dd.table.columns.get('amount').primary_key
-        assert dd.dshape == dshape('var * {name: string, amount: int}')
+        t2 = resource('sqlite:///' + fn + '::badtable',
+                      dshape='var * {name: string, amount: int}')
 
-        assert raises(ValueError, lambda: SQL(self.engine, 'testtable2'))
-
-
-    def test_extension(self):
-        dd = SQL(self.engine, 'testtable2',
-                               schema='{name: string, amount: int32}',
-                               primary_key='name')
-
-        data_list = [('Alice', 100), ('Bob', 50)]
-        data_dict = [{'name': name, 'amount': amount} for name, amount in data_list]
-
-        dd.extend(data_dict)
-
-        with self.engine.connect() as conn:
-            results = conn.execute('select * from testtable2')
-            self.assertEquals(list(results), data_list)
-
-
-        assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
-        assert (dd.as_py() == tuple(map(tuple, data_list)) or
-                dd.as_py() == data_dict)
-
-
-    def test_chunks(self):
-        schema = '{name: string, amount: int32}'
-        dd = SQL(self.engine, 'testtable3',
-                              schema=schema,
-                              primary_key='name')
-
-        data_list = [('Alice', 100), ('Bob', 50), ('Charlie', 200)]
-        data_dict = [{'name': name, 'amount': amount} for name, amount in data_list]
-        chunk = nd.array(data_list, dtype=str(dd.dshape))
-
-        dd.extend_chunks([chunk])
-
-        assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
-
-        self.assertEquals(len(list(dd.chunks(blen=2))), 2)
-
-    def test_indexing(self):
-        dd = SQL(self.engine, 'testtable',
-                 schema='{name: string, amount: int, id: int}',
-                 primary_key='id')
-
-        data = [('Alice', 100, 1), ('Bob', 50, 2), ('Charlie', 200, 3)]
-        dd.extend(data)
-
-        self.assertEqual(set(dd[:, ['id', 'name']]),
-                        set(((1, 'Alice'), (2, 'Bob'), (3, 'Charlie'))))
-        self.assertEqual(set(dd[:, 'name']), set(('Alice', 'Bob', 'Charlie')))
-        assert dd[0, 'name'] in ('Alice', 'Bob', 'Charlie')
-        self.assertEqual(set(dd[:, 0]), set(dd[:, 'name']))
-        self.assertEqual(set(dd[:, [1, 0]]), set(dd[:, ['amount', 'name']]))
-        self.assertEqual(len(list(dd[:2, 'name'])), 2)
-        self.assertEqual(set(dd[:, :]), set(data))
-        self.assertEqual(set(dd[:, :2]), set(dd[:, ['name', 'amount']]))
-        self.assertEqual(set(dd[:]), set(dd[:, :]))
-        assert dd[0] in data
-
-    def test_inconsistent_schemas(self):
-        dd = SQL('sqlite:///:memory:',
-                 'badtable',
-                 schema='{name: string, amount: string}')
-        dd.extend([('Alice', '100'), ('Bob', '200')])
-
-        dd2 = SQL(dd.engine,
-                 'badtable',
-                 schema='{name: string, amount: int}')
-
-        assert list(dd2) == [('Alice', 100), ('Bob', 200)]
+        assert into(list, t2) == [('Alice', 100), ('Bob', 200)]
 
 
 def test_discovery():
@@ -144,41 +70,30 @@ def test_discover_null_columns():
             dshape('{name: string}')
 
 
+def single_table_engine():
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+    t = sa.Table('accounts', metadata,
+                 sa.Column('name', sa.String),
+                 sa.Column('amount', sa.Integer))
+    t.create()
+    return engine, t
+
+
 def test_discovery_engine():
-    dd = SQL('sqlite:///:memory:',
-             'accounts',
-             schema='{name: string, amount: int}')
+    engine, t = single_table_engine()
 
-    assert discover(dd.engine, 'accounts') == dd.dshape
+    assert discover(engine, 'accounts') == discover(t)
 
-    assert discover(dd.engine) == \
-            dshape('{accounts: var * {name: string, amount: int}}')
+    assert str(discover(engine)) == str(discover({'accounts': t}))
 
 
 def test_extend_empty():
-    dd = SQL('sqlite:///:memory:',
-             'accounts',
-             schema='{name: string, amount: int}')
+    engine, t = single_table_engine()
 
-    assert not list(dd)
-    dd.extend([])
-    assert not list(dd)
-
-
-def test_schema_detection():
-    engine = sa.create_engine('sqlite:///:memory:')
-    dd = SQL(engine,
-             'accounts',
-             schema='{name: string, amount: int32}')
-
-    dd.extend([['Alice', 100], ['Bob', 200]])
-
-    dd2 = SQL(engine, 'accounts')
-
-    assert dd.schema == dd2.schema
-
-    if os.path.isfile('my.db'):
-        os.remove('my.db')
+    assert not into(list, t)
+    into(t, [])
+    assert not into(list, t)
 
 
 def test_dshape_to_alchemy():
@@ -213,15 +128,12 @@ def test_create_from_datashape():
 def test_csv_gzip_into_sql():
     from blaze.data.csv import CSV
     from blaze.data.sql import into
-    engine = sa.create_engine('sqlite:///:memory:')
-    sql = SQL(engine,
-              'accounts',
-              schema='{name: string, amount: int32}')
+    engine, sql = single_table_engine()
     with filetext(b'Alice,2\nBob,4', extension='csv.gz',
                   open=gzip.open, mode='wb') as fn:
         csv = CSV(fn, schema=sql.schema)
         into(sql, csv)
-        assert list(sql) == list(csv)
+        assert into(list, sql) == into(list, csv)
 
 
 def test_into_table_iterator():
@@ -242,3 +154,16 @@ def test_into_table_iterator():
     into(t2, data2)
 
     assert into(list, t2) == data
+
+
+def test_extension():
+    engine, t = single_table_engine()
+
+    data_list = [('Alice', 100), ('Bob', 50)]
+    data_dict = [{'name': name, 'amount': amount} for name, amount in data_list]
+
+    into(t, data_dict)
+
+    with engine.connect() as conn:
+        results = conn.execute('select * from accounts')
+        assert list(results) == data_list
