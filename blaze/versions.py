@@ -1,13 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
-import importlib
 import itertools
 import sys
 
 from .compute import compute_up
 from .compute.core import compute_down
 
-builtins = {"__builtin__", "datetime", "_abcoll", "numbers"}
+builtins = set(["__builtin__", "datetime", "_abcoll", "numbers", "collections",
+                "builtins"])
 
 def _get_package(datatype):
     t = datatype.__module__.split(".")[0]
@@ -18,13 +18,15 @@ def _get_package(datatype):
 
 def get_backends():
     funcs = itertools.chain(compute_up.funcs, compute_down.funcs)
-    packages = {_get_package(signature[1]) for signature in funcs if len(signature) > 1}
+    packages = set(_get_package(signature[1]) 
+                   for signature in funcs 
+                   if len(signature) > 1)
 
     versions = {}
     for package in packages:
         if package != "__builtin__":
             try:
-                versions[package] = importlib.import_module(package).__version__
+                versions[package] = __import__(package).__version__
             except ImportError:
                 versions[package] = "Not Installed"
             except AttributeError:
@@ -42,7 +44,7 @@ def _get_support(t):
     else:
         return package
 
-def get_capabilities():
+def get_compute_support():
     funcs = itertools.chain(compute_up.ordering, compute_down.ordering)
     support = {}
 
