@@ -21,7 +21,6 @@ def get_backends():
     packages = {_get_package(signature[1]) for signature in funcs if len(signature) > 1}
 
     versions = {}
-    builtins = {"__builtin__", "datetime", "_abcoll", "numbers"}
     for package in packages:
         if package != "__builtin__":
             try:
@@ -33,3 +32,26 @@ def get_backends():
     versions["Python"] = sys.version
 
     return versions
+
+def _get_support(t):
+    if t == object:
+        return t
+    package = _get_package(t)
+    if package == "blaze" or package == "__builtin__":
+        return t
+    else:
+        return package
+
+def get_capabilities():
+    funcs = itertools.chain(compute_up.ordering, compute_down.ordering)
+    support = {}
+
+    for func in funcs:
+        operation, types = func[0], func[1:]
+        supported = set(_get_support(t) for t in types)
+        if types:
+            if operation not in support:
+                support[operation] = supported
+            else:
+                support[operation] |= supported
+    return support
