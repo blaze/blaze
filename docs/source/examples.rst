@@ -27,7 +27,7 @@ Split-Apply-Combine
 
 .. doctest::
 
-   >>> from blaze import SQL, Data, by
+   >>> from blaze import Data, by
    >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species

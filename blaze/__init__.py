@@ -16,7 +16,7 @@ from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
 from .api import *
-from .data import CSV, HDF5, SQL, coerce
+from .data import CSV, HDF5, coerce
 from .json import *
 from .resource import *
 from .compute.csv import *

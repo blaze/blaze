@@ -1105,7 +1105,8 @@ def into(a, b, **kwargs):
 
 
 @dispatch(sqlalchemy.Table, (pd.DataFrame, ColumnDataSource, tb.Table,
-                             nd.array, np.ndarray, ctable, sqlalchemy.Table))
+                             nd.array, np.ndarray, ctable, sqlalchemy.Table,
+                             DataDescriptor))
 def into(a, b, **kwargs):
     return into(a, into(Iterator, b), **kwargs)
 
@@ -1114,7 +1115,8 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     return into(a, into(list, b), columns=discover(b).measure.names)
 
-@dispatch((np.ndarray, tb.node.MetaNode, ctable, ColumnDataSource),
+@dispatch((np.ndarray, tb.node.MetaNode, ctable, ColumnDataSource,
+           DataDescriptor),
           sqlalchemy.Table)
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame, b), **kwargs)

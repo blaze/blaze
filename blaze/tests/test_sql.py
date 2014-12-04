@@ -4,20 +4,20 @@ import sqlalchemy
 from cytoolz import first
 from blaze.sql import drop, create_index, resource
 from blaze.data.sql import into
-from blaze import compute, Table, SQL, symbol, discover
+from blaze import compute, Data, symbol, discover
 from blaze.utils import tmpfile
 
 
 @pytest.fixture
 def sql():
     data = [(1, 2), (10, 20), (100, 200)]
-    sql = SQL('sqlite:///:memory:', 'foo', schema='{x: int, y: int}')
-    sql.extend(data)
+    sql = resource('sqlite:///:memory:', 'foo', dshape='var * {x: int, y: int}')
+    into(sql, data)
     return sql
 
 
 def test_column(sql):
-    t = Table(sql)
+    t = Data(sql)
 
     r = compute(t['x'])
     assert r == [1, 10, 100]
@@ -27,9 +27,9 @@ def test_column(sql):
 
 
 def test_drop(sql):
-    assert sql.table.exists(sql.engine)
+    assert sql.exists(sql.bind)
     drop(sql)
-    assert not sql.table.exists(sql.engine)
+    assert not sql.exists(sql.bind)
 
 
 class TestCreateIndex(object):
@@ -49,10 +49,10 @@ class TestCreateIndex(object):
 
     def test_create_index_unique(self, sql):
         create_index(sql, 'y', name='y_idx', unique=True)
-        assert len(sql.table.indexes) == 1
-        idx = first(sql.table.indexes)
+        assert len(sql.indexes) == 1
+        idx = first(sql.indexes)
         assert idx.unique
-        assert idx.columns.y == sql.table.c.y
+        assert idx.columns.y == sql.c.y
 
     def test_composite_index(self, sql):
         create_index(sql, ['x', 'y'], name='idx_xy')
@@ -73,6 +73,7 @@ def test_resource():
         uri = 'sqlite:///' + fn
         sql = resource(uri, 'foo', dshape='var * {x: int, y: int}')
         assert isinstance(sql, sqlalchemy.Table)
+
     with tmpfile('.db') as fn:
         uri = 'sqlite:///' + fn
         sql = resource(uri + '::' + 'foo', dshape='var * {x: int, y: int}')

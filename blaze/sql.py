@@ -7,9 +7,8 @@ from sqlalchemy.engine import Engine
 from toolz import first, keyfilter
 
 from .compute.sql import select
-from .data.sql import SQL, dispatch, dshape_to_table
+from .data.sql import dispatch, dshape_to_table
 from .expr import Expr, Projection, Field, UnaryOp, BinOp, Join
-from .data.sql import SQL, dispatch
 from .compatibility import basestring, _strtypes
 from .resource import resource
 from .utils import keywords
@@ -17,31 +16,12 @@ from .utils import keywords
 
 import sqlalchemy as sa
 
-__all__ = 'SQL',
-
-
-@dispatch((Field, Projection, Expr, UnaryOp), SQL)
-def compute_up(t, ddesc, **kwargs):
-    return compute_up(t, ddesc.table, **kwargs)
-
-@dispatch((BinOp, Join), SQL, sa.sql.Selectable)
-def compute_up(t, lhs, rhs, **kwargs):
-    return compute_up(t, lhs.table, rhs, **kwargs)
-
-@dispatch((BinOp, Join), sa.sql.Selectable, SQL)
-def compute_up(t, lhs, rhs, **kwargs):
-    return compute_up(t, lhs, rhs.table, **kwargs)
-
-@dispatch((BinOp, Join), SQL, SQL)
-def compute_up(t, lhs, rhs, **kwargs):
-    return compute_up(t, lhs.table, rhs.table, **kwargs)
+__all__ = ()
 
 
 def engine_of(x):
     if isinstance(x, Engine):
         return x
-    if isinstance(x, SQL):
-        return x.engine
     if isinstance(x, MetaData):
         return x.bind
     if isinstance(x, Table):
@@ -58,7 +38,7 @@ def post_compute(expr, query, scope=None):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, (SQL, Engine, Table)) for val in scope.values()):
+    if not all(isinstance(val, (Engine, Table)) for val in scope.values()):
         return query
 
     engines = set(filter(None, map(engine_of, scope.values())))
@@ -81,16 +61,9 @@ def post_compute(expr, query, scope=None):
     return result
 
 
-@dispatch(SQL)
-def drop(s):
-    s.table.drop(s.engine)
-
-
-@dispatch(SQL, basestring)
-def create_index(s, column, name=None, unique=False):
-    if name is None:
-        raise ValueError('SQL indexes must have a name')
-    sa.Index(name, getattr(s.table.c, column), unique=unique).create(s.engine)
+@dispatch(sqlalchemy.Table)
+def drop(table):
+    table.drop(table.bind)
 
 
 @dispatch(sqlalchemy.Table, basestring)
@@ -98,15 +71,6 @@ def create_index(s, column, name=None, unique=False):
     if name is None:
         raise ValueError('SQL indexes must have a name')
     sa.Index(name, getattr(s.c, column), unique=unique).create(s.bind)
-
-
-@dispatch(SQL, list)
-def create_index(s, columns, name=None, unique=False):
-    if name is None:
-        raise ValueError('SQL indexes must have a name')
-    args = name,
-    args += tuple(getattr(s.table.c, column) for column in columns)
-    sa.Index(*args, unique=unique).create(s.engine)
 
 
 @dispatch(sqlalchemy.Table, list)
@@ -149,6 +113,6 @@ def resource_impala(uri, *args, **kwargs):
 
 
 from .compute.pyfunc import broadcast_collect
-@dispatch(Expr, (SQL, sa.sql.elements.ClauseElement))
+@dispatch(Expr, sa.sql.elements.ClauseElement)
 def optimize(expr, _):
     return broadcast_collect(expr)
