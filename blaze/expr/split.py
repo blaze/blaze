@@ -159,25 +159,27 @@ def _split_agg(expr, leaf=None, agg=None):
 @dispatch(mean)
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
     child = expr._subs({leaf: chunk})._child
-    return summary(total=child.sum(), count=child.count(), keepdims=keepdims)
+    return summary(total=child.sum(), count=child.count(), keepdims=keepdims,
+            axis=expr.axis)
 
 @dispatch(mean)
 def _split_agg(expr, leaf=None, agg=None):
-    total = agg.total.sum()
-    count = agg.count.sum()
+    total = agg.total.sum(axis=expr.axis, keepdims=expr.keepdims)
+    count = agg.count.sum(axis=expr.axis, keepdims=expr.keepdims)
 
     return 1.0 * total / count
 
 @dispatch((std, var))
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
     child = expr._subs({leaf: chunk})._child
-    return summary(x=child.sum(), x2=(child**2).sum(), n=child.count(), keepdims=keepdims)
+    return summary(x=child.sum(), x2=(child**2).sum(), n=child.count(),
+            keepdims=keepdims, axis=expr.axis)
 
 @dispatch(var)
 def _split_agg(expr, leaf=None, agg=None):
-    x = agg.x.sum()
-    x2 = agg.x2.sum()
-    n = agg.n.sum() * 1.0
+    x = agg.x.sum(axis=expr.axis, keepdims=expr.keepdims)
+    x2 = agg.x2.sum(axis=expr.axis, keepdims=expr.keepdims)
+    n = agg.n.sum(axis=expr.axis, keepdims=expr.keepdims) * 1.0
 
     result = (x2 / n) - (x / n)**2
 
@@ -188,9 +190,9 @@ def _split_agg(expr, leaf=None, agg=None):
 
 @dispatch(std)
 def _split_agg(expr, leaf=None, agg=None):
-    x = agg.x.sum()
-    x2 = agg.x2.sum()
-    n = agg.n.sum() * 1.0
+    x = agg.x.sum(axis=expr.axis, keepdims=expr.keepdims)
+    x2 = agg.x2.sum(axis=expr.axis, keepdims=expr.keepdims)
+    n = agg.n.sum(axis=expr.axis, keepdims=expr.keepdims) * 1.0
 
     result = (x2 / n) - (x / n)**2
 

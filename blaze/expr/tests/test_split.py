@@ -269,6 +269,13 @@ def test_nd_chunk_axis_args():
     assert agg.shape == (6, 16)
     assert agg_expr.isidentical(agg.sum(axis=0))
 
+    for func in [var, std, mean]:
+        (chunk, chunk_expr), (agg, agg_expr) = split(x, func(x, axis=0), chunk=c)
+
+        assert chunk.shape == (4, 4)
+        assert chunk_expr.shape == (1, 4)
+        assert agg.shape == (6, 16)
+
 
 def test_agg_shape_in_tabular_case_with_explicit_chunk():
     t = symbol('t', '1000 * {name: string, amount: int, id: int}')
