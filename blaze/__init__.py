@@ -16,7 +16,7 @@ from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
 from .api import *
-from .data import CSV, HDF5, coerce
+from .data import CSV, coerce
 from .json import *
 from .resource import *
 from .compute.csv import *
@@ -39,6 +39,7 @@ try:
 except (ImportError, TypeError):
     pass
 try:
+    from .h5py import *
     from .compute.h5py import *
 except ImportError:
     pass

@@ -2,10 +2,11 @@ import json
 import numpy as np
 import unittest
 
-from blaze.data import CSV, JSON_Streaming, HDF5
+from blaze.data import CSV, JSON_Streaming
 from blaze import into, resource
 from blaze.utils import filetext, tmpfile
 from blaze.data.utils import tuplify
+from blaze.h5py import resource
 
 class SingleTestClass(unittest.TestCase):
     def test_csv_json(self):
@@ -74,7 +75,7 @@ class SingleTestClass(unittest.TestCase):
                     d[:] = np.array(1)
 
                 csv = CSV(csv_fn, mode='r+', schema='{a: int32, b: int32, c: int32}')
-                hdf5 = HDF5(hdf5_fn, '/data', schema=csv.schema)
+                hdf5 = resource(hdf5_fn + '::/data')
 
                 into(csv, hdf5)
 
@@ -108,10 +109,9 @@ class SingleTestClass(unittest.TestCase):
         with tmpfile('hdf5') as hdf5_fn:
             with filetext('1,1\n2,2\n') as csv_fn:
                 csv = CSV(csv_fn, schema='{a: int32, b: int32}')
-                hdf5 = HDF5(hdf5_fn, '/data', schema='{a: int32, b: int32}')
+                hdf5 = resource(hdf5_fn + '::/data', dshape='var * {a: int32, b: int32}')
 
                 into(hdf5, csv)
 
-                self.assertEquals(nd.as_py(hdf5.as_dynd()),
-                                  [{'a': 1, 'b': 1},
-                                   {'a': 2, 'b': 2}])
+                self.assertEquals(hdf5[:].tolist(),
+                                  [(1, 1), (2, 2)])
