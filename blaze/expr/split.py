@@ -278,11 +278,11 @@ def _split_agg(expr, leaf=None, agg=None):
                                 expr.fields[:ngroup]))))
 
 
-@dispatch((ElemWise, (Like, Selection)))
+@dispatch((ElemWise, Like, Selection))
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
 
-@dispatch((ElemWise, (Like, Selection)))
+@dispatch((ElemWise, Like, Selection))
 def _split_agg(expr, leaf=None, agg=None):
     return agg
 
