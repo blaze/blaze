@@ -78,18 +78,6 @@ for CSV or ``INSERT`` statements for SQL.
    ...             (7, 'Georgina', 700)])
 
 
-Migration
----------
-
-The combination of uniform iteration and insertion enables trivial data
-migration between storage systems.
-
-.. code-block:: python
-
-   >>> sql = SQL('sqlite:///:memory:', 'accounts', schema=csv.schema)
-   >>> sql.extend(iter(csv))  # Migrate csv file to SQLite database
-
-
 Indexing
 --------
 
@@ -172,7 +160,8 @@ SQLite, etc...
 
 .. code-block:: python
 
-   >>> sql = SQL('sqlite:///:memory:', 'accounts', schema='{id:int}')
+   >>> sql = resource('sqlite:///:memory:', 'accounts',
+   ...                dshape='var * {name: string, amount: int}')
 
 Specifying Datashape
 --------------------

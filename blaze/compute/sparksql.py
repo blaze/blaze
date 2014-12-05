@@ -6,7 +6,7 @@ import itertools
 from datashape import discover, Unit, Tuple, Record, iscollection, isscalar
 import sqlalchemy as sa
 
-from ..data.sql import dshape_to_alchemy
+from ..sql import dshape_to_alchemy
 from ..dispatch import dispatch
 from ..expr import *
 from .utils import literalquery

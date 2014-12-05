@@ -10,9 +10,7 @@ num_processes = len(output.splitlines())
 pytestmark = pytest.mark.skipif(num_processes < 3, reason="No MySQL Installation")
 
 
-from blaze import SQL
-from blaze import CSV
-from blaze.api.into import into
+from blaze import CSV, resource, into
 import sqlalchemy
 import os
 import csv as csv_module
@@ -54,7 +52,6 @@ def teardown_function(function):
             metadata.tables[t].drop(engine)
 
 def test_csv_postgres_load():
-
     tbl = 'testtable'
 
     engine = sqlalchemy.create_engine(url)
@@ -67,8 +64,8 @@ def test_csv_postgres_load():
 
     csv = CSV(file_name)
 
-    sql = SQL(url,tbl, schema=csv.schema)
-    engine = sql.engine
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
+    engine = sql.bind
     conn = engine.raw_connection()
 
     cursor = conn.cursor()
@@ -85,53 +82,50 @@ def test_simple_into():
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
 
-    into(sql,csv, if_exists="replace")
+    into(sql, csv, if_exists="replace")
 
-    assert list(sql[:, 'a']) == [1, 10, 100]
-    assert list(sql[:, 'b']) == [2, 20, 200]
+    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
+
 
 def test_append():
 
     tbl = 'testtable_into_append'
 
     csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
 
-    into(sql,csv, if_exists="replace")
+    into(sql, csv, if_exists="replace")
+    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
 
-    assert list(sql[:, 'a']) == [1, 10, 100]
-    assert list(sql[:, 'b']) == [2, 20, 200]
+    into(sql, csv, if_exists="append")
+    assert into(list, sql) == [(1, 2), (10, 20), (100, 200),
+                               (1, 2), (10, 20), (100, 200)]
 
-    into(sql,csv, if_exists="append")
-    assert list(sql[:, 'a']) == [1, 10, 100, 1, 10, 100]
-    assert list(sql[:, 'b']) == [2, 20, 200, 2, 20, 200]
 
 def test_simple_float_into():
-
     tbl = 'testtable_into_float'
 
     csv = CSV(file_name_floats, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
 
     into(sql,csv, if_exists="replace")
 
-    assert list(sql[:, 'a']) == [1.02, 102.02, 1002.02]
-    assert list(sql[:, 'b']) == [2.02, 202.02, 2002.02]
+    assert into(list, sql) == \
+            [(1.02, 2.02), (102.02, 202.02), (1002.02, 2002.02)]
 
 def test_tryexcept_into():
 
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
 
-    into(sql,csv, if_exists="replace", QUOTE="alpha", FORMAT="csv") # uses multi-byte character and
+    into(sql, csv, if_exists="replace", QUOTE="alpha", FORMAT="csv") # uses multi-byte character and
                                                       # fails over to using sql.extend()
 
-    assert list(sql[:, 'a']) == [1, 10, 100]
-    assert list(sql[:, 'b']) == [2, 20, 200]
+    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
 
 
 @pytest.mark.xfail(raises=KeyError)
@@ -140,21 +134,20 @@ def test_failing_argument():
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name, columns=['a', 'b'])
-    sql = SQL(url,tbl, schema= csv.schema)
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
 
-    into(sql,csv, if_exists="replace", skipinitialspace="alpha") # failing call
+    into(sql, csv, if_exists="replace", skipinitialspace="alpha") # failing call
+
 
 def test_no_header_no_columns():
-
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name)
-    sql = SQL(url,tbl, schema= '{x: int, y: int}')
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
 
-    into(sql,csv, if_exists="replace")
+    into(sql, csv, if_exists="replace")
 
-    assert list(sql[:, 'x']) == [1, 10, 100]
-    assert list(sql[:, 'y']) == [2, 20, 200]
+    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
 
 
 def test_complex_into():
@@ -167,33 +160,9 @@ def test_complex_into():
 
     csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int64, Consts: float64}')
 
-    sql = SQL(url,tbl, schema=csv.schema)
-    into(sql,csv, if_exists="replace")
+    sql = resource(url + '::' + tbl, dshape=csv.dshape)
+    into(sql, csv, if_exists="replace")
 
     df = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
 
-    assert sql[0] == csv[0]
-
-    #implement count method
-    print(len(list(sql[:])))
-
-    # assert sql[] == csv[-1]
-    for col in sql.columns:
-        #need to convert to python datetime
-        if col == "RegistrationDate":
-            py_dates = list(df['RegistrationDate'].astype(object).values)
-            py_dates = [dt.date(d.year, d.month, d.day) for d in py_dates]
-            assert list(sql[:,col]) == list(csv[:,col]) == py_dates
-        #handle floating point precision -- perhaps it's better to call out to assert_array_almost_equal
-        elif col == 'Consts':
-
-            ##  WARNING!!! Floats are truncated with MySQL and the assertion fails
-            sql_array = np.array(list(sql[:,col]))
-            csv_array = list(csv[:,col])
-            df_array = df[col].values
-            np.testing.assert_almost_equal(sql_array,csv_array, decimal=5)
-            np.testing.assert_almost_equal(sql_array,df_array, decimal=5)
-        else:
-            assert list(sql[:,col]) == list(csv[:,col]) == list(df[col].values)
-
-#
+    assert into(list, sql) == into(list, csv)

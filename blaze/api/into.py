@@ -4,6 +4,7 @@ import os
 from dynd import nd
 import datashape
 import sys
+import sqlalchemy
 from functools import partial
 from datashape import dshape, Record, to_numpy_dtype, Option
 from datashape.predicates import isscalar
@@ -84,7 +85,7 @@ except ImportError:
 
 
 try:
-    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel, SQL
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
@@ -229,6 +230,11 @@ def into(a, b, **kwargs):
     return numpy_ensure_strings(b).tolist()
 
 
+@dispatch(Iterator, (nd.array, np.ndarray))
+def into(a, b, **kwargs):
+    return iter(into(list, b, **kwargs))
+
+
 @dispatch(set, object)
 def into(a, b, **kwargs):
     return set(into(list, b, **kwargs))
@@ -353,7 +359,7 @@ def into(_, data, filename=None, datapath=None, **kwargs):
     return t
 
 
-@dispatch(tb.Table, (pd.DataFrame, CSV, SQL, nd.array, Collection))
+@dispatch(tb.Table, (pd.DataFrame, CSV, nd.array, Collection))
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b), **kwargs)
 
@@ -943,8 +949,6 @@ def into(a, b, **kwargs):
     # TODO: CSV of Field
 
 
-
-
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
     return pd.DataFrame(list(b), columns=b.columns)
@@ -972,7 +976,11 @@ def into(a, b, **kwargs):
     Transfer data between two data resources based on their URIs.
 
     >>> into('sqlite://:memory:::tablename', '/path/to/file.csv') #doctest:+SKIP
-    <blaze.data.sql.SQL at 0x7f32d80b80d0>
+    Table('tablename', MetaData(bind=Engine(sqlite:///:memory:)),
+                       Column('id', BigInteger(), table=<tablename>),
+                       Column('name', Text(), table=<tablename>, nullable=False),
+                       Column('balance', BigInteger(), table=<tablename>),
+                       schema=None)
 
     Uses ``resource`` functin to resolve data resources
 
@@ -1098,3 +1106,21 @@ def into(a, **kwargs):
 def into(a, b, **kwargs):
     into(a, into(Iterator, b, **kwargs))
     return a
+
+
+@dispatch(sqlalchemy.Table, (pd.DataFrame, ColumnDataSource, tb.Table,
+                             nd.array, np.ndarray, ctable, sqlalchemy.Table,
+                             DataDescriptor, Collection))
+def into(a, b, **kwargs):
+    return into(a, into(Iterator, b), **kwargs)
+
+
+@dispatch(pd.DataFrame, sqlalchemy.Table)
+def into(a, b, **kwargs):
+    return into(a, into(list, b), columns=discover(b).measure.names)
+
+@dispatch((np.ndarray, tb.node.MetaNode, ctable, ColumnDataSource,
+           DataDescriptor, Collection),
+          sqlalchemy.Table)
+def into(a, b, **kwargs):
+    return into(a, into(pd.DataFrame, b), **kwargs)

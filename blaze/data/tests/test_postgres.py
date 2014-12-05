@@ -28,7 +28,7 @@ except sqlalchemy.exc.OperationalError:
     pytestmark = pytest.mark.skipif(True, reason="Can not connect to postgres")
 
 
-from blaze import SQL, into, resource
+from blaze import into, resource
 from contextlib import contextmanager
 
 
@@ -68,31 +68,10 @@ def non_existing_schema(name):
             pass
 
 
-def test_sql_schema_behavior():
-    with existing_schema('myschema'):
-        sql = SQL(url, 'accounts', schema_name='myschema', schema='{name: string, value: int}')
-        into(sql, data)
-        assert engine.has_table('accounts', schema='myschema')
-
-        sql2 = SQL(url, 'accounts', schema_name='myschema')
-        assert list(sql2) == data
-
-        sql3 = SQL(url, 'myschema.accounts')
-        assert list(sql2) == data
-
-
-def test_sql_new_schema():
-    with non_existing_schema('myschema2'):
-        sql = SQL(url, 'accounts', schema_name='myschema2', schema='{name: string, value: int}')
-        into(sql, data)
-        assert engine.has_table('accounts', schema='myschema2')
-
-        sql2 = SQL(url, 'accounts', schema_name='myschema2')
-        assert list(sql2) == data
-
-
+"""
 def test_resource_specifying_database_name():
     with existing_schema('myschema'):
-        sql = resource(url + '::myschema.accounts', schema='{name: string, value: int}')
-        assert isinstance(sql, SQL)
+        sql = resource(url + '::myschema.accounts', dshape='var * {name: string, value: int}')
+        assert isinstance(sql, sqlalchemy.Table)
         assert sql.table.schema == 'myschema'
+"""

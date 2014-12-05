@@ -9,7 +9,7 @@ from blaze.expr import symbol, by
 from blaze.api import Data, into
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
-from blaze.sql import SQL
+from blaze.sql import resource
 
 
 sources = []
@@ -28,8 +28,8 @@ x = into(np.ndarray, df)
 
 bc = into(bcolz.ctable, df)
 
-sql = SQL('sqlite:///:memory:', 'accounts', schema=t.schema)
-sql.extend(L)
+sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
+into(sql, L)
 
 sources = [df, x, bc, sql]
 

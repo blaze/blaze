@@ -2,8 +2,8 @@ import json
 import numpy as np
 import unittest
 
-from blaze.data import CSV, JSON_Streaming, HDF5, SQL
-from blaze.api.into import into
+from blaze.data import CSV, JSON_Streaming, HDF5
+from blaze import into, resource
 from blaze.utils import filetext, tmpfile
 from blaze.data.utils import tuplify
 
@@ -90,7 +90,8 @@ class SingleTestClass(unittest.TestCase):
                 with tmpfile('db') as sqldb:
 
                     csv = CSV(csv_fn, mode='r', schema=schema)
-                    sql = SQL('sqlite:///' + sqldb, 'testtable', schema=schema)
+                    sql = resource('sqlite:///' + sqldb + '::testtable',
+                                    dshape='var * ' + schema)
                     json = JSON_Streaming(json_fn, mode='r+', schema=schema)
 
                     into(sql, csv)

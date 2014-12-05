@@ -10,7 +10,8 @@ import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
 from pandas import DataFrame
-from blaze import into
+from blaze import into, resource
+from blaze.utils import tmpfile
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
@@ -438,67 +439,76 @@ def test_outer_join():
     L = symbol('L', 'var * {id: int, name: string, amount: real}')
     R = symbol('R', 'var * {city: string, id: int}')
 
-    from blaze.sql import SQL
-    engine = sa.create_engine('sqlite:///:memory:')
+    with tmpfile('db') as fn:
+        uri = 'sqlite:///' + fn
+        engine = resource(uri)
 
-    _left = [(1, 'Alice', 100),
-            (2, 'Bob', 200),
-            (4, 'Dennis', 400)]
-    left = SQL(engine, 'left', schema=L.schema)
-    left.extend(_left)
+        _left = [(1, 'Alice', 100),
+                (2, 'Bob', 200),
+                (4, 'Dennis', 400)]
 
-    _right = [('NYC', 1),
-             ('Boston', 1),
-             ('LA', 3),
-             ('Moscow', 4)]
-    right = SQL(engine, 'right', schema=R.schema)
-    right.extend(_right)
+        left = resource(uri, 'left', dshape=L.dshape)
+        into(left, _left)
 
-    conn = engine.connect()
+        _right = [('NYC', 1),
+                 ('Boston', 1),
+                 ('LA', 3),
+                 ('Moscow', 4)]
+        right = resource(uri, 'right', dshape=R.dshape)
+        into(right, _right)
 
+        conn = engine.connect()
 
-    query = compute(join(L, R, how='inner'), {L: left.table, R: right.table})
-    result = list(map(tuple, conn.execute(query).fetchall()))
+        query = compute(join(L, R, how='inner'),
+                        {L: left, R: right},
+                        post_compute=False)
+        result = list(map(tuple, conn.execute(query).fetchall()))
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (4, 'Dennis', 400, 'Moscow')])
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (4, 'Dennis', 400, 'Moscow')])
 
-    query = compute(join(L, R, how='left'), {L: left.table, R: right.table})
-    result = list(map(tuple, conn.execute(query).fetchall()))
+        query = compute(join(L, R, how='left'),
+                        {L: left, R: right},
+                        post_compute=False)
+        result = list(map(tuple, conn.execute(query).fetchall()))
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (2, 'Bob', 200, None),
-             (4, 'Dennis', 400, 'Moscow')])
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (2, 'Bob', 200, None),
+                 (4, 'Dennis', 400, 'Moscow')])
 
-    query = compute(join(L, R, how='right'), {L: left.table, R: right.table})
-    print(query)
-    result = list(map(tuple, conn.execute(query).fetchall()))
-    print(result)
+        query = compute(join(L, R, how='right'),
+                        {L: left, R: right},
+                        post_compute=False)
+        print(query)
+        result = list(map(tuple, conn.execute(query).fetchall()))
+        print(result)
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (3, None, None, 'LA'),
-             (4, 'Dennis', 400, 'Moscow')])
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (3, None, None, 'LA'),
+                 (4, 'Dennis', 400, 'Moscow')])
 
-    # SQLAlchemy doesn't support full outer join
-    """
-    query = compute(join(L, R, how='outer'), {L: left.table, R: right.table})
-    result = list(map(tuple, conn.execute(query).fetchall()))
+        # SQLAlchemy doesn't support full outer join
+        """
+        query = compute(join(L, R, how='outer'),
+                        {L: left, R: right},
+                        post_compute=False)
+        result = list(map(tuple, conn.execute(query).fetchall()))
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (2, 'Bob', 200, None),
-             (3, None, None, 'LA'),
-             (4, 'Dennis', 400, 'Moscow')])
-    """
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (2, 'Bob', 200, None),
+                 (3, None, None, 'LA'),
+                 (4, 'Dennis', 400, 'Moscow')])
+        """
 
-    conn.close()
+        conn.close()
 
 
 def test_summary():
