@@ -47,15 +47,15 @@ def get_backends():
     return versions
 
 def _get_support(t):
-    if t == object:
-        return t
     package = _get_package(t)
 
     if package == "__builtin__":
-        if t == list or t == tuple or t == dict:
+        if t in frozenset([list, tuple, dict, float, int, bool]):
             return "Pure Python"
         else:
             return t
+    elif package == "blaze":
+        return t
     else:
         return package
 
