@@ -5,16 +5,23 @@ import sys
 
 from .compute import compute_up
 from .compute.core import compute_down
+from .compute.spark import Dummy
+from .compute.mongo import MongoQuery
+
 
 builtins = set(["__builtin__", "datetime", "_abcoll", "numbers", "collections",
                 "builtins"])
+blaze_wrappers = {MongoQuery: "pymongo", Dummy: "pyspark"}
 
 def _get_package(datatype):
-    t = datatype.__module__.split(".")[0]
-    if t not in builtins:
-        return t
+    if datatype in blaze_wrappers:
+        return blaze_wrappers[datatype]
     else:
-        return "__builtin__"
+        t = datatype.__module__.split(".")[0]
+        if t not in builtins:
+            return t
+        else:
+            return "__builtin__"
 
 def get_backends():
     funcs = itertools.chain(compute_up.funcs, compute_down.funcs)
@@ -26,11 +33,15 @@ def get_backends():
     for package in packages:
         if package != "__builtin__":
             try:
-                versions[package] = __import__(package).__version__
+                p = __import__(package)
+                if hasattr(p, "__version__"):
+                    versions[package] = p.__version__
+                elif hasattr(p, "version"):
+                    versions[package] = p.version
+                else:
+                    versions[package] = "Unknown"
             except ImportError:
                 versions[package] = "Not Installed"
-            except AttributeError:
-                versions[package] = "Unknown"
     versions["Python"] = sys.version
 
     return versions
@@ -39,8 +50,12 @@ def _get_support(t):
     if t == object:
         return t
     package = _get_package(t)
-    if package == "blaze" or package == "__builtin__":
-        return t
+
+    if package == "__builtin__":
+        if t == list or t == tuple or t == dict:
+            return "Pure Python"
+        else:
+            return t
     else:
         return package
 
