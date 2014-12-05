@@ -3,8 +3,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 
-from blaze import SQL
-from blaze import CSV
+from blaze import CSV, resource
 from blaze.api.into import into
 from blaze.utils import tmpfile
 import sqlalchemy
@@ -15,9 +14,12 @@ import subprocess
 
 @pytest.yield_fixture
 def engine():
+    tbl = 'testtable'
     with tmpfile('db') as filename:
         engine = sqlalchemy.create_engine('sqlite:///' + filename)
-        yield engine
+        t = resource('sqlite:///' + filename + '::' + tbl,
+                     dshape='var * {a: int32, b: int32}')
+        yield engine, t
 
 
 @pytest.yield_fixture
@@ -31,19 +33,19 @@ def csv():
         yield csv
 
 
-def test_simple_into(engine, csv):
+def test_simple_into(csv):
+    tbl = 'testtable'
 
-    tbl = 'testtable_into_2'
-
-    sql = SQL(engine, tbl, schema= csv.schema)
+    sql = resource('sqlite:///:memory:', tbl, dshape=csv.dshape)
+    engine = sql.bind
 
     into(sql, csv, if_exists="replace")
-    conn = sql.engine.raw_connection()
+    conn = engine.raw_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' and name='{0}';".format(tbl))
 
     sqlite_tbl_names = cursor.fetchall()
     assert sqlite_tbl_names[0][0] == tbl
 
-    assert list(sql[:, 'a']) == [1, 10, 100]
-    assert list(sql[:, 'b']) == [2, 20, 200]
+
+    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]

@@ -5,7 +5,7 @@ from datetime import date, datetime
 from blaze.compute.core import (compute_up, compute_down, optimize, compute,
         bottom_up_until_type_break, top_then_bottom_then_top_again_etc,
         swap_resources_into_scope)
-from blaze.expr import by, symbol, Expr
+from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
 
@@ -65,10 +65,10 @@ def test_bottom_up_until_type_break():
     # ensure that we work on binops with one child
     x = symbol('x', 'real')
     expr, scope = bottom_up_until_type_break(x + x, {x: 1})
-    x2 = symbol('_', 'real')
-    assert expr.isidentical(x2)
     assert len(scope) == 1
-    assert x2 in scope
+    x2 = list(scope.keys())[0]
+    assert isinstance(x2, Symbol)
+    assert isinstance(expr, Symbol)
     assert scope[x2] == 2
 
 

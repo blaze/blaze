@@ -1,8 +1,9 @@
 import os
 import pytest
+import sqlalchemy
 from blaze.resource import resource, drop, create_index
-from blaze.data import CSV, SQL
 from blaze.h5py import h5py
+from blaze.data import CSV
 from blaze.api.into import into
 
 from unittest import TestCase
@@ -79,8 +80,8 @@ class TestResource(TestCase):
     def test_sql(self):
         with tmpfile('.db') as filename:
             assert isinstance(resource('sqlite:///%s::tablename' % filename,
-                                       schema='{x: int, y: int}'),
-                              SQL)
+                                       dshape='var * {x: int, y: int}'),
+                              sqlalchemy.Table)
 
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
@@ -118,8 +119,8 @@ def test_create_index_uri():
     from blaze.data.csv import drop
     with tmpfile(extension='.db') as fn:
         uri = 'sqlite:///%s::table' % fn
-        sql = resource(uri, schema='{x: int, y: int}')
+        sql = resource(uri, dshape='var * {x: int, y: int}')
         create_index(uri, 'x', name='x_index')
-        sql = resource(uri, schema='{x: int, y: int}')
+        sql = resource(uri, schema='var * {x: int, y: int}')
 
-        assert list(list(sql.table.indexes)[0].columns)[0].name == 'x'
+        assert list(list(sql.indexes)[0].columns)[0].name == 'x'

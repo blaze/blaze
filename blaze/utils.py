@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import tempfile
 import os
 import inspect
+import datetime
 
 from itertools import islice
 from contextlib import contextmanager
@@ -181,14 +182,24 @@ def keywords(func):
     return inspect.getargspec(func).args
 
 
+def normalize_to_date(dt):
+    if isinstance(dt, datetime.datetime) and not dt.time():
+        return dt.date()
+    else:
+        return dt
+
 def assert_allclose(lhs, rhs):
     for tb in map(zip, lhs, rhs):
         for left, right in tb:
             if isinstance(left, (np.floating, float)):
                 # account for nans
                 assert np.all(np.isclose(left, right, equal_nan=True))
-            else:
-                assert left == right
+                continue
+            if isinstance(left, datetime.datetime):
+                left = normalize_to_date(left)
+            if isinstance(right, datetime.datetime):
+                right = normalize_to_date(right)
+            assert left == right
 
 
 def example(filename, datapath=os.path.join('examples', 'data')):

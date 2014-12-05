@@ -31,7 +31,8 @@ try:
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
-except ImportError:
+    RDD.min
+except (AttributeError, ImportError):
     SparkContext = Dummy
     pyspark = Dummy()
     pyspark.rdd = Dummy()

@@ -16,7 +16,7 @@ from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
 from .api import *
-from .data import CSV, SQL, coerce
+from .data import CSV, coerce
 from .json import *
 from .resource import *
 from .compute.csv import *
@@ -31,7 +31,7 @@ from .server import *
 
 try:
     from .spark import *
-except ImportError:
+except (AttributeError, ImportError):
     pass
 try:
     from .compute.sparksql import *

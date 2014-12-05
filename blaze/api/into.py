@@ -4,6 +4,7 @@ import os
 from dynd import nd
 import datashape
 import sys
+import sqlalchemy
 from functools import partial
 from datashape import dshape, Record, to_numpy_dtype, Option
 from datashape.predicates import isscalar
@@ -29,7 +30,6 @@ from ..compatibility import _strtypes, map
 from ..utils import keywords
 from ..data.utils import sort_dtype_items
 from ..pytables import PyTables
-from ..compute.spark import RDD
 
 
 __all__ = ['into', 'discover']
@@ -62,6 +62,11 @@ def into(a, b, **kwargs):
 # Optional imports
 
 try:
+    from ..compute.spark import RDD
+except (AttributeError, ImportError):
+    RDD = type(None)
+
+try:
     from bokeh.objects import ColumnDataSource
 except ImportError:
     ColumnDataSource = type(None)
@@ -86,7 +91,7 @@ except ImportError:
 
 
 try:
-    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel, SQL
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming, Excel
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
@@ -231,6 +236,11 @@ def into(a, b, **kwargs):
     return numpy_ensure_strings(b).tolist()
 
 
+@dispatch(Iterator, (nd.array, np.ndarray))
+def into(a, b, **kwargs):
+    return iter(into(list, b, **kwargs))
+
+
 @dispatch(set, object)
 def into(a, b, **kwargs):
     return set(into(list, b, **kwargs))
@@ -355,7 +365,7 @@ def into(_, data, filename=None, datapath=None, **kwargs):
     return t
 
 
-@dispatch(tb.Table, (pd.DataFrame, CSV, SQL, nd.array, Collection))
+@dispatch(tb.Table, (pd.DataFrame, CSV, nd.array, Collection))
 def into(a, b, **kwargs):
     return into(a, into(np.ndarray, b), **kwargs)
 
@@ -945,8 +955,6 @@ def into(a, b, **kwargs):
     # TODO: CSV of Field
 
 
-
-
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
     return pd.DataFrame(list(b), columns=b.columns)
@@ -974,7 +982,11 @@ def into(a, b, **kwargs):
     Transfer data between two data resources based on their URIs.
 
     >>> into('sqlite://:memory:::tablename', '/path/to/file.csv') #doctest:+SKIP
-    <blaze.data.sql.SQL at 0x7f32d80b80d0>
+    Table('tablename', MetaData(bind=Engine(sqlite:///:memory:)),
+                       Column('id', BigInteger(), table=<tablename>),
+                       Column('name', Text(), table=<tablename>, nullable=False),
+                       Column('balance', BigInteger(), table=<tablename>),
+                       schema=None)
 
     Uses ``resource`` functin to resolve data resources
 
@@ -1007,7 +1019,7 @@ def into(a, b, **kwargs):
     return into(target, b, dshape=dshape, **kwargs)
 
 @dispatch(Iterator, (list, tuple, set, Iterator))
-def into(a, b):
+def into(a, b, **kwargs):
     return b
 
 @dispatch(pd.DataFrame, Excel)
@@ -1116,3 +1128,21 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     # TODO: handle large HDF5 case
     return into(a, b[:], **kwargs)
+
+
+@dispatch(sqlalchemy.Table, (pd.DataFrame, ColumnDataSource, tb.Table,
+                             nd.array, np.ndarray, ctable, sqlalchemy.Table,
+                             DataDescriptor, Collection))
+def into(a, b, **kwargs):
+    return into(a, into(Iterator, b), **kwargs)
+
+
+@dispatch(pd.DataFrame, sqlalchemy.Table)
+def into(a, b, **kwargs):
+    return into(a, into(list, b), columns=discover(b).measure.names)
+
+@dispatch((np.ndarray, tb.node.MetaNode, ctable, ColumnDataSource,
+           DataDescriptor, Collection),
+          sqlalchemy.Table)
+def into(a, b, **kwargs):
+    return into(a, into(pd.DataFrame, b), **kwargs)
