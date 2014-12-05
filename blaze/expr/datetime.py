@@ -135,6 +135,10 @@ class DateTimeTruncate(DateTime):
         else:
             return datashape.datetime_
 
+    @property
+    def _name(self):
+        return self._child._name
+
 
 def truncate(expr, *args, **kwargs):
     """ Truncate datetime expression
