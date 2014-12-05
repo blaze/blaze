@@ -4,9 +4,8 @@ from .core import *
 from .csv import *
 from .excel import *
 from .json import *
-from .hdf5 import *
 from .meta import *
 
-__all__ = ['CSV', 'Concat', 'DataDescriptor', 'HDF5', 'JSON', 'JSON_Streaming',
+__all__ = ['CSV', 'Concat', 'DataDescriptor', 'JSON', 'JSON_Streaming',
            'Stack', 'coerce', 'coerce_row_to_dict', 'coerce_to_ordered',
            'discover', 'dshape', 'nd', 'Excel']

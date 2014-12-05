@@ -9,7 +9,7 @@ from functools import partial
 from datashape import dshape, Record, to_numpy_dtype, Option
 from datashape.predicates import isscalar
 import toolz
-from toolz import concat, partition_all, first, merge
+from toolz import concat, partition_all, first, merge, assoc
 from cytoolz import pluck
 import copy
 from datetime import datetime
@@ -77,6 +77,12 @@ try:
 except ImportError:
     ctable = type(None)
     carray = type(None)
+
+try:
+    import h5py
+    from h5py import Dataset
+except ImportError:
+    Dataset = type(None)
 
 try:
     from pymongo.collection import Collection
@@ -1106,6 +1112,22 @@ def into(a, **kwargs):
 def into(a, b, **kwargs):
     into(a, into(Iterator, b, **kwargs))
     return a
+
+
+@dispatch(Dataset, pd.DataFrame)
+def into(a, b, **kwargs):
+    return into(a, into(np.ndarray, b, **kwargs), **kwargs)
+
+@dispatch(Dataset, CSV)
+def into(a, b, **kwargs):
+    # TODO: handle large CSV case
+    return into(a, into(pd.DataFrame, b), **assoc(kwargs, 'dshape', b.dshape))
+
+
+@dispatch(CSV, Dataset)
+def into(a, b, **kwargs):
+    # TODO: handle large HDF5 case
+    return into(a, b[:], **kwargs)
 
 
 @dispatch(sqlalchemy.Table, (pd.DataFrame, ColumnDataSource, tb.Table,
