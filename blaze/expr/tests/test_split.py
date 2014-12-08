@@ -5,7 +5,7 @@ import datashape
 from datashape import dshape
 from datashape.predicates import isscalar, isrecord, iscollection
 
-t = TableSymbol('t', '{name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int, id: int}')
 a = symbol('a', '1000 * 2000 * {x: float32, y: float32}')
 
 
@@ -322,3 +322,15 @@ def test_keepdims_equals_true_doesnt_mess_up_agg_shape():
     (chunk, chunk_expr), (agg, agg_expr) = split(x, x.sum(), keepdims=False)
 
     assert iscollection(agg.dshape)
+
+
+def test_splittable_apply():
+    def f(x):
+        pass
+
+    (chunk, chunk_expr), (agg, agg_expr) = \
+            split(t, t.amount.apply(f, 'var * int', splittable=True))
+    assert chunk_expr.isidentical(
+            chunk.amount.apply(f, 'var * int', splittable=True))
+
+    assert agg_expr.isidentical(agg)

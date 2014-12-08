@@ -401,15 +401,15 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(t['amount'], builtins.sum, 'real'), data)
-    expected = compute(t['amount'].sum(), data)
+    result = compute(t.amount.apply(builtins.sum, 'real'), data)
+    expected = compute(t.amount.sum(), data)
 
     assert result == expected
 
 
 def test_apply():
     data2 = tuple(map(tuple, data))
-    assert compute(Apply(t, hash, 'int'), data2) == hash(data2)
+    assert compute(t.apply(hash, 'int'), data2) == hash(data2)
 
 
 def test_map_datetime():

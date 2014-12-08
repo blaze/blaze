@@ -103,6 +103,16 @@ def compute_up(t, rdd, **kwargs):
     return rdd.take(t.n)
 
 
+@dispatch(Apply, RDD)
+def compute_up(t, rdd, **kwargs):
+    if t._splittable:
+        return rdd.mapPartitions(t.func)
+    else:
+        raise NotImplementedError("Can only apply splittable functions."
+                "To apply function to each partition add splittable=True kwarg"
+                " to call to apply.  t.apply(func, dshape, splittable=True)")
+
+
 @dispatch(Sort, RDD)
 def compute_up(t, rdd, **kwargs):
     if isinstance(t.key, (str, unicode, tuple, list)):
