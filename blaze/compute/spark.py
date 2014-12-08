@@ -110,7 +110,7 @@ def compute_up(t, rdd, **kwargs):
     else:
         raise NotImplementedError("Can only apply splittable functions."
                 "To apply function to each partition add splittable=True kwarg"
-                " to call to apply.  t.apply(func, dshape, splittable=True)"))
+                " to call to apply.  t.apply(func, dshape, splittable=True)")
 
 
 @dispatch(Sort, RDD)
