@@ -598,11 +598,6 @@ def test_apply():
     assert s.dshape == dshape('real')
     assert r.schema == dshape('real')
 
-    with pytest.raises(TypeError):
-        s.schema
-    with pytest.raises(NotImplementedError):
-        l.dshape
-
 
 def test_TableSymbol_printing_is_legible():
     accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
