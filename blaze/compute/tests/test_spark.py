@@ -5,6 +5,7 @@ from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
 from blaze.expr.functions import *
+from toolz import identity
 from datashape.predicates import iscollection
 from datashape import dshape
 
@@ -109,6 +110,7 @@ exprs = [
     (t['amount'] * 1).label('foo'),
     t.map(lambda tup: tup[1] + tup[2], 'real'),
     t.like(name='Alice'),
+    t['amount'].apply(identity, 'var * real', splittable=True),
     t['amount'].map(inc, 'int')]
 
 
