@@ -56,7 +56,7 @@ from ..dispatch import dispatch
 from ..compatibility import builtins
 
 good_to_split = (Reduction, Summary, By, Distinct)
-can_split = good_to_split + (Like, Selection, ElemWise)
+can_split = good_to_split + (Like, Selection, ElemWise, Apply)
 
 __all__ = ['path_split', 'split']
 
@@ -201,7 +201,6 @@ def _split_agg(expr, leaf=None, agg=None):
 
     return sqrt(result)
 
-
 @dispatch(Distinct)
 def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
@@ -285,6 +284,18 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     return expr._subs({leaf: chunk})
 
 @dispatch((ElemWise, Like, Selection))
+def _split_agg(expr, leaf=None, agg=None):
+    return agg
+
+
+@dispatch(Apply)
+def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
+    if expr._splittable:
+        return expr._subs({leaf: chunk})
+    else:
+        raise NotIimplementedError()
+
+@dispatch(Apply)
 def _split_agg(expr, leaf=None, agg=None):
     return agg
 

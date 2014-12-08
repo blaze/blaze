@@ -15,7 +15,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
                         Summary, count, symbol, Field, discover,
-                        max, min, label
+                        max, min, label, Symbol
                         )
 from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile
@@ -592,12 +592,11 @@ def test_map_without_any_info():
 
 
 def test_apply():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    s = Apply(t['amount'], sum, dshape='real')
-    r = Apply(t['amount'], sum, dshape='3 * real')
-    l = Apply(t['amount'], sum)
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
+    s = t['amount'].apply(sum, dshape='real')
+    r = t['amount'].apply(sum, dshape='3 * real')
     assert s.dshape == dshape('real')
-    assert r.schema == dshape("float64")
+    assert r.schema == dshape('real')
 
     with pytest.raises(TypeError):
         s.schema
