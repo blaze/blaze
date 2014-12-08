@@ -9,6 +9,7 @@ from dynd import nd
 from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps
 from blaze import into, compute
+from .crossdomain import crossdomain
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
@@ -254,7 +255,8 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
+@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
+@crossdomain(origin="*", headers=None)
 def comp(datasets, name):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
@@ -279,11 +281,16 @@ def comp(datasets, name):
         result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
+                    'names' : t.columns,
                     'data': result})
 
 
+@route('/ping')
+def ping(datasets):
+    return 'pong'
 
-@route('/compute.json', methods=['POST', 'PUT', 'GET'])
+@route('/compute.json', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
+@crossdomain(origin="*", headers=None)
 def compserver(datasets):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
@@ -291,7 +298,6 @@ def compserver(datasets):
         data = json.loads(request.data)
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
-
 
     tree_ns = dict((name, Symbol(name, discover(datasets[name])))
                     for name in datasets)
@@ -307,4 +313,6 @@ def compserver(datasets):
         result = into(list, result)
 
     return jsonify({'datashape': str(expr.dshape),
-                    'data': result})
+                    'data': result,
+                    'names' : expr.fields,
+                })
