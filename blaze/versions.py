@@ -72,7 +72,7 @@ def get_compute_support():
                 support[operation] |= supported
     return support
 
-def get_supported_compute():
+def get_supported_computations():
     d = {}
 
     for operation, backends in get_compute_support().iteritems():
