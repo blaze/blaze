@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
-
+from functools import reduce
 import itertools
 import sys
+
+import pandas as pd
 
 from .compute import compute_up
 from .compute.core import compute_down
@@ -50,10 +52,7 @@ def _get_support(t):
     package = _get_package(t)
 
     if package == "__builtin__":
-        if t in frozenset([list, tuple, dict, float, int, bool]):
-            return "Pure Python"
-        else:
-            return t
+        return "Pure Python"
     elif package == "blaze":
         return t
     else:
@@ -72,3 +71,29 @@ def get_compute_support():
             else:
                 support[operation] |= supported
     return support
+
+def get_supported_compute():
+    d = {}
+
+    for operation, backends in get_compute_support().iteritems():
+        for backend in backends:
+            if backend not in d:
+                d[backend] = set()
+            d[backend].add(operation)
+
+    return d
+
+def _shorten(s):
+    s = str(s).split(".")[-1]
+    if s.endswith("'>"):
+        s = s[:-2]
+    return s
+
+def dict_to_df(d):
+    values = reduce(set.union, d.itervalues())
+    df = pd.DataFrame()
+
+    for key, value in d.iteritems():
+        df[_shorten(key)] = pd.Series(dict((_shorten(v), v in value) for v in values))
+
+    return df
