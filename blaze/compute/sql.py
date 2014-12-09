@@ -312,8 +312,17 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    s2 = s.alias(next(aliases)).count()
-    return select([list(inner_columns(s2))[0].label(t._name)])
+    al = next(aliases)
+    try:
+        s2 = s.alias(al)
+        col = list(s2.primary_key)[0]
+    except (KeyError, IndexError):
+        s2 = s.alias(al)
+        col = list(s2.columns)[0]
+
+    result = sqlalchemy.sql.functions.count(col)
+
+    return select([list(inner_columns(result))[0].label(t._name)])
 
 
 @dispatch(nunique, sqlalchemy.Column)

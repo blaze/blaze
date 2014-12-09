@@ -4,6 +4,7 @@ import re
 import pytest
 from blaze.compute.sql import (compute, computefull, select, lower_column,
         compute_up)
+from blaze.sql import create_from_datashape
 from blaze.expr import *
 import sqlalchemy
 import sqlalchemy as sa
@@ -1011,3 +1012,21 @@ def test_distinct_count_on_projection():
         SELECT count(alias.id) as count
         FROM (SELECT DISTINCT accounts.amount AS amount, accounts.id AS id
               FROM accounts) as alias""")
+
+
+def test_join_count():
+    ds = '{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}'
+    engine = resource('sqlite:///:memory:')
+    engine = create_from_datashape(engine, ds)
+    db = symbol('db', ds)
+
+    expr = join(db.t1[db.t1.x > -1], db.t2, 'x', 'a').count()
+
+    result = compute(expr, {db: engine}, post_compute=False)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT count(alias.x) as count
+    FROM (SELECT t1.x AS x, t1.y AS y, t2.b AS b
+          FROM t1 JOIN t2 ON t1.x = t2.a
+          WHERE t1.x > ?) as alias
+          """)
