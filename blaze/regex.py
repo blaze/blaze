@@ -57,7 +57,8 @@ class RegexDispatcher(object):
         return _
 
     def dispatch(self, s):
-        funcs = [func for r, func in self.funcs.items() if re.match(r, s)]
+        funcs = [func for r, func in self.funcs.items()
+                      if re.match(r, s, re.IGNORECASE)]
         return max(funcs, key=self.priorities.get)
 
     def __call__(self, s, *args, **kwargs):
