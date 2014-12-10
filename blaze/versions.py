@@ -89,11 +89,26 @@ def _shorten(s):
         s = s[:-2]
     return s
 
-def dict_to_df(d):
-    values = reduce(set.union, d.itervalues())
-    df = pd.DataFrame()
+def get_multiindexed_support():
+    d = get_supported_computations()
+    values = sorted(str(v) for v in reduce(set.union, d.itervalues()))
+    ts = [(v.split(".")[-2], _shorten(v)) for v in values if "blaze" in v]
+    mi = pd.MultiIndex.from_tuples(ts)
 
-    for key, value in d.iteritems():
-        df[_shorten(key)] = pd.Series(dict((_shorten(v), v in value) for v in values))
+    df = pd.DataFrame(index=mi)
+
+    operations = set(df.index.levels[-1])
+    for column, values in d.iteritems():
+        values = set(_shorten(v) for v in values)
+        series = pd.Series(dict((v, v in values) for v in operations))
+        series.index = df.index
+
+        df[_shorten(column)] = series
 
     return df
+
+def get_grouped_support():
+    return get_multiindexed_support().groupby(level=0).any()
+
+def get_detailed_support():
+    return get_multiindexed_support().groupby(level=1).any()
