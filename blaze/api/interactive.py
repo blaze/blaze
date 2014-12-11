@@ -14,7 +14,7 @@ from collections import Iterator
 
 from ..expr import Expr, Symbol, ndim
 from ..dispatch import dispatch
-from .into import into
+from into import into
 from ..compatibility import _strtypes, unicode
 from ..resource import resource
 
@@ -236,6 +236,7 @@ def expr_repr(expr, n=10):
 def to_html(df):
     return df.to_html()
 
+
 @dispatch(Expr)
 def to_html(expr):
     # Tables
@@ -254,32 +255,11 @@ def to_html(o):
 def to_html(o):
     return o.replace('\n', '<br>')
 
-@dispatch(type, Expr)
+
+@dispatch((object, type, str), Expr)
 def into(a, b, **kwargs):
-    f = into.dispatch(a, type(b))
-    return f(a, b, **kwargs)
-
-
-@dispatch(object, Expr)
-def into(a, b, **kwargs):
-    return into(a, compute(b, **kwargs), dshape=kwargs.pop('dshape', b.dshape),
-                schema=b.schema, **kwargs)
-
-
-@dispatch(DataFrame, Expr)
-def into(a, b, **kwargs):
-    return into(DataFrame(columns=b.fields), compute(b, **kwargs))
-
-
-@dispatch(nd.array, Expr)
-def into(a, b, **kwargs):
-    return into(nd.array(), compute(b, **kwargs), dtype=str(b.schema))
-
-
-@dispatch(np.ndarray, Expr)
-def into(a, b, **kwargs):
-    schema = dshape(str(b.schema).replace('?', ''))
-    return into(np.ndarray(0), compute(b, **kwargs), dtype=to_numpy_dtype(schema))
+    result = compute(b, **kwargs)
+    return into(a, result, **kwargs)
 
 
 def table_length(expr):
