@@ -1,6 +1,5 @@
 from blaze.api.interactive import (Data, compute, concrete_head, expr_repr,
-        to_html)
-from blaze.api.into import into
+        to_html, into)
 import os
 
 from blaze.data import CSV
@@ -145,8 +144,7 @@ def test_repr_html():
 
 
 def test_into():
-    from blaze.api.into import into
-    assert into([], t) == into([], data)
+    assert into(list, t) == into(list, data)
 
 
 def test_serialization():
@@ -164,7 +162,7 @@ def test_table_resource():
 
         t = Data(filename)
         assert isinstance(t.data, CSV)
-        assert into(list, compute(t)) == list(csv)
+        assert into(list, compute(t)) == into(list, csv)
 
 
 def test_concretehead_failure():
