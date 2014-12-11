@@ -160,10 +160,14 @@ def single_table_engine():
 
 def test_discovery_engine():
     engine, t = single_table_engine()
-
     assert discover(engine, 'accounts') == discover(t)
-
     assert str(discover(engine)) == str(discover({'accounts': t}))
+
+
+def test_discovery_metadata():
+    engine, t = single_table_engine()
+    metadata = t.metadata
+    assert str(discover(metadata)) == str(discover({'accounts': t}))
 
 
 def test_extend_empty():

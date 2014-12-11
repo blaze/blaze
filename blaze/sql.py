@@ -104,8 +104,12 @@ def discover(engine, tablename):
 
 @dispatch(sa.engine.base.Engine)
 def discover(engine):
-    metadata = sa.MetaData()
-    metadata.reflect(engine)
+    metadata = sa.MetaData(engine)
+    return discover(metadata)
+
+@dispatch(sa.MetaData)
+def discover(metadata):
+    metadata.reflect()
     pairs = []
     for name, table in sorted(metadata.tables.items(), key=first):
         try:
@@ -433,7 +437,7 @@ def post_compute(expr, query, scope=None):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, (Engine, Table)) for val in scope.values()):
+    if not all(isinstance(val, (MetaData, Engine, Table)) for val in scope.values()):
         return query
 
     engines = set(filter(None, map(engine_of, scope.values())))

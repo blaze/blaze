@@ -523,12 +523,20 @@ def compute_up(t, s, **kwargs):
 
 
 @toolz.memoize
+def table_of_metadata(metadata, name):
+    metadata.reflect()
+    return metadata.tables[name]
+
+
 def table_of_engine(engine, name):
     metadata = sqlalchemy.MetaData(engine)
-    metadata.reflect(engine)
-    return metadata.tables[name]
+    return table_of_metadata(metadata, name)
 
 
 @dispatch(Field, sqlalchemy.engine.Engine)
 def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
+
+@dispatch(Field, sqlalchemy.MetaData)
+def compute_up(expr, data, **kwargs):
+    return table_of_metadata(data, expr._name)
