@@ -104,8 +104,12 @@ def discover(engine, tablename):
 
 @dispatch(sa.engine.base.Engine)
 def discover(engine):
-    metadata = sa.MetaData()
-    metadata.reflect(engine)
+    metadata = sa.MetaData(engine)
+    return discover(metadata)
+
+@dispatch(sa.MetaData)
+def discover(metadata):
+    metadata.reflect()
     pairs = []
     for name, table in sorted(metadata.tables.items(), key=first):
         try:
