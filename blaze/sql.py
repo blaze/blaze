@@ -437,7 +437,7 @@ def post_compute(expr, query, scope=None):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, (Engine, Table)) for val in scope.values()):
+    if not all(isinstance(val, (MetaData, Engine, Table)) for val in scope.values()):
         return query
 
     engines = set(filter(None, map(engine_of, scope.values())))
