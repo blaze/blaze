@@ -259,6 +259,7 @@ def to_html(o):
 @dispatch((object, type, str), Expr)
 def into(a, b, **kwargs):
     result = compute(b, **kwargs)
+    kwargs['dshape'] = b.dshape
     return into(a, result, **kwargs)
 
 

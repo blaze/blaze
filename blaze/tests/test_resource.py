@@ -4,7 +4,7 @@ import sqlalchemy
 from blaze.resource import resource, drop, create_index
 from blaze.h5py import h5py
 from blaze.data import CSV
-from blaze.api.into import into
+from into import into
 
 from unittest import TestCase
 from blaze.compatibility import xfail

@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 import h5py
+from into import into, convert, append, resource, drop
 
 from multipledispatch import halt_ordering, restart_ordering
 
@@ -16,9 +17,9 @@ from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
 from .api import *
+from .index import create_index
 from .data import CSV, coerce
 from .json import *
-from .resource import *
 from .compute.csv import *
 from .compute.dynd import *
 from .compute.python import *

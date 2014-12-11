@@ -7,7 +7,8 @@ bcolz = pytest.importorskip('bcolz')
 import numpy as np
 
 import blaze as bz
-from blaze.bcolz import into, chunks
+from into import into
+from blaze.compute.bcolz import chunks
 from blaze.expr import symbol
 from blaze.compute.core import compute, pre_compute
 
@@ -30,7 +31,7 @@ def test_discover():
 
 def test_chunks():
     assert len(list(chunks(b, chunksize=2))) == 2
-    assert (next(chunks(b, chunksize=2)) == into(np.array(0), b)[:2]).all()
+    assert (next(chunks(b, chunksize=2)) == into(np.ndarray, b)[:2]).all()
 
 
 def test_reductions():
@@ -53,10 +54,11 @@ def test_nunique():
 
 
 def test_selection_head():
+    ds = dshape('var * {a: int32, b: int32, c: float64}')
     b = into(bcolz.ctable,
-             ((i, i + 1, float(i)**2) for i in range(10000)),
-             names=['a', 'b', 'c'])
-    t = symbol('t', 'var * {a: int32, b: int32, c: float64}')
+             [(i, i + 1, float(i)**2) for i in range(10000)],
+             dshape=ds)
+    t = symbol('t', ds)
 
     assert compute((t.a < t.b).all(), b) == True
     assert list(compute(t[t.a < t.b].a.head(10), b)) == list(range(10))

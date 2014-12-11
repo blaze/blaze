@@ -29,7 +29,7 @@ from datashape.predicates import isscalar
 import datashape
 import itertools
 
-from ..api.into import into
+from into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,

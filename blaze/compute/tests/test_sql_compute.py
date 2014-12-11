@@ -2,16 +2,16 @@ from __future__ import absolute_import, division, print_function
 
 import re
 import pytest
+import datashape
 from blaze.compute.sql import (compute, computefull, select, lower_column,
         compute_up)
-from blaze.sql import create_from_datashape
 from blaze.expr import *
 import sqlalchemy
 import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
 from pandas import DataFrame
-from blaze import into, resource
+from into import into, resource
 from blaze.utils import tmpfile
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
@@ -1015,9 +1015,8 @@ def test_distinct_count_on_projection():
 
 
 def test_join_count():
-    ds = '{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}'
-    engine = resource('sqlite:///:memory:')
-    engine = create_from_datashape(engine, ds)
+    ds = datashape.dshape('{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}')
+    engine = resource('sqlite:///:memory:', dshape=ds)
     db = symbol('db', ds)
 
     expr = join(db.t1[db.t1.x > -1], db.t2, 'x', 'a').count()

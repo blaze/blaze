@@ -6,7 +6,7 @@ from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary
-from blaze import into
+from into import into
 from datashape import discover, to_numpy
 
 
@@ -134,10 +134,9 @@ def test_relabel():
 
 
 def test_by():
-    from blaze.api.into import into
     expr = by(t.amount > 0, count=t.id.count())
     result = compute(expr, x)
-    assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
+    assert set(map(tuple, into(list, result))) == set([(False, 2), (True, 3)])
 
 
 def test_compute_up_field():

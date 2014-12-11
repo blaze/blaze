@@ -12,13 +12,13 @@ from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
-from ..api import discover, Data
+from ..api import Data
 from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify
 from .. import expr
 
 from ..compatibility import map
-from datashape import Mono
+from datashape import Mono, discover
 
 from .index import parse_index
 

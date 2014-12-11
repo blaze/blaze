@@ -4,6 +4,7 @@ import itertools as it
 import os
 import gzip
 import bz2
+from into import into
 from functools import partial
 from contextlib import contextmanager
 
@@ -419,7 +420,6 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self, usecols=None, chunksize=None):
-        from blaze.api.into import into
         chunksize = chunksize or self.chunksize
         dfs = self.pandas_read_csv(usecols=usecols,
                                    chunksize=chunksize,

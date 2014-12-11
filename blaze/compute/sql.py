@@ -19,9 +19,10 @@ from __future__ import absolute_import, division, print_function
 import operator
 import sqlalchemy as sa
 import sqlalchemy
-from sqlalchemy import sql
+from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
+from sqlalchemy.engine import Engine
 from operator import and_
 import itertools
 from copy import copy
@@ -533,6 +534,16 @@ def table_of_engine(engine, name):
 @dispatch(Field, sqlalchemy.engine.Engine)
 def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
+
+
+def engine_of(x):
+    if isinstance(x, Engine):
+        return x
+    if isinstance(x, MetaData):
+        return x.bind
+    if isinstance(x, Table):
+        return x.metadata.bind
+    raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
 @dispatch(Expr, sqlalchemy.sql.ClauseElement)

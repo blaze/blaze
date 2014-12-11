@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installat
 
 from blaze import CSV
 from blaze.sql import resource, create_from_datashape
-from blaze.api.into import into
+from into import into
 from blaze.utils import assert_allclose
 import sqlalchemy
 import os

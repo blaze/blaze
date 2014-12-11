@@ -5,7 +5,7 @@ from dynd import nd
 from ..expr import *
 from .core import base, compute
 from ..dispatch import dispatch
-from ..api.into import into
+from into import into
 
 __all__ = 'nd',
 

@@ -4,7 +4,7 @@ import pytest
 
 
 from blaze import CSV, resource
-from blaze.api.into import into
+from into import into
 from blaze.utils import tmpfile
 import sqlalchemy
 import os
