@@ -6,6 +6,7 @@ from toolz import curry, concat, map
 import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
+from into import into
 
 from ..dispatch import dispatch
 from ..data.csv import CSV
@@ -13,7 +14,6 @@ from ..expr import Expr, Head, ElemWise, Distinct, Symbol, Projection, Field
 from ..expr.core import path
 from ..utils import available_memory
 from ..expr.split import split
-from ..api.into import into
 from .core import compute
 from ..expr.optimize import lean_projection
 
@@ -73,13 +73,3 @@ def compute_down(expr, data, map=map, **kwargs):
         intermediate = concat(parts)
 
     return compute(agg_expr, {agg: intermediate})
-
-
-@dispatch(Iterator, pandas.io.parsers.TextFileReader)
-def into(a, b, **kwargs):
-    return concat(map(into(a), b))
-
-
-@dispatch((list, tuple, set), pandas.io.parsers.TextFileReader)
-def into(a, b, **kwargs):
-    return into(a, into(Iterator, b))
