@@ -2,9 +2,10 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
+import datashape
+import numpy as np
 from flask import json
 from datetime import datetime
-from dynd import nd
 from pandas import DataFrame
 from toolz import pipe
 
@@ -123,7 +124,8 @@ def test_get_datetimes():
 
     assert 'OK' in response.status
     data = json.loads(response.data)
-    result = nd.array(data['data'], type=data['datashape'])
+    ds = datashape.dshape(data['datashape'])
+    result = into(np.ndarray, data['data'], dshape=ds)
     assert into(list, result) == into(list, events)
 
 

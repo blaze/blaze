@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import requests
+from into import convert
 from flask import json
 import flask
 from toolz import first
@@ -141,7 +142,6 @@ def compute_down(expr, data, **kwargs):
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     from ..api import Data
-    from ..api import into
     leaf = expr._leaves()[0]
     tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 
@@ -157,18 +157,13 @@ def compute_down(expr, ec, **kwargs):
     return data['data']
 
 
-@dispatch(list, ClientDataset)
-def into(_, c, **kwargs):
+@convert.register(list, ClientDataset)
+def convert_client_dataset(c, **kwargs):
     r = requests.get('%s/compute.json' % c.client.url,
                      data = json.dumps({'expr': c.name}),
                      headers={'Content-Type': 'application/json'})
     data = json.loads(content(r))
     return data['data']
-
-@dispatch(DataFrame, ClientDataset)
-def into(_, c, **kwargs):
-    return into(DataFrame, into(list, c), columns=c.dshape.measure.names)
-
 
 @resource.register('blaze://.+::.+', priority=16)
 def resource_blaze_dataset(uri, **kwargs):
