@@ -18,5 +18,5 @@ def test_tmpfile():
 def test_json_encoder():
     result = json.dumps([1, datetime(2000, 1, 1, 12, 30, 0)],
                         default=json_dumps)
-    assert result == '[1, "2000-01-01 12:30:00Z"]'
-    assert json.loads(result) == [1, "2000-01-01 12:30:00Z"]
+    assert result == '[1, "2000-01-01T12:30:00Z"]'
+    assert json.loads(result) == [1, "2000-01-01T12:30:00Z"]
