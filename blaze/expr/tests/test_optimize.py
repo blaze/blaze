@@ -41,6 +41,16 @@ def test_sort():
     assert lean_projection(t.sort('x').y).isidentical(t[['x','y']].sort('x').y)
 
 
+def test_merge():
+    expr = lean_projection(merge(a=t.x+1, y=t.y))
+    assert expr._child.isidentical(t[['x', 'y']])
+
+
+def test_merge_with_table():
+    expr = lean_projection(merge(t, a=t.x+1))
+    assert expr.isidentical(expr)
+
+
 def test_head():
     assert lean_projection(t.sort('x').y.head(5)).isidentical(
                 t[['x','y']].sort('x').y.head(5))

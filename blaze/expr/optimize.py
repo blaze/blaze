@@ -175,6 +175,18 @@ def _lean(expr, fields=None):
     child, new_fields = _lean(expr._child, fields=expr.fields)
     return expr._subs({expr._child: child}), new_fields
 
+@dispatch(Merge)
+def _lean(expr, fields=None):
+    new_fields = set()
+    for f in expr.fields:
+        if f not in fields:
+            continue
+        le, nf = _lean(expr[f], fields=set([f]))
+        new_fields.update(nf)
+    child, _ = _lean(expr._child, fields=new_fields)
+
+    return expr._subs({expr._child: child})[sorted(fields)], new_fields
+
 
 @dispatch(Expr)
 def _lean(expr, fields=None):
