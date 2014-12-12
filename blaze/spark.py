@@ -24,7 +24,7 @@ def coerce(dshape, rdd):
     return rdd.mapPartitions(partial(coerce, dshape))
 
 
-@convert.dispatch(list, RDD)
+@convert.register(list, RDD)
 def list_to_rdd(rdd, **kwargs):
     return rdd.collect()
 
