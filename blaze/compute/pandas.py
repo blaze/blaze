@@ -331,7 +331,10 @@ def post_compute_by(t, df):
 def compute_up(t, df, **kwargs):
     grouper = get_grouper(t, t.grouper, df)
     result = compute_by(t, t.apply, grouper, df)
-    return post_compute_by(t.apply, into(DataFrame, result))
+    result2 = post_compute_by(t.apply, into(DataFrame, result))
+    if isinstance(result2, DataFrame):
+        result2.columns = t.fields
+    return result2
 
 
 def concat_nodup(a, b):

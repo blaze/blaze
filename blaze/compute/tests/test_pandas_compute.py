@@ -550,8 +550,7 @@ def test_rowwise_by():
     df = pd.DataFrame({'id': [1, 1, 2],
                        'name': ['alice', 'wendy', 'bob'],
                        'amount': [100, 200, 300.03]})
-    expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=['index',
-                                                              'total'])
+    expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=expr.fields)
 
     result = compute(expr, df)
     assert expected.index.tolist() == result.index.tolist()
