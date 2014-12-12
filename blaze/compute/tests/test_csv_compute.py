@@ -2,7 +2,7 @@ from blaze.compute.csv import pre_compute, CSV
 from blaze import compute, discover
 from blaze.utils import example
 from blaze.expr import Expr, symbol
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import pandas as pd
 from toolz import first
 from collections import Iterator
@@ -11,7 +11,7 @@ from into.chunks import chunks
 def test_pre_compute_on_small_csv_gives_dataframe():
     csv = CSV(example('iris.csv'))
     s = symbol('s', discover(csv))
-    assert isinstance(pre_compute(s.species, csv), DataFrame)
+    assert isinstance(pre_compute(s.species, csv), (Series, DataFrame))
 
 
 def test_pre_compute_on_large_csv_gives_chunked_reader():

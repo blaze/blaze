@@ -33,6 +33,8 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
     # Chunk if the file is large
     if os.path.getsize(data.path) > comfortable_memory:
         kwargs['chunksize'] = chunksize
+    else:
+        chunksize = None
 
     # Insert projection into read_csv
     oexpr = optimize(expr, data)
@@ -41,7 +43,10 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
     if len(pth) >= 2 and isinstance(pth[-2], (Projection, Field)):
         kwargs['usecols'] = pth[-2].fields
 
-    return csv_to_DataFrame(data, **kwargs)
+    if chunksize:
+        return into(chunks(pd.DataFrame), data, dshape=leaf.dshape, **kwargs)
+    else:
+        return into(pd.DataFrame, data, dshape=leaf.dshape, **kwargs)
 
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
@@ -59,7 +64,8 @@ def compute_chunk(chunk, chunk_expr, part):
     return compute(chunk_expr, {chunk: part})
 
 
-@dispatch(Expr, (pandas.io.parsers.TextFileReader, chunks(pd.DataFrame)))
+@dispatch(Expr, (pandas.io.parsers.TextFileReader, chunks(pd.DataFrame),
+    chunks(CSV)))
 def compute_down(expr, data, map=map, **kwargs):
     leaf = expr._leaves()[0]
 
