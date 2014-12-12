@@ -21,7 +21,7 @@ data = [(1, 2), (10, 20), (100, 200)]
 @pytest.yield_fixture
 def csv():
     with tmpfile('csv') as filename:
-        csv = into(filename, data, dshape=ds)
+        csv = into(filename, data, dshape=ds, has_header=False)
         yield csv
 
 
