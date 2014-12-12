@@ -203,14 +203,6 @@ def test_path_issue():
     assert t2.sizes in t2.children
 
 
-def test_different_schema_raises():
-    with tmpfile('.csv') as filename:
-        df = pd.DataFrame(np.random.randn(10, 2))
-        df.to_csv(filename, index=False, header=False)
-        with pytest.raises(TypeError):
-            Table(CSV(filename), columns=list('ab'))
-
-
 def test_getattr_doesnt_override_properties():
     t = TableSymbol('t', '{_subs: string, schema: string}')
     assert callable(t._subs)
