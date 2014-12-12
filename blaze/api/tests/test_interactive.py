@@ -240,3 +240,10 @@ def test_Data_on_json_is_concrete():
 def test_repr_on_nd_array_doesnt_err():
     d = Data(np.ones((2, 2, 2)))
     repr(d + 1)
+
+
+def test_generator_reprs_concretely():
+    x = [1, 2, 3, 4, 5, 6]
+    d = Data(x)
+    expr = d[d > 2] + 1
+    assert '4' in repr(expr)

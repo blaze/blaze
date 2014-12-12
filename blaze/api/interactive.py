@@ -168,8 +168,12 @@ def concrete_head(expr, n=10):
 
         if len(result) == 0:
             return DataFrame(columns=expr.fields)
-
-        return into(DataFrame(columns=expr.fields), result)
+        if isrecord(expr.dshape.measure):
+            return into(DataFrame, result, dshape=expr.dshape)
+        else:
+            df = into(DataFrame, result, dshape=expr.dshape)
+            df.columns = [expr._name]
+            return df
     except:
         return compute(expr)
 
