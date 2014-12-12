@@ -811,6 +811,21 @@ def test_computation_directly_on_sqlalchemy_Tables():
     assert list(result) == []
 
 
+def test_computation_directly_on_metadata():
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    name.create()
+
+    s = symbol('s', discover(metadata))
+
+    result = compute(s.name, {s: metadata}, post_compute=False)
+    assert result == name
+
+
 sql_bank = sa.Table('bank', sa.MetaData(),
                  sa.Column('id', sa.Integer),
                  sa.Column('name', sa.String),
