@@ -4,7 +4,7 @@ import itertools as it
 import os
 import gzip
 import bz2
-from into import into
+from into import into, resource
 from functools import partial
 from contextlib import contextmanager
 
@@ -25,7 +25,6 @@ from datashape.predicates import isdimension
 import blaze as bz
 from .pandas_dtype import dshape_to_pandas
 from .core import DataDescriptor
-from ..resource import resource
 from ..utils import nth, nth_list, keywords
 from .. import compatibility
 from ..compatibility import SEEK_END, builtins, _strtypes, _inttypes

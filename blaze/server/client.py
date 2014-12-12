@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import requests
-from into import convert
+from into import convert, resource
 from flask import json
 import flask
 from toolz import first
@@ -14,7 +14,6 @@ from ..data.utils import coerce
 from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .index import emit_index
-from ..resource import resource
 from .server import DEFAULT_PORT
 
 # These are a hack for testing

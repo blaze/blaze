@@ -14,9 +14,8 @@ from collections import Iterator
 
 from ..expr import Expr, Symbol, ndim
 from ..dispatch import dispatch
-from into import into
+from into import into, resource
 from ..compatibility import _strtypes, unicode
-from ..resource import resource
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
 

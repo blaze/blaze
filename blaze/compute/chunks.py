@@ -336,7 +336,7 @@ def compute_down(expr, data, map=map, **kwargs):
     return compute(agg_expr, {agg: intermediate})
 
 
-from ..resource import resource
+from into import resource
 from glob import glob
 
 @resource.register('.*\*.*', priority=14)

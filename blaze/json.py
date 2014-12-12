@@ -4,7 +4,7 @@ import json
 from toolz import map, partial, concat
 import gzip
 
-from .resource import resource
+from into import resource
 
 __all__ = 'resource',
 

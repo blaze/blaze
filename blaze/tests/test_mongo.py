@@ -14,7 +14,6 @@ from datashape import discover, dshape
 
 from blaze import drop, into, create_index
 from blaze.utils import assert_allclose
-from blaze.resource import resource
 
 
 no_mongoimport = pytest.mark.skipif(raises(OSError,
@@ -339,13 +338,3 @@ def test_jsonarray_into_mongodb(empty_collec):
     mongo_data = list(coll.find({}, {'_id': 0}))
 
     assert mongo_data[0] == data[0]
-
-
-
-@no_mongoimport
-def test_resource(conn):
-    coll = resource('mongodb://localhost:27017/db::mycoll')
-    assert coll.name == 'mycoll'
-    assert coll.database.name == 'db'
-    assert coll.database.connection.host == 'localhost'
-    assert coll.database.connection.port == 27017

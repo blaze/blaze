@@ -12,7 +12,7 @@ import datashape
 
 import shutil
 from blaze.utils import tmpfile
-from .resource import resource
+from into import resource
 
 __all__ = ['PyTables']
 
