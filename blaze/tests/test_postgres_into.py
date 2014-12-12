@@ -10,8 +10,9 @@ num_processes = len(output.splitlines())
 pytestmark = pytest.mark.skipif(num_processes < 6, reason="No Postgres Installation")
 
 
+from datashape import dshape
 from blaze import CSV
-from blaze.sql import create_from_datashape
+from into.backends.sql import create_from_datashape
 from into import into, resource
 from blaze.utils import assert_allclose
 import sqlalchemy
@@ -39,9 +40,10 @@ except sqlalchemy.exc.OperationalError:
     pytestmark = pytest.mark.skipif(True, reason="Can not connect to postgres")
 
 
-def setup_function(function):
-    data = [(1, 2), (10, 20), (100, 200)]
+data = [(1, 2), (10, 20), (100, 200)]
+ds = dshape('var * {a: int32, b: int32}')
 
+def setup_function(function):
     with open(file_name, 'w') as f:
         csv_writer = csv_module.writer(f)
         for row in data:
@@ -69,12 +71,11 @@ def test_csv_postgres_load():
         t = metadata.tables[tbl]
         t.drop(engine)
 
-    create_from_datashape(engine, '{testtable: ' + str(csv.schema) + '}')
+    create_from_datashape(engine, dshape('{testtable: %s}' % ds))
     metadata = sqlalchemy.MetaData()
     metadata.reflect(engine)
     sql = metadata.tables[tbl]
     conn = engine.raw_connection()
-
 
     cursor = conn.cursor()
     full_path = os.path.abspath(file_name)
@@ -84,79 +85,72 @@ def test_csv_postgres_load():
 
 
 def test_simple_into():
-
     tbl = 'testtable_into_2'
 
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = resource(url, tbl, dshape=csv.dshape)
+    csv = CSV(file_name)
+    sql = resource(url, tbl, dshape=ds)
 
-    into(sql,csv, if_exists="replace")
+    into(sql, csv, dshape=ds)
 
-    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
+    assert into(list, sql) == data
 
 def test_append():
-
     tbl = 'testtable_into_append'
 
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = resource(url, tbl, dshape=csv.dshape)
+    csv = CSV(file_name)
+    sql = resource(url, tbl, dshape=ds)
 
-    into(sql,csv, if_exists="replace")
-    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
+    into(sql, csv)
+    assert into(list, sql) == data
 
-    into(sql,csv, if_exists="append")
-    assert into(list, sql) == [(1, 2), (10, 20), (100, 200),
-                               (1, 2), (10, 20), (100, 200)]
+    into(sql, csv)
+    assert into(list, sql) == data + data
 
 
 def test_tryexcept_into():
-
     tbl = 'testtable_into_2'
 
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = resource(url, tbl, dshape=csv.dshape)
+    csv = CSV(file_name)
+    sql = resource(url, tbl, dshape=ds)
 
-    into(sql,csv, if_exists="replace", QUOTE="alpha", FORMAT="csv") # uses multi-byte character and
-                                                      # fails over to using sql.extend()
+    into(sql, csv, quotechar="alpha") # uses multi-byte character and
+                                      # fails over to using sql.extend()
 
-    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
+    assert into(list, sql) == data
 
 
 @pytest.mark.xfail(raises=KeyError)
 def test_failing_argument():
-
-    tbl = 'testtable_into_2'
-
-    csv = CSV(file_name, columns=['a', 'b'])
-    sql = resource(url, tbl, dshape=csv.dshape)
-
-    into(sql, csv, if_exists="replace", skipinitialspace="alpha") # failing call
-
-def test_no_header_no_columns():
-
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name)
-    sql = resource(url, tbl, dshape=csv.dshape)
+    sql = resource(url, tbl, dshape=ds)
 
-    into(sql,csv, if_exists="replace")
+    into(sql, csv, skipinitialspace="alpha") # failing call
 
-    assert into(list, sql) == [(1, 2), (10, 20), (100, 200)]
+
+def test_no_header_no_columns():
+    tbl = 'testtable_into_3'
+
+    csv = CSV(file_name)
+    sql = resource(url, tbl, dshape=ds)
+
+    into(sql, csv, dshape=ds)
+
+    assert into(list, sql) == data
 
 
 def test_complex_into():
     # data from: http://dummydata.me/generate
-
     this_dir = os.path.dirname(__file__)
     file_name = os.path.join(this_dir, 'dummydata.csv')
 
     tbl = 'testtable_into_complex'
+    ds = dshape('var * {Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
 
-    csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
-    sql = resource(url, tbl, dshape=csv.dshape)
+    csv = CSV(file_name, has_header=True)
+    sql = resource(url, tbl, dshape=ds)
 
-    into(sql, csv, if_exists="replace")
-
-    df = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
+    into(sql, csv)
 
     assert_allclose(into(list, sql), into(list, csv))

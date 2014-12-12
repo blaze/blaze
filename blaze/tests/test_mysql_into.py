@@ -15,8 +15,6 @@ import sqlalchemy
 import os
 import csv as csv_module
 import pandas as pd
-import datetime as dt
-import numpy as np
 import getpass
 
 username = getpass.getuser()
