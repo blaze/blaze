@@ -230,9 +230,8 @@ def listpack(x):
 
 
 from json import JSONEncoder
-from datetime import datetime
 
-@dispatch(datetime)
+@dispatch(datetime.datetime)
 def json_dumps(dt):
     if not dt.tzname():
         return str(dt) + 'Z'
