@@ -8,7 +8,6 @@ from pandas import DataFrame, Series
 import itertools
 from functools import reduce
 import numpy as np
-from dynd import nd
 import warnings
 from collections import Iterator
 

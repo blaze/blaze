@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from dynd import nd
 from pandas import DataFrame
 import h5py
 from into import into, convert, append, resource, drop
@@ -21,7 +20,6 @@ from .api import *
 from .index import create_index
 from .json import *
 from .compute.csv import *
-from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
@@ -38,6 +36,11 @@ try:
     from .compute.sparksql import *
     from .sparksql import *
 except (ImportError, TypeError):
+    pass
+try:
+    from dynd import nd
+    from .compute.dynd import *
+except ImportError:
     pass
 try:
     from .h5py import *

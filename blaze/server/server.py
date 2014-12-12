@@ -6,7 +6,6 @@ from collections import Iterator
 import socket
 from flask import Flask, request
 import json
-from dynd import nd
 from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps
 from blaze import into, compute

@@ -5,7 +5,6 @@ from into import convert, resource
 from flask import json
 import flask
 from toolz import first
-from dynd import nd
 from datashape import dshape, DataShape, Record
 from pandas import DataFrame
 

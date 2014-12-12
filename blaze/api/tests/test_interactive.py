@@ -14,7 +14,6 @@ import sys
 
 import pandas as pd
 import numpy as np
-from dynd import nd
 
 data = (('Alice', 100),
         ('Bob', 200))
@@ -184,14 +183,14 @@ def test_into_np_ndarray_column():
 def test_into_nd_array_selection():
     t = Data(L, fields=['id', 'name', 'balance'])
     expr = t[t['balance'] < 0]
-    selarray = into(nd.array, expr)
+    selarray = into(np.ndarray, expr)
     assert len(list(compute(expr))) == len(selarray)
 
 
 def test_into_nd_array_column_failure():
     tble = Data(L, fields=['id', 'name', 'balance'])
     expr = tble[tble['balance'] < 0]
-    colarray = into(nd.array, expr)
+    colarray = into(np.ndarray, expr)
     assert len(list(compute(expr))) == len(colarray)
 
 
