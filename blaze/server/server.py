@@ -4,7 +4,8 @@ from __future__ import absolute_import, division, print_function
 import blaze
 from collections import Iterator
 import socket
-from flask import Flask, request, jsonify, json
+from flask import Flask, request
+import json
 from dynd import nd
 from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps
@@ -13,6 +14,7 @@ from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
 from ..api import Data
+from ..utils import json_dumps
 from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify
 from .. import expr
@@ -82,7 +84,8 @@ def route(*args, **kwargs):
 
 @route('/datasets.json')
 def dataset(datasets):
-    return jsonify(dict((k, str(discover(v))) for k, v in datasets.items()))
+    return json.dumps(dict((k, str(discover(v))) for k, v in datasets.items()),
+                      default=json_dumps)
 
 
 def to_tree(expr, names=None):
@@ -277,9 +280,9 @@ def comp(datasets, name):
     result = compute(expr, dset)
     if iscollection(expr.dshape):
         result = into(list, result)
-    return jsonify({'name': name,
-                    'datashape': str(expr.dshape),
-                    'data': result})
+    return json.dumps({'name': name,
+                       'datashape': str(expr.dshape),
+                       'data': result}, default=json_dumps)
 
 
 
@@ -306,5 +309,5 @@ def compserver(datasets):
     if iscollection(expr.dshape):
         result = into(list, result)
 
-    return jsonify({'datashape': str(expr.dshape),
-                    'data': result})
+    return json.dumps({'datashape': str(expr.dshape),
+                       'data': result}, default=json_dumps)

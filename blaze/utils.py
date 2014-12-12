@@ -234,4 +234,7 @@ from datetime import datetime
 
 @dispatch(datetime)
 def json_dumps(dt):
-    return str(dt)
+    if not dt.tzname():
+        return str(dt) + 'Z'
+    else:
+        return str(dt)
