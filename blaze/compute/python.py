@@ -41,8 +41,7 @@ from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
 from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize, base
 
-from ..data import DataDescriptor
-from ..data.utils import listpack
+from ..utils import listpack
 from .pyfunc import lambdify, broadcast_collect
 from . import pydatetime
 
@@ -537,7 +536,7 @@ def pair_assemble(t):
     return assemble
 
 
-@dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
+@dispatch(Join, Sequence, Sequence)
 def compute_up(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
 

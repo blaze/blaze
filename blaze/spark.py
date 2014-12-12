@@ -3,7 +3,6 @@ from functools import partial
 
 from into import into, convert
 from .compatibility import _strtypes
-from .data.utils import coerce
 from .dispatch import dispatch
 from .expr import Expr
 from datashape import discover, var
@@ -15,13 +14,8 @@ except (ImportError, AttributeError):
     RDD = type(None)
     SparkContext = type(None)
     pyspark = None
-    coerce = None
 
-__all__ = ['pyspark', 'coerce']
-
-@dispatch(_strtypes, RDD)
-def coerce(dshape, rdd):
-    return rdd.mapPartitions(partial(coerce, dshape))
+__all__ = ['pyspark']
 
 
 @convert.register(list, RDD)

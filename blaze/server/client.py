@@ -9,8 +9,6 @@ from dynd import nd
 from datashape import dshape, DataShape, Record
 from pandas import DataFrame
 
-from ..data import DataDescriptor
-from ..data.utils import coerce
 from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .index import emit_index

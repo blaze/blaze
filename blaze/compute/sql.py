@@ -37,7 +37,7 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
 from .core import compute_up, compute, base
-from ..data.utils import listpack
+from ..utils import listpack
 
 __all__ = ['sqlalchemy', 'select']
 

@@ -35,7 +35,6 @@ import pandas as pd
 import numpy as np
 
 from ..dispatch import dispatch
-from ..data.core import DataDescriptor
 from ..expr.split import split
 from ..expr import Expr
 
@@ -161,14 +160,13 @@ def compute_up(expr, c1, c2, **kwargs):
 
 dict_items = type(dict().items())
 
-@dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
+@dispatch(Join, (object, tuple, list, Iterator, dict_items), ChunkIterator)
 def compute_up(expr, other, c, **kwargs):
     return ChunkIterator(compute_up(expr, other, pre_compute(expr, chunk))
             for chunk in c)
 
 
-@dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
-    DataDescriptor))
+@dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator))
 def compute_up(expr, c, other, **kwargs):
     return ChunkIterator(compute_up(expr, pre_compute(expr, chunk), other)
             for chunk in c)
