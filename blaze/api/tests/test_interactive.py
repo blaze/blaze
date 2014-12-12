@@ -1,8 +1,9 @@
 from blaze.api.interactive import (Data, compute, concrete_head, expr_repr,
-        to_html, into)
+        to_html)
 import os
 
-from blaze.data import CSV
+from into import into, append
+from into.backends.csv import CSV
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from blaze.expr import symbol
@@ -157,8 +158,9 @@ def test_serialization():
 
 def test_table_resource():
     with tmpfile('csv') as filename:
-        csv = CSV(filename, 'w', schema='{x: int, y: int}')
-        csv.extend([[1, 2], [10, 20]])
+        ds = dshape('var * {a: int, b: int}')
+        csv = CSV(filename)
+        append(csv, [[1, 2], [10, 20]], dshape=ds)
 
         t = Data(filename)
         assert isinstance(t.data, CSV)

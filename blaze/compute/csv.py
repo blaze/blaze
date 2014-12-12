@@ -7,9 +7,10 @@ import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
 from into import into
+from into.chunks import chunks
+from into.backends.csv import CSV, csv_to_DataFrame
 
 from ..dispatch import dispatch
-from ..data.csv import CSV
 from ..expr import Expr, Head, ElemWise, Distinct, Symbol, Projection, Field
 from ..expr.core import path
 from ..utils import available_memory
@@ -21,6 +22,7 @@ from ..expr.optimize import lean_projection
 @dispatch(Expr, CSV)
 def optimize(expr, _):
     return lean_projection(expr)  # This is handled in pre_compute
+
 
 @dispatch(Expr, CSV)
 def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
@@ -39,7 +41,7 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
     if len(pth) >= 2 and isinstance(pth[-2], (Projection, Field)):
         kwargs['usecols'] = pth[-2].fields
 
-    return data.pandas_read_csv(**kwargs)
+    return csv_to_DataFrame(data, **kwargs)
 
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
@@ -57,7 +59,7 @@ def compute_chunk(chunk, chunk_expr, part):
     return compute(chunk_expr, {chunk: part})
 
 
-@dispatch(Expr, pandas.io.parsers.TextFileReader)
+@dispatch(Expr, (pandas.io.parsers.TextFileReader, chunks(pd.DataFrame)))
 def compute_down(expr, data, map=map, **kwargs):
     leaf = expr._leaves()[0]
 

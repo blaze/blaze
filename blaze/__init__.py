@@ -4,6 +4,7 @@ from dynd import nd
 from pandas import DataFrame
 import h5py
 from into import into, convert, append, resource, drop
+from into.backends.csv import CSV
 
 from multipledispatch import halt_ordering, restart_ordering
 
@@ -18,7 +19,6 @@ from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
 from .expr.functions import *
 from .api import *
 from .index import create_index
-from .data import CSV, coerce
 from .json import *
 from .compute.csv import *
 from .compute.dynd import *

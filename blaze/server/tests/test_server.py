@@ -154,7 +154,7 @@ iris = CSV(example('iris.csv'))
 
 def test_compute_with_variable_in_namespace(iris_server):
     test = iris_server
-    t = Symbol('t', iris.dshape)
+    t = Symbol('t', discover(iris))
     pl = Symbol('pl', 'float32')
     expr = t[t.petal_length > pl].species
     tree = to_tree(expr, {pl: 'pl'})
@@ -171,7 +171,7 @@ def test_compute_with_variable_in_namespace(iris_server):
 
 def test_compute_by_with_summary(iris_server):
     test = iris_server
-    t = Symbol('t', iris.dshape)
+    t = Symbol('t', discover(iris))
     expr = by(t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
@@ -185,7 +185,7 @@ def test_compute_by_with_summary(iris_server):
 
 def test_compute_column_wise(iris_server):
     test = iris_server
-    t = Symbol('t', iris.dshape)
+    t = Symbol('t', discover(iris))
     subexpr = ((t.petal_width / 2 > 0.5) &
                (t.petal_length / 2 > 0.5))
     expr = t[subexpr]

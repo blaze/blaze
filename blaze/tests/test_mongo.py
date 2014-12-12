@@ -96,7 +96,7 @@ def test_discover(bank_collec):
 
 
 def test_into(empty_collec, bank):
-    ds = datashape.dshape('var * {name: string, amount: int}')
+    ds = dshape('var * {name: string, amount: int}')
     lhs = set(into(list, into(empty_collec, bank), dshape=ds))
     rhs = set([('Alice', 100), ('Alice', 200), ('Bob', 100), ('Bob', 200),
                ('Bob', 300)])
