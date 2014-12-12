@@ -15,7 +15,9 @@ import numpy as np
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
-from blaze.compatibility import map, zip
+from .compatibility import map, zip
+
+from .dispatch import dispatch
 
 thread_pool = ThreadPool(psutil.NUM_CPUS)
 
@@ -225,3 +227,11 @@ def listpack(x):
         return x
     else:
         return [x]
+
+
+from json import JSONEncoder
+from datetime import datetime
+
+@dispatch(datetime)
+def json_dumps(dt):
+    return str(dt)
