@@ -46,6 +46,32 @@ def test_merge():
     assert expr._child.isidentical(t[['x', 'y']])
 
 
+def test_add():
+    expr = t.x + 1
+    expr2, fields = _lean(expr, fields=set(['x']))
+    assert expr2.isidentical(expr)
+    assert fields == set(['x'])
+
+    expr = (t.x + t.y).label('a')
+    expr2, fields = _lean(expr, fields=set(['a']))
+    assert expr2.isidentical(expr)
+    assert fields == set(['x', 'y'])
+
+
+def test_label():
+    expr = t.x.label('foo')
+    expr2, fields =  _lean(expr, fields=set(['foo']))
+    assert expr2.isidentical(expr)
+    assert fields == set(['x'])
+
+
+def test_relabel():
+    expr = t.relabel(x='X', y='Y')
+    expr2, fields = _lean(expr, fields=set(['X', 'z']))
+    assert expr2.isidentical(t[['x', 'z']].relabel(x='X'))
+    assert fields == set(['x', 'z'])
+
+
 def test_merge_with_table():
     expr = lean_projection(merge(t, a=t.x+1))
     assert expr.isidentical(expr)
