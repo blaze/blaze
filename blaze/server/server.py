@@ -12,7 +12,7 @@ from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
-from ..api import Data
+from ..interactive import Data
 from ..utils import json_dumps
 from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
 from ..expr.parser import exprify

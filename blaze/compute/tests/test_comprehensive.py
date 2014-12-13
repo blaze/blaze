@@ -7,7 +7,7 @@ import bcolz
 from into import resource, into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
-from blaze.api import Data
+from blaze.interactive import Data
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 

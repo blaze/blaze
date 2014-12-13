@@ -1,6 +1,5 @@
 from blaze.expr import *
 from blaze.expr.split import *
-from blaze.api.dplyr import transform
 import datashape
 from datashape import dshape
 from datashape.predicates import isscalar, isrecord, iscollection

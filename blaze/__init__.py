@@ -12,13 +12,13 @@ halt_ordering() # Turn off multipledispatch ordering
 from datashape import dshape, discover
 from .expr import (Symbol, TableSymbol, symbol)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var)
+        mean, merge, nunique, relabel, selection, sort, summary, var, transform)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
-from .api import *
 from .index import create_index
 from .json import *
+from .interactive import *
 from .compute.csv import *
 from .compute.python import *
 from .compute.pandas import *

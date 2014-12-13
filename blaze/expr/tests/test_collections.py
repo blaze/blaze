@@ -19,13 +19,11 @@ def test_merge_on_single_argument_is_noop():
 
 
 def test_transform():
-    expr = transform(t, x=amount + id)
-    assert expr.fields == ['id', 'name', 'amount', 'x']
+    t = symbol('t', '5 * {x: int, y: int}')
+    expr = transform(t, z=t.x + t.y)
+    assert expr.fields == ['x', 'y', 'z']
 
-    expr = transform(t, amount=amount + 1)
-    assert expr.fields == ['id', 'name', 'amount']
-    assert (t['amount'] + 1) in expr._subterms()
-    assert t[['id', 'name']] in expr._subterms()
+    assert (t.x + t.y) in expr._subterms()
 
 
 def test_distinct():

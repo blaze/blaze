@@ -137,7 +137,7 @@ def compute_down(expr, data, **kwargs):
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
-    from ..api import Data
+    from ..interactive import Data
     leaf = expr._leaves()[0]
     tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 

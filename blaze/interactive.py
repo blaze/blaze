@@ -11,10 +11,10 @@ import numpy as np
 import warnings
 from collections import Iterator
 
-from ..expr import Expr, Symbol, ndim
-from ..dispatch import dispatch
+from .expr import Expr, Symbol, ndim
+from .dispatch import dispatch
 from into import into, resource
-from ..compatibility import _strtypes, unicode
+from .compatibility import _strtypes, unicode
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
 

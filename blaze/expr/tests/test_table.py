@@ -15,7 +15,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
                         Summary, count, symbol, Field, discover,
-                        max, min, label, Symbol
+                        max, min, label, Symbol, transform
                         )
 from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile
@@ -195,7 +195,6 @@ def test_selection_path_check():
 
 
 def test_path_issue():
-    from blaze.api.dplyr import transform
     t = TableSymbol('t', "{topic: string, word: string, result: ?float64}")
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))

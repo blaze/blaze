@@ -1,4 +1,4 @@
-from blaze.api.interactive import (Data, compute, concrete_head, expr_repr,
+from blaze.interactive import (Data, compute, concrete_head, expr_repr,
         to_html)
 import os
 
@@ -195,10 +195,9 @@ def test_into_nd_array_column_failure():
 
 
 def test_Data_attribute_repr():
-    path = os.path.join(os.path.dirname(__file__), 'accounts.csv')
-    t = Data(CSV(path))
-    result = t.timestamp.day
-    expected = pd.DataFrame({'timestamp_day': [25] * 3})
+    t = Data(CSV(example('accounts-datetimes.csv')))
+    result = t.when.day
+    expected = pd.DataFrame({'when_day': [1,2,3,4,5]})
     assert repr(result) == repr(expected)
 
 
