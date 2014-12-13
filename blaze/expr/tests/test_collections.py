@@ -18,6 +18,16 @@ def test_merge_on_single_argument_is_noop():
     assert merge(t.name).isidentical(t.name)
 
 
+def test_transform():
+    expr = transform(t, x=amount + id)
+    assert expr.fields == ['id', 'name', 'amount', 'x']
+
+    expr = transform(t, amount=amount + 1)
+    assert expr.fields == ['id', 'name', 'amount']
+    assert (t['amount'] + 1) in expr._subterms()
+    assert t[['id', 'name']] in expr._subterms()
+
+
 def test_distinct():
     assert '5' not in str(t.distinct().dshape)
 

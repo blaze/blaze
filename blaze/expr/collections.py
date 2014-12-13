@@ -168,6 +168,20 @@ def merge(*exprs, **kwargs):
     return result
 
 
+def transform(t, replace=True, **kwargs):
+    """ Add named columns to table
+
+    >>> t = symbol('t', 'var * {x: int, y: int}')
+    >>> transform(t, z=t.x + t.y).fields
+    ['x', 'y', 'z']
+    """
+    if replace and set(t.fields).intersection(set(kwargs)):
+        t = t[[c for c in t.fields if c not in kwargs]]
+
+    args = [t] + [v.label(k) for k, v in kwargs.items()]
+    return merge(*args)
+
+
 def schema_concat(exprs):
     """ Concatenate schemas together.  Supporting both Records and Units
 
