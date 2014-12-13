@@ -218,10 +218,13 @@ precision_map = {'year': 'M8[Y]',
 
 # these offsets are integers in units of their representation
 
-# this is the number of days since *Python's* epoch, which is 01-01-01
-day_offset = np.datetime64('1970-01-01', 'D').item().toordinal()
-offsets = {'week': 4,
-           'day': day_offset}
+epoch = datetime.datetime(1970, 1, 1)
+offsets = {
+    'week': epoch.isoweekday(),
+
+    # number of days since *Python's* epoch, which is 01-01-01
+    'day': epoch.toordinal()
+}
 
 
 @dispatch(DateTimeTruncate, (np.ndarray, np.datetime64))
