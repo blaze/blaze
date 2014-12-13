@@ -216,18 +216,18 @@ precision_map = {'year': 'M8[Y]',
                  'nanosecond': 'M8[ns]'}
 
 
-day_offset = np.timedelta64(datetime.datetime(2000, 1, 1).toordinal() -
-                            int(np.datetime64('2000-01-01', 'D').view('int64')),
-                            's')
-no_offset = lambda unit: np.timedelta64(0, unit)
+# these offsets are integers in units of their representation
 
-offsets = {'week': np.timedelta64(4, 'D'), 'day': day_offset}
+# this is the number of days since *Python's* epoch, which is 01-01-01
+day_offset = np.datetime64('1970-01-01', 'D').item().toordinal()
+offsets = {'week': 4,
+           'day': day_offset}
 
 
 @dispatch(DateTimeTruncate, (np.ndarray, np.datetime64))
 def compute_up(expr, data, **kwargs):
     np_dtype = precision_map[expr.unit]
-    offset = offsets.get(expr.unit, no_offset(np.datetime_data(np_dtype)[0]))
+    offset = offsets.get(expr.unit, 0)
     measure = expr.measure * 7 if expr.unit == 'week' else expr.measure
     result = (((data.astype(np_dtype)
                     .astype('int64')
