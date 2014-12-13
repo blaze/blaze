@@ -230,7 +230,7 @@ def compute_up(expr, data, **kwargs):
     offset = offsets.get(expr.unit, 0)
     measure = expr.measure * 7 if expr.unit == 'week' else expr.measure
     result = (((data.astype(np_dtype)
-                    .astype('int64')
+                    .view('int64')
                     + offset)
                     // measure
                     * measure
