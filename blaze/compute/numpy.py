@@ -221,9 +221,7 @@ precision_map = {'year': 'M8[Y]',
 epoch = datetime.datetime(1970, 1, 1)
 offsets = {
     'week': epoch.isoweekday(),
-
-    # number of days since *Python's* epoch, which is 01-01-01
-    'day': epoch.toordinal()
+    'day': epoch.toordinal() # number of days since *Python's* epoch (01/01/01)
 }
 
 
