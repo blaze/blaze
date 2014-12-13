@@ -487,6 +487,11 @@ def into(a, df, **kwargs):
     return x
 
 
+@dispatch(np.ndarray, pd.Series)
+def into(_, s, **kwargs):
+    return s.values
+
+
 @dispatch(nd.array)
 def discover(arr):
     return dshape(nd.dshape_of(arr))
