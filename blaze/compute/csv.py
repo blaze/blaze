@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
 from into import into
-from into.chunks import chunks
+from into.chunks import chunks, Chunks
 from into.backends.csv import CSV, csv_to_DataFrame
 
 from ..dispatch import dispatch
@@ -51,7 +51,7 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
 
-@dispatch(Head, CSV)
+@dispatch(Head, (Chunks, CSV))
 def pre_compute(expr, data, **kwargs):
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(expr, leaf)):
@@ -64,8 +64,7 @@ def compute_chunk(chunk, chunk_expr, part):
     return compute(chunk_expr, {chunk: part})
 
 
-@dispatch(Expr, (pandas.io.parsers.TextFileReader, chunks(pd.DataFrame),
-    chunks(CSV)))
+@dispatch(Expr, pandas.io.parsers.TextFileReader)
 def compute_down(expr, data, map=map, **kwargs):
     leaf = expr._leaves()[0]
 
