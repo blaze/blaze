@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import datetime
+
 import numpy as np
 from pandas import DataFrame, Series
 from datashape import to_numpy
@@ -204,7 +206,7 @@ def compute_up(expr, data, **kwargs):
 
 precision_map = {'year': 'M8[Y]',
                  'month': 'M8[M]',
-                 'week': 'M8[W]',
+                 'week': 'M8[D]',
                  'day': 'M8[D]',
                  'hour': 'M8[h]',
                  'minute': 'M8[m]',
@@ -213,27 +215,28 @@ precision_map = {'year': 'M8[Y]',
                  'microsecond': 'M8[us]',
                  'nanosecond': 'M8[ns]'}
 
+
+day_offset = np.timedelta64(datetime.datetime(2000, 1, 1).toordinal() -
+                            int(np.datetime64('2000-01-01', 'D').view('int64')),
+                            's')
+no_offset = lambda unit: np.timedelta64(0, unit)
+
+offsets = {'week': np.timedelta64(4, 'D'), 'day': day_offset}
+
+
 @dispatch(DateTimeTruncate, (np.ndarray, np.datetime64))
 def compute_up(expr, data, **kwargs):
     np_dtype = precision_map[expr.unit]
-    if expr.unit in ['day', 'week']:
-        if expr.unit == 'day':
-            measure = expr.measure
-        else:
-            measure = expr.measure * 7
-        return (((data.astype('M8[D]')
-                      .astype('i8')
-                      + 4)
-                      // measure
-                      *  measure
-                      - 4)
-                     .astype('M8[D]'))
-    else:
-        return ((data.astype(np_dtype)
-                     .astype('i8')
-                     // expr.measure
-                     * expr.measure)
-                     .astype(np_dtype))
+    offset = offsets.get(expr.unit, no_offset(np.datetime_data(np_dtype)[0]))
+    measure = expr.measure * 7 if expr.unit == 'week' else expr.measure
+    result = (((data.astype(np_dtype)
+                    .astype('int64')
+                    + offset)
+                    // measure
+                    * measure
+                    - offset)
+                    .astype(np_dtype))
+    return result
 
 
 @dispatch(np.ndarray)
