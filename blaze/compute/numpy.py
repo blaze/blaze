@@ -204,6 +204,13 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
+
+# Note the use of 'week': 'M8[D]' here.
+
+# We truncate week offsets "manually" in the compute_up implementation by first
+# converting to days then multiplying our measure by 7 this simplifies our code
+# by only requiring us to calculate the week offset relative to the day of week.
+
 precision_map = {'year': 'M8[Y]',
                  'month': 'M8[M]',
                  'week': 'M8[D]',
