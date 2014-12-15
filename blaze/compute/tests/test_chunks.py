@@ -11,8 +11,8 @@ s = symbol('s', discover(cL))
 def test_chunks_compute():
     exprs = [s, s + 1, s.max(), s.mean() + 1, s.head()]
     for e in exprs:
-        result = compute(e, {s: L})
-        expected = compute(e, {s: cL})
+        result = compute(e, {s: cL})
+        expected = compute(e, {s: L})
         if iscollection(e.dshape):
             result = into(list, result)
             expected = into(list, expected)

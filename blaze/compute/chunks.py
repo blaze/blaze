@@ -33,19 +33,13 @@ def compute_down(expr, data, map=map, **kwargs):
 
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr)
 
-    parts = map(curry(compute_chunk, chunk, chunk_expr), data)
+    parts = list(map(curry(compute_chunk, chunk, chunk_expr), data))
 
-    if isinstance(parts, Iterator):
-        first_part = next(parts)
-        parts = concat([[first_part], parts])
-    else:
-        first_part = parts[0]
-
-    if isinstance(first_part, np.ndarray):
-        intermediate = np.concatenate(list(parts))
-    elif isinstance(first_part, pd.DataFrame):
-        intermediate = pd.concat(list(parts))
-    elif isinstance(first_part, (Iterable, Iterator)):
-        intermediate = concat(parts)
+    if isinstance(parts[0], np.ndarray):
+        intermediate = np.concatenate(parts)
+    elif isinstance(parts[0], pd.DataFrame):
+        intermediate = pd.concat(parts)
+    elif isinstance(parts[0], (Iterable, Iterator)):
+        intermediate = list(concat(parts))
 
     return compute(agg_expr, {agg: intermediate})
