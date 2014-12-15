@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import datetime
+
 import numpy as np
 from pandas import DataFrame, Series
 from datashape import to_numpy
@@ -202,9 +204,16 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
+
+# Note the use of 'week': 'M8[D]' here.
+
+# We truncate week offsets "manually" in the compute_up implementation by first
+# converting to days then multiplying our measure by 7 this simplifies our code
+# by only requiring us to calculate the week offset relative to the day of week.
+
 precision_map = {'year': 'M8[Y]',
                  'month': 'M8[M]',
-                 'week': 'M8[W]',
+                 'week': 'M8[D]',
                  'day': 'M8[D]',
                  'hour': 'M8[h]',
                  'minute': 'M8[m]',
@@ -213,27 +222,29 @@ precision_map = {'year': 'M8[Y]',
                  'microsecond': 'M8[us]',
                  'nanosecond': 'M8[ns]'}
 
+
+# these offsets are integers in units of their representation
+
+epoch = datetime.datetime(1970, 1, 1)
+offsets = {
+    'week': epoch.isoweekday(),
+    'day': epoch.toordinal() # number of days since *Python's* epoch (01/01/01)
+}
+
+
 @dispatch(DateTimeTruncate, (np.ndarray, np.datetime64))
 def compute_up(expr, data, **kwargs):
     np_dtype = precision_map[expr.unit]
-    if expr.unit in ['day', 'week']:
-        if expr.unit == 'day':
-            measure = expr.measure
-        else:
-            measure = expr.measure * 7
-        return (((data.astype('M8[D]')
-                      .astype('i8')
-                      + 4)
-                      // measure
-                      *  measure
-                      - 4)
-                     .astype('M8[D]'))
-    else:
-        return ((data.astype(np_dtype)
-                     .astype('i8')
-                     // expr.measure
-                     * expr.measure)
-                     .astype(np_dtype))
+    offset = offsets.get(expr.unit, 0)
+    measure = expr.measure * 7 if expr.unit == 'week' else expr.measure
+    result = (((data.astype(np_dtype)
+                    .view('int64')
+                    + offset)
+                    // measure
+                    * measure
+                    - offset)
+                    .astype(np_dtype))
+    return result
 
 
 @dispatch(np.ndarray)
