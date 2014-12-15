@@ -211,10 +211,12 @@ def test_can_trivially_create_csv_Data_with_unicode():
 
 
 def test_can_trivially_create_sqlite_table():
+    pytest.importorskip('sqlalchemy')
     Data('sqlite:///'+example('iris.db')+'::iris')
 
 
 def test_can_trivially_create_pytables():
+    pytest.importorskip('tables')
     Data(example('accounts.h5')+'::/accounts')
 
 

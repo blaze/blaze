@@ -1,9 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-import requests
+try:
+    import flask
+    from flask import json
+    import requests
+except ImportError:
+    pass
+
+
 from into import convert, resource
-from flask import json
-import flask
 from toolz import first
 from datashape import dshape, DataShape, Record
 from pandas import DataFrame

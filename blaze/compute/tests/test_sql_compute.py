@@ -1,13 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-import re
 import pytest
+sqlalchemy = pytest.importorskip('sqlalchemy')
+sa = sqlalchemy
+
 import datashape
+import re
 from blaze.compute.sql import (compute, computefull, select, lower_column,
         compute_up)
 from blaze.expr import *
-import sqlalchemy
-import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
 from pandas import DataFrame

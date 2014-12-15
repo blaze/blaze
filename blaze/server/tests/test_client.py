@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from pandas import DataFrame
+import pytest
+pytest.importorskip('flask')
 
+from pandas import DataFrame
 from blaze import compute, Data, by, into
 from blaze.expr import Expr, Symbol, Field
 from blaze.dispatch import dispatch

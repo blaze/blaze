@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame
 import numpy as np
-import bcolz
 from into import resource, into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
@@ -26,12 +25,23 @@ df = DataFrame(L, columns=['amount', 'id', 'name'])
 
 x = into(np.ndarray, df)
 
-bc = into(bcolz.ctable, df)
+sources = [df, x]
 
-sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
-into(sql, L)
+try:
+    import sqlalchemcy
+    sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
+    into(sql, L)
+    sources.append(sql)
+except:
+    sql = None
 
-sources = [df, x, bc, sql]
+
+try:
+    import bcolz
+    bc = into(bcolz.ctable, df)
+    sources.append(bc)
+except ImportError:
+    bc = None
 
 try:
     import pymongo

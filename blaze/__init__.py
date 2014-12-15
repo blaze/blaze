@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 from pandas import DataFrame
-import h5py
 from into import into, convert, append, resource, drop
 from into.backends.csv import CSV
 
@@ -25,8 +24,16 @@ from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
-from .sql import *
-from .server import *
+
+try:
+    from .server import *
+except ImportError:
+    pass
+
+try:
+    from .sql import *
+except ImportError:
+    pass
 
 try:
     from .spark import *

@@ -1,10 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
+try:
+    import flask
+    from flask import Flask, request
+except ImportError:
+    pass
 
 import blaze
 from collections import Iterator
 import socket
-from flask import Flask, request
 import json
 from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps

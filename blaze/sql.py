@@ -3,19 +3,23 @@ from __future__ import absolute_import, division, print_function
 from .compatibility import basestring
 from .dispatch import dispatch
 
-import sqlalchemy as sa
+try:
+    import sqlalchemy as sa
+    from sqlalchemy import Table
+except ImportError:
+    Table = type(None)
 
 __all__ = ()
 
 
-@dispatch(sa.Table, basestring)
+@dispatch(Table, basestring)
 def create_index(s, column, name=None, unique=False):
     if name is None:
         raise ValueError('SQL indexes must have a name')
     sa.Index(name, getattr(s.c, column), unique=unique).create(s.bind)
 
 
-@dispatch(sa.Table, list)
+@dispatch(Table, list)
 def create_index(s, columns, name=None, unique=False):
     if name is None:
         raise ValueError('SQL indexes must have a name')

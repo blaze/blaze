@@ -1,8 +1,10 @@
 import pytest
-import sqlalchemy
-import sqlalchemy as sa
+
+pytest.importorskip('sqlalchemy')
 import gzip
 from cytoolz import first
+import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.exc import OperationalError
 from datashape import dshape
 import datashape
