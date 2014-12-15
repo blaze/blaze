@@ -11,7 +11,6 @@ except ImportError:
 
 __all__ = ()
 
-
 @dispatch(Table, basestring)
 def create_index(s, column, name=None, unique=False):
     if name is None:

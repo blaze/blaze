@@ -525,10 +525,14 @@ def compute_up(t, s, **kwargs):
 
 
 @toolz.memoize
+def table_of_metadata(metadata, name):
+    metadata.reflect()
+    return metadata.tables[name]
+
+
 def table_of_engine(engine, name):
     metadata = sqlalchemy.MetaData(engine)
-    metadata.reflect(engine)
-    return metadata.tables[name]
+    return table_of_metadata(metadata, name)
 
 
 @dispatch(Field, sqlalchemy.engine.Engine)
@@ -555,7 +559,7 @@ def post_compute(expr, query, scope=None):
     We find these engines and, if they are all the same, run the query against
     these engines and return the result.
     """
-    if not all(isinstance(val, (Engine, Table)) for val in scope.values()):
+    if not all(isinstance(val, (Engine, MetaData, Table)) for val in scope.values()):
         return query
 
     engines = set(filter(None, map(engine_of, scope.values())))
@@ -582,3 +586,8 @@ from .pyfunc import broadcast_collect
 @dispatch(Expr, sa.sql.elements.ClauseElement)
 def optimize(expr, _):
     return broadcast_collect(expr)
+
+
+@dispatch(Field, sqlalchemy.MetaData)
+def compute_up(expr, data, **kwargs):
+    return table_of_metadata(data, expr._name)

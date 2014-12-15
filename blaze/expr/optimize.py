@@ -75,6 +75,25 @@ def _lean(expr, fields=None):
 def _lean(expr, fields=None):
     return expr, fields
 
+
+@dispatch(Label)
+def _lean(expr, fields=None):
+    child, new_fields = _lean(expr._child, fields=())
+    return child.label(expr._name), new_fields
+
+
+@dispatch(ReLabel)
+def _lean(expr, fields=None):
+    labels = dict(expr.labels)
+    reverse_labels = dict((v, k) for k, v in expr.labels)
+
+    child_fields = set(reverse_labels.get(f, f) for f in fields)
+
+    child, new_fields = _lean(expr._child, fields=child_fields)
+    return child.relabel(**dict((k, v) for k, v in expr.labels if k in
+        child.fields)), new_fields
+
+
 @dispatch(ElemWise)
 def _lean(expr, fields=None):
     if isscalar(expr._child.dshape.measure):
@@ -174,6 +193,19 @@ def _lean(expr, fields=None):
 def _lean(expr, fields=None):
     child, new_fields = _lean(expr._child, fields=expr.fields)
     return expr._subs({expr._child: child}), new_fields
+
+
+@dispatch(Merge)
+def _lean(expr, fields=None):
+    new_fields = set()
+    for f in expr.fields:
+        if f not in fields:
+            continue
+        le, nf = _lean(expr[f], fields=set([f]))
+        new_fields.update(nf)
+    child, _ = _lean(expr._child, fields=new_fields)
+
+    return expr._subs({expr._child: child})[sorted(fields)], new_fields
 
 
 @dispatch(Expr)
