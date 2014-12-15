@@ -1,6 +1,6 @@
 from blaze.compute.csv import pre_compute, CSV
-from blaze import compute, discover
-from blaze.utils import example
+from blaze import compute, discover, dshape, into
+from blaze.utils import example, filetext
 from blaze.expr import Expr, symbol
 from pandas import DataFrame, Series
 import pandas as pd
@@ -51,3 +51,11 @@ def test_pre_compute_calls_lean_projection():
                          csv, comfortable_memory=10)
     assert set(first(result).columns) == \
             set(['sepal_length', 'species'])
+
+def test_unused_datetime_columns():
+    ds = dshape('2 * {val: string, when: datetime}')
+    with filetext("val,when\na,2000-01-01\nb,2000-02-02") as fn:
+        csv = CSV(fn, has_header=True)
+
+        s = symbol('s', discover(csv))
+        assert into(list, compute(s.val, csv)) == ['a', 'b']

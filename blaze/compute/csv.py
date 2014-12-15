@@ -51,11 +51,11 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
 
-@dispatch(Head, (Chunks, CSV))
+@dispatch(Head, CSV)
 def pre_compute(expr, data, **kwargs):
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(expr, leaf)):
-        return into(Iterator, data)
+        return into(Iterator, data, chunksize=10000, dshape=leaf.dshape)
     else:
         raise MDNotImplementedError()
 

@@ -159,20 +159,17 @@ def concrete_head(expr, n=10):
     if not iscollection(expr.dshape):
         return compute(expr)
 
-    try:
-        head = expr.head(n + 1)
-        result = compute(head)
+    head = expr.head(n + 1)
+    result = compute(head)
 
-        if len(result) == 0:
-            return DataFrame(columns=expr.fields)
-        if isrecord(expr.dshape.measure):
-            return into(DataFrame, result, dshape=expr.dshape)
-        else:
-            df = into(DataFrame, result, dshape=expr.dshape)
-            df.columns = [expr._name]
-            return df
-    except:
-        return compute(expr)
+    if len(result) == 0:
+        return DataFrame(columns=expr.fields)
+    if isrecord(expr.dshape.measure):
+        return into(DataFrame, result, dshape=expr.dshape)
+    else:
+        df = into(DataFrame, result, dshape=expr.dshape)
+        df.columns = [expr._name]
+        return df
 
 
 def repr_tables(expr, n=10):
