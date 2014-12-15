@@ -117,6 +117,7 @@ class TestPyTablesLight(object):
         assert filename == tbfile
         assert shape == (0,)
 
+    @xfail(reason="Don't yet support datetimes")
     def test_table_into_ndarray(self, dt_tb, dt_data):
         t = PyTables(dt_tb, '/dt')
         res = into(np.ndarray, t)
