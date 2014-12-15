@@ -265,7 +265,7 @@ def comp(datasets, name):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
     try:
-        data = json.loads(request.data)
+        data = json.loads(request.data.decode('utf-8'))
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 
@@ -294,7 +294,7 @@ def compserver(datasets):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
     try:
-        data = json.loads(request.data)
+        data = json.loads(request.data.decode('utf-8'))
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 

@@ -81,7 +81,7 @@ class Client(object):
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
-        data = json.loads(content(response))
+        data = json.loads(content(response).decode('utf-8'))
 
         return DataShape(Record([[name, dshape(ds)] for name, ds in
             sorted(data.items(), key=first)]))
@@ -153,7 +153,7 @@ def compute_down(expr, ec, **kwargs):
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
 
-    data = json.loads(content(r))
+    data = json.loads(content(r).decode('utf-8'))
 
     return data['data']
 
@@ -163,7 +163,7 @@ def convert_client_dataset(c, **kwargs):
     r = requests.get('%s/compute.json' % c.client.url,
                      data = json.dumps({'expr': c.name}),
                      headers={'Content-Type': 'application/json'})
-    data = json.loads(content(r))
+    data = json.loads(content(r).decode('utf-8'))
     return data['data']
 
 @resource.register('blaze://.+::.+', priority=16)

@@ -35,7 +35,8 @@ test = server.app.test_client()
 
 def test_datasets():
     response = test.get('/datasets.json')
-    assert json.loads(response.data) == {'accounts': str(discover(accounts)),
+    assert json.loads(response.data.decode('utf-8')) == \
+                                      {'accounts': str(discover(accounts)),
                                          'cities': str(discover(cities)),
                                          'events': str(discover(events))}
 
@@ -115,7 +116,7 @@ def test_compute():
                          content_type='application/json')
 
     assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
+    assert json.loads(response.data.decode('utf-8'))['data'] == expected
 
 
 def test_get_datetimes():
@@ -124,7 +125,7 @@ def test_get_datetimes():
                          content_type='application/json')
 
     assert 'OK' in response.status
-    data = json.loads(response.data)
+    data = json.loads(response.data.decode('utf-8'))
     ds = datashape.dshape(data['datashape'])
     result = into(np.ndarray, data['data'], dshape=ds)
     assert into(list, result) == into(list, events)
@@ -140,7 +141,7 @@ def test_compute_with_namespace():
                          content_type='application/json')
 
     assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
+    assert json.loads(response.data.decode('utf-8'))['data'] == expected
 
 
 @pytest.fixture
@@ -165,7 +166,7 @@ def test_compute_with_variable_in_namespace(iris_server):
                      content_type='application/json')
 
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = list(compute(expr._subs({pl: 5}), {t: iris}))
     assert result == expected
 
@@ -179,7 +180,7 @@ def test_compute_by_with_summary(iris_server):
     resp = test.post('/compute/iris.json', data=blob,
                      content_type='application/json')
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = compute(expr, iris)
     assert result == list(map(list, into(list, expected)))
 
@@ -196,7 +197,7 @@ def test_compute_column_wise(iris_server):
                      content_type='application/json')
 
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = compute(expr, iris)
     assert list(map(tuple, result)) == into(list, expected)
 
@@ -212,7 +213,7 @@ def test_multi_expression_compute():
                      content_type='application/json')
 
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = compute(expr, {a: accounts, c: cities})
 
     assert list(map(tuple, result))== into(list, expected)
