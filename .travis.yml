@@ -42,6 +42,9 @@ install:
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 
+  # Install into
+  - pip install git+http://github.com/ContinuumIO/into
+
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
 

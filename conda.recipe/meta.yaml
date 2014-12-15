@@ -22,6 +22,7 @@ requirements:
     - bcolz
     - pytables
     - psutil
+    - into
     - unittest2 [py26]
 
   run:
@@ -40,6 +41,7 @@ requirements:
     - bcolz
     - pytables
     - psutil
+    - into
     - unittest2 [py26]
 
 test:
