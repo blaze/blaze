@@ -18,7 +18,7 @@ from blaze.compute import compute_up
 from datashape.predicates import iscollection
 from ..interactive import Data
 from ..utils import json_dumps
-from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
+from ..expr import Expr, Symbol, Selection, Broadcast, symbol
 from ..expr.parser import exprify
 from .. import expr
 
@@ -106,7 +106,7 @@ def to_tree(expr, names=None):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
+    >>> t = symbol('t', 'var * {x: int32, y: int32}')
     >>> to_tree(t) # doctest: +SKIP
     {'op': 'Symbol',
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
@@ -152,7 +152,7 @@ def to_tree(expr, names=None):
     elif isinstance(expr, Mono):
         return str(expr)
     elif isinstance(expr, Data):
-        return to_tree(Symbol(expr._name, expr.dshape), names)
+        return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
                 'args': [to_tree(arg, names) for arg in expr._args]}
@@ -197,7 +197,7 @@ def from_tree(expr, namespace=None):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
+    >>> t = symbol('t', 'var * {x: int32, y: int32}')
     >>> tree = to_tree(t)
     >>> tree # doctest: +SKIP
     {'op': 'Symbol',
@@ -274,7 +274,7 @@ def comp(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
 
-    t = Symbol(name, discover(dset))
+    t = symbol(name, discover(dset))
     namespace = data.get('namespace', dict())
     namespace[name] = t
 
@@ -299,16 +299,20 @@ def compserver(datasets):
         return ("Bad JSON.  Got %s " % request.data, 404)
 
 
-    tree_ns = dict((name, Symbol(name, discover(datasets[name])))
+    tree_ns = dict((name, symbol(name, discover(datasets[name])))
                     for name in datasets)
     if 'namespace' in data:
         tree_ns = merge(tree_ns, data['namespace'])
 
     expr = from_tree(data['expr'], namespace=tree_ns)
 
-    compute_ns = dict((Symbol(name, discover(datasets[name])), datasets[name])
+    compute_ns = dict((symbol(name, discover(datasets[name])), datasets[name])
                         for name in datasets)
-    result = compute(expr, compute_ns)
+    try:
+        result = compute(expr, compute_ns)
+    except Exception as e:
+        return ("Computation failed with message:\n%s" % e, 500)
+
     if iscollection(expr.dshape):
         result = into(list, result)
 
