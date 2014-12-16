@@ -9,15 +9,9 @@ python:
 branches:
   only:
     - master
-    - reorg
-
-addons:
-  postgresql: "9.3"
 
 services:
     - mongodb
-    - postgres
-    - mysql
 
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
@@ -50,9 +44,6 @@ install:
 
   # Install PyMongo
   - pip install pymongo
-
-  # Install MySQL py2.y/3.x
-  - pip install pymysql
 
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
@@ -95,7 +86,6 @@ install:
   - python setup.py install
 
 before_script:
-  - mysql -e 'create database test'
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
 
