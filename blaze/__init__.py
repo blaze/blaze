@@ -32,6 +32,7 @@ except ImportError:
 
 try:
     from .sql import *
+    from .compute.sql import *
 except ImportError:
     pass
 
@@ -59,19 +60,21 @@ try:
 except ImportError:
     pass
 try:
-    import blaze.compute.chunks
+    from .compute.chunks import *
 except ImportError:
     pass
 try:
-    from .bcolz import *
+    from .compute.bcolz import *
 except ImportError:
     pass
 try:
     from .mongo import *
+    from .compute.mongo import *
 except ImportError:
     pass
 try:
     from .pytables import *
+    from .compute.pytables import *
 except ImportError:
     pass
 
