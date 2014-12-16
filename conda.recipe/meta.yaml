@@ -8,7 +8,6 @@ build:
 requirements:
   build:
     - python
-    - dynd-python
     - numpy
     - multipledispatch
     - sqlalchemy
@@ -28,7 +27,6 @@ requirements:
 
   run:
     - python
-    - dynd-python
     - numpy
     - multipledispatch
     - sqlalchemy
