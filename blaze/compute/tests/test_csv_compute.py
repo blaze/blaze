@@ -75,5 +75,5 @@ def test_multiple_csv_files():
             a = compute(e, {s: r})
             b = compute(e, {s: data})
             if iscollection(e.dshape):
-                a, b = into(list, a), into(list, b)
+                a, b = into(set, a), into(set, b)
             assert a == b
