@@ -73,12 +73,12 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Field, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
-    return data[expr._name]
+    return data[str(expr._name)]
 
 
 @dispatch(Projection, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
-    return data[expr.fields]
+    return data[list(map(str, expr.fields))]
 
 
 @dispatch(Slice, (bcolz.carray, bcolz.ctable))
@@ -117,7 +117,7 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
                    if isinstance(e, Expr)
                    and any(i is expr._leaves()[0] for i in e._inputs))
     if len(children) == 1 and isinstance(first(children), (Field, Projection)):
-        raise NotImplementedError()
+        data = data[list(map(str, first(children).fields))]
 
 
     chunk = symbol('chunk', chunksize * leaf.schema)

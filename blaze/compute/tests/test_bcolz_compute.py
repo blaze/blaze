@@ -48,6 +48,7 @@ def test_reductions():
     assert len(list(compute(t.distinct(), b))) == 3
     assert len(list(compute(t.a.distinct(), b))) == 3
 
+
 def test_nunique():
     assert compute(t.a.nunique(), b) == 3
     assert compute(t.nunique(), b) == 3
@@ -113,3 +114,21 @@ def dont_test_pre_compute(): # This is no longer desired.  Handled by compute_up
 
     result = pre_compute(s[['a', 'b']], b)
     assert result.names == ['a', 'b']
+
+
+def eq(a, b):
+    c = a == b
+    if isinstance(c, np.ndarray):
+        c = c.all()
+    return c
+
+
+def test_unicode_field_names():
+    b = bcolz.ctable(np.array([(1, 1., 10.), (2, 2., 20.), (3, 3., 30.)],
+                              dtype=[('a', 'i8'), ('b', 'f8'), ('c', 'f8')]))
+    s = symbol('s', discover(b))
+
+    assert eq(compute(s[u'a'], b)[:],
+              compute(s['a'],  b))
+    assert eq(compute(s[[u'a', u'c']], b)[:],
+              compute(s[['a', 'c']],  b))
