@@ -117,7 +117,7 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
                    if isinstance(e, Expr)
                    and any(i is expr._leaves()[0] for i in e._inputs))
     if len(children) == 1 and isinstance(first(children), (Field, Projection)):
-        data = data[list(map(str, first(children).fields))]
+        raise MDNotImplementedError()
 
 
     chunk = symbol('chunk', chunksize * leaf.schema)

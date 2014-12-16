@@ -129,6 +129,6 @@ def test_unicode_field_names():
     s = symbol('s', discover(b))
 
     assert eq(compute(s[u'a'], b)[:],
-              compute(s['a'],  b))
+              compute(s['a'],  b)[:])
     assert eq(compute(s[[u'a', u'c']], b)[:],
-              compute(s[['a', 'c']],  b))
+              compute(s[['a', 'c']],  b)[:])
