@@ -93,14 +93,11 @@ def print_versions():
     """Print all the versions of software that Blaze relies on."""
     import sys, platform
     import numpy as np
-    import dynd
     import datashape
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("Datashape version: %s" % datashape.__version__)
     print("NumPy version: %s" % np.__version__)
-    print("DyND version: %s / LibDyND %s" %
-                    (dynd.__version__, dynd.__libdynd_version__))
     print("Python version: %s" % sys.version)
     (sysname, nodename, release, version, machine, processor) = \
         platform.uname()
