@@ -22,12 +22,11 @@ import bcolz
 import math
 import numpy as np
 import pandas as pd
-from .chunks import ChunkIndexable
 
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
-from ..api import into
+from into import into
 
 __all__ = ['bcolz']
 

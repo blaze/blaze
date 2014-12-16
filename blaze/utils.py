@@ -15,7 +15,9 @@ import numpy as np
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
-from blaze.compatibility import map, zip
+from .compatibility import map, zip
+
+from .dispatch import dispatch
 
 thread_pool = ThreadPool(psutil.NUM_CPUS)
 
@@ -209,3 +211,27 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 def available_memory():
     return psutil.virtual_memory().available
+
+def listpack(x):
+    """
+    >>> listpack(1)
+    [1]
+    >>> listpack((1, 2))
+    [1, 2]
+    >>> listpack([1, 2])
+    [1, 2]
+    """
+    if isinstance(x, tuple):
+        return list(x)
+    elif isinstance(x, list):
+        return x
+    else:
+        return [x]
+
+
+@dispatch(datetime.datetime)
+def json_dumps(dt):
+    s = dt.isoformat()
+    if not dt.tzname():
+        s = s + 'Z'
+    return s

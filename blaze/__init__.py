@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-from dynd import nd
 from pandas import DataFrame
-import h5py
+from into import into, convert, append, resource, drop
+from into.backends.csv import CSV
 
 from multipledispatch import halt_ordering, restart_ordering
 
@@ -11,23 +11,29 @@ halt_ordering() # Turn off multipledispatch ordering
 from datashape import dshape, discover
 from .expr import (Symbol, TableSymbol, symbol)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var)
+        mean, merge, nunique, relabel, selection, sort, summary, var, transform)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
-from .api import *
-from .data import CSV, coerce
+from .index import create_index
 from .json import *
-from .resource import *
+from .interactive import *
 from .compute.csv import *
-from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
-from .sql import *
-from .server import *
+
+try:
+    from .server import *
+except ImportError:
+    pass
+
+try:
+    from .sql import *
+except ImportError:
+    pass
 
 try:
     from .spark import *
@@ -37,6 +43,11 @@ try:
     from .compute.sparksql import *
     from .sparksql import *
 except (ImportError, TypeError):
+    pass
+try:
+    from dynd import nd
+    from .compute.dynd import *
+except ImportError:
     pass
 try:
     from .h5py import *
@@ -69,7 +80,7 @@ restart_ordering() # Restart multipledispatch ordering and do ordering
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.6.6'
+__version__ = '0.6.7'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog

@@ -14,12 +14,12 @@ Interact with a set of CSV files or a SQL database
    >>> from blaze import *
    >>> t = Data('blaze/examples/data/accounts_*.csv')
    >>> t
-      id     name  amount
-   0   1    Alice     100
-   1   2      Bob     200
-   2   3  Charlie     300
-   3   4      Dan     400
-   4   5    Edith     500
+      id      name  amount
+   0   1     Alice     100
+   1   2       Bob     200
+   2   3   Charlie     300
+   3   4       Dan     400
+   4   5     Edith     500
 
    >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
    >>> t
@@ -41,8 +41,8 @@ Migrate CSV files into a SQL database
 
 .. code-block:: python
 
-   >>> into('sqlite:///myfile.db::iris', 'blaze.examples/data/iris.csv') # doctest: +SKIP
-   <blaze.data.sql.SQL at 0x7f0f64ffbdd0>
+   >>> into('sqlite:///myfile.db::iris', 'blaze/examples/data/iris.csv') # doctest: +SKIP
+   Table('iris', MetaData(bind=Engine(sqlite:///myfile.db)), ...)
 
 What sorts of URI's does Blaze support?
 ---------------------------------------

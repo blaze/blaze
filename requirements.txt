@@ -1,4 +1,3 @@
-dynd-python
 datashape
 numpy >= 1.7
 sqlalchemy
@@ -14,3 +13,4 @@ requests
 tables
 pymongo
 psutil
+into

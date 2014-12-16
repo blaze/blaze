@@ -1,6 +1,6 @@
 package:
   name: blaze
-  version: "0.6.6"
+  version: "0.6.7"
 
 build:
     number: {{environ.get('BINSTAR_BUILD', 1)}}
@@ -8,13 +8,13 @@ build:
 requirements:
   build:
     - python
-    - dynd-python
     - numpy
     - multipledispatch
     - sqlalchemy
     - pandas
     - h5py
     - datashape
+    - into
     - flask
     - requests
     - cytoolz
@@ -22,17 +22,18 @@ requirements:
     - bcolz
     - pytables
     - psutil
+    - into
     - unittest2 [py26]
 
   run:
     - python
-    - dynd-python
     - numpy
     - multipledispatch
     - sqlalchemy
     - pandas
     - h5py
     - datashape
+    - into
     - flask
     - requests
     - cytoolz
@@ -40,6 +41,7 @@ requirements:
     - bcolz
     - pytables
     - psutil
+    - into
     - unittest2 [py26]
 
 test:

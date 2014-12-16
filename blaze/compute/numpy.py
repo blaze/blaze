@@ -14,7 +14,7 @@ from ..expr import UTCFromTimestamp, DateTimeTruncate
 
 from .core import base, compute
 from ..dispatch import dispatch
-from ..api.into import into
+from into import into
 import pandas as pd
 
 __all__ = ['np']
@@ -180,11 +180,11 @@ def compute_up(expr, x, **kwargs):
 
 @dispatch(Expr, np.ndarray)
 def compute_up(t, x, **kwargs):
+    ds = t._child.dshape
     if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
-        df = DataFrame(columns=t._child.fields)
+        return compute_up(t, into(DataFrame, x, dshape=ds), **kwargs)
     else:
-        df = Series(name=t._child.fields[0])
-    return compute_up(t, into(df, x), **kwargs)
+        return compute_up(t, into(Series, x, dshape=ds), **kwargs)
 
 
 @dispatch(nelements, np.ndarray)

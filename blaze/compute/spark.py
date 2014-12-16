@@ -16,7 +16,7 @@ from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
-from ..data.utils import listpack
+from ..utils import listpack
 
 from .core import compute, compute_up
 
