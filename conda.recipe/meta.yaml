@@ -23,6 +23,7 @@ requirements:
     - pytables
     - psutil
     - into
+    - pymongo
     - unittest2 [py26]
 
   run:
@@ -42,6 +43,7 @@ requirements:
     - pytables
     - psutil
     - into
+    - pymongo
     - unittest2 [py26]
 
 test:
