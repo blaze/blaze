@@ -49,6 +49,8 @@ Index
    backends
    uri
    interactivity
+   csv
+   ooc
    install
    datashape
    server
