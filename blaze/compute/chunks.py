@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from multipledispatch import MDNotImplementedError
 from into import Chunks, chunks, convert, discover
 from collections import Iterator, Iterable
 from toolz import curry, concat, map

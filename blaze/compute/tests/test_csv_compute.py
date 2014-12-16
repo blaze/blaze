@@ -1,8 +1,9 @@
 from blaze.compute.csv import pre_compute, CSV
-from blaze import compute, discover, dshape, into
-from blaze.utils import example, filetext
+from blaze import compute, discover, dshape, into, resource
+from blaze.utils import example, filetext, filetexts
 from blaze.expr import Expr, symbol
 from pandas import DataFrame, Series
+from datashape.predicates import iscollection
 import pandas as pd
 from toolz import first
 from collections import Iterator
@@ -59,3 +60,20 @@ def test_unused_datetime_columns():
 
         s = symbol('s', discover(csv))
         assert into(list, compute(s.val, csv)) == ['a', 'b']
+
+def test_multiple_csv_files():
+    d = {'mult1.csv': 'name,val\nAlice,1\nBob,2',
+         'mult2.csv': 'name,val\nAlice,3\nCharlie,4'}
+
+    data = [('Alice', 1), ('Bob', 2), ('Alice', 3), ('Charlie', 4)]
+    with filetexts(d) as fns:
+        r = resource('mult*.csv')
+        s = symbol('s', discover(r))
+
+        for e in [s, s.name, s.name.nunique(), s.name.count_values(),
+                s.val.mean()]:
+            a = compute(e, {s: r})
+            b = compute(e, {s: data})
+            if iscollection(e.dshape):
+                a, b = into(list, a), into(list, b)
+            assert a == b
