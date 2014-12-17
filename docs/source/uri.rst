@@ -51,20 +51,21 @@ What sorts of URI's does Blaze support?
     * ``.csv``
     * ``.json``
     * ``.csv.gz/json.gz``
+    * ``.hdf5`` (uses ``h5py``)
     * ``.hdf5::/datapath`` (uses ``h5py``)
     * ``.h5::/datapath`` (uses ``PyTables``)
     * ``.bcolz``
     * ``.xls(x)``
 * SQLAlchemy strings like the following
     * ``sqlite:////absolute/path/to/myfile.db::tablename``
-    * ``postgresql://username:password@hostname:port::tablename``
-    * ``postgresql://username:password@hostname:port::database.tablename``
-    * ``impala://hostname::tablename`` (uses ``impyla``)
+    * ``sqlite:////absolute/path/to/myfile.db``  (specify a particular table)
+    * ``postgresql://username:password@hostname:port``
+    * ``impala://hostname`` (uses ``impyla``)
     * *anything supported by SQLAlchemy*
 * MongoDB Connection strings of the following form
     * ``mongodb://username:password@hostname:port/database_name::collection_name``
 * Blaze server strings of the following form
-    * ``blaze://hostname:port::dataset_name``  (port defaults to 6363)
+    * ``blaze://hostname:port``  (port defaults to 6363)
 
 In all cases when a location or table name is required in addition to the traditional URI (e.g. a data path within an HDF5 file or a Table/Collection name within a database) then that information follows on the end of the URI after a separator of two colons ``::``.
 
