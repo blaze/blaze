@@ -20,10 +20,12 @@ metadata, or Table objects to ``Data``.  This can be useful if you need to
 specify more information that does not fit comfortably into a URI (like a
 desired schema.)
 
-   >>> import sqlalchemy
-   >>> engine = sqlalchemy.create_engine('postgreqsql://hostname')
+.. code-block:: python
 
-   >>> db = Data(engine)
+   >>> import sqlalchemy  # doctest: +SKIP
+   >>> engine = sqlalchemy.create_engine('postgreqsql://hostname')  # doctest: +SKIP
+
+   >>> db = Data(engine)  # doctest: +SKIP
 
 How does it work?
 -----------------
@@ -66,9 +68,9 @@ to that database with the following code
 
    >>> from blaze import *
 
-   >>> db = Data('sqlite:///Downloads/lahman2013.sqlite')
+   >>> db = Data('sqlite:///Downloads/lahman2013.sqlite') # doctest: +SKIP
 
-   >>> db.<tab>  # see available tables
+   >>> db.<tab>  # see available tables  # doctest: +SKIP
    db.AllstarFull          db.FieldingOF           db.Schools              db.fields
    db.Appearances          db.FieldingPost         db.SchoolsPlayers       db.isidentical
    db.AwardsManagers       db.HallOfFame           db.SeriesPost           db.like
@@ -79,7 +81,7 @@ to that database with the following code
    db.BattingPost          db.PitchingPost         db.data
    db.Fielding             db.Salaries             db.dshape
 
-   >>> db.Teams  # view one particular database
+   >>> db.Teams  # view one particular database  # doctest: +SKIP
        yearID lgID teamID franchID divID  Rank   G  Ghome   W   L     ...       \
    0     1871   NA    BS1      BNA  None     3  31    NaN  20  10     ...
    1     1871   NA    CH1      CNA  None     2  28    NaN  19   9     ...
