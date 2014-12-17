@@ -15,7 +15,7 @@ from blaze import dshape
 from blaze.compute.core import compute, compute_up, pre_compute
 from blaze.expr import (symbol, by, merge, join, count, Distinct,
                         Apply, sum, min, max, any, summary,
-                        count, std, head)
+                        count, std, head, transform)
 import numpy as np
 
 from blaze import cos, sin
@@ -439,6 +439,13 @@ def test_merge():
     expr = merge(t['name'], col)
 
     assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
+
+
+def test_transform():
+    expr = transform(t, x=t.amount / t.id)
+    assert list(compute(expr, data)) == [('Alice', 100, 1, 100),
+                                         ('Bob',   200, 2, 100),
+                                         ('Alice',  50, 3, 50 / 3)]
 
 
 def test_map_columnwise():

@@ -9,6 +9,7 @@ from collections import Iterator, Iterable
 from into import into
 from into.chunks import chunks, Chunks
 from into.backends.csv import CSV, csv_to_DataFrame
+from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
 from ..expr import Expr, Head, ElemWise, Distinct, Symbol, Projection, Field
