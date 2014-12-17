@@ -28,6 +28,7 @@ from .compute.core import *
 from .compute.core import compute
 from .sql import *
 from .server import *
+from .versions import *
 
 try:
     from .spark import *

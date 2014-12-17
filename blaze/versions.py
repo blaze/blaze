@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 from functools import reduce
-import itertools
+from itertools import chain
 import sys
 
 import pandas as pd
+import ipdb
 
 from .compute import compute_up
 from .compute.core import compute_down
@@ -14,6 +15,9 @@ from .compute.mongo import MongoQuery
 builtins = set(["__builtin__", "datetime", "_abcoll", "numbers", "collections",
                 "builtins"])
 blaze_wrappers = {MongoQuery: "pymongo", Dummy: "pyspark"}
+
+def _get_functions():
+    return chain(compute_up.funcs, compute_down.funcs)
 
 def _get_package(datatype):
     if datatype in blaze_wrappers:
@@ -26,9 +30,8 @@ def _get_package(datatype):
             return "__builtin__"
 
 def get_backends():
-    funcs = itertools.chain(compute_up.funcs, compute_down.funcs)
     packages = set(_get_package(signature[1]) 
-                   for signature in funcs 
+                   for signature in _get_functions()
                    if len(signature) > 1)
 
     versions = {}
@@ -48,62 +51,41 @@ def get_backends():
 
     return versions
 
-def _get_support(t):
+def _get_backend(t):
     package = _get_package(t)
 
     if package == "__builtin__":
         return "Pure Python"
     elif package == "blaze":
-        return t
+        return "blaze." + t.__name__
     else:
         return package
 
-def get_compute_support():
-    funcs = itertools.chain(compute_up.ordering, compute_down.ordering)
+def get_support_dict():
     support = {}
-
-    for func in funcs:
+    for func in _get_functions():
         operation, types = func[0], func[1:]
-        supported = set(_get_support(t) for t in types)
-        if types:
-            if operation not in support:
-                support[operation] = supported
-            else:
-                support[operation] |= supported
+        for backend in set(_get_backend(t) for t in types):
+            if backend not in support:
+                support[backend] = set()
+            support[backend].add(operation.__name__)
+
     return support
 
-def get_supported_computations():
-    d = {}
-
-    for operation, backends in get_compute_support().iteritems():
-        for backend in backends:
-            if backend not in d:
-                d[backend] = set()
-            d[backend].add(operation)
-
-    return d
-
-def _shorten(s):
-    s = str(s).split(".")[-1]
-    if s.endswith("'>"):
-        s = s[:-2]
-    return s
-
 def get_multiindexed_support():
-    d = get_supported_computations()
-    values = sorted(str(v) for v in reduce(set.union, d.itervalues()))
-    ts = [(v.split(".")[-2], _shorten(v)) for v in values if "blaze" in v]
+    values = set(func[0] for func in _get_functions())
+
+    ts = sorted((v.__module__, v.__name__)
+                for v in values 
+                if "blaze" in v.__module__) # ignore types like list or tuple
     mi = pd.MultiIndex.from_tuples(ts)
-
     df = pd.DataFrame(index=mi)
-
     operations = set(df.index.levels[-1])
-    for column, values in d.iteritems():
-        values = set(_shorten(v) for v in values)
-        series = pd.Series(dict((v, v in values) for v in operations))
-        series.index = df.index
 
-        df[_shorten(column)] = series
+    for backend, supported in get_support_dict().iteritems():
+        supported = pd.Series(dict((op, op in supported) for op in operations))
+        supported.index = mi    # this seems a little ugly
+        df[backend] = supported
 
     return df
 
