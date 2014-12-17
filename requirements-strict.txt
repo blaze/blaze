@@ -1,0 +1,9 @@
+numpy >= 1.7
+pandas
+datashape
+into
+toolz
+cytoolz
+multipledispatch >= 0.4.7
+sqlalchemy
+psutil
