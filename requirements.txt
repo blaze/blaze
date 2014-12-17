@@ -13,3 +13,4 @@ tables
 pymongo
 psutil
 pytest
+bcolz

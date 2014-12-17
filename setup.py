@@ -146,7 +146,7 @@ setup(
     author_email='blaze-dev@continuum.io',
     description='Blaze',
     long_description=longdesc,
-    install_requires=open('requirements.txt').read().strip().split('\n'),
+    install_requires=open('requirements-strict.txt').read().strip().split('\n'),
     license='BSD',
     platforms = ['any'],
     classifiers=[
