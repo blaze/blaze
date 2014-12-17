@@ -61,7 +61,7 @@ Dependencies
 
 * numpy_ >= 1.7
 * datashape_ >= 0.4.0
-* into_
+* into_ >= 0.1.3
 * dynd-python_ >= 0.6.4
 * toolz_ >= 0.7.0
 * cytoolz_

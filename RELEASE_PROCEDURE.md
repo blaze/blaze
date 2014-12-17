@@ -8,12 +8,12 @@ a new version of Blaze.
 
  * /setup.py
  * /blaze/__init__.py
- * /conda.yaml
+ * /conda.recipe/meta.yaml
 
 2. Confirm the dependencies and their version numbers in
    /docs/source/install.rst
    /requirements.txt
-   In particular, `datashape`, `dynd-python`, etc
+   In particular, `datashape`, `into`, etc
    will typically be released concurrently with `blaze`,
    so they need to be updated to match.
 

@@ -141,7 +141,7 @@ with open('README.md') as f:
 
 setup(
     name='blaze',
-    version='0.6.8',
+    version='0.7.0',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',

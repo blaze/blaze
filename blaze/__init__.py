@@ -83,7 +83,7 @@ restart_ordering() # Restart multipledispatch ordering and do ordering
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.6.8'
+__version__ = '0.7.0'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog
