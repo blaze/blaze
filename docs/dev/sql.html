@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Interacting with SQL Databases &mdash; Blaze 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Out of Core Processing" href="ooc.html" />
+    <link rel="prev" title="Tips for working with CSV files" href="csv.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li>
+            <a href="quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="api.html"><i class="icon-download"></i> API</a>
+        </li>
+
+        <li>
+            <a href="people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Interacting with SQL Databases</a><ul>
+<li><a class="reference internal" href="#how-to">How to</a></li>
+<li><a class="reference internal" href="#how-does-it-work">How does it work?</a></li>
+<li><a class="reference internal" href="#what-databases-does-blaze-support">What databases does Blaze support?</a></li>
+<li><a class="reference internal" href="#what-operations-work-on-sql-databases">What operations work on SQL databases?</a></li>
+<li><a class="reference internal" href="#how-can-i-try-this-out">How can I try this out?</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="interacting-with-sql-databases">
+<h1>Interacting with SQL Databases<a class="headerlink" href="#interacting-with-sql-databases" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-to">
+<h2>How to<a class="headerlink" href="#how-to" title="Permalink to this headline">¶</a></h2>
+<p>Typically one provides a SQL connection string to the <tt class="docutils literal"><span class="pre">Data</span></tt> constructor</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;postgresql:///user:pass@hostname&#39;</span><span class="p">)</span>  
+
+<span class="go">or</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;postgresql://user:pass@hostname::my-table-name&#39;</span><span class="p">)</span>  
+</pre></div>
+</div>
+<p>Alternatively users familiar with SQLAlchemy can pass any SQLAlchemy engine,
+metadata, or Table objects to <tt class="docutils literal"><span class="pre">Data</span></tt>.  This can be useful if you need to
+specify more information that does not fit comfortably into a URI (like a
+desired schema.)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sqlalchemy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">engine</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="s">&#39;postgreqsql://hostname&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-does-it-work">
+<h2>How does it work?<a class="headerlink" href="#how-does-it-work" title="Permalink to this headline">¶</a></h2>
+<p>As you manipulate a Blaze expression Blaze in turn manipulates a SQLAlchemy
+expression.  When you ask for a result SQLAlchemy generates the SQL appropriate
+for your database and sends the query to the database to be run.</p>
+</div>
+<div class="section" id="what-databases-does-blaze-support">
+<h2>What databases does Blaze support?<a class="headerlink" href="#what-databases-does-blaze-support" title="Permalink to this headline">¶</a></h2>
+<p>Blaze derives all SQL support from SQLAlchemy so really one should ask, <em>What
+databases does SQLAlchemy support?</em>.  The answer is <em>quite a few</em> in the main
+SQLAlchemy project and <em>most</em> when you include third party libraries.</p>
+<p>However, URI support within Blaze is limited to a smaller set.  For exotic
+databases you may have to create a <tt class="docutils literal"><span class="pre">sqlalchemy.engine</span></tt> explicitly as shown
+above.</p>
+</div>
+<div class="section" id="what-operations-work-on-sql-databases">
+<h2>What operations work on SQL databases?<a class="headerlink" href="#what-operations-work-on-sql-databases" title="Permalink to this headline">¶</a></h2>
+<p>Most tabular operations, but not all.  SQLAlchemy translation is a high
+priority. Failures include array operations like slicing and dot products don&#8217;t
+make sense in SQL.  Additionally some operations like datetime access are not
+yet well supported through SQLAlchemy.  Finally some databases, like SQLite,
+have limited support for common mathematical functions like <tt class="docutils literal"><span class="pre">sin</span></tt>.</p>
+</div>
+<div class="section" id="how-can-i-try-this-out">
+<h2>How can I try this out?<a class="headerlink" href="#how-can-i-try-this-out" title="Permalink to this headline">¶</a></h2>
+<p>The easiest way to play with SQL is to download a SQLite database.  We
+recommend the <a href="#id1"><span class="problematic" id="id2">`Lahman baseball statistics database`_</span></a>.  After downloading one could connect blaze
+to that database with the following code</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;sqlite:///Downloads/lahman2013.sqlite&#39;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>  <span class="c"># see available tables</span>
+<span class="go">db.AllstarFull          db.FieldingOF           db.Schools              db.fields</span>
+<span class="go">db.Appearances          db.FieldingPost         db.SchoolsPlayers       db.isidentical</span>
+<span class="go">db.AwardsManagers       db.HallOfFame           db.SeriesPost           db.like</span>
+<span class="go">db.AwardsPlayers        db.Managers             db.Teams                db.map</span>
+<span class="go">db.AwardsShareManagers  db.ManagersHalf         db.TeamsFranchises      db.relabel</span>
+<span class="go">db.AwardsSharePlayers   db.Master               db.TeamsHalf            db.schema</span>
+<span class="go">db.Batting              db.Pitching             db.apply                db.temp</span>
+<span class="go">db.BattingPost          db.PitchingPost         db.data</span>
+<span class="go">db.Fielding             db.Salaries             db.dshape</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">Teams</span>  <span class="c"># view one particular database</span>
+<span class="go">    yearID lgID teamID franchID divID  Rank   G  Ghome   W   L     ...       \</span>
+<span class="go">0     1871   NA    BS1      BNA  None     3  31    NaN  20  10     ...</span>
+<span class="go">1     1871   NA    CH1      CNA  None     2  28    NaN  19   9     ...</span>
+<span class="go">2     1871   NA    CL1      CFC  None     8  29    NaN  10  19     ...</span>
+<span class="go">3     1871   NA    FW1      KEK  None     7  19    NaN   7  12     ...</span>
+
+<span class="go">    DP    FP                     name                               park  \</span>
+<span class="go">0  NaN  0.83     Boston Red Stockings                South End Grounds I</span>
+<span class="go">1  NaN  0.82  Chicago White Stockings            Union Base-Ball Grounds</span>
+<span class="go">2  NaN  0.81   Cleveland Forest Citys       National Association Grounds</span>
+<span class="go">3  NaN  0.80     Fort Wayne Kekiongas                     Hamilton Field</span>
+
+<span class="go">    attendance  BPF  PPF  teamIDBR  teamIDlahman45  teamIDretro</span>
+<span class="go">0          NaN  103   98       BOS             BS1          BS1</span>
+<span class="go">1          NaN  104  102       CHI             CH1          CH1</span>
+<span class="go">2          NaN   96  100       CLE             CL1          CL1</span>
+<span class="go">3          NaN  101  107       KEK             FW1          FW1</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>One can then query and compute results as with a normal blaze workflow.</p>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-27761864-10', 'auto');
+    ga('send', 'pageview');
+    </script>
+  </body>
+</html>

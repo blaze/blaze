@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>URI strings &mdash; Blaze 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Tips for working with CSV files" href="csv.html" />
+    <link rel="prev" title="Basic Queries" href="queries.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li>
+            <a href="quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="api.html"><i class="icon-download"></i> API</a>
+        </li>
+
+        <li>
+            <a href="people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">URI strings</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#what-sorts-of-uri-s-does-blaze-support">What sorts of URI&#8217;s does Blaze support?</a></li>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li><a class="reference internal" href="#where-does-this-work-in-blaze">Where does this work in Blaze?</a></li>
+<li><a class="reference internal" href="#can-i-extend-this-to-my-own-types">Can I extend this to my own types?</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="uri-strings">
+<h1>URI strings<a class="headerlink" href="#uri-strings" title="Permalink to this headline">¶</a></h1>
+<p>Blaze uses strings to specify data resources.  This is purely for ease of use.</p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Interact with a set of CSV files or a SQL database</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/accounts_*.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span>
+<span class="go">   id      name  amount</span>
+<span class="go">0   1     Alice     100</span>
+<span class="go">1   2       Bob     200</span>
+<span class="go">2   3   Charlie     300</span>
+<span class="go">3   4       Dan     400</span>
+<span class="go">4   5     Edith     500</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;sqlite:///blaze/examples/data/iris.db::iris&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span>
+<span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
+<span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
+<span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
+<span class="go">2            4.7          3.2           1.3          0.2  Iris-setosa</span>
+<span class="go">3            4.6          3.1           1.5          0.2  Iris-setosa</span>
+<span class="go">4            5.0          3.6           1.4          0.2  Iris-setosa</span>
+<span class="go">5            5.4          3.9           1.7          0.4  Iris-setosa</span>
+<span class="go">6            4.6          3.4           1.4          0.3  Iris-setosa</span>
+<span class="go">7            5.0          3.4           1.5          0.2  Iris-setosa</span>
+<span class="go">8            4.4          2.9           1.4          0.2  Iris-setosa</span>
+<span class="go">9            4.9          3.1           1.5          0.1  Iris-setosa</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Migrate CSV files into a SQL database</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="s">&#39;sqlite:///myfile.db::iris&#39;</span><span class="p">,</span> <span class="s">&#39;blaze/examples/data/iris.csv&#39;</span><span class="p">)</span> 
+<span class="go">Table(&#39;iris&#39;, MetaData(bind=Engine(sqlite:///myfile.db)), ...)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="what-sorts-of-uri-s-does-blaze-support">
+<h2>What sorts of URI&#8217;s does Blaze support?<a class="headerlink" href="#what-sorts-of-uri-s-does-blaze-support" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>Paths to files on disk, including the following extensions</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">.csv</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">.json</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">.csv.gz/json.gz</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">.hdf5</span></tt> (uses <tt class="docutils literal"><span class="pre">h5py</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">.hdf5::/datapath</span></tt> (uses <tt class="docutils literal"><span class="pre">h5py</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">.h5::/datapath</span></tt> (uses <tt class="docutils literal"><span class="pre">PyTables</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">.bcolz</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">.xls(x)</span></tt></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>SQLAlchemy strings like the following</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">sqlite:////absolute/path/to/myfile.db::tablename</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">sqlite:////absolute/path/to/myfile.db</span></tt>  (specify a particular table)</li>
+<li><tt class="docutils literal"><span class="pre">postgresql://username:password&#64;hostname:port</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">impala://hostname</span></tt> (uses <tt class="docutils literal"><span class="pre">impyla</span></tt>)</li>
+<li><em>anything supported by SQLAlchemy</em></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>MongoDB Connection strings of the following form</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">mongodb://username:password&#64;hostname:port/database_name::collection_name</span></tt></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Blaze server strings of the following form</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">blaze://hostname:port</span></tt>  (port defaults to 6363)</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>In all cases when a location or table name is required in addition to the traditional URI (e.g. a data path within an HDF5 file or a Table/Collection name within a database) then that information follows on the end of the URI after a separator of two colons <tt class="docutils literal"><span class="pre">::</span></tt>.</p>
+</div>
+<div class="section" id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<p>URIs are managed through the <tt class="docutils literal"><span class="pre">resource</span></tt> function which is dispatched based on regular expressions.  For example a simple resource function to handle <tt class="docutils literal"><span class="pre">.json</span></tt> files might look like the following (although Blaze&#8217;s actual solution is a bit more comprehensive):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">resource</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="nd">@resource.register</span><span class="p">(</span><span class="s">&#39;.+\.json&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">resource_json</span><span class="p">(</span><span class="n">uri</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">uri</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="where-does-this-work-in-blaze">
+<h2>Where does this work in Blaze?<a class="headerlink" href="#where-does-this-work-in-blaze" title="Permalink to this headline">¶</a></h2>
+<p>URIs are supported through the resource function internally.  Other user-facing functions use resource if they are given a string.  So far this includes the following</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Data</span></tt> as shown at the top of this page</li>
+<li><tt class="docutils literal"><span class="pre">into</span></tt> as shown at the top of this page</li>
+</ul>
+</div>
+<div class="section" id="can-i-extend-this-to-my-own-types">
+<h2>Can I extend this to my own types?<a class="headerlink" href="#can-i-extend-this-to-my-own-types" title="Permalink to this headline">¶</a></h2>
+<p>Absolutely.  Import and extend <tt class="docutils literal"><span class="pre">resource</span></tt> as shown in the &#8220;How it works&#8221; section.  The rest of Blaze will pick up your change automatically.</p>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-27761864-10', 'auto');
+    ga('send', 'pageview');
+    </script>
+  </body>
+</html>
