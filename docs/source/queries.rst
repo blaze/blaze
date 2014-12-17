@@ -10,7 +10,7 @@ We use the well known iris dataset
 
    >>> from blaze import *
    >>> iris = Data('blaze/examples/data/iris.csv')
-   >>> iris
+   >>> iris  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -26,7 +26,7 @@ Select individual columns using attributes
 
 .. code-block:: python
 
-   >>> iris.species
+   >>> iris.species  # doctest: +SKIP
            species
    0   Iris-setosa
    1   Iris-setosa
@@ -38,7 +38,7 @@ Or item access
 
 .. code-block:: python
 
-   >>> iris['species']
+   >>> iris['species']  # doctest: +SKIP
            species
    0   Iris-setosa
    1   Iris-setosa
@@ -50,7 +50,7 @@ Select many columns using a list of names
 
 .. code-block:: python
 
-   >>> iris[['sepal_length', 'species']]
+   >>> iris[['sepal_length', 'species']]  # doctest: +SKIP
        sepal_length      species
    0            5.1  Iris-setosa
    1            4.9  Iris-setosa
@@ -66,7 +66,7 @@ Use mathematical operators and functions as normal
 
 .. code-block:: python
 
-   >>> log(iris.sepal_length * 10)
+   >>> log(iris.sepal_length * 10)  # doctest: +SKIP
        sepal_length
    0       3.931826
    1       3.891820
@@ -88,10 +88,10 @@ either as methods or as base functions.
 
 .. code-block:: python
 
-   >>> iris.sepal_length.mean()
+   >>> iris.sepal_length.mean()  # doctest: +SKIP
    5.843333333333334
 
-   >>> mean(iris.sepal_length)
+   >>> mean(iris.sepal_length)  # doctest: +SKIP
    5.843333333333334
 
 
@@ -105,7 +105,7 @@ general format
 
    >>> by(table.grouping_columns, name_1=table.column.reduction(),
    ...                            name_2=table.column.reduction(),
-   ...                            ...)
+   ...                            ...)  # doctest: +SKIP
 
 Here is a concrete example.  Find the shortest, longest, and average petal
 length by species.
@@ -132,7 +132,7 @@ Add new columns using the ``transform`` function
 .. code-block:: python
 
    >>> transform(iris, sepal_ratio = iris.sepal_length / iris.sepal_width,
-                       petal_ratio = iris.petal_length / iris.petal_width)
+   ...                 petal_ratio = iris.petal_length / iris.petal_width)  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width      species  \
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -154,7 +154,7 @@ Match text with glob strings, specifying columns with keyword arguments.
 
 .. code-block:: python
 
-   >>> iris.like(species='*versicolor')
+   >>> iris.like(species='*versicolor')  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width          species
    50           7.0          3.2           4.7          1.4  Iris-versicolor
    51           6.4          3.2           4.5          1.5  Iris-versicolor
@@ -166,7 +166,7 @@ Relabel Column names
 
 .. code-block:: python
 
-   >>> iris.relabel(petal_length='PETAL-LENGTH', petal_width='PETAL-WIDTH')
+   >>> iris.relabel(petal_length='PETAL-LENGTH', petal_width='PETAL-WIDTH')  # doctest: +SKIP
        sepal_length  sepal_width  PETAL-LENGTH  PETAL-WIDTH      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
