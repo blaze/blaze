@@ -4,7 +4,6 @@ from itertools import chain
 import sys
 
 import pandas as pd
-import ipdb
 
 from .compute import compute_up
 from .compute.core import compute_down
@@ -82,7 +81,7 @@ def get_multiindexed_support():
     df = pd.DataFrame(index=mi)
     operations = set(df.index.levels[-1])
 
-    for backend, supported in get_support_dict().iteritems():
+    for backend, supported in get_support_dict().items():
         supported = pd.Series(dict((op, op in supported) for op in operations))
         supported.index = mi    # this seems a little ugly
         df[backend] = supported
