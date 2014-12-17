@@ -51,6 +51,7 @@ User facing
    queries
    uri
    csv
+   sql
    ooc
    server
    datashape
