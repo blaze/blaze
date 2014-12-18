@@ -227,7 +227,6 @@ def from_tree(expr, namespace=None):
     >>> from_tree(tree, namespace={'t': t})
     t.x
 
-
     See Also
     --------
 
@@ -264,6 +263,7 @@ def compserver(dataset):
         return ("Bad JSON.  Got %s " % request.data, 404)
 
     ns = payload.get('namespace', dict())
+    ns[':leaf'] = symbol('leaf', discover(dataset))
 
     expr = from_tree(payload['expr'], namespace=ns)
     assert len(expr._leaves()) == 1

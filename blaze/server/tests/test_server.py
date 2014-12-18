@@ -220,3 +220,15 @@ def test_multi_expression_compute():
     expected = compute(expr, {s: data})
 
     assert list(map(tuple, result))== into(list, expected)
+
+
+def test_leaf_symbol():
+    query = {'expr': {'op': 'Field', 'args': [':leaf', 'cities']}}
+    resp = test.post('/compute.json',
+                     data=json.dumps(query),
+                     content_type='application/json')
+
+    a = json.loads(resp.data.decode('utf-8'))['data']
+    b = into(list, cities)
+
+    assert list(map(tuple, a)) == b
