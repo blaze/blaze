@@ -13,7 +13,7 @@ from toolz import first
 from datashape import dshape, DataShape, Record
 from pandas import DataFrame
 
-from ..expr import Expr, Symbol
+from ..expr import Expr, symbol
 from ..dispatch import dispatch
 from .index import emit_index
 from .server import DEFAULT_PORT
@@ -68,6 +68,7 @@ class Client(object):
     blaze.server.server.Server
     """
     __slots__ = 'url'
+
     def __init__(self, url, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
@@ -76,39 +77,12 @@ class Client(object):
 
     @property
     def dshape(self):
-        response = requests.get('%s/datasets.json' % self.url)
+        response = requests.get('%s/datashape' % self.url)
 
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
-        data = json.loads(content(response).decode('utf-8'))
-
-        return DataShape(Record([[name, dshape(ds)] for name, ds in
-            sorted(data.items(), key=first)]))
-
-
-class ClientDataset(object):
-    """ A dataset residing on a foreign Blaze Server
-
-    Not for public use.  Suggest the use of ``blaze.server.client.Client``
-    class instead.
-
-    This is only used to support backwards compatibility for the syntax
-
-        Data('blaze://hostname::dataname')
-
-    The following behavior is suggested instead
-
-        Data('blaze://hostname').dataname
-    """
-    __slots__ = 'client', 'name'
-    def __init__(self, client, name):
-        self.client = client
-        self.name = name
-
-    @property
-    def dshape(self):
-        return self.client.dshape.measure.dict[self.name]
+        return dshape(content(response).decode('utf-8'))
 
 
 def ExprClient(*args, **kwargs):
@@ -117,34 +91,17 @@ def ExprClient(*args, **kwargs):
     return Client(*args, **kwargs)
 
 
-@dispatch((Client, ClientDataset))
-def discover(ec):
-    return ec.dshape
+@dispatch(Client)
+def discover(c):
+    return c.dshape
 
-
-
-
-@dispatch(Expr, ClientDataset, ClientDataset)
-def compute_down(expr, data1, data2, **kwargs):
-    assert data1.client.url == data2.client.url
-    s = Symbol('client', discover(data2.client))
-    leaf1, leaf2 = expr._leaves()
-    d = {leaf1: s[data1.name], leaf2: s[data2.name]}
-    return compute_down(expr._subs(d), data1.client, **kwargs)
-
-
-@dispatch(Expr, ClientDataset)
-def compute_down(expr, data, **kwargs):
-    s = Symbol('client', discover(data.client))
-    leaf = expr._leaves()[0]
-    return compute_down(expr._subs({leaf: s[data.name]}), data.client, **kwargs)
 
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     from ..interactive import Data
     leaf = expr._leaves()[0]
-    tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
+    tree = to_tree(expr)
 
     r = requests.get('%s/compute.json' % ec.url,
                      data = json.dumps({'expr': tree}),
@@ -156,21 +113,6 @@ def compute_down(expr, ec, **kwargs):
     data = json.loads(content(r).decode('utf-8'))
 
     return data['data']
-
-
-@convert.register(list, ClientDataset)
-def convert_client_dataset(c, **kwargs):
-    r = requests.get('%s/compute.json' % c.client.url,
-                     data = json.dumps({'expr': c.name}),
-                     headers={'Content-Type': 'application/json'})
-    data = json.loads(content(r).decode('utf-8'))
-    return data['data']
-
-@resource.register('blaze://.+::.+', priority=16)
-def resource_blaze_dataset(uri, **kwargs):
-    uri, name = uri.split('::')
-    client = resource(uri)
-    return ClientDataset(client, name)
 
 
 @resource.register('blaze://.+')
