@@ -10,8 +10,8 @@ from into import into
 
 
 class Dataset(object):
-    def __init__(self, ns, cache=None):
-        self.ns = ns
+    def __init__(self, data, cache=None):
+        self.data = data
         if cache is None:
             cache = dict()
         self.cache = cache
@@ -19,12 +19,12 @@ class Dataset(object):
 
 @dispatch(Dataset)
 def discover(d):
-    return discover(d.ns)
+    return discover(d.data)
 
 
 @dispatch(Field, Dataset)
 def compute_up(expr, data, **kwargs):
-    return data.ns[expr._name]
+    return data.data[expr._name]
 
 
 @dispatch(Expr, Dataset)
@@ -32,16 +32,10 @@ def compute_down(expr, data, **kwargs):
     if expr in data.cache:
         return data.cache[expr]
 
-    # Replace expression based on dataset to expression based on leaves in
-    # dataset's namespace
-    # Also, create appropriate namespace
     leaf = expr._leaves()[0]
-    leaves = dict((k, symbol(k, discover(v))) for k, v in data.ns.items())
-    expr2 = expr._subs(dict((leaf[k], leaves[k]) for k in leaves))
-    ns = dict((leaves[k], v) for k, v in data.ns.items())
 
     # Do work
-    result = compute(expr2, ns, **kwargs)
+    result = compute(expr, {leaf: data.data}, **kwargs)
 
     # If the result is ephemeral then make it concrete
     if isinstance(result, Iterator):
