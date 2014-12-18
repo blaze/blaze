@@ -44,7 +44,7 @@ Then we host this publicly on port ``6363``
 A Server is the following
 
 1.  A mapping of names to datasets
-2.  A `Flask <http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application>`_ app.
+2.  A Flask_ app.
 
 With this code our machine is now hosting our CSV file through a
 web-application on port 6363.  We can now access our CSV file, through Blaze,
@@ -191,8 +191,44 @@ We interact on the client machine through the data object but computations on
 this object cause communications through the web API, resulting in seemlessly
 interactive remote computation.
 
+
+Advanced Use
+------------
+
+Blaze servers may host any data that Blaze understands from a single integer
+
+.. code-block:: python
+
+   >>> server = Server(1)
+
+To a dictionary of several heterogeneous datasets
+
+.. code-block:: python
+
+   >>> server = Server({'my-dataframe': df,
+                        'iris': resource('iris.csv'),
+                        'baseball': resource('sqlite:///baseball-statistics.db')})
+
+A variety of hosting options are available through the Flask_ project
+
+::
+
+   >>> help(server.app.run)  # doctest: +SKIP
+   Help on method run in module flask.app:
+
+   run(self, host=None, port=None, debug=None, **options) method of  flask.app.Flask instance
+   Runs the application on a local development server.  If the
+   :attr:`debug` flag is set the server will automatically reload
+   for code changes and show a debugger in case an exception happened.
+
+   ...
+
+
 Conclusion
 ==========
 
 Because this process builds off Blaze expressions it works
 equally well for data stored in any format on which Blaze is trained, including in-memory DataFrames, SQL/Mongo databases, or even Spark clusters.
+
+
+.. _Flask : http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application
