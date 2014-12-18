@@ -5,6 +5,7 @@ import pandas as pd
 from .dispatch import dispatch
 from .expr import Expr, Field, symbol, ndim
 from .compute import compute
+from .compatibility import unicode
 from collections import Iterator
 from into import into
 
@@ -56,7 +57,7 @@ def concrete_type(ds):
     >>> concrete_type('var * {name: string, amount: int}').__name__
     'DataFrame'
     """
-    if isinstance(ds, str):
+    if isinstance(ds, (str, unicode)):
         ds = dshape(ds)
     if not iscollection(ds):
         return type(ds)

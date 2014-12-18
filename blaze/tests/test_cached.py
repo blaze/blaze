@@ -1,5 +1,5 @@
 from blaze.cached import CachedDataset
-from blaze import symbol, discover, compute
+from blaze import symbol, discover, compute, into
 import pandas as pd
 from collections import Iterator
 
@@ -37,3 +37,4 @@ def test_streaming():
     result = compute(expr, d)
 
     assert not isinstance(d.cache[expr], Iterator)
+    assert into(list, d.cache[expr]) == [2, 2]

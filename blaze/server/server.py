@@ -263,10 +263,7 @@ def compserver(dataset):
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 
-    if 'namespace' in payload:
-        ns = payload['namespace']
-    else:
-        ns = {}
+    ns = payload.get('namespace', dict())
 
     expr = from_tree(payload['expr'], namespace=ns)
     assert len(expr._leaves()) == 1
