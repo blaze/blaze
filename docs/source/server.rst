@@ -136,7 +136,7 @@ Now we use Blaze to generate the query programmatically
    >>> d = to_tree(expr, names={t: ':leaf'})
 
    >>> query = {'expr': d}
-   >>> query  # doctest: +NORMALIZE_WHITESPACE
+   >>> query  # doctest: +SKIP
    {'expr': {'args': [{'args': [':leaf', 'petal_length'],
                          'op': 'Field'},
                       [0],
@@ -147,7 +147,7 @@ Alternatively we build a query to grab a single column
 
 .. code-block:: python
 
-   >>> to_tree(t.species, names={t: ':leaf'})
+   >>> to_tree(t.species, names={t: ':leaf'})  # doctest: +SKIP
    {'args': [':leaf', 'species'], 'op': 'Field'}
 
 
