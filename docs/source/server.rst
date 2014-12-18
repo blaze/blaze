@@ -206,8 +206,8 @@ To a dictionary of several heterogeneous datasets
 .. code-block:: python
 
    >>> server = Server({'my-dataframe': df,
-                        'iris': resource('iris.csv'),
-                        'baseball': resource('sqlite:///baseball-statistics.db')})
+   ...                  'iris': resource('iris.csv'),
+   ...                  'baseball': resource('sqlite:///baseball-statistics.db')})  # doctest: +SKIP
 
 A variety of hosting options are available through the Flask_ project
 
@@ -234,12 +234,14 @@ web-based caching system like memcached or use a data centric solution.
 The Blaze ``CachedDataset`` might be appropriate in some situations.  A cached
 dataset holds a normal dataset and a ``dict`` like object.
 
-   >>> dset = {'my-dataframe': df,
-               'iris': resource('iris.csv'),
-               'baseball': resource('sqlite:///baseball-statistics.db')}
+.. code-block:: python
 
-   >>> from blaze.cached import CachedDataset
-   >>> cached = CachedDataset(dset, cache=dict())
+   >>> dset = {'my-dataframe': df,
+   ...         'iris': resource('iris.csv'),
+   ...         'baseball': resource('sqlite:///baseball-statistics.db')} # doctest: +SKIP
+
+   >>> from blaze.cached import CachedDataset  # doctest: +SKIP
+   >>> cached = CachedDataset(dset, cache=dict())  # doctest: +SKIP
 
 Queries and results executed against a cached dataset are stored in the cache
 (here a normal Python ``dict``) for fast future access.
@@ -247,24 +249,31 @@ Queries and results executed against a cached dataset are stored in the cache
 If accumulated results are likely to fill up memory then other, on-disk
 dict-like structures can be used like Shove_ or Chest_.
 
-   >>> from chest import Chest
-   >>> cached = CachedDataset(dset, cache=Chest())
+.. code-block:: python
+
+   >>> from chest import Chest  # doctest: +SKIP
+   >>> cached = CachedDataset(dset, cache=Chest())  # doctest: +SKIP
 
 These cached objects can be used anywhere normal objects can be used in Blaze,
 including an interactive (and now performance cached) ``Data`` object
 
-   >>> d = Data(cached)
+.. code-block:: python
+
+   >>> d = Data(cached)  # doctest: +SKIP
 
 or a Blaze server
 
-   >>> server = Server(cached)
+.. code-block:: python
+
+   >>> server = Server(cached)  # doctest: +SKIP
 
 
 Conclusion
 ==========
 
-Because this process builds off Blaze expressions it works
-equally well for data stored in any format on which Blaze is trained, including in-memory DataFrames, SQL/Mongo databases, or even Spark clusters.
+Because this process builds off Blaze expressions it works equally well for data
+stored in any format on which Blaze is trained, including in-memory DataFrames,
+SQL/Mongo databases, or even Spark clusters.
 
 
 .. _Flask : http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application
