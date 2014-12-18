@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from datetime import date, datetime
+from datashape import discover, dshape
 
 from blaze.compute.core import (compute_up, compute_down, optimize, compute,
         bottom_up_until_type_break, top_then_bottom_then_top_again_etc,
@@ -91,3 +92,13 @@ def test_swap_resources_into_scope():
     assert not expr._resources()
 
     assert t not in scope
+
+
+def test_compute_up_on_dict():
+    d = {'a': [1, 2, 3], 'b': [4, 5, 6]}
+
+    assert str(discover(d)) == str(dshape('{a: 3 * int64, b: 3 * int64}'))
+
+    s = symbol('s', discover(d))
+
+    assert compute(s.a, {s: d}) == [1, 2, 3]
