@@ -32,14 +32,13 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    ...
 
 
-Then we host this under the name ``'iris'`` and serve publicly on port
-``6363``
+Then we host this publicly on port ``6363``
 
 
 .. code-block:: python
 
    from blaze.server import Server
-   server = Server({'iris': csv})
+   server = Server(csv)
    server.run(host='0.0.0.0', port=6363)
 
 A Server is the following
@@ -66,7 +65,7 @@ We can use standard command line tools to interact with this web service::
 
    $ curl \
        -H "Content-Type: application/json" \
-       -d '{"expr": {"op": "Field", "args": ["iris", "species"]}}' \
+       -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
        localhost:6363/compute.json
 
    {
@@ -82,7 +81,7 @@ We can use standard command line tools to interact with this web service::
        -H "Content-Type: application/json" \
        -d  '{"expr": {"op": "sum", \
                       "args": [{"op": "Field", \
-                                "args": ["iris", "petal_Length"]}]}}' \
+                                "args": [":leaf", "petal_Length"]}]}}' \
        localhost:6363/compute.json
 
    {
@@ -90,9 +89,9 @@ We can use standard command line tools to interact with this web service::
      "datashape": "{petal_length_sum: float64}",
    }
 
-
-Constructing these queries can be difficult to do by hand, fortunately Blaze
-can help you to build them.
+These queries deconstruct the Blaze expression as nested JSON.  The ``":leaf"``
+string is a special case pointing to the base data.  Constructing these queries
+can be difficult to do by hand, fortunately Blaze can help you to build them.
 
 
 Using the Python Requests Library
@@ -110,7 +109,7 @@ First we repeat the same experiment as before, this time using the Python
 
    query = {'expr': {'op': 'sum',
                      'args': [{'op': 'Field',
-                               'args': ['iris', 'petal_length']}]}}
+                               'args': [':leaf', 'petal_length']}]}}
 
    r = requests.get('http://localhost:6363/compute.json',
                    data=json.dumps(query),
@@ -129,20 +128,28 @@ Now we use Blaze to generate the query programmatically
 
    >>> # Build a Symbol like our served iris data
    >>> dshape= "var * {sepal_length: float64, sepal_width: float64, petal_length: float64, petal_width: float64, species: string}"  # matching schema to csv file
-   >>> t = Symbol('t', dshape)
+   >>> t = symbol('t', dshape)
    >>> expr = t.petal_length.sum()
 
    >>> from blaze.server import to_tree
 
-   >>> d = to_tree(expr, names={t: 'iris'})
+   >>> d = to_tree(expr, names={t: ':leaf'})
 
    >>> query = {'expr': d}
+   >>> query  # doctest: +NORMALIZE_WHITESPACE
+   {'expr': {'args': [{'args': [':leaf', 'petal_length'],
+                         'op': 'Field'},
+                      [0],
+                      False],
+               'op': 'sum'}}
 
 Alternatively we build a query to grab a single column
 
 .. code-block:: python
 
-   >>> b = to_tree(t.species, names={t: 'iris'})
+   >>> to_tree(t.species, names={t: ':leaf'})
+   {'args': [':leaf', 'species'], 'op': 'Field'}
+
 
 Fully Interactive Python-to-Python Remote work
 ----------------------------------------------
@@ -156,11 +163,9 @@ do work for us
    # Client code, run this in a separate process from the Server
 
    from blaze import *
-   c = Client('http://localhost:6363', 'iris')
+   t = Data('blaze://localhost:6363')
 
-   t = Data(c)
    t
-
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -181,9 +186,10 @@ do work for us
    1      Iris-setosa  1.9  1.0
    2  Iris-versicolor  5.1  3.0
 
-We interact on the client machine through the ``Client`` data object but
-computations on this object cause communications through the web API, resulting
-in seemlessly interactive remote computation.
+
+We interact on the client machine through the data object but computations on
+this object cause communications through the web API, resulting in seemlessly
+interactive remote computation.
 
 Conclusion
 ==========
