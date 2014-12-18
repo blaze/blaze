@@ -1,4 +1,4 @@
-from blaze.dataset import CachedDataset
+from blaze.cached import CachedDataset
 from blaze import symbol, discover, compute
 import pandas as pd
 from collections import Iterator

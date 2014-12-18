@@ -109,7 +109,7 @@ def test_pre_compute_on_multiple_datasets_is_selective():
     from into import CSV
     import pandas as pd
     from blaze import Data
-    from blaze.dataset import CachedDataset
+    from blaze.cached import CachedDataset
 
     df = pd.DataFrame([[1, 'Alice',   100],
                          [2, 'Bob',    -200],
