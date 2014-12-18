@@ -9,6 +9,7 @@ from blaze.compute.core import (compute_up, compute_down, optimize, compute,
 from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
+from blaze.utils import example
 
 import numpy as np
 
@@ -102,3 +103,21 @@ def test_compute_up_on_dict():
     s = symbol('s', discover(d))
 
     assert compute(s.a, {s: d}) == [1, 2, 3]
+
+
+def test_pre_compute_on_multiple_datasets_is_selective():
+    from into import CSV
+    import pandas as pd
+    from blaze import Data
+    from blaze.dataset import Dataset
+
+    df = pd.DataFrame([[1, 'Alice',   100],
+                         [2, 'Bob',    -200],
+                         [3, 'Charlie', 300],
+                         [4, 'Denis',   400],
+                         [5, 'Edith',  -500]], columns=['id', 'name', 'amount'])
+    iris = CSV(example('iris.csv'))
+    dset = Dataset({'df': df, 'iris': iris})
+
+    d = Data(dset)
+    assert str(compute(d.df.amount)) == str(df.amount)
