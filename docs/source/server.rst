@@ -224,6 +224,42 @@ A variety of hosting options are available through the Flask_ project
    ...
 
 
+Caching
+-------
+
+Caching results on frequently run queries may significantly improve user
+experience in some cases.  One may wrap a Blaze server in a traditional
+web-based caching system like memcached or use a data centric solution.
+
+The Blaze ``CachedDataset`` might be appropriate in some situations.  A cached
+dataset holds a normal dataset and a ``dict`` like object.
+
+   >>> dset = {'my-dataframe': df,
+               'iris': resource('iris.csv'),
+               'baseball': resource('sqlite:///baseball-statistics.db')}
+
+   >>> from blaze.cached import CachedDataset
+   >>> cached = CachedDataset(dset, cache=dict())
+
+Queries and results executed against a cached dataset are stored in the cache
+(here a normal Python ``dict``) for fast future access.
+
+If accumulated results are likely to fill up memory then other, on-disk
+dict-like structures can be used like Shove_ or Chest_.
+
+   >>> from chest import Chest
+   >>> cached = CachedDataset(dset, cache=Chest())
+
+These cached objects can be used anywhere normal objects can be used in Blaze,
+including an interactive (and now performance cached) ``Data`` object
+
+   >>> d = Data(cached)
+
+or a Blaze server
+
+   >>> server = Server(cached)
+
+
 Conclusion
 ==========
 
@@ -232,3 +268,5 @@ equally well for data stored in any format on which Blaze is trained, including 
 
 
 .. _Flask : http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application
+.. _Shove : https://pypi.python.org/pypi/shove/0.5.6
+.. _Chest : https://github.com/mrocklin/chest
