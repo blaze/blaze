@@ -29,8 +29,8 @@ object or URI with which Blaze is familiar.
 .. code-block:: python
 
    >>> from blaze import *
-   >>> iris = Data('sqlite:///blaze/examples/data/iris.db::iris')  # an interactive expression
-   >>> iris
+   >>> db = Data('sqlite:///blaze/examples/data/iris.db')  # an interactive expression
+   >>> db.iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -44,51 +44,50 @@ object or URI with which Blaze is familiar.
    9            4.9          3.1           1.5          0.1  Iris-setosa
    ...
 
-   >>> iris.species.<tab>  # doctest: +SKIP
-   iris.species.columns       iris.species.max
-   iris.species.count         iris.species.min
-   iris.species.count_values  iris.species.ndim
-   iris.species.distinct      iris.species.nunique
-   iris.species.dshape        iris.species.relabel
-   iris.species.expr          iris.species.resources
-   iris.species.fields        iris.species.schema
-   iris.species.head          iris.species.shape
-   iris.species.isidentical   iris.species.sort
-   iris.species.label         iris.species.species
-   iris.species.like          iris.species.to_html
-   iris.species.map
+   >>> db.iris.species.<tab>  # doctest: +SKIP
+   db.iris.species.columns       db.iris.species.max
+   db.iris.species.count         db.iris.species.min
+   db.iris.species.count_values  db.iris.species.ndim
+   db.iris.species.distinct      db.iris.species.nunique
+   db.iris.species.dshape        db.iris.species.relabel
+   db.iris.species.expr          db.iris.species.resources
+   db.iris.species.fields        db.iris.species.schema
+   db.iris.species.head          db.iris.species.shape
+   db.iris.species.isidentical   db.iris.species.sort
+   db.iris.species.label         db.iris.species.species
+   db.iris.species.like          db.iris.species.to_html
+   db.iris.species.map
 
-   >>> iris.species.distinct()
+   >>> db.iris.species.distinct()
               species
    0      Iris-setosa
    1  Iris-versicolor
    2   Iris-virginica
 
 
-
-In the case above ``iris`` is a ``Symbol``, just like any normal Blaze leaf
+In the case above ``db`` is a ``Symbol``, just like any normal Blaze leaf
 expresion
 
 .. code-block:: python
 
-   >>> isinstance(iris, Symbol)
+   >>> isinstance(db, Symbol)
    True
 
-But ``iris`` has one additional field, ``iris.data`` which points to
-a Blaze ``SQL`` object holding a SQLAlchemy Table.
+But ``db`` has one additional field, ``db.data`` which points to
+a SQLAlchemy Table.
 
 .. code-block:: python
 
-   >>> iris.data                                 # doctest: +SKIP
-   <blaze.data.sql.SQL at 0x7f0f64ffbdd0>
+   >>> db.data                                 # doctest: +SKIP
+   <sqlalchemy.Table at 0x7f0f64ffbdd0>
 
-Compute calls including ``iris`` may omit the customary namespace, e.g.
+Compute calls including ``db`` may omit the customary namespace, e.g.
 
 .. code-block:: python
 
-   >>> expr = iris.species.distinct()
+   >>> expr = db.iris.species.distinct()
 
-   >>> # compute(expr, {iris: some_sql_object})  # Usually provide a namespace
+   >>> # compute(expr, {db: some_sql_object})  # Usually provide a namespace
    >>> compute(expr)                             # doctest: +SKIP
    ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica']
 
@@ -97,7 +96,7 @@ This implicit namespace can be found with the ``._resources`` method
 .. code-block:: python
 
    >>> expr._resources()                          # doctest: +SKIP
-   {iris: <blaze.data.sql.SQL at 0x7f0f64ffbdd0>}
+   {db: <sqlalchemy.Table object>}
 
 Additionally, we override the ``__repr__`` and ``_repr_html_`` methods to
 include calls to ``compute``.  This way, whenever an expression is printed to

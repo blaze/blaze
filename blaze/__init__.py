@@ -24,7 +24,7 @@ from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
-from .versions import *
+from .cached import CachedDataset
 
 try:
     from .server import *

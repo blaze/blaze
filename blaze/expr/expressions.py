@@ -7,7 +7,7 @@ from toolz import concat, memoize, partial, pipe
 from toolz.curried import map, filter
 import re
 
-from datashape import dshape, DataShape, Record, Var, Mono
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
@@ -609,6 +609,14 @@ dshape_methods = memoize(partial(select_functions, dshape_method_list))
 schema_methods = memoize(partial(select_functions, schema_method_list))
 
 
+@dispatch(DataShape)
+def shape(ds):
+    s = ds.shape
+    s = tuple(int(d) if isinstance(d, Fixed) else d for d in s)
+    return s
+
+
+@dispatch(object)
 def shape(expr):
     """ Shape of expression
 

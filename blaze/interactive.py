@@ -35,7 +35,66 @@ except ImportError:
     pass
 
 
-class Data(Symbol):
+def Data(data, dshape=None, name=None, fields=None, columns=None,
+         schema=None, **kwargs):
+    sub_uri = ''
+    if isinstance(data, _strtypes):
+        if '::' in data:
+            data, sub_uri = data.split('::')
+        data = resource(data, schema=schema, dshape=dshape,
+                              columns=columns, **kwargs)
+    if (isinstance(data, Iterator) and
+            not isinstance(data, tuple(not_an_iterator))):
+        data = tuple(data)
+    if columns:
+        warnings.warn("columns kwarg deprecated.  Use fields instead",
+                      DeprecationWarning)
+    if columns and not fields:
+        fields = columns
+    if schema and dshape:
+        raise ValueError("Please specify one of schema= or dshape= keyword"
+                " arguments")
+    if schema and not dshape:
+        dshape = var * schema
+    if dshape and isinstance(dshape, _strtypes):
+        dshape = datashape.dshape(dshape)
+    if not dshape:
+        dshape = discover(data)
+        types = None
+        if isinstance(dshape.measure, Tuple) and fields:
+            types = dshape[1].dshapes
+            schema = Record(list(zip(fields, types)))
+            dshape = DataShape(*(dshape.shape + (schema,)))
+        elif isscalar(dshape.measure) and fields:
+            types = (dshape.measure,) * int(dshape[-2])
+            schema = Record(list(zip(fields, types)))
+            dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
+        elif isrecord(dshape.measure) and fields:
+            types = dshape.measure.types
+            schema = Record(list(zip(fields, types)))
+            dshape = DataShape(*(dshape.shape + (schema,)))
+
+    ds = datashape.dshape(dshape)
+
+    if (hasattr(data, 'schema')
+         and isinstance(data.schema, (DataShape, str, unicode))
+         and ds.measure != data.dshape.measure):
+        raise TypeError('%s schema %s does not match schema %s' %
+                        (type(data).__name__, data.schema,
+                                              ds.measure))
+
+    name = name or next(names)
+    result = InteractiveSymbol(data, ds, name)
+
+    if sub_uri:
+        for field in sub_uri.split('/'):
+            if field:
+                result = result[field]
+
+    return result
+
+
+class InteractiveSymbol(Symbol):
     """ Interactive data
 
     The ``Data`` object presents a familiar view onto a variety of forms of
@@ -71,53 +130,9 @@ class Data(Symbol):
     """
     __slots__ = 'data', 'dshape', '_name'
 
-    def __init__(self, data, dshape=None, name=None, fields=None, columns=None,
-            schema=None, **kwargs):
-        if isinstance(data, _strtypes):
-            data = resource(data, schema=schema, dshape=dshape,
-                    columns=columns, **kwargs)
-        if (isinstance(data, Iterator) and
-                not isinstance(data, tuple(not_an_iterator))):
-            data = tuple(data)
-        if columns:
-            warnings.warn("columns kwarg deprecated.  Use fields instead",
-                          DeprecationWarning)
-        if columns and not fields:
-            fields = columns
-        if schema and dshape:
-            raise ValueError("Please specify one of schema= or dshape= keyword"
-                    " arguments")
-        if schema and not dshape:
-            dshape = var * schema
-        if dshape and isinstance(dshape, _strtypes):
-            dshape = datashape.dshape(dshape)
-        if not dshape:
-            dshape = discover(data)
-            types = None
-            if isinstance(dshape.measure, Tuple) and fields:
-                types = dshape[1].dshapes
-                schema = Record(list(zip(fields, types)))
-                dshape = DataShape(*(dshape.shape + (schema,)))
-            elif isscalar(dshape.measure) and fields:
-                types = (dshape.measure,) * int(dshape[-2])
-                schema = Record(list(zip(fields, types)))
-                dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
-            elif isrecord(dshape.measure) and fields:
-                types = dshape.measure.types
-                schema = Record(list(zip(fields, types)))
-                dshape = DataShape(*(dshape.shape + (schema,)))
-
-        self.dshape = datashape.dshape(dshape)
-
+    def __init__(self, data, dshape, name=None):
         self.data = data
-
-        if (hasattr(data, 'schema')
-             and isinstance(data.schema, (DataShape, str, unicode))
-             and self.schema != data.schema):
-            raise TypeError('%s schema %s does not match %s schema %s' %
-                            (type(data).__name__, data.schema,
-                             type(self).__name__, self.schema))
-
+        self.dshape = dshape
         self._name = name or next(names)
 
     def _resources(self):
@@ -131,6 +146,7 @@ class Data(Symbol):
         for slot, arg in zip(self.__slots__, state):
             setattr(self, slot, arg)
 
+
 def Table(*args, **kwargs):
     """ Deprecated, see Data instead """
     warnings.warn("Table is deprecated, use Data instead",
@@ -138,7 +154,7 @@ def Table(*args, **kwargs):
     return Data(*args, **kwargs)
 
 
-@dispatch(Data, dict)
+@dispatch(InteractiveSymbol, dict)
 def _subs(o, d):
     return o
 

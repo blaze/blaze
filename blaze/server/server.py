@@ -16,7 +16,7 @@ from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
-from ..interactive import Data
+from ..interactive import InteractiveSymbol
 from ..utils import json_dumps
 from ..expr import Expr, Symbol, Selection, Broadcast, symbol
 from ..expr.parser import exprify
@@ -49,22 +49,15 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'datasets', 'port'
+    __slots__ = 'app', 'data', 'port'
 
-    def __init__(self, datasets=None):
+    def __init__(self, data=None):
         app = self.app = Flask('blaze.server.server')
-        self.datasets = datasets or dict()
+        self.data = data or dict()
 
         for args, kwargs, func in routes:
-            func2 = wraps(func)(partial(func, self.datasets))
+            func2 = wraps(func)(partial(func, self.data))
             app.route(*args, **kwargs)(func2)
-
-    def __getitem__(self, key):
-        return self.datasets[key]
-
-    def __setitem__(self, key, value):
-        self.datasets[key] = value
-        return value
 
     def run(self, *args, **kwargs):
         port = kwargs.pop('port', DEFAULT_PORT)
@@ -85,8 +78,9 @@ def route(*args, **kwargs):
     return f
 
 
-@route('/datasets.json')
-def dataset(datasets):
+@route('/datashape')
+def dataset(data):
+    return str(discover(data))
     return json.dumps(dict((k, str(discover(v))) for k, v in datasets.items()),
                       default=json_dumps)
 
@@ -151,7 +145,7 @@ def to_tree(expr, names=None):
                 'args': [to_tree(arg, names=names) for arg in [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, Mono):
         return str(expr)
-    elif isinstance(expr, Data):
+    elif isinstance(expr, InteractiveSymbol):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
@@ -233,7 +227,6 @@ def from_tree(expr, namespace=None):
     >>> from_tree(tree, namespace={'t': t})
     t.x
 
-
     See Also
     --------
 
@@ -260,56 +253,24 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
-def comp(datasets, name):
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
-    try:
-        data = json.loads(request.data.decode('utf-8'))
-    except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
-
-    try:
-        dset = datasets[name]
-    except KeyError:
-        return ("Dataset %s not found" % name, 404)
-
-    t = symbol(name, discover(dset))
-    namespace = data.get('namespace', dict())
-    namespace[name] = t
-
-    expr = from_tree(data['expr'], namespace=namespace)
-
-    result = compute(expr, dset)
-    if iscollection(expr.dshape):
-        result = into(list, result)
-    return json.dumps({'name': name,
-                       'datashape': str(expr.dshape),
-                       'data': result}, default=json_dumps)
-
-
-
 @route('/compute.json', methods=['POST', 'PUT', 'GET'])
-def compserver(datasets):
+def compserver(dataset):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
     try:
-        data = json.loads(request.data.decode('utf-8'))
+        payload = json.loads(request.data.decode('utf-8'))
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 
+    ns = payload.get('namespace', dict())
+    ns[':leaf'] = symbol('leaf', discover(dataset))
 
-    tree_ns = dict((name, symbol(name, discover(datasets[name])))
-                    for name in datasets)
-    if 'namespace' in data:
-        tree_ns = merge(tree_ns, data['namespace'])
+    expr = from_tree(payload['expr'], namespace=ns)
+    assert len(expr._leaves()) == 1
+    leaf = expr._leaves()[0]
 
-    expr = from_tree(data['expr'], namespace=tree_ns)
-
-    compute_ns = dict((symbol(name, discover(datasets[name])), datasets[name])
-                        for name in datasets)
     try:
-        result = compute(expr, compute_ns)
+        result = compute(expr, {leaf: dataset})
     except Exception as e:
         return ("Computation failed with message:\n%s" % e, 500)
 
