@@ -1,4 +1,4 @@
-from blaze.dataset import Dataset
+from blaze.dataset import CachedDataset
 from blaze import symbol, discover, compute
 import pandas as pd
 from collections import Iterator
@@ -16,7 +16,7 @@ t = symbol('t', discover(df))
 def test_dataset():
     ns = {'t': df, 'x': 10}
     cache=dict()
-    d = Dataset(ns, cache=cache)
+    d = CachedDataset(ns, cache=cache)
 
     assert discover(d) == discover(ns)
 
@@ -30,7 +30,7 @@ def test_streaming():
            {'name': 'Bob', 'x': 1}]
     ns = {'t': seq, 'x': 10}
     cache=dict()
-    d = Dataset(ns, cache=cache)
+    d = CachedDataset(ns, cache=cache)
 
     s = symbol('s', discover(d))
     expr = s.t.x * 2

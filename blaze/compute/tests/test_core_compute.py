@@ -109,7 +109,7 @@ def test_pre_compute_on_multiple_datasets_is_selective():
     from into import CSV
     import pandas as pd
     from blaze import Data
-    from blaze.dataset import Dataset
+    from blaze.dataset import CachedDataset
 
     df = pd.DataFrame([[1, 'Alice',   100],
                          [2, 'Bob',    -200],
@@ -117,7 +117,7 @@ def test_pre_compute_on_multiple_datasets_is_selective():
                          [4, 'Denis',   400],
                          [5, 'Edith',  -500]], columns=['id', 'name', 'amount'])
     iris = CSV(example('iris.csv'))
-    dset = Dataset({'df': df, 'iris': iris})
+    dset = CachedDataset({'df': df, 'iris': iris})
 
     d = Data(dset)
     assert str(compute(d.df.amount)) == str(df.amount)

@@ -9,7 +9,7 @@ from collections import Iterator
 from into import into
 
 
-class Dataset(object):
+class CachedDataset(object):
     def __init__(self, data, cache=None):
         self.data = data
         if cache is None:
@@ -17,17 +17,17 @@ class Dataset(object):
         self.cache = cache
 
 
-@dispatch(Dataset)
+@dispatch(CachedDataset)
 def discover(d):
     return discover(d.data)
 
 
-@dispatch(Field, Dataset)
+@dispatch(Field, CachedDataset)
 def compute_up(expr, data, **kwargs):
     return data.data[expr._name]
 
 
-@dispatch(Expr, Dataset)
+@dispatch(Expr, CachedDataset)
 def compute_down(expr, data, **kwargs):
     if expr in data.cache:
         return data.cache[expr]
