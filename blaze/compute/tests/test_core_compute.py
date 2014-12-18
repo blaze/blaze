@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from datetime import date, datetime
+from datashape import discover, dshape
 
 from blaze.compute.core import (compute_up, compute_down, optimize, compute,
         bottom_up_until_type_break, top_then_bottom_then_top_again_etc,
@@ -8,6 +9,7 @@ from blaze.compute.core import (compute_up, compute_down, optimize, compute,
 from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
+from blaze.utils import example
 
 import numpy as np
 
@@ -91,3 +93,31 @@ def test_swap_resources_into_scope():
     assert not expr._resources()
 
     assert t not in scope
+
+
+def test_compute_up_on_dict():
+    d = {'a': [1, 2, 3], 'b': [4, 5, 6]}
+
+    assert str(discover(d)) == str(dshape('{a: 3 * int64, b: 3 * int64}'))
+
+    s = symbol('s', discover(d))
+
+    assert compute(s.a, {s: d}) == [1, 2, 3]
+
+
+def test_pre_compute_on_multiple_datasets_is_selective():
+    from into import CSV
+    import pandas as pd
+    from blaze import Data
+    from blaze.cached import CachedDataset
+
+    df = pd.DataFrame([[1, 'Alice',   100],
+                         [2, 'Bob',    -200],
+                         [3, 'Charlie', 300],
+                         [4, 'Denis',   400],
+                         [5, 'Edith',  -500]], columns=['id', 'name', 'amount'])
+    iris = CSV(example('iris.csv'))
+    dset = CachedDataset({'df': df, 'iris': iris})
+
+    d = Data(dset)
+    assert str(compute(d.df.amount)) == str(df.amount)

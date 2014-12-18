@@ -32,20 +32,19 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    ...
 
 
-Then we host this under the name ``'iris'`` and serve publicly on port
-``6363``
+Then we host this publicly on port ``6363``
 
 
 .. code-block:: python
 
    from blaze.server import Server
-   server = Server({'iris': csv})
+   server = Server(csv)
    server.run(host='0.0.0.0', port=6363)
 
 A Server is the following
 
 1.  A mapping of names to datasets
-2.  A `Flask <http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application>`_ app.
+2.  A Flask_ app.
 
 With this code our machine is now hosting our CSV file through a
 web-application on port 6363.  We can now access our CSV file, through Blaze,
@@ -66,7 +65,7 @@ We can use standard command line tools to interact with this web service::
 
    $ curl \
        -H "Content-Type: application/json" \
-       -d '{"expr": {"op": "Field", "args": ["iris", "species"]}}' \
+       -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
        localhost:6363/compute.json
 
    {
@@ -82,7 +81,7 @@ We can use standard command line tools to interact with this web service::
        -H "Content-Type: application/json" \
        -d  '{"expr": {"op": "sum", \
                       "args": [{"op": "Field", \
-                                "args": ["iris", "petal_Length"]}]}}' \
+                                "args": [":leaf", "petal_Length"]}]}}' \
        localhost:6363/compute.json
 
    {
@@ -90,9 +89,9 @@ We can use standard command line tools to interact with this web service::
      "datashape": "{petal_length_sum: float64}",
    }
 
-
-Constructing these queries can be difficult to do by hand, fortunately Blaze
-can help you to build them.
+These queries deconstruct the Blaze expression as nested JSON.  The ``":leaf"``
+string is a special case pointing to the base data.  Constructing these queries
+can be difficult to do by hand, fortunately Blaze can help you to build them.
 
 
 Using the Python Requests Library
@@ -110,7 +109,7 @@ First we repeat the same experiment as before, this time using the Python
 
    query = {'expr': {'op': 'sum',
                      'args': [{'op': 'Field',
-                               'args': ['iris', 'petal_length']}]}}
+                               'args': [':leaf', 'petal_length']}]}}
 
    r = requests.get('http://localhost:6363/compute.json',
                    data=json.dumps(query),
@@ -129,20 +128,28 @@ Now we use Blaze to generate the query programmatically
 
    >>> # Build a Symbol like our served iris data
    >>> dshape= "var * {sepal_length: float64, sepal_width: float64, petal_length: float64, petal_width: float64, species: string}"  # matching schema to csv file
-   >>> t = Symbol('t', dshape)
+   >>> t = symbol('t', dshape)
    >>> expr = t.petal_length.sum()
 
    >>> from blaze.server import to_tree
 
-   >>> d = to_tree(expr, names={t: 'iris'})
+   >>> d = to_tree(expr, names={t: ':leaf'})
 
    >>> query = {'expr': d}
+   >>> query  # doctest: +SKIP
+   {'expr': {'args': [{'args': [':leaf', 'petal_length'],
+                         'op': 'Field'},
+                      [0],
+                      False],
+               'op': 'sum'}}
 
 Alternatively we build a query to grab a single column
 
 .. code-block:: python
 
-   >>> b = to_tree(t.species, names={t: 'iris'})
+   >>> to_tree(t.species, names={t: ':leaf'})  # doctest: +SKIP
+   {'args': [':leaf', 'species'], 'op': 'Field'}
+
 
 Fully Interactive Python-to-Python Remote work
 ----------------------------------------------
@@ -156,11 +163,9 @@ do work for us
    # Client code, run this in a separate process from the Server
 
    from blaze import *
-   c = Client('http://localhost:6363', 'iris')
+   t = Data('blaze://localhost:6363')
 
-   t = Data(c)
    t
-
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -181,12 +186,96 @@ do work for us
    1      Iris-setosa  1.9  1.0
    2  Iris-versicolor  5.1  3.0
 
-We interact on the client machine through the ``Client`` data object but
-computations on this object cause communications through the web API, resulting
-in seemlessly interactive remote computation.
+
+We interact on the client machine through the data object but computations on
+this object cause communications through the web API, resulting in seemlessly
+interactive remote computation.
+
+
+Advanced Use
+------------
+
+Blaze servers may host any data that Blaze understands from a single integer
+
+.. code-block:: python
+
+   >>> server = Server(1)
+
+To a dictionary of several heterogeneous datasets
+
+.. code-block:: python
+
+   >>> server = Server({'my-dataframe': df,
+   ...                  'iris': resource('iris.csv'),
+   ...                  'baseball': resource('sqlite:///baseball-statistics.db')})  # doctest: +SKIP
+
+A variety of hosting options are available through the Flask_ project
+
+::
+
+   >>> help(server.app.run)  # doctest: +SKIP
+   Help on method run in module flask.app:
+
+   run(self, host=None, port=None, debug=None, **options) method of  flask.app.Flask instance
+   Runs the application on a local development server.  If the
+   :attr:`debug` flag is set the server will automatically reload
+   for code changes and show a debugger in case an exception happened.
+
+   ...
+
+
+Caching
+-------
+
+Caching results on frequently run queries may significantly improve user
+experience in some cases.  One may wrap a Blaze server in a traditional
+web-based caching system like memcached or use a data centric solution.
+
+The Blaze ``CachedDataset`` might be appropriate in some situations.  A cached
+dataset holds a normal dataset and a ``dict`` like object.
+
+.. code-block:: python
+
+   >>> dset = {'my-dataframe': df,
+   ...         'iris': resource('iris.csv'),
+   ...         'baseball': resource('sqlite:///baseball-statistics.db')} # doctest: +SKIP
+
+   >>> from blaze.cached import CachedDataset  # doctest: +SKIP
+   >>> cached = CachedDataset(dset, cache=dict())  # doctest: +SKIP
+
+Queries and results executed against a cached dataset are stored in the cache
+(here a normal Python ``dict``) for fast future access.
+
+If accumulated results are likely to fill up memory then other, on-disk
+dict-like structures can be used like Shove_ or Chest_.
+
+.. code-block:: python
+
+   >>> from chest import Chest  # doctest: +SKIP
+   >>> cached = CachedDataset(dset, cache=Chest())  # doctest: +SKIP
+
+These cached objects can be used anywhere normal objects can be used in Blaze,
+including an interactive (and now performance cached) ``Data`` object
+
+.. code-block:: python
+
+   >>> d = Data(cached)  # doctest: +SKIP
+
+or a Blaze server
+
+.. code-block:: python
+
+   >>> server = Server(cached)  # doctest: +SKIP
+
 
 Conclusion
 ==========
 
-Because this process builds off Blaze expressions it works
-equally well for data stored in any format on which Blaze is trained, including in-memory DataFrames, SQL/Mongo databases, or even Spark clusters.
+Because this process builds off Blaze expressions it works equally well for data
+stored in any format on which Blaze is trained, including in-memory DataFrames,
+SQL/Mongo databases, or even Spark clusters.
+
+
+.. _Flask : http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application
+.. _Shove : https://pypi.python.org/pypi/shove/0.5.6
+.. _Chest : https://github.com/mrocklin/chest

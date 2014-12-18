@@ -8,7 +8,7 @@ import itertools
 from collections import Iterator
 
 from ..compatibility import basestring
-from ..expr import Expr, Symbol, symbol, eval_str
+from ..expr import Expr, Field, Symbol, symbol, eval_str
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -445,7 +445,9 @@ def compute(expr, d, **kwargs):
 
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
-        d3 = dict((e, pre_compute_(expr2, dat, **kwargs)) for e, dat in d2.items())
+        d3 = dict([(e, pre_compute_(expr2, dat, **kwargs))
+                        for e, dat in d2.items()
+                        if e in expr2])
     else:
         d3 = d2
 
@@ -466,3 +468,8 @@ def compute(expr, d, **kwargs):
         result = post_compute_(expr3, result, scope=d4)
 
     return result
+
+
+@dispatch(Field, dict)
+def compute_up(expr, data, **kwargs):
+    return data[expr._name]

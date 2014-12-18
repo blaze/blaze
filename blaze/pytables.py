@@ -124,5 +124,8 @@ def get_chunk(b, i, chunksize=2**15):
 
 
 @resource.register('.+\.h5')
-def resource_pytables(path, datapath, **kwargs):
-    return PyTables(path, datapath, **kwargs)
+def resource_pytables(path, datapath=None, **kwargs):
+    if not datapath:
+        return tb.open_file(path)
+    else:
+        return PyTables(path, datapath, **kwargs)

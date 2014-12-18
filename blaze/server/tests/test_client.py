@@ -4,19 +4,22 @@ import pytest
 pytest.importorskip('flask')
 
 from pandas import DataFrame
-from blaze import compute, Data, by, into
-from blaze.expr import Expr, Symbol, Field
+from blaze import compute, Data, by, into, discover
+from blaze.expr import Expr, symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.server.index import parse_index, emit_index
-from blaze.server.client import Client, discover, resource, ClientDataset
+from blaze.server.client import Client, resource
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
+
 df2 = DataFrame([['Charlie', 100], ['Dan', 200]],
                 columns=['name', 'amount'])
 
-server = Server(datasets={'accounts': df, 'accounts2': df})
+data = {'accounts': df, 'accounts2': df}
+
+server = Server(data)
 
 test = server.app.test_client()
 
@@ -26,9 +29,9 @@ client.requests = test # OMG monkey patching
 
 def test_client():
     c = Client('localhost:6363')
-    assert str(discover(c)) == str(discover(server.datasets))
+    assert str(discover(c)) == str(discover(data))
 
-    t = Symbol('t', discover(c))
+    t = symbol('t', discover(c))
     expr = t.accounts.amount.sum()
 
     assert compute(expr, c) == 300
@@ -36,12 +39,6 @@ def test_client():
     assert isinstance(t.accounts.name, Field)
     assert compute(t.accounts.name, c) == ['Alice', 'Bob']
 
-
-def test_compute_with_dataset():
-    c = resource('blaze://localhost:6363::accounts')
-    s = Symbol('s', discover(c))
-
-    assert compute(s.name, c) == ['Alice', 'Bob']
 
 def test_expr_client_interactive():
     c = Client('localhost:6363')
@@ -54,46 +51,21 @@ def test_expr_client_interactive():
 
 def test_compute_client_with_multiple_datasets():
     c = resource('blaze://localhost:6363')
-    s = Symbol('s', discover(c))
+    s = symbol('s', discover(c))
 
     assert compute(s.accounts.amount.sum() + s.accounts2.amount.sum(),
                     {s: c}) == 600
 
-def test_compute_multiple_client_datasets():
-    a1 = resource('blaze://localhost:6363::accounts')
-    a2 = resource('blaze://localhost:6363::accounts2')
-    s1 = Symbol('s1', discover(a1))
-    s2 = Symbol('s2', discover(a2))
-
-    assert compute(s1.amount.sum() + s2.amount.sum(),
-            {s1: a1, s2: a2}) == 600
-
-def test_clientdataset_into_list():
-    a = resource('blaze://localhost:6363::accounts')
-
-    assert into(list, a) == [['Alice', 100], ['Bob', 200]]
-
-
-def test_clientdataset_into_list():
-    a = resource('blaze://localhost:6363::accounts')
-
-    assert str(into(DataFrame, a)) == \
-            str(DataFrame([['Alice', 100], ['Bob', 200]],
-                          columns=['name', 'amount']))
 
 def test_resource():
     c = resource('blaze://localhost:6363')
-    assert str(discover(c)) == str(discover(server.datasets))
-
-
-def test_resource_with_dataset():
-    c = resource('blaze://localhost:6363::accounts')
-    assert str(discover(c)) == str(discover(df))
+    assert isinstance(c, Client)
+    assert str(discover(c)) == str(discover(data))
 
 
 def test_resource_default_port():
     ec = resource('blaze://localhost')
-    assert str(discover(ec)) == str(discover(server.datasets))
+    assert str(discover(ec)) == str(discover(data))
 
 
 def test_resource_non_default_port():
@@ -103,7 +75,7 @@ def test_resource_non_default_port():
 
 def test_resource_all_in_one():
     ec = resource('blaze://localhost:6363')
-    assert str(discover(ec)) == str(discover(server.datasets))
+    assert str(discover(ec)) == str(discover(data))
 
 
 class CustomExpr(Expr):
@@ -121,6 +93,11 @@ def compute_up(expr, data, **kwargs):
 
 def test_custom_expressions():
     ec = Client('localhost:6363')
-    t = Symbol('t', discover(ec))
+    t = symbol('t', discover(ec))
 
     assert list(map(tuple, compute(CustomExpr(t.accounts), ec))) == into(list, df)
+
+
+def test_client_dataset():
+    d = Data('blaze://localhost::accounts')
+    assert list(map(tuple, into(list, d))) == into(list, df)
