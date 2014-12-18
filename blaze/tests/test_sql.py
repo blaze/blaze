@@ -1,22 +1,33 @@
 import pytest
-from sqlalchemy.exc import OperationalError
-import sqlalchemy
+
+pytest.importorskip('sqlalchemy')
+import gzip
 from cytoolz import first
-from blaze.sql import drop, create_index, resource
-from blaze import compute, Table, SQL, Symbol, discover
-from blaze.utils import tmpfile
+import sqlalchemy
+import sqlalchemy as sa
+from sqlalchemy.exc import OperationalError
+from datashape import dshape
+import datashape
+import sys
+from into import into, drop
+
+from blaze import create_index, resource
+from blaze.sql import create_index
+from blaze import compute, Data, symbol, discover
+from blaze.utils import raises, filetext, tmpfile
+from blaze.compatibility import PY2
 
 
 @pytest.fixture
 def sql():
     data = [(1, 2), (10, 20), (100, 200)]
-    sql = SQL('sqlite:///:memory:', 'foo', schema='{x: int, y: int}')
-    sql.extend(data)
+    sql = resource('sqlite:///:memory:', 'foo', dshape='var * {x: int, y: int}')
+    into(sql, data)
     return sql
 
 
 def test_column(sql):
-    t = Table(sql)
+    t = Data(sql)
 
     r = compute(t['x'])
     assert r == [1, 10, 100]
@@ -26,9 +37,9 @@ def test_column(sql):
 
 
 def test_drop(sql):
-    assert sql.table.exists(sql.engine)
+    assert sql.exists(sql.bind)
     drop(sql)
-    assert not sql.table.exists(sql.engine)
+    assert not sql.exists(sql.bind)
 
 
 class TestCreateIndex(object):
@@ -48,10 +59,10 @@ class TestCreateIndex(object):
 
     def test_create_index_unique(self, sql):
         create_index(sql, 'y', name='y_idx', unique=True)
-        assert len(sql.table.indexes) == 1
-        idx = first(sql.table.indexes)
+        assert len(sql.indexes) == 1
+        idx = first(sql.indexes)
         assert idx.unique
-        assert idx.columns.y == sql.table.c.y
+        assert idx.columns.y == sql.c.y
 
     def test_composite_index(self, sql):
         create_index(sql, ['x', 'y'], name='idx_xy')
@@ -65,40 +76,3 @@ class TestCreateIndex(object):
     def test_composite_index_fails_with_existing_columns(self, sql):
         with pytest.raises(AttributeError):
             create_index(sql, ['x', 'z', 'bizz'], name='idx_name')
-
-
-def test_resource():
-    with tmpfile('.db') as fn:
-        uri = 'sqlite:///' + fn
-        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
-        assert isinstance(resource(uri, 'foo'), SQL)
-        assert isinstance(resource(uri + '::foo'), SQL)
-
-    sql = SQL('sqlite:///:memory:', 'foo', schema='{x: int, y: int}')
-    assert isinstance(resource('sqlite:///:memory:', 'foo',
-                               schema='{x: int, y: int}'),
-                      SQL)
-    assert isinstance(resource('sqlite:///:memory:::foo',
-                               schema='{x: int, y: int}'),
-                      SQL)
-
-def test_resource_to_engine():
-    with tmpfile('.db') as fn:
-        uri = 'sqlite:///' + fn
-        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
-
-        r = resource(uri)
-        assert isinstance(r, sqlalchemy.engine.Engine)
-        assert r.dialect.name == 'sqlite'
-
-
-def test_computation_on_engine():
-    with tmpfile('.db') as fn:
-        uri = 'sqlite:///' + fn
-        sql = SQL(uri, 'foo', schema='{x: int, y: int}')
-        sql.extend([(1, 2), (10, 20)])
-
-        r = resource(uri)
-        s = Symbol('s', discover(r))
-
-        assert compute(s.foo.x.max(), r) == 10

@@ -11,12 +11,18 @@ Blaze can be most easily installed from conda_
 
    $ conda install blaze
 
-We also have developer builds hosted on the ``blaze`` binstar channel:
+More up-to-date builds are available on the ``blaze`` binstar channel:
 http://binstar.org/blaze
 
 ::
 
     conda install -c blaze blaze
+
+Blaze may also be installed using ``pip``:
+
+::
+
+    pip install blaze
 
 If you are interested in the development version of Blaze you can
 obtain the source from Github.
@@ -24,12 +30,6 @@ obtain the source from Github.
 ::
 
     $ git clone git@github.com:ContinuumIO/blaze.git
-
-However many of the dependencies are non-trivial to install.
-It is **highly recommend** that you build Blaze using the Anaconda
-distribution, a free Python distribution that comes with a host of
-scientific and numeric packages bundled and precompiled into a userspace
-Python environment.
 
 Anaconda can be downloaded for all platforms here:
 http://continuum.io/anaconda.html .
@@ -60,7 +60,8 @@ Dependencies
 ~~~~~~~~~~~~
 
 * numpy_ >= 1.7
-* datashape_ >= 0.3.0
+* datashape_ >= 0.4.0
+* into_ >= 0.1.3
 * dynd-python_ >= 0.6.4
 * toolz_ >= 0.7.0
 * cytoolz_
@@ -69,6 +70,7 @@ Dependencies
 
 **Optional**
 
+* dynd-python_ >= 0.6.5
 * sqlalchemy_
 * h5py_
 * spark_ >= 1.0.0
@@ -80,11 +82,11 @@ Dependencies
 
 
 .. _numpy: http://www.numpy.org/
+.. _into: https://github.com/ContinuumIO/into
 .. _h5py: http://docs.h5py.org/en/latest/
 .. _pytest: http://pytest.org/latest/
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _datashape: https://github.com/ContinuumIO/datashape
-.. _blz: https://github.com/ContinuumIO/blz
 .. _pandas: http://pandas.pydata.org/
 .. _cytoolz: https://github.com/pytoolz/cytoolz/
 .. _sqlalchemy: http://www.sqlalchemy.org/

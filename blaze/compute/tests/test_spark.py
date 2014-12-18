@@ -1,10 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze import into
+from into import into
 from blaze.compute import compute, compute_up
 from blaze.compatibility import xfail
 from blaze.expr import *
 from blaze.expr.functions import *
+from toolz import identity
 from datashape.predicates import iscollection
 from datashape import dshape
 
@@ -109,6 +110,7 @@ exprs = [
     (t['amount'] * 1).label('foo'),
     t.map(lambda tup: tup[1] + tup[2], 'real'),
     t.like(name='Alice'),
+    t['amount'].apply(identity, 'var * real', splittable=True),
     t['amount'].map(inc, 'int')]
 
 
@@ -228,7 +230,6 @@ def test_spark_merge():
 
 
 def test_spark_into():
-    from blaze.api.into import into
     seq = [1, 2, 3]
     assert isinstance(into(rdd, seq), RDD)
     assert into([], into(rdd, seq)) == seq
@@ -402,12 +403,12 @@ if issubclass(SQLContext, object):
                 t.id.map(lambda x: x + 1, 'int'): [srdd], # no udfs yet
                 t[t.amount > 50]['name']: [],
                 by(t.name, total=t.amount.sum()): [],
-                by(t.id, count=t.id.count()): [],
-                by(t[['id', 'amount']], count=t.id.count()): [],
+                by(t.id, total=t.id.count()): [],
+                by(t[['id', 'amount']], total=t.id.count()): [],
                 by(t[['id', 'amount']], total=(t.amount + 1).sum()): [],
-                by(t[['id', 'amount']], count=t.name.nunique()): [rdd, srdd],
-                by(t.id, t.amount.count()): [],
-                by(t.id, t.id.nunique()): [rdd, srdd],
+                by(t[['id', 'amount']], total=t.name.nunique()): [rdd, srdd],
+                by(t.id, total=t.amount.count()): [],
+                by(t.id, total=t.id.nunique()): [rdd, srdd],
                 # by(t, t.count()): [],
                 # by(t.id, t.count()): [df],
                 t[['amount', 'id']]: [],

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 import csv as csv_module
-from blaze.data import CSV, JSON
+# from blaze.data import CSV, JSON
 import subprocess
 import tempfile
 import json
@@ -14,7 +14,6 @@ from datashape import discover, dshape
 
 from blaze import drop, into, create_index
 from blaze.utils import assert_allclose
-from blaze.resource import resource
 
 
 no_mongoimport = pytest.mark.skipif(raises(OSError,
@@ -97,7 +96,8 @@ def test_discover(bank_collec):
 
 
 def test_into(empty_collec, bank):
-    lhs = set(into([], into(empty_collec, bank), columns=['name', 'amount']))
+    ds = dshape('var * {name: string, amount: int}')
+    lhs = set(into(list, into(empty_collec, bank), dshape=ds))
     rhs = set([('Alice', 100), ('Alice', 200), ('Bob', 100), ('Bob', 200),
                ('Bob', 300)])
     assert lhs == rhs
@@ -339,13 +339,3 @@ def test_jsonarray_into_mongodb(empty_collec):
     mongo_data = list(coll.find({}, {'_id': 0}))
 
     assert mongo_data[0] == data[0]
-
-
-
-@no_mongoimport
-def test_resource(conn):
-    coll = resource('mongodb://localhost:27017/db::mycoll')
-    assert coll.name == 'mycoll'
-    assert coll.database.name == 'db'
-    assert coll.database.connection.host == 'localhost'
-    assert coll.database.connection.port == 27017

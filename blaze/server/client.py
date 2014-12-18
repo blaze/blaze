@@ -1,19 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-import requests
-from flask import json
-import flask
+try:
+    import flask
+    from flask import json
+    import requests
+except ImportError:
+    pass
+
+
+from into import convert, resource
 from toolz import first
-from dynd import nd
 from datashape import dshape, DataShape, Record
 from pandas import DataFrame
 
-from ..data import DataDescriptor
-from ..data.utils import coerce
 from ..expr import Expr, Symbol
 from ..dispatch import dispatch
 from .index import emit_index
-from ..resource import resource
 from .server import DEFAULT_PORT
 
 # These are a hack for testing
@@ -79,7 +81,7 @@ class Client(object):
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
-        data = json.loads(content(response))
+        data = json.loads(content(response).decode('utf-8'))
 
         return DataShape(Record([[name, dshape(ds)] for name, ds in
             sorted(data.items(), key=first)]))
@@ -140,8 +142,7 @@ def compute_down(expr, data, **kwargs):
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
-    from ..api import Data
-    from ..api import into
+    from ..interactive import Data
     leaf = expr._leaves()[0]
     tree = to_tree(expr, dict((leaf[f], f) for f in leaf.fields))
 
@@ -152,23 +153,18 @@ def compute_down(expr, ec, **kwargs):
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
 
-    data = json.loads(content(r))
+    data = json.loads(content(r).decode('utf-8'))
 
     return data['data']
 
 
-@dispatch(list, ClientDataset)
-def into(_, c, **kwargs):
+@convert.register(list, ClientDataset)
+def convert_client_dataset(c, **kwargs):
     r = requests.get('%s/compute.json' % c.client.url,
                      data = json.dumps({'expr': c.name}),
                      headers={'Content-Type': 'application/json'})
-    data = json.loads(content(r))
+    data = json.loads(content(r).decode('utf-8'))
     return data['data']
-
-@dispatch(DataFrame, ClientDataset)
-def into(_, c, **kwargs):
-    return into(DataFrame, into(list, c), columns=c.dshape.measure.names)
-
 
 @resource.register('blaze://.+::.+', priority=16)
 def resource_blaze_dataset(uri, **kwargs):

@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import h5py
 
 import pytest
+h5py = pytest.importorskip('h5py')
 
 from blaze import compute
 from blaze.expr import symbol

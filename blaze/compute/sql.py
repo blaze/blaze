@@ -19,14 +19,16 @@ from __future__ import absolute_import, division, print_function
 import operator
 import sqlalchemy as sa
 import sqlalchemy
-from sqlalchemy import sql
+from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
+from sqlalchemy.engine import Engine
 from operator import and_
 import itertools
 from copy import copy
 import toolz
 from multipledispatch import MDNotImplementedError
+from datashape.predicates import isscalar, isrecord
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
@@ -35,7 +37,7 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
 from .core import compute_up, compute, base
-from ..data.utils import listpack
+from ..utils import listpack
 
 __all__ = ['sqlalchemy', 'select']
 
@@ -312,8 +314,17 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
-    s2 = s.alias(next(aliases)).count()
-    return select([list(inner_columns(s2))[0].label(t._name)])
+    al = next(aliases)
+    try:
+        s2 = s.alias(al)
+        col = list(s2.primary_key)[0]
+    except (KeyError, IndexError):
+        s2 = s.alias(al)
+        col = list(s2.columns)[0]
+
+    result = sqlalchemy.sql.functions.count(col)
+
+    return select([list(inner_columns(result))[0].label(t._name)])
 
 
 @dispatch(nunique, sqlalchemy.Column)
@@ -514,12 +525,69 @@ def compute_up(t, s, **kwargs):
 
 
 @toolz.memoize
+def table_of_metadata(metadata, name):
+    metadata.reflect()
+    return metadata.tables[name]
+
+
 def table_of_engine(engine, name):
     metadata = sqlalchemy.MetaData(engine)
-    metadata.reflect(engine)
-    return metadata.tables[name]
+    return table_of_metadata(metadata, name)
 
 
 @dispatch(Field, sqlalchemy.engine.Engine)
 def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
+
+
+def engine_of(x):
+    if isinstance(x, Engine):
+        return x
+    if isinstance(x, MetaData):
+        return x.bind
+    if isinstance(x, Table):
+        return x.metadata.bind
+    raise NotImplementedError("Can't deterimine engine of %s" % x)
+
+
+@dispatch(Expr, sqlalchemy.sql.ClauseElement)
+def post_compute(expr, query, scope=None):
+    """ Execute SQLAlchemy query against SQLAlchemy engines
+
+    If the result of compute is a SQLAlchemy query then it is likely that the
+    data elements are themselves SQL objects which contain SQLAlchemy engines.
+    We find these engines and, if they are all the same, run the query against
+    these engines and return the result.
+    """
+    if not all(isinstance(val, (Engine, MetaData, Table)) for val in scope.values()):
+        return query
+
+    engines = set(filter(None, map(engine_of, scope.values())))
+
+    if not engines:
+        return query
+
+    if len(set(map(str, engines))) != 1:
+        raise NotImplementedError("Expected single SQLAlchemy engine")
+
+    engine = toolz.first(engines)
+
+    with engine.connect() as conn:  # Perform query
+        result = conn.execute(select(query)).fetchall()
+
+    if isscalar(expr.dshape):
+        return result[0][0]
+    if isscalar(expr.dshape.measure):
+        return [x[0] for x in result]
+    return result
+
+
+from .pyfunc import broadcast_collect
+@dispatch(Expr, sa.sql.elements.ClauseElement)
+def optimize(expr, _):
+    return broadcast_collect(expr)
+
+
+@dispatch(Field, sqlalchemy.MetaData)
+def compute_up(expr, data, **kwargs):
+    return table_of_metadata(data, expr._name)

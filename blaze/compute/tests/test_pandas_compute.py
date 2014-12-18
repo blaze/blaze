@@ -356,19 +356,19 @@ def test_map():
 
 
 def test_apply_column():
-    result = compute(Apply(t['amount'], np.sum, 'real'), df)
+    result = compute(t.amount.apply(np.sum, 'real'), df)
     expected = np.sum(df['amount'])
 
     assert str(result) == str(expected)
 
-    result = compute(Apply(t['amount'], builtins.sum, 'real'), df)
+    result = compute(t.amount.apply(builtins.sum, 'real'), df)
     expected = builtins.sum(df['amount'])
 
     assert str(result) == str(expected)
 
 
 def test_apply():
-    result = compute(Apply(t, str, 'string'), df)
+    result = compute(t.apply(str, 'string'), df)
     expected = str(df)
 
     assert result == expected
@@ -550,8 +550,7 @@ def test_rowwise_by():
     df = pd.DataFrame({'id': [1, 1, 2],
                        'name': ['alice', 'wendy', 'bob'],
                        'amount': [100, 200, 300.03]})
-    expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=['index',
-                                                              'total'])
+    expected = pd.DataFrame([(5, 300.03), (6, 300)], columns=expr.fields)
 
     result = compute(expr, df)
     assert expected.index.tolist() == result.index.tolist()
@@ -593,7 +592,7 @@ def test_nelements():
     assert compute(t.nrows, df) == len(df)
 
 
-def test_datetime_truncation():
+def test_datetime_truncation_minutes():
     data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
                   dtype='M8[ns]')
     s = symbol('s', 'var * datetime')
@@ -601,9 +600,42 @@ def test_datetime_truncation():
             list(Series(['2000-01-01T12:00:00Z', '2000-06-25T12:20:00Z'],
                         dtype='M8[ns]'))
 
+
+def test_datetime_truncation_nanoseconds():
+    data = Series(['2000-01-01T12:10:00.000000005',
+                   '2000-01-01T12:10:00.000000025'],
+                  dtype='M8[ns]')
+    s = symbol('s', 'var * datetime')
+    result = Series(['2000-01-01T12:10:00.000000000',
+                     '2000-01-01T12:10:00.000000020'],
+                    dtype='M8[ns]')
+    assert list(compute(s.truncate(nanoseconds=20), data)) == list(result)
+
+
+def test_datetime_truncation_weeks():
+    data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
+                  dtype='M8[ns]')
+    s = symbol('s', 'var * datetime')
     assert list(compute(s.truncate(2, 'weeks'), data)) == \
-            list(Series(['1999-12-19T00:00:00Z', '2000-06-18T00:00:00Z'],
+            list(Series(['1999-12-19', '2000-06-18'],
                         dtype='M8[ns]'))
+
+
+def test_datetime_truncation_days():
+    data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
+                  dtype='M8[ns]')
+    s = symbol('s', 'var * datetime')
+    assert list(compute(s.truncate(days=3), data)) == \
+            list(Series(['1999-12-31', '2000-06-25'],
+                        dtype='M8[ns]'))
+
+
+def test_datetime_truncation_same_as_python():
+    data = Series(['2000-01-01T12:10:00Z', '2000-06-25T12:35:12Z'],
+                  dtype='M8[ns]')
+    s = symbol('s', 'var * datetime')
+    assert (compute(s.truncate(weeks=2), data[0].to_pydatetime()) ==
+            datetime(1999, 12, 26).date())
 
 
 def test_complex_group_by():

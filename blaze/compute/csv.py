@@ -6,14 +6,16 @@ from toolz import curry, concat, map
 import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
+from into import into
+from into.chunks import chunks, Chunks
+from into.backends.csv import CSV, csv_to_DataFrame
+from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
-from ..data.csv import CSV
 from ..expr import Expr, Head, ElemWise, Distinct, Symbol, Projection, Field
 from ..expr.core import path
 from ..utils import available_memory
 from ..expr.split import split
-from ..api.into import into
 from .core import compute
 from ..expr.optimize import lean_projection
 
@@ -21,6 +23,7 @@ from ..expr.optimize import lean_projection
 @dispatch(Expr, CSV)
 def optimize(expr, _):
     return lean_projection(expr)  # This is handled in pre_compute
+
 
 @dispatch(Expr, CSV)
 def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
@@ -31,6 +34,8 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
     # Chunk if the file is large
     if os.path.getsize(data.path) > comfortable_memory:
         kwargs['chunksize'] = chunksize
+    else:
+        chunksize = None
 
     # Insert projection into read_csv
     oexpr = optimize(expr, data)
@@ -39,7 +44,10 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
     if len(pth) >= 2 and isinstance(pth[-2], (Projection, Field)):
         kwargs['usecols'] = pth[-2].fields
 
-    return data.pandas_read_csv(**kwargs)
+    if chunksize:
+        return into(chunks(pd.DataFrame), data, dshape=leaf.dshape, **kwargs)
+    else:
+        return into(pd.DataFrame, data, dshape=leaf.dshape, **kwargs)
 
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
@@ -48,7 +56,7 @@ Cheap = (Head, ElemWise, Distinct, Symbol)
 def pre_compute(expr, data, **kwargs):
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(expr, leaf)):
-        return into(Iterator, data)
+        return into(Iterator, data, chunksize=10000, dshape=leaf.dshape)
     else:
         raise MDNotImplementedError()
 
@@ -73,13 +81,3 @@ def compute_down(expr, data, map=map, **kwargs):
         intermediate = concat(parts)
 
     return compute(agg_expr, {agg: intermediate})
-
-
-@dispatch(Iterator, pandas.io.parsers.TextFileReader)
-def into(a, b, **kwargs):
-    return concat(map(into(a), b))
-
-
-@dispatch((list, tuple, set), pandas.io.parsers.TextFileReader)
-def into(a, b, **kwargs):
-    return into(a, into(Iterator, b))

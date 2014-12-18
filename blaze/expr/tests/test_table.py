@@ -15,7 +15,7 @@ from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
                         Summary, count, symbol, Field, discover,
-                        max, min, label
+                        max, min, label, Symbol, transform
                         )
 from blaze.compatibility import PY3, builtins
 from blaze.utils import raises, tmpfile
@@ -195,20 +195,11 @@ def test_selection_path_check():
 
 
 def test_path_issue():
-    from blaze.api.dplyr import transform
     t = TableSymbol('t', "{topic: string, word: string, result: ?float64}")
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 
     assert t2.sizes in t2.children
-
-
-def test_different_schema_raises():
-    with tmpfile('.csv') as filename:
-        df = pd.DataFrame(np.random.randn(10, 2))
-        df.to_csv(filename, index=False, header=False)
-        with pytest.raises(TypeError):
-            Table(CSV(filename), columns=list('ab'))
 
 
 def test_getattr_doesnt_override_properties():
@@ -592,17 +583,11 @@ def test_map_without_any_info():
 
 
 def test_apply():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    s = Apply(t['amount'], sum, dshape='real')
-    r = Apply(t['amount'], sum, dshape='3 * real')
-    l = Apply(t['amount'], sum)
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
+    s = t['amount'].apply(sum, dshape='real')
+    r = t['amount'].apply(sum, dshape='3 * real')
     assert s.dshape == dshape('real')
-    assert r.schema == dshape("float64")
-
-    with pytest.raises(TypeError):
-        s.schema
-    with pytest.raises(NotImplementedError):
-        l.dshape
+    assert r.schema == dshape('real')
 
 
 def test_TableSymbol_printing_is_legible():

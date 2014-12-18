@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-from dynd import nd
 from pandas import DataFrame
-import h5py
+from into import into, convert, append, resource, drop
+from into.backends.csv import CSV
 
 from multipledispatch import halt_ordering, restart_ordering
 
@@ -11,24 +11,31 @@ halt_ordering() # Turn off multipledispatch ordering
 from datashape import dshape, discover
 from .expr import (Symbol, TableSymbol, symbol)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var)
+        mean, merge, nunique, relabel, selection, sort, summary, var, transform)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
-from .api import *
-from .data import CSV, HDF5, SQL, coerce
+from .index import create_index
 from .json import *
-from .resource import *
+from .interactive import *
 from .compute.csv import *
-from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
-from .sql import *
-from .server import *
 from .versions import *
+
+try:
+    from .server import *
+except ImportError:
+    pass
+
+try:
+    from .sql import *
+    from .compute.sql import *
+except ImportError:
+    pass
 
 try:
     from .spark import *
@@ -40,6 +47,12 @@ try:
 except (ImportError, TypeError):
     pass
 try:
+    from dynd import nd
+    from .compute.dynd import *
+except ImportError:
+    pass
+try:
+    from .h5py import *
     from .compute.h5py import *
 except ImportError:
     pass
@@ -48,19 +61,21 @@ try:
 except ImportError:
     pass
 try:
-    import blaze.compute.chunks
+    from .compute.chunks import *
 except ImportError:
     pass
 try:
-    from .bcolz import *
+    from .compute.bcolz import *
 except ImportError:
     pass
 try:
     from .mongo import *
+    from .compute.mongo import *
 except ImportError:
     pass
 try:
     from .pytables import *
+    from .compute.pytables import *
 except ImportError:
     pass
 
@@ -69,7 +84,7 @@ restart_ordering() # Restart multipledispatch ordering and do ordering
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.6.6'
+__version__ = '0.7.0'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog
@@ -82,14 +97,11 @@ def print_versions():
     """Print all the versions of software that Blaze relies on."""
     import sys, platform
     import numpy as np
-    import dynd
     import datashape
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("Datashape version: %s" % datashape.__version__)
     print("NumPy version: %s" % np.__version__)
-    print("DyND version: %s / LibDyND %s" %
-                    (dynd.__version__, dynd.__libdynd_version__))
     print("Python version: %s" % sys.version)
     (sysname, nodename, release, version, machine, processor) = \
         platform.uname()

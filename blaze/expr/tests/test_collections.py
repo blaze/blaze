@@ -18,6 +18,14 @@ def test_merge_on_single_argument_is_noop():
     assert merge(t.name).isidentical(t.name)
 
 
+def test_transform():
+    t = symbol('t', '5 * {x: int, y: int}')
+    expr = transform(t, z=t.x + t.y)
+    assert expr.fields == ['x', 'y', 'z']
+
+    assert (t.x + t.y) in expr._subterms()
+
+
 def test_distinct():
     assert '5' not in str(t.distinct().dshape)
 

@@ -35,14 +35,22 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from math import ceil
-import h5py
 import toolz
 import itertools
-import bcolz
+try:
+    import h5py
+    from h5py import Dataset
+except ImportError:
+    Dataset = type(None)
+
+try:
+    from bcolz import carray, ctable
+except ImportError:
+    carray = ctable = type(None)
 
 from .dispatch import dispatch
 
-Array = (np.ndarray, h5py.Dataset, bcolz.ctable, bcolz.carray)
+Array = (np.ndarray, Dataset, ctable, carray)
 
 @dispatch(Array, object)
 def partition_get(data, part, chunksize=None):

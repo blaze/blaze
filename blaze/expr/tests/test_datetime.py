@@ -44,3 +44,8 @@ def test_isdatelike():
     assert not isdatelike('int32')
     assert isdatelike('?date')
     assert not isdatelike('{is_outdated: bool}')
+
+
+def test_truncate_names():
+    t = symbol('t', '5 * {name: string, when: datetime}')
+    assert t.when.truncate(days=2)._name == 'when'

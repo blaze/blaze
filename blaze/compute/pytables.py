@@ -93,6 +93,16 @@ def compute_up(proj, t, **kwargs):
     return out
 
 
+@dispatch(Field, tb.File)
+def compute_up(expr, data, **kwargs):
+    return data.getNode('/')._v_children[expr._name]
+
+
+@dispatch(Field, tb.Node)
+def compute_up(expr, data, **kwargs):
+    return data._v_children[expr._name]
+
+
 @dispatch(Field, tb.Table)
 def compute_up(c, t, **kwargs):
     return getattr(t.cols, c._name)

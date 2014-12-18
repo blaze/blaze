@@ -1,16 +1,16 @@
-dynd-python
 datashape
+into
 numpy >= 1.7
-sqlalchemy
 pandas
-h5py
 multipledispatch >= 0.4.7
 cytoolz
 toolz
+sqlalchemy
+h5py
 flask >= 0.10.1
-pytest
-xlrd
 requests
 tables
 pymongo
 psutil
+pytest
+bcolz

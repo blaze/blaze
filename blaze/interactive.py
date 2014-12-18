@@ -8,15 +8,13 @@ from pandas import DataFrame, Series
 import itertools
 from functools import reduce
 import numpy as np
-from dynd import nd
 import warnings
 from collections import Iterator
 
-from ..expr import Expr, Symbol, ndim
-from ..dispatch import dispatch
-from .into import into
-from ..compatibility import _strtypes, unicode
-from ..resource import resource
+from .expr import Expr, Symbol, ndim
+from .dispatch import dispatch
+from into import into, resource
+from .compatibility import _strtypes, unicode
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
 
@@ -35,8 +33,6 @@ try:
     not_an_iterator.append(pymongo.collection.Collection)
 except ImportError:
     pass
-from ..compute.chunks import ChunkIterator
-not_an_iterator.append(ChunkIterator)
 
 
 class Data(Symbol):
@@ -163,16 +159,17 @@ def concrete_head(expr, n=10):
     if not iscollection(expr.dshape):
         return compute(expr)
 
-    try:
-        head = expr.head(n + 1)
-        result = compute(head)
+    head = expr.head(n + 1)
+    result = compute(head)
 
-        if len(result) == 0:
-            return DataFrame(columns=expr.fields)
-
-        return into(DataFrame(columns=expr.fields), result)
-    except:
-        return compute(expr)
+    if len(result) == 0:
+        return DataFrame(columns=expr.fields)
+    if isrecord(expr.dshape.measure):
+        return into(DataFrame, result, dshape=expr.dshape)
+    else:
+        df = into(DataFrame, result, dshape=expr.dshape)
+        df.columns = [expr._name]
+        return df
 
 
 def repr_tables(expr, n=10):
@@ -236,6 +233,7 @@ def expr_repr(expr, n=10):
 def to_html(df):
     return df.to_html()
 
+
 @dispatch(Expr)
 def to_html(expr):
     # Tables
@@ -254,32 +252,12 @@ def to_html(o):
 def to_html(o):
     return o.replace('\n', '<br>')
 
-@dispatch(type, Expr)
+
+@dispatch((object, type, str), Expr)
 def into(a, b, **kwargs):
-    f = into.dispatch(a, type(b))
-    return f(a, b, **kwargs)
-
-
-@dispatch(object, Expr)
-def into(a, b, **kwargs):
-    return into(a, compute(b, **kwargs), dshape=kwargs.pop('dshape', b.dshape),
-                schema=b.schema, **kwargs)
-
-
-@dispatch(DataFrame, Expr)
-def into(a, b, **kwargs):
-    return into(DataFrame(columns=b.fields), compute(b, **kwargs))
-
-
-@dispatch(nd.array, Expr)
-def into(a, b, **kwargs):
-    return into(nd.array(), compute(b, **kwargs), dtype=str(b.schema))
-
-
-@dispatch(np.ndarray, Expr)
-def into(a, b, **kwargs):
-    schema = dshape(str(b.schema).replace('?', ''))
-    return into(np.ndarray(0), compute(b, **kwargs), dtype=to_numpy_dtype(schema))
+    result = compute(b, **kwargs)
+    kwargs['dshape'] = b.dshape
+    return into(a, result, **kwargs)
 
 
 def table_length(expr):

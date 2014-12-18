@@ -1,10 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
+pytest.importorskip('flask')
 
+import datashape
+import numpy as np
 from flask import json
 from datetime import datetime
-from dynd import nd
 from pandas import DataFrame
 from toolz import pipe
 
@@ -33,7 +35,8 @@ test = server.app.test_client()
 
 def test_datasets():
     response = test.get('/datasets.json')
-    assert json.loads(response.data) == {'accounts': str(discover(accounts)),
+    assert json.loads(response.data.decode('utf-8')) == \
+                                      {'accounts': str(discover(accounts)),
                                          'cities': str(discover(cities)),
                                          'events': str(discover(events))}
 
@@ -113,7 +116,7 @@ def test_compute():
                          content_type='application/json')
 
     assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
+    assert json.loads(response.data.decode('utf-8'))['data'] == expected
 
 
 def test_get_datetimes():
@@ -122,8 +125,9 @@ def test_get_datetimes():
                          content_type='application/json')
 
     assert 'OK' in response.status
-    data = json.loads(response.data)
-    result = nd.array(data['data'], type=data['datashape'])
+    data = json.loads(response.data.decode('utf-8'))
+    ds = datashape.dshape(data['datashape'])
+    result = into(np.ndarray, data['data'], dshape=ds)
     assert into(list, result) == into(list, events)
 
 
@@ -137,7 +141,7 @@ def test_compute_with_namespace():
                          content_type='application/json')
 
     assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
+    assert json.loads(response.data.decode('utf-8'))['data'] == expected
 
 
 @pytest.fixture
@@ -152,7 +156,7 @@ iris = CSV(example('iris.csv'))
 
 def test_compute_with_variable_in_namespace(iris_server):
     test = iris_server
-    t = Symbol('t', iris.dshape)
+    t = Symbol('t', discover(iris))
     pl = Symbol('pl', 'float32')
     expr = t[t.petal_length > pl].species
     tree = to_tree(expr, {pl: 'pl'})
@@ -162,28 +166,28 @@ def test_compute_with_variable_in_namespace(iris_server):
                      content_type='application/json')
 
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = list(compute(expr._subs({pl: 5}), {t: iris}))
     assert result == expected
 
 
 def test_compute_by_with_summary(iris_server):
     test = iris_server
-    t = Symbol('t', iris.dshape)
+    t = Symbol('t', discover(iris))
     expr = by(t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
     resp = test.post('/compute/iris.json', data=blob,
                      content_type='application/json')
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = compute(expr, iris)
     assert result == list(map(list, into(list, expected)))
 
 
 def test_compute_column_wise(iris_server):
     test = iris_server
-    t = Symbol('t', iris.dshape)
+    t = Symbol('t', discover(iris))
     subexpr = ((t.petal_width / 2 > 0.5) &
                (t.petal_length / 2 > 0.5))
     expr = t[subexpr]
@@ -193,7 +197,7 @@ def test_compute_column_wise(iris_server):
                      content_type='application/json')
 
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = compute(expr, iris)
     assert list(map(tuple, result)) == into(list, expected)
 
@@ -209,7 +213,7 @@ def test_multi_expression_compute():
                      content_type='application/json')
 
     assert 'OK' in resp.status
-    result = json.loads(resp.data)['data']
+    result = json.loads(resp.data.decode('utf-8'))['data']
     expected = compute(expr, {a: accounts, c: cities})
 
     assert list(map(tuple, result))== into(list, expected)

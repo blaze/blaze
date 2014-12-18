@@ -1,9 +1,9 @@
-from blaze.api.interactive import (Data, compute, concrete_head, expr_repr,
+from blaze.interactive import (Data, compute, concrete_head, expr_repr,
         to_html)
-from blaze.api.into import into
 import os
 
-from blaze.data import CSV
+from into import into, append
+from into.backends.csv import CSV
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from blaze.expr import symbol
@@ -14,7 +14,6 @@ import sys
 
 import pandas as pd
 import numpy as np
-from dynd import nd
 
 data = (('Alice', 100),
         ('Bob', 200))
@@ -145,8 +144,7 @@ def test_repr_html():
 
 
 def test_into():
-    from blaze.api.into import into
-    assert into([], t) == into([], data)
+    assert into(list, t) == into(list, data)
 
 
 def test_serialization():
@@ -159,12 +157,13 @@ def test_serialization():
 
 def test_table_resource():
     with tmpfile('csv') as filename:
-        csv = CSV(filename, 'w', schema='{x: int, y: int}')
-        csv.extend([[1, 2], [10, 20]])
+        ds = dshape('var * {a: int, b: int}')
+        csv = CSV(filename)
+        append(csv, [[1, 2], [10, 20]], dshape=ds)
 
         t = Data(filename)
         assert isinstance(t.data, CSV)
-        assert into(list, compute(t)) == list(csv)
+        assert into(list, compute(t)) == into(list, csv)
 
 
 def test_concretehead_failure():
@@ -184,22 +183,21 @@ def test_into_np_ndarray_column():
 def test_into_nd_array_selection():
     t = Data(L, fields=['id', 'name', 'balance'])
     expr = t[t['balance'] < 0]
-    selarray = into(nd.array, expr)
+    selarray = into(np.ndarray, expr)
     assert len(list(compute(expr))) == len(selarray)
 
 
 def test_into_nd_array_column_failure():
     tble = Data(L, fields=['id', 'name', 'balance'])
     expr = tble[tble['balance'] < 0]
-    colarray = into(nd.array, expr)
+    colarray = into(np.ndarray, expr)
     assert len(list(compute(expr))) == len(colarray)
 
 
 def test_Data_attribute_repr():
-    path = os.path.join(os.path.dirname(__file__), 'accounts.csv')
-    t = Data(CSV(path))
-    result = t.timestamp.day
-    expected = pd.DataFrame({'timestamp_day': [25] * 3})
+    t = Data(CSV(example('accounts-datetimes.csv')))
+    result = t.when.day
+    expected = pd.DataFrame({'when_day': [1,2,3,4,5]})
     assert repr(result) == repr(expected)
 
 
@@ -213,10 +211,12 @@ def test_can_trivially_create_csv_Data_with_unicode():
 
 
 def test_can_trivially_create_sqlite_table():
+    pytest.importorskip('sqlalchemy')
     Data('sqlite:///'+example('iris.db')+'::iris')
 
 
 def test_can_trivially_create_pytables():
+    pytest.importorskip('tables')
     Data(example('accounts.h5')+'::/accounts')
 
 
@@ -242,3 +242,10 @@ def test_Data_on_json_is_concrete():
 def test_repr_on_nd_array_doesnt_err():
     d = Data(np.ones((2, 2, 2)))
     repr(d + 1)
+
+
+def test_generator_reprs_concretely():
+    x = [1, 2, 3, 4, 5, 6]
+    d = Data(x)
+    expr = d[d > 2] + 1
+    assert '4' in repr(expr)

@@ -9,7 +9,7 @@ from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join']
+           'head', 'sort', 'Join', 'join', 'transform']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -166,6 +166,21 @@ def merge(*exprs, **kwargs):
             frequencies(result.fields).items() if v > 1))
 
     return result
+
+
+def transform(t, replace=True, **kwargs):
+    """ Add named columns to table
+
+    >>> from blaze import symbol
+    >>> t = symbol('t', 'var * {x: int, y: int}')
+    >>> transform(t, z=t.x + t.y).fields
+    ['x', 'y', 'z']
+    """
+    if replace and set(t.fields).intersection(set(kwargs)):
+        t = t[[c for c in t.fields if c not in kwargs]]
+
+    args = [t] + [v.label(k) for k, v in kwargs.items()]
+    return merge(*args)
 
 
 def schema_concat(exprs):
