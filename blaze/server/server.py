@@ -16,7 +16,7 @@ from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
-from ..interactive import Data
+from ..interactive import InteractiveSymbol
 from ..utils import json_dumps
 from ..expr import Expr, Symbol, Selection, Broadcast, symbol
 from ..expr.parser import exprify
@@ -145,7 +145,7 @@ def to_tree(expr, names=None):
                 'args': [to_tree(arg, names=names) for arg in [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, Mono):
         return str(expr)
-    elif isinstance(expr, Data):
+    elif isinstance(expr, InteractiveSymbol):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,

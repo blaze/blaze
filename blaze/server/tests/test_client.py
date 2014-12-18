@@ -96,3 +96,8 @@ def test_custom_expressions():
     t = symbol('t', discover(ec))
 
     assert list(map(tuple, compute(CustomExpr(t.accounts), ec))) == into(list, df)
+
+
+def test_client_dataset():
+    d = Data('blaze://localhost::accounts')
+    assert list(map(tuple, into(list, d))) == into(list, df)

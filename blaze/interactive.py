@@ -37,9 +37,12 @@ except ImportError:
 
 def Data(data, dshape=None, name=None, fields=None, columns=None,
          schema=None, **kwargs):
+    sub_uri = ''
     if isinstance(data, _strtypes):
+        if '::' in data:
+            data, sub_uri = data.split('::')
         data = resource(data, schema=schema, dshape=dshape,
-                columns=columns, **kwargs)
+                              columns=columns, **kwargs)
     if (isinstance(data, Iterator) and
             not isinstance(data, tuple(not_an_iterator))):
         data = tuple(data)
@@ -81,7 +84,14 @@ def Data(data, dshape=None, name=None, fields=None, columns=None,
                                               ds.measure))
 
     name = name or next(names)
-    return InteractiveSymbol(data, ds, name)
+    result = InteractiveSymbol(data, ds, name)
+
+    if sub_uri:
+        for field in sub_uri.split('/'):
+            if field:
+                result = result[field]
+
+    return result
 
 
 class InteractiveSymbol(Symbol):
