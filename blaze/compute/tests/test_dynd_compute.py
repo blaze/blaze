@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+dynd = pytest.importorskip('dynd')
 from dynd import nd
 
 from blaze.compute.core import compute

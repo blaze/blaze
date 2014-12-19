@@ -2,6 +2,18 @@
 Release Notes
 =============
 
+Release 0.7.0
+-------------
+
+* Pull out data migration utilities to ``into`` project
+* Out-of-core CSV support now depends on chunked pandas computation
+* h5py and bcolz backends support multi-threading/processing
+* Remove ``data`` directory including ``SQL``, ``HDF5`` objects.  Depend on
+  standard types within other projects instead (e.g. ``sqlalchemy.Table``,
+  ``h5py.Dataset``, ...)
+* Better support SQL nested queries for complex queries
+* Support databases, h5py files, servers as first class datasets
+
 
 Release 0.6.6
 -------------

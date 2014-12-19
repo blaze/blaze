@@ -40,19 +40,31 @@ sync.
 Index
 ~~~~~
 
+User facing
+
 .. toctree::
    :maxdepth: 1
 
    overview
+   install
    quickstart
+   queries
+   uri
+   csv
+   sql
+   ooc
+   server
+   datashape
+   api
+
+Internal
+
+.. toctree::
+   :maxdepth: 1
+
    expressions
    backends
-   uri
    interactivity
-   install
-   datashape
-   server
-   api
    dev_workflow
    expr-compute-dev
    computation

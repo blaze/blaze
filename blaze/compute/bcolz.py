@@ -22,12 +22,11 @@ import bcolz
 import math
 import numpy as np
 import pandas as pd
-from .chunks import ChunkIndexable
 
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
-from ..api import into
+from into import into
 
 __all__ = ['bcolz']
 
@@ -74,12 +73,12 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Field, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
-    return data[expr._name]
+    return data[str(expr._name)]
 
 
 @dispatch(Projection, bcolz.ctable)
 def compute_up(expr, data, **kwargs):
-    return data[expr.fields]
+    return data[list(map(str, expr.fields))]
 
 
 @dispatch(Slice, (bcolz.carray, bcolz.ctable))
@@ -118,7 +117,7 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
                    if isinstance(e, Expr)
                    and any(i is expr._leaves()[0] for i in e._inputs))
     if len(children) == 1 and isinstance(first(children), (Field, Projection)):
-        raise NotImplementedError()
+        raise MDNotImplementedError()
 
 
     chunk = symbol('chunk', chunksize * leaf.schema)

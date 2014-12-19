@@ -10,7 +10,7 @@ def mymap(func, *args):
 
 
 def test_map_called_on_resource_star():
-    r = resource(example('accounts*.csv'))
+    r = resource(example('accounts_*.csv'))
     s = symbol('s', discover(r))
     flag[0] = False
     a = compute(s.count(), r)

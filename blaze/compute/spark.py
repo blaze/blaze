@@ -16,7 +16,7 @@ from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
-from ..data.utils import listpack
+from ..utils import listpack
 
 from .core import compute, compute_up
 
@@ -101,6 +101,16 @@ def compute_up(t, rdd, **kwargs):
 @dispatch(Head, RDD)
 def compute_up(t, rdd, **kwargs):
     return rdd.take(t.n)
+
+
+@dispatch(Apply, RDD)
+def compute_up(t, rdd, **kwargs):
+    if t._splittable:
+        return rdd.mapPartitions(t.func)
+    else:
+        raise NotImplementedError("Can only apply splittable functions."
+                "To apply function to each partition add splittable=True kwarg"
+                " to call to apply.  t.apply(func, dshape, splittable=True)")
 
 
 @dispatch(Sort, RDD)

@@ -3,13 +3,12 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame
 import numpy as np
-import bcolz
+from into import resource, into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
-from blaze.api import Data, into
+from blaze.interactive import Data
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
-from blaze.sql import SQL
 
 
 sources = []
@@ -26,12 +25,23 @@ df = DataFrame(L, columns=['amount', 'id', 'name'])
 
 x = into(np.ndarray, df)
 
-bc = into(bcolz.ctable, df)
+sources = [df, x]
 
-sql = SQL('sqlite:///:memory:', 'accounts', schema=t.schema)
-sql.extend(L)
+try:
+    import sqlalchemcy
+    sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
+    into(sql, L)
+    sources.append(sql)
+except:
+    sql = None
 
-sources = [df, x, bc, sql]
+
+try:
+    import bcolz
+    bc = into(bcolz.ctable, df)
+    sources.append(bc)
+except ImportError:
+    bc = None
 
 try:
     import pymongo
@@ -96,7 +106,7 @@ base = df
 
 def df_eq(a, b):
     return (list(a.columns) == list(b.columns)
-            and list(a.dtypes) == list(b.dtypes)
+            # and list(a.dtypes) == list(b.dtypes)
             and into(set, into(list, a)) == into(set, into(list, b)))
 
 
@@ -106,7 +116,10 @@ def typename(obj):
 
 def test_base():
     for expr, exclusions in expressions.items():
-        model = compute(expr._subs({t: Data(base, t.dshape)}))
+        if iscollection(expr.dshape):
+            model = into(DataFrame, into(np.ndarray, expr._subs({t: Data(base, t.dshape)})))
+        else:
+            model = expr._subs({t: Data(base, t.dshape)})
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
@@ -114,9 +127,9 @@ def test_base():
             print('%s <- %s' % (typename(model), typename(source)))
             T = Data(source)
             if iscollection(expr.dshape):
-                result = into(model, expr._subs({t: T}))
+                result = into(type(model), expr._subs({t: T}))
                 if isscalar(expr.dshape.measure):
-                    assert set(into([], result)) == set(into([], model))
+                    assert set(into(list, result)) == set(into(list, model))
                 else:
                     assert df_eq(result, model)
             elif isrecord(expr.dshape):

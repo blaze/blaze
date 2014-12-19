@@ -1,16 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
-import re
 import pytest
+sqlalchemy = pytest.importorskip('sqlalchemy')
+sa = sqlalchemy
+
+import datashape
+import re
 from blaze.compute.sql import (compute, computefull, select, lower_column,
         compute_up)
 from blaze.expr import *
-import sqlalchemy
-import sqlalchemy as sa
 from blaze.compatibility import xfail
 from blaze.utils import unique
 from pandas import DataFrame
-from blaze import into
+from into import into, resource
+from blaze.utils import tmpfile
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
@@ -438,67 +441,76 @@ def test_outer_join():
     L = symbol('L', 'var * {id: int, name: string, amount: real}')
     R = symbol('R', 'var * {city: string, id: int}')
 
-    from blaze.sql import SQL
-    engine = sa.create_engine('sqlite:///:memory:')
+    with tmpfile('db') as fn:
+        uri = 'sqlite:///' + fn
+        engine = resource(uri)
 
-    _left = [(1, 'Alice', 100),
-            (2, 'Bob', 200),
-            (4, 'Dennis', 400)]
-    left = SQL(engine, 'left', schema=L.schema)
-    left.extend(_left)
+        _left = [(1, 'Alice', 100),
+                (2, 'Bob', 200),
+                (4, 'Dennis', 400)]
 
-    _right = [('NYC', 1),
-             ('Boston', 1),
-             ('LA', 3),
-             ('Moscow', 4)]
-    right = SQL(engine, 'right', schema=R.schema)
-    right.extend(_right)
+        left = resource(uri, 'left', dshape=L.dshape)
+        into(left, _left)
 
-    conn = engine.connect()
+        _right = [('NYC', 1),
+                 ('Boston', 1),
+                 ('LA', 3),
+                 ('Moscow', 4)]
+        right = resource(uri, 'right', dshape=R.dshape)
+        into(right, _right)
 
+        conn = engine.connect()
 
-    query = compute(join(L, R, how='inner'), {L: left.table, R: right.table})
-    result = list(map(tuple, conn.execute(query).fetchall()))
+        query = compute(join(L, R, how='inner'),
+                        {L: left, R: right},
+                        post_compute=False)
+        result = list(map(tuple, conn.execute(query).fetchall()))
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (4, 'Dennis', 400, 'Moscow')])
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (4, 'Dennis', 400, 'Moscow')])
 
-    query = compute(join(L, R, how='left'), {L: left.table, R: right.table})
-    result = list(map(tuple, conn.execute(query).fetchall()))
+        query = compute(join(L, R, how='left'),
+                        {L: left, R: right},
+                        post_compute=False)
+        result = list(map(tuple, conn.execute(query).fetchall()))
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (2, 'Bob', 200, None),
-             (4, 'Dennis', 400, 'Moscow')])
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (2, 'Bob', 200, None),
+                 (4, 'Dennis', 400, 'Moscow')])
 
-    query = compute(join(L, R, how='right'), {L: left.table, R: right.table})
-    print(query)
-    result = list(map(tuple, conn.execute(query).fetchall()))
-    print(result)
+        query = compute(join(L, R, how='right'),
+                        {L: left, R: right},
+                        post_compute=False)
+        print(query)
+        result = list(map(tuple, conn.execute(query).fetchall()))
+        print(result)
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (3, None, None, 'LA'),
-             (4, 'Dennis', 400, 'Moscow')])
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (3, None, None, 'LA'),
+                 (4, 'Dennis', 400, 'Moscow')])
 
-    # SQLAlchemy doesn't support full outer join
-    """
-    query = compute(join(L, R, how='outer'), {L: left.table, R: right.table})
-    result = list(map(tuple, conn.execute(query).fetchall()))
+        # SQLAlchemy doesn't support full outer join
+        """
+        query = compute(join(L, R, how='outer'),
+                        {L: left, R: right},
+                        post_compute=False)
+        result = list(map(tuple, conn.execute(query).fetchall()))
 
-    assert set(result) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (2, 'Bob', 200, None),
-             (3, None, None, 'LA'),
-             (4, 'Dennis', 400, 'Moscow')])
-    """
+        assert set(result) == set(
+                [(1, 'Alice', 100, 'NYC'),
+                 (1, 'Alice', 100, 'Boston'),
+                 (2, 'Bob', 200, None),
+                 (3, None, None, 'LA'),
+                 (4, 'Dennis', 400, 'Moscow')])
+        """
 
-    conn.close()
+        conn.close()
 
 
 def test_summary():
@@ -800,6 +812,21 @@ def test_computation_directly_on_sqlalchemy_Tables():
     assert list(result) == []
 
 
+def test_computation_directly_on_metadata():
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+    name = sa.Table('name', metadata,
+             sa.Column('id', sa.Integer),
+             sa.Column('name', sa.String),
+             )
+    name.create()
+
+    s = symbol('s', discover(metadata))
+
+    result = compute(s.name, {s: metadata}, post_compute=False)
+    assert result == name
+
+
 sql_bank = sa.Table('bank', sa.MetaData(),
                  sa.Column('id', sa.Integer),
                  sa.Column('name', sa.String),
@@ -1001,3 +1028,20 @@ def test_distinct_count_on_projection():
         SELECT count(alias.id) as count
         FROM (SELECT DISTINCT accounts.amount AS amount, accounts.id AS id
               FROM accounts) as alias""")
+
+
+def test_join_count():
+    ds = datashape.dshape('{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}')
+    engine = resource('sqlite:///:memory:', dshape=ds)
+    db = symbol('db', ds)
+
+    expr = join(db.t1[db.t1.x > -1], db.t2, 'x', 'a').count()
+
+    result = compute(expr, {db: engine}, post_compute=False)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT count(alias.x) as count
+    FROM (SELECT t1.x AS x, t1.y AS y, t2.b AS b
+          FROM t1 JOIN t2 ON t1.x = t2.a
+          WHERE t1.x > ?) as alias
+          """)

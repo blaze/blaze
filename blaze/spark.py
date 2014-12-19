@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 from functools import partial
 
+from into import into, convert
 from .compatibility import _strtypes
-from .data.utils import coerce
 from .dispatch import dispatch
 from .expr import Expr
 from datashape import discover, var
@@ -14,38 +14,18 @@ except (ImportError, AttributeError):
     RDD = type(None)
     SparkContext = type(None)
     pyspark = None
-    coerce = None
 
-__all__ = ['pyspark', 'coerce']
-
-@dispatch(_strtypes, RDD)
-def coerce(dshape, rdd):
-    return rdd.mapPartitions(partial(coerce, dshape))
+__all__ = ['pyspark']
 
 
-@dispatch(type, RDD)
-def into(a, rdd, **kwargs):
-    f = into.dispatch(a, type(rdd))
-    return f(a, rdd, **kwargs)
-
-@dispatch(object, RDD)
-def into(o, rdd, **kwargs):
-    return into(o, rdd.collect())
+@convert.register(list, RDD)
+def list_to_rdd(rdd, **kwargs):
+    return rdd.collect()
 
 
-@dispatch((tuple, list, set), RDD)
-def into(a, b, **kwargs):
-    if not isinstance(a, type):
-        a = type(a)
-    b = b.collect()
-    if isinstance(b[0], (tuple, list)) and not type(b[0]) == tuple:
-        b = map(tuple, b)
-    return a(b)
-
-
-@dispatch(SparkContext, (Expr, RDD, object) + _strtypes)
+@dispatch(SparkContext, (Expr, object))
 def into(sc, o, **kwargs):
-    return sc.parallelize(into(list, o, **kwargs))
+    return sc.parallelize(convert(list, o, **kwargs))
 
 
 @dispatch(RDD)

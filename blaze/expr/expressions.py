@@ -7,7 +7,7 @@ from toolz import concat, memoize, partial, pipe
 from toolz.curried import map, filter
 import re
 
-from datashape import dshape, DataShape, Record, Var, Mono
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins
@@ -565,29 +565,23 @@ class Apply(Expr):
     --------
 
     >>> t = symbol('t', 'var * {name: string, amount: int}')
-    >>> h = Apply(t, hash)  # Hash value of resultant table
+    >>> h = t.apply(hash, dshape='int64')  # Hash value of resultant dataset
 
-    Optionally provide extra datashape information
+    You must provide the datashape of the result with the ``dshape=`` keyword.
+    For datashape examples see
+        http://datashape.pydata.org/grammar.html#some-simple-examples
 
-    >>> h = Apply(t, hash, dshape='real')
+    If using a chunking backend and your operation may be safely split and
+    concatenated then add the ``splittable=True`` keyword argument
 
-    Apply brings a function within the expression tree.
-    The following transformation is often valid
-
-    Before ``compute(Apply(expr, f), ...)``
-    After  ``f(compute(expr, ...)``
+    >>> t.apply(f, dshape='...', splittable=True) # doctest: +SKIP
 
     See Also
     --------
 
     blaze.expr.expressions.Map
     """
-    __slots__ = '_hash', '_child', 'func', '_dshape'
-
-    def __init__(self, child, func, dshape=None):
-        self._child = child
-        self.func = func
-        self._dshape = dshape
+    __slots__ = '_hash', '_child', 'func', '_dshape', '_splittable'
 
     @property
     def schema(self):
@@ -598,10 +592,13 @@ class Apply(Expr):
 
     @property
     def dshape(self):
-        if self._dshape:
-            return dshape(self._dshape)
-        else:
-            raise NotImplementedError("Datashape of arbitrary Apply not defined")
+        return dshape(self._dshape)
+
+
+def apply(expr, func, dshape, splittable=False):
+    return Apply(expr, func, datashape.dshape(dshape), splittable)
+
+apply.__doc__ = Apply.__doc__
 
 
 dshape_method_list = list()
@@ -612,6 +609,14 @@ dshape_methods = memoize(partial(select_functions, dshape_method_list))
 schema_methods = memoize(partial(select_functions, schema_method_list))
 
 
+@dispatch(DataShape)
+def shape(ds):
+    s = ds.shape
+    s = tuple(int(d) if isinstance(d, Fixed) else d for d in s)
+    return s
+
+
+@dispatch(object)
 def shape(expr):
     """ Shape of expression
 
@@ -643,6 +648,7 @@ def ndim(expr):
 
 
 dshape_method_list.extend([
+    (lambda ds: True, set([apply])),
     (iscollection, set([shape, ndim])),
     ])
 

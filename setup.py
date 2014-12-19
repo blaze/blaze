@@ -8,8 +8,7 @@ import shutil
 import textwrap
 from fnmatch import fnmatch
 
-from distutils.core import Command, setup
-from distutils.util import convert_path
+from setuptools import Command, setup, convert_path
 
 
 #------------------------------------------------------------------------
@@ -142,11 +141,12 @@ with open('README.md') as f:
 
 setup(
     name='blaze',
-    version='0.6.6',
+    version='0.7.0',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',
     long_description=longdesc,
+    install_requires=open('requirements-strict.txt').read().strip().split('\n'),
     license='BSD',
     platforms = ['any'],
     classifiers=[

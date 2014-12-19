@@ -1,24 +1,29 @@
 from __future__ import absolute_import, division, print_function
 
+try:
+    import flask
+    from flask import Flask, request
+except ImportError:
+    pass
 
 import blaze
 from collections import Iterator
 import socket
-from flask import Flask, request, jsonify, json
-from dynd import nd
+import json
 from cytoolz import first, merge, valmap, assoc
 from functools import partial, wraps
 from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection
-from ..api import discover, Data
-from ..expr import Expr, Symbol, Selection, Broadcast, Symbol
+from ..interactive import InteractiveSymbol
+from ..utils import json_dumps
+from ..expr import Expr, Symbol, Selection, Broadcast, symbol
 from ..expr.parser import exprify
 from .. import expr
 
 from ..compatibility import map
-from datashape import Mono
+from datashape import Mono, discover
 
 from .index import parse_index
 
@@ -44,22 +49,15 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'datasets', 'port'
+    __slots__ = 'app', 'data', 'port'
 
-    def __init__(self, datasets=None):
+    def __init__(self, data=None):
         app = self.app = Flask('blaze.server.server')
-        self.datasets = datasets or dict()
+        self.data = data or dict()
 
         for args, kwargs, func in routes:
-            func2 = wraps(func)(partial(func, self.datasets))
+            func2 = wraps(func)(partial(func, self.data))
             app.route(*args, **kwargs)(func2)
-
-    def __getitem__(self, key):
-        return self.datasets[key]
-
-    def __setitem__(self, key, value):
-        self.datasets[key] = value
-        return value
 
     def run(self, *args, **kwargs):
         port = kwargs.pop('port', DEFAULT_PORT)
@@ -80,9 +78,11 @@ def route(*args, **kwargs):
     return f
 
 
-@route('/datasets.json')
-def dataset(datasets):
-    return jsonify(dict((k, str(discover(v))) for k, v in datasets.items()))
+@route('/datashape')
+def dataset(data):
+    return str(discover(data))
+    return json.dumps(dict((k, str(discover(v))) for k, v in datasets.items()),
+                      default=json_dumps)
 
 
 def to_tree(expr, names=None):
@@ -100,7 +100,7 @@ def to_tree(expr, names=None):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
+    >>> t = symbol('t', 'var * {x: int32, y: int32}')
     >>> to_tree(t) # doctest: +SKIP
     {'op': 'Symbol',
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
@@ -145,8 +145,8 @@ def to_tree(expr, names=None):
                 'args': [to_tree(arg, names=names) for arg in [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, Mono):
         return str(expr)
-    elif isinstance(expr, Data):
-        return to_tree(Symbol(expr._name, expr.dshape), names)
+    elif isinstance(expr, InteractiveSymbol):
+        return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
                 'args': [to_tree(arg, names) for arg in expr._args]}
@@ -191,7 +191,7 @@ def from_tree(expr, namespace=None):
     Examples
     --------
 
-    >>> t = Symbol('t', 'var * {x: int32, y: int32}')
+    >>> t = symbol('t', 'var * {x: int32, y: int32}')
     >>> tree = to_tree(t)
     >>> tree # doctest: +SKIP
     {'op': 'Symbol',
@@ -227,7 +227,6 @@ def from_tree(expr, namespace=None):
     >>> from_tree(tree, namespace={'t': t})
     t.x
 
-
     See Also
     --------
 
@@ -254,57 +253,29 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
-def comp(datasets, name):
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
-
-    try:
-        dset = datasets[name]
-    except KeyError:
-        return ("Dataset %s not found" % name, 404)
-
-    t = Symbol(name, discover(dset))
-    namespace = data.get('namespace', dict())
-    namespace[name] = t
-
-    expr = from_tree(data['expr'], namespace=namespace)
-
-    result = compute(expr, dset)
-    if iscollection(expr.dshape):
-        result = into(list, result)
-    return jsonify({'name': name,
-                    'datashape': str(expr.dshape),
-                    'data': result})
-
-
-
 @route('/compute.json', methods=['POST', 'PUT', 'GET'])
-def compserver(datasets):
+def compserver(dataset):
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
     try:
-        data = json.loads(request.data)
+        payload = json.loads(request.data.decode('utf-8'))
     except ValueError:
         return ("Bad JSON.  Got %s " % request.data, 404)
 
+    ns = payload.get('namespace', dict())
+    ns[':leaf'] = symbol('leaf', discover(dataset))
 
-    tree_ns = dict((name, Symbol(name, discover(datasets[name])))
-                    for name in datasets)
-    if 'namespace' in data:
-        tree_ns = merge(tree_ns, data['namespace'])
+    expr = from_tree(payload['expr'], namespace=ns)
+    assert len(expr._leaves()) == 1
+    leaf = expr._leaves()[0]
 
-    expr = from_tree(data['expr'], namespace=tree_ns)
+    try:
+        result = compute(expr, {leaf: dataset})
+    except Exception as e:
+        return ("Computation failed with message:\n%s" % e, 500)
 
-    compute_ns = dict((Symbol(name, discover(datasets[name])), datasets[name])
-                        for name in datasets)
-    result = compute(expr, compute_ns)
     if iscollection(expr.dshape):
         result = into(list, result)
 
-    return jsonify({'datashape': str(expr.dshape),
-                    'data': result})
+    return json.dumps({'datashape': str(expr.dshape),
+                       'data': result}, default=json_dumps)

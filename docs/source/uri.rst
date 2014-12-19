@@ -14,12 +14,12 @@ Interact with a set of CSV files or a SQL database
    >>> from blaze import *
    >>> t = Data('blaze/examples/data/accounts_*.csv')
    >>> t
-      id     name  amount
-   0   1    Alice     100
-   1   2      Bob     200
-   2   3  Charlie     300
-   3   4      Dan     400
-   4   5    Edith     500
+      id      name  amount
+   0   1     Alice     100
+   1   2       Bob     200
+   2   3   Charlie     300
+   3   4       Dan     400
+   4   5     Edith     500
 
    >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
    >>> t
@@ -41,8 +41,8 @@ Migrate CSV files into a SQL database
 
 .. code-block:: python
 
-   >>> into('sqlite:///myfile.db::iris', 'blaze.examples/data/iris.csv') # doctest: +SKIP
-   <blaze.data.sql.SQL at 0x7f0f64ffbdd0>
+   >>> into('sqlite:///myfile.db::iris', 'blaze/examples/data/iris.csv') # doctest: +SKIP
+   Table('iris', MetaData(bind=Engine(sqlite:///myfile.db)), ...)
 
 What sorts of URI's does Blaze support?
 ---------------------------------------
@@ -51,20 +51,21 @@ What sorts of URI's does Blaze support?
     * ``.csv``
     * ``.json``
     * ``.csv.gz/json.gz``
+    * ``.hdf5`` (uses ``h5py``)
     * ``.hdf5::/datapath`` (uses ``h5py``)
     * ``.h5::/datapath`` (uses ``PyTables``)
     * ``.bcolz``
     * ``.xls(x)``
 * SQLAlchemy strings like the following
     * ``sqlite:////absolute/path/to/myfile.db::tablename``
-    * ``postgresql://username:password@hostname:port::tablename``
-    * ``postgresql://username:password@hostname:port::database.tablename``
-    * ``impala://hostname::tablename`` (uses ``impyla``)
+    * ``sqlite:////absolute/path/to/myfile.db``  (specify a particular table)
+    * ``postgresql://username:password@hostname:port``
+    * ``impala://hostname`` (uses ``impyla``)
     * *anything supported by SQLAlchemy*
 * MongoDB Connection strings of the following form
     * ``mongodb://username:password@hostname:port/database_name::collection_name``
 * Blaze server strings of the following form
-    * ``blaze://hostname:port::dataset_name``  (port defaults to 6363)
+    * ``blaze://hostname:port``  (port defaults to 6363)
 
 In all cases when a location or table name is required in addition to the traditional URI (e.g. a data path within an HDF5 file or a Table/Collection name within a database) then that information follows on the end of the URI after a separator of two colons ``::``.
 

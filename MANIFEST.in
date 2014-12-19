@@ -1,3 +1,11 @@
-include *.md *.py
-recursive-include docs *.ipynb *.txt *.py Makefile *.rst
+recursive-include blaze *.py
+recursive-include docs *.rst
+
+include requirements.txt
+include requirements-strict.txt
+include setup.py
+include README.md
+include LICENSE.txt
+include MANIFEST.in
+
 prune docs/_build

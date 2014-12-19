@@ -41,8 +41,7 @@ from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
 from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize, base
 
-from ..data import DataDescriptor
-from ..data.utils import listpack
+from ..utils import listpack
 from .pyfunc import lambdify, broadcast_collect
 from . import pydatetime
 
@@ -82,7 +81,8 @@ def child(x):
         return x._child
     if hasattr(x, '_inputs') and len(x._inputs) == 1:
         return x._inputs[0]
-    raise NotImplementedError()
+    raise NotImplementedError("Found expression with multiple children.\n"
+            "Perhaps Broadcast Optimize was not called")
 
 
 def recursive_rowfunc(t, stop):
@@ -249,7 +249,8 @@ def deepmap(func, *data, **kwargs):
 
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = [rrowfunc(_child, t._child) for _child in t.children]
+    children = [optimize(child, []) for child in t.children]
+    funcs = [rrowfunc(_child, t._child) for _child in children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
@@ -537,7 +538,7 @@ def pair_assemble(t):
     return assemble
 
 
-@dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
+@dispatch(Join, Sequence, Sequence)
 def compute_up(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
 

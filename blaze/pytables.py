@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 import os
 
 import numpy as np
-import tables as tb
 
 from toolz import first
 from .dispatch import dispatch
@@ -12,7 +11,13 @@ import datashape
 
 import shutil
 from blaze.utils import tmpfile
-from .resource import resource
+from into import resource
+
+try:
+    import tables as tb
+    from tables import Table
+except ImportError:
+    Table = type(None)
 
 __all__ = ['PyTables']
 
@@ -102,7 +107,7 @@ def PyTables(path, datapath, dshape=None, **kwargs):
     return tb.open_file(path, mode='a').get_node(datapath)
 
 
-@dispatch(tb.Table)
+@dispatch(Table)
 def chunks(b, chunksize=2**15):
     start = 0
     n = len(b)
@@ -111,7 +116,7 @@ def chunks(b, chunksize=2**15):
         start += chunksize
 
 
-@dispatch(tb.Table, int)
+@dispatch(Table, int)
 def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
@@ -119,5 +124,8 @@ def get_chunk(b, i, chunksize=2**15):
 
 
 @resource.register('.+\.h5')
-def resource_pytables(path, datapath, **kwargs):
-    return PyTables(path, datapath, **kwargs)
+def resource_pytables(path, datapath=None, **kwargs):
+    if not datapath:
+        return tb.open_file(path)
+    else:
+        return PyTables(path, datapath, **kwargs)

@@ -13,12 +13,12 @@ Combining separate, gzipped csv files.
    >>> from blaze import into
    >>> from pandas import DataFrame
    >>> into(DataFrame, 'blaze/examples/data/accounts_*.csv.gz')
-      id     name  amount
-   0   1    Alice     100
-   1   2      Bob     200
-   2   3  Charlie     300
-   3   4      Dan     400
-   4   5    Edith     500
+      id      name  amount
+   0   1     Alice     100
+   1   2       Bob     200
+   2   3   Charlie     300
+   3   4       Dan     400
+   4   5     Edith     500
 
 
 -------------------
@@ -27,7 +27,7 @@ Split-Apply-Combine
 
 .. doctest::
 
-   >>> from blaze import SQL, Data, by
+   >>> from blaze import Data, by
    >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species
