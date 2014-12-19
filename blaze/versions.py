@@ -74,7 +74,7 @@ def get_support_dict():
 def get_multiindexed_support():
     values = set(func[0] for func in _get_functions())
 
-    ts = sorted((v.__module__, v.__name__)
+    ts = sorted((v.__module__.split(".")[-1], v.__name__)
                 for v in values 
                 if "blaze" in v.__module__) # ignore types like list or tuple
     mi = pd.MultiIndex.from_tuples(ts)
