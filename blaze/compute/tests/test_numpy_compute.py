@@ -77,6 +77,8 @@ def test_Reductions():
     assert compute(t['amount'].std(unbiased=True), x) == x['amount'].std(ddof=1)
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
+    assert compute(t['amount'].first(), x) == x['amount'][0]
+    assert compute(t['amount'].last(), x) == x['amount'][-1]
 
 def test_reductions_on_recarray():
     assert compute(t.count(), x) == len(x)
@@ -150,7 +152,6 @@ def test_compute_up_projection():
 def test_slice():
     for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
         assert (compute(t[s], x) == x[s]).all()
-
 
 
 ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
@@ -234,7 +235,6 @@ def test_datetime_truncation():
               np.array(['2000-06-18', '2000-06-18'], dtype='M8[D]'))
 
     assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 7
-
 
 
 def test_hour():

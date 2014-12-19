@@ -103,6 +103,9 @@ def test_reductions():
     assert compute(count(t['amount']), data) == 3
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
+    assert compute(t.amount.first(), data) == 100
+    assert compute(t.amount.last(), data) == 50
+
 
 def test_1d_reductions_keepdims():
     for r in [sum, min, max, nunique, count]:

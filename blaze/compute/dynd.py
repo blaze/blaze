@@ -14,7 +14,7 @@ from into import into
 __all__ = ()
 
 
-@dispatch(Slice, array)
+@dispatch((SingleElementSlice, Slice), array)
 def compute_up(expr, data, **kwargs):
     return data[expr.index]
 

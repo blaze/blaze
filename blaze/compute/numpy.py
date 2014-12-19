@@ -8,7 +8,7 @@ from datashape import to_numpy
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
-from ..expr import std, var, count, nunique, Summary
+from ..expr import std, var, count, nunique, Summary, SingleElementSlice
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 
@@ -173,7 +173,7 @@ def compute_up(sel, x, **kwargs):
 def compute_up(expr, data, **kwargs):
     return (data * 1e6).astype('M8[us]')
 
-@dispatch(Slice, np.ndarray)
+@dispatch((SingleElementSlice, Slice), np.ndarray)
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
 

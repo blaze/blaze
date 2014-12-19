@@ -1,13 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
 import toolz
-from toolz import first
 from datashape import Record, DataShape
 from datashape import coretypes as ct
 
 from .core import common_subexpression
-from .expressions import Expr, symbol, ndim
-from ..compatibility import builtins
+from .expressions import Expr, symbol, ndim, Slice
 
 
 class Reduction(Expr):
@@ -43,8 +41,6 @@ class Reduction(Expr):
         if not isinstance(axis, tuple):
             axis = (axis,)
         axis = tuple(sorted(axis))
-        # if builtins.any(ax >= ndim(_child) for ax in axis):
-        #     raise ValueError("Passed axes %s that are greater than ndim" % axis)
         self.axis = axis
         self.keepdims = keepdims
 
@@ -90,38 +86,44 @@ class Reduction(Expr):
 class any(Reduction):
     _dtype = ct.bool_
 
+
 class all(Reduction):
     _dtype = ct.bool_
+
 
 class sum(Reduction):
     @property
     def _dtype(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
-            return first(schema.types)
+            return toolz.first(schema.types)
         else:
             return schema
+
 
 class max(Reduction):
     @property
     def _dtype(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
-            return first(schema.types)
+            return toolz.first(schema.types)
         else:
             return schema
+
 
 class min(Reduction):
     @property
     def _dtype(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
-            return first(schema.types)
+            return toolz.first(schema.types)
         else:
             return schema
 
+
 class mean(Reduction):
     _dtype = ct.real
+
 
 class var(Reduction):
     """Variance
@@ -177,8 +179,10 @@ class count(Reduction):
     """ The number of non-null elements """
     _dtype = ct.int_
 
+
 class nunique(Reduction):
     _dtype = ct.int_
+
 
 class nelements(Reduction):
     """Compute the number of elements in a collection, including missing values.
@@ -195,6 +199,22 @@ class nelements(Reduction):
     nelements(t[t.amount < 1])
     """
     _dtype = ct.int_
+
+
+class SingleElementSlice(Reduction):
+    index = None
+
+    @property
+    def _dtype(self):
+        return self._child.schema.measure
+
+
+class first(SingleElementSlice):
+    index = 0
+
+
+class last(SingleElementSlice):
+    index = -1
 
 
 def nrows(expr):
@@ -252,8 +272,8 @@ class Summary(Expr):
 
 
 def summary(keepdims=False, axis=None, **kwargs):
-    items = sorted(kwargs.items(), key=first)
-    names = tuple(map(first, items))
+    items = sorted(kwargs.items(), key=toolz.first)
+    names = tuple(map(toolz.first, items))
     values = tuple(map(toolz.second, items))
     child = common_subexpression(*values)
 
@@ -282,7 +302,7 @@ from .expressions import (schema_method_list, dshape_method_list,
                           method_properties)
 
 dshape_method_list.extend([
-    (iscollection, set([count, min, max, nelements])),
+    (iscollection, set([count, min, max, nelements, first, last])),
     (lambda ds: len(ds.shape) == 1,
         set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),

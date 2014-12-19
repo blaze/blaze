@@ -10,7 +10,7 @@ from ..partition import partitions, partition_get, partition_set, flatten
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, symbol
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, ElemWise
 from ..expr import std, var, count, nunique
-from ..expr import BinOp, UnaryOp, USub, Not, nelements
+from ..expr import BinOp, UnaryOp, USub, Not, nelements, SingleElementSlice
 from ..expr import path, shape, Symbol
 from ..expr.split import split
 
@@ -93,7 +93,7 @@ def compute_up(expr, data, **kwargs):
     return data[expr._name]
 
 
-@dispatch(Slice, h5py.Dataset)
+@dispatch((SingleElementSlice, Slice), h5py.Dataset)
 def compute_up(expr, data, **kwargs):
     return data[expr.index]
 

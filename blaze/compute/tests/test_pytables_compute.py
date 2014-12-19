@@ -139,6 +139,10 @@ class TestReductions(object):
     def test_mean(self, data):
         assert compute(t['amount'].mean(), data) == x['amount'].mean()
 
+    def test_first_last(self, data):
+        assert compute(t.amount.first(), data) == x['amount'][0]
+        assert compute(t.amount.last(), data) == x['amount'][-1]
+
 
 class TestTopLevelReductions(object):
     def test_count(self, data):

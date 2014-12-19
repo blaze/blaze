@@ -6,7 +6,7 @@ from multipledispatch import MDNotImplementedError
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
         Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply, Reduction,
         symbol)
-from ..expr import Label, Distinct, By, Slice
+from ..expr import Label, Distinct, By, Slice, SingleElementSlice
 from ..expr import std, var, count, mean, nunique, sum
 from ..expr import eval_str, Expr
 from ..expr import path
@@ -81,7 +81,7 @@ def compute_up(expr, data, **kwargs):
     return data[list(map(str, expr.fields))]
 
 
-@dispatch(Slice, (bcolz.carray, bcolz.ctable))
+@dispatch((SingleElementSlice, Slice), (bcolz.carray, bcolz.ctable))
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
 

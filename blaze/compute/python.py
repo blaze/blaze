@@ -21,8 +21,8 @@ from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity, tail
 from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
-import datetime
 import cytoolz
+import datetime
 import toolz
 import math
 from datashape.predicates import isscalar, iscollection
@@ -31,9 +31,9 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Summary, Like,
-                    DateTime, Date, Time, Millisecond, symbol, ElemWise,
+                    DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp)
+                    UTCFromTimestamp, SingleElementSlice, first, last)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -368,7 +368,7 @@ def compute_up_1d(t, seq, **kwargs):
 @dispatch(Distinct, Sequence)
 def compute_up(t, seq, **kwargs):
     try:
-        row = first(seq)
+        row = toolz.first(seq)
     except StopIteration:
         return ()
     seq = concat([[row], seq]) # re-add row to seq
@@ -638,6 +638,15 @@ def like_regex_predicate(expr):
 def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)
+
+
+@dispatch(SingleElementSlice, Sequence)
+def compute_up(expr, seq, **kwargs):
+    index = expr.index
+
+    if isinstance(expr, (first, last)):
+        return getattr(toolz, type(expr).__name__)(seq)
+    return nth(index, seq)
 
 
 @dispatch(Slice, Sequence)

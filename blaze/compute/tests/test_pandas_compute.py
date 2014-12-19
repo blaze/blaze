@@ -160,6 +160,8 @@ def test_reductions():
     assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
     assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
+    assert compute(t.amount.first(), df) == df.amount.iloc[0]
+    assert compute(t.amount.last(), df) == df.amount.iloc[-1]
 
 
 def test_reductions_on_dataframes():

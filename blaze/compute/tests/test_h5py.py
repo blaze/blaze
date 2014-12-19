@@ -79,6 +79,10 @@ def test_reductions(data):
               x.sum(axis=1))
     assert eq(compute(s.sum(axis=0), data),
               x.sum(axis=0))
+    assert eq(compute(s.first(), data),
+              x[0])
+    assert eq(compute(s.last(), data),
+              x[-1])
 
 
 def test_mixed(recdata):
