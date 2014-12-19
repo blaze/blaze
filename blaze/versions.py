@@ -83,8 +83,7 @@ def get_multiindexed_support():
 
     for backend, supported in get_support_dict().items():
         supported = pd.Series(dict((op, op in supported) for op in operations))
-        supported.index = mi    # this seems a little ugly
-        df[backend] = supported
+        df[backend] = supported.reindex_axis(mi, level=1)
 
     return df
 
