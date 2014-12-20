@@ -6,6 +6,8 @@
 *.swo
 *.pyd
 build
+dist
+blaze.egg-info
 
 
 __conda_version__.txt
