@@ -72,7 +72,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     d = dict((t._scalars[0][c], list(inner_columns(s))[i])
              for i, c in enumerate(t._scalars[0].fields))
-    result = compute(t._scalar_expr, d)
+    result = compute(t._scalar_expr, d, post_compute=False)
 
     s = copy(s)
     s.append_column(result)
@@ -83,7 +83,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     d = dict((t._scalars[0][c], list(inner_columns(s))[i])
              for i, c in enumerate(t._scalars[0].fields))
-    return compute(t._scalar_expr, d)
+    return compute(t._scalar_expr, d, post_compute=False)
 
 
 @dispatch(BinOp, ColumnElement)
@@ -118,7 +118,8 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, Select)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope), optimize=False)
+    predicate = compute(t.predicate, toolz.merge(ns, scope),
+                            optimize=False, post_compute=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
@@ -127,7 +128,8 @@ def compute_up(t, s, scope=None, **kwargs):
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope), optimize=False)
+    predicate = compute(t.predicate, toolz.merge(ns, scope),
+                            optimize=False, post_compute=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
@@ -263,7 +265,7 @@ names = {mean: 'avg',
 def compute_up(t, s, **kwargs):
     d = dict((t._child[c], list(inner_columns(s))[i])
             for i, c in enumerate(t._child.fields))
-    col = compute(t, d)
+    col = compute(t, d, post_compute=False)
 
     s = copy(s)
     s.append_column(col)
@@ -340,7 +342,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
     if isinstance(t.apply, Reduction):
-        reductions = [compute(t.apply, {t._child: s})]
+        reductions = [compute(t.apply, {t._child: s}, post_compute=False)]
     elif isinstance(t.apply, Summary):
         reductions = [compute(val, {t._child: s}, post_compute=None).label(name)
                 for val, name in zip(t.apply.values, t.apply.fields)]
@@ -359,7 +361,7 @@ def compute_up(t, s, **kwargs):
         raise ValueError("Grouper must be a projection, got %s"
                                   % t.grouper)
     if isinstance(t.apply, Reduction):
-        reductions = [compute(t.apply, {t._child: s})]
+        reductions = [compute(t.apply, {t._child: s}, post_compute=False)]
     elif isinstance(t.apply, Summary):
         reductions = [compute(val, {t._child: s}, post_compute=None).label(name)
                 for val, name in zip(t.apply.values, t.apply.fields)]
@@ -424,10 +426,10 @@ def compute_up(t, s, **kwargs):
     s = alias_it(s)
 
     if isinstance(t.apply, Reduction):
-        reduction = compute(t.apply, {t._child: s})
+        reduction = compute(t.apply, {t._child: s}, post_compute=False)
 
     elif isinstance(t.apply, Summary):
-        reduction = compute(t.apply, {t._child: s})
+        reduction = compute(t.apply, {t._child: s}, post_compute=False)
 
     # d = dict((c.name, c) for c in inner_columns(s))
     # grouper = [d[col] for col in t.grouper.fields]
@@ -482,7 +484,8 @@ def compute_up(t, s, **kwargs):
 @dispatch(Merge, Selectable)
 def compute_up(t, s, **kwargs):
     subexpression = common_subexpression(*t.children)
-    children = [compute(child, {subexpression: s}) for child in t.children]
+    children = [compute(child, {subexpression: s}, post_compute=False)
+                 for child in t.children]
     return select(children)
 
 

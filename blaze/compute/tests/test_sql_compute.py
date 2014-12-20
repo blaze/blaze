@@ -1045,3 +1045,22 @@ def test_join_count():
           FROM t1 JOIN t2 ON t1.x = t2.a
           WHERE t1.x > ?) as alias
           """)
+
+
+def test_merge_compute():
+    data = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    ds = datashape.dshape('var * {id: int, name: string, amount: real}')
+    s = symbol('s', ds)
+
+    with tmpfile('db') as fn:
+        uri = 'sqlite:///' + fn
+        into(uri + '::table', data, dshape=ds)
+
+        expr = transform(s, amount10=s.amount * 10)
+        result = into(list, compute(expr, {s: data}))
+
+        assert result == [(1, 'Alice', 100, 1000),
+                          (2, 'Bob',   200, 2000),
+                          (4, 'Dennis',400, 4000)]
