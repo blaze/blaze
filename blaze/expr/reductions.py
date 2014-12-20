@@ -201,24 +201,16 @@ class nelements(Reduction):
     _dtype = ct.int_
 
 
-class SingleElementSlice(Reduction):
-    index = None
-
-    @property
-    def _dtype(self):
-        return self._child.schema.measure
-
-
-class first(SingleElementSlice):
-    index = 0
-
-
-class last(SingleElementSlice):
-    index = -1
-
-
 def nrows(expr):
     return nelements(expr, axis=(0,))
+
+
+def first(expr):
+    return expr[0]
+
+
+def last(expr):
+    return expr[-1]
 
 
 class Summary(Expr):
