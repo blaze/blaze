@@ -5,7 +5,7 @@ from toolz import first
 import numpy as np
 from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
-from datashape.predicates import isscalar
+from datashape.predicates import isscalar, isboolean, isnumeric
 from datashape import coretypes as ct
 
 from .core import parenthesize, eval_str
@@ -365,10 +365,10 @@ BitOr = Or
 from .expressions import schema_method_list
 
 schema_method_list.extend([
-    (isscalar,
+    (isnumeric,
             set([_add, _radd, _mul,
             _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
             _rpow, _mod, _rmod,  _neg])),
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
-    (isscalar, set([_or, _ror, _and, _rand, _invert])),
+    (isboolean, set([_or, _ror, _and, _rand, _invert])),
     ])

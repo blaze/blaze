@@ -10,6 +10,7 @@ from datetime import date, datetime
 
 x = symbol('x', 'real')
 y = symbol('y', 'real')
+b = symbol('b', 'bool')
 
 
 def test_basic():
@@ -29,7 +30,8 @@ def test_eval_str():
 
     print(eval_str(-x))
     assert eval_str(-x) == '-x'
-    assert '~' in eval_str(~x)
+
+    assert '~' in eval_str(~b)
 
 
 def test_str():
@@ -64,7 +66,7 @@ def test_Symbol_is_hashable():
 
 def test_relationals():
     x = symbol('x', 'real')
-    for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1, ~x]:
+    for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1, ~b]:
         assert expr.dshape == dshape('bool')
         assert eval(str(expr)) == expr
 

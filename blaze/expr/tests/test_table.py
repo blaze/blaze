@@ -226,7 +226,7 @@ def test_selection_consistent_children():
 def test_str():
     import re
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    expr = t[t['amount'] < 0]['name'] * 2
+    expr = t[t['amount'] < 0]['id'] * 2
     assert '<class' not in str(expr)
     assert not re.search('0x[0-9a-f]+', str(expr))
 

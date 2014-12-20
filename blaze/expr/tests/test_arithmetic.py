@@ -1,5 +1,6 @@
 from blaze.expr import *
 from datashape import dshape
+from blaze.utils import raises
 
 x = symbol('x', '5 * 3 * int32')
 y = symbol('y', '5 * 3 * int32')
@@ -46,3 +47,11 @@ def test_printing():
 
     assert str(~b) == '~b'
     assert str(~(b | (x > y))) == '~(b | (x > y))'
+
+
+def test_dir():
+    i = symbol('i', '10 * int')
+    d = symbol('d', '10 * datetime')
+
+    assert i + 1
+    assert raises(Exception, lambda: d + 1)
