@@ -36,6 +36,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count)
+from ..compute.pyfunc import lambdify
 from ..expr import UnaryOp, BinOp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -233,6 +234,7 @@ def compute_by(t, r, g, df):
 
 name_dict = dict()
 seen_names = set()
+
 def _name(expr):
     """ A unique and deterministic name for an expression """
     if expr in name_dict:
@@ -274,8 +276,12 @@ def fancify_summary(expr):
     """
     seen_names.clear()
     name_dict.clear()
-    exprs = pipe(expr.values, map(Expr._traverse), concat, filter(lambda x:
-        isinstance(x, Reduction)), set)
+    exprs = pipe(expr.values,
+                 map(Expr._traverse),
+                 concat,
+                 filter(lambda x: isinstance(x, Expr) and
+                        not datashape.iscollection(x.dshape)),
+                 set)
     one = summary(**dict((_name(expr), expr) for expr in exprs))
 
     two = dict((_name(expr), symbol(_name(expr), datashape.var * expr.dshape))
@@ -286,6 +292,7 @@ def fancify_summary(expr):
         expr.values))
 
     return one, two, three
+
 
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
@@ -298,10 +305,6 @@ def compute_by(t, s, g, df):
     df2 = concat_nodup(df, preapply)
 
     groups = df2.groupby(g)
-
-    d = defaultdict(list)
-    for name, v in zip(names, one.values):
-        d[name].append(v.symbol)
 
     d = dict((name, v.symbol) for name, v in zip(one.names, one.values))
 
