@@ -480,6 +480,14 @@ def test_summary_by():
                            ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
 
 
+
+def test_summary_by_first():
+    reduc = t.amount.first()
+    expr = by(t.name, fst=reduc)
+    result = compute(expr, df)
+    assert result == df.amount.iloc[0]
+
+
 @pytest.mark.xfail(reason="reduction assumed to be at the end")
 def test_summary_by_reduction_arithmetic():
     expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
