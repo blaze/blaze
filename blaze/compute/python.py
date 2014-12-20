@@ -33,7 +33,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Summary, Like,
                     DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp, SingleElementSlice, first, last)
+                    UTCFromTimestamp)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -53,6 +53,7 @@ from math import *
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
+
 
 @dispatch(Expr, Sequence)
 def pre_compute(expr, seq, scope=None, **kwargs):
@@ -146,6 +147,7 @@ def rowfunc(t):
 def rowfunc(expr):
     return eval(funcstr(expr))
 
+
 @dispatch(Map)
 def rowfunc(t):
     if isscalar(t._child.dshape.measure):
@@ -163,9 +165,11 @@ def rowfunc(t):
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)
 
+
 @dispatch(UTCFromTimestamp)
 def rowfunc(t):
     return datetime.datetime.utcfromtimestamp
+
 
 @dispatch((Date, Time))
 def rowfunc(t):
@@ -186,13 +190,16 @@ def rowfunc(expr):
 def rowfunc(expr):
     return getattr(math, type(expr).__name__)
 
+
 @dispatch(USub)
 def rowfunc(expr):
     return operator.neg
 
+
 @dispatch(Not)
 def rowfunc(expr):
     return operator.invert
+
 
 @dispatch(Arithmetic)
 def rowfunc(expr):
@@ -261,6 +268,7 @@ def compute_up(t, seq, **kwargs):
         return deepmap(func, seq, n=ndim(child(t)))
     else:
         return func(seq)
+
 
 @dispatch(Broadcast, Sequence)
 def compute_up(t, seq, **kwargs):
@@ -425,6 +433,7 @@ def child(expr):
     if len(expr._inputs) > 1:
         raise ValueError()
     return expr._inputs[0]
+
 
 def reduce_by_funcs(t):
     """ Create grouping func and binary operator for a by-reduction/summary
@@ -638,15 +647,6 @@ def like_regex_predicate(expr):
 def compute_up(expr, seq, **kwargs):
     predicate = like_regex_predicate(expr)
     return filter(predicate, seq)
-
-
-@dispatch(SingleElementSlice, Sequence)
-def compute_up(expr, seq, **kwargs):
-    index = expr.index
-
-    if isinstance(expr, (first, last)):
-        return getattr(toolz, type(expr).__name__)(seq)
-    return nth(index, seq)
 
 
 @dispatch(Slice, Sequence)

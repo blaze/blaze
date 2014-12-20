@@ -1,20 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
 try:
-    from dynd import nd
     from dynd.nd import array
 except ImportError:
     array = type(None)
 
 from ..expr import *
-from .core import base, compute
+from .core import compute
 from ..dispatch import dispatch
-from into import into
 
 __all__ = ()
 
 
-@dispatch((SingleElementSlice, Slice), array)
+@dispatch(Slice, array)
 def compute_up(expr, data, **kwargs):
     return data[expr.index]
 

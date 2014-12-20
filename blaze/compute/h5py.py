@@ -6,18 +6,15 @@ from multipledispatch import MDNotImplementedError
 from datashape import DataShape, to_numpy
 from toolz import curry
 
-from ..partition import partitions, partition_get, partition_set, flatten
-from ..expr import Reduction, Field, Projection, Broadcast, Selection, symbol
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, ElemWise
-from ..expr import std, var, count, nunique
-from ..expr import BinOp, UnaryOp, USub, Not, nelements, SingleElementSlice
+from ..partition import partitions
+from ..expr import Reduction, Field, symbol
+from ..expr import Expr, Slice, ElemWise
+from ..expr import nelements
 from ..expr import path, shape, Symbol
 from ..expr.split import split
 
-from .core import base, compute
+from .core import compute
 from ..dispatch import dispatch
-from into import into
-from ..partition import partitions, partition_get, partition_set
 from ..utils import available_memory, thread_pool
 
 __all__ = []
@@ -93,7 +90,7 @@ def compute_up(expr, data, **kwargs):
     return data[expr._name]
 
 
-@dispatch((SingleElementSlice, Slice), h5py.Dataset)
+@dispatch(Slice, h5py.Dataset)
 def compute_up(expr, data, **kwargs):
     return data[expr.index]
 

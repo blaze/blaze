@@ -6,8 +6,7 @@ import tables as tb
 from datashape import Record, from_numpy, datetime_, date_
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection, Symbol,
-                        Sort, Reduction, count, Slice, Expr, nelements,
-                        SingleElementSlice)
+                        Sort, Reduction, count, Slice, Expr, nelements)
 from blaze.compatibility import basestring, map
 from ..dispatch import dispatch
 
@@ -144,7 +143,7 @@ def compute_up(s, t, **kwargs):
     return result[::-1]
 
 
-@dispatch((SingleElementSlice, Slice), tb.Table)
+@dispatch(Slice, tb.Table)
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
 

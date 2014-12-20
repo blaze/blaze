@@ -8,7 +8,7 @@ from datashape import to_numpy
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
-from ..expr import std, var, count, nunique, Summary, SingleElementSlice
+from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 
@@ -112,6 +112,7 @@ def axify(expr, axis):
     """
     return type(expr)(expr._child, axis=axis)
 
+
 @dispatch(Summary, np.ndarray)
 def compute_up(expr, data, **kwargs):
     shape, dtype = to_numpy(expr.dshape)
@@ -154,6 +155,7 @@ def compute_up(t, x, **kwargs):
 def compute_up(t, x, **kwargs):
     return x[:t.n]
 
+
 @dispatch(Label, np.ndarray)
 def compute_up(t, x, **kwargs):
     return np.array(x, dtype=[(t.label, x.dtype.type)])
@@ -169,11 +171,13 @@ def compute_up(t, x, **kwargs):
 def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel._child: x})]
 
+
 @dispatch(UTCFromTimestamp, np.ndarray)
 def compute_up(expr, data, **kwargs):
     return (data * 1e6).astype('M8[us]')
 
-@dispatch((SingleElementSlice, Slice), np.ndarray)
+
+@dispatch(Slice, np.ndarray)
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
 
