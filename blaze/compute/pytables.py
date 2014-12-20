@@ -143,7 +143,7 @@ def compute_up(s, t, **kwargs):
     return result[::-1]
 
 
-@dispatch(Slice, tb.Table)
+@dispatch(Slice, (tb.Table, tb.Column))
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
 
