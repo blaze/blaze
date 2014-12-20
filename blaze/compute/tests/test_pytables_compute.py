@@ -129,15 +129,11 @@ def test_arithmetic(data):
               x['amount'] + x['id'] + 3)
 
 
-class TestReductions(object):
-    def test_count(self, data):
-        assert compute(t['amount'].count(), data) == len(x['amount'])
+def test_reductions(data):
+    assert compute(t['amount'].count(), data) == len(x['amount'])
+    assert compute(t['amount'].sum(), data) == x['amount'].sum()
+    assert compute(t['amount'].mean(), data) == x['amount'].mean()
 
-    def test_sum(self, data):
-        assert compute(t['amount'].sum(), data) == x['amount'].sum()
-
-    def test_mean(self, data):
-        assert compute(t['amount'].mean(), data) == x['amount'].mean()
 
     def test_first_last(self, data):
         assert compute(t.amount.first(), data) == x['amount'][0]
