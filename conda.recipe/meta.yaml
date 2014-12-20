@@ -53,8 +53,6 @@ test:
     - coverage
 
   commands:
-    - conda remove markupsafe --yes
-    - conda install markupsafe --yes
     - python -c "import blaze; blaze.test()"
 
 about:

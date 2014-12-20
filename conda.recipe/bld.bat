@@ -1,5 +1,7 @@
 @echo off
 
+conda remove markupsafe --yes
+conda install markupsafe --yes
 SET BLD_DIR=%CD%
 cd /D "%RECIPE_DIR%\.."
 FOR /F "delims=" %%i IN ('git describe --tags') DO set BLAZE_VERSION=%%i
