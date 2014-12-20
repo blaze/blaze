@@ -270,11 +270,16 @@ def makeleaf(expr):
     >>> x = symbol('x', 'real')
     >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
     False
+
+    >>> makeleaf(t) is t  # makeleaf passes on Symbols
+    t
     """
     name = expr._name or '_'
     token = None
     if expr in _leaf_cache:
         return _leaf_cache[expr]
+    if isinstance(expr, Symbol):  # Idempotent on symbols
+        return expr
     if (name, token) in _used_tokens:
         for token in itertools.count():
             if (name, token) not in _used_tokens:
