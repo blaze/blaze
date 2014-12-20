@@ -281,14 +281,14 @@ from datashape.predicates import iscollection, isboolean, isnumeric
 from .expressions import (schema_method_list, dshape_method_list,
                           method_properties)
 
-schema_method_list.extend([
-    (isboolean, set([any, all, sum])),
-    (isnumeric, set([mean, sum, mean, min, max, std, var])),
-    ])
-
 dshape_method_list.extend([
     (iscollection, set([count, min, max, nelements])),
-    (lambda ds: len(ds.shape) == 1, set([nrows, nunique])),
+    (lambda ds: len(ds.shape) == 1,
+        set([nrows, nunique])),
+    (lambda ds: iscollection(ds) and isboolean(ds),
+        set([any, all, sum])),
+    (lambda ds: iscollection(ds) and isnumeric(ds),
+        set([mean, sum, mean, min, max, std, var])),
     ])
 
 method_properties.update([nrows])

@@ -53,3 +53,11 @@ def test_summary_with_multiple_children():
     t = symbol('t', 'var * {x: int, y: int, z: int}')
 
     assert summary(a=t.x.sum() + t.y.sum())._child.isidentical(t)
+
+
+def test_dir():
+    t = symbol('t', '10 * int')
+    assert 'mean' in dir(t)
+
+    t = symbol('t', 'int')
+    assert 'mean' not in dir(t)
