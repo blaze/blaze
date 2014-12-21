@@ -693,6 +693,15 @@ def test_slice():
     assert list(compute(t.name[:2], data)) == [data[0][0], data[1][0]]
 
 
+def test_negative_slicing():
+    assert list(compute(t[-1:], data)) == data[-1:]
+    assert list(compute(t[-1:], iter(data))) == data[-1:]
+    assert list(compute(t[-1], data)) == data[-1]
+    assert list(compute(t[-1], iter(data))) == data[-1]
+    assert list(compute(t[-2], data)) == data[-2]
+    assert list(compute(t[-2], iter(data))) == data[-2]
+
+
 def test_multi_dataset_broadcast():
     x = symbol('x', '3 * int')
     y = symbol('y', '3 * int')
