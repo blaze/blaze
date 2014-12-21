@@ -184,13 +184,13 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         expr3 = expr2
         scope4 = scope3
 
-
     # 4. Repeat
     if expr.isidentical(expr3):
         raise NotImplementedError("Don't know how to compute:\n"
                 "expr: %s\n"
                 "data: %s" % (expr3, scope4))
-    return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
+    else:
+        return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
 def top_to_bottom(d, expr, **kwargs):
@@ -251,7 +251,6 @@ def _reset_leaves():
 def makeleaf(expr):
     """ Name of a new leaf replacement for this expression
 
-
     >>> _reset_leaves()
 
     >>> t = symbol('t', '{x: int, y: int, z: int}')
@@ -270,11 +269,16 @@ def makeleaf(expr):
     >>> x = symbol('x', 'real')
     >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
     False
+
+    >>> makeleaf(t) is t  # makeleaf passes on Symbols
+    True
     """
     name = expr._name or '_'
     token = None
     if expr in _leaf_cache:
         return _leaf_cache[expr]
+    if isinstance(expr, Symbol):  # Idempotent on symbols
+        return expr
     if (name, token) in _used_tokens:
         for token in itertools.count():
             if (name, token) not in _used_tokens:
@@ -342,6 +346,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
     #    (this is the bottom part of bottom up)
     exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope, **kwargs)
                              for i in inputs])
+
     # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
     new_expr = expr._subs(dict((i, e) for i, e in zip(inputs, exprs)
@@ -350,7 +355,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
     old_expr_leaves = expr._leaves()
     old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
 
-    # 3. If the leaves have change substantially then stop
+    # 3. If the leaves have changed substantially then stop
     key = lambda x: str(type(x))
     if type_change(sorted(new_scope.values(), key=key),
                    sorted(old_data_leaves, key=key)):
@@ -366,7 +371,6 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
                                        **kwargs)}
     except NotImplementedError:
         return new_expr, new_scope
-
 
 
 def bottom_up(d, expr):
