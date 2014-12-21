@@ -36,7 +36,6 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count)
-from ..compute.pyfunc import lambdify
 from ..expr import UnaryOp, BinOp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base

@@ -104,13 +104,7 @@ def test_reductions():
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
     assert compute(t.amount.first(), data) == 100
-
-
-@pytest.mark.xfail(raises=AssertionError,
-                   reason='Negative values not supported in Python slicing')
-def test_last():
-    expr = t.amount.last()
-    assert compute(expr, data) == 50
+    assert compute(t.amount.last(), data) == 50
 
 
 def test_1d_reductions_keepdims():
@@ -589,8 +583,6 @@ def test_summary_by_first():
     assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 100)))
 
 
-@pytest.mark.xfail(raises=AssertionError,
-                   reason='fixme when tail is in toolz/cytoolz')
 def test_summary_by_last():
     expr = by(t.name, amt=t.amount.last())
     assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 50)))
