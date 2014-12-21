@@ -353,7 +353,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
                                       if not i.isidentical(e)))
 
     old_expr_leaves = expr._leaves()
-    old_data_leaves = [scope.get(lf) for lf in old_expr_leaves]
+    old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
 
     # 3. If the leaves have changed substantially then stop
     key = lambda x: str(type(x))
@@ -367,8 +367,8 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
     except KeyError:
         return new_expr, new_scope
     try:
-        r = compute_up(new_expr, *_data, scope=new_scope, **kwargs)
-        return leaf, {leaf: r}
+        return leaf, {leaf: compute_up(new_expr, *_data, scope=new_scope,
+                                       **kwargs)}
     except NotImplementedError:
         return new_expr, new_scope
 

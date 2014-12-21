@@ -279,8 +279,7 @@ def fancify_summary(expr):
     exprs = pipe(expr.values,
                  map(Expr._traverse),
                  concat,
-                 filter(lambda x: isinstance(x, Expr) and
-                        not datashape.iscollection(x.dshape)),
+                 filter(lambda x: isinstance(x, Reduction)),
                  set)
     one = summary(**dict((_name(expr), expr) for expr in exprs))
 
@@ -308,7 +307,7 @@ def compute_by(t, s, g, df):
 
     d = dict((name, v.symbol) for name, v in zip(one.names, one.values))
 
-    result = groups.agg(dict(d))
+    result = groups.agg(d)
 
     scope = dict((v, result[k]) for k, v in two.items())
     cols = [compute(expr.label(name), scope) for name, expr in three.items()]

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import toolz
-from datashape import Record, DataShape
+from datashape import Record, DataShape, dshape
 from datashape import coretypes as ct
 
 from .core import common_subexpression
@@ -30,7 +30,6 @@ class Reduction(Expr):
     350
     """
     __slots__ = '_hash', '_child', 'axis', 'keepdims'
-    _dtype = None
 
     def __init__(self, _child, axis=None, keepdims=False):
         self._child = _child
@@ -54,7 +53,7 @@ class Reduction(Expr):
             shape = tuple(d
                           for i, d in enumerate(self._child.shape)
                           if i not in axis)
-        return DataShape(*(shape + (self._dtype,)))
+        return DataShape(*(shape + (self.schema,)))
 
     @property
     def symbol(self):
@@ -84,16 +83,16 @@ class Reduction(Expr):
 
 
 class any(Reduction):
-    _dtype = ct.bool_
+    schema = dshape(ct.bool_)
 
 
 class all(Reduction):
-    _dtype = ct.bool_
+    schema = dshape(ct.bool_)
 
 
 class sum(Reduction):
     @property
-    def _dtype(self):
+    def schema(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return toolz.first(schema.types)
@@ -103,7 +102,7 @@ class sum(Reduction):
 
 class max(Reduction):
     @property
-    def _dtype(self):
+    def schema(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return toolz.first(schema.types)
@@ -113,7 +112,7 @@ class max(Reduction):
 
 class min(Reduction):
     @property
-    def _dtype(self):
+    def schema(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             return toolz.first(schema.types)
@@ -122,7 +121,7 @@ class min(Reduction):
 
 
 class mean(Reduction):
-    _dtype = ct.real
+    schema = dshape(ct.real)
 
 
 class var(Reduction):
@@ -139,11 +138,11 @@ class var(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    _dtype = ct.real
+    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, child, *args, **kwargs)
+        super(var, self).__init__(child, *args, **kwargs)
 
 
 class std(Reduction):
@@ -168,20 +167,20 @@ class std(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    _dtype = ct.real
+    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, child, *args, **kwargs)
+        super(std, self).__init__(child, *args, **kwargs)
 
 
 class count(Reduction):
     """ The number of non-null elements """
-    _dtype = ct.int_
+    schema = dshape(ct.int_)
 
 
 class nunique(Reduction):
-    _dtype = ct.int_
+    schema = dshape(ct.int_)
 
 
 class nelements(Reduction):
@@ -198,7 +197,7 @@ class nelements(Reduction):
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
     """
-    _dtype = ct.int_
+    schema = dshape(ct.int_)
 
 
 def nrows(expr):
@@ -250,7 +249,7 @@ class Summary(Expr):
                           for i, d in enumerate(self._child.shape)
                           if i not in axis)
         measure = Record(list(zip(self.names,
-                                  [v._dtype for v in self.values])))
+                                  [v.schema for v in self.values])))
         return DataShape(*(shape + (measure,)))
 
     def __str__(self):

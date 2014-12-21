@@ -481,9 +481,11 @@ def test_summary_by():
 
 
 
+@pytest.mark.xfail(raises=TypeError,
+                   reason=('pandas backend cannot support non Reduction '
+                           'subclasses'))
 def test_summary_by_first():
-    reduc = t.amount.first()
-    expr = by(t.name, fst=reduc)
+    expr = by(t.name, fst=t.amount.first())
     result = compute(expr, df)
     assert result == df.amount.iloc[0]
 
