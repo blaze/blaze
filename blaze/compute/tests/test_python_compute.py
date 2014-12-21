@@ -584,6 +584,18 @@ def test_summary_by():
                                             ('Bob', 1, 201)])
 
 
+def test_summary_by_first():
+    expr = by(t.name, amt=t.amount.first())
+    assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 100)))
+
+
+@pytest.mark.xfail(raises=AssertionError,
+                   reason='fixme when tail is in toolz/cytoolz')
+def test_summary_by_last():
+    expr = by(t.name, amt=t.amount.last())
+    assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 50)))
+
+
 def test_reduction_arithmetic():
     expr = t.amount.sum() + 1
     assert compute(expr, data) == 351
