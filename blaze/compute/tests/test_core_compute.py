@@ -1,16 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-from datetime import date, datetime
-from datashape import discover, dshape
+import pytest
 
-from blaze.compute.core import (compute_up, compute_down, optimize, compute,
-        bottom_up_until_type_break, top_then_bottom_then_top_again_etc,
-        swap_resources_into_scope)
-from blaze.expr import by, symbol, Expr, Symbol
+from datashape import discover, dshape, coretypes as ct
+
+from blaze.compute.core import (compute_up, compute, bottom_up_until_type_break,
+                                top_then_bottom_then_top_again_etc,
+                                swap_resources_into_scope)
+from blaze.expr import by, symbol, Expr, Symbol, Reduction
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
 from blaze.utils import example
 
+import pandas as pd
 import numpy as np
 
 
@@ -107,7 +109,6 @@ def test_compute_up_on_dict():
 
 def test_pre_compute_on_multiple_datasets_is_selective():
     from into import CSV
-    import pandas as pd
     from blaze import Data
     from blaze.cached import CachedDataset
 
@@ -121,3 +122,18 @@ def test_pre_compute_on_multiple_datasets_is_selective():
 
     d = Data(dset)
     assert str(compute(d.df.amount)) == str(df.amount)
+
+
+def test_raises_on_valid_expression_but_no_implementation():
+    class MyExpr(Expr):
+        __slots__ = '_hash', '_child'
+
+        @property
+        def dshape(self):
+            return self._child.dshape
+
+    t = symbol('t', 'var * {amount: real}')
+    expr = MyExpr(t.amount)
+    df = [(1.0,), (2.0,), (3.0,)]
+    with pytest.raises(NotImplementedError):
+        compute(expr, df)
