@@ -271,7 +271,7 @@ def makeleaf(expr):
     False
 
     >>> makeleaf(t) is t  # makeleaf passes on Symbols
-    t
+    True
     """
     name = expr._name or '_'
     token = None
