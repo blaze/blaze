@@ -19,7 +19,7 @@ import operator
 import re
 from collections import Iterator
 from functools import partial
-from toolz import map, filter, compose, juxt, identity
+from toolz import map, filter, compose, juxt, identity, tail
 from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
 import datetime
 import cytoolz
@@ -646,9 +646,20 @@ def compute_up(expr, seq, **kwargs):
     if isinstance(index, tuple) and len(index) == 1:
         index = index[0]
     if isinstance(index, _inttypes):
-        return nth(index, seq)
+        try:
+            return seq[index]
+        except:
+            if index >= 0:
+                return nth(index, seq)
+            else:
+                return tail(-index, seq)[0]
     if isinstance(index, slice):
-        return itertools.islice(seq, index.start, index.stop, index.step)
+        if (index.start and index.start < 0 and
+            index.stop is None and
+            index.step in (1, None)):
+            return tail(-index.start, seq)
+        else:
+            return itertools.islice(seq, index.start, index.stop, index.step)
     raise NotImplementedError("Only 1d slices supported")
 
 
