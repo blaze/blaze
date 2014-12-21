@@ -56,6 +56,15 @@ class Reduction(Expr):
         return DataShape(*(shape + (self.schema,)))
 
     @property
+    def schema(self):
+        schema = self._child.schema[0]
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            result = toolz.first(schema.types)
+        else:
+            result = schema
+        return DataShape(schema)
+
+    @property
     def symbol(self):
         return type(self).__name__
 
@@ -91,33 +100,15 @@ class all(Reduction):
 
 
 class sum(Reduction):
-    @property
-    def schema(self):
-        schema = self._child.schema[0]
-        if isinstance(schema, Record) and len(schema.types) == 1:
-            return toolz.first(schema.types)
-        else:
-            return schema
+    pass
 
 
 class max(Reduction):
-    @property
-    def schema(self):
-        schema = self._child.schema[0]
-        if isinstance(schema, Record) and len(schema.types) == 1:
-            return toolz.first(schema.types)
-        else:
-            return schema
+    pass
 
 
 class min(Reduction):
-    @property
-    def schema(self):
-        schema = self._child.schema[0]
-        if isinstance(schema, Record) and len(schema.types) == 1:
-            return toolz.first(schema.types)
-        else:
-            return schema
+    pass
 
 
 class mean(Reduction):
