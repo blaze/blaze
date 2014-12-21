@@ -702,6 +702,12 @@ def test_negative_slicing():
     assert list(compute(t[-2], iter(data))) == data[-2]
 
 
+@pytest.mark.xfail(raises=ValueError,
+                   reason="No support for stop and step having negative values")
+def test_negative_slicing_raises_on_stop_and_step_not_None():
+    assert list(compute(t[-2:-5:-1], data)) == data[-2:-5:-1]
+
+
 def test_multi_dataset_broadcast():
     x = symbol('x', '3 * int')
     y = symbol('y', '3 * int')
