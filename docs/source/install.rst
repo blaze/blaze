@@ -56,24 +56,25 @@ To run tests:
 
     $ py.test --doctest-modules --pyargs blaze
 
-Dependencies
-~~~~~~~~~~~~
+Strict Dependencies
+~~~~~~~~~~~~~~~~~~~
 
 * numpy_ >= 1.7
 * datashape_ >= 0.4.0
 * into_ >= 0.1.3
-* dynd-python_ >= 0.6.4
 * toolz_ >= 0.7.0
 * cytoolz_
 * multipledispatch_ >= 0.4.7
 * pandas_
 
-**Optional**
+Optional Dependencies
+~~~~~~~~~~~~~~~~~~~~~
 
 * dynd-python_ >= 0.6.5
 * sqlalchemy_
 * h5py_
-* spark_ >= 1.0.0
+* spark_ >= 1.1.0
+* dynd-python_ >= 0.6.5
 * pymongo_
 * pytables_
 * bcolz_
