@@ -89,6 +89,8 @@
 <li><a class="reference internal" href="#using-curl">Using <tt class="docutils literal"><span class="pre">curl</span></tt></a></li>
 <li><a class="reference internal" href="#using-the-python-requests-library">Using the Python Requests Library</a></li>
 <li><a class="reference internal" href="#fully-interactive-python-to-python-remote-work">Fully Interactive Python-to-Python Remote work</a></li>
+<li><a class="reference internal" href="#advanced-use">Advanced Use</a></li>
+<li><a class="reference internal" href="#caching">Caching</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#conclusion">Conclusion</a></li>
@@ -127,10 +129,9 @@ simple REST-ful API.</p>
 <span class="gp">...</span>
 </pre></div>
 </div>
-<p>Then we host this under the name <tt class="docutils literal"><span class="pre">'iris'</span></tt> and serve publicly on port
-<tt class="docutils literal"><span class="pre">6363</span></tt></p>
+<p>Then we host this publicly on port <tt class="docutils literal"><span class="pre">6363</span></tt></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze.server</span> <span class="kn">import</span> <span class="n">Server</span>
-<span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">({</span><span class="s">&#39;iris&#39;</span><span class="p">:</span> <span class="n">csv</span><span class="p">})</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">csv</span><span class="p">)</span>
 <span class="n">server</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6363</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -154,7 +155,7 @@ below.</p>
 <p>We can use standard command line tools to interact with this web service:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ curl \
     -H &quot;Content-Type: application/json&quot; \
-    -d &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;Field&quot;, &quot;args&quot;: [&quot;iris&quot;, &quot;species&quot;]}}&#39; \
+    -d &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;Field&quot;, &quot;args&quot;: [&quot;:leaf&quot;, &quot;species&quot;]}}&#39; \
     localhost:6363/compute.json
 
 {
@@ -170,7 +171,7 @@ $ curl \
     -H &quot;Content-Type: application/json&quot; \
     -d  &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;sum&quot;, \
                    &quot;args&quot;: [{&quot;op&quot;: &quot;Field&quot;, \
-                             &quot;args&quot;: [&quot;iris&quot;, &quot;petal_Length&quot;]}]}}&#39; \
+                             &quot;args&quot;: [&quot;:leaf&quot;, &quot;petal_Length&quot;]}]}}&#39; \
     localhost:6363/compute.json
 
 {
@@ -179,8 +180,9 @@ $ curl \
 }
 </pre></div>
 </div>
-<p>Constructing these queries can be difficult to do by hand, fortunately Blaze
-can help you to build them.</p>
+<p>These queries deconstruct the Blaze expression as nested JSON.  The <tt class="docutils literal"><span class="pre">&quot;:leaf&quot;</span></tt>
+string is a special case pointing to the base data.  Constructing these queries
+can be difficult to do by hand, fortunately Blaze can help you to build them.</p>
 </div>
 <div class="section" id="using-the-python-requests-library">
 <h3>Using the Python Requests Library<a class="headerlink" href="#using-the-python-requests-library" title="Permalink to this headline">¶</a></h3>
@@ -193,7 +195,7 @@ can help you to build them.</p>
 
  <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;expr&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;sum&#39;</span><span class="p">,</span>
                    <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;Field&#39;</span><span class="p">,</span>
-                             <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;iris&#39;</span><span class="p">,</span> <span class="s">&#39;petal_length&#39;</span><span class="p">]}]}}</span>
+                             <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;:leaf&#39;</span><span class="p">,</span> <span class="s">&#39;petal_length&#39;</span><span class="p">]}]}}</span>
 
  <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:6363/compute.json&#39;</span><span class="p">,</span>
                  <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
@@ -210,18 +212,25 @@ can help you to build them.</p>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c"># Build a Symbol like our served iris data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dshape</span><span class="o">=</span> <span class="s">&quot;var * {sepal_length: float64, sepal_width: float64, petal_length: float64, petal_width: float64, species: string}&quot;</span>  <span class="c"># matching schema to csv file</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="n">dshape</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="n">dshape</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.server</span> <span class="kn">import</span> <span class="n">to_tree</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">to_tree</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="s">&#39;iris&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">to_tree</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="s">&#39;:leaf&#39;</span><span class="p">})</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;expr&#39;</span><span class="p">:</span> <span class="n">d</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">query</span>  
+<span class="go">{&#39;expr&#39;: {&#39;args&#39;: [{&#39;args&#39;: [&#39;:leaf&#39;, &#39;petal_length&#39;],</span>
+<span class="go">                      &#39;op&#39;: &#39;Field&#39;},</span>
+<span class="go">                   [0],</span>
+<span class="go">                   False],</span>
+<span class="go">            &#39;op&#39;: &#39;sum&#39;}}</span>
 </pre></div>
 </div>
 <p>Alternatively we build a query to grab a single column</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">to_tree</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="s">&#39;iris&#39;</span><span class="p">})</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">to_tree</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="s">&#39;:leaf&#39;</span><span class="p">})</span>  
+<span class="go">{&#39;args&#39;: [&#39;:leaf&#39;, &#39;species&#39;], &#39;op&#39;: &#39;Field&#39;}</span>
 </pre></div>
 </div>
 </div>
@@ -233,11 +242,9 @@ do work for us</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># Client code, run this in a separate process from the Server</span>
 
 <span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="s">&#39;http://localhost:6363&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;blaze://localhost:6363&#39;</span><span class="p">)</span>
 
-<span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 <span class="n">t</span>
-
     <span class="n">sepal_length</span>  <span class="n">sepal_width</span>  <span class="n">petal_length</span>  <span class="n">petal_width</span>      <span class="n">species</span>
 <span class="mi">0</span>            <span class="mf">5.1</span>          <span class="mf">3.5</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
 <span class="mi">1</span>            <span class="mf">4.9</span>          <span class="mf">3.0</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
@@ -259,15 +266,74 @@ do work for us</p>
 <span class="mi">2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">versicolor</span>  <span class="mf">5.1</span>  <span class="mf">3.0</span>
 </pre></div>
 </div>
-<p>We interact on the client machine through the <tt class="docutils literal"><span class="pre">Client</span></tt> data object but
-computations on this object cause communications through the web API, resulting
-in seemlessly interactive remote computation.</p>
+<p>We interact on the client machine through the data object but computations on
+this object cause communications through the web API, resulting in seemlessly
+interactive remote computation.</p>
+</div>
+<div class="section" id="advanced-use">
+<h3>Advanced Use<a class="headerlink" href="#advanced-use" title="Permalink to this headline">¶</a></h3>
+<p>Blaze servers may host any data that Blaze understands from a single integer</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To a dictionary of several heterogeneous datasets</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">({</span><span class="s">&#39;my-dataframe&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="s">&#39;iris&#39;</span><span class="p">:</span> <span class="n">resource</span><span class="p">(</span><span class="s">&#39;iris.csv&#39;</span><span class="p">),</span>
+<span class="gp">... </span>                 <span class="s">&#39;baseball&#39;</span><span class="p">:</span> <span class="n">resource</span><span class="p">(</span><span class="s">&#39;sqlite:///baseball-statistics.db&#39;</span><span class="p">)})</span>  
+</pre></div>
+</div>
+<p>A variety of hosting options are available through the <a class="reference external" href="http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application">Flask</a> project</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">server</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>  
+<span class="go">Help on method run in module flask.app:</span>
+
+<span class="go">run(self, host=None, port=None, debug=None, **options) method of  flask.app.Flask instance</span>
+<span class="go">Runs the application on a local development server.  If the</span>
+<span class="go">:attr:`debug` flag is set the server will automatically reload</span>
+<span class="go">for code changes and show a debugger in case an exception happened.</span>
+
+<span class="gp">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="caching">
+<h3>Caching<a class="headerlink" href="#caching" title="Permalink to this headline">¶</a></h3>
+<p>Caching results on frequently run queries may significantly improve user
+experience in some cases.  One may wrap a Blaze server in a traditional
+web-based caching system like memcached or use a data centric solution.</p>
+<p>The Blaze <tt class="docutils literal"><span class="pre">CachedDataset</span></tt> might be appropriate in some situations.  A cached
+dataset holds a normal dataset and a <tt class="docutils literal"><span class="pre">dict</span></tt> like object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dset</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;my-dataframe&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s">&#39;iris&#39;</span><span class="p">:</span> <span class="n">resource</span><span class="p">(</span><span class="s">&#39;iris.csv&#39;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="s">&#39;baseball&#39;</span><span class="p">:</span> <span class="n">resource</span><span class="p">(</span><span class="s">&#39;sqlite:///baseball-statistics.db&#39;</span><span class="p">)}</span> 
+
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.cached</span> <span class="kn">import</span> <span class="n">CachedDataset</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cached</span> <span class="o">=</span> <span class="n">CachedDataset</span><span class="p">(</span><span class="n">dset</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="nb">dict</span><span class="p">())</span>  
+</pre></div>
+</div>
+<p>Queries and results executed against a cached dataset are stored in the cache
+(here a normal Python <tt class="docutils literal"><span class="pre">dict</span></tt>) for fast future access.</p>
+<p>If accumulated results are likely to fill up memory then other, on-disk
+dict-like structures can be used like <a class="reference external" href="https://pypi.python.org/pypi/shove/0.5.6">Shove</a> or <a class="reference external" href="https://github.com/mrocklin/chest">Chest</a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chest</span> <span class="kn">import</span> <span class="n">Chest</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cached</span> <span class="o">=</span> <span class="n">CachedDataset</span><span class="p">(</span><span class="n">dset</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">Chest</span><span class="p">())</span>  
+</pre></div>
+</div>
+<p>These cached objects can be used anywhere normal objects can be used in Blaze,
+including an interactive (and now performance cached) <tt class="docutils literal"><span class="pre">Data</span></tt> object</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">cached</span><span class="p">)</span>  
+</pre></div>
+</div>
+<p>or a Blaze server</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">cached</span><span class="p">)</span>  
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="conclusion">
 <h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
-<p>Because this process builds off Blaze expressions it works
-equally well for data stored in any format on which Blaze is trained, including in-memory DataFrames, SQL/Mongo databases, or even Spark clusters.</p>
+<p>Because this process builds off Blaze expressions it works equally well for data
+stored in any format on which Blaze is trained, including in-memory DataFrames,
+SQL/Mongo databases, or even Spark clusters.</p>
 </div>
 </div>
 

@@ -86,7 +86,8 @@
 <li><a class="reference internal" href="#">Install</a><ul>
 <li><a class="reference internal" href="#installing">Installing</a></li>
 <li><a class="reference internal" href="#introduction">Introduction</a></li>
-<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#strict-dependencies">Strict Dependencies</a></li>
+<li><a class="reference internal" href="#optional-dependencies">Optional Dependencies</a></li>
 </ul>
 </li>
 </ul>
@@ -136,24 +137,31 @@ $ make docs
 </pre></div>
 </div>
 </div>
-<div class="section" id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="strict-dependencies">
+<h2>Strict Dependencies<a class="headerlink" href="#strict-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Blaze depends on NumPy, Pandas, and a few pure-python libraries.  It should be
+easy to install on any Numeric Python setup.</p>
 <ul class="simple">
 <li><a class="reference external" href="http://www.numpy.org/">numpy</a> &gt;= 1.7</li>
 <li><a class="reference external" href="https://github.com/ContinuumIO/datashape">datashape</a> &gt;= 0.4.0</li>
 <li><a class="reference external" href="https://github.com/ContinuumIO/into">into</a> &gt;= 0.1.3</li>
-<li><a class="reference external" href="https://github.com/ContinuumIO/dynd-python">dynd-python</a> &gt;= 0.6.4</li>
 <li><a class="reference external" href="http://toolz.readthedocs.org/">toolz</a> &gt;= 0.7.0</li>
 <li><a class="reference external" href="https://github.com/pytoolz/cytoolz/">cytoolz</a></li>
 <li><a class="reference external" href="http://multiple-dispatch.readthedocs.org/">multipledispatch</a> &gt;= 0.4.7</li>
 <li><a class="reference external" href="http://pandas.pydata.org/">pandas</a></li>
 </ul>
-<p><strong>Optional</strong></p>
+</div>
+<div class="section" id="optional-dependencies">
+<h2>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Blaze can help you use a variety of other libraries like <tt class="docutils literal"><span class="pre">sqlalchemy</span></tt> or
+<tt class="docutils literal"><span class="pre">h5py</span></tt>.  If these are installed then Blaze will use them.  Some of these are
+non-trivial to install.  We recommend installation throgh <tt class="docutils literal"><span class="pre">conda</span></tt>.</p>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/ContinuumIO/dynd-python">dynd-python</a> &gt;= 0.6.5</li>
 <li><a class="reference external" href="http://www.sqlalchemy.org/">sqlalchemy</a></li>
 <li><a class="reference external" href="http://docs.h5py.org/en/latest/">h5py</a></li>
-<li><a class="reference external" href="http://spark.apache.org/">spark</a> &gt;= 1.0.0</li>
+<li><a class="reference external" href="http://spark.apache.org/">spark</a> &gt;= 1.1.0</li>
+<li><a class="reference external" href="https://github.com/ContinuumIO/dynd-python">dynd-python</a> &gt;= 0.6.5</li>
 <li><a class="reference external" href="http://api.mongodb.org/python/current/">pymongo</a></li>
 <li><a class="reference external" href="http://www.pytables.org/moin">pytables</a></li>
 <li><a class="reference external" href="https://github.com/Blosc/bcolz">bcolz</a></li>

@@ -114,8 +114,8 @@ the cost of full generality.</p>
 <p>We create an interactive expression by calling the <tt class="docutils literal"><span class="pre">Data</span></tt> constructor on any
 object or URI with which Blaze is familiar.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;sqlite:///blaze/examples/data/iris.db::iris&#39;</span><span class="p">)</span>  <span class="c"># an interactive expression</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;sqlite:///blaze/examples/data/iris.db&#39;</span><span class="p">)</span>  <span class="c"># an interactive expression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">iris</span>
 <span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
 <span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
 <span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
@@ -129,50 +129,50 @@ object or URI with which Blaze is familiar.</p>
 <span class="go">9            4.9          3.1           1.5          0.1  Iris-setosa</span>
 <span class="gp">...</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>  
-<span class="go">iris.species.columns       iris.species.max</span>
-<span class="go">iris.species.count         iris.species.min</span>
-<span class="go">iris.species.count_values  iris.species.ndim</span>
-<span class="go">iris.species.distinct      iris.species.nunique</span>
-<span class="go">iris.species.dshape        iris.species.relabel</span>
-<span class="go">iris.species.expr          iris.species.resources</span>
-<span class="go">iris.species.fields        iris.species.schema</span>
-<span class="go">iris.species.head          iris.species.shape</span>
-<span class="go">iris.species.isidentical   iris.species.sort</span>
-<span class="go">iris.species.label         iris.species.species</span>
-<span class="go">iris.species.like          iris.species.to_html</span>
-<span class="go">iris.species.map</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>  
+<span class="go">db.iris.species.columns       db.iris.species.max</span>
+<span class="go">db.iris.species.count         db.iris.species.min</span>
+<span class="go">db.iris.species.count_values  db.iris.species.ndim</span>
+<span class="go">db.iris.species.distinct      db.iris.species.nunique</span>
+<span class="go">db.iris.species.dshape        db.iris.species.relabel</span>
+<span class="go">db.iris.species.expr          db.iris.species.resources</span>
+<span class="go">db.iris.species.fields        db.iris.species.schema</span>
+<span class="go">db.iris.species.head          db.iris.species.shape</span>
+<span class="go">db.iris.species.isidentical   db.iris.species.sort</span>
+<span class="go">db.iris.species.label         db.iris.species.species</span>
+<span class="go">db.iris.species.like          db.iris.species.to_html</span>
+<span class="go">db.iris.species.map</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
 <span class="go">           species</span>
 <span class="go">0      Iris-setosa</span>
 <span class="go">1  Iris-versicolor</span>
 <span class="go">2   Iris-virginica</span>
 </pre></div>
 </div>
-<p>In the case above <tt class="docutils literal"><span class="pre">iris</span></tt> is a <tt class="docutils literal"><span class="pre">Symbol</span></tt>, just like any normal Blaze leaf
+<p>In the case above <tt class="docutils literal"><span class="pre">db</span></tt> is a <tt class="docutils literal"><span class="pre">Symbol</span></tt>, just like any normal Blaze leaf
 expresion</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
 </div>
-<p>But <tt class="docutils literal"><span class="pre">iris</span></tt> has one additional field, <tt class="docutils literal"><span class="pre">iris.data</span></tt> which points to
-a Blaze <tt class="docutils literal"><span class="pre">SQL</span></tt> object holding a SQLAlchemy Table.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">data</span>                                 
-<span class="go">&lt;blaze.data.sql.SQL at 0x7f0f64ffbdd0&gt;</span>
+<p>But <tt class="docutils literal"><span class="pre">db</span></tt> has one additional field, <tt class="docutils literal"><span class="pre">db.data</span></tt> which points to
+a SQLAlchemy Table.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">data</span>                                 
+<span class="go">&lt;sqlalchemy.Table at 0x7f0f64ffbdd0&gt;</span>
 </pre></div>
 </div>
-<p>Compute calls including <tt class="docutils literal"><span class="pre">iris</span></tt> may omit the customary namespace, e.g.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+<p>Compute calls including <tt class="docutils literal"><span class="pre">db</span></tt> may omit the customary namespace, e.g.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="c"># compute(expr, {iris: some_sql_object})  # Usually provide a namespace</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># compute(expr, {db: some_sql_object})  # Usually provide a namespace</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">compute</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>                             
 <span class="go">[&#39;Iris-setosa&#39;, &#39;Iris-versicolor&#39;, &#39;Iris-virginica&#39;]</span>
 </pre></div>
 </div>
 <p>This implicit namespace can be found with the <tt class="docutils literal"><span class="pre">._resources</span></tt> method</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span><span class="o">.</span><span class="n">_resources</span><span class="p">()</span>                          
-<span class="go">{iris: &lt;blaze.data.sql.SQL at 0x7f0f64ffbdd0&gt;}</span>
+<span class="go">{db: &lt;sqlalchemy.Table object&gt;}</span>
 </pre></div>
 </div>
 <p>Additionally, we override the <tt class="docutils literal"><span class="pre">__repr__</span></tt> and <tt class="docutils literal"><span class="pre">_repr_html_</span></tt> methods to

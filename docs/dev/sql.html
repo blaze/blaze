@@ -113,11 +113,10 @@
 metadata, or Table objects to <tt class="docutils literal"><span class="pre">Data</span></tt>.  This can be useful if you need to
 specify more information that does not fit comfortably into a URI (like a
 desired schema.)</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sqlalchemy</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">engine</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="s">&#39;postgreqsql://hostname&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sqlalchemy</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">engine</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="s">&#39;postgreqsql://hostname&#39;</span><span class="p">)</span>  
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>  
 </pre></div>
 </div>
 </div>
@@ -151,9 +150,9 @@ recommend the <a href="#id1"><span class="problematic" id="id2">`Lahman baseball
 to that database with the following code</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;sqlite:///Downloads/lahman2013.sqlite&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;sqlite:///Downloads/lahman2013.sqlite&#39;</span><span class="p">)</span> 
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>  <span class="c"># see available tables</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>  <span class="c"># see available tables  </span>
 <span class="go">db.AllstarFull          db.FieldingOF           db.Schools              db.fields</span>
 <span class="go">db.Appearances          db.FieldingPost         db.SchoolsPlayers       db.isidentical</span>
 <span class="go">db.AwardsManagers       db.HallOfFame           db.SeriesPost           db.like</span>
@@ -164,7 +163,7 @@ to that database with the following code</p>
 <span class="go">db.BattingPost          db.PitchingPost         db.data</span>
 <span class="go">db.Fielding             db.Salaries             db.dshape</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">Teams</span>  <span class="c"># view one particular database</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">Teams</span>  <span class="c"># view one particular database  </span>
 <span class="go">    yearID lgID teamID franchID divID  Rank   G  Ghome   W   L     ...       \</span>
 <span class="go">0     1871   NA    BS1      BNA  None     3  31    NaN  20  10     ...</span>
 <span class="go">1     1871   NA    CH1      CNA  None     2  28    NaN  19   9     ...</span>
