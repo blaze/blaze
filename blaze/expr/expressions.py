@@ -172,6 +172,21 @@ class Expr(Node):
                 isscalar(self._child.dshape.measure)):
             return self._child._name
 
+    def __enter__(self):
+        """ context entering """
+        return self
+
+    def __exit__(self, *args):
+        """
+        context existing
+
+        close any open resources if we are called in context
+        """
+        for key, value in self._resources().items():
+            closer = getattr(value,'close',None)
+            if closer is not None:
+                closer()
+        return True
 
 _symbol_cache = dict()
 
@@ -221,7 +236,6 @@ class Symbol(Expr):
 
     def _resources(self):
         return dict()
-
 
 @dispatch(Symbol, dict)
 def _subs(o, d):

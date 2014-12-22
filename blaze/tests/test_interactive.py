@@ -204,6 +204,9 @@ def test_Data_attribute_repr():
 def test_can_trivially_create_csv_Data():
     Data(example('iris.csv'))
 
+    # in context
+    with Data(example('iris.csv')) as d:
+        assert d is not None
 
 def test_can_trivially_create_csv_Data_with_unicode():
     if sys.version[0] == '2':
@@ -214,11 +217,14 @@ def test_can_trivially_create_sqlite_table():
     pytest.importorskip('sqlalchemy')
     Data('sqlite:///'+example('iris.db')+'::iris')
 
+    # in context
+    with Data('sqlite:///'+example('iris.db')+'::iris') as d:
+        assert d is not None
 
 def test_can_trivially_create_pytables():
     pytest.importorskip('tables')
-    Data(example('accounts.h5')+'::/accounts')
-
+    with Data(example('accounts.h5')+'::/accounts') as d:
+        assert d is not None
 
 def test_data_passes_kwargs_to_resource():
     assert Data(example('iris.csv'), encoding='ascii').data.encoding == 'ascii'
@@ -231,6 +237,9 @@ def test_data_on_iterator_refies_data():
     assert into(list, d) == data
     assert into(list, d) == data
 
+    # in context
+    with Data(iter(data)) as d:
+        assert d is not None
 
 def test_Data_on_json_is_concrete():
     d = Data(example('accounts-streaming.json'))
