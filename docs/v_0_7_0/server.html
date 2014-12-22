@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Server &mdash; Blaze 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Datashape" href="datashape.html" />
+    <link rel="prev" title="Out of Core Processing" href="ooc.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li>
+            <a href="quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="api.html"><i class="icon-download"></i> API</a>
+        </li>
+
+        <li>
+            <a href="people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Server</a><ul>
+<li><a class="reference internal" href="#setting-up-a-blaze-server">Setting up a Blaze Server</a></li>
+<li><a class="reference internal" href="#interacting-with-the-web-server-from-the-client">Interacting with the Web Server from the Client</a><ul>
+<li><a class="reference internal" href="#using-curl">Using <tt class="docutils literal"><span class="pre">curl</span></tt></a></li>
+<li><a class="reference internal" href="#using-the-python-requests-library">Using the Python Requests Library</a></li>
+<li><a class="reference internal" href="#fully-interactive-python-to-python-remote-work">Fully Interactive Python-to-Python Remote work</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="server">
+<h1>Server<a class="headerlink" href="#server" title="Permalink to this headline">¶</a></h1>
+<p>Blaze provides uniform access to a variety of common data formats.  Blaze
+Server builds off of this uniform interface to host data remotely through a
+simple REST-ful API.</p>
+<div class="section" id="setting-up-a-blaze-server">
+<h2>Setting up a Blaze Server<a class="headerlink" href="#setting-up-a-blaze-server" title="Permalink to this headline">¶</a></h2>
+<p>To demonstrate the use of the Blaze server we serve the iris csv file.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Server code, run this once.  Leave running.</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/iris.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Data</span><span class="p">(</span><span class="n">csv</span><span class="p">)</span>
+<span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
+<span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
+<span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
+<span class="go">2            4.7          3.2           1.3          0.2  Iris-setosa</span>
+<span class="go">3            4.6          3.1           1.5          0.2  Iris-setosa</span>
+<span class="go">4            5.0          3.6           1.4          0.2  Iris-setosa</span>
+<span class="go">5            5.4          3.9           1.7          0.4  Iris-setosa</span>
+<span class="go">6            4.6          3.4           1.4          0.3  Iris-setosa</span>
+<span class="go">7            5.0          3.4           1.5          0.2  Iris-setosa</span>
+<span class="go">8            4.4          2.9           1.4          0.2  Iris-setosa</span>
+<span class="go">9            4.9          3.1           1.5          0.1  Iris-setosa</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Then we host this under the name <tt class="docutils literal"><span class="pre">'iris'</span></tt> and serve publicly on port
+<tt class="docutils literal"><span class="pre">6363</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze.server</span> <span class="kn">import</span> <span class="n">Server</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">({</span><span class="s">&#39;iris&#39;</span><span class="p">:</span> <span class="n">csv</span><span class="p">})</span>
+<span class="n">server</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6363</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A Server is the following</p>
+<ol class="arabic simple">
+<li>A mapping of names to datasets</li>
+<li>A <a class="reference external" href="http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application">Flask</a> app.</li>
+</ol>
+<p>With this code our machine is now hosting our CSV file through a
+web-application on port 6363.  We can now access our CSV file, through Blaze,
+as a service from a variety of applications.</p>
+</div>
+<div class="section" id="interacting-with-the-web-server-from-the-client">
+<h2>Interacting with the Web Server from the Client<a class="headerlink" href="#interacting-with-the-web-server-from-the-client" title="Permalink to this headline">¶</a></h2>
+<p>Computation is now available on this server at
+<tt class="docutils literal"><span class="pre">hostname:6363/compute.json</span></tt>.  To communicate the computation to be done
+we pass Blaze expressions in JSON format through the request.  See the examples
+below.</p>
+<div class="section" id="using-curl">
+<h3>Using <tt class="docutils literal"><span class="pre">curl</span></tt><a class="headerlink" href="#using-curl" title="Permalink to this headline">¶</a></h3>
+<p>We can use standard command line tools to interact with this web service:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ curl \
+    -H &quot;Content-Type: application/json&quot; \
+    -d &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;Field&quot;, &quot;args&quot;: [&quot;iris&quot;, &quot;species&quot;]}}&#39; \
+    localhost:6363/compute.json
+
+{
+  &quot;data&quot;: [
+      &quot;Iris-setosa&quot;,
+      &quot;Iris-setosa&quot;,
+      ...
+      ],
+  &quot;datashape&quot;: &quot;var * {species: string}&quot;,
+}
+
+$ curl \
+    -H &quot;Content-Type: application/json&quot; \
+    -d  &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;sum&quot;, \
+                   &quot;args&quot;: [{&quot;op&quot;: &quot;Field&quot;, \
+                             &quot;args&quot;: [&quot;iris&quot;, &quot;petal_Length&quot;]}]}}&#39; \
+    localhost:6363/compute.json
+
+{
+  &quot;data&quot;: 563.8000000000004,
+  &quot;datashape&quot;: &quot;{petal_length_sum: float64}&quot;,
+}
+</pre></div>
+</div>
+<p>Constructing these queries can be difficult to do by hand, fortunately Blaze
+can help you to build them.</p>
+</div>
+<div class="section" id="using-the-python-requests-library">
+<h3>Using the Python Requests Library<a class="headerlink" href="#using-the-python-requests-library" title="Permalink to this headline">¶</a></h3>
+<p>First we repeat the same experiment as before, this time using the Python
+<tt class="docutils literal"><span class="pre">requests</span></tt> library instead of the command line tool <tt class="docutils literal"><span class="pre">curl</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre> <span class="c"># Client code, run this in a separate process from the Server</span>
+
+ <span class="kn">import</span> <span class="nn">json</span>
+ <span class="kn">import</span> <span class="nn">requests</span>
+
+ <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;expr&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;sum&#39;</span><span class="p">,</span>
+                   <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s">&#39;op&#39;</span><span class="p">:</span> <span class="s">&#39;Field&#39;</span><span class="p">,</span>
+                             <span class="s">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;iris&#39;</span><span class="p">,</span> <span class="s">&#39;petal_length&#39;</span><span class="p">]}]}}</span>
+
+ <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:6363/compute.json&#39;</span><span class="p">,</span>
+                 <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
+                 <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s">&#39;application/json&#39;</span><span class="p">})</span>
+
+ <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+<span class="p">{</span><span class="s">u&#39;data&#39;</span><span class="p">:</span> <span class="mf">563.8000000000004</span><span class="p">,</span>
+ <span class="s">u&#39;datashape&#39;</span><span class="p">:</span> <span class="s">u&#39;{petal_length_sum: float64}&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Now we use Blaze to generate the query programmatically</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Build a Symbol like our served iris data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dshape</span><span class="o">=</span> <span class="s">&quot;var * {sepal_length: float64, sepal_width: float64, petal_length: float64, petal_width: float64, species: string}&quot;</span>  <span class="c"># matching schema to csv file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="n">dshape</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.server</span> <span class="kn">import</span> <span class="n">to_tree</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">to_tree</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="s">&#39;iris&#39;</span><span class="p">})</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;expr&#39;</span><span class="p">:</span> <span class="n">d</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Alternatively we build a query to grab a single column</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">to_tree</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="s">&#39;iris&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="fully-interactive-python-to-python-remote-work">
+<h3>Fully Interactive Python-to-Python Remote work<a class="headerlink" href="#fully-interactive-python-to-python-remote-work" title="Permalink to this headline">¶</a></h3>
+<p>Alternatively we can use this API to have one Blaze process control another.
+Given our iris web server we can use Blaze on the client to drive the server to
+do work for us</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Client code, run this in a separate process from the Server</span>
+
+<span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="s">&#39;http://localhost:6363&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">)</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="n">t</span>
+
+    <span class="n">sepal_length</span>  <span class="n">sepal_width</span>  <span class="n">petal_length</span>  <span class="n">petal_width</span>      <span class="n">species</span>
+<span class="mi">0</span>            <span class="mf">5.1</span>          <span class="mf">3.5</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">1</span>            <span class="mf">4.9</span>          <span class="mf">3.0</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">2</span>            <span class="mf">4.7</span>          <span class="mf">3.2</span>           <span class="mf">1.3</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">3</span>            <span class="mf">4.6</span>          <span class="mf">3.1</span>           <span class="mf">1.5</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">4</span>            <span class="mf">5.0</span>          <span class="mf">3.6</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">5</span>            <span class="mf">5.4</span>          <span class="mf">3.9</span>           <span class="mf">1.7</span>          <span class="mf">0.4</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">6</span>            <span class="mf">4.6</span>          <span class="mf">3.4</span>           <span class="mf">1.4</span>          <span class="mf">0.3</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">7</span>            <span class="mf">5.0</span>          <span class="mf">3.4</span>           <span class="mf">1.5</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">8</span>            <span class="mf">4.4</span>          <span class="mf">2.9</span>           <span class="mf">1.4</span>          <span class="mf">0.2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="mi">9</span>            <span class="mf">4.9</span>          <span class="mf">3.1</span>           <span class="mf">1.5</span>          <span class="mf">0.1</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>
+<span class="o">...</span>
+
+<span class="n">by</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+              <span class="nb">max</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+           <span class="n">species</span>  <span class="nb">max</span>  <span class="nb">min</span>
+<span class="mi">0</span>   <span class="n">Iris</span><span class="o">-</span><span class="n">virginica</span>  <span class="mf">6.9</span>  <span class="mf">4.5</span>
+<span class="mi">1</span>      <span class="n">Iris</span><span class="o">-</span><span class="n">setosa</span>  <span class="mf">1.9</span>  <span class="mf">1.0</span>
+<span class="mi">2</span>  <span class="n">Iris</span><span class="o">-</span><span class="n">versicolor</span>  <span class="mf">5.1</span>  <span class="mf">3.0</span>
+</pre></div>
+</div>
+<p>We interact on the client machine through the <tt class="docutils literal"><span class="pre">Client</span></tt> data object but
+computations on this object cause communications through the web API, resulting
+in seemlessly interactive remote computation.</p>
+</div>
+</div>
+<div class="section" id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
+<p>Because this process builds off Blaze expressions it works
+equally well for data stored in any format on which Blaze is trained, including in-memory DataFrames, SQL/Mongo databases, or even Spark clusters.</p>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-27761864-10', 'auto');
+    ga('send', 'pageview');
+    </script>
+  </body>
+</html>

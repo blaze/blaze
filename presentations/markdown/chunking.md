@@ -1,11 +1,17 @@
 ## Expression Chunking
 
 
+## ... designing parallel algorithms
+
+
+## ... out-of-core, parallel, numpy/pandas
+
+
 ### Suppose we have a large array of integers
 
 A trillion numbers
 
-    x = array([5, 3, 1, ... <one trillion numbers>, ... 12, 5, 10])
+    x = np.array([5, 3, 1, ... <one trillion numbers>, ... 12, 5, 10])
 
 How do we compute the largest?
 
@@ -13,8 +19,9 @@ How do we compute the largest?
 
 <hr>
 
+### Define the problem in Blaze
+
     >>> from blaze import symbol
-    >>> from blaze.expr.split import split
     >>> x = symbol('x', '1000000000 * int')
     >>> x.max()
 
@@ -34,6 +41,7 @@ Max of aggregated results
 
 <hr>
 
+    >>> from blaze.expr.split import split
     >>> split(x, x.max())
     ((chunk,     max(chunk)),
      (aggregate, max(aggregate)))
@@ -54,6 +62,7 @@ Sum of aggregated results
 
 <hr>
 
+    >>> from blaze.expr.split import split
     >>> split(x, x.sum())
     ((chunk,     sum(chunk)),
      (aggregate, sum(aggregate)))
@@ -74,6 +83,7 @@ Sum aggregated results
 
 <hr>
 
+    >>> from blaze.expr.split import split
     >>> split(x, x.count())
     ((chunk,     count(chunk)),
      (aggregate, sum(aggregate)))
@@ -95,6 +105,7 @@ Sum the total and count then divide
 
 <hr>
 
+    >>> from blaze.expr.split import split
     >>> split(x, x.mean())
     ((chunk,     summary(count=count(chunk), total=sum(chunk))),
      (aggregate, sum(aggregate.total)) / sum(aggregate.count))
@@ -115,6 +126,7 @@ Split-apply-combine on concatenation of results
 
 <hr>
 
+    >>> from blaze.expr.split import split
     >>> split(x, by(x, freq=x.count())
     ((chunk,     by(chunk, freq=count(chunk))),
      (aggregate, by(aggregate.chunk, freq=sum(aggregate.freq))))
@@ -148,6 +160,13 @@ Known shapes:
     dshape("10 * 10 * 10 * {n: int32, x: float64, x2: float64}")
 
 
+### Recap
+
+Blaze expressions let us design powerful algorihtms abstractly.  Development is
+fast and generally applicable.
+
+<hr>
+
 ### Limitations
 
 * No sorting, joining, etc..
@@ -158,11 +177,3 @@ Known shapes:
     *   Expression splitting - *what* do we want to compute?
     *   Task scheduling - *where* do we compute each piece?
     *   In-memory execution - *how* do we actually execute this?
-
-<hr>
-
-### Recap
-
-Blaze expressions let us design powerful algorihtms abstractly.  Development is
-fast and generally applicable.
-

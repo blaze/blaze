@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Basic Queries &mdash; Blaze 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.7.0 documentation" href="index.html" />
+    <link rel="next" title="URI strings" href="uri.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li>
+            <a href="quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="api.html"><i class="icon-download"></i> API</a>
+        </li>
+
+        <li>
+            <a href="people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Basic Queries</a><ul>
+<li><a class="reference internal" href="#column-access">Column Access</a></li>
+<li><a class="reference internal" href="#mathematical-operations">Mathematical operations</a></li>
+<li><a class="reference internal" href="#reductions">Reductions</a></li>
+<li><a class="reference internal" href="#split-apply-combine">Split-Apply-Combine</a></li>
+<li><a class="reference internal" href="#add-computed-columns">Add Computed Columns</a></li>
+<li><a class="reference internal" href="#text-matching">Text Matching</a></li>
+<li><a class="reference internal" href="#relabel-column-names">Relabel Column names</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="basic-queries">
+<h1>Basic Queries<a class="headerlink" href="#basic-queries" title="Permalink to this headline">¶</a></h1>
+<p>Here we give a quick overview of some of the more common query functionality.</p>
+<p>We use the well known iris dataset</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s">&#39;blaze/examples/data/iris.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span>  
+<span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
+<span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
+<span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
+<span class="go">2            4.7          3.2           1.3          0.2  Iris-setosa</span>
+<span class="go">3            4.6          3.1           1.5          0.2  Iris-setosa</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<div class="section" id="column-access">
+<h2>Column Access<a class="headerlink" href="#column-access" title="Permalink to this headline">¶</a></h2>
+<p>Select individual columns using attributes</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">species</span>  
+<span class="go">        species</span>
+<span class="go">0   Iris-setosa</span>
+<span class="go">1   Iris-setosa</span>
+<span class="go">2   Iris-setosa</span>
+<span class="go">3   Iris-setosa</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Or item access</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="p">[</span><span class="s">&#39;species&#39;</span><span class="p">]</span>  
+<span class="go">        species</span>
+<span class="go">0   Iris-setosa</span>
+<span class="go">1   Iris-setosa</span>
+<span class="go">2   Iris-setosa</span>
+<span class="go">3   Iris-setosa</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Select many columns using a list of names</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="p">[[</span><span class="s">&#39;sepal_length&#39;</span><span class="p">,</span> <span class="s">&#39;species&#39;</span><span class="p">]]</span>  
+<span class="go">    sepal_length      species</span>
+<span class="go">0            5.1  Iris-setosa</span>
+<span class="go">1            4.9  Iris-setosa</span>
+<span class="go">2            4.7  Iris-setosa</span>
+<span class="go">3            4.6  Iris-setosa</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mathematical-operations">
+<h2>Mathematical operations<a class="headerlink" href="#mathematical-operations" title="Permalink to this headline">¶</a></h2>
+<p>Use mathematical operators and functions as normal</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">log</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">sepal_length</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>  
+<span class="go">    sepal_length</span>
+<span class="go">0       3.931826</span>
+<span class="go">1       3.891820</span>
+<span class="go">2       3.850148</span>
+<span class="go">3       3.828641</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>Note that mathematical functions like <tt class="docutils literal"><span class="pre">log</span></tt> should be imported from <tt class="docutils literal"><span class="pre">blaze</span></tt>.
+These will translate to <tt class="docutils literal"><span class="pre">np.log</span></tt>, <tt class="docutils literal"><span class="pre">math.log</span></tt>, <tt class="docutils literal"><span class="pre">sqlalchemy.sql.func.log</span></tt>,
+etc. based on the backend.</p>
+</div>
+<div class="section" id="reductions">
+<h2>Reductions<a class="headerlink" href="#reductions" title="Permalink to this headline">¶</a></h2>
+<p>As with many Blaze operations reductions like <tt class="docutils literal"><span class="pre">sum</span></tt> and <tt class="docutils literal"><span class="pre">mean</span></tt> may be used
+either as methods or as base functions.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">sepal_length</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  
+<span class="go">5.843333333333334</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mean</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">sepal_length</span><span class="p">)</span>  
+<span class="go">5.843333333333334</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="split-apply-combine">
+<h2>Split-Apply-Combine<a class="headerlink" href="#split-apply-combine" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">by</span></tt> operation expresses split-apply-combine computations.  It has the
+general format</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">grouping_columns</span><span class="p">,</span> <span class="n">name_1</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">column</span><span class="o">.</span><span class="n">reduction</span><span class="p">(),</span>
+<span class="gp">... </span>                           <span class="n">name_2</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">column</span><span class="o">.</span><span class="n">reduction</span><span class="p">(),</span>
+<span class="gp">... </span>                           <span class="o">...</span><span class="p">)</span>  
+</pre></div>
+</div>
+<p>Here is a concrete example.  Find the shortest, longest, and average petal
+length by species.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">shortest</span><span class="o">=</span><span class="n">iris</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+<span class="gp">... </span>                  <span class="n">longest</span><span class="o">=</span><span class="n">iris</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+<span class="gp">... </span>                  <span class="n">average</span><span class="o">=</span><span class="n">iris</span><span class="o">.</span><span class="n">petal_length</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="go">           species  average  longest  shortest</span>
+<span class="go">0      Iris-setosa    1.462      1.9       1.0</span>
+<span class="go">1  Iris-versicolor    4.260      5.1       3.0</span>
+<span class="go">2   Iris-virginica    5.552      6.9       4.5</span>
+</pre></div>
+</div>
+<p>This simple model can be extended to include more complex groupers and more
+complex reduction expressions.</p>
+</div>
+<div class="section" id="add-computed-columns">
+<h2>Add Computed Columns<a class="headerlink" href="#add-computed-columns" title="Permalink to this headline">¶</a></h2>
+<p>Add new columns using the <tt class="docutils literal"><span class="pre">transform</span></tt> function</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">transform</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">sepal_ratio</span> <span class="o">=</span> <span class="n">iris</span><span class="o">.</span><span class="n">sepal_length</span> <span class="o">/</span> <span class="n">iris</span><span class="o">.</span><span class="n">sepal_width</span><span class="p">,</span>
+<span class="gp">... </span>                <span class="n">petal_ratio</span> <span class="o">=</span> <span class="n">iris</span><span class="o">.</span><span class="n">petal_length</span> <span class="o">/</span> <span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="p">)</span>  
+<span class="go">    sepal_length  sepal_width  petal_length  petal_width      species  \</span>
+<span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
+<span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
+<span class="go">2            4.7          3.2           1.3          0.2  Iris-setosa</span>
+<span class="go">3            4.6          3.1           1.5          0.2  Iris-setosa</span>
+
+<span class="go">    sepal_ratio  petal_ratio</span>
+<span class="go">0      1.457143     7.000000</span>
+<span class="go">1      1.633333     7.000000</span>
+<span class="go">2      1.468750     6.500000</span>
+<span class="go">3      1.483871     7.500000</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="text-matching">
+<h2>Text Matching<a class="headerlink" href="#text-matching" title="Permalink to this headline">¶</a></h2>
+<p>Match text with glob strings, specifying columns with keyword arguments.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">species</span><span class="o">=</span><span class="s">&#39;*versicolor&#39;</span><span class="p">)</span>  
+<span class="go">    sepal_length  sepal_width  petal_length  petal_width          species</span>
+<span class="go">50           7.0          3.2           4.7          1.4  Iris-versicolor</span>
+<span class="go">51           6.4          3.2           4.5          1.5  Iris-versicolor</span>
+<span class="go">52           6.9          3.1           4.9          1.5  Iris-versicolor</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="relabel-column-names">
+<h2>Relabel Column names<a class="headerlink" href="#relabel-column-names" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span><span class="o">.</span><span class="n">relabel</span><span class="p">(</span><span class="n">petal_length</span><span class="o">=</span><span class="s">&#39;PETAL-LENGTH&#39;</span><span class="p">,</span> <span class="n">petal_width</span><span class="o">=</span><span class="s">&#39;PETAL-WIDTH&#39;</span><span class="p">)</span>  
+<span class="go">    sepal_length  sepal_width  PETAL-LENGTH  PETAL-WIDTH      species</span>
+<span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
+<span class="go">1            4.9          3.0           1.4          0.2  Iris-setosa</span>
+<span class="go">2            4.7          3.2           1.3          0.2  Iris-setosa</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-27761864-10', 'auto');
+    ga('send', 'pageview');
+    </script>
+  </body>
+</html>

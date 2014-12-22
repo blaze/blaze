@@ -17,8 +17,26 @@ Blaze is an extensible interface for data analytics.
 
 It feels like NumPy/Pandas.  It drives other data systems.
 
-Blaze expressions enable us to design algorithms.
+Blaze expressions enable high-level reasoning.
 
+
+
+## Motivation
+
+NumPy and Pandas serve as the foundation for the PyData stack
+
+... but they are limited to memory
+
+*The state of biggish-data analysis is still wild*
+
+
+## Approach
+
+*   Blaze is a user interface
+    *   ... and something like a compiler
+    *   ... for analytic processing (like Pandas, not like Redis)
+*   It isn't a database or a Pandas replacement
+*   It complements pre-existing systems by improving user access
 
 
 ## Play time
