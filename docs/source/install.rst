@@ -59,6 +59,9 @@ To run tests:
 Strict Dependencies
 ~~~~~~~~~~~~~~~~~~~
 
+Blaze depends on NumPy, Pandas, and a few pure-python libraries.  It should be
+easy to install on any Numeric Python setup.
+
 * numpy_ >= 1.7
 * datashape_ >= 0.4.0
 * into_ >= 0.1.3
@@ -69,6 +72,10 @@ Strict Dependencies
 
 Optional Dependencies
 ~~~~~~~~~~~~~~~~~~~~~
+
+Blaze can help you use a variety of other libraries like ``sqlalchemy`` or
+``h5py``.  If these are installed then Blaze will use them.  Some of these are
+non-trivial to install.  We recommend installation throgh ``conda``.
 
 * dynd-python_ >= 0.6.5
 * sqlalchemy_
