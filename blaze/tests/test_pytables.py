@@ -1,6 +1,7 @@
 import numpy as np
 import datashape as ds
 import pytest
+from toolz import first
 
 from blaze import into
 from blaze.utils import tmpfile
@@ -156,7 +157,7 @@ class TestPyTablesLight(object):
         """ check the context manager auto-closes the resources """
 
         with Data("{0}::dt".format(dt_tb)) as t:
-            f = t._resources().values()[0]
+            f = first(t._resources().values())
             assert f.isopen
         assert not f.isopen
 
