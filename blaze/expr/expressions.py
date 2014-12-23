@@ -173,19 +173,19 @@ class Expr(Node):
             return self._child._name
 
     def __enter__(self):
-        """ context entering """
+        """ Enter context """
         return self
 
     def __exit__(self, *args):
-        """
-        context existing
+        """ Exit context
 
-        close any open resources if we are called in context
+        Close any open resource if we are called in context
         """
-        for key, value in self._resources().items():
-            closer = getattr(value,'close',None)
-            if closer is not None:
-                closer()
+        for value in self._resources().values():
+            try:
+                value.close()
+            except AttributeError:
+                pass
         return True
 
 _symbol_cache = dict()

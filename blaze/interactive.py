@@ -146,6 +146,7 @@ class InteractiveSymbol(Symbol):
         for slot, arg in zip(self.__slots__, state):
             setattr(self, slot, arg)
 
+
 def Table(*args, **kwargs):
     """ Deprecated, see Data instead """
     warnings.warn("Table is deprecated, use Data instead",
