@@ -30,6 +30,7 @@ def test_date_attribute_completion():
     assert not builtins.all([x.startswith('__') and x.endswith('__')
                             for x in dir(t.name)])
 
+
 def test_datetime_attribute_name():
     t = symbol('t', '5 * {name: string, when: datetime}')
     assert 'when' in t.when.day._name
@@ -49,3 +50,16 @@ def test_isdatelike():
 def test_truncate_names():
     t = symbol('t', '5 * {name: string, when: datetime}')
     assert t.when.truncate(days=2)._name == 'when'
+
+
+def test_truncate_repr():
+    t = symbol('t', '5 * {name: string, when: datetime}')
+    assert repr(t.when.truncate(days=2)) == 't.when.truncate(day=2)'
+    assert repr(t.when.date.truncate(month=3)) == 't.when.date.truncate(month=3)'
+    assert repr(t.when.date.truncate(ns=4)) == 't.when.date.truncate(nanosecond=4)'
+
+
+def test_truncate_raises_with_no_arguments():
+    t = symbol('t', '5 * {name: string, when: datetime}')
+    with pytest.raises(TypeError):
+        t.when.truncate()
