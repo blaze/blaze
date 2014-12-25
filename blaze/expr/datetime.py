@@ -95,13 +95,32 @@ class UTCFromTimestamp(DateTime):
 def utcfromtimestamp(expr):
     return UTCFromTimestamp(expr)
 
-units = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second',
-'millisecond', 'microsecond', 'nanosecond']
+units = [
+    'year',
+    'month',
+    'week',
+    'day',
+    'hour',
+    'minute',
+    'second',
+    'millisecond',
+    'microsecond',
+    'nanosecond'
+]
 
 
-_unit_aliases = {'y': 'year', 'w': 'week', 'd': 'day', 'date': 'day',
-    'h': 'hour', 's': 'second', 'ms': 'millisecond', 'us': 'microsecond',
-    'ns': 'nanosecond'}
+_unit_aliases = {
+    'y': 'year',
+    'w': 'week',
+    'd': 'day',
+    'date': 'day',
+    'h': 'hour',
+    's': 'second',
+    'ms': 'millisecond',
+    'us': 'microsecond',
+    'ns': 'nanosecond'
+}
+
 
 def normalize_time_unit(s):
     """ Normalize time input to one of 'year', 'second', 'millisecond', etc..
@@ -138,6 +157,9 @@ class DateTimeTruncate(DateTime):
     @property
     def _name(self):
         return self._child._name
+
+    def __repr__(self):
+        return '%s.truncate(%s=%s)' % (self._child, self.unit, self.measure)
 
 
 def truncate(expr, *args, **kwargs):
