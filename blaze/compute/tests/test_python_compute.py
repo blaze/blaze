@@ -103,8 +103,8 @@ def test_reductions():
     assert compute(count(t['amount']), data) == 3
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
-    assert compute(t.amount.first(), data) == 100
-    assert compute(t.amount.last(), data) == 50
+    assert compute(t.amount[0], data) == 100
+    assert compute(t.amount[-1], data) == 50
 
 
 def test_1d_reductions_keepdims():
@@ -579,12 +579,12 @@ def test_summary_by():
 
 
 def test_summary_by_first():
-    expr = by(t.name, amt=t.amount.first())
+    expr = by(t.name, amt=t.amount[0])
     assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 100)))
 
 
 def test_summary_by_last():
-    expr = by(t.name, amt=t.amount.last())
+    expr = by(t.name, amt=t.amount[-1])
     assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 50)))
 
 

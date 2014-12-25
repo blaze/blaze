@@ -195,14 +195,6 @@ def nrows(expr):
     return nelements(expr, axis=(0,))
 
 
-def first(expr):
-    return expr[0]
-
-
-def last(expr):
-    return expr[-1]
-
-
 class Summary(Expr):
     """ A collection of named reductions
 
@@ -280,11 +272,10 @@ summary.__doc__ = Summary.__doc__
 
 
 from datashape.predicates import iscollection, isboolean, isnumeric
-from .expressions import (schema_method_list, dshape_method_list,
-                          method_properties)
+from .expressions import dshape_method_list, method_properties
 
 dshape_method_list.extend([
-    (iscollection, set([count, min, max, nelements, first, last])),
+    (iscollection, set([count, min, max, nelements])),
     (lambda ds: len(ds.shape) == 1,
         set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),

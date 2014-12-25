@@ -160,8 +160,8 @@ def test_reductions():
     assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
     assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
-    assert compute(t.amount.first(), df) == df.amount.iloc[0]
-    assert compute(t.amount.last(), df) == df.amount.iloc[-1]
+    assert compute(t.amount[0], df) == df.amount.iloc[0]
+    assert compute(t.amount[-1], df) == df.amount.iloc[-1]
 
 
 def test_reductions_on_dataframes():
@@ -485,7 +485,7 @@ def test_summary_by():
                    reason=('pandas backend cannot support non Reduction '
                            'subclasses'))
 def test_summary_by_first():
-    expr = by(t.name, fst=t.amount.first())
+    expr = by(t.name, fst=t.amount[0])
     result = compute(expr, df)
     assert result == df.amount.iloc[0]
 

@@ -133,8 +133,8 @@ def test_reductions(data):
     assert compute(t['amount'].count(), data) == len(x['amount'])
     assert compute(t['amount'].sum(), data) == x['amount'].sum()
     assert compute(t['amount'].mean(), data) == x['amount'].mean()
-    assert compute(t.amount.first(), data) == x['amount'][0]
-    assert compute(t.amount.last(), data) == x['amount'][-1]
+    assert compute(t.amount[0], data) == x['amount'][0]
+    assert compute(t.amount[-1], data) == x['amount'][-1]
 
 
 class TestTopLevelReductions(object):
