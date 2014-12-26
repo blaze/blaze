@@ -54,9 +54,12 @@ def test_truncate_names():
 
 def test_truncate_repr():
     t = symbol('t', '5 * {name: string, when: datetime}')
-    assert repr(t.when.truncate(days=2)) == 't.when.truncate(day=2)'
-    assert repr(t.when.date.truncate(month=3)) == 't.when.date.truncate(month=3)'
-    assert repr(t.when.date.truncate(ns=4)) == 't.when.date.truncate(nanosecond=4)'
+    assert repr(t.when.truncate(days=2)) == 't.when.truncate(days=2)'
+    assert repr(t.when.date.truncate(month=3)) == 't.when.date.truncate(months=3)'
+    assert repr(t.when.date.truncate(ns=4)) == 't.when.date.truncate(nanoseconds=4)'
+    assert repr(t.when.date.truncate(days=4.2)) == 't.when.date.truncate(days=4.2)'
+    assert repr(t.when.date.truncate(days=4.2876)) == 't.when.date.truncate(days=4.2876)'
+    assert repr(t.when.date.truncate(days=4.287654)) == 't.when.date.truncate(days=4.28765)'
 
 
 def test_truncate_raises_with_no_arguments():
