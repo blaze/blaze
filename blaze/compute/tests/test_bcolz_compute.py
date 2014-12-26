@@ -6,7 +6,6 @@ bcolz = pytest.importorskip('bcolz')
 
 import numpy as np
 
-import blaze as bz
 from into import into
 from blaze.compute.bcolz import chunks
 from blaze.expr import symbol
@@ -47,6 +46,10 @@ def test_reductions():
                                                            ddof=1)) < 1e-5
     assert len(list(compute(t.distinct(), b))) == 3
     assert len(list(compute(t.a.distinct(), b))) == 3
+    assert compute(t.a[0], b) == 1
+    assert compute(t.a[-1], b) == 3
+    assert compute(t[0], b) == compute(t[0], b)
+    assert compute(t[-1], b) == compute(t[-1], b)
 
 
 def test_nunique():

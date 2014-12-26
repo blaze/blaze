@@ -7,24 +7,20 @@ from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
         Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply, Reduction,
         symbol)
 from ..expr import Label, Distinct, By, Slice
-from ..expr import std, var, count, mean, nunique, sum
-from ..expr import eval_str, Expr
+from ..expr import Expr
 from ..expr import path
-from ..expr.optimize import lean_projection, _lean
+from ..expr.optimize import lean_projection
 from ..expr.split import split
-from ..partition import partitions, partition_get
+from ..partition import partitions
 from .core import compute
-from ..utils import available_memory
 
 from collections import Iterator, Iterable
 import datashape
 import bcolz
-import math
 import numpy as np
 import pandas as pd
 
 
-from ..compatibility import builtins
 from ..dispatch import dispatch
 from into import into
 
@@ -61,6 +57,7 @@ def compute_down(expr, data, **kwargs):
         return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
     else:
         raise MDNotImplementedError()
+
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
     Selection, ElemWise, Apply, Reduction, Distinct, By), (bcolz.ctable, bcolz.carray))
