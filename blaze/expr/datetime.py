@@ -183,7 +183,7 @@ class DateTimeTruncate(DateTime):
         return self._child._name
 
     def __str__(self):
-        return '%s.truncate(%s=%s)' % (self._child, self.unit, self.measure)
+        return '%s.truncate(%ss=%g)' % (self._child, self.unit, self.measure)
 
 
 def truncate(expr, *args, **kwargs):
