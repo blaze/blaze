@@ -4,6 +4,8 @@ from .expressions import Expr, ndim, symbol
 from datashape import DataShape
 from collections import Iterable
 
+__all__ = 'Transpose', 'TensorDot', 'dot', 'transpose', 'tensordot'
+
 class Transpose(Expr):
     """ Transpose dimensions in an N-Dimensional array
 
@@ -62,8 +64,7 @@ class TensorDot(Expr):
 
 def tensordot(lhs, rhs, axes=None):
     if axes is None:
-        if ndim(lhs) == 2:
-            left = ndim(lhs) - 1
+        left = ndim(lhs) - 1
         right = 0
     elif isinstance(axes, Iterable):
         left, right = axes

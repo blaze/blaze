@@ -11,6 +11,7 @@ from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
+from ..expr import Transpose, TensorDot
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -254,3 +255,13 @@ def chunks(x, chunksize=1024):
     while start < n:
         yield x[start:start + chunksize]
         start += chunksize
+
+
+@dispatch(Transpose, np.ndarray)
+def compute_up(expr, x, **kwargs):
+    return np.transpose(x, axes=expr.axes)
+
+
+@dispatch(TensorDot, np.ndarray, np.ndarray)
+def compute_up(expr, lhs, rhs, **kwargs):
+    return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])

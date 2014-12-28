@@ -1,5 +1,5 @@
 from blaze.expr import *
-from blaze.expr.array import *
+from blaze.expr.arrays import *
 
 
 w = symbol('x', '5 * 6 * int32')
