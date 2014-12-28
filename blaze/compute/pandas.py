@@ -36,7 +36,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
                     IsNull, DropNA)
-from ..expr import UnaryOp, BinOp
+from ..expr import UnaryOp, BinOp, isnan
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
 from ..compatibility import _inttypes
@@ -135,7 +135,7 @@ def compute_up(t, df, **kwargs):
     return df.dropna(how=t.how)
 
 
-@dispatch(IsNull, NDFrame)
+@dispatch((isnan, IsNull), NDFrame)
 def compute_up(t, df, **kwargs):
     return df.isnull()
 
