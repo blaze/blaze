@@ -79,13 +79,15 @@ def maxshape(shapes):
 
     >>> maxshape([(10, 1), (1, 10), ()])
     (10, 10)
+
+    >>> maxshape([(4, 5), (5,)])
+    (4, 5)
     """
     shapes = [shape for shape in shapes if shape]
     if not shapes:
         return ()
-    if len(set(map(len, shapes))) != 1:
-        raise ValueError("Only support arithmetic on expressions with equal "
-                "number of dimensions.")
+    ndim = max(map(len, shapes))
+    shapes = [(1,) * (ndim - len(shape)) + shape for shape in shapes]
     return tuple(map(maxvar, zip(*shapes)))
 
 
