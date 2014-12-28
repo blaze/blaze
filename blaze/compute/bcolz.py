@@ -72,20 +72,6 @@ def compute_up(expr, data, **kwargs):
     return data[cond]
 
 
-@dispatch(IsNull, bcolz.ctable)
-def compute_up(n, t, **kwargs):
-    # TODO: a projection insertion here would be nice
-    # i.e., only compute_up over the columns in the child of an IsNull
-    # expression
-    names = t.cols.names
-    return bcolz.carray([compute_up(n, t.cols[c], **kwargs) for c in names])
-
-
-@dispatch(IsNull, bcolz.carray)
-def compute_up(_, data, **kwargs):
-    return bcolz.eval('t != t', user_dict={'t': data})
-
-
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
            Selection, ElemWise, Apply, Reduction, Distinct, By),
           (bcolz.ctable, bcolz.carray))

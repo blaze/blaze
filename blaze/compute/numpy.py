@@ -10,7 +10,7 @@ from numbers import Number
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique, Summary
-from ..expr import BinOp, UnaryOp, USub, Not, nelements
+from ..expr import BinOp, UnaryOp, USub, Not, nelements, IsNull, DropNA
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
 from ..utils import keywords
@@ -274,6 +274,21 @@ def compute_up(expr, data, **kwargs):
                     - offset)
                     .astype(np_dtype))
     return result
+
+
+@dispatch(IsNull, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    try:
+        import numexpr as ne
+    except ImportError:
+        return data != data
+    else:
+        return ne.evaluate('data != data', local_dict={'data': data})
+
+
+@dispatch(DropNA, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return data[compute(~expr._child.isnull(), data)]
 
 
 @dispatch(np.ndarray)

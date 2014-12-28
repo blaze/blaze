@@ -22,7 +22,6 @@ b = bcolz.ctable(np.array([(1, 1., np.datetime64('2010-01-01')),
 
 t = symbol('t', 'var * {a: int64, b: float64, date: ?date}')
 
-
 to = symbol('to', 'var * {a: int64, b: float64}')
 bo = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, np.nan)],
                            dtype=[('a', 'i8'), ('b', 'f8')]))
@@ -167,7 +166,7 @@ def test_isnull():
 
 
 @pytest.mark.xfail(raises=AttributeError,
-                   reason="bcolz doesn't support NA values")
+                   reason="bcolz doesn't support NA values, use isnan")
 def test_dropna():
-    e = nt.b.dropna()
-    assert (compute(e, nb) == bcolz.carray([2.0, 3.0])).all()
+    e = t.b.dropna()
+    assert (compute(e, bo) == bcolz.carray([1.0, 2.0])).all()
