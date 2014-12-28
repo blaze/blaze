@@ -38,7 +38,7 @@ from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
                     Not, nelements)
-from ..compatibility import builtins, apply, unicode, _inttypes
+from ..compatibility import builtins, apply, unicode, _inttypes, _strtypes
 from .core import compute, compute_up, optimize, base
 
 from ..utils import listpack
@@ -304,6 +304,7 @@ def compute_up(t, a, b, **kwargs):
 @dispatch(DropNA, Sequence)
 def compute_up(expr, data, **kwargs):
     f = rowfunc(expr._child.isnull())
+    data = iter(data)
     first_el = first(data)
 
     def mapper(x):
@@ -312,7 +313,7 @@ def compute_up(expr, data, **kwargs):
             return not getattr(builtins, expr.how)(x)
         else:
             return not x
-    return filter(compose(mapper, f), data)
+    return filter(compose(mapper, f), concat(([first_el], data)))
 
 
 @dispatch(Selection, Sequence)
