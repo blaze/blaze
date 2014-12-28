@@ -837,8 +837,19 @@ def test_isnull():
     data = [('Alice', -100, None),
             (None, None, None),
             ('Bob', 300, 'New York City')]
-    t = TableSymbol('t', '{name: ?string, amount: ?int32, city: ?string}')
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
     expr = t.name.isnull()
+    result = compute(expr, data)
+    assert list(result) == [False, True, False]
+
+
+@pytest.mark.xfail
+def test_isnull_whole_collection():
+    data = [('Alice', -100, None),
+            (None, None, None),
+            ('Bob', 300, 'New York City')]
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
+    expr = t.isnull()
     result = compute(expr, data)
     assert list(result) == [False, True, False]
 
@@ -847,7 +858,7 @@ def test_dropna():
     data = [('Alice', -100, None),
             (None, None, None),
             ('Bob', 300, 'New York City')]
-    t = TableSymbol('t', '{name: ?string, amount: ?int32, city: ?string}')
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
     expr = t.name.dropna()
     result = compute(expr, data)
     assert list(result) == ['Alice', 'Bob']
