@@ -1,10 +1,26 @@
 from __future__ import absolute_import, division, print_function
 
-from .expressions import Expr, ndim
+from .expressions import Expr, ndim, symbol
 from datashape import DataShape
 from collections import Iterable
 
 class Transpose(Expr):
+    """ Transpose dimensions in an N-Dimensional array
+
+    Examples
+    --------
+
+    >>> x = symbol('x', '10 * 20 * int32')
+    >>> x.T.shape
+    (20, 10)
+
+    Specify axis ordering with axes keyword argument
+
+    >>> x = symbol('x', '10 * 20 * 30 * int32')
+    >>> x.transpose([2, 0, 1]).shape
+    (30, 10, 20)
+    """
+
     __slots__ = '_hash', '_child', 'axes'
 
     @property
@@ -18,7 +34,11 @@ def transpose(expr, axes=None):
     if axes is None:
         assert ndim(expr) == 2
         axes = (1, 0)
+    if isinstance(axes, list):
+        axes = tuple(axes)
     return Transpose(expr, axes)
+
+transpose.__doc__ = Transpose.__doc__
 
 
 def T(expr):
@@ -26,6 +46,8 @@ def T(expr):
 
 
 class TensorDot(Expr):
+    """ Dot Product: Contract and sum dimensions of two arrays """
+
     __slots__ = '_hash', 'lhs', 'rhs', '_left_axes', '_right_axes'
     __inputs__ = 'lhs', 'rhs'
 
@@ -58,6 +80,8 @@ def tensordot(lhs, rhs, axes=None):
         right = tuple(right)
 
     return TensorDot(lhs, rhs, left, right)
+
+tensordot.__doc__ = TensorDot.__doc__
 
 def dot(lhs, rhs):
     return tensordot(lhs, rhs)
