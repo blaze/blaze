@@ -16,7 +16,6 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
-import operator
 import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql, Table, MetaData
@@ -28,10 +27,10 @@ import itertools
 from copy import copy
 import toolz
 from multipledispatch import MDNotImplementedError
-from datashape.predicates import isscalar, isrecord
+from datashape.predicates import isscalar
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
+from ..expr import Projection, Selection, Field, Broadcast, Expr, IsNull, DropNA
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
@@ -42,13 +41,13 @@ from ..utils import listpack
 __all__ = ['sqlalchemy', 'select']
 
 
-
 def inner_columns(s):
     try:
         return s.inner_columns
     except AttributeError:
         return s.c
     raise TypeError()
+
 
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
@@ -155,7 +154,9 @@ def select(s):
 def computefull(t, s):
     return select(compute(t, s))
 
+
 table_names = ('table_%d' % i for i in itertools.count(1))
+
 
 def name(sel):
     """ Name of a selectable """
@@ -165,6 +166,7 @@ def name(sel):
         if len(sel.froms) == 1:
             return name(sel.froms[0])
     return next(table_names)
+
 
 @dispatch(Select, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
@@ -186,6 +188,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
         raise MDNotImplementedError()
     return b.replace_selectable(b.froms[0],
                 a.join(b.froms[0], condition, **kwargs))
+
 
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
@@ -215,20 +218,20 @@ def compute_up(t, lhs, rhs, **kwargs):
     else:
         rdict = rhs.c
 
-
     condition = reduce(and_,
-            [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
-        for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
+                       [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
+                        for l, r in zip(listpack(t.on_left),
+                                        listpack(t.on_right))])
 
     if t.how == 'inner':
         join = _join_selectables(lhs, rhs, condition=condition)
-        main, other = lhs, rhs
+        main = lhs
     elif t.how == 'left':
         join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
-        main, other = lhs, rhs
+        main = lhs
     elif t.how == 'right':
         join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
-        main, other = rhs, lhs
+        main = rhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise ValueError("SQLAlchemy doesn't support full outer Join")
@@ -239,7 +242,6 @@ def compute_up(t, lhs, rhs, **kwargs):
         else:
             return list(x.columns)
     main_cols = cols(main)
-    other_cols = cols(other)
     left_cols = cols(lhs)
     right_cols = cols(rhs)
 
@@ -338,6 +340,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return select(s).distinct()
 
+
 @dispatch(By, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
@@ -404,6 +407,7 @@ def lower_column(col):
 
 
 aliases = ('alias_%d' % i for i in itertools.count(1))
+
 
 @toolz.memoize
 def alias_it(s):
@@ -525,6 +529,16 @@ def compute_up(t, s, **kwargs):
 
     return s.where(reduce(and_,
                           [key.like(pattern) for key, pattern in d.items()]))
+
+
+@dispatch(IsNull, ClauseElement)
+def compute_up(t, s, **kwargs):
+    return s == None
+
+
+@dispatch(DropNA, ClauseElement)
+def compute_up(t, s, **kwargs):
+    return s.table.select().with_only_columns([s]).where(s != None)
 
 
 @toolz.memoize

@@ -16,6 +16,7 @@ from into import into, resource
 from blaze.utils import tmpfile
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 metadata = sa.MetaData()
 
@@ -24,6 +25,13 @@ s = sa.Table('accounts', metadata,
              sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True),
              )
+
+
+ns = sa.Table('nullaccounts', metadata,
+              sa.Column('name', sa.String, nullable=True),
+              sa.Column('amount', sa.REAL),
+              sa.Column('id', sa.Integer, primary_key=True),
+              )
 
 tbig = symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
@@ -86,6 +94,7 @@ def test_arithmetic():
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
 
+
 def test_join():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -124,7 +133,6 @@ def test_join():
     ORDER BY amounts.amount""")
 
 
-
 def test_clean_complex_join():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -155,8 +163,6 @@ def test_clean_complex_join():
     FROM amounts, (SELECT amounts.name AS name, amounts.amount AS amount
     FROM amounts
     WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
-
-
 
 
 def test_multi_column_join():
@@ -246,6 +252,7 @@ def test_count_on_table():
               FROM accounts
               WHERE accounts.amount > :amount_1) as alias"""))
 
+
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
 
@@ -334,6 +341,7 @@ def test_by_three():
     FROM accountsbig GROUP BY accountsbig.name, accountsbig.sex
     """)
 
+
 def test_by_summary_clean():
     expr = by(t.name, min=t.amount.min(), max=t.amount.max())
     result = compute(expr, s)
@@ -358,7 +366,6 @@ def test_by_summary_single_column():
     """
 
     assert normalize(str(result)) == normalize(expected)
-
 
 
 def test_join_projection():
@@ -402,7 +409,6 @@ def test_sort_on_distinct():
             ORDER BY amount""")
 
 
-
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
 
@@ -430,6 +436,7 @@ def test_merge():
     assert 'FROM accounts' in result
     assert 'SELECT accounts.name' in result
     assert 'new' in result
+
 
 def test_projection_of_selection():
     print(compute(t[t['amount'] < 0][['name', 'amount']], s))
@@ -580,13 +587,13 @@ def test_clean_join():
         """)
 
 
-
 def test_like():
     expr = t.like(name='Alice*')
     assert normalize(str(compute(expr, s))) == normalize("""
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
 
 def test_columnwise_on_complex_selection():
     assert normalize(str(select(compute(t[t.amount > 0].amount + 1, s)))) == \
@@ -595,6 +602,7 @@ def test_columnwise_on_complex_selection():
     FROM accounts
     WHERE accounts.amount > :amount_2
     """)
+
 
 def test_reductions_on_complex_selections():
 
@@ -1064,3 +1072,17 @@ def test_merge_compute():
         assert result == [(1, 'Alice', 100, 1000),
                           (2, 'Bob',   200, 2000),
                           (4, 'Dennis',400, 4000)]
+
+
+def test_isnull():
+    result = compute(nt.name.isnull(), ns)
+    assert str(result) == 'nullaccounts.name IS NULL'
+
+
+def test_dropna():
+    result = compute(nt.name.dropna(), ns)
+    expected = normalize("""
+               SELECT nullaccounts.name
+               FROM nullaccounts
+               WHERE nullaccounts.name IS NOT NULL""")
+    assert normalize(str(result)) == expected
