@@ -7,7 +7,7 @@ __all__ = ['IsNull', 'isnull', 'DropNA', 'dropna']
 
 
 class IsNull(ElemWise):
-    __slots__ = '_child',
+    __slots__ = '_hash', '_child',
 
     @property
     def schema(self):
@@ -15,7 +15,10 @@ class IsNull(ElemWise):
 
     @property
     def dshape(self):
-        return DataShape(Var(), self.schema.measure)
+        return DataShape(Var(), self.schema)
+
+    def __str__(self):
+        return '%s.isnull()' % self._child
 
 
 def isnull(expr):
@@ -23,12 +26,15 @@ def isnull(expr):
 
 
 class DropNA(Expr):
-    __slots__ = '_child', 'how'
+    __slots__ = '_hash', '_child', 'how'
 
     @property
     def dshape(self):
         ds = self._child.dshape
         return DataShape(Var(), ds.measure.ty)
+
+    def __str__(self):
+        return '%s.dropna(how=%r)' % (self._child, self.how)
 
 
 def dropna(expr, how='any'):
@@ -43,10 +49,7 @@ schema_method_list.extend([
 ])
 
 
-def isdropna(ds):
-    return isinstance(ds.measure, Option) and iscollection(ds)
-
-
 dshape_method_list.extend([
-    (isdropna, set([dropna]))
+    (lambda ds: isinstance(ds.measure, Option) and iscollection(ds),
+     set([dropna])),
 ])
