@@ -7,7 +7,7 @@ sa = sqlalchemy
 import datashape
 import re
 from blaze.compute.sql import (compute, computefull, select, lower_column,
-        compute_up)
+                               compute_up)
 from blaze.expr import *
 from blaze.compatibility import xfail
 from blaze.utils import unique
@@ -33,14 +33,15 @@ ns = sa.Table('nullaccounts', metadata,
               sa.Column('id', sa.Integer, primary_key=True),
               )
 
-tbig = symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
+tbig = symbol('tbig',
+              'var * {name: string, sex: string[1], amount: int, id: int}')
 
 sbig = sa.Table('accountsbig', metadata,
-             sa.Column('name', sa.String),
-             sa.Column('sex', sa.String),
-             sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True),
-             )
+                sa.Column('name', sa.String),
+                sa.Column('sex', sa.String),
+                sa.Column('amount', sa.Integer),
+                sa.Column('id', sa.Integer, primary_key=True),
+                )
 
 def normalize(s):
     s2 = ' '.join(s.strip().split()).lower().replace('_', '')
@@ -860,7 +861,6 @@ def test_aliased_views_with_two_group_bys():
           GROUP BY bank.name) as alias
     GROUP BY alias.total
     """)
-
 
 
 def test_aliased_views_with_join():
