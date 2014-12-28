@@ -1,4 +1,5 @@
 from blaze.expr import *
+from blaze.expr.array import *
 
 
 x = symbol('x', '4 * 5 * int32')
@@ -7,3 +8,9 @@ z = symbol('z', '4 * int32')
 
 def test_shape_of_binop_of_differently_shaped_arrays():
     assert (x + y).shape == x.shape
+
+
+def test_transpose():
+    assert ndim(x.dshape) == 2
+
+    assert x.T.shape == (5, 4)
