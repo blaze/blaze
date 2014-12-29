@@ -4,7 +4,7 @@ import datetime
 
 import numpy as np
 from pandas import DataFrame, Series
-from datashape import to_numpy
+from datashape import to_numpy, to_numpy_dtype
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
@@ -79,11 +79,18 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if issubclass(x.dtype.type, (np.floating, np.object)) and x.dtype.names is None:
+    if (issubclass(x.dtype.type, (np.floating, np.object_)) or
+        x.dtype == np.dtype('datetime64[ns]')):
         return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    elif x.dtype != np.dtype('datetime64[ns]'):
+        # we have to cast datetimes to nanoseconds if they're not otherwise
+        # pandas will call np.isnan which can't handle datetime64s
+        return pd.notnull(x.astype('datetime64[ns]')).sum(keepdims=t.keepdims,
+                                                          axis=t.axis)
     else:
-        return np.ones(x.shape, dtype='int64').sum(keepdims=t.keepdims,
-                                                   axis=t.axis)
+        return np.ones(x.shape,
+                       dtype=to_numpy_dtype(t.dshape)).sum(keepdims=t.keepdims,
+                                                           axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
@@ -91,7 +98,7 @@ def compute_up(t, x, **kwargs):
     assert t.axis == tuple(range(ndim(t._child)))
     result = len(np.unique(x))
     if t.keepdims:
-        result = np.array([result])
+        result = np.array([result], dtype=to_numpy_dtype(t.dshape))
     return result
 
 
