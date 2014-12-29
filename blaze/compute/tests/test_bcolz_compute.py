@@ -19,7 +19,7 @@ b = bcolz.ctable(np.array([(1, 1., np.datetime64('2010-01-01')),
                                  ('b', 'f8'),
                                  ('date', 'datetime64[D]')]))
 
-t = symbol('t', 'var * {a: int64, b: float64, date: date}')
+t = symbol('t', 'var * {a: int64, b: float64, date: ?date}')
 
 
 to = symbol('to', 'var * {a: int64, b: float64}')
