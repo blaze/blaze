@@ -4,7 +4,7 @@ import datetime
 
 import numpy as np
 from pandas import DataFrame, Series
-from datashape import to_numpy
+from datashape import to_numpy, to_numpy_dtype
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
@@ -77,12 +77,19 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
+inat = np.datetime64('NaT').view('int64')
+
+
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if np.issubdtype(x.dtype, np.float): # scalar dtype
+    if issubclass(x.dtype.type, (np.floating, np.object_)):
         return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    elif issubclass(x.dtype.type, np.datetime64):
+        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis)
     else:
-        return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
+        return np.ones(x.shape,
+                       dtype=to_numpy_dtype(t.dshape)).sum(keepdims=t.keepdims,
+                                                           axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)

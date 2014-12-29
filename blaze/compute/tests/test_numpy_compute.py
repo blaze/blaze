@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import numbers
 import pytest
 from datetime import datetime, date
 
@@ -79,6 +80,12 @@ def test_Reductions():
     assert compute((t['amount'] > 250).all(), x) == False
     assert compute(t['amount'][0], x) == x['amount'][0]
     assert compute(t['amount'][-1], x) == x['amount'][-1]
+
+
+def test_count_string():
+    s = symbol('name', 'var * ?string')
+    x = np.array(['Alice', np.nan, 'Bob', 'Denis', 'Edith'], dtype='object')
+    assert compute(s.count(), x) == 4
 
 
 def test_reductions_on_recarray():
