@@ -81,6 +81,12 @@ def test_Reductions():
     assert compute(t['amount'][-1], x) == x['amount'][-1]
 
 
+def test_count_string():
+    s = symbol('name', 'var * ?string')
+    x = np.array(['Alice', np.nan, 'Bob', 'Denis', 'Edith'], dtype='object')
+    assert compute(s.count(), x) == 4
+
+
 def test_reductions_on_recarray():
     assert compute(t.count(), x) == len(x)
 
