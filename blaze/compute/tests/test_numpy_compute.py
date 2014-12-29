@@ -68,8 +68,6 @@ def test_invert_not():
 def test_Reductions():
     assert compute(t['amount'].mean(), x) == x['amount'].mean()
     assert compute(t['amount'].count(), x) == len(x['amount'])
-    assert isinstance(compute(t['amount'].count(), x), (numbers.Integral,
-                                                        np.integer))
     assert compute(t['amount'].sum(), x) == x['amount'].sum()
     assert compute(t['amount'].min(), x) == x['amount'].min()
     assert compute(t['amount'].max(), x) == x['amount'].max()
