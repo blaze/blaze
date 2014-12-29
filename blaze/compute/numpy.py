@@ -97,7 +97,7 @@ def compute_up(t, x, **kwargs):
     assert t.axis == tuple(range(ndim(t._child)))
     result = len(np.unique(x))
     if t.keepdims:
-        result = np.array([result], dtype=to_numpy_dtype(t.dshape))
+        result = np.array([result])
     return result
 
 
