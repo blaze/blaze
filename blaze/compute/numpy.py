@@ -100,7 +100,7 @@ def compute_up(t, x, **kwargs):
     return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
 
 
-def axify(expr, axis):
+def axify(expr, axis, keepdims=False):
     """ inject axis argument into expression
 
     Helper function for compute_up(Summary, np.ndarray)
@@ -111,7 +111,7 @@ def axify(expr, axis):
     >>> axify(expr, axis=0)
     sum(s, axis=(0,))
     """
-    return type(expr)(expr._child, axis=axis)
+    return type(expr)(expr._child, axis=axis, keepdims=keepdims)
 
 @dispatch(Summary, np.ndarray)
 def compute_up(expr, data, **kwargs):
@@ -119,7 +119,7 @@ def compute_up(expr, data, **kwargs):
     if shape:
         result = np.empty(shape=shape, dtype=dtype)
         for n, v in zip(expr.names, expr.values):
-            result[n] = compute(axify(v, expr.axis), data)
+            result[n] = compute(axify(v, expr.axis, expr.keepdims), data)
         return result
     else:
         return tuple(compute(axify(v, expr.axis), data) for v in expr.values)
