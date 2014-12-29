@@ -77,16 +77,15 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
+inat = np.datetime64('NaT').view('int64')
+
+
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if (issubclass(x.dtype.type, (np.floating, np.object_)) or
-        x.dtype == np.dtype('datetime64[ns]')):
+    if issubclass(x.dtype.type, (np.floating, np.object_)):
         return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
-    elif x.dtype != np.dtype('datetime64[ns]'):
-        # we have to cast datetimes to nanoseconds if they're not otherwise
-        # pandas will call np.isnan which can't handle datetime64s
-        return pd.notnull(x.astype('datetime64[ns]')).sum(keepdims=t.keepdims,
-                                                          axis=t.axis)
+    elif issubclass(x.dtype.type, np.datetime64):
+        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis)
     else:
         return np.ones(x.shape,
                        dtype=to_numpy_dtype(t.dshape)).sum(keepdims=t.keepdims,
