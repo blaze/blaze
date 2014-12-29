@@ -12,10 +12,14 @@ from blaze.expr import symbol
 from blaze.compute.core import compute, pre_compute
 
 
-b = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, 3.)],
-                          dtype=[('a', 'i8'), ('b', 'f8')]))
+b = bcolz.ctable(np.array([(1, 1., np.datetime64('2010-01-01')),
+                           (2, 2., np.datetime64('NaT')),
+                           (3, 3., np.datetime64('2010-01-03'))],
+                          dtype=[('a', 'i8'),
+                                 ('b', 'f8'),
+                                 ('date', 'datetime64[D]')]))
 
-t = symbol('t', 'var * {a: int64, b: float64}')
+t = symbol('t', 'var * {a: int64, b: float64, date: date}')
 
 
 to = symbol('to', 'var * {a: int64, b: float64}')
@@ -24,7 +28,7 @@ bo = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, np.nan)],
 
 
 def test_discover():
-    assert discover(b) == dshape('3 * {a: int64, b: float64}')
+    assert discover(b) == dshape('3 * {a: int64, b: float64, date: date}')
     assert discover(b['a']) == dshape('3 * int64')
 
 
@@ -46,6 +50,19 @@ def test_reductions():
                                                            ddof=1)) < 1e-5
     assert len(list(compute(t.distinct(), b))) == 3
     assert len(list(compute(t.a.distinct(), b))) == 3
+
+    assert compute(t.a.nunique(), b) == 3
+    assert isinstance(compute(t.a.nunique(), b), np.integer)
+
+    assert compute(t.a.count(), b) == 3
+    assert isinstance(compute(t.date.count(), b), np.integer)
+
+    assert compute(t.date.nunique(), b) == 2
+    assert isinstance(compute(t.date.nunique(), b), np.integer)
+
+    assert compute(t.date.count(), b) == 2
+    assert isinstance(compute(t.a.count(), b), np.integer)
+
     assert compute(t.a[0], b) == 1
     assert compute(t.a[-1], b) == 3
     assert compute(t[0], b) == compute(t[0], b)
