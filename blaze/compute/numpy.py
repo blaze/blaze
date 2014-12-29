@@ -137,13 +137,13 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Sort, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if (t.key in x.dtype.names or
+    if x.dtype.names is None:  # not a struct array
+        result = np.sort(x)
+    elif (t.key in x.dtype.names or  # struct array
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
     elif t.key:
-        raise NotImplementedError("Sort key %s not supported" % str(t.key))
-    else:
-        result = np.sort(x)
+        raise NotImplementedError("Sort key %s not supported" % t.key)
 
     if not t.ascending:
         result = result[::-1]
