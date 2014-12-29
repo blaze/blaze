@@ -82,7 +82,8 @@ def compute_up(t, x, **kwargs):
     if issubclass(x.dtype.type, (np.floating, np.object)) and x.dtype.names is None:
         return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
     else:
-        return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
+        return np.ones(x.shape, dtype='int64').sum(keepdims=t.keepdims,
+                                                   axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
