@@ -116,6 +116,9 @@ def test_sort():
     assert eq(compute(t.sort(['amount', 'id']), x),
               np.sort(x, order=['amount', 'id']))
 
+    assert eq(compute(t.amount.sort(), x),
+              np.sort(x['amount']))
+
 
 def test_head():
     assert eq(compute(t.head(2), x),
