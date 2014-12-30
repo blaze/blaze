@@ -233,6 +233,7 @@ def compute_by(t, r, g, df):
 
 name_dict = dict()
 seen_names = set()
+
 def _name(expr):
     """ A unique and deterministic name for an expression """
     if expr in name_dict:
@@ -274,8 +275,11 @@ def fancify_summary(expr):
     """
     seen_names.clear()
     name_dict.clear()
-    exprs = pipe(expr.values, map(Expr._traverse), concat, filter(lambda x:
-        isinstance(x, Reduction)), set)
+    exprs = pipe(expr.values,
+                 map(Expr._traverse),
+                 concat,
+                 filter(lambda x: isinstance(x, Reduction)),
+                 set)
     one = summary(**dict((_name(expr), expr) for expr in exprs))
 
     two = dict((_name(expr), symbol(_name(expr), datashape.var * expr.dshape))
@@ -286,6 +290,7 @@ def fancify_summary(expr):
         expr.values))
 
     return one, two, three
+
 
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
@@ -299,13 +304,9 @@ def compute_by(t, s, g, df):
 
     groups = df2.groupby(g)
 
-    d = defaultdict(list)
-    for name, v in zip(names, one.values):
-        d[name].append(v.symbol)
-
     d = dict((name, v.symbol) for name, v in zip(one.names, one.values))
 
-    result = groups.agg(dict(d))
+    result = groups.agg(d)
 
     scope = dict((v, result[k]) for k, v in two.items())
     cols = [compute(expr.label(name), scope) for name, expr in three.items()]
