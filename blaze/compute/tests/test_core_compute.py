@@ -49,7 +49,7 @@ def test_bottom_up_until_type_break():
 
     e = (s.amount + 1).distinct()
     expr, scope = bottom_up_until_type_break(e, {s: data})
-    amount = symbol('amount', 'var * real', token=1)
+    amount = symbol('amount', 'var * int64', token=1)
     assert expr.isidentical(amount)
     assert len(scope) == 1
     assert amount in scope

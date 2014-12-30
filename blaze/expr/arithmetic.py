@@ -6,7 +6,7 @@ import numpy as np
 from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric
-from datashape import coretypes as ct
+from datashape import coretypes as ct, discover, unsigned, promote, optionify
 
 from .core import parenthesize, eval_str
 from .expressions import Expr, shape, ElemWise
@@ -23,6 +23,7 @@ def name(o):
         return o._name
     else:
         return None
+
 
 class BinOp(ElemWise):
     __slots__ = '_hash', 'lhs', 'rhs'
@@ -118,12 +119,19 @@ class UnaryOp(ElemWise):
 
 class Arithmetic(BinOp):
     """ Super class for arithmetic operators like add or mul """
-    _dtype = ct.real
+
+    @property
+    def _dtype(self):
+        # we can't simply use .schema or .datashape because we may have a bare
+        # integer, for example
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        return promote(lhs, rhs)
 
     @property
     def dshape(self):
         # TODO: better inference.  e.g. int + int -> int
-        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) + (self._dtype,)))
+        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
+                           (self._dtype,)))
 
 
 class Add(Arithmetic):
@@ -145,10 +153,24 @@ class Div(Arithmetic):
     symbol = '/'
     op = operator.truediv
 
+    @property
+    def _dtype(self):
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        return optionify(lhs, rhs, ct.float64)
+
 
 class FloorDiv(Arithmetic):
     symbol = '//'
     op = operator.floordiv
+
+    @property
+    def _dtype(self):
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        is_unsigned = lhs in unsigned and rhs in unsigned
+        max_width = max(lhs.itemsize, rhs.itemsize)
+        prefix = 'u' if is_unsigned else ''
+        measure = getattr(ct, '%sint%d' % (prefix, max_width * 8))
+        return optionify(lhs, rhs, measure)
 
 
 class Pow(Arithmetic):
