@@ -1,8 +1,9 @@
 from blaze.expr import *
 from blaze.expr.arrays import *
+from blaze.utils import raises
 
 
-w = symbol('x', '5 * 6 * int32')
+w = symbol('w', '5 * 6 * int32')
 x = symbol('x', '4 * 5 * int32')
 y = symbol('y', '5 * int32')
 z = symbol('z', '4 * int32')
@@ -28,3 +29,7 @@ def test_tensordot():
 
     expr = tensordot(x, z, axes=[[0], [0]])
     assert expr.shape == (5,)
+
+
+def test_shapes_raise_errors():
+    assert raises(Exception, lambda: w + x)

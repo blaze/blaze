@@ -88,6 +88,9 @@ def maxshape(shapes):
         return ()
     ndim = max(map(len, shapes))
     shapes = [(1,) * (ndim - len(shape)) + shape for shape in shapes]
+    for dims in zip(*shapes):
+        if len(set(dims) - set([1])) >= 2:
+            raise ValueError("Shapes don't align, %s" % dims)
     return tuple(map(maxvar, zip(*shapes)))
 
 
@@ -227,46 +230,74 @@ def _neg(self):
     return USub(self)
 
 def _add(self, other):
-    return Add(self, scalar_coerce(self.dshape, other))
+    result = Add(self, scalar_coerce(self.dshape, other))
+    result.dshape # ensure that this works
+    return result
 
 def _radd(self, other):
-    return Add(scalar_coerce(self.dshape, other), self)
+    result = Add(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 def _mul(self, other):
-    return Mult(self, scalar_coerce(self.dshape, other))
+    result = Mult(self, scalar_coerce(self.dshape, other))
+    result.dshape
+    return result
 
 def _rmul(self, other):
-    return Mult(scalar_coerce(self.dshape, other), self)
+    result = Mult(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 def _div(self, other):
-    return Div(self, scalar_coerce(self.dshape, other))
+    result = Div(self, scalar_coerce(self.dshape, other))
+    result.dshape
+    return result
 
 def _rdiv(self, other):
-    return Div(scalar_coerce(self.dshape, other), self)
+    result = Div(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 def _floordiv(self, other):
-    return FloorDiv(self, scalar_coerce(self.dshape, other))
+    result = FloorDiv(self, scalar_coerce(self.dshape, other))
+    result.dshape
+    return result
 
 def _rfloordiv(self, other):
-    return FloorDiv(scalar_coerce(self.dshape, other), self)
+    result = FloorDiv(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 def _sub(self, other):
-    return Sub(self, scalar_coerce(self.dshape, other))
+    result = Sub(self, scalar_coerce(self.dshape, other))
+    result.dshape
+    return result
 
 def _rsub(self, other):
-    return Sub(scalar_coerce(self.dshape, other), self)
+    result = Sub(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 def _pow(self, other):
-    return Pow(self, scalar_coerce(self.dshape, other))
+    result = Pow(self, scalar_coerce(self.dshape, other))
+    result.dshape
+    return result
 
 def _rpow(self, other):
-    return Pow(scalar_coerce(self.dshape, other), self)
+    result = Pow(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 def _mod(self, other):
-    return Mod(self, scalar_coerce(self.dshape, other))
+    result = Mod(self, scalar_coerce(self.dshape, other))
+    result.dshape
+    return result
 
 def _rmod(self, other):
-    return Mod(scalar_coerce(self.dshape, other), self)
+    result = Mod(scalar_coerce(self.dshape, other), self)
+    result.dshape
+    return result
 
 
 class Relational(Arithmetic):
