@@ -26,7 +26,6 @@ class Transpose(Expr):
     >>> x.transpose([2, 0, 1]).shape
     (30, 10, 20)
     """
-
     __slots__ = '_hash', '_child', 'axes'
 
     @property
@@ -40,13 +39,12 @@ class Transpose(Expr):
             return 'transpose(%s)' % self._child
         else:
             return 'transpose(%s, axes=%s)' % (self._child,
-                    str(list(self.axes)))
+                    list(self.axes))
 
 
 def transpose(expr, axes=None):
     if axes is None:
-        assert ndim(expr) == 2
-        axes = (1, 0)
+        axes = tuple(range(ndim(expr)))[::-1]
     if isinstance(axes, list):
         axes = tuple(axes)
     return Transpose(expr, axes)
@@ -70,7 +68,6 @@ class TensorDot(Expr):
     >>> tensordot(x, y, axes=[0, 0])
     tensordot(x, y, axes=[0, 0])
     """
-
     __slots__ = '_hash', 'lhs', 'rhs', '_left_axes', '_right_axes'
     __inputs__ = 'lhs', 'rhs'
 

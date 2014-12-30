@@ -14,8 +14,12 @@ def test_shape_of_binop_of_differently_shaped_arrays():
 
 def test_transpose():
     assert ndim(x.dshape) == 2
-
     assert x.T.shape == (5, 4)
+
+
+def test_default_transpose_axes():
+    a = symbol('a', '10 * 20 * 30 * 40 * int32')
+    assert transpose(a).shape == a.shape[::-1]
 
 
 def test_dot():
@@ -32,4 +36,4 @@ def test_tensordot():
 
 
 def test_shapes_raise_errors():
-    assert raises(Exception, lambda: w + x)
+    assert raises(ValueError, lambda: w + x)
