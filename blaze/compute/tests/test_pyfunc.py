@@ -23,7 +23,7 @@ def inc(x):
 
 
 def test_map():
-    f = lambdify([t], t.x + t.y.map(inc))
+    f = lambdify([t], t.x + t.y.map(inc, 'int'))
     assert f((1, 2, 3, 4)) == 1 + inc(2)
 
 

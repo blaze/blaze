@@ -289,3 +289,20 @@ def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
     p = datetime(2014, 11, 11)
     expr = s.truncate(1, 'week')
     assert compute(expr, n) == compute(expr, p)
+
+
+
+nA = np.arange(30, dtype='f4').reshape((5, 6))
+ny = np.arange(6, dtype='f4')
+
+A = symbol('A', discover(nA))
+y = symbol('y', discover(ny))
+
+def test_transpose():
+    assert eq(compute(A.T, nA), nA.T)
+    assert eq(compute(A.transpose((0, 1)), nA), nA)
+
+
+def test_dot():
+    assert eq(compute(y.dot(y), {y: ny}), np.dot(ny, ny))
+    assert eq(compute(A.dot(y), {A: nA, y: ny}), np.dot(nA, ny))
