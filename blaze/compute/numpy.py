@@ -4,7 +4,7 @@ import datetime
 
 import numpy as np
 from pandas import DataFrame, Series
-from datashape import to_numpy
+from datashape import to_numpy, to_numpy_dtype
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
@@ -78,12 +78,19 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
+inat = np.datetime64('NaT').view('int64')
+
+
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if np.issubdtype(x.dtype, np.float): # scalar dtype
+    if issubclass(x.dtype.type, (np.floating, np.object_)):
         return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    elif issubclass(x.dtype.type, np.datetime64):
+        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis)
     else:
-        return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
+        return np.ones(x.shape,
+                       dtype=to_numpy_dtype(t.dshape)).sum(keepdims=t.keepdims,
+                                                           axis=t.axis)
 
 
 @dispatch(nunique, np.ndarray)
@@ -113,6 +120,7 @@ def axify(expr, axis, keepdims=False):
     """
     return type(expr)(expr._child, axis=axis, keepdims=keepdims)
 
+
 @dispatch(Summary, np.ndarray)
 def compute_up(expr, data, **kwargs):
     shape, dtype = to_numpy(expr.dshape)
@@ -137,13 +145,13 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Sort, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if (t.key in x.dtype.names or
+    if x.dtype.names is None:  # not a struct array
+        result = np.sort(x)
+    elif (t.key in x.dtype.names or  # struct array
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
     elif t.key:
-        raise NotImplementedError("Sort key %s not supported" % str(t.key))
-    else:
-        result = np.sort(x)
+        raise NotImplementedError("Sort key %s not supported" % t.key)
 
     if not t.ascending:
         result = result[::-1]
@@ -154,6 +162,7 @@ def compute_up(t, x, **kwargs):
 @dispatch(Head, np.ndarray)
 def compute_up(t, x, **kwargs):
     return x[:t.n]
+
 
 @dispatch(Label, np.ndarray)
 def compute_up(t, x, **kwargs):
@@ -170,9 +179,11 @@ def compute_up(t, x, **kwargs):
 def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel._child: x})]
 
+
 @dispatch(UTCFromTimestamp, np.ndarray)
 def compute_up(expr, data, **kwargs):
     return (data * 1e6).astype('M8[us]')
+
 
 @dispatch(Slice, np.ndarray)
 def compute_up(expr, x, **kwargs):

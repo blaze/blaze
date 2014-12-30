@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import numbers
 import pytest
 from datetime import datetime, date
 
@@ -77,9 +78,19 @@ def test_Reductions():
     assert compute(t['amount'].std(unbiased=True), x) == x['amount'].std(ddof=1)
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
+    assert compute(t['amount'][0], x) == x['amount'][0]
+    assert compute(t['amount'][-1], x) == x['amount'][-1]
+
+
+def test_count_string():
+    s = symbol('name', 'var * ?string')
+    x = np.array(['Alice', np.nan, 'Bob', 'Denis', 'Edith'], dtype='object')
+    assert compute(s.count(), x) == 4
+
 
 def test_reductions_on_recarray():
     assert compute(t.count(), x) == len(x)
+
 
 def test_count_nan():
     t = symbol('t', '3 * ?real')
@@ -111,6 +122,9 @@ def test_sort():
 
     assert eq(compute(t.sort(['amount', 'id']), x),
               np.sort(x, order=['amount', 'id']))
+
+    assert eq(compute(t.amount.sort(), x),
+              np.sort(x['amount']))
 
 
 def test_head():
@@ -150,7 +164,6 @@ def test_compute_up_projection():
 def test_slice():
     for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
         assert (compute(t[s], x) == x[s]).all()
-
 
 
 ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
@@ -234,7 +247,6 @@ def test_datetime_truncation():
               np.array(['2000-06-18', '2000-06-18'], dtype='M8[D]'))
 
     assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 7
-
 
 
 def test_hour():

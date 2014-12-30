@@ -2,12 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datashape import discover, dshape, coretypes as ct
+from datashape import discover, dshape
 
 from blaze.compute.core import (compute_up, compute, bottom_up_until_type_break,
                                 top_then_bottom_then_top_again_etc,
                                 swap_resources_into_scope)
-from blaze.expr import by, symbol, Expr, Symbol, Reduction
+from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
 from blaze.utils import example
