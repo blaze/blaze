@@ -41,6 +41,13 @@ def test_selection():
     assert eq(compute(t[t['amount'] < 0], x), x[x['amount'] < 0])
 
 
+def test_arith():
+    expr = (t.amount + t.id) / t.amount
+    result = compute(expr, x)
+    import ipdb; ipdb.set_trace()
+    assert result is not None
+
+
 def test_arithmetic():
     assert eq(compute(t['amount'] + t['id'], x),
               x['amount'] + x['id'])
