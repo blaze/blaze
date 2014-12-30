@@ -90,7 +90,7 @@ def maxshape(shapes):
     shapes = [(1,) * (ndim - len(shape)) + shape for shape in shapes]
     for dims in zip(*shapes):
         if len(set(dims) - set([1])) >= 2:
-            raise ValueError("Shapes don't align, %s" % dims)
+            raise ValueError("Shapes don't align, %s" % str(dims))
     return tuple(map(maxvar, zip(*shapes)))
 
 

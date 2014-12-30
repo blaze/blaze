@@ -13,12 +13,16 @@ class Transpose(Expr):
     --------
 
     >>> x = symbol('x', '10 * 20 * int32')
+    >>> x.T
+    transpose(x)
     >>> x.T.shape
     (20, 10)
 
     Specify axis ordering with axes keyword argument
 
     >>> x = symbol('x', '10 * 20 * 30 * int32')
+    >>> x.transpose([2, 0, 1])
+    transpose(x, axes=[2, 0, 1])
     >>> x.transpose([2, 0, 1]).shape
     (30, 10, 20)
     """
@@ -30,6 +34,13 @@ class Transpose(Expr):
         s = self._child.shape
         return DataShape(*(tuple([s[i] for i in self.axes]) +
                            (self._child.dshape.measure,)))
+
+    def __str__(self):
+        if self.axes == tuple(range(ndim(self)))[::-1]:
+            return 'transpose(%s)' % self._child
+        else:
+            return 'transpose(%s, axes=%s)' % (self._child,
+                    str(list(self.axes)))
 
 
 def transpose(expr, axes=None):
@@ -48,7 +59,17 @@ def T(expr):
 
 
 class TensorDot(Expr):
-    """ Dot Product: Contract and sum dimensions of two arrays """
+    """ Dot Product: Contract and sum dimensions of two arrays
+
+    >>> x = symbol('x', '20 * 20 * int32')
+    >>> y = symbol('y', '20 * 30 * int32')
+
+    >>> x.dot(y)
+    tensordot(x, y)
+
+    >>> tensordot(x, y, axes=[0, 0])
+    tensordot(x, y, axes=[0, 0])
+    """
 
     __slots__ = '_hash', 'lhs', 'rhs', '_left_axes', '_right_axes'
     __inputs__ = 'lhs', 'rhs'
@@ -61,6 +82,20 @@ class TensorDot(Expr):
                          if i not in self._right_axes])
         # TODO: handle type promotion
         return DataShape(*(shape + (self.lhs.dshape.measure,)))
+
+    def __str__(self):
+        if self.isidentical(tensordot(self.lhs, self.rhs)):
+            return 'tensordot(%s, %s)' % (self.lhs, self.rhs)
+        else:
+            la = self._left_axes
+            if len(la) == 1:
+                la = la[0]
+            ra = self._right_axes
+            if len(ra) == 1:
+                ra = ra[0]
+            return 'tensordot(%s, %s, axes=[%s, %s])' % (
+                    self.lhs, self.rhs, str(la), str(ra))
+
 
 def tensordot(lhs, rhs, axes=None):
     if axes is None:
