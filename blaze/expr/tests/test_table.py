@@ -56,11 +56,13 @@ def test_table_name():
     with pytest.raises(AttributeError):
         r.name
 
+
 def test_shape():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.shape
     assert isinstance(t.shape, tuple)
     assert len(t.shape) == 1
+
 
 def test_table_symbol_bool():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
@@ -477,6 +479,7 @@ def test_by_summary():
 
     assert a.isidentical(b)
 
+
 def test_by_summary_printing():
     t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
     assert str(by(t.name, total=sum(t.amount))) == \
@@ -658,13 +661,15 @@ def test_common_subexpression():
 def test_schema_of_complex_interaction():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     expr = (a['x'] + a['y']) / a['z']
-    assert expr.schema == dshape('real')
+    assert expr.schema == dshape('float32')
 
     expr = expr.label('foo')
-    assert expr.schema == dshape('real')
+    assert expr.schema == dshape('float32')
+
 
 def iscolumn(x):
     return isscalar(x.dshape.measure)
+
 
 def test_iscolumn():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
@@ -818,7 +823,6 @@ class TestRepr(object):
         assert s == ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
                      " _schema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
-
 
 
 def test_count_values():
