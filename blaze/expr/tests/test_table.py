@@ -661,10 +661,10 @@ def test_common_subexpression():
 def test_schema_of_complex_interaction():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     expr = (a['x'] + a['y']) / a['z']
-    assert expr.schema == dshape('float32')
+    assert expr.schema == dshape('float64')
 
     expr = expr.label('foo')
-    assert expr.schema == dshape('float32')
+    assert expr.schema == dshape('float64')
 
 
 def iscolumn(x):

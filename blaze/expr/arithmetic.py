@@ -156,9 +156,7 @@ class Div(Arithmetic):
     @property
     def _dtype(self):
         lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
-        max_width = max(lhs.itemsize, rhs.itemsize)
-        measure = getattr(ct, 'float%d' % (max_width * 8))
-        return optionify(lhs, rhs, measure)
+        return optionify(lhs, rhs, ct.float64)
 
 
 class FloorDiv(Arithmetic):
