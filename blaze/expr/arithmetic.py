@@ -6,7 +6,7 @@ import numpy as np
 from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric
-from datashape import coretypes as ct, discover, unsigned, promote
+from datashape import coretypes as ct, discover, unsigned, promote, optionify
 
 from .core import parenthesize, eval_str
 from .expressions import Expr, shape, ElemWise
