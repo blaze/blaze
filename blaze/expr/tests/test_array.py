@@ -35,5 +35,12 @@ def test_tensordot():
     assert expr.shape == (5,)
 
 
+def test_tensordot_schema_matches_mul():
+    x = symbol('x', '5 * int64')
+    y = symbol('y', '5 * float32')
+
+    assert tensordot(x, y).dshape.measure == (x + y).dshape.measure
+
+
 def test_shapes_raise_errors():
     assert raises(ValueError, lambda: w + x)

@@ -73,12 +73,18 @@ class TensorDot(Expr):
 
     @property
     def dshape(self):
+        # Compute shape
         shape = tuple([d for i, d in enumerate(self.lhs.shape)
                          if i not in self._left_axes] +
                       [d for i, d in enumerate(self.rhs.shape)
                          if i not in self._right_axes])
-        # TODO: handle type promotion
-        return DataShape(*(shape + (self.lhs.dshape.measure,)))
+
+        # Compute measure by mimicking a mul and add
+        l = symbol('l', self.lhs.dshape.measure)
+        r = symbol('r', self.rhs.dshape.measure)
+        measure = ((l * r) + (l * r)).dshape.measure
+
+        return DataShape(*(shape + (measure,)))
 
     def __str__(self):
         if self.isidentical(tensordot(self.lhs, self.rhs)):
