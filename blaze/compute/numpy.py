@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
+import itertools
 import datetime
+import ast
+import numba as nb
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -10,8 +13,10 @@ from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import UTCFromTimestamp, DateTimeTruncate
+from ..expr import UTCFromTimestamp, DateTimeTruncate, Arithmetic
 from ..expr import Transpose, TensorDot
+from blaze import symbol
+from .pyfunc import broadcast_collect
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -41,16 +46,65 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t._child[c]._expr, x[c]) for c in t._child.fields)
-    return compute(t._expr, d)
+    scalar = t._scalars[0]
+    fields = scalar.fields
+    d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
+             for i, c in enumerate(fields))
+    expr = t._scalar_expr._subs(d)
+    scope = {e: x[e._name] for e in d.values()}
+    result = compute(expr, scope)
+    argnames = [ast.Name(id=field, ctx=ast.Load(), lineno=0, col_offset=0)
+                for field in fields]
+    f = ast.Lambda(args=ast.arguments(args=argnames, defaults=[]),
+                   body=result,
+                   lineno=0,
+                   col_offset=0)
+    expr = ast.Expression(body=f)
+    blob = compile(expr, filename=__file__, mode='eval')
+    func = eval(blob)
+    assert func is not None
+    import ipdb; ipdb.set_trace()
+    ufunc = nb.vectorize([])(func)
+    return ufunc(*x)
+
+
+binops = {
+    '+': ast.Add,
+    '-': ast.Sub,
+    '*': ast.Mult,
+    '/': ast.Div,
+    '//': ast.FloorDiv,
+}
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
 def compute_up(t, lhs, rhs, **kwargs):
-    return t.op(lhs, rhs)
+    return ast.BinOp(
+        ast.Name(id=t.lhs._name, ctx=ast.Load(), lineno=0, col_offset=0),
+        binops[t.symbol](),
+        ast.Name(id=t.rhs._name, ctx=ast.Load(), lineno=0, col_offset=0),
+        lineno=0,
+        col_offset=0
+    )
 
 
-@dispatch(BinOp, np.ndarray)
+@dispatch(BinOp, ast.expr, np.ndarray)
+def compute_up(t, lhs, rhs, **kwargs):
+    return ast.BinOp(
+        lhs,
+        binops[t.symbol](),
+        ast.Name(id=t.rhs._name, ctx=ast.Load(), lineno=0, col_offset=0),
+        lineno=0,
+        col_offset=0
+    )
+
+
+@dispatch(BinOp, ast.expr, ast.expr)
+def compute_up(t, lhs, rhs, **kwargs):
+    return ast.BinOp(lhs, binops[t.symbol](), rhs)
+
+
+@dispatch(BinOp, (np.ndarray, ast.expr))
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
@@ -58,8 +112,14 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
+@dispatch(Arithmetic, np.ndarray)
+def optimize(expr, _):
+    return broadcast_collect(expr)
+
+
 @dispatch(BinOp, base, np.ndarray)
 def compute_up(t, lhs, rhs, **kwargs):
+    import ipdb; ipdb.set_trace()
     return t.op(lhs, rhs)
 
 
