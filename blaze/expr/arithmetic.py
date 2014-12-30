@@ -231,72 +231,72 @@ def _neg(self):
 
 def _add(self, other):
     result = Add(self, scalar_coerce(self.dshape, other))
-    result.dshape # ensure that this works
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _radd(self, other):
     result = Add(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _mul(self, other):
     result = Mult(self, scalar_coerce(self.dshape, other))
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _rmul(self, other):
     result = Mult(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _div(self, other):
     result = Div(self, scalar_coerce(self.dshape, other))
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _rdiv(self, other):
     result = Div(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _floordiv(self, other):
     result = FloorDiv(self, scalar_coerce(self.dshape, other))
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _rfloordiv(self, other):
     result = FloorDiv(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _sub(self, other):
     result = Sub(self, scalar_coerce(self.dshape, other))
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _rsub(self, other):
     result = Sub(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _pow(self, other):
     result = Pow(self, scalar_coerce(self.dshape, other))
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _rpow(self, other):
     result = Pow(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _mod(self, other):
     result = Mod(self, scalar_coerce(self.dshape, other))
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 def _rmod(self, other):
     result = Mod(scalar_coerce(self.dshape, other), self)
-    result.dshape
+    result.dshape # Check that shapes and dtypes match up
     return result
 
 
@@ -355,40 +355,64 @@ class Not(UnaryOp):
 
 
 def _eq(self, other):
-    return Eq(self, scalar_coerce(self.dshape, other))
+    result = Eq(self, scalar_coerce(self.dshape, other))
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _ne(self, other):
-    return Ne(self, scalar_coerce(self.dshape, other))
+    result = Ne(self, scalar_coerce(self.dshape, other))
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _lt(self, other):
-    return Lt(self, scalar_coerce(self.dshape, other))
+    result = Lt(self, scalar_coerce(self.dshape, other))
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _le(self, other):
-    return Le(self, scalar_coerce(self.dshape, other))
+    result = Le(self, scalar_coerce(self.dshape, other))
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _gt(self, other):
-    return Gt(self, scalar_coerce(self.dshape, other))
+    result = Gt(self, scalar_coerce(self.dshape, other))
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _ge(self, other):
-    return Ge(self, scalar_coerce(self.dshape, other))
+    result = Ge(self, scalar_coerce(self.dshape, other))
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _invert(self):
-    return Invert(self)
+    result = Invert(self)
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _and(self, other):
-    return And(self, other)
+    result = And(self, other)
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _rand(self, other):
-    return And(other, self)
+    result = And(other, self)
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _or(self, other):
-    return Or(self, other)
+    result = Or(self, other)
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _ror(self, other):
-    return Or(other, self)
+    result = Or(other, self)
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 def _invert(self):
-    return Not(self)
+    result = Not(self)
+    result.dshape # Check that shapes and dtypes match up
+    return result
 
 Invert = Not
 BitAnd = And
