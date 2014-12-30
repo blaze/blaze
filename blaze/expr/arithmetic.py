@@ -3,10 +3,10 @@ from __future__ import absolute_import, division, print_function
 import operator
 from toolz import first
 import numpy as np
-from datashape import dshape, var, DataShape, to_numpy_dtype, from_numpy
+from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric
-from datashape import coretypes as ct, discover, unsigned, Option
+from datashape import coretypes as ct, discover, unsigned, promote
 
 from .core import parenthesize, eval_str
 from .expressions import Expr, shape, ElemWise
@@ -115,41 +115,6 @@ class UnaryOp(ElemWise):
     @property
     def _name(self):
         return self._child._name
-
-
-def promote(lhs, rhs):
-    """Promote two scalar dshapes to a possibly larger, but compatibile type
-
-    Examples
-    --------
-    >>> from blaze import symbol
-    >>> x = symbol('x', '?int32')
-    >>> y = symbol('y', 'int64')
-    >>> promote(x.schema.measure, y.schema.measure)
-    ?int64
-    """
-    left, right = getattr(lhs, 'ty', lhs), getattr(rhs, 'ty', rhs)
-    dshape = from_numpy((), np.promote_types(to_numpy_dtype(left),
-                                             to_numpy_dtype(right)))
-    return optionify(lhs, rhs, dshape)
-
-
-def optionify(lhs, rhs, dshape):
-    """Check whether a binary operation's dshape came from Option dshaped
-    operands and construct an Option type accordingly
-
-    Examples
-    --------
-    >>> from blaze import symbol
-    >>> from datashape import int64
-    >>> x = symbol('x', '?int32')
-    >>> y = symbol('y', 'int64')
-    >>> optionify(x.schema.measure, y.schema.measure, int64)
-    ?int64
-    """
-    if hasattr(lhs, 'ty') or hasattr(rhs, 'ty'):
-        return Option(dshape)
-    return dshape
 
 
 class Arithmetic(BinOp):
