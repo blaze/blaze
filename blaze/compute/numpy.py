@@ -12,7 +12,7 @@ from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import UTCFromTimestamp, DateTimeTruncate, Arithmetic
+from ..expr import UTCFromTimestamp, DateTimeTruncate, Arithmetic, Symbol
 from ..expr import Transpose, TensorDot
 from blaze import symbol
 from .pyfunc import broadcast_collect
@@ -43,6 +43,9 @@ def compute_up(t, x, **kwargs):
     raise NotImplementedError() # pragma: no cover
 
 
+_func_cache = dict()
+
+
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
     scalar = t._scalars[0]
@@ -52,19 +55,33 @@ def compute_up(t, x, **kwargs):
     expr = t._scalar_expr._subs(d)
     scope = {e: x[e._name] for e in d.values()}
     result = compute(expr, scope)
-    argnames = [ast.Name(id=field, ctx=ast.Load(), lineno=0, col_offset=0)
-                for field in fields]
+    valid_fields = sorted(set(
+        filter(lambda x: isinstance(x, Symbol), expr._traverse())),
+                          key=lambda x: fields.index(x._name))
+    argnames = [ast.Name(id=field._name, ctx=ast.Load(), lineno=0, col_offset=0)
+                for field in valid_fields]
     f = ast.Lambda(args=ast.arguments(args=argnames, defaults=[]),
                    body=result,
                    lineno=0,
                    col_offset=0)
-    expr = ast.Expression(body=f)
-    blob = compile(expr, filename=__file__, mode='eval')
-    func = eval(blob)
+    func = eval(compile(ast.Expression(body=f), filename=__file__, mode='eval'))
+
     assert func is not None
+
+    # TODO: why the f is blaze giving me int32 here?!?
+    # TODO: fix that shizzle
+    # sig = '%s(%s)' % (expr.schema.measure, ', '.join(str(e.schema.measure)
+    #                                                  for e in valid_fields))
+    sig = 'float64(int64,int64)'
+    key = str(expr), sig
+
+    try:
+        ufunc = _func_cache[key]
+    except KeyError:
+        ufunc = _func_cache[key] = nb.vectorize([sig])(func)
     import ipdb; ipdb.set_trace()
-    ufunc = nb.vectorize([])(func)
-    return ufunc(*x)
+    arrays = [x[field._name] for field in valid_fields]
+    return ufunc(*arrays)
 
 
 binops = {
