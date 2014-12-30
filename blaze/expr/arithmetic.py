@@ -3,10 +3,10 @@ from __future__ import absolute_import, division, print_function
 import operator
 from toolz import first
 import numpy as np
-from datashape import dshape, var, DataShape
+from datashape import dshape, var, DataShape, to_numpy_dtype, from_numpy
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric
-from datashape import coretypes as ct
+from datashape import coretypes as ct, discover, unsigned, Option
 
 from .core import parenthesize, eval_str
 from .expressions import Expr, shape, ElemWise
@@ -23,6 +23,7 @@ def name(o):
         return o._name
     else:
         return None
+
 
 class BinOp(ElemWise):
     __slots__ = '_hash', 'lhs', 'rhs'
@@ -116,14 +117,56 @@ class UnaryOp(ElemWise):
         return self._child._name
 
 
+def promote(lhs, rhs):
+    """Promote two scalar dshapes to a possibly larger, but compatibile type
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> x = symbol('x', '?int32')
+    >>> y = symbol('y', 'int64')
+    >>> promote(x.schema.measure, y.schema.measure)
+    ?int64
+    """
+    left, right = getattr(lhs, 'ty', lhs), getattr(rhs, 'ty', rhs)
+    dshape = from_numpy((), np.promote_types(to_numpy_dtype(left),
+                                             to_numpy_dtype(right)))
+    return optionify(lhs, rhs, dshape)
+
+
+def optionify(lhs, rhs, dshape):
+    """Check whether a binary operation's dshape came from Option dshaped
+    operands and construct an Option type accordingly
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> from datashape import int64
+    >>> x = symbol('x', '?int32')
+    >>> y = symbol('y', 'int64')
+    >>> optionify(x.schema.measure, y.schema.measure, int64)
+    ?int64
+    """
+    if hasattr(lhs, 'ty') or hasattr(rhs, 'ty'):
+        return Option(dshape)
+    return dshape
+
+
 class Arithmetic(BinOp):
     """ Super class for arithmetic operators like add or mul """
-    _dtype = ct.real
+
+    @property
+    def _dtype(self):
+        # we can't simply use .schema or .datashape because we may have a bare
+        # integer, for example
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        return promote(lhs, rhs)
 
     @property
     def dshape(self):
         # TODO: better inference.  e.g. int + int -> int
-        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) + (self._dtype,)))
+        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
+                           (self._dtype,)))
 
 
 class Add(Arithmetic):
@@ -145,10 +188,26 @@ class Div(Arithmetic):
     symbol = '/'
     op = operator.truediv
 
+    @property
+    def _dtype(self):
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        max_width = max(lhs.itemsize, rhs.itemsize)
+        measure = getattr(ct, 'float%d' % (max_width * 8))
+        return optionify(lhs, rhs, measure)
+
 
 class FloorDiv(Arithmetic):
     symbol = '//'
     op = operator.floordiv
+
+    @property
+    def _dtype(self):
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        is_unsigned = lhs in unsigned and rhs in unsigned
+        max_width = max(lhs.itemsize, rhs.itemsize)
+        prefix = 'u' if is_unsigned else ''
+        measure = getattr(ct, '%sint%d' % (prefix, max_width * 8))
+        return optionify(lhs, rhs, measure)
 
 
 class Pow(Arithmetic):
