@@ -4,7 +4,6 @@ import datetime
 
 import numpy as np
 from pandas import DataFrame, Series
-import datashape
 from datashape import to_numpy, to_numpy_dtype
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
@@ -12,11 +11,8 @@ from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
-from ..expr import Transpose, TensorDot, symbol
-from .pyfunc import lambdify, broadcast_collect
-
-import numba
-from numba.types import Record
+from ..expr import Transpose, TensorDot
+from .pyfunc import broadcast_collect
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -44,64 +40,15 @@ def compute_up(t, x, **kwargs):
     raise NotImplementedError() # pragma: no cover
 
 
-def get_numba_type(dshape):
-    measure = dshape.measure
-    if measure == datashape.bool_:
-        restype = numba.bool_  # str(bool_) == 'bool' so we can't use getattr
-    elif measure == datashape.date_:
-        restype = numba.types.NPDatetime('D')
-    elif measure == datashape.datetime_:
-        restype = numba.types.NPDatetime('us')
-    elif measure == datashape.timedelta_:
-        restype = numba.types.NPTimedelta(measure.unit)
-    else:
-        restype = getattr(numba, str(measure))
-    return restype
-
-
-@dispatch(Expr)
-def compute_signature(expr):
-    restype = get_numba_type(expr.schema)
-    argtypes = [get_numba_type(e.schema) for e in expr._leaves()]
-    return restype(*argtypes)
-
-
-_func_cache = dict()
-
-
-def get_numba_ufunc(expr, func):
-    sig = compute_signature(expr)
-
-    try:
-        ufunc = _func_cache[expr]
-    except KeyError:
-        # we need getattr(..., 'func', func) for Map expressions which can just
-        # be passed straight into numba
-        ufunc = numba.vectorize([sig], nopython=True)(getattr(expr, 'func', func))
-        _func_cache[expr] = ufunc
-    return ufunc
-
-
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    assert len(t._scalars) == 1
-    scalar = t._scalars[0]
-    fields = scalar.fields
-    d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
-             for i, c in enumerate(fields))
-    expr = t._scalar_expr._subs(d)
-    leaves = expr._leaves()
-    func = lambdify(leaves, expr)
+    return compute(t._scalar_expr, x)
 
-    if isinstance(expr, (UTCFromTimestamp, DateTimeTruncate)):
-        # numba segfaults here
-        return compute(t._scalar_expr, x)
-    else:
-        ufunc = get_numba_ufunc(expr, func)
-        if x.dtype.names is not None:
-            return ufunc(*(x[leaf._name] for leaf in leaves))
-        else:
-            return ufunc(x)
+
+try:
+    from .numba import compute_up
+except ImportError:
+    pass
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
