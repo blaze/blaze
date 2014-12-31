@@ -66,17 +66,6 @@ def compute_signature(expr):
     return restype(*argtypes)
 
 
-@dispatch(Expr, np.ndarray)
-def compute_signature(expr, x):
-    name = expr._leaves()[0]._name
-    fields = np.array(x.dtype.names)
-    size = x.dtype.itemsize
-    aligned = x.dtype.alignment
-    dtype = x.dtype
-    restype = getattr(numba, str(expr.schema.measure))
-    return restype(Record(name, fields, size, aligned, dtype))
-
-
 _func_cache = dict()
 
 
