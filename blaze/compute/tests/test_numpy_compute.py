@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+
 import numpy as np
 from datetime import datetime, date
 
@@ -14,7 +15,7 @@ x = np.array([(1, 'Alice', 100),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)],
-            dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
+             dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
 
 t = symbol('t', discover(x))
 
