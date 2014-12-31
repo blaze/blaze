@@ -11,8 +11,10 @@ import itertools
 import ast
 
 
-def make(cls, lineno=0, col_offset=0, *args, **kwargs):
-    return cls(*args, lineno=lineno, col_offset=col_offset, **kwargs)
+def make(cls, *args, **kwargs):
+    kwargs.setdefault('lineno', 0)
+    kwargs.setdefault('col_offset', 0)
+    return cls(*args, **kwargs)
 
 
 def variable(name, ctx=None):
@@ -70,7 +72,6 @@ def _astify(expr, leaves=None):
 def _astify(expr, leaves=None):
     child, scope = astify(leaves, expr._child)
     index = make(ast.Index, make(ast.Str, expr._name))
-    import ipdb; ipdb.set_trace()
     sub = make(ast.Subscript, child, index, ast.Load())
     return sub, scope
 
@@ -98,11 +99,9 @@ binops = {
 @dispatch(Math)
 def _astify(expr, leaves=None):
     child, scope = astify(leaves, expr._child)
-    call = make(ast.Call, make(ast.Attribute,
-                               variable('np'),
-                               expr.symbol,
-                               ast.Load()),
-                args=[child])
+    attr = make(ast.Attribute, variable('np'), expr.symbol, ast.Load())
+    call = make(ast.Call, func=attr, args=[child], keywords=[], starargs=None,
+                kwargs=None)
     return call, toolz.merge(scope, {'np': np})
 
 
@@ -110,6 +109,13 @@ def _astify(expr, leaves=None):
 def _astify(expr, leaves=None):
     raise NotImplementedError("Do not know how to write expressions of type %s"
                               " to a Python AST" % type(expr).__name__)
+
+
+def build_lambda(leaves, expr):
+    body, scope = astify(leaves, expr)
+    argnames = [variable(leaf._name) for leaf in leaves]
+    args = make(ast.arguments, args=argnames, defaults=[])
+    return make(ast.Lambda, args=args, body=body), scope
 
 
 def lambdify(leaves, expr):
@@ -124,7 +130,7 @@ def lambdify(leaves, expr):
     >>> f(1, 0, 100, '')
     2.0
     """
-    body, scope = astify(leaves, expr)
-    eval_expr = ast.Expression(body=body, lineno=0, col_offset=0)
-    import ipdb; ipdb.set_trace()
-    return eval(compile(eval_expr, filename=__file__, mode='eval'), scope)
+    body, scope = build_lambda(leaves, expr)
+    eval_expr = make(ast.Expression, body=body)
+    code_object = compile(eval_expr, filename=__file__, mode='eval')
+    return eval(code_object, scope)
