@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datetime
+import numba as nb
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -12,6 +13,9 @@ from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
+from .ast import lambdify
+from blaze import symbol
+from .pyfunc import broadcast_collect
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -39,10 +43,31 @@ def compute_up(t, x, **kwargs):
     raise NotImplementedError() # pragma: no cover
 
 
+_func_cache = dict()
+
+
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t._child[c]._expr, x[c]) for c in t._child.fields)
-    return compute(t._expr, d)
+    scalar = t._scalars[0]
+    fields = scalar.fields
+    d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
+             for i, c in enumerate(fields))
+    expr = t._scalar_expr._subs(d)
+    func = lambdify(expr._leaves(), expr)
+
+    assert callable(func)
+
+    sig = '%s(%s)' % (expr.schema.measure, ', '.join(str(e.schema.measure)
+                                                     for e in expr._leaves()))
+    key = str(expr), sig
+
+    try:
+        ufunc = _func_cache[key]
+    except KeyError:
+        ufunc = _func_cache[key] = nb.vectorize([sig])(func)
+
+    arrays = [x[leaf._name] for leaf in expr._leaves()]
+    return ufunc(*arrays)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
@@ -56,6 +81,11 @@ def compute_up(t, data, **kwargs):
         return t.op(data, t.rhs)
     else:
         return t.op(t.lhs, data)
+
+
+@dispatch(Expr, np.ndarray)
+def optimize(expr, _):
+    return broadcast_collect(expr)
 
 
 @dispatch(BinOp, base, np.ndarray)
