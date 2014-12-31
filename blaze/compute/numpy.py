@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import datetime
-import ast
 import numba as nb
 
 import numpy as np
@@ -12,8 +11,9 @@ from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
 from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import UTCFromTimestamp, DateTimeTruncate, Arithmetic, Symbol
+from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
+from .ast import lambdify
 from blaze import symbol
 from .pyfunc import broadcast_collect
 
@@ -43,18 +43,6 @@ def compute_up(t, x, **kwargs):
     raise NotImplementedError() # pragma: no cover
 
 
-def variable(name, ctx=None, lineno=0, col_offset=0):
-    return ast.Name(id=name, ctx=ctx or ast.Load(), lineno=lineno,
-                    col_offset=col_offset)
-
-
-def compile_expression(body):
-    return eval(compile(ast.Expression(body=body,
-                                       lineno=0,
-                                       col_offset=0), filename=__file__,
-                        mode='eval'))
-
-
 _func_cache = dict()
 
 
@@ -65,25 +53,12 @@ def compute_up(t, x, **kwargs):
     d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
              for i, c in enumerate(fields))
     expr = t._scalar_expr._subs(d)
-    scope = dict((e, x[e._name]) for e in d.values())
-    result = compute(expr, scope)
-    valid_fields = sorted(set(
-        filter(lambda x: isinstance(x, Symbol), expr._traverse())),
-        key=lambda x: fields.index(x._name))
-    argnames = [variable(field._name) for field in valid_fields]
-    f = ast.Lambda(args=ast.arguments(args=argnames, defaults=[],
-                                      lineno=0, col_offset=0),
-                   body=result,
-                   lineno=0,
-                   col_offset=0)
-    func = compile_expression(f)
+    func = lambdify(expr._leaves(), expr)
 
-    assert func is not None
+    assert callable(func)
 
-    # TODO: why the f is blaze giving me int32 here?!?
-    # TODO: fix that shizzle
     sig = '%s(%s)' % (expr.schema.measure, ', '.join(str(e.schema.measure)
-                                                     for e in valid_fields))
+                                                     for e in expr._leaves()))
     key = str(expr), sig
 
     try:
@@ -91,49 +66,16 @@ def compute_up(t, x, **kwargs):
     except KeyError:
         ufunc = _func_cache[key] = nb.vectorize([sig])(func)
 
-    arrays = [x[field._name] for field in valid_fields]
+    arrays = [x[leaf._name] for leaf in expr._leaves()]
     return ufunc(*arrays)
-
-
-binops = {
-    '+': ast.Add,
-    '-': ast.Sub,
-    '*': ast.Mult,
-    '/': ast.Div,
-    '//': ast.FloorDiv,
-    '**': ast.Pow,
-    '%': ast.Mod,
-}
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
 def compute_up(t, lhs, rhs, **kwargs):
-    return ast.BinOp(
-        variable(t.lhs._name),
-        binops[t.symbol](),
-        variable(t.rhs._name),
-        lineno=0,
-        col_offset=0
-    )
+    return t.op(lhs, rhs)
 
 
-@dispatch(BinOp, ast.expr, np.ndarray)
-def compute_up(t, lhs, rhs, **kwargs):
-    return ast.BinOp(
-        lhs,
-        binops[t.symbol](),
-        variable(t.rhs._name),
-        lineno=0,
-        col_offset=0
-    )
-
-
-@dispatch(BinOp, ast.expr, ast.expr)
-def compute_up(t, lhs, rhs, **kwargs):
-    return ast.BinOp(lhs, binops[t.symbol](), rhs, lineno=0, col_offset=0)
-
-
-@dispatch(BinOp, (np.ndarray, ast.expr))
+@dispatch(BinOp, np.ndarray)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
