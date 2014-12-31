@@ -141,7 +141,7 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-@dispatch(Arithmetic, np.ndarray)
+@dispatch(Expr, np.ndarray)
 def optimize(expr, _):
     return broadcast_collect(expr)
 
