@@ -1,8 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import numbers
-import pytest
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
@@ -11,14 +9,14 @@ from into import into
 from datashape import discover, to_numpy
 
 
-t = symbol('t', 'var * {id: int, name: string, amount: int}')
-
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)],
             dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
+
+t = symbol('t', discover(x))
 
 def eq(a, b):
     c = a == b
