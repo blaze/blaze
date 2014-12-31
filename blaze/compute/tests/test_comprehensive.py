@@ -79,7 +79,7 @@ expressions = {
         t.head(3): [],
         t.name.distinct(): [],
         t[t.amount > 50]['name']: [], # odd ordering issue
-        t.id.map(lambda x: x + 1, schema='int', name='id'): [sql, mongo],
+        t.id.map(lambda x: x + 1, schema='int64', name='id'): [sql, mongo],
         t[t.amount > 50]['name']: [],
         by(t.name, total=t.amount.sum()): [],
         by(t.id, count=t.id.count()): [],
