@@ -135,7 +135,8 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch((std, var), np.ndarray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)(ddof=t.unbiased)
+    return getattr(x, t.symbol)(ddof=t.unbiased, axis=t.axis,
+            keepdims=t.keepdims)
 
 
 @dispatch(Distinct, np.ndarray)

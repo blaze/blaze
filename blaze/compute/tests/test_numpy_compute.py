@@ -173,6 +173,7 @@ a = symbol('a', discover(ax))
 def test_array_reductions():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:
         assert eq(compute(a.sum(axis=axis), ax), ax.sum(axis=axis))
+        assert eq(compute(a.std(axis=axis), ax), ax.std(axis=axis))
 
 
 def test_array_reductions_with_keepdims():
