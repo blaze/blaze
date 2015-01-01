@@ -48,7 +48,7 @@ def year(expr):
 
 
 class Month(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
 
 
 def month(expr):
@@ -56,7 +56,7 @@ def month(expr):
 
 
 class Day(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
 
 
 def day(expr):
@@ -72,7 +72,7 @@ def time(expr):
 
 
 class Hour(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
 
 
 def hour(expr):
@@ -80,7 +80,7 @@ def hour(expr):
 
 
 class Minute(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
 
 
 def minute(expr):
@@ -88,7 +88,7 @@ def minute(expr):
 
 
 class Second(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
 
 
 def second(expr):
