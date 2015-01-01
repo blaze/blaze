@@ -27,6 +27,7 @@ def get_numba_type(dshape):
     --------
     >>> import datashape
     >>> import numba
+
     >>> get_numba_type(datashape.bool_)
     bool
 
