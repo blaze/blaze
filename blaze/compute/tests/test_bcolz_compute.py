@@ -77,7 +77,7 @@ def test_nunique():
 def test_selection_head():
     ds = dshape('var * {a: int32, b: int32, c: float64}')
     b = into(bcolz.ctable,
-             [(i, i + 1, float(i)**2) for i in range(10000)],
+             [(i, i + 1, float(i) ** 2) for i in range(10)],
              dshape=ds)
     t = symbol('t', ds)
 
