@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 import numpy as np
+import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
@@ -324,3 +325,11 @@ def test_complex_map():
     result = compute(expr, {a: x, b: y})
     expected = np.array([1 + 3, 2 + 4, 3 + 5])
     assert eq(result, expected)
+
+
+def test_subexpr_datetime():
+    data = pd.date_range(start='01/01/2010', end='01/04/2010', freq='D').values
+    s = symbol('s', discover(data))
+    result = compute(s.truncate(days=2).day, data)
+    expected = np.array([31, 2, 2, 4])
+    np.testing.assert_array_equal(result, expected)
