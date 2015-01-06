@@ -2,14 +2,20 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from .core import compute
-from ..expr import Broadcast, symbol, UTCFromTimestamp, DateTimeTruncate
-from ..expr import Map
+from ..expr import (Broadcast, symbol, Expr, Arithmetic, Math, Map,
+                    broadcast_collect)
 from ..dispatch import dispatch
 from toolz import memoize
 import datashape
 import numba
 from .pyfunc import funcstr
+
+
+@dispatch(Expr, np.ndarray)
+def optimize(expr, data, **kwargs):
+    Broadcastable = Arithmetic, Math, Map
+    return broadcast_collect(expr, Broadcastable=Broadcastable,
+                             WantToBroadcast=Broadcastable)
 
 
 def get_numba_type(dshape):
@@ -134,8 +140,8 @@ def _get_numba_ufunc(expr):
     """
     leaves = expr._leaves()
     s, scope = funcstr(leaves, expr)
-    scope = {k: numba.jit(nopython=True)(v) if callable(v) else v
-             for k, v in scope.items()}
+    scope = dict((k, numba.jit(nopython=True)(v) if callable(v) else v)
+                 for k, v in scope.items())
     func = eval(s, scope)
     sig = compute_signature(expr)
     return numba.vectorize([sig], nopython=True)(func)
@@ -153,13 +159,8 @@ def compute_up(t, x, **kwargs):
     d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
              for i, c in enumerate(fields))
     expr = t._scalar_expr._subs(d)
-
-    if isinstance(expr, (UTCFromTimestamp, DateTimeTruncate)):
-        # numba segfaults here
-        return compute(t._scalar_expr, x)
+    ufunc = get_numba_ufunc(expr)
+    if x.dtype.names is not None:
+        return ufunc(*(x[leaf._name] for leaf in expr._leaves()))
     else:
-        ufunc = get_numba_ufunc(expr)
-        if x.dtype.names is not None:
-            return ufunc(*(x[leaf._name] for leaf in expr._leaves()))
-        else:
-            return ufunc(x)
+        return ufunc(x)
