@@ -4,11 +4,12 @@ import numpy as np
 
 from .core import compute
 from ..expr import Broadcast, symbol, UTCFromTimestamp, DateTimeTruncate
+from ..expr import Map
 from ..dispatch import dispatch
 from toolz import memoize
 import datashape
 import numba
-from .pyfunc import lambdify
+from .pyfunc import funcstr
 
 
 def get_numba_type(dshape):
@@ -132,12 +133,12 @@ def _get_numba_ufunc(expr):
     compute_signature
     """
     leaves = expr._leaves()
-    func = lambdify(leaves, expr)
+    s, scope = funcstr(leaves, expr)
+    scope = {k: numba.jit(nopython=True)(v) if callable(v) else v
+             for k, v in scope.items()}
+    func = eval(s, scope)
     sig = compute_signature(expr)
-
-    # we need getattr(..., 'func', func) for Map expressions which can be passed
-    # directly into numba
-    return numba.vectorize([sig], nopython=True)(getattr(expr, 'func', func))
+    return numba.vectorize([sig], nopython=True)(func)
 
 
 # do this here so we can run our doctest
