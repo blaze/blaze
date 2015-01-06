@@ -87,11 +87,6 @@ def compute_up(t, x, **kwargs):
 inat = np.datetime64('NaT').view('int64')
 
 
-@dispatch(Expr, np.ndarray)
-def optimize(expr, data, **kwargs):
-    return broadcast_collect(expr)
-
-
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
     if issubclass(x.dtype.type, (np.floating, np.object_)):
