@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from ..expr import (Broadcast, symbol, Expr, Arithmetic, Math, Map,
-                    broadcast_collect)
+from .core import compute
+from ..expr import Broadcast, symbol, Expr, Arithmetic, Math, Map, Field
+from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
 from toolz import memoize
 import datashape
@@ -13,7 +14,7 @@ from .pyfunc import funcstr
 
 @dispatch(Expr, np.ndarray)
 def optimize(expr, data, **kwargs):
-    Broadcastable = Arithmetic, Math, Map
+    Broadcastable = Arithmetic, Math, Map, Field
     return broadcast_collect(expr, Broadcastable=Broadcastable,
                              WantToBroadcast=Broadcastable)
 
@@ -53,6 +54,25 @@ def get_numba_type(dshape):
     >>> get_numba_type(datashape.int64)
     int64
 
+    >>> get_numba_type(datashape.String(7, "A"))
+    [char x 7]
+
+    >>> get_numba_type(datashape.String(None, "A"))
+    str
+
+    >>> get_numba_type(datashape.String(7))
+    [unichr x 7]
+
+    >>> get_numba_type(datashape.string)
+    Traceback (most recent call last):
+      ...
+    TypeError: Numba cannot handle variable length strings
+
+    >>> get_numba_type(datashape.object_)
+    Traceback (most recent call last):
+      ...
+    TypeError: Numba cannot handle object datashape
+
     See Also
     --------
     compute_signature
@@ -66,6 +86,18 @@ def get_numba_type(dshape):
         restype = numba.types.NPDatetime('us')
     elif isinstance(measure, datashape.TimeDelta):  # isinstance for diff freqs
         restype = numba.types.NPTimedelta(measure.unit)
+    elif isinstance(measure, datashape.String):
+        encoding = measure.encoding
+        fixlen = measure.fixlen
+        if fixlen is None:
+            if encoding == 'A':
+                return numba.types.string
+            raise TypeError("Numba cannot handle variable length strings")
+        typ = (numba.types.CharSeq
+               if encoding == 'A' else numba.types.UnicodeCharSeq)
+        return typ(fixlen or 0)
+    elif measure == datashape.object_:
+        raise TypeError("Numba cannot handle object datashape")
     else:
         restype = getattr(numba, str(measure))
     return restype
@@ -159,7 +191,12 @@ def compute_up(t, x, **kwargs):
     d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
              for i, c in enumerate(fields))
     expr = t._scalar_expr._subs(d)
-    ufunc = get_numba_ufunc(expr)
+    try:
+        ufunc = get_numba_ufunc(expr)
+    except TypeError:
+        # strings and objects aren't supported very well yet
+        return compute(t._scalar_expr, x)
+
     if x.dtype.names is not None:
         return ufunc(*(x[leaf._name] for leaf in expr._leaves()))
     else:
