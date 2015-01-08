@@ -21,6 +21,7 @@ x = np.array([(1, 'Alice', 100),
 
 t = symbol('t', discover(x))
 
+
 def eq(a, b):
     c = a == b
     if isinstance(c, np.ndarray):
