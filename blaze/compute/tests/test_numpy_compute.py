@@ -1,15 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-import pytest
-
 import numpy as np
 import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary
+from blaze import sin
 from into import into
-from datashape import discover, to_numpy
+from datashape import discover, to_numpy, dshape
 
 
 x = np.array([(1, 'Alice', 100),
@@ -292,6 +291,23 @@ def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
     p = datetime(2014, 11, 11)
     expr = s.truncate(1, 'week')
     assert compute(expr, n) == compute(expr, p)
+
+
+def test_add_multiple_ndarrays():
+    a = symbol('a', '5 * 4 * int64')
+    b = symbol('b', '5 * 4 * float32')
+    x = np.arange(9, dtype='int64').reshape(3, 3)
+    y = (x + 1).astype('float32')
+    expr = sin(a) + 2 * b
+    scope = {a: x, b: y}
+    expected = sin(x) + 2 * y
+
+    # check that we cast correctly
+    assert expr.dshape == dshape('5 * 4 * float64')
+
+    np.testing.assert_array_equal(compute(expr, scope), expected)
+    np.testing.assert_array_equal(compute(expr, scope, optimize=False),
+                                  expected)
 
 
 nA = np.arange(30, dtype='f4').reshape((5, 6))
