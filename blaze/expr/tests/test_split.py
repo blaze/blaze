@@ -1,6 +1,5 @@
 from blaze.expr import *
 from blaze.expr.split import *
-import datashape
 from datashape import dshape
 from datashape.predicates import isscalar, isrecord, iscollection
 
@@ -45,7 +44,7 @@ def test_mean():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(1.0 * agg.total.sum() / agg.count.sum())
+    assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
 
 
 def test_var():
@@ -58,8 +57,8 @@ def test_var():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical((agg.x2.sum() / (agg.n.sum() * 1.0)
-                              - (agg.x.sum() / (agg.n.sum() * 1.0))**2))
+    assert agg_expr.isidentical((agg.x2.sum() / (agg.n.sum())
+                              - (agg.x.sum() / (agg.n.sum())) ** 2))
 
 def test_std():
     (chunk, chunk_expr), (agg, agg_expr) = split(t, t.amount.std())
@@ -71,8 +70,8 @@ def test_std():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(sqrt((agg.x2.sum() / (agg.n.sum() * 1.0)
-                                   - (agg.x.sum() / (agg.n.sum() * 1.0))**2)))
+    assert agg_expr.isidentical(sqrt((agg.x2.sum() / (agg.n.sum())
+                                   - (agg.x.sum() / (agg.n.sum())) ** 2)))
 
 
 def test_sum_with_axis_argument():
@@ -162,8 +161,9 @@ def test_summary_with_mean():
                                           b_count=chunk.id.count(), keepdims=True))
 
     # assert not agg.schema == dshape('{a: int32, b: int32}')
-    assert agg_expr.isidentical(summary(a=agg.a.sum(),
-                                        b=(agg.b_total.sum() / agg.b_count.sum()) + 1))
+    expected = summary(a=agg.a.sum(),
+                       b=(agg.b_total.sum() / agg.b_count.sum()) + 1)
+    assert agg_expr.isidentical(expected)
 
 def test_complex_summaries():
     t = symbol('t', '100 * {a: int, b: int}')
@@ -217,7 +217,7 @@ def test_by_mean():
                                         avg_count=chunk.amount.count()))
 
     assert agg_expr.isidentical(by(agg.name,
-        avg=(1.0 * agg.avg_total.sum() / agg.avg_count.sum())))
+        avg=(agg.avg_total.sum() / agg.avg_count.sum())))
 
 
 def test_embarassing_rowwise():
