@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from .core import compute
+from .core import compute, compute_up
 from ..expr import Broadcast, symbol, Expr, Arithmetic, Math, Map, Field
 from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
@@ -14,7 +14,7 @@ from .pyfunc import funcstr
 
 @dispatch(Expr, np.ndarray)
 def optimize(expr, data, **kwargs):
-    Broadcastable = Arithmetic, Math, Map, Field
+    Broadcastable = Arithmetic, Math, Map
     return broadcast_collect(expr, Broadcastable=Broadcastable,
                              WantToBroadcast=Broadcastable)
 
@@ -73,6 +73,11 @@ def get_numba_type(dshape):
       ...
     TypeError: Numba cannot handle object datashape
 
+    >>> get_numba_type(datashape.dshape('10 * {a: int64}'))
+    Traceback (most recent call last):
+      ...
+    TypeError: Invalid datashape to numba type: dshape("{ a : int64 }")
+
     See Also
     --------
     compute_signature
@@ -99,7 +104,10 @@ def get_numba_type(dshape):
     elif measure == datashape.object_:
         raise TypeError("Numba cannot handle object datashape")
     else:
-        restype = getattr(numba, str(measure))
+        try:
+            restype = getattr(numba, str(measure))
+        except AttributeError:
+            raise TypeError('Invalid datashape to numba type: %r' % measure)
     return restype
 
 
@@ -171,7 +179,11 @@ def _get_numba_ufunc(expr):
     compute_signature
     """
     leaves = expr._leaves()
-    s, scope = funcstr(leaves, expr)
+
+    # we may not have a Broadcast instance because arithmetic expressions can
+    # be vectorized so we use getattr
+    s, scope = funcstr(leaves, getattr(expr, '_scalar_expr', expr))
+
     scope = dict((k, numba.jit(nopython=True)(v) if callable(v) else v)
                  for k, v in scope.items())
     func = eval(s, scope)
@@ -183,21 +195,14 @@ def _get_numba_ufunc(expr):
 get_numba_ufunc = memoize(_get_numba_ufunc)
 
 
-@dispatch(Broadcast, np.ndarray)
-def compute_up(t, x, **kwargs):
-    assert len(t._scalars) == 1
-    scalar = t._scalars[0]
-    fields = scalar.fields
-    d = dict((scalar[c], symbol(c, getattr(scalar, c).dshape))
-             for i, c in enumerate(fields))
-    expr = t._scalar_expr._subs(d)
+def broadcast_numba(t, *data, **kwargs):
     try:
-        ufunc = get_numba_ufunc(expr)
-    except TypeError:
-        # strings and objects aren't supported very well yet
-        return compute(t._scalar_expr, x)
-
-    if x.dtype.names is not None:
-        return ufunc(*(x[leaf._name] for leaf in expr._leaves()))
+        ufunc = get_numba_ufunc(t)
+    except TypeError:  # strings and objects aren't supported very well yet
+        return compute(t, dict(zip(t._leaves(), data)))
     else:
-        return ufunc(x)
+        return ufunc(*data)
+
+
+for i in range(10):
+    compute_up.register(Broadcast, *([np.ndarray] * i))(broadcast_numba)
