@@ -89,7 +89,6 @@ def test_neg_dshape_unsigned():
     assert (-y).dshape == dshape('int32')
 
 
-@xfail(reason="TODO")
 def test_arithmetic_dshape_inference():
     x = symbol('x', 'int')
     y = symbol('y', 'int')
