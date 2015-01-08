@@ -311,23 +311,6 @@ def test_dot():
     assert eq(compute(A.dot(y), {A: nA, y: ny}), np.dot(nA, ny))
 
 
-@pytest.mark.xfail(raises=NotImplementedError,
-                   reason='Multiple children not yet implemented')
-def test_complex_map():
-    def inc(x):
-        return x + 1
-
-    a = symbol('a', '3 * int64')
-    b = symbol('b', '3 * int64')
-
-    expr = a + b.map(inc, 'int64')
-    x = np.array([1, 2, 3])
-    y = x + 1
-    result = compute(expr, {a: x, b: y})
-    expected = np.array([1 + 3, 2 + 4, 3 + 5])
-    assert eq(result, expected)
-
-
 def test_subexpr_datetime():
     data = pd.date_range(start='01/01/2010', end='01/04/2010', freq='D').values
     s = symbol('s', discover(data))
