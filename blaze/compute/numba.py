@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from .core import compute, optimize
-from ..expr import Expr, Arithmetic, Math, Map
+from ..expr import Expr, Arithmetic, Math, Map, USub
 from ..expr.broadcast import broadcast_collect
 from toolz import memoize
 import datashape
@@ -11,7 +11,7 @@ import numba
 from .pyfunc import funcstr
 
 
-Broadcastable = Arithmetic, Math, Map
+Broadcastable = Arithmetic, Math, Map, USub
 
 
 def optimize_ndarray(expr, *data, **kwargs):
