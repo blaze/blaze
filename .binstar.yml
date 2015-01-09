@@ -15,6 +15,7 @@ engine:
 
 install:
   - conda config --add channels blaze
+  - conda config --add channels numba
 
 before_script:
   - python -V

@@ -12,6 +12,7 @@ from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
+from .pyfunc import broadcast_collect
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -41,8 +42,13 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Broadcast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    d = dict((t._child[c]._expr, x[c]) for c in t._child.fields)
-    return compute(t._expr, d)
+    return compute(t._scalar_expr, x)
+
+
+try:
+    from .numba import compute_up
+except ImportError:
+    pass
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
@@ -183,7 +189,7 @@ def compute_up(sel, x, **kwargs):
 
 @dispatch(UTCFromTimestamp, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    return (data * 1e6).astype('M8[us]')
+    return (data * 1e6).astype('datetime64[us]')
 
 
 @dispatch(Slice, np.ndarray)

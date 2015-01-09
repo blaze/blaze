@@ -239,6 +239,12 @@ def isidentical(a, b):
 
     >>> isidentical(x + 1, x + 2)
     False
+
+    >>> isidentical((x, x + 1), (x, x + 1))
+    True
+
+    >>> isidentical((x, x + 1), (x, x + 2))
+    False
     """
     if isinstance(a, base) and isinstance(b, base):
         return a == b
@@ -246,6 +252,8 @@ def isidentical(a, b):
         return False
     if isinstance(a, Node):
         return all(map(isidentical, a._args, b._args))
+    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+        return len(a) == len(b) and all(map(isidentical, a, b))
     return a == b
 
 

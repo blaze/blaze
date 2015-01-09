@@ -26,6 +26,7 @@ def test_contains():
 
     assert t['id'] in t['id'].sum()
 
+
 def test_path():
     from blaze.expr import TableSymbol, join
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -58,6 +59,7 @@ def test_hash():
     assert hash(e._subs({'e': 'f'})) == hash(f)
 
 """
+
 def test_subs_on_datashape():
     assert subs(dshape('3 * {foo: int}'), {'foo': 'bar'}) == dshape('3 * {bar: int}')
 """

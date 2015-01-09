@@ -25,6 +25,7 @@ requirements:
     - into
     - pymongo
     - pytest
+    - numba
     - unittest2 [py26]
 
   run:
@@ -45,6 +46,7 @@ requirements:
     - psutil
     - into
     - pymongo
+    - numba
     - unittest2 [py26]
 
 test:
