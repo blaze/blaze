@@ -76,7 +76,7 @@ def get_numba_type(dshape):
     >>> get_numba_type(datashape.dshape('10 * {a: int64}'))
     Traceback (most recent call last):
       ...
-    TypeError: Invalid datashape to numba type: dshape("{ a : int64 }")
+    TypeError: Invalid datashape to numba type: dshape("{a: int64}")
 
     See Also
     --------
