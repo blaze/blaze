@@ -7,7 +7,6 @@ from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
 from . import pydatetime
-import numpy as np
 import datetime
 import math
 import toolz
