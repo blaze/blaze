@@ -1,20 +1,20 @@
 from __future__ import absolute_import, division, print_function
 
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
-        Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
-        Map, UTCFromTimestamp, DateTimeTruncate, symbol)
+                    Date, Time, DateTime, Millisecond, Microsecond, broadcast,
+                    sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
+                    USub)
 from ..expr.expressions import valid_identifier
-from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
 from . import pydatetime
 import datetime
-from datashape import iscollection
 import math
 import toolz
 import itertools
 
 
 funcnames = ('func_%d' % i for i in itertools.count())
+
 
 def parenthesize(s):
     if ' ' in s:
@@ -82,6 +82,13 @@ def _print_python(expr, leaves=None):
                          expr.symbol,
                          parenthesize(rhs)),
             toolz.merge(left_scope, right_scope))
+
+
+@dispatch(USub)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return '-%s' % parenthesize(child), scope
+
 
 @dispatch(Math)
 def _print_python(expr, leaves=None):
