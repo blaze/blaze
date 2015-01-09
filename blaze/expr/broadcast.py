@@ -7,7 +7,7 @@ from toolz import curry
 
 from .expressions import *
 from .expressions import Field, Map
-from .arithmetic import maxshape, Arithmetic, USub
+from .arithmetic import maxshape, Arithmetic, UnaryOp
 from .math import Math, sin
 from .datetime import DateTime
 
@@ -100,8 +100,8 @@ def scalar_symbols(exprs):
     return scalars
 
 
-Broadcastable = (Arithmetic, Math, Map, Field, DateTime, USub)
-WantToBroadcast = (Arithmetic, Math, Map, DateTime, USub)
+Broadcastable = (Arithmetic, Math, Map, Field, DateTime, UnaryOp)
+WantToBroadcast = (Arithmetic, Math, Map, DateTime, UnaryOp)
 
 
 def broadcast_collect(expr, Broadcastable=Broadcastable,
