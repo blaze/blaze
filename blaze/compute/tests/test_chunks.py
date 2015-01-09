@@ -17,3 +17,7 @@ def test_chunks_compute():
             result = into(list, result)
             expected = into(list, expected)
         assert result == expected
+
+
+def test_chunks_head():
+    assert compute(s.head(2), cL) == (1., 2.)
