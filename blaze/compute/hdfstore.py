@@ -18,4 +18,21 @@ def pre_compute(expr, data, **kwargs):
 
 @dispatch(Field, pd.HDFStore)
 def compute_up(expr, data, **kwargs):
-    return data.get_storer('/%s' % expr._name)
+    key = '/' + expr._name
+    if key in data.keys():
+        return data.get_storer(key)
+    else:
+        return HDFGroup(data, key)
+
+
+from collections import namedtuple
+HDFGroup = namedtuple('HDFGroup', 'parent,datapath')
+
+
+@dispatch(Field, HDFGroup)
+def compute_up(expr, data, **kwargs):
+    key = data.datapath + '/' + expr._name
+    if key in data.parent.keys():
+        return data.parent.get_storer(key)
+    else:
+        return HDFGroup(data.parent, key)
