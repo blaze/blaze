@@ -31,6 +31,11 @@ def test_hdfstore():
         a = resource('hdfstore://%s::/appendable' % fn)
         assert isinstance(pre_compute(s, a), Chunks)
 
+        hdf.close()
+        f.parent.close()
+        a.parent.close()
+
+
 
 def test_groups():
     with tmpfile('.hdf5') as fn:
@@ -42,3 +47,5 @@ def test_groups():
         s = symbol('s', discover(hdf))
 
         assert list(compute(s.data.fixed, hdf).a) == [1, 2, 3, 4]
+
+        hdf.close()
