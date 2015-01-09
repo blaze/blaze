@@ -65,7 +65,7 @@ def test_to_tree():
                               {'op': 'Symbol',
                                'args': [
                                     't',
-                                    'var * { name : string, amount : int32 }',
+                                    'var * {name: string, amount: int32}',
                                     None
                                     ]
                                },

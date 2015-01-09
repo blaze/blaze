@@ -366,8 +366,8 @@ def test_reduction_name():
 
 def test_max_min_class():
     t = TableSymbol('t', '{name: string, amount: int32}')
-    assert str(max(t).dshape) == '{ name : string, amount : int32 }'
-    assert str(min(t).dshape) == '{ name : string, amount : int32 }'
+    assert str(max(t).dshape) == '{name: string, amount: int32}'
+    assert str(min(t).dshape) == '{name: string, amount: int32}'
 
 
 @pytest.fixture
