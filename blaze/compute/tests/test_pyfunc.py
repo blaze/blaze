@@ -1,5 +1,6 @@
 from blaze.compute.pyfunc import *
 from blaze.compute.pyfunc import _print_python
+from blaze.expr.broadcast import broadcast_collect
 import datetime
 
 t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
