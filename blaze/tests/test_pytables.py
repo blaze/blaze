@@ -6,7 +6,7 @@ from toolz import first
 from blaze import into
 from blaze.utils import tmpfile
 from blaze.compatibility import xfail
-from blaze import PyTables, discover, Data
+from blaze import PyTables, discover
 
 
 tb = pytest.importorskip('tables')
@@ -151,15 +151,6 @@ class TestPyTablesLight(object):
         lhs, rhs = map(discover, (t, dt_data))
         t._v_file.close()
         assert lhs == rhs
-
-
-    def test_context_manager(self, dt_tb, dt_data):
-        """ check the context manager auto-closes the resources """
-
-        with Data("{0}::dt".format(dt_tb)) as t:
-            f = first(t._resources().values())
-            assert f.isopen
-        assert not f.isopen
 
     def test_no_extra_files_around(self, dt_tb):
         """ check the context manager auto-closes the resources """
