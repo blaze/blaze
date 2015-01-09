@@ -68,3 +68,9 @@ def test_pyfunc_works_with_invalid_python_names():
     t = Symbol('t', '{"x.y": int, "y z": int}')
     f = lambdify([t], t.x_y + t.y_z)
     assert f((1, 2)) == 3
+
+
+def test_usub():
+    x = symbol('x', 'float64')
+    f = lambdify([x], -x)
+    assert f(1.0) == -1.0
