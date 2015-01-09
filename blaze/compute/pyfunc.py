@@ -3,10 +3,11 @@ from __future__ import absolute_import, division, print_function
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
-                    USub)
+                    USub, Not)
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
 from . import pydatetime
+import numpy as np
 import datetime
 import math
 import toolz
@@ -87,7 +88,13 @@ def _print_python(expr, leaves=None):
 @dispatch(USub)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
-    return '-%s' % parenthesize(child), scope
+    return '%s%s' % (expr.symbol, parenthesize(child)), scope
+
+
+@dispatch(Not)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return 'not %s' % parenthesize(child), scope
 
 
 @dispatch(Math)
