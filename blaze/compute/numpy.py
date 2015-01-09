@@ -12,7 +12,6 @@ from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
-from .pyfunc import broadcast_collect
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -28,7 +27,7 @@ def compute_up(c, x, **kwargs):
         return x[c._name]
     if not x.dtype.names and x.shape[1] == len(c._child.fields):
         return x[:, c._child.fields.index(c._name)]
-    raise NotImplementedError() # pragma: no cover
+    raise NotImplementedError()  # pragma: no cover
 
 
 @dispatch(Projection, np.ndarray)
@@ -37,18 +36,18 @@ def compute_up(t, x, **kwargs):
         return x[t.fields]
     if not x.dtype.names and x.shape[1] == len(t._child.fields):
         return x[:, [t._child.fields.index(col) for col in t.fields]]
-    raise NotImplementedError() # pragma: no cover
-
-
-@dispatch(Broadcast, np.ndarray)
-def compute_up(t, x, **kwargs):
-    return compute(t._scalar_expr, x)
+    raise NotImplementedError()  # pragma: no cover
 
 
 try:
-    from .numba import compute_up
+    from .numba import broadcast_numba as broadcast_ndarray
 except ImportError:
-    pass
+    def broadcast_ndarray(t, *data, **kwargs):
+        return compute(t._scalar_expr, *data, **kwargs)
+
+
+for i in range(1, 11):
+    compute_up.register(Broadcast, *([np.ndarray] * i))(broadcast_ndarray)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
