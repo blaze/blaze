@@ -1,5 +1,6 @@
 from blaze.compute.pyfunc import *
 from blaze.compute.pyfunc import _print_python
+from blaze.expr.broadcast import broadcast_collect
 import datetime
 
 t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
@@ -47,13 +48,13 @@ def test_broadcast_collect():
     t = symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
 
     expr = t.distinct()
-    expr = expr.x + 2*expr.y
+    expr = expr.x + 2 * expr.y
     expr = expr.distinct()
 
     result = broadcast_collect(expr)
 
     expected = t.distinct()
-    expected = broadcast(expected.x + 2*expected.y, [expected])
+    expected = broadcast(expected.x + 2 * expected.y, [expected])
     expected = expected.distinct()
 
     assert result.isidentical(expected)
@@ -67,3 +68,19 @@ def test_pyfunc_works_with_invalid_python_names():
     t = Symbol('t', '{"x.y": int, "y z": int}')
     f = lambdify([t], t.x_y + t.y_z)
     assert f((1, 2)) == 3
+
+
+def test_usub():
+    x = symbol('x', 'float64')
+    f = lambdify([x], -x)
+    assert f(1.0) == -1.0
+
+
+def test_not():
+    x = symbol('x', 'bool')
+    f = lambdify([x], ~x)
+    r = f(True)
+    assert isinstance(r, bool) and not r
+
+    r = f(False)
+    assert isinstance(r, bool) and r

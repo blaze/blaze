@@ -585,7 +585,9 @@ def post_compute(expr, query, scope=None):
     return result
 
 
-from .pyfunc import broadcast_collect
+from ..expr.broadcast import broadcast_collect
+
+
 @dispatch(Expr, sa.sql.elements.ClauseElement)
 def optimize(expr, _):
     return broadcast_collect(expr)

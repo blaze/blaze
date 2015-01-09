@@ -2,21 +2,25 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from .core import compute, compute_up
-from ..expr import Broadcast, symbol, Expr, Arithmetic, Math, Map, Field
+from .core import compute, optimize
+from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
 from ..expr.broadcast import broadcast_collect
-from ..dispatch import dispatch
 from toolz import memoize
 import datashape
 import numba
 from .pyfunc import funcstr
 
 
-@dispatch(Expr, np.ndarray)
-def optimize(expr, data, **kwargs):
-    Broadcastable = Arithmetic, Math, Map
+Broadcastable = Arithmetic, Math, Map, UnaryOp
+
+
+def optimize_ndarray(expr, *data, **kwargs):
     return broadcast_collect(expr, Broadcastable=Broadcastable,
                              WantToBroadcast=Broadcastable)
+
+
+for i in range(1, 11):
+    optimize.register(Expr, *([np.ndarray] * i))(optimize_ndarray)
 
 
 def get_numba_type(dshape):
@@ -202,7 +206,3 @@ def broadcast_numba(t, *data, **kwargs):
         return compute(t, dict(zip(t._leaves(), data)))
     else:
         return ufunc(*data)
-
-
-for i in range(10):
-    compute_up.register(Broadcast, *([np.ndarray] * i))(broadcast_numba)

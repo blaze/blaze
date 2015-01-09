@@ -48,7 +48,8 @@ except:
     pass
 
 
-from .pyfunc import broadcast_collect
+from ..expr.broadcast import broadcast_collect
+
 
 @dispatch(Expr, RDD)
 def optimize(expr, seq):

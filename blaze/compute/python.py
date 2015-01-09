@@ -20,7 +20,7 @@ import re
 from collections import Iterator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity, tail
-from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
+from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
 import cytoolz
 import datetime
 import toolz
@@ -42,7 +42,8 @@ from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize, base
 
 from ..utils import listpack
-from .pyfunc import lambdify, broadcast_collect
+from ..expr.broadcast import broadcast_collect
+from .pyfunc import lambdify
 from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
