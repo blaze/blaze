@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import toolz
 import datashape
 import functools
-from toolz import concat, memoize, partial, pipe
+from toolz import concat, memoize, partial
 from toolz.curried import map, filter
 import re
 
@@ -23,6 +23,7 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
 
 _attr_cache = dict()
 
+
 def isvalid_identifier(s):
     """
 
@@ -34,6 +35,7 @@ def isvalid_identifier(s):
     False
     """
     return not not re.match('^\w+$', s)
+
 
 def valid_identifier(s):
     """
@@ -66,8 +68,9 @@ class Expr(Node):
         if not isinstance(self.dshape.measure, Record):
             if fieldname == self._name:
                 return self
-            raise ValueError("Can not get field '%s' of non-record expression %s"
-                    % (fieldname, self))
+            raise ValueError(
+                "Can not get field '%s' of non-record expression %s" %
+                (fieldname, self))
         return Field(self, fieldname)
 
     def __getitem__(self, key):
@@ -81,7 +84,7 @@ class Expr(Node):
                 return self._project(key)
             else:
                 raise ValueError('Names %s not consistent with known names %s'
-                        % (key, self.fields))
+                                 % (key, self.fields))
         elif (isinstance(key, tuple)
                 and all(isinstance(k, (int, slice)) for k in key)):
             return Slice(self, key)
@@ -111,17 +114,17 @@ class Expr(Node):
             return int(self.dshape[0])
         except TypeError:
             raise ValueError('Can not determine length of table with the '
-                    'following datashape: %s' % self.dshape)
+                             'following datashape: %s' % self.dshape)
 
-    def __len__(self): # pragma: no cover
+    def __len__(self):  # pragma: no cover
         return self._len()
 
     def __iter__(self):
         raise NotImplementedError(
-                'Iteration over expressions is not supported.\n'
-                'Iterate over computed result instead, e.g. \n'
-                "\titer(expr)           # don't do this\n"
-                "\titer(compute(expr))  # do this instead")
+            'Iteration over expressions is not supported.\n'
+            'Iterate over computed result instead, e.g. \n'
+            "\titer(expr)           # don't do this\n"
+            "\titer(compute(expr))  # do this instead")
 
     def __dir__(self):
         result = dir(type(self))
@@ -147,7 +150,7 @@ class Expr(Node):
             fields = dict(zip(map(valid_identifier, self.fields),
                               self.fields))
             if self.fields and key in fields:
-                if isscalar(self.dshape.measure): # t.foo.foo is t.foo
+                if isscalar(self.dshape.measure):  # t.foo.foo is t.foo
                     result = self
                 else:
                     result = self[fields[key]]
@@ -159,7 +162,8 @@ class Expr(Node):
                     if func in method_properties:
                         result = func(self)
                     else:
-                        result = functools.update_wrapper(partial(func, self), func)
+                        result = functools.update_wrapper(partial(func, self),
+                                                          func)
                 else:
                     raise
         _attr_cache[(self, key)] = result
@@ -190,6 +194,7 @@ class Expr(Node):
 
 _symbol_cache = dict()
 
+
 def _symbol_key(args, kwargs):
     if len(args) == 1:
         name, = args
@@ -204,6 +209,7 @@ def _symbol_key(args, kwargs):
     token = kwargs.get('token', token)
     ds = dshape(ds)
     return (name, ds, token)
+
 
 @memoize(cache=_symbol_cache, key=_symbol_key)
 def symbol(name, dshape, token=None):
@@ -237,6 +243,7 @@ class Symbol(Expr):
     def _resources(self):
         return dict()
 
+
 @dispatch(Symbol, dict)
 def _subs(o, d):
     """ Subs symbols using symbol function
@@ -255,7 +262,7 @@ class ElemWise(Expr):
     @property
     def dshape(self):
         return datashape.DataShape(*(self._child.dshape.shape
-                                  + tuple(self.schema)))
+                                     + tuple(self.schema)))
 
 
 class Field(ElemWise):
@@ -302,15 +309,16 @@ class Projection(ElemWise):
 
     Examples
     --------
-
     >>> accounts = symbol('accounts',
     ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{name: string, amount: int32}")
 
+    >>> accounts[['name', 'amount']]
+    accounts[['name', 'amount']]
+
     See Also
     --------
-
     blaze.expr.expressions.Field
     """
     __slots__ = '_hash', '_child', '_fields'
@@ -325,8 +333,7 @@ class Projection(ElemWise):
         return DataShape(Record([(name, d[name]) for name in self.fields]))
 
     def __str__(self):
-        return '%s[[%s]]' % (self._child,
-                             ', '.join(["'%s'" % name for name in self.fields]))
+        return '%s[%s]' % (self._child, self.fields)
 
     def _project(self, key):
         if isinstance(key, list) and set(key).issubset(set(self.fields)):
@@ -337,7 +344,7 @@ class Projection(ElemWise):
         if fieldname in self.fields:
             return Field(self._child, fieldname)
         raise ValueError("Field %s not found in columns %s" % (fieldname,
-            self.fields))
+                                                               self.fields))
 
 
 def projection(expr, names):
@@ -346,13 +353,16 @@ def projection(expr, names):
     if not isinstance(names, (tuple, list)):
         raise TypeError("Wanted list of strings, got %s" % names)
     if not set(names).issubset(expr.fields):
-        raise ValueError("Mismatched names.  Asking for names %s "
-                "where expression has names %s" % (names, expr.fields))
+        raise ValueError("Mismatched names. Asking for names %s "
+                         "where expression has names %s" %
+                         (names, expr.fields))
     return Projection(expr, tuple(names))
 projection.__doc__ = Projection.__doc__
 
 
 from .utils import hashable_index, replace_slices
+
+
 class Slice(Expr):
     __slots__ = '_hash', '_child', '_index'
 
@@ -403,13 +413,13 @@ def selection(table, predicate):
 
     if not builtins.all(isinstance(node, (ElemWise, Symbol))
                         or node.isidentical(subexpr)
-           for node in concat([path(predicate, subexpr),
-                               path(table, subexpr)])):
+                        for node in concat([path(predicate, subexpr),
+                                            path(table, subexpr)])):
 
         raise ValueError("Selection not properly matched with table:\n"
-                   "child: %s\n"
-                   "apply: %s\n"
-                   "predicate: %s" % (subexpr, table, predicate))
+                         "child: %s\n"
+                         "apply: %s\n"
+                         "predicate: %s" % (subexpr, table, predicate))
 
     if not isboolean(predicate.dshape):
         raise TypeError("Must select over a boolean predicate.  Got:\n"
@@ -421,22 +431,19 @@ selection.__doc__ = Selection.__doc__
 
 
 class Label(ElemWise):
-    """ A Labeled expresion
+    """A Labeled expression
 
     Examples
     --------
-
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
-
-    >>> (accounts.amount * 100)._name
+    >>> expr = accounts.amount * 100
+    >>> expr._name
     'amount'
-
-    >>> (accounts.amount * 100).label('new_amount')._name
+    >>> expr.label('new_amount')._name
     'new_amount'
 
     See Also
     --------
-
     blaze.expr.expressions.ReLabel
     """
     __slots__ = '_hash', '_child', 'label'
@@ -456,7 +463,7 @@ class Label(ElemWise):
             raise ValueError("Column Mismatch: %s" % key)
 
     def __str__(self):
-        return "label(%s, '%s')" % (self._child, self.label)
+        return "label(%s, %r)" % (self._child, self.label)
 
 
 def label(expr, lab):
@@ -531,7 +538,6 @@ class Map(ElemWise):
 
     Examples
     --------
-
     >>> from datetime import datetime
 
     >>> t = symbol('t', 'var * {price: real, time: int64}')  # times as integers
@@ -544,7 +550,6 @@ class Map(ElemWise):
 
     See Also
     --------
-
     blaze.expr.expresions.Apply
     """
     __slots__ = '_hash', '_child', 'func', '_schema', '_name0'
@@ -555,8 +560,9 @@ class Map(ElemWise):
             return dshape(self._schema)
         else:
             raise NotImplementedError("Schema of mapped column not known.\n"
-                    "Please specify datashape keyword in .map method.\n"
-                    "Example: t.columnname.map(function, 'int64')")
+                                      "Please specify datashape keyword in "
+                                      ".map method.\nExample: "
+                                      "t.columnname.map(function, 'int64')")
 
     def label(self, name):
         assert isscalar(self.dshape.measure)
@@ -673,12 +679,12 @@ def ndim(expr):
 dshape_method_list.extend([
     (lambda ds: True, set([apply])),
     (iscollection, set([shape, ndim])),
-    ])
+])
 
 schema_method_list.extend([
-    (isscalar,  set([label, relabel])),
-    (isrecord,  set([relabel])),
-    ])
+    (isscalar, set([label, relabel])),
+    (isrecord, set([relabel])),
+])
 
 method_properties.update([shape, ndim])
 
@@ -686,19 +692,3 @@ method_properties.update([shape, ndim])
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
-
-
-"""
-from .core import subs
-@dispatch(Mono, dict)
-def _subs(ds, d):
-    if ds in d:
-        return d[ds]
-    else:
-        old = ds.parameters
-        new = tuple([subs(p, d) for p in old])
-        if old != new:
-            return type(ds)(*new)
-        else:
-            return ds
-"""
