@@ -4,8 +4,8 @@ from toolz import curry, concat, first
 from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
-        Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply, Reduction,
-        symbol)
+                    Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
+                    Reduction, symbol)
 from ..expr import Label, Distinct, By, Slice
 from ..expr import Expr
 from ..expr import path
@@ -45,6 +45,7 @@ def discover(data):
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
 
+
 @dispatch(Head, (bcolz.ctable, bcolz.carray))
 def compute_down(expr, data, **kwargs):
     """ Cheap and simple computation in simple case
@@ -60,7 +61,8 @@ def compute_down(expr, data, **kwargs):
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
-    Selection, ElemWise, Apply, Reduction, Distinct, By), (bcolz.ctable, bcolz.carray))
+           Selection, ElemWise, Apply, Reduction, Distinct, By),
+          (bcolz.ctable, bcolz.carray))
 def compute_up(expr, data, **kwargs):
     """ This is only necessary because issubclass(bcolz.carray, Iterator)
 
@@ -83,30 +85,27 @@ def compute_up(expr, x, **kwargs):
     return x[expr.index]
 
 
-@dispatch((bcolz.carray, bcolz.ctable))
-def chunks(b, chunksize=2**15):
-    start = 0
-    n = b.len
-    while start < n:
-        yield b[start:start + chunksize]
-        start += chunksize
-
-
-@dispatch((bcolz.carray, bcolz.ctable), int)
-def get_chunk(b, i, chunksize=2**15):
-    start = chunksize * i
-    stop = chunksize * (i + 1)
-    return b[start:stop]
-
-
 def compute_chunk(source, chunk, chunk_expr, data_index):
     part = source[data_index]
     return compute(chunk_expr, {chunk: part})
 
 
+def get_chunksize(data):
+    if isinstance(data, bcolz.carray):
+        return data.chunklen
+    elif isinstance(data, bcolz.ctable):
+        return min(data[c].chunklen for c in data.names)
+    else:
+        raise TypeError("Don't know how to compute chunksize for type %r" %
+                        type(data).__name__)
+
+
 @dispatch(Expr, (bcolz.carray, bcolz.ctable))
-def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
+def compute_down(expr, data, chunksize=None, map=map, **kwargs):
     leaf = expr._leaves()[0]
+
+    if chunksize is None:
+        chunksize = get_chunksize(data)
 
     # If the bottom expression is a projection or field then want to do
     # compute_up first
@@ -116,14 +115,13 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
     if len(children) == 1 and isinstance(first(children), (Field, Projection)):
         raise MDNotImplementedError()
 
-
     chunk = symbol('chunk', chunksize * leaf.schema)
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr, chunk=chunk)
 
     data_parts = partitions(data, chunksize=(chunksize,))
 
     parts = list(map(curry(compute_chunk, data, chunk, chunk_expr),
-                           data_parts))
+                     data_parts))
 
     if isinstance(parts[0], np.ndarray):
         intermediate = np.concatenate(parts)
@@ -132,7 +130,7 @@ def compute_down(expr, data, chunksize=2**20, map=map, **kwargs):
     elif isinstance(parts[0], Iterable):
         intermediate = list(concat(parts))
     else:
-        raise TypeError(
-        "Don't know how to concatenate objects of type %s" % type(parts[0]))
+        raise TypeError("Don't know how to concatenate objects of type %r" %
+                        type(parts[0]).__name__)
 
     return compute(agg_expr, {agg: intermediate})
