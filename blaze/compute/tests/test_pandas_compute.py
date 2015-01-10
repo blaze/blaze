@@ -337,13 +337,6 @@ ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
 tframe = DataFrame({'timestamp': ts})
 
 
-def test_map_with_rename():
-    t = symbol('s', discover(tframe))
-    result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
-    renamed = result.relabel({'timestamp': 'date'})
-    assert renamed.fields == ['date']
-
-
 def test_map_column():
     inc = lambda x: x + 1
     result = compute(t['amount'].map(inc, 'int'), df)

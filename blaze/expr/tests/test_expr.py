@@ -103,7 +103,14 @@ def test_symbol_subs():
 
 
 def test_multiple_renames_on_series_fails():
-    t = symbol('s', discover(tframe))
+    t = symbol('s', 'var * {timestamp: datetime}')
     ts = t.timestamp
-    with pytest.raises(ValueError):
-        ts.relabel({'timestamp': 'date', 'hello': 'world'})
+    assert raises(ValueError, lambda: ts.relabel({'timestamp': 'date',
+                                                  'hello': 'world'}))
+
+
+def test_map_with_rename():
+    t = symbol('s', 'var * {timestamp: datetime}')
+    result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
+    assert raises(ValueError, lambda: result.relabel({'timestamp': 'date'}))
+    assert result.fields == ['date']
