@@ -489,20 +489,21 @@ class ReLabel(ElemWise):
     @property
     def schema(self):
         subs = dict(self.labels)
-        d = self._child.dshape.measure.dict
-
+        param = self._child.dshape.measure.parameters[0]
         return DataShape(Record([[subs.get(name, name), dtype]
-            for name, dtype in self._child.dshape.measure.parameters[0]]))
+                                 for name, dtype in param]))
 
     def __str__(self):
-        return '%s.relabel(%s)' % (self._child, ', '.join('%s="%s"' % l for l
-            in self.labels))
+        return ('%s.relabel(%s)' %
+                (self._child, ', '.join('%s=%r' % l for l in self.labels)))
 
 
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
     labels = dict((k, v) for k, v in labels.items() if k != v)
+    if not set(labels).issubset(child.fields):
+        raise ValueError("Cannot relabel non-existent child fields")
     if not labels:
         return child
     if isinstance(labels, dict):  # Turn dict into tuples
