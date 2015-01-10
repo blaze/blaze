@@ -4,7 +4,6 @@ from blaze import symbol, discover, compute
 import pandas as pd
 from datetime import datetime
 from into import Chunks, resource, into
-from blaze.compatibility import skipif, PY3
 
 
 df = pd.DataFrame([['a', 1, 10., datetime(2000, 1, 1)],
@@ -14,7 +13,6 @@ df = pd.DataFrame([['a', 1, 10., datetime(2000, 1, 1)],
                    columns=['name', 'a', 'b', 'time'])
 
 
-@skipif(PY3, reason="https://github.com/pydata/pandas/issues/9219")
 def test_hdfstore():
     with tmpfile('.hdf5') as fn:
         df.to_hdf(fn, '/appendable', format='table')

@@ -147,6 +147,7 @@ def filetexts(d, open=open):
 def tmpfile(extension=''):
     extension = '.' + extension.lstrip('.')
     handle, filename = tempfile.mkstemp(extension)
+    os.remove(filename)
 
     yield filename
 
