@@ -463,6 +463,8 @@ def label(expr, lab):
     if expr._name == lab:
         return expr
     return Label(expr, lab)
+
+
 label.__doc__ = Label.__doc__
 
 
@@ -480,7 +482,7 @@ class ReLabel(ElemWise):
     >>> accounts.relabel(not_a_column='definitely_not_a_column')
     Traceback (most recent call last):
         ...
-    ValueError: Cannot relabel non-existent child fields
+    ValueError: Cannot relabel non-existent child fields: {'not_a_column'}
 
     See Also
     --------
@@ -504,8 +506,12 @@ def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
     labels = dict((k, v) for k, v in labels.items() if k != v)
-    if not set(labels).issubset(child.fields):
-        raise ValueError("Cannot relabel non-existent child fields")
+    label_keys = set(labels)
+    fields = child.fields
+    if not label_keys.issubset(fields):
+        non_existent_fields = label_keys.difference(fields)
+        raise ValueError("Cannot relabel non-existent child fields: {%s}" %
+                         ', '.join(map(repr, non_existent_fields)))
     if not labels:
         return child
     if isinstance(labels, dict):  # Turn dict into tuples
