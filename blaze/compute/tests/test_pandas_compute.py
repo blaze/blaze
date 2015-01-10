@@ -344,14 +344,6 @@ def test_map_with_rename():
     assert renamed.fields == ['date']
 
 
-@pytest.mark.xfail(reason="Should this?  This seems odd but vacuously valid")
-def test_multiple_renames_on_series_fails():
-    t = symbol('s', discover(tframe))
-    expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
-    with pytest.raises(ValueError):
-        compute(expr, tframe)
-
-
 def test_map_column():
     inc = lambda x: x + 1
     result = compute(t['amount'].map(inc, 'int'), df)

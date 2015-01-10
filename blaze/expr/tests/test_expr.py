@@ -5,6 +5,7 @@ from blaze.expr import *
 from blaze.expr.core import subs
 from blaze.utils import raises
 
+
 def test_Symbol():
     e = symbol('e', '3 * 5 * {name: string, amount: int}')
     assert e.dshape == dshape('3 * 5 * {name: string, amount: int}')
@@ -98,4 +99,11 @@ def test_symbol_subs():
     e = symbol('e', '{x: int, y: int}')
     f = symbol('f', '{x: int, y: int}')
     d = {'e': 'f'}
-    assert e._subs({'e': 'f'}) is f
+    assert e._subs(d) is f
+
+
+def test_multiple_renames_on_series_fails():
+    t = symbol('s', discover(tframe))
+    ts = t.timestamp
+    with pytest.raises(ValueError):
+        ts.relabel({'timestamp': 'date', 'hello': 'world'})
