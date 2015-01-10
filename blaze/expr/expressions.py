@@ -472,16 +472,18 @@ class ReLabel(ElemWise):
 
     Examples
     --------
-
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.schema
     dshape("{name: string, amount: int32}")
     >>> accounts.relabel(amount='balance').schema
     dshape("{name: string, balance: int32}")
+    >>> accounts.relabel(not_a_column='definitely_not_a_column')
+    Traceback (most recent call last):
+        ...
+    ValueError: Cannot relabel non-existent child fields
 
     See Also
     --------
-
     blaze.expr.expressions.Label
     """
     __slots__ = '_hash', '_child', 'labels'
