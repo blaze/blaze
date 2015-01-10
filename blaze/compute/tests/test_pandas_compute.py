@@ -481,12 +481,11 @@ def test_summary_by_first():
     assert result == df.amount.iloc[0]
 
 
-@pytest.mark.xfail(reason="reduction assumed to be at the end")
 def test_summary_by_reduction_arithmetic():
     expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
     result = compute(expr, df)
     expected = DataFrame([['Alice', 2, 151],
-                          ['Bob', 1, 202]], columns=['name', 'count', 'sum'])
+                          ['Bob', 1, 201]], columns=['name', 'count', 'sum'])
     tm.assert_frame_equal(result, expected)
 
 
