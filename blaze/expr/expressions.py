@@ -233,8 +233,11 @@ class Symbol(Expr):
 
     Example
     -------
-
     >>> points = symbol('points', '5 * 3 * {x: int, y: int}')
+    >>> points
+    points
+    >>> points.dshape
+    dshape("5 * 3 * {x: int32, y: int32}")
     """
     __slots__ = '_hash', '_name', 'dshape', '_token'
     __inputs__ = ()
