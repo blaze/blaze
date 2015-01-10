@@ -1,6 +1,6 @@
 """
 
->>> from blaze.expr import Symbol
+>>> from blaze.expr import symbol
 >>> from blaze.compute.pandas import compute
 
 >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
@@ -21,7 +21,6 @@ from pandas.core.generic import NDFrame
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
-from collections import defaultdict
 from toolz import merge as merge_dicts
 from toolz.curried import pipe, filter, map, concat
 import fnmatch
@@ -51,16 +50,18 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Field, (DataFrame, DataFrameGroupBy))
 def compute_up(t, df, **kwargs):
+    assert len(t.fields) == 1
     return df[t.fields[0]]
 
 
 @dispatch(Field, Series)
 def compute_up(t, data, **kwargs):
+    assert len(t.fields) == 1
     if t.fields[0] == data.name:
         return data
     else:
-        raise ValueError("Fieldname %s does not match Series name %s"
-                % (t.fields[0], data.name))
+        raise ValueError("Fieldname %r does not match Series name %r"
+                         % (t.fields[0], data.name))
 
 
 @dispatch(Broadcast, DataFrame)
@@ -107,15 +108,6 @@ def compute_up(t, df, **kwargs):
     return df[predicate]
 
 
-@dispatch(Symbol, DataFrame)
-def compute_up(t, df, **kwargs):
-    if not list(t.fields) == list(df.names):
-        # TODO also check dtype
-        raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
-                         % (t, df))
-    return df
-
-
 @dispatch(Join, DataFrame, DataFrame)
 def compute_up(t, lhs, rhs, **kwargs):
     """ Join two pandas data frames on arbitrary columns
@@ -137,7 +129,7 @@ def compute_up(t, gb, **kwargs):
     return gb
 
 
-def post_reduction(result):
+def get_scalar(result):
     # pandas may return an int, numpy scalar or non scalar here so we need to
     # program defensively so that things are JSON serializable
     try:
@@ -148,7 +140,7 @@ def post_reduction(result):
 
 @dispatch(Reduction, (Series, SeriesGroupBy))
 def compute_up(t, s, **kwargs):
-    result = post_reduction(getattr(s, t.symbol)())
+    result = get_scalar(getattr(s, t.symbol)())
     if t.keepdims:
         result = Series([result], name=s.name)
     return result
@@ -156,22 +148,15 @@ def compute_up(t, s, **kwargs):
 
 @dispatch((std, var), (Series, SeriesGroupBy))
 def compute_up(t, s, **kwargs):
-    result = post_reduction(getattr(s, t.symbol)(ddof=t.unbiased))
+    result = get_scalar(getattr(s, t.symbol)(ddof=t.unbiased))
     if t.keepdims:
         result = Series([result], name=s.name)
     return result
 
 
-@dispatch(Distinct, DataFrame)
+@dispatch(Distinct, (DataFrame, Series))
 def compute_up(t, df, **kwargs):
-    return df.drop_duplicates()
-
-
-@dispatch(Distinct, Series)
-def compute_up(t, s, **kwargs):
-    s2 = Series(s.unique())
-    s2.name = s.name
-    return s2
+    return df.drop_duplicates().reset_index(drop=True)
 
 
 def unpack(seq):
@@ -203,7 +188,7 @@ def get_grouper(c, grouper, df):
     if isinstance(g, Series):
         return g
     if isinstance(g, DataFrame):
-        return [g[c] for c in g.columns]
+        return [g[col] for col in g.columns]
 
 
 @dispatch(By, (Field, Projection), NDFrame)
@@ -233,6 +218,7 @@ def compute_by(t, r, g, df):
 
 name_dict = dict()
 seen_names = set()
+
 
 def _name(expr):
     """ A unique and deterministic name for an expression """
@@ -283,11 +269,11 @@ def fancify_summary(expr):
     one = summary(**dict((_name(expr), expr) for expr in exprs))
 
     two = dict((_name(expr), symbol(_name(expr), datashape.var * expr.dshape))
-                for expr in exprs)
+               for expr in exprs)
 
     d = dict((expr, two[_name(expr)]) for expr in exprs)
     three = dict((name, value._subs(d)) for name, value in zip(expr.names,
-        expr.values))
+                                                               expr.values))
 
     return one, two, three
 
@@ -463,12 +449,14 @@ def compute_up(expr, data, **kwargs):
     else:
         return Series(dict(zip(expr.fields, values)))
 
+
 @dispatch(Summary, Series)
 def compute_up(expr, data, **kwargs):
     result = tuple(compute(val, {expr._child: data}) for val in expr.values)
     if expr.keepdims:
         result = [result]
     return result
+
 
 @dispatch(Like, DataFrame)
 def compute_up(expr, df, **kwargs):
@@ -492,7 +480,7 @@ def compute_up(expr, s, **kwargs):
 
 @dispatch(UTCFromTimestamp, Series)
 def compute_up(expr, s, **kwargs):
-    return pd.datetools.to_datetime(s*1e9, utc=True)
+    return pd.datetools.to_datetime(s * 1e9, utc=True)
 
 
 @dispatch(Millisecond, Series)
@@ -529,11 +517,20 @@ def compute_up(expr, df, **kwargs):
     return df.shape[0]
 
 
-units_map = {'year': 'Y', 'month': 'M', 'week': 'W', 'day': 'D', 'hour': 'h',
-'minute': 'm', 'second': 's', 'millisecond': 'ms', 'microsecond': 'us',
-'nanosecond': 'ns'}
+units_map = {
+    'year': 'Y',
+    'month': 'M',
+    'week': 'W',
+    'day': 'D',
+    'hour': 'h',
+    'minute': 'm',
+    'second': 's',
+    'millisecond': 'ms',
+    'microsecond': 'us',
+    'nanosecond': 'ns'
+}
+
 
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
-    from blaze import into, np
     return Series(compute_up(expr, into(np.ndarray, data), **kwargs))
