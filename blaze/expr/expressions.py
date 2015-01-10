@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 import toolz
 import datashape
 import functools
+import keyword
+
 from toolz import concat, memoize, partial
 from toolz.curried import map, filter
 import re
@@ -24,22 +26,29 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
 _attr_cache = dict()
 
 
-def isvalid_identifier(s):
-    """
+def isvalid_identifier(s, regex=re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')):
+    """Check whether a string is a valid Python identifier
 
+    Examples
+    --------
     >>> isvalid_identifier('Hello')
     True
     >>> isvalid_identifier('Hello world')
     False
     >>> isvalid_identifier('Helloworld!')
     False
+    >>> isvalid_identifier('1a')
+    False
+    >>> isvalid_identifier('a1')
+    True
+    >>> isvalid_identifier('for')
+    False
     """
-    return not not re.match('^\w+$', s)
+    return not keyword.iskeyword(s) and regex.match(s) is not None
 
 
 def valid_identifier(s):
-    """
-
+    """Rewrite a string to be a valid identifier if it contains
     >>> valid_identifier('hello')
     'hello'
     >>> valid_identifier('hello world')
@@ -48,10 +57,12 @@ def valid_identifier(s):
     'hello_world'
     >>> valid_identifier('hello-world')
     'hello_world'
-    >>> print(valid_identifier(None))
-    None
+    >>> valid_identifier(None)
+    >>> valid_identifier('1a')
     """
     if isinstance(s, _strtypes):
+        if s[0].isdigit():
+            return
         return s.replace(' ', '_').replace('.', '_').replace('-', '_')
     return s
 
