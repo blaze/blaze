@@ -88,14 +88,17 @@ inat = np.datetime64('NaT').view('int64')
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
+    result_dtype = to_numpy_dtype(t.dshape)
     if issubclass(x.dtype.type, (np.floating, np.object_)):
-        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis,
+                                 dtype=result_dtype)
     elif issubclass(x.dtype.type, np.datetime64):
-        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis)
+        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis,
+                                             dtype=result_dtype)
     else:
-        return np.ones(x.shape,
-                       dtype=to_numpy_dtype(t.dshape)).sum(keepdims=t.keepdims,
-                                                           axis=t.axis)
+        return np.ones(x.shape, dtype=result_dtype).sum(keepdims=t.keepdims,
+                                                        axis=t.axis,
+                                                        dtype=result_dtype)
 
 
 @dispatch(nunique, np.ndarray)
@@ -109,7 +112,12 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
+    reducer = getattr(x, t.symbol)
+    try:
+        return reducer(axis=t.axis, keepdims=t.keepdims,
+                       dtype=to_numpy_dtype(t.schema))
+    except TypeError:  # some reductions don't take the dtype argument
+        return reducer(axis=t.axis, keepdims=t.keepdims)
 
 
 def axify(expr, axis, keepdims=False):
