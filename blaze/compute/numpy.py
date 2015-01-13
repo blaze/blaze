@@ -12,6 +12,7 @@ from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
+from ..utils import keywords
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -88,14 +89,17 @@ inat = np.datetime64('NaT').view('int64')
 
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
+    result_dtype = to_numpy_dtype(t.dshape)
     if issubclass(x.dtype.type, (np.floating, np.object_)):
-        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis,
+                                 dtype=result_dtype)
     elif issubclass(x.dtype.type, np.datetime64):
-        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis)
+        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis,
+                                             dtype=result_dtype)
     else:
-        return np.ones(x.shape,
-                       dtype=to_numpy_dtype(t.dshape)).sum(keepdims=t.keepdims,
-                                                           axis=t.axis)
+        return np.ones(x.shape, dtype=result_dtype).sum(keepdims=t.keepdims,
+                                                        axis=t.axis,
+                                                        dtype=result_dtype)
 
 
 @dispatch(nunique, np.ndarray)
@@ -109,7 +113,12 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
+    # can't use the method here, as they aren't Python functions
+    reducer = getattr(np, t.symbol)
+    if 'dtype' in keywords(reducer):
+        return reducer(x, axis=t.axis, keepdims=t.keepdims,
+                       dtype=to_numpy_dtype(t.schema))
+    return reducer(x, axis=t.axis, keepdims=t.keepdims)
 
 
 def axify(expr, axis, keepdims=False):

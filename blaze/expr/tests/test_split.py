@@ -3,7 +3,7 @@ from blaze.expr.split import *
 from datashape import dshape
 from datashape.predicates import isscalar, isrecord, iscollection
 
-t = symbol('t', 'var * {name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
 a = symbol('a', '1000 * 2000 * {x: float32, y: float32}')
 
 
@@ -283,7 +283,7 @@ def test_agg_shape_in_tabular_case_with_explicit_chunk():
     expr = by(t.name, total=t.amount.sum())
     (chunk, chunk_expr), (agg, agg_expr) = split(t, expr, chunk=c)
 
-    assert agg.dshape == dshape('var * {name: string, total: int}')
+    assert agg.dshape == dshape('var * {name: string, total: int64}')
 
 
 def test_reductions():

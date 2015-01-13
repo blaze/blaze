@@ -336,12 +336,9 @@ def test_unary_ops():
 def test_reduction():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = sum(t['amount'])
-    print(type(r.dshape))
-    print(type(dshape('int32')))
-    print(r.dshape)
-    assert r.dshape in (dshape('int32'),
-                        dshape('{amount: int32}'),
-                        dshape('{amount_sum: int32}'))
+    assert r.dshape in (dshape('int64'),
+                        dshape('{amount: int64}'),
+                        dshape('{amount_sum: int64}'))
 
     assert 'amount' not in str(t.count().dshape)
 
@@ -432,7 +429,7 @@ class TestScalarArithmetic(object):
 def test_summary():
     t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
     s = summary(total=t.amount.sum(), num=t.id.count())
-    assert s.dshape == dshape('{num: int32, total: int32}')
+    assert s.dshape == dshape('{num: int32, total: int64}')
     assert hash(s)
     assert eval(str(s)).isidentical(s)
 
