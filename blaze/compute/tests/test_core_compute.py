@@ -60,7 +60,7 @@ def test_bottom_up_until_type_break():
 
     e = s.amount.sum() + 1
     expr, scope = bottom_up_until_type_break(e, {s: data})
-    amount_sum = symbol('amount_sum', 'int')
+    amount_sum = symbol('amount_sum', 'int64')
     assert expr.isidentical(amount_sum + 1)
     assert len(scope) == 1
     assert amount_sum in scope
@@ -77,7 +77,7 @@ def test_bottom_up_until_type_break():
 
 
 def test_top_then_bottom_then_top_again_etc():
-    s = symbol('s', 'var * {name: string, amount: int}')
+    s = symbol('s', 'var * {name: string, amount: int32}')
     data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
                     dtype=[('name', 'S7'), ('amount', 'i4')])
 

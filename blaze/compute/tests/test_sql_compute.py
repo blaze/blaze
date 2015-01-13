@@ -348,11 +348,11 @@ def test_by_summary_clean():
 
 
 def test_by_summary_single_column():
-    expr = by(t.name, n=t.name.count(), biggest=t.name.max())
+    expr = by(t.name, n=t.name.count(), biggest=t.amount.max())
     result = compute(expr, s)
 
     expected = """
-    SELECT accounts.name, max(accounts.name) AS biggest, count(accounts.name) AS n
+    SELECT accounts.name, max(accounts.amount) AS biggest, count(accounts.name) AS n
     FROM accounts
     GROUP BY accounts.name
     """
