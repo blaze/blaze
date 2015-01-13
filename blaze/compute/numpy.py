@@ -12,6 +12,7 @@ from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
+from ..utils import keywords
 
 from .core import base, compute
 from ..dispatch import dispatch
@@ -112,12 +113,12 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
-    reducer = getattr(x, t.symbol)
-    try:
-        return reducer(axis=t.axis, keepdims=t.keepdims,
+    # can't use the method here, as they aren't Python functions
+    reducer = getattr(np, t.symbol)
+    if 'dtype' in keywords(reducer):
+        return reducer(x, axis=t.axis, keepdims=t.keepdims,
                        dtype=to_numpy_dtype(t.schema))
-    except TypeError:  # some reductions don't take the dtype argument
-        return reducer(axis=t.axis, keepdims=t.keepdims)
+    return reducer(x, axis=t.axis, keepdims=t.keepdims)
 
 
 def axify(expr, axis, keepdims=False):
