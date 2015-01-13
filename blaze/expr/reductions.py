@@ -63,7 +63,7 @@ class Reduction(Expr):
             result = toolz.first(schema.types)
         else:
             result = schema
-        return DataShape(datashape.maxtype(result))
+        return DataShape(result)
 
     @property
     def symbol(self):
@@ -101,7 +101,9 @@ class all(Reduction):
 
 
 class sum(Reduction):
-    pass
+    @property
+    def schema(self):
+        return DataShape(datashape.maxtype(super(sum, self).schema))
 
 
 class max(Reduction):
@@ -168,11 +170,11 @@ class std(Reduction):
 
 class count(Reduction):
     """ The number of non-null elements """
-    schema = dshape(ct.int_)
+    schema = dshape(ct.int32)
 
 
 class nunique(Reduction):
-    schema = dshape(ct.int_)
+    schema = dshape(ct.int32)
 
 
 class nelements(Reduction):
@@ -189,7 +191,7 @@ class nelements(Reduction):
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
     """
-    schema = dshape(ct.int_)
+    schema = dshape(ct.int32)
 
 
 def nrows(expr):

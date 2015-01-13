@@ -189,7 +189,7 @@ def test_summary_on_ndarray():
 
     result = compute(summary(total=a.sum(), min=a.min(), keepdims=True), ax)
     expected = np.array([(ax.min(), ax.sum())],
-                        dtype=[('min', 'float64'), ('total', 'float64')])
+                        dtype=[('min', 'float32'), ('total', 'float64')])
     assert result.ndim == ax.ndim
     assert eq(expected, result)
 
