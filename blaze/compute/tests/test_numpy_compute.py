@@ -333,3 +333,18 @@ def test_subexpr_datetime():
     result = compute(s.truncate(days=2).day, data)
     expected = np.array([31, 2, 2, 4])
     np.testing.assert_array_equal(result, expected)
+
+
+def test_mixed_types():
+    x = np.array([[(4, 180), (4, 184), (4, 188), (4, 192), (4, 196)],
+                  [(4, 660), (4, 664), (4, 668), (4, 672), (4, 676)],
+                  [(4, 1140), (4, 1144), (4, 1148), (4, 1152), (4, 1156)],
+                  [(4, 1620), (4, 1624), (4, 1628), (4, 1632), (4, 1636)],
+                  [(4, 2100), (4, 2104), (4, 2108), (4, 2112), (4, 2116)]],
+                 dtype=[('count', '<i4'), ('total', '<i8')])
+    aggregate = symbol('aggregate', discover(x))
+    result = compute(aggregate.total.sum(axis=(0,)) /
+                     aggregate.count.sum(axis=(0,)), x)
+    expected = (x['total'].sum(axis=0, keepdims=True) /
+                x['count'].sum(axis=0, keepdims=True)).squeeze()
+    np.testing.assert_array_equal(result, expected)
