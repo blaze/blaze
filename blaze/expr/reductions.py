@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import toolz
 from datashape import Record, DataShape, dshape
 from datashape import coretypes as ct
+import datashape
 
 from .core import common_subexpression
 from .expressions import Expr, symbol, ndim, Slice
@@ -62,7 +63,7 @@ class Reduction(Expr):
             result = toolz.first(schema.types)
         else:
             result = schema
-        return DataShape(schema)
+        return DataShape(datashape.maxtype(result))
 
     @property
     def symbol(self):
