@@ -348,13 +348,13 @@ def test_by_summary_clean():
 
 
 def test_by_summary_single_column():
-    expr = by(t.amount, n=t.amount.count(), biggest=t.amount.max())
+    expr = by(t.name, n=t.name.count(), biggest=t.name.max())
     result = compute(expr, s)
 
     expected = """
-    SELECT accounts.amount, max(accounts.amount) AS biggest, count(accounts.amount) AS n
+    SELECT accounts.name, max(accounts.name) AS biggest, count(accounts.name) AS n
     FROM accounts
-    GROUP BY accounts.amount
+    GROUP BY accounts.name
     """
 
     assert normalize(str(result)) == normalize(expected)
