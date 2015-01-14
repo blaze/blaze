@@ -1,5 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+try:
+    import h5py  # if we import h5py after tables we segfault
+except ImportError:
+    pass
+
 from pandas import DataFrame
 from into import into, convert, append, resource, drop
 from into.backends.csv import CSV
