@@ -36,3 +36,8 @@ def test_slice():
     assert str(x[:2]) == 'x[:2]'
     assert str(x[0, :2]) == 'x[0, :2]'
     assert str(x[1:4:2, :2]) == 'x[1:4:2, :2]'
+
+
+def test_negative_slice():
+    x = symbol('x', '10 * 10 * int32')
+    assert x[:5, -3:].shape == (5, 3)
