@@ -103,5 +103,4 @@ to that database with the following code
 
 One can then query and compute results as with a normal blaze workflow.
 
-
-.. _Lahman baseball statitics database: https://github.com/jknecht/baseball-archive-sqlite/raw/master/lahman2013.sqlite
+.. _`Lahman baseball statistics database`: https://github.com/jknecht/baseball-archive-sqlite/raw/master/lahman2013.sqlite
