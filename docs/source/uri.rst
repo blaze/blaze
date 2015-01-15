@@ -52,8 +52,8 @@ What sorts of URI's does Blaze support?
     * ``.json``
     * ``.csv.gz/json.gz``
     * ``.hdf5`` (uses ``h5py``)
-    * ``.hdf5::/datapath`` (uses ``h5py``)
-    * ``.h5::/datapath`` (uses ``PyTables``)
+    * ``.hdf5::/datapath``
+    * ``hdfstore://filename.hdf5`` (uses special ``pandas.HDFStore`` format)
     * ``.bcolz``
     * ``.xls(x)``
 * SQLAlchemy strings like the following
