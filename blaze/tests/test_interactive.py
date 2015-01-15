@@ -1,5 +1,4 @@
 from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
-from blaze import discover
 
 from into import into, append
 from into.backends.csv import CSV
