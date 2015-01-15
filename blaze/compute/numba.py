@@ -4,7 +4,7 @@ import numpy as np
 
 from .core import compute, optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
-from ..expr.broadcast import broadcast_collect
+from ..expr.broadcast import broadcast_collect, Broadcast
 from toolz import memoize
 import datashape
 import numba
@@ -182,11 +182,15 @@ def _get_numba_ufunc(expr):
     get_numba_type
     compute_signature
     """
-    leaves = expr._leaves()
+    if isinstance(expr, Broadcast):
+        leaves = expr._scalars
+        expr = expr._scalar_expr
+    else:
+        leaves = expr._leaves()
 
     # we may not have a Broadcast instance because arithmetic expressions can
     # be vectorized so we use getattr
-    s, scope = funcstr(leaves, getattr(expr, '_scalar_expr', expr))
+    s, scope = funcstr(leaves, expr)
 
     scope = dict((k, numba.jit(nopython=True)(v) if callable(v) else v)
                  for k, v in scope.items())
