@@ -253,10 +253,9 @@ def to_html(df):
 @dispatch(Expr)
 def to_html(expr):
     # Tables
-    if ndim(expr) == 1:
-        return to_html(concrete_head(expr))
-
-    return to_html(repr(expr))
+    if not expr._resources() or ndim(expr) != 1:
+        return to_html(repr(expr))
+    return to_html(concrete_head(expr))
 
 
 @dispatch(object)

@@ -1,6 +1,5 @@
-from blaze.interactive import (Data, compute, concrete_head, expr_repr,
-        to_html)
-import os
+from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
+from blaze import discover
 
 from into import into, append
 from into.backends.csv import CSV
@@ -115,6 +114,11 @@ def test_dataframe_backed_repr_complex():
                       columns=['id', 'name', 'balance'])
     t = Data(df)
     repr(t[t['balance'] < 0])
+
+
+def test_repr_html_on_no_resources_symbol():
+    t = symbol('t', '5 * {id: int, name: string, balance: int}')
+    assert to_html(t) == 't'
 
 
 def test_expr_repr_empty():
