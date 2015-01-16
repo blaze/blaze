@@ -136,9 +136,11 @@ class Node(object):
         ident = self.isidentical(other)
         if ident is True:
             return ident
+
         try:
             return self._eq(other)
-        except:
+        except AttributeError:
+            # e.g., we can't compare whole tables to other things (yet?)
             pass
         return False
 

@@ -11,6 +11,7 @@ import pytest
 import sys
 
 import pandas as pd
+import pandas.util.testing as tm
 import numpy as np
 
 data = (('Alice', 100),
@@ -229,6 +230,7 @@ def test_can_trivially_create_pytables():
     with Data(example('accounts.h5')+'::/accounts') as d:
         assert d is not None
 
+
 def test_data_passes_kwargs_to_resource():
     assert Data(example('iris.csv'), encoding='ascii').data.encoding == 'ascii'
 
@@ -243,6 +245,7 @@ def test_data_on_iterator_refies_data():
     # in context
     with Data(iter(data)) as d:
         assert d is not None
+
 
 def test_Data_on_json_is_concrete():
     d = Data(example('accounts-streaming.json'))
@@ -261,3 +264,14 @@ def test_generator_reprs_concretely():
     d = Data(x)
     expr = d[d > 2] + 1
     assert '4' in repr(expr)
+
+
+def test_incompatible_types():
+    d = Data(pd.DataFrame(L, columns=['id', 'name', 'amount']))
+
+    with pytest.raises(ValueError):
+        d.id == 'foo'
+
+    result = compute(d.id == 3)
+    expected = pd.Series([False, False, True, False, False], name='id')
+    tm.assert_series_equal(result, expected)
