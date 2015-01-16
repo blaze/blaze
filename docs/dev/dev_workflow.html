@@ -103,29 +103,24 @@
 then please email <a class="reference external" href="mailto:blaze-dev&#37;&#52;&#48;continuum&#46;io">blaze-dev<span>&#64;</span>continuum<span>&#46;</span>io</a>.</p>
 <div class="section" id="installing-development-blaze">
 <h2>Installing Development Blaze<a class="headerlink" href="#installing-development-blaze" title="Permalink to this headline">¶</a></h2>
-<p>Blaze has a number of dependencies, both due to relying on community projects
-and also because it itself is split among a few projects.</p>
-<p>Install <cite>conda_</cite>, then copy-paste the following</p>
-<div class="highlight-python"><div class="highlight"><pre># Install most of the requirements through the recent conda release
-conda install --yes blaze
-
-# Some requirements are kept up-to-date on PyPI
-conda install --yes pip
-pip install git+https://github.com/ContinuumIO/datashape.git --upgrade
-pip install toolz cytoolz multipledispatch  --upgrade
-
-# Get source
-git clone https://github.com/ContinuumIO/blaze.git
-cd blaze
-
-# Install and run tests
-python setup.py install                      # Install Blaze
-python -c &#39;import blaze; blaze.test()&#39;       # Run tests
+<p>Blaze depends on many other projects, both projects that develop alongside
+blaze (like <tt class="docutils literal"><span class="pre">into</span></tt>) as well a number of community projects (like <tt class="docutils literal"><span class="pre">pandas</span></tt>).</p>
+<p>Blaze development happens in the following projects, all of which are available
+on github.com/ContinuumIO/project-name</p>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/ContinuumIO/blaze">Blaze</a></li>
+<li><a class="reference external" href="https://github.com/ContinuumIO/datashape">DataShape</a></li>
+<li><a class="reference external" href="https://github.com/ContinuumIO/into">Into</a></li>
+<li><a class="reference external" href="https://github.com/ContinuumIO/dask">Dask</a></li>
+<li><a class="reference external" href="https://github.com/ContinuumIO/dynd-python">DyND</a></li>
+</ul>
+<p>Bleeding edge binaries are kept up-to-date on the <tt class="docutils literal"><span class="pre">blaze</span></tt> conda channel.
+New developers likely only need to interact with one or two of these libraries so we recommend downloading everything by the conda channel and then only cloning those git repositories that you actively need:</p>
+<div class="highlight-python"><div class="highlight"><pre>conda install -c blaze blaze  # install everything from dev channel
+git clone git@github.com:ContinuumIO/blaze.git  # only clone blaze and into
+git clone git@github.com:ContinuumIO/into.git  # only clone blaze and into
 </pre></div>
 </div>
-<p>It is possible but challenging to install Blaze without conda.
-Most of the requirements can be installed from PyPI.
-A notable exception is <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">DyND</a> which must be compiled from source.</p>
 </div>
 <div class="section" id="github-flow">
 <h2>GitHub Flow<a class="headerlink" href="#github-flow" title="Permalink to this headline">¶</a></h2>
@@ -153,16 +148,14 @@ there are two automated testing mechanisms being used. First is
 requests that are made. This provides a smoke test against both
 Python 2 and Python 3 before a merge.</p>
 <p>The Travis tests only run on Linux, but Blaze is supported on Linux,
-OS X, and Windows. Internal to Continuum, a <a class="reference external" href="http://jenkins-ci.org/">Jenkins</a> server is
-running which builds and tests Blaze on the following platforms/versions</p>
+OS X, and Windows.   Further tests and bleeding-edge builds are carried out
+using <a class="reference external" href="https://binstar.org/blaze/blaze/builds">Binstar-build</a> which tests and builds Blaze on the following
+platforms/versions</p>
 <ul class="simple">
 <li>Python versions 2.6, 2.7, 3.3, 3.4</li>
 <li>Operating systems Windows, OS-X, Linux</li>
 <li>32-bit and 64-bit</li>
 </ul>
-<p>That these configurations are all working should be verified by someone at
-Continuum ideally after each merge of a pull request and certainly before each
-release.</p>
 <p><strong>Relative Imports:</strong></p>
 <p>To avoid the side effects of top level imports, e.g. <cite>import blaze</cite>, all internal code should be imported relatively.  Thus:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#file: blaze/objects/table.py</span>
