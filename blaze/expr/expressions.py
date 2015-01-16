@@ -394,7 +394,7 @@ class Slice(Expr):
         return replace_slices(self._index)
 
     def __str__(self):
-        if isinstance(self.index, tuple):
+        if type(self.index) == tuple:
             return '%s[%s]' % (self._child, ', '.join(map(str, self._index)))
         else:
             return '%s[%s]' % (self._child, self._index)

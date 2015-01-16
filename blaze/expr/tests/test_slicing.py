@@ -51,3 +51,8 @@ def test_None_slice():
 def test_list_slice():
     x = symbol('x', '10 * 10 * int32')
     assert x[[1, 2, 3], [4, 5]].shape == (3, 2)
+
+
+def test_list_slice_string():
+    x = symbol('x', '10 * 10 * int32')
+    assert str(x[[1, 2, 3]]) == "x[[1, 2, 3]]"

@@ -36,7 +36,8 @@ class _slice(object):
 
 
 class hashable_list(tuple):
-    pass
+    def __str__(self):
+        return str(list(self))
 
 
 def hashable_index(index):
@@ -48,7 +49,7 @@ def hashable_index(index):
     >>> isinstance(hash(hashable_index((1, slice(10)))), int)
     True
     """
-    if isinstance(index, tuple):
+    if type(index) is tuple:  # can't do isinstance due to hashable_list
         return tuple(map(hashable_index, index))
     elif isinstance(index, list):
         return hashable_list(index)
