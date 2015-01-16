@@ -97,9 +97,9 @@ class Expr(Node):
                 raise ValueError('Names %s not consistent with known names %s'
                                  % (key, self.fields))
         elif (isinstance(key, tuple)
-                and all(isinstance(k, (int, slice, type(None))) for k in key)):
+                and all(isinstance(k, (int, slice, type(None), list)) for k in key)):
             return Slice(self, key)
-        elif isinstance(key, (slice, int, type(None))):
+        elif isinstance(key, (slice, int, type(None), list)):
             return Slice(self, (key,))
         raise ValueError("Not understood %s[%s]" % (self, key))
 

@@ -46,3 +46,8 @@ def test_negative_slice():
 def test_None_slice():
     x = symbol('x', '10 * 10 * int32')
     assert x[:5, None, -3:].shape == (5, 1, 3)
+
+
+def test_list_slice():
+    x = symbol('x', '10 * 10 * int32')
+    assert x[[1, 2, 3], [4, 5]].shape == (3, 2)
