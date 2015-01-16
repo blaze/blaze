@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 from pandas import DataFrame, Series
 from datashape import to_numpy, to_numpy_dtype
+from numbers import Number
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
@@ -47,8 +48,9 @@ except ImportError:
         return compute(t._scalar_expr, *data, **kwargs)
 
 
-for i in range(1, 11):
-    compute_up.register(Broadcast, *([np.ndarray] * i))(broadcast_ndarray)
+compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
+for i in range(2, 6):
+    compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))

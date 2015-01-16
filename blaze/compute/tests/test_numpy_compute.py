@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary
+from blaze.expr import symbol, by, exp, summary, Broadcast
 from blaze import sin
 from into import into
 from datashape import discover, to_numpy, dshape
@@ -348,3 +348,13 @@ def test_mixed_types():
     expected = (x['total'].sum(axis=0, keepdims=True) /
                 x['count'].sum(axis=0, keepdims=True)).squeeze()
     np.testing.assert_array_equal(result, expected)
+
+
+def test_broadcast_compute_against_numbers_and_arrays():
+    A = symbol('A', '5 * float32')
+    a = symbol('a', 'float32')
+    b = symbol('b', 'float32')
+    x = np.arange(5, dtype='f4')
+    expr = Broadcast((A, b), (a, b), a + b)
+    result = compute(expr, {A: x, b: 10})
+    assert eq(result, x + 10)
