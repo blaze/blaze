@@ -146,6 +146,9 @@ class InteractiveSymbol(Symbol):
         for slot, arg in zip(self.__slots__, state):
             setattr(self, slot, arg)
 
+    def _repr_html_(self):
+        return to_html(self)
+
 
 def Table(*args, **kwargs):
     """ Deprecated, see Data instead """
@@ -253,10 +256,9 @@ def to_html(df):
 @dispatch(Expr)
 def to_html(expr):
     # Tables
-    if ndim(expr) == 1:
-        return to_html(concrete_head(expr))
-
-    return to_html(repr(expr))
+    if not expr._resources() or ndim(expr) != 1:
+        return to_html(repr(expr))
+    return to_html(concrete_head(expr))
 
 
 @dispatch(object)
@@ -284,5 +286,4 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
-Expr._repr_html_ = lambda self: to_html(self)
 Expr.__len__ = table_length
