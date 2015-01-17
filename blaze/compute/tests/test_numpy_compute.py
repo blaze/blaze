@@ -372,7 +372,7 @@ def test_map():
     x = symbol('x', discover(a))
     expr = x.map(f, 'float64')
     result = compute(expr, a)
-    expected = np.sin(a) + 1.03 * np.cos(a) ** 2
+    expected = f(a)
 
     # make sure we're not going to pandas here
     assert type(result) == np.ndarray
