@@ -367,7 +367,7 @@ def test_broadcast_compute_against_numbers_and_arrays():
 
 def test_map():
     pytest.importorskip('numba')
-    a = np.arange(10)
+    a = np.arange(10.0)
     f = lambda x: np.sin(x) + 1.03 * np.cos(x) ** 2
     x = symbol('x', discover(a))
     expr = x.map(f, 'float64')
