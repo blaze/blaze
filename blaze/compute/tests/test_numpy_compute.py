@@ -162,14 +162,17 @@ def test_compute_up_projection():
     assert eq(compute_up(t[['name', 'amount']], x), x[['name', 'amount']])
 
 
-def test_slice():
-    for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
-        assert (compute(t[s], x) == x[s]).all()
-
-
 ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
 
 a = symbol('a', discover(ax))
+
+def test_slice():
+    inds = [0, slice(2), slice(1, 3), slice(None, None, 2), [1, 2, 3],
+            (0, 1), (0, slice(1, 3)), (slice(0, 3), slice(3, 1, -1)),
+            (0, [1, 2])]
+    for s in inds:
+        assert (compute(a[s], ax) == ax[s]).all()
+
 
 def test_array_reductions():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:
