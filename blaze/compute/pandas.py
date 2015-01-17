@@ -493,7 +493,7 @@ def compute_up(expr, df, **kwargs):
     index = expr.index
     if isinstance(index, tuple) and len(index) == 1:
         index = index[0]
-    if isinstance(index, _inttypes):
+    if isinstance(index, _inttypes + (list,)):
         return df.iloc[index]
     elif isinstance(index, slice):
         if index.stop is not None:

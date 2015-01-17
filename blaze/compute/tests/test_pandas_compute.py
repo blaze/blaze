@@ -578,6 +578,7 @@ def test_frame_slice():
     tm.assert_frame_equal(compute(t[:2], df), df.iloc[:2])
     tm.assert_frame_equal(compute(t[1:3], df), df.iloc[1:3])
     tm.assert_frame_equal(compute(t[1::2], df), df.iloc[1::2])
+    tm.assert_frame_equal(compute(t[[2, 0]], df), df.iloc[[2, 0]])
 
 
 def test_series_slice():
