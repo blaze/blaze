@@ -83,6 +83,11 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 |                 |                    for filename in                              |                                                   |
 |                 |                    glob.glob('path/to/*.csv')])                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+| Save result     | .. code-block:: python                                          | .. code-block:: python                            |
+| to CSV file     |                                                                 |                                                   |
+|                 |    df[df.amount < 0].to_csv('output.csv')                       |    into('output.csv', df[df.amount < 0]           |
+|                 |                                                                 |                                                   |
++-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Read from       | .. code-block:: python                                          | .. code-block:: python                            |
 | SQL database    |                                                                 |                                                   |
 |                 |    import sqlalchemy as sa                                      |    df = Data('sqlite://db.db::t')                 |
