@@ -288,7 +288,8 @@ def table_length(expr):
 Expr.__repr__ = expr_repr
 Expr.__len__ = table_length
 
-def intonumpy(data, dtype=None):
+def intonumpy(data, dtype=None, **kwargs):
+    # TODO: Don't ignore other kwargs like copy
     result = into(np.ndarray, data)
     if dtype:
         result = result.astype(dtype)

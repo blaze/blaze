@@ -7,6 +7,7 @@ from blaze.compute.python import compute
 from blaze.expr import symbol
 from datashape import dshape
 from blaze.utils import tmpfile, example
+from blaze.compatibility import xfail
 import pytest
 import sys
 
@@ -299,3 +300,10 @@ def test_iter():
     x = np.ones(4)
     d = Data(x)
     assert list(d + 1) == [2, 2, 2, 2]
+
+
+@xfail(reason="DataFrame constructor doesn't yet support __array__")
+def test_DataFrame():
+    x = np.array([(1, 2), (1., 2.)], dtype=[('a', 'i4'), ('b', 'f4')])
+    d = Data(x)
+    assert isinstance(pd.DataFrame(d), pd.DataFrame)
