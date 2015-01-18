@@ -76,13 +76,6 @@ def Data(data, dshape=None, name=None, fields=None, columns=None,
 
     ds = datashape.dshape(dshape)
 
-    if (hasattr(data, 'schema')
-         and isinstance(data.schema, (DataShape, str, unicode))
-         and ds.measure != data.dshape.measure):
-        raise TypeError('%s schema %s does not match schema %s' %
-                        (type(data).__name__, data.schema,
-                                              ds.measure))
-
     name = name or next(names)
     result = InteractiveSymbol(data, ds, name)
 
