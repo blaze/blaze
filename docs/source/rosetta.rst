@@ -15,37 +15,37 @@ Imports and Construction
 
    # construct a DataFrame
    df = pd.DataFrame({
-      'name': 'Alice Bob Joe Bob'.split(),
-      'amount': np.random.rand(4) * 1000,
-      'id': np.arange(4)
-   })
-
-   df2 = pd.DataFrame({
-      'name': 'Alice Bob Joe Bob Alice'.split(),
-      'amount': np.random.rand(5) * 1000,
-      'id': np.arange(5)
+      'name': ['Alice', 'Bob', 'Joe', 'Bob'],
+      'amount': [100, 200, 300, 400],
+      'id': [1, 2, 3, 4],
    })
 
    # put `df` into a Blaze Data object
    df = Data(df)
-   df2 = Data(df2)
 
 
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Computation     | Pandas                                                          | Blaze                                             |
 +=================+=================================================================+===================================================+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
+| Column          |                                                                 |                                                   |
+| Arithmetic      |    df.amount * 2                                                |    df.amount * 2                                  |
++-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+|                 | .. code-block:: python                                          | .. code-block:: python                            |
+| Multiple        |                                                                 |                                                   |
+| Columns         |    df[['id', 'amount']]                                         |    df[['id', 'amount']]                           |
++-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+|                 | .. code-block:: python                                          | .. code-block:: python                            |
+|                 |                                                                 |                                                   |
+| Selection       |    df[df.amount > 300]                                          |    df[df.amount > 300]                            |
++-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+|                 | .. code-block:: python                                          | .. code-block:: python                            |
 |  Group By       |                                                                 |                                                   |
 |                 |    df.groupby('name').amount.mean()                             |    by(df.name, amount=df.amount.mean())           |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 | Join            |                                                                 |                                                   |
-|                 |    pd.merge(df, df2, on='name')                                 |    join(df, df2,                                  |
-|                 |                                                                 |         on_left='name', on_right='name')          |
-+-----------------+-----------------------------------------------------------------+---------------------------------------------------+
-|                 | .. code-block:: python                                          | .. code-block:: python                            |
-|                 |                                                                 |                                                   |
-| Selection       |    df[df.amount > 300]                                          |    df[df.amount > 300]                            |
+|                 |    pd.merge(df, df2, on='name')                                 |    join(df, df2, 'name')                          |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |                 |                                                                 |                                                   |
@@ -66,10 +66,6 @@ Imports and Construction
 | Reductions      |    df.amount.mean()                                             |    df.amount.mean()                               |
 |                 |    df.amount.value_counts()                                     |    df.amount.count_values()                       |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
-|                 | .. code-block:: python                                          | .. code-block:: python                            |
-|                 |                                                                 |                                                   |
-| Projection      |    df[['id', 'amount']]                                         |    df[['id', 'amount']]                           |
-+-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 
 Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `into <https://github.com/ContinuumIO/into>`_ project.
 
@@ -81,16 +77,16 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Operation       | Pandas                                                          | Blaze                                             |
 +=================+=================================================================+===================================================+
-| Reading a       | .. code-block:: python                                          | .. code-block:: python                            |
+| Load            | .. code-block:: python                                          | .. code-block:: python                            |
 | directory of    |                                                                 |                                                   |
-| CSV files       |    df = pd.concat([pd.read_csv(filename)                        |    df = into(pd.DataFrame,                        |
-|                 |                    for filename in                              |              'path/to/*.csv')                     |
+| CSV files       |    df = pd.concat([pd.read_csv(filename)                        |    df = Data('path/to/*.csv')                     |
+|                 |                    for filename in                              |                                                   |
 |                 |                    glob.glob('path/to/*.csv')])                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
-| Reading in a    | .. code-block:: python                                          | .. code-block:: python                            |
-| table from      |                                                                 |                                                   |
-| a SQLite        |    import sqlalchemy as sa                                      |    df = into(pd.DataFrame,                        |
-| database        |    engine = sa.create_engine('sqlite://db.db')                  |              'sqlite://db.db::t')                 |
+| Read from       | .. code-block:: python                                          | .. code-block:: python                            |
+| SQL database    |                                                                 |                                                   |
+|                 |    import sqlalchemy as sa                                      |    df = Data('sqlite://db.db::t')                 |
+|                 |    engine = sa.create_engine('sqlite://db.db')                  |                                                   |
 |                 |    df = pd.read_sql('select * from t',                          |                                                   |
 |                 |                     con=engine)                                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
