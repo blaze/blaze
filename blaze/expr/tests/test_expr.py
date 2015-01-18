@@ -82,11 +82,6 @@ def test_fields_with_spaces():
     assert e.a_b.isidentical(e['a.b'])
 
 
-def test_iter_raises_not_implemented_Error():
-    e = symbol('e', '5 * {x: int, "a b": int}')
-    assert raises(NotImplementedError, lambda: iter(e))
-
-
 def test_selection_name_matches_child():
     t = symbol('t', 'var * {x: int, "a.b": int}')
     assert t.x[t.x > 0]._name == t.x._name

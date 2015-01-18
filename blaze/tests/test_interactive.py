@@ -293,3 +293,9 @@ def test_python_scalar_protocols():
     assert float(d + 1.0) == 2.0
     assert bool(d > 0) is True
     assert complex(d + 1.0j) == 1 + 1.0j
+
+
+def test_iter():
+    x = np.ones(4)
+    d = Data(x)
+    assert list(d + 1) == [2, 2, 2, 2]
