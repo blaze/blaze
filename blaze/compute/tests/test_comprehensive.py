@@ -119,7 +119,7 @@ def test_base():
         if iscollection(expr.dshape):
             model = into(DataFrame, into(np.ndarray, expr._subs({t: Data(base, t.dshape)})))
         else:
-            model = expr._subs({t: Data(base, t.dshape)})
+            model = compute(expr._subs({t: Data(base, t.dshape)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):

@@ -40,7 +40,7 @@ def df_all(a_df, b_df):
     This method doesn't check the index which can be manipulated during
     operations.
     """
-    assert all(a_df.columns == b_df.columns)
+    assert np.all(a_df.columns == b_df.columns)
     for col in a_df.columns:
         assert np.all(a_df[col] == b_df[col])
     return True

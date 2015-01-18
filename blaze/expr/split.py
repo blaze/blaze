@@ -78,8 +78,6 @@ def path_split(leaf, expr):
         elif not isinstance(node, can_split):
             return last
         last = node
-    if not node:
-        raise ValueError()
     return node
 
 
@@ -110,7 +108,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
     """
     center = path_split(leaf, expr)
-    if not chunk:
+    if chunk is None:
         if leaf.ndim > 1:
             raise ValueError("Please provide a chunk symbol")
         else:
@@ -120,7 +118,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
                                             keepdims=True)
 
-    if not agg:
+    if agg is None:
         agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
         agg = symbol('aggregate', agg_dshape)

@@ -33,7 +33,7 @@ class Sort(Expr):
 
     @property
     def key(self):
-        if not self._key:
+        if self._key is () or self._key is None:
             return self._child.fields[0]
         if isinstance(self._key, tuple):
             return list(self._key)

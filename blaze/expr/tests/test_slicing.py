@@ -6,7 +6,6 @@ def test_array_dshape():
     x = symbol('x', '5 * 3 * float32')
     assert x.shape == (5, 3)
     assert x.schema == dshape('float32')
-    assert x
     assert len(x) == 5
     assert x.ndim == 2
 

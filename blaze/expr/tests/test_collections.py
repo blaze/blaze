@@ -1,6 +1,7 @@
 from blaze.expr import *
 from blaze.expr.collections import *
 from blaze.utils import raises
+from blaze.compatibility import builtins
 from toolz import isdistinct
 
 
@@ -23,7 +24,8 @@ def test_transform():
     expr = transform(t, z=t.x + t.y)
     assert expr.fields == ['x', 'y', 'z']
 
-    assert (t.x + t.y) in expr._subterms()
+    assert builtins.any((t.x + t.y).isidentical(node)
+                for node in expr._subterms())
 
 
 def test_distinct():

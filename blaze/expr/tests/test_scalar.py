@@ -68,24 +68,24 @@ def test_relationals():
     x = symbol('x', 'real')
     for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1, ~b]:
         assert expr.dshape == dshape('bool')
-        assert eval(str(expr)) == expr
+        assert eval(str(expr)).isidentical(expr)
 
 
 def test_numbers():
     x = symbol('x', 'real')
-    y = symbol('x', 'int')
+    y = symbol('y', 'int')
     for expr in [x + 1, x - 1, x * 1, x + y, x - y, x / y, x * y + x + y,
                  x**y, x**2, 2**x, x % 5, -x,
                  sin(x), cos(x ** 2), exp(log(y))]:
         assert expr.dshape == dshape('real')
-        assert eval(str(expr)) == expr
+        assert eval(str(expr)).isidentical(expr)
 
     assert (-y).dshape == dshape('int')
 
 
 @xfail(reason="TODO")
 def test_neg_dshape_unsigned():
-    y = symbol('x', 'uint32')
+    y = symbol('y', 'uint32')
     assert (-y).dshape == dshape('int32')
 
 
