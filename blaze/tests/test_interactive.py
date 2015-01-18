@@ -285,3 +285,11 @@ def test___array__():
     d = Data(x[:2])
     x[2:] = d + 1
     assert x.tolist() == [1, 1, 2, 2]
+
+
+def test_python_scalar_protocols():
+    d = Data(1)
+    assert int(d + 1) == 2
+    assert float(d + 1.0) == 2.0
+    assert bool(d > 0) is True
+    assert complex(d + 1.0j) == 1 + 1.0j

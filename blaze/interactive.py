@@ -295,3 +295,7 @@ def intonumpy(data, dtype=None):
     return result
 
 Expr.__array__ = intonumpy
+Expr.__int__ = lambda x: int(compute(x))
+Expr.__float__ = lambda x: float(compute(x))
+Expr.__complex__ = lambda x: complex(compute(x))
+Expr.__bool__ = lambda x: bool(compute(x))
