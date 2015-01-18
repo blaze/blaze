@@ -275,3 +275,8 @@ def test_incompatible_types():
     result = compute(d.id == 3)
     expected = pd.Series([False, False, True, False, False], name='id')
     tm.assert_series_equal(result, expected)
+
+
+def test___array__():
+    d = Data(x)
+    assert (np.array(d + 1) == x + 1).all()

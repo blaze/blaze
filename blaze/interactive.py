@@ -287,3 +287,4 @@ def table_length(expr):
 
 Expr.__repr__ = expr_repr
 Expr.__len__ = table_length
+Expr.__array__ = into(np.ndarray)
