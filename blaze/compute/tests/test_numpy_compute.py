@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 import numpy as np
 import pandas as pd
 from datetime import datetime, date
@@ -361,3 +363,19 @@ def test_broadcast_compute_against_numbers_and_arrays():
     expr = Broadcast((A, b), (a, b), a + b)
     result = compute(expr, {A: x, b: 10})
     assert eq(result, x + 10)
+
+
+def test_map():
+    pytest.importorskip('numba')
+    a = np.arange(10.0)
+    f = lambda x: np.sin(x) + 1.03 * np.cos(x) ** 2
+    x = symbol('x', discover(a))
+    expr = x.map(f, 'float64')
+    result = compute(expr, a)
+    expected = f(a)
+
+    # make sure we're not going to pandas here
+    assert type(result) == np.ndarray
+    assert type(result) == type(expected)
+
+    np.testing.assert_array_equal(result, expected)
