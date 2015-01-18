@@ -278,5 +278,10 @@ def test_incompatible_types():
 
 
 def test___array__():
+    x = np.ones(4)
     d = Data(x)
     assert (np.array(d + 1) == x + 1).all()
+
+    d = Data(x[:2])
+    x[2:] = d + 1
+    assert x.tolist() == [1, 1, 2, 2]

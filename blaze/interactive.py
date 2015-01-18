@@ -287,4 +287,11 @@ def table_length(expr):
 
 Expr.__repr__ = expr_repr
 Expr.__len__ = table_length
-Expr.__array__ = into(np.ndarray)
+
+def intonumpy(data, dtype=None):
+    result = into(np.ndarray, data)
+    if dtype:
+        result = result.astype(dtype)
+    return result
+
+Expr.__array__ = intonumpy
