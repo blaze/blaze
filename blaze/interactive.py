@@ -281,7 +281,7 @@ def into(a, b, **kwargs):
 def table_length(expr):
     try:
         return expr._len()
-    except TypeError:
+    except ValueError:
         return compute(expr.count())
 
 
