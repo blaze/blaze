@@ -49,6 +49,7 @@ User facing
    install
    quickstart
    queries
+   rosetta
    uri
    csv
    sql
