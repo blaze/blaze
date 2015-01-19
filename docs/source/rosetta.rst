@@ -3,7 +3,6 @@ Pandas to Blaze
 
 This page maps pandas constructs to blaze constructs.
 
-
 Imports and Construction
 ------------------------
 
@@ -11,7 +10,7 @@ Imports and Construction
 
    import numpy as np
    import pandas as pd
-   from blaze import Data, by, join
+   from blaze import Data, by, join, merge
 
    # construct a DataFrame
    df = pd.DataFrame({
@@ -20,7 +19,7 @@ Imports and Construction
       'id': [1, 2, 3, 4],
    })
 
-   # put `df` into a Blaze Data object
+   # put the `df` DataFrame into a Blaze Data object
    df = Data(df)
 
 
@@ -42,6 +41,8 @@ Imports and Construction
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |  Group By       |                                                                 |                                                   |
 |                 |    df.groupby('name').amount.mean()                             |    by(df.name, amount=df.amount.mean())           |
+|                 |    df.groupby(['name', 'id']).amount.mean()                     |    by(merge(df.name, df.id),                      |
+|                 |                                                                 |       amount=df.amount.mean())                    |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 | Join            |                                                                 |                                                   |
@@ -50,24 +51,30 @@ Imports and Construction
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |                 |                                                                 |                                                   |
 | Map             |    df.amount.map(lambda x: x + 1)                               |    df.amount.map(lambda x: x + 1,                 |
-|                 |                                                                 |                  'float64')                       |
+|                 |                                                                 |                  'int64')                         |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |                 |                                                                 |                                                   |
-| Relabel         |    df.rename(columns={'name': 'alias',                          |    df.relabel(name='alias',                       |
+| Relabel Columns |    df.rename(columns={'name': 'alias',                          |    df.relabel(name='alias',                       |
 |                 |                       'amount': 'dollars'})                     |               amount='dollars')                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |                 |                                                                 |                                                   |
 | Drop duplicates |    df.drop_duplicates()                                         |    df.distinct()                                  |
+|                 |    df.name.drop_duplicates()                                    |    df.name.distinct()                             |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |                 |                                                                 |                                                   |
 | Reductions      |    df.amount.mean()                                             |    df.amount.mean()                               |
 |                 |    df.amount.value_counts()                                     |    df.amount.count_values()                       |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+| Column Type     | .. code-block:: python                                          | .. code-block:: python                            |
+| Information     |                                                                 |                                                   |
+|                 |    df.dtypes                                                    |    df.dshape                                      |
+|                 |    df.amount.dtype                                              |    df.amount.dshape                               |
++-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 
-Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `into <https://github.com/ContinuumIO/into>`_ project.
+Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `into <https://github.com/ContinuumIO/into>`_ library.
 
 
 .. code-block:: python
@@ -85,7 +92,7 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Save result     | .. code-block:: python                                          | .. code-block:: python                            |
 | to CSV file     |                                                                 |                                                   |
-|                 |    df[df.amount < 0].to_csv('output.csv')                       |    into('output.csv', df[df.amount < 0]           |
+|                 |    df[df.amount < 0].to_csv('output.csv')                       |    into('output.csv', df[df.amount < 0])          |
 |                 |                                                                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Read from       | .. code-block:: python                                          | .. code-block:: python                            |
