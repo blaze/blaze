@@ -74,7 +74,7 @@ Imports and Construction
 |                 |    df.amount.dtype                                              |    df.amount.dshape                               |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 
-Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `into <https://github.com/ContinuumIO/into>`_ library.
+Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `into <https://github.com/ContinuumIO/into>`_ library. In many cases, blaze will able to handle datasets that can't fit into main memory, which is something that can't be easily done with pandas.
 
 
 .. code-block:: python
