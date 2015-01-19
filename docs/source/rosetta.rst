@@ -92,7 +92,8 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Save result     | .. code-block:: python                                          | .. code-block:: python                            |
 | to CSV file     |                                                                 |                                                   |
-|                 |    df[df.amount < 0].to_csv('output.csv')                       |    into('output.csv', df[df.amount < 0])          |
+|                 |    df[df.amount < 0].to_csv('output.csv')                       |    into('output.csv',                             |
+|                 |                                                                 |         df[df.amount < 0])                        |
 |                 |                                                                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Read from       | .. code-block:: python                                          | .. code-block:: python                            |
