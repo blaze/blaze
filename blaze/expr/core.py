@@ -48,12 +48,6 @@ class Node(object):
     def _inputs(self):
         return tuple([getattr(self, i) for i in self.__inputs__])
 
-    def __nonzero__(self): # pragma: no cover
-        return True
-
-    def __bool__(self):
-        return True
-
     def _leaves(self):
         """ Leaves of an expresion tree
 
@@ -371,7 +365,7 @@ def path(a, b):
         if not a._inputs:
             break
         for child in a._inputs:
-            if b in child._traverse():
+            if any(b.isidentical(node) for node in child._traverse()):
                 a = child
                 break
     yield a

@@ -34,18 +34,6 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                   columns=['name', 'sex', 'amount', 'id'])
 
 
-def df_all(a_df, b_df):
-    """Checks if two dataframes have the same columns
-
-    This method doesn't check the index which can be manipulated during
-    operations.
-    """
-    assert all(a_df.columns == b_df.columns)
-    for col in a_df.columns:
-        assert np.all(a_df[col] == b_df[col])
-    return True
-
-
 def test_series_columnwise():
     s = Series([1, 2, 3], name='a')
     t = symbol('t', 'var * {a: int64}')
@@ -195,9 +183,9 @@ def test_distinct():
                          columns=['name', 'sex', 'amount', 'id'])
     d_t = Distinct(tbig)
     d_df = compute(d_t, dftoobig)
-    assert df_all(d_df, dfbig)
+    tm.assert_frame_equal(d_df, dfbig)
     # Test idempotence
-    assert df_all(compute(d_t, d_df), d_df)
+    tm.assert_frame_equal(compute(d_t, d_df), d_df)
 
 
 def test_by_one():

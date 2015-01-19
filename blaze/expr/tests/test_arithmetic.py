@@ -64,8 +64,8 @@ def test_dir():
     i = symbol('i', '10 * int')
     d = symbol('d', '10 * datetime')
 
-    assert i + 1
-    with pytest.raises(Exception):
+    assert isinstance(i + 1, Add)  # this works
+    with pytest.raises(Exception):  # this doesn't
         d + 1
 
 

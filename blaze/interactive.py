@@ -274,9 +274,24 @@ def into(a, b, **kwargs):
 def table_length(expr):
     try:
         return expr._len()
-    except TypeError:
+    except ValueError:
         return compute(expr.count())
 
 
 Expr.__repr__ = expr_repr
 Expr.__len__ = table_length
+
+def intonumpy(data, dtype=None, **kwargs):
+    # TODO: Don't ignore other kwargs like copy
+    result = into(np.ndarray, data)
+    if dtype:
+        result = result.astype(dtype)
+    return result
+
+Expr.__array__ = intonumpy
+Expr.__int__ = lambda x: int(compute(x))
+Expr.__float__ = lambda x: float(compute(x))
+Expr.__complex__ = lambda x: complex(compute(x))
+Expr.__bool__ = lambda x: bool(compute(x))
+Expr.__nonzero__ = lambda x: bool(compute(x))
+Expr.__iter__ = into(Iterator)

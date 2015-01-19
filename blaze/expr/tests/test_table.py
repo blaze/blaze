@@ -64,17 +64,6 @@ def test_shape():
     assert len(t.shape) == 1
 
 
-def test_table_symbol_bool():
-    t = TableSymbol('t', '10 * {name: string, amount: int}')
-    assert t.__bool__() == True
-
-
-def test_nonzero():
-    t = TableSymbol('t', '10 * {name: string, amount: int}')
-    assert t
-    assert (not not t) is True
-
-
 def test_eq():
     assert TableSymbol('t', '{a: string, b: int}').isidentical(
             TableSymbol('t', '{a: string, b: int}'))
@@ -193,7 +182,6 @@ def test_selection_path_check():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     t2 = t[t.name == 'Alice']
     t3 = t2[t2.amount > 0]
-    assert t3
 
 
 def test_path_issue():
@@ -201,7 +189,7 @@ def test_path_issue():
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 
-    assert t2.sizes in t2.children
+    assert builtins.any(t2.sizes.isidentical(node) for node in t2.children)
 
 
 def test_getattr_doesnt_override_properties():

@@ -7,6 +7,7 @@ from blaze.compute.python import compute
 from blaze.expr import symbol
 from datashape import dshape
 from blaze.utils import tmpfile, example
+from blaze.compatibility import xfail
 import pytest
 import sys
 
@@ -275,3 +276,34 @@ def test_incompatible_types():
     result = compute(d.id == 3)
     expected = pd.Series([False, False, True, False, False], name='id')
     tm.assert_series_equal(result, expected)
+
+
+def test___array__():
+    x = np.ones(4)
+    d = Data(x)
+    assert (np.array(d + 1) == x + 1).all()
+
+    d = Data(x[:2])
+    x[2:] = d + 1
+    assert x.tolist() == [1, 1, 2, 2]
+
+
+def test_python_scalar_protocols():
+    d = Data(1)
+    assert int(d + 1) == 2
+    assert float(d + 1.0) == 2.0
+    assert bool(d > 0) is True
+    assert complex(d + 1.0j) == 1 + 1.0j
+
+
+def test_iter():
+    x = np.ones(4)
+    d = Data(x)
+    assert list(d + 1) == [2, 2, 2, 2]
+
+
+@xfail(reason="DataFrame constructor doesn't yet support __array__")
+def test_DataFrame():
+    x = np.array([(1, 2), (1., 2.)], dtype=[('a', 'i4'), ('b', 'f4')])
+    d = Data(x)
+    assert isinstance(pd.DataFrame(d), pd.DataFrame)
