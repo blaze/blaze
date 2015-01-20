@@ -29,11 +29,11 @@ def sql():
 def test_column(sql):
     t = Data(sql)
 
-    r = compute(t['x'])
+    r = list(t['x'])
     assert r == [1, 10, 100]
-    assert compute(t[['x']]) == [(1,), (10,), (100,)]
+    assert list(t[['x']]) == [(1,), (10,), (100,)]
 
-    assert compute(t.count()) == 3
+    assert int(t.count()) == 3
 
 
 def test_drop(sql):

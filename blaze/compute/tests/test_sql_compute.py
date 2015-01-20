@@ -57,11 +57,13 @@ def test_projection():
 
 
 def test_eq():
-    assert str(compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
+    assert str(compute(t['amount'] == 100, s, post_compute=False)) == \
+            str(s.c.amount == 100)
 
 
 def test_eq_unicode():
-    assert str(compute(t['name'] == u'Alice', s)) == str(s.c.name == u'Alice')
+    assert str(compute(t['name'] == u'Alice', s, post_compute=False)) == \
+            str(s.c.name == u'Alice')
 
 
 def test_selection():
@@ -72,18 +74,22 @@ def test_selection():
 
 
 def test_arithmetic():
-    assert str(computefull(t['amount'] + t['id'], s)) == \
+    assert str(compute(t['amount'] + t['id'], s)) == \
             str(sa.select([s.c.amount + s.c.id]))
-    assert str(compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
-    assert str(compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
+    assert str(compute(t['amount'] + t['id'], s, post_compute=False)) == \
+            str(s.c.amount + s.c.id)
+    assert str(compute(t['amount'] * t['id'], s, post_compute=False)) == \
+            str(s.c.amount * s.c.id)
 
-    assert str(compute(t['amount'] * 2, s)) == str(s.c.amount * 2)
-    assert str(compute(2 * t['amount'], s)) == str(2 * s.c.amount)
+    assert str(compute(t['amount'] * 2, s, post_compute=False)) == \
+            str(s.c.amount * 2)
+    assert str(compute(2 * t['amount'], s, post_compute=False)) == \
+            str(2 * s.c.amount)
 
-    assert (str(compute(~(t['amount'] > 10), s)) ==
+    assert (str(compute(~(t['amount'] > 10), s, post_compute=False)) ==
             "~(accounts.amount > :amount_1)")
 
-    assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
+    assert str(compute(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
 
 def test_join():
@@ -193,22 +199,24 @@ def test_multi_column_join():
 
 
 def test_unary_op():
-    assert str(compute(exp(t['amount']), s)) == str(sa.func.exp(s.c.amount))
+    assert str(compute(exp(t['amount']), s, post_compute=False)) == \
+            str(sa.func.exp(s.c.amount))
 
 
 def test_unary_op():
-    assert str(compute(-t['amount'], s)) == str(-s.c.amount)
+    assert str(compute(-t['amount'], s, post_compute=False)) == \
+            str(-s.c.amount)
 
 
 def test_reductions():
-    assert str(compute(sum(t['amount']), s)) == \
+    assert str(compute(sum(t['amount']), s, post_compute=False)) == \
             str(sa.sql.functions.sum(s.c.amount))
-    assert str(compute(mean(t['amount']), s)) == \
+    assert str(compute(mean(t['amount']), s, post_compute=False)) == \
             str(sa.sql.func.avg(s.c.amount))
-    assert str(compute(count(t['amount']), s)) == \
+    assert str(compute(count(t['amount']), s, post_compute=False)) == \
             str(sa.sql.func.count(s.c.amount))
 
-    assert 'amount_sum' == compute(sum(t['amount']), s).name
+    assert 'amount_sum' == compute(sum(t['amount']), s, post_compute=False).name
 
 
 def test_nelements():
@@ -226,12 +234,12 @@ def test_nelements_axis_1():
 
 
 def test_count_on_table():
-    result = select(compute(t.count(), s))
+    result = compute(t.count(), s)
     assert normalize(str(result)) == normalize("""
     SELECT count(accounts.id) as count_1
     FROM accounts""")
 
-    result = select(compute(t[t.amount > 0].count(), s))
+    result = compute(t[t.amount > 0].count(), s)
     assert (
         normalize(str(result)) == normalize("""
         SELECT count(accounts.id) as count_1
@@ -247,7 +255,7 @@ def test_count_on_table():
               WHERE accounts.amount > :amount_1) as alias"""))
 
 def test_distinct():
-    result = str(compute(Distinct(t['amount']), s))
+    result = str(compute(Distinct(t['amount']), s, post_compute=False))
 
     assert 'distinct' in result.lower()
     assert 'amount' in result.lower()
@@ -408,8 +416,8 @@ def test_head():
 
 
 def test_label():
-    assert str(compute((t['amount'] * 10).label('foo'), s)) == \
-            str((s.c.amount * 10).label('foo'))
+    assert str(compute((t['amount'] * 10).label('foo'), s, post_compute=False))\
+            == str((s.c.amount * 10).label('foo'))
 
 
 def test_relabel():
@@ -807,7 +815,7 @@ def test_computation_directly_on_sqlalchemy_Tables():
     name.create()
 
     s = symbol('s', discover(name))
-    result = compute(s.id + 1, name)
+    result = into(list, compute(s.id + 1, name))
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
 
