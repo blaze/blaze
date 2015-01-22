@@ -29,6 +29,7 @@ from copy import copy
 import toolz
 from multipledispatch import MDNotImplementedError
 from datashape.predicates import isscalar, isrecord
+from into.backends.sql import metadata_of_engine
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
@@ -529,12 +530,13 @@ def compute_up(t, s, **kwargs):
 
 @toolz.memoize
 def table_of_metadata(metadata, name):
-    metadata.reflect()
+    if name not in metadata.tables:
+        metadata.reflect(views=metadata.bind.dialect.supports_views)
     return metadata.tables[name]
 
 
 def table_of_engine(engine, name):
-    metadata = sqlalchemy.MetaData(engine)
+    metadata = metadata_of_engine(engine)
     return table_of_metadata(metadata, name)
 
 
