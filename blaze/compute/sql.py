@@ -555,38 +555,6 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-@dispatch(Expr, sqlalchemy.sql.ClauseElement)
-def post_compute(expr, query, scope=None):
-    """ Execute SQLAlchemy query against SQLAlchemy engines
-
-    If the result of compute is a SQLAlchemy query then it is likely that the
-    data elements are themselves SQL objects which contain SQLAlchemy engines.
-    We find these engines and, if they are all the same, run the query against
-    these engines and return the result.
-    """
-    if not all(isinstance(val, (Engine, MetaData, Table)) for val in scope.values()):
-        return query
-
-    engines = set(filter(None, map(engine_of, scope.values())))
-
-    if not engines:
-        return query
-
-    if len(set(map(str, engines))) != 1:
-        raise NotImplementedError("Expected single SQLAlchemy engine")
-
-    engine = toolz.first(engines)
-
-    with engine.connect() as conn:  # Perform query
-        result = conn.execute(select(query)).fetchall()
-
-    if isscalar(expr.dshape):
-        return result[0][0]
-    if isscalar(expr.dshape.measure):
-        return [x[0] for x in result]
-    return result
-
-
 from ..expr.broadcast import broadcast_collect
 
 
@@ -598,3 +566,8 @@ def optimize(expr, _):
 @dispatch(Field, sqlalchemy.MetaData)
 def compute_up(expr, data, **kwargs):
     return table_of_metadata(data, expr._name)
+
+
+@dispatch(Expr, sa.sql.elements.ClauseElement)
+def post_compute(_, s, **kwargs):
+    return select(s)

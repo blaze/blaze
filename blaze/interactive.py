@@ -172,6 +172,15 @@ def concrete_head(expr, n=10):
         return compute(expr)
 
     head = expr.head(n + 1)
+
+    if not iscollection(expr.dshape):
+        return into(object, head)
+    elif isrecord(expr.dshape.measure):
+        return into(DataFrame, head)
+    else:
+        df = into(DataFrame, head)
+        df.columns = [expr._name]
+        return df
     result = compute(head)
 
     if len(result) == 0:
@@ -284,14 +293,22 @@ Expr.__len__ = table_length
 def intonumpy(data, dtype=None, **kwargs):
     # TODO: Don't ignore other kwargs like copy
     result = into(np.ndarray, data)
-    if dtype:
+    if dtype and result.dtype != dtype:
         result = result.astype(dtype)
     return result
 
+
+def convert_base(typ, x):
+    x = compute(x)
+    try:
+        return typ(x)
+    except:
+        return typ(into(typ, x))
+
 Expr.__array__ = intonumpy
-Expr.__int__ = lambda x: int(compute(x))
-Expr.__float__ = lambda x: float(compute(x))
-Expr.__complex__ = lambda x: complex(compute(x))
-Expr.__bool__ = lambda x: bool(compute(x))
-Expr.__nonzero__ = lambda x: bool(compute(x))
+Expr.__int__ = lambda x: convert_base(int, x)
+Expr.__float__ = lambda x: convert_base(float, x)
+Expr.__complex__ = lambda x: convert_base(complex, x)
+Expr.__bool__ = lambda x: convert_base(bool, x)
+Expr.__nonzero__ = lambda x: convert_base(bool, x)
 Expr.__iter__ = into(Iterator)
