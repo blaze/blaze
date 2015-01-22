@@ -8,8 +8,8 @@ disappointment.  Blaze is limited;  learning those limitations can direct you
 to greater productivity.
 
 First and foremost, Blaze does not replace Pandas.  Pandas will always be more
-feature rich and mature than Blaze.  There are things that you simply can't do
-if you want to generalize out of memory.
+feature rich and more mature than Blaze.  There are things that you simply
+can't do if you want to generalize out of memory.
 
 If your data fits nicely in memory then use NumPy/Pandas.  Your data probably
 fits nicely in memory.
@@ -41,9 +41,10 @@ Of course, others can build off of Blaze in the same way that ``scipy`` and
 ``scikit-learn`` built off of ``numpy/pandas``.  Blaze devs often also do this
 work (it's important) but we generally don't include it in the Blaze library.
 
-It's also worth mentioning different classes of algorithms work well on small
-vs large datasets.  It could be that the algorithm that you like most may not
-easily extend beyond the scope of memory.
+It's also worth mentioning that different classes of algorithms work well on
+small vs large datasets.  It could be that the algorithm that you like most may
+not easily extend beyond the scope of memory.  A direct translation of
+scikit-learn algorithms to Blaze would likely be computationally disastrous.
 
 
 What Blaze Does
@@ -52,20 +53,19 @@ What Blaze Does
 Blaze is a query system that looks like NumPy/Pandas.  You write Blaze
 queries, Blaze translates those queries to something else (like SQL), and ships
 those queries to various database to run on other people's fast code.  It
-smoothes out this process to make interacting with foreign data *feel* like
-using Pandas.  It's like a glorified courier.
+smoothes out this process to make interacting with foreign data as accessible
+as using Pandas.  This is actually quite difficult.
 
 Blaze increases human accessibility, not computational performance.
 
 
-We work on other things that might be fast
-------------------------------------------
+But we work on other things
+---------------------------
 
 Blaze devs interact with a lot of other computational systems.  Sometimes we
 find holes where systems should exist, but don't.  In these cases we may write
 our own computational system.  In these cases we naturally hook up Blaze to
-serve as a front-end query system.
+serve as a front-end query system.  We often write about these experiments.
 
-As a result you may see us talking about performance numbers and doing some of
-the things we just said Blaze doesn't do.  These things aren't Blaze (but you
-*can* use Blaze use them easily.)
+As a result you may see us doing some of the things we just said "Blaze doesn't
+do".  These things aren't Blaze (but you *can* use Blaze use them easily.)
