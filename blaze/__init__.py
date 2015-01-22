@@ -57,7 +57,6 @@ try:
 except ImportError:
     pass
 try:
-    from .h5py import *
     from .compute.h5py import *
 except ImportError:
     pass
