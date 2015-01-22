@@ -1,7 +1,7 @@
 import numpy as np
 from blaze import *
 from bokeh.plotting import *
-from bokeh.objects import HoverTool, ColumnDataSource
+from bokeh.models import HoverTool, ColumnDataSource
 from bokeh.embed import *
 from bokeh.resources import Resources
 from collections import OrderedDict
