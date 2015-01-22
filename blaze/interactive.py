@@ -139,9 +139,6 @@ class InteractiveSymbol(Symbol):
         for slot, arg in zip(self.__slots__, state):
             setattr(self, slot, arg)
 
-    def _repr_html_(self):
-        return to_html(self)
-
 
 def Table(*args, **kwargs):
     """ Deprecated, see Data instead """
@@ -288,6 +285,7 @@ def table_length(expr):
 
 
 Expr.__repr__ = expr_repr
+Expr._repr_html_ = lambda x: to_html(x)
 Expr.__len__ = table_length
 
 def intonumpy(data, dtype=None, **kwargs):
