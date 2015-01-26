@@ -8,6 +8,7 @@ except ImportError:
 from pandas import DataFrame
 from into import into, convert, append, resource, drop
 from into.backends.csv import CSV
+from into.backends.json import JSON, JSONLines
 
 from multipledispatch import halt_ordering, restart_ordering
 
@@ -21,9 +22,9 @@ from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.functions import *
 from .index import create_index
-from .json import *
 from .interactive import *
 from .compute.csv import *
+from .compute.json import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
