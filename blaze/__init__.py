@@ -24,6 +24,7 @@ from .index import create_index
 from .json import *
 from .interactive import *
 from .compute.csv import *
+from .compute.json import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
