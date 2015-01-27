@@ -1,8 +1,9 @@
 from .core import pre_compute
 from ..dispatch import dispatch
-from ..expr import Expr, Head, ElemWise, Distinct, Symbol, Projection, Field
+from ..expr import Expr
 from into.backends.json import JSON, JSONLines
-from into import into, Iterator
+from into import into
+from collections import Iterator
 from into.utils import records_to_tuples
 
 
