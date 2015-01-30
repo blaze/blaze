@@ -1077,6 +1077,6 @@ def test_merge_compute():
 
 
 def test_head_limit():
-    assert compute(t.head(5).head(10))._limit == 5
-    assert compute(t.head(10).head(5))._limit == 5
-    assert compute(t.head(10).head(10))._limit == 5
+    assert compute(t.head(5).head(10), s)._limit == 5
+    assert compute(t.head(10).head(5), s)._limit == 5
+    assert compute(t.head(10).head(10), s)._limit == 10
