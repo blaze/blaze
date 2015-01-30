@@ -457,14 +457,9 @@ def compute_up(t, s, **kwargs):
     return s.order_by(col)
 
 
-@dispatch(Head, Select)
+@dispatch(Head, (Select, ClauseElement))
 def compute_up(t, s, **kwargs):
-    return s.limit(t.n)
-
-
-@dispatch(Head, ClauseElement)
-def compute_up(t, s, **kwargs):
-    return select(s).limit(t.n)
+    return select([s]).limit(t.n)
 
 
 @dispatch(Label, ClauseElement)
