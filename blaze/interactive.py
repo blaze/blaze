@@ -237,7 +237,7 @@ def expr_repr(expr, n=10):
     # Other
     dat = expr._resources().values()
     if len(dat) == 1:
-        dat = dat[0]
+        dat = list(dat)[0]  # may be dict_values
 
     s = 'Data:       %s' % dat
     if not isinstance(expr, Symbol):
