@@ -459,7 +459,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Head, Select)
 def compute_up(t, s, **kwargs):
-    if s._limit is not None and s._limit < t.n:
+    if s._limit is not None and s._limit <= t.n:
         return s
     return s.limit(t.n)
 
