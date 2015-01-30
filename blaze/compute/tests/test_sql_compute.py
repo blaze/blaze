@@ -4,11 +4,17 @@ import pytest
 sqlalchemy = pytest.importorskip('sqlalchemy')
 sa = sqlalchemy
 
-import datashape
 import re
-from blaze.compute.sql import (compute, computefull, select, lower_column,
-        compute_up)
+from itertools import repeat
+
+import pandas as pd
+import pandas.util.testing as tm
+
+import datashape
+
+from blaze.compute.sql import compute, computefull, select, lower_column
 from blaze.expr import *
+from blaze import Data
 from blaze.compatibility import xfail
 from blaze.utils import unique
 from pandas import DataFrame
@@ -1072,3 +1078,18 @@ def test_merge_compute():
         assert result == [(1, 'Alice', 100, 1000),
                           (2, 'Bob',   200, 2000),
                           (4, 'Dennis',400, 4000)]
+
+
+def test_head_compute():
+    data = tm.makeMixedDataFrame()
+    t = symbol('t', discover(data))
+    db = into('sqlite:///:memory:::t', data, dshape=t.dshape)
+    n = 2
+    d = Data(db)
+
+    # skip the header and the ... at the end of the repr
+    expr = d.head(n)
+    s = repr(expr)
+    split = s.split('\n')
+    result = (split if split[-1] != '...' else split[:-1])[1:]
+    assert len(result) == n
