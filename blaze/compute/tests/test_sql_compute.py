@@ -4,10 +4,12 @@ import pytest
 sqlalchemy = pytest.importorskip('sqlalchemy')
 sa = sqlalchemy
 
-import datashape
 import re
+
+import datashape
+
 from blaze.compute.sql import (compute, computefull, select, lower_column,
-        compute_up)
+                               compute_up)
 from blaze.expr import *
 from blaze.compatibility import xfail
 from blaze.utils import unique
@@ -1072,3 +1074,9 @@ def test_merge_compute():
         assert result == [(1, 'Alice', 100, 1000),
                           (2, 'Bob',   200, 2000),
                           (4, 'Dennis',400, 4000)]
+
+
+def test_head_limit():
+    assert compute(t.head(5).head(10), s)._limit == 5
+    assert compute(t.head(10).head(5), s)._limit == 5
+    assert compute(t.head(10).head(10), s)._limit == 10

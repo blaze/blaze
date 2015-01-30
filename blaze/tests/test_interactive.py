@@ -2,6 +2,7 @@ from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
 
 from into import into, append
 from into.backends.csv import CSV
+from blaze import discover
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from blaze.expr import symbol
@@ -308,3 +309,18 @@ def test_DataFrame():
     x = np.array([(1, 2), (1., 2.)], dtype=[('a', 'i4'), ('b', 'f4')])
     d = Data(x)
     assert isinstance(pd.DataFrame(d), pd.DataFrame)
+
+
+def test_head_compute():
+    data = tm.makeMixedDataFrame()
+    t = symbol('t', discover(data))
+    db = into('sqlite:///:memory:::t', data, dshape=t.dshape)
+    n = 2
+    d = Data(db)
+
+    # skip the header and the ... at the end of the repr
+    expr = d.head(n)
+    s = repr(expr)
+    assert '...' not in s
+    result = s.split('\n')[1:]
+    assert len(result) == n
