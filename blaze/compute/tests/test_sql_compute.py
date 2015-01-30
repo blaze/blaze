@@ -5,14 +5,13 @@ sqlalchemy = pytest.importorskip('sqlalchemy')
 sa = sqlalchemy
 
 import re
-from itertools import repeat
 
-import pandas as pd
 import pandas.util.testing as tm
 
 import datashape
 
-from blaze.compute.sql import compute, computefull, select, lower_column
+from blaze.compute.sql import (compute, computefull, select, lower_column,
+                               compute_up)
 from blaze.expr import *
 from blaze import Data
 from blaze.compatibility import xfail
@@ -1090,6 +1089,6 @@ def test_head_compute():
     # skip the header and the ... at the end of the repr
     expr = d.head(n)
     s = repr(expr)
-    split = s.split('\n')
-    result = (split if split[-1] != '...' else split[:-1])[1:]
+    assert '...' not in s
+    result = s.split('\n')[1:]
     assert len(result) == n
