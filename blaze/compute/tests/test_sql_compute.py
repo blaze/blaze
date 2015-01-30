@@ -6,14 +6,11 @@ sa = sqlalchemy
 
 import re
 
-import pandas.util.testing as tm
-
 import datashape
 
 from blaze.compute.sql import (compute, computefull, select, lower_column,
                                compute_up)
 from blaze.expr import *
-from blaze import Data
 from blaze.compatibility import xfail
 from blaze.utils import unique
 from pandas import DataFrame
@@ -1079,16 +1076,7 @@ def test_merge_compute():
                           (4, 'Dennis',400, 4000)]
 
 
-def test_head_compute():
-    data = tm.makeMixedDataFrame()
-    t = symbol('t', discover(data))
-    db = into('sqlite:///:memory:::t', data, dshape=t.dshape)
-    n = 2
-    d = Data(db)
-
-    # skip the header and the ... at the end of the repr
-    expr = d.head(n)
-    s = repr(expr)
-    assert '...' not in s
-    result = s.split('\n')[1:]
-    assert len(result) == n
+def test_head_limit():
+    assert compute(t.head(5).head(10))._limit == 5
+    assert compute(t.head(10).head(5))._limit == 5
+    assert compute(t.head(10).head(10))._limit == 5
