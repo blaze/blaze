@@ -2,10 +2,10 @@
 What Blaze Doesn't Do
 =====================
 
-Blaze suffers from over-hype.  The terms *Big-Data* and *Pandas* inevitably
-conflate in people's minds to become something unattainable and lead to
-disappointment.  Blaze is limited;  learning those limitations can direct you
-to greater productivity.
+Blaze occasionally suffers from over-hype.  The terms *Big-Data* and *Pandas*
+inevitably conflate in people's minds to become something unattainable and lead
+to disappointment.  Blaze is limited;  learning those limitations can direct
+you to greater productivity.
 
 First and foremost, Blaze does not replace Pandas.  Pandas will always be more
 feature rich and more mature than Blaze.  There are things that you simply
@@ -18,12 +18,12 @@ fits nicely in memory.
 Some concrete things Blaze doesn't do
 -------------------------------------
 
-1.  Clean unstructured data - That petabyte of HTML you downloaded?  Can't
-    help you.
-2.  Most things in SciPy - You'd like to do gradient descent or run an FFT?  Out of luck.
-3.  Most things in SciKit Learn/Image/... - Ohhh, machine learning on terabytes of data!  Look elsewhere.
+1.  Clean unstructured data.  Blaze only handles analytic queries on structured
+    data.
+2.  Most things in SciPy.  Including things like FFT, and gradient descent.
+3.  Most things in SciKit Learn/Image/etc..
 4.  Statistical inference - We invite you to build this (this one is actually pretty doable.)
-5.  Parallelize your existing Python code - Not gonna happen.
+5.  Parallelize your existing Python code
 6.  Replace Spark - Blaze may operate on top of Spark, it doesn't compete with it.
 7.  Compute quickly - Blaze uses other things to compute, it doesn't compute
     anything itself.  So asking questions about how fast Blaze is are
