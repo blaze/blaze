@@ -394,5 +394,5 @@ def test_vector_norm():
               np.linalg.norm(x.flatten(), ord=1))
     assert eq(compute(s.vnorm(ord=1, axis=0), x),
               np.linalg.norm(x, ord=1, axis=0))
-    assert eq(compute(s.vnorm(ord=1, axis=0, keepdims=True), x),
-              np.linalg.norm(x, ord=1, axis=0, keepdims=True))
+    assert eq(compute(s.vnorm(ord=4, axis=0, keepdims=True), x),
+              np.linalg.norm(x, ord=4, axis=0, keepdims=True))

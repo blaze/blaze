@@ -288,6 +288,8 @@ def vnorm(expr, ord=None, axis=None, keepdims=False):
         return min(abs(expr), axis=axis, keepdims=keepdims)
     elif ord == 1:
         return sum(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord % 2 == 0:
+        return sum(expr**ord, axis=axis, keepdims=keepdims)**(1./ord)
     else:
         return sum(abs(expr)**ord, axis=axis, keepdims=keepdims)**(1./ord)
 
