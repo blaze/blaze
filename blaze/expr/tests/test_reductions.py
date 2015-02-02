@@ -65,7 +65,7 @@ def test_dir():
 
 def test_norms():
     x = symbol('x', '5 * 3 * float32')
-    assert x.norm().isidentical(x.norm('fro'))
-    assert x.norm().isidentical(x.norm(2))
-    assert x.norm(axis=0).shape == (3,)
-    assert x.norm(axis=0, keepdims=True).shape == (1, 3)
+    assert x.vnorm().isidentical(x.vnorm('fro'))
+    assert x.vnorm().isidentical(x.vnorm(2))
+    assert x.vnorm(axis=0).shape == (3,)
+    assert x.vnorm(axis=0, keepdims=True).shape == (1, 3)

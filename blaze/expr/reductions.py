@@ -275,7 +275,7 @@ def summary(keepdims=False, axis=None, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
-def norm(expr, ord=None, axis=None, keepdims=None):
+def vnorm(expr, ord=None, axis=None, keepdims=False):
     """ Vector norm
 
     See np.linalg.norm
@@ -287,7 +287,7 @@ def norm(expr, ord=None, axis=None, keepdims=None):
     elif ord == -inf:
         return min(abs(expr), axis=axis, keepdims=keepdims)
     else:
-        return sum((abs(expr)**ord)**(1./ord), axis=axis, keepdims=keepdims)
+        return sum(abs(expr)**ord, axis=axis, keepdims=keepdims)**(1./ord)
 
 
 from datashape.predicates import iscollection, isboolean, isnumeric
@@ -300,7 +300,7 @@ dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isboolean(ds),
         set([any, all, sum])),
     (lambda ds: iscollection(ds) and isnumeric(ds),
-        set([mean, sum, mean, min, max, std, var, norm])),
+        set([mean, sum, mean, min, max, std, var, vnorm])),
     ])
 
 method_properties.update([nrows])

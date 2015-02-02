@@ -382,3 +382,17 @@ def test_map():
     assert type(result) == type(expected)
 
     np.testing.assert_array_equal(result, expected)
+
+
+def test_vector_norm():
+    x = np.arange(30).reshape((5, 6))
+    s = symbol('x', discover(x))
+
+    assert eq(compute(s.vnorm(), x),
+              np.linalg.norm(x))
+    assert eq(compute(s.vnorm(ord=1), x),
+              np.linalg.norm(x.flatten(), ord=1))
+    assert eq(compute(s.vnorm(ord=1, axis=0), x),
+              np.linalg.norm(x, ord=1, axis=0))
+    assert eq(compute(s.vnorm(ord=1, axis=0, keepdims=True), x),
+              np.linalg.norm(x, ord=1, axis=0, keepdims=True))
