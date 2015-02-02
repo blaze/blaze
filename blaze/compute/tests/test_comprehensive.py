@@ -15,11 +15,11 @@ sources = []
 
 t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
-L = [[100, 1, 'Alice'],
-     [200, 2, 'Bob'],
-     [300, 3, 'Charlie'],
-     [400, 4, 'Dan'],
-     [500, 5, 'Edith']]
+L = [[ 100, 1, 'Alice'],
+     [ 200, 2, 'Bob'],
+     [ 300, 3, 'Charlie'],
+     [-400, 4, 'Dan'],
+     [ 500, 5, 'Edith']]
 
 df = DataFrame(L, columns=['amount', 'id', 'name'])
 
@@ -61,6 +61,7 @@ if pymongo:
 expressions = {
         t: [],
         t['id']: [],
+        abs(t['amount']): [],
         t.id.max(): [],
         t.amount.sum(): [],
         t.amount.sum(keepdims=True): [],
