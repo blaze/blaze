@@ -21,6 +21,7 @@ class RealMath(Math):
     _dtype = real
 
 
+class abs(RealMath): pass
 class sqrt(RealMath): pass
 
 class sin(RealMath): pass

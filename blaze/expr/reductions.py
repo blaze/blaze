@@ -4,6 +4,7 @@ import toolz
 from datashape import Record, DataShape, dshape
 from datashape import coretypes as ct
 import datashape
+from numpy import inf
 
 from .core import common_subexpression
 from .expressions import Expr, symbol, ndim, Slice
@@ -274,6 +275,21 @@ def summary(keepdims=False, axis=None, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
+def norm(expr, ord=None, axis=None, keepdims=None):
+    """ Vector norm
+
+    See np.linalg.norm
+    """
+    if ord is None or ord == 'fro':
+        ord = 2
+    if ord == inf:
+        return max(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord == -inf:
+        return min(abs(expr), axis=axis, keepdims=keepdims)
+    else:
+        return sum((abs(expr)**ord)**(1./ord), axis=axis, keepdims=keepdims)
+
+
 from datashape.predicates import iscollection, isboolean, isnumeric
 from .expressions import dshape_method_list, method_properties
 
@@ -284,7 +300,7 @@ dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isboolean(ds),
         set([any, all, sum])),
     (lambda ds: iscollection(ds) and isnumeric(ds),
-        set([mean, sum, mean, min, max, std, var])),
+        set([mean, sum, mean, min, max, std, var, norm])),
     ])
 
 method_properties.update([nrows])
