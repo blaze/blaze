@@ -123,6 +123,8 @@ def test_multi_column_join():
 def test_unary_op():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
 
+def test_abs():
+    assert (compute(abs(t['amount']), df) == abs(df['amount'])).all()
 
 def test_neg():
     tm.assert_series_equal(compute(-t['amount'], df),

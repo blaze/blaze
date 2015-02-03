@@ -63,6 +63,7 @@ from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
                     Eq, Ne, And, Or, Summary, Like, Broadcast, DateTime,
                     Microsecond, Date, Time, Expr, symbol, Arithmetic, floor,
                     ceil, FloorDiv)
+from ..expr import math
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
 from .core import compute
@@ -181,6 +182,11 @@ def compute_sub(t):
     elif isinstance(t, floor):
         x = compute_sub(t._child)
         return {'$subtract': [x, {'$mod': [x, 1]}]}
+    elif isinstance(t, math.abs):
+        x = compute_sub(t._child)
+        return {'$cond': [{'$lt': [x, 0]},
+                          {'$subtract': [0, x]},
+                          x]}
     elif isinstance(t, ceil):
         x = compute_sub(t._child)
         return {'$add': [x,

@@ -29,8 +29,8 @@ def test_map():
 
 
 def test_math():
-    f = lambdify([t], t.x + cos(t.y))
-    assert f((1, 0, 3, 4)) == 1 + math.cos(0.0)
+    f = lambdify([t], abs(t.x) + cos(t.y))
+    assert f((-1, 0, 3, 4)) == 1 + math.cos(0.0)
 
 
 def test_datetime_literals_and__print_python():

@@ -57,6 +57,9 @@ def test_UnaryOp():
     assert eq(compute(exp(t['amount']), x),
               np.exp(x['amount']))
 
+    assert eq(compute(abs(-t['amount']), x),
+              abs(-x['amount']))
+
 
 def test_Neg():
     assert eq(compute(-t['amount'], x),
@@ -379,3 +382,18 @@ def test_map():
     assert type(result) == type(expected)
 
     np.testing.assert_array_equal(result, expected)
+
+
+def test_vector_norm():
+    x = np.arange(30).reshape((5, 6))
+    s = symbol('x', discover(x))
+
+    assert eq(compute(s.vnorm(), x),
+              np.linalg.norm(x))
+    assert eq(compute(s.vnorm(ord=1), x),
+              np.linalg.norm(x.flatten(), ord=1))
+    assert eq(compute(s.vnorm(ord=4, axis=0), x),
+              np.linalg.norm(x, ord=4, axis=0))
+
+    expr = s.vnorm(ord=4, axis=0, keepdims=True)
+    assert expr.shape == compute(expr, x).shape

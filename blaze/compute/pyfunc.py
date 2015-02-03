@@ -4,6 +4,7 @@ from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
                     USub, Not)
+from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
 from . import pydatetime
@@ -102,6 +103,10 @@ def _print_python(expr, leaves=None):
     return ('math.%s(%s)' % (type(expr).__name__, child),
             toolz.merge(scope, {'math': math}))
 
+@dispatch(expr_math.abs)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return ('abs(%s)' % child, scope)
 
 @dispatch(Date)
 def _print_python(expr, leaves=None):

@@ -61,3 +61,11 @@ def test_dir():
 
     t = symbol('t', 'int')
     assert 'mean' not in dir(t)
+
+
+def test_norms():
+    x = symbol('x', '5 * 3 * float32')
+    assert x.vnorm().isidentical(x.vnorm('fro'))
+    assert x.vnorm().isidentical(x.vnorm(2))
+    assert x.vnorm(axis=0).shape == (3,)
+    assert x.vnorm(axis=0, keepdims=True).shape == (1, 3)

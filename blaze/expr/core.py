@@ -216,6 +216,10 @@ class Node(object):
     def __invert__(self):
         return self._invert()
 
+    def __abs__(self):
+        from .math import abs
+        return abs(self)
+
 
 def isidentical(a, b):
     """ Strict equality testing
