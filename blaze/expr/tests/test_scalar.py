@@ -258,6 +258,8 @@ def test_scalar_coerce():
     assert scalar_coerce('?date', '') == None
     assert scalar_coerce('?int', 0) == 0
     assert scalar_coerce('?int', '0') == 0
+    x = symbol('x', '?int')
+    assert scalar_coerce('?int', x) is x
 
 
 def test_scalar_name_dtype():

@@ -204,6 +204,11 @@ def scalar_coerce(ds, val):
         return None
 
 
+@dispatch((ct.Mono, ct.Option, DataShape), Expr)
+def scalar_coerce(ds, val):
+    return val
+
+
 @dispatch(ct.Date, _strtypes)
 def scalar_coerce(_, val):
     dt = dt_parse(val)
