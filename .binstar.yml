@@ -23,7 +23,7 @@ before_script:
 script:
   - conda build conda.recipe
 
-iotimeout: 120
+iotimeout: 600
 
 build_targets: conda
 
