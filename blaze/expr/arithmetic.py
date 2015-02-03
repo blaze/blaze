@@ -204,7 +204,7 @@ def scalar_coerce(ds, val):
         return None
 
 
-@dispatch((ct.Mono, ct.Option, DataShape), Expr)
+@dispatch((ct.Record, ct.Mono, ct.Option, DataShape), Expr)
 def scalar_coerce(ds, val):
     return val
 
