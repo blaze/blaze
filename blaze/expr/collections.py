@@ -425,14 +425,31 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 join.__doc__ = Join.__doc__
 
 
+class IsIn(Map):
+    __slots__ = '_hash', '_child', 'seq'
+
+
+    @property
+    def func(self):
+        def inner(element):
+            return element in self.seq
+        return inner
+
+    @property
+    def schema(self):
+        return datashape.bool_
+
+    @property
+    def _name(self):
+        return "isin"
+
+
 def isin(t, seq):
     """ Checks if every element is in another sequence
     :param seq: the sequence to check against
     :return: a 1d sequence of boolean
     """
-    def f(elem):
-        return elem in set(seq)
-    return Map(t, f, datashape.bool_, 'isin')
+    return IsIn(t, tuple(set(seq)))
 
 from .expressions import dshape_method_list
 
