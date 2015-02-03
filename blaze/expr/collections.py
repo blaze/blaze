@@ -6,10 +6,10 @@ from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, label
+from .expressions import Expr, ElemWise, label, Map
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform']
+           'head', 'sort', 'Join', 'join', 'transform', 'isin']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -425,9 +425,18 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 join.__doc__ = Join.__doc__
 
 
+def isin(t, seq):
+    """ Checks if every element is in another sequence
+    :param seq: the sequence to check against
+    :return: a 1d sequence of boolean
+    """
+    def f(elem):
+        return elem in set(seq)
+    return Map(t, f, datashape.bool_, 'isin')
+
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([sort, head])),
+    (iscollection, set([sort, head, isin])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])
