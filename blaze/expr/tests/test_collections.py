@@ -70,5 +70,5 @@ def test_raise_error_if_join_on_no_columns():
 
 
 def test_isin():
-    assert hasattr('isin', t.x)
+    assert hasattr(t.x, 'isin')
     # not sure how to test abstractly, it just piggybacks map

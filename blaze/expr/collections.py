@@ -8,7 +8,7 @@ from datashape.predicates import isscalar, iscollection, isrecord
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Map
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
            'head', 'sort', 'Join', 'join', 'transform', 'isin']
 
 class Sort(Expr):
@@ -431,6 +431,7 @@ class IsIn(Map):
 
     @property
     def func(self):
+        # do this to gracefully degrade to map in case no special IsIn operation
         def inner(element):
             return element in self.seq
         return inner
