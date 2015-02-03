@@ -430,7 +430,7 @@ class IsIn(Map):
 
     Parameters
     ----------
-    seq : tuple
+    seq : iterable
 
     """
 
