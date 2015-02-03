@@ -10,6 +10,8 @@ from contextlib import contextmanager
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
 
+from into.utils import tmpfile, filetext, filetexts, raises, keywords
+
 import psutil
 import numpy as np
 
@@ -102,87 +104,6 @@ def ndget(ind, data):
         return type(result)(ndget(ind[1:], row) for row in result)
     else:
         return ndget(ind[1:], result)
-
-
-@contextmanager
-def filetext(text, extension='', open=open, mode='wt'):
-    with tmpfile(extension=extension) as filename:
-        f = open(filename, mode=mode)
-        try:
-            f.write(text)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
-
-        yield filename
-
-
-@contextmanager
-def filetexts(d, open=open):
-    """ Dumps a number of textfiles to disk
-
-    d - dict
-        a mapping from filename to text like {'a.csv': '1,1\n2,2'}
-    """
-    for filename, text in d.items():
-        f = open(filename, 'wt')
-        try:
-            f.write(text)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
-
-    yield list(d)
-
-    for filename in d:
-        if os.path.exists(filename):
-            os.remove(filename)
-
-
-@contextmanager
-def tmpfile(extension=''):
-    extension = '.' + extension.lstrip('.')
-    handle, filename = tempfile.mkstemp(extension)
-    os.remove(filename)
-
-    yield filename
-
-    try:
-        if os.path.exists(filename):
-            os.remove(filename)
-    except OSError:  # Sometimes Windows can't close files
-        if os.name == 'nt':
-            os.close(handle)
-            try:
-                os.remove(filename)
-            except OSError:  # finally give up
-                pass
-
-
-def raises(err, lamda):
-    try:
-        lamda()
-        return False
-    except err:
-        return True
-
-
-def keywords(func):
-    """ Get the argument names of a function
-
-    >>> def f(x, y=2):
-    ...     pass
-
-    >>> keywords(f)
-    ['x', 'y']
-    """
-    if isinstance(func, type):
-        return keywords(func.__init__)
-    return inspect.getargspec(func).args
 
 
 def normalize_to_date(dt):
