@@ -426,6 +426,14 @@ join.__doc__ = Join.__doc__
 
 
 class IsIn(Map):
+    """Tests if every element is a member of a set
+
+    Parameters
+    ----------
+    seq : tuple
+
+    """
+
     __slots__ = '_hash', '_child', 'seq'
 
 
@@ -451,6 +459,9 @@ def isin(t, seq):
     :return: a 1d sequence of boolean
     """
     return IsIn(t, tuple(set(seq)))
+
+isin.__doc__ = IsIn.__doc__
+
 
 from .expressions import dshape_method_list
 
