@@ -67,3 +67,8 @@ def test_raise_error_if_join_on_no_columns():
     b = symbol('b', 'var * {y: int}')
 
     assert raises(ValueError, lambda: join(a, b))
+
+
+def test_isin():
+    assert hasattr(t.x, 'isin')
+    # not sure how to test abstractly, it just piggybacks map

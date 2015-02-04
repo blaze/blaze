@@ -6,10 +6,10 @@ from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, label
+from .expressions import Expr, ElemWise, label, Map
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform']
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
+           'head', 'sort', 'Join', 'join', 'transform', 'isin']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -425,9 +425,47 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 join.__doc__ = Join.__doc__
 
 
+class IsIn(Map):
+    """Tests if every element is a member of a set
+
+    Parameters
+    ----------
+    seq : iterable
+
+    """
+
+    __slots__ = '_hash', '_child', 'seq'
+
+
+    @property
+    def func(self):
+        # do this to gracefully degrade to map in case no special IsIn operation
+        def inner(element):
+            return element in self.seq
+        return inner
+
+    @property
+    def schema(self):
+        return datashape.bool_
+
+    @property
+    def _name(self):
+        return "isin"
+
+
+def isin(t, seq):
+    """ Checks if every element is in another sequence
+    :param seq: the sequence to check against
+    :return: a 1d sequence of boolean
+    """
+    return IsIn(t, tuple(set(seq)))
+
+isin.__doc__ = IsIn.__doc__
+
+
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([sort, head])),
+    (iscollection, set([sort, head, isin])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])

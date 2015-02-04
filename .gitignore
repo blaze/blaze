@@ -11,3 +11,7 @@ blaze.egg-info
 
 
 __conda_version__.txt
+
+# Vagrant related ignores
+Vagrantfile
+.vagrant/*
