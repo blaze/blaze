@@ -4,6 +4,7 @@ import toolz
 import datashape
 import functools
 import keyword
+import numpy as np
 
 from toolz import concat, memoize, partial
 from toolz.curried import map, filter
@@ -96,11 +97,12 @@ class Expr(Node):
             else:
                 raise ValueError('Names %s not consistent with known names %s'
                                  % (key, self.fields))
-        elif (isinstance(key, tuple)
-                and all(isinstance(k, (int, slice, type(None), list)) for k in key)):
-            return Slice(self, key)
-        elif isinstance(key, (slice, int, type(None), list)):
-            return Slice(self, (key,))
+        elif (isinstance(key, tuple) and
+              all(isinstance(k, (int, slice, type(None), list, np.ndarray))
+              for k in key)):
+            return sliceit(self, key)
+        elif isinstance(key, (slice, int, type(None), list, np.ndarray)):
+            return sliceit(self, (key,))
         raise ValueError("Not understood %s[%s]" % (self, key))
 
     def map(self, func, schema=None, name=None):
@@ -377,13 +379,37 @@ projection.__doc__ = Projection.__doc__
 from .utils import hashable_index, replace_slices
 
 
+def sanitize_index_lists(ind):
+    """ Handle lists/arrays of integers/bools as indexes
+
+    >>> sanitize_index_lists([2, 3, 5])
+    [2, 3, 5]
+    >>> sanitize_index_lists([True, False, True, False])
+    [0, 2]
+    >>> sanitize_index_lists(np.array([1, 2, 3]))
+    [1, 2, 3]
+    >>> sanitize_index_lists(np.array([False, True, True]))
+    [1, 2]
+    """
+    if not isinstance(ind, (list, np.ndarray)):
+        return ind
+    if isinstance(ind, np.ndarray):
+        ind = ind.tolist()
+    if isinstance(ind, list) and ind and isinstance(ind[0], bool):
+        ind = [a for a, b in enumerate(ind) if b]
+    return ind
+
+
+def sliceit(child, index):
+    index2 = tuple(map(sanitize_index_lists, index))
+    index3 = hashable_index(index2)
+    s = Slice(child, index3)
+    hash(s)
+    return s
+
+
 class Slice(Expr):
     __slots__ = '_hash', '_child', '_index'
-
-    def __init__(self, child, index):
-        self._child = child
-        self._index = hashable_index(index)
-        hash(self)
 
     @property
     def dshape(self):

@@ -1,4 +1,5 @@
 from blaze.expr import symbol
+import numpy as np
 from datashape import dshape, isscalar
 
 
@@ -55,3 +56,14 @@ def test_list_slice():
 def test_list_slice_string():
     x = symbol('x', '10 * 10 * int32')
     assert str(x[[1, 2, 3]]) == "x[[1, 2, 3]]"
+
+
+def test_slice_with_boolean_list():
+    x = symbol('x', '5 * int32')
+    expr = x[[True, False, False, True, False]]
+    assert expr.index == ([0, 3],)
+
+
+def test_slice_with_numpy_array():
+    x = symbol('x', '2 * int32')
+    assert x[np.array([True, False])].isidentical(x[[True, False]])
