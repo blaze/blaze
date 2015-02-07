@@ -2,13 +2,9 @@
 .. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
    :align: center
 
-**Blaze** provides a familiar interface to various computational resources.
-
-Blaze extends the usability of NumPy and Pandas to distributed and
-out-of-core computing.  Blaze provides an interface similar to that of the
-NumPy ND-Array or Pandas DataFrame but maps these familiar interfaces onto a
-variety of other computational engines like Postgres or Spark.
-
+**Blaze** translates a subset of modified NumPy and Pandas-like syntax to
+databases and other computing systems.  Blaze allows Python users a familiar
+interface to query data living in other data storage systems.
 
 Core
 ----
@@ -29,13 +25,6 @@ Presentations
 
 * `See previous presentations about Blaze`_
 
-
-Under Development
------------------
-
-Please be aware that Blaze is under active development. The project has gone
-through many changes and this documentation has not been kept uniformly in
-sync.
 
 Index
 ~~~~~
