@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -5,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Server &mdash; Blaze 0.7.0 documentation</title>
+    <title>Server &mdash; Blaze 0.7.1 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,8 +17,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.7.0',
+        URL_ROOT:    '',
+        VERSION:     '0.7.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.7.0 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.7.1 documentation" href="index.html" />
     <link rel="next" title="Datashape" href="datashape.html" />
     <link rel="prev" title="Out of Core Processing" href="ooc.html" />
 <meta charset='utf-8'>
@@ -153,32 +154,31 @@ below.</p>
 <div class="section" id="using-curl">
 <h3>Using <tt class="docutils literal"><span class="pre">curl</span></tt><a class="headerlink" href="#using-curl" title="Permalink to this headline">¶</a></h3>
 <p>We can use standard command line tools to interact with this web service:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ curl \
-    -H &quot;Content-Type: application/json&quot; \
-    -d &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;Field&quot;, &quot;args&quot;: [&quot;:leaf&quot;, &quot;species&quot;]}}&#39; \
+<div class="highlight-python"><pre>$ curl \
+    -H "Content-Type: application/json" \
+    -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
     localhost:6363/compute.json
 
 {
-  &quot;data&quot;: [
-      &quot;Iris-setosa&quot;,
-      &quot;Iris-setosa&quot;,
+  "data": [
+      "Iris-setosa",
+      "Iris-setosa",
       ...
       ],
-  &quot;datashape&quot;: &quot;var * {species: string}&quot;,
+  "datashape": "var * {species: string}",
 }
 
 $ curl \
-    -H &quot;Content-Type: application/json&quot; \
-    -d  &#39;{&quot;expr&quot;: {&quot;op&quot;: &quot;sum&quot;, \
-                   &quot;args&quot;: [{&quot;op&quot;: &quot;Field&quot;, \
-                             &quot;args&quot;: [&quot;:leaf&quot;, &quot;petal_Length&quot;]}]}}&#39; \
+    -H "Content-Type: application/json" \
+    -d  '{"expr": {"op": "sum", \
+                   "args": [{"op": "Field", \
+                             "args": [":leaf", "petal_Length"]}]}}' \
     localhost:6363/compute.json
 
 {
-  &quot;data&quot;: 563.8000000000004,
-  &quot;datashape&quot;: &quot;{petal_length_sum: float64}&quot;,
-}
-</pre></div>
+  "data": 563.8000000000004,
+  "datashape": "{petal_length_sum: float64}",
+}</pre>
 </div>
 <p>These queries deconstruct the Blaze expression as nested JSON.  The <tt class="docutils literal"><span class="pre">&quot;:leaf&quot;</span></tt>
 string is a special case pointing to the base data.  Constructing these queries

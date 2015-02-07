@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -5,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core &mdash; Blaze 0.7.0 documentation</title>
+    <title>Core &mdash; Blaze 0.7.1 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,8 +17,8 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.7.0',
+        URL_ROOT:    '',
+        VERSION:     '0.7.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.7.0 documentation" href="#" />
+    <link rel="top" title="Blaze 0.7.1 documentation" href="#" />
     <link rel="next" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -83,8 +84,7 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="#"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Core</a></li>
-<li><a class="reference internal" href="#presentations">Presentations</a></li>
-<li><a class="reference internal" href="#under-development">Under Development</a><ul>
+<li><a class="reference internal" href="#presentations">Presentations</a><ul>
 <li><a class="reference internal" href="#index">Index</a><ul>
 </ul>
 </li>
@@ -98,11 +98,9 @@
       <div class="span9">
           
   <img alt="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png" class="align-center" src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png" />
-<p><strong>Blaze</strong> provides a familiar interface to various computational resources.</p>
-<p>Blaze extends the usability of NumPy and Pandas to distributed and
-out-of-core computing.  Blaze provides an interface similar to that of the
-NumPy ND-Array or Pandas DataFrame but maps these familiar interfaces onto a
-variety of other computational engines like Postgres or Spark.</p>
+<p><strong>Blaze</strong> translates a subset of modified NumPy and Pandas-like syntax to
+databases and other computing systems.  Blaze allows Python users a familiar
+interface to query data living in other data storage systems.</p>
 <div class="section" id="core">
 <h1>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h1>
 <p>The core of Blaze consists of</p>
@@ -121,12 +119,6 @@ countless other projects.</p>
 <ul class="simple">
 <li><a class="reference external" href="http://blaze.pydata.org/presentations">See previous presentations about Blaze</a></li>
 </ul>
-</div>
-<div class="section" id="under-development">
-<h1>Under Development<a class="headerlink" href="#under-development" title="Permalink to this headline">¶</a></h1>
-<p>Please be aware that Blaze is under active development. The project has gone
-through many changes and this documentation has not been kept uniformly in
-sync.</p>
 <div class="section" id="index">
 <h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
 <p>User facing</p>
@@ -136,6 +128,7 @@ sync.</p>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries.html">Basic Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rosetta.html">Pandas to Blaze</a></li>
 <li class="toctree-l1"><a class="reference internal" href="uri.html">URI strings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="csv.html">Tips for working with CSV files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sql.html">Interacting with SQL Databases</a></li>
