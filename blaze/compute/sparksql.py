@@ -89,8 +89,8 @@ def compute_down(expr, data):
     query = compute(expr, scope)
 
     # interpolate params
-    qs = str(literalquery(query, dialect=HiveDialect()))
-    return data.sql(qs)
+    compiled = literalquery(query, dialect=HiveDialect())
+    return data.sql(str(compiled))
 
 
 # see http://spark.apache.org/docs/latest/sql-programming-guide.html#spark-sql-datatype-reference
