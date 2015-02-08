@@ -3,21 +3,19 @@ from __future__ import absolute_import, division, print_function
 import pytest
 pyspark = pytest.importorskip('pyspark')
 
-from pyspark import RDD
-
-from into import into
-from blaze.compute import compute
-from blaze import symbol, summary, exp, by, join, merge, discover
+import pandas as pd
+from blaze import compute, symbol, summary, exp, by, join, merge
 from toolz import identity
+
 
 data = [['Alice', 100, 1],
         ['Bob', 200, 2],
         ['Alice', 50, 3]]
+
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
 
-from pandas import DataFrame
-df = DataFrame(data, columns=['name', 'amount', 'id'])
+df = pd.DataFrame(data, columns=['name', 'amount', 'id'])
 
 
 # this only exists because we need to have a single session scoped spark
@@ -154,11 +152,11 @@ def test_spark_big_by(sc):
     check_exprs_against_python(big_exprs, databig, rddbig)
 
 
-def test_spark_head(rdd):
+def test_head(rdd):
     assert list(compute(t.head(1), rdd)) == list(compute(t.head(1), data))
 
 
-def test_spark_sort(rdd):
+def test_sort(rdd):
     check_exprs_against_python([
         t.sort('amount'),
         t.sort('amount', ascending=True),
@@ -167,12 +165,12 @@ def test_spark_sort(rdd):
         t.sort(['amount', 'id'])], data, rdd)
 
 
-def test_spark_distinct(rdd):
+def test_distinct(rdd):
     assert set(compute(t['name'].distinct(), rdd).collect()) == \
         set(['Alice', 'Bob'])
 
 
-def test_spark_join(rdd, rdd2):
+def test_join(rdd, rdd2):
 
     joined = join(t, t2, 'name')
     expected = [('Alice', 100, 1, 'Austin'),
@@ -182,7 +180,7 @@ def test_spark_join(rdd, rdd2):
     assert all(i in expected for i in result)
 
 
-def test_spark_multi_column_join(sc):
+def test_multi_column_join(sc):
     left = [(1, 2, 3),
             (2, 3, 4),
             (1, 3, 5)]
@@ -205,7 +203,7 @@ def test_spark_multi_column_join(sc):
     assert set(result.collect()) == set(expected)
 
 
-def test_spark_groupby(sc):
+def test_groupby(sc):
     rddidx = sc.parallelize(data_idx)
     rddarc = sc.parallelize(data_arc)
 
@@ -217,13 +215,13 @@ def test_spark_groupby(sc):
     assert in_degree == {'A': 1, 'C': 2}
 
 
-def test_spark_multi_level_rowfunc_works(rdd):
+def test_multi_level_rowfunc_works(rdd):
     expr = t['amount'].map(lambda x: x + 1, 'int')
 
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
 
-def test_spark_merge(rdd):
+def test_merge(rdd):
     col = (t['amount'] * 2).label('new')
     expr = merge(t['name'], col)
 
@@ -231,26 +229,20 @@ def test_spark_merge(rdd):
         (row[0], row[1] * 2) for row in data]
 
 
-def test_spark_into(rdd):
-    seq = [1, 2, 3]
-    assert isinstance(into(rdd, seq), RDD)
-    assert into([], into(rdd, seq)) == seq
-
-
-def test_spark_selection_out_of_order(rdd):
+def test_selection_out_of_order(rdd):
     expr = t['name'][t['amount'] < 100]
 
     assert compute(expr, rdd).collect() == ['Alice']
 
 
-def test_spark_recursive_rowfunc_is_used(rdd):
+def test_recursive_rowfunc_is_used(rdd):
     expr = by(t['name'], total=(2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2 * (101 + 53)),
                 ('Bob', 2 * (202))]
     assert set(compute(expr, rdd).collect()) == set(expected)
 
 
-def test_spark_outer_join(sc):
+def test_outer_join(sc):
     left = [(1, 'Alice', 100),
             (2, 'Bob', 200),
             (4, 'Dennis', 400)]
@@ -282,15 +274,9 @@ def test_spark_outer_join(sc):
          (4, 'Dennis', 400, 'Moscow')])
 
     # Full outer join not yet supported
-    """
     assert set(compute(join(L, R, how='outer'), {L: left, R: right}).collect()) == set(
-            [(1, 'Alice', 100, 'NYC'),
-             (1, 'Alice', 100, 'Boston'),
-             (2, 'Bob', 200, None),
-             (3, None, None, 'LA'),
-             (4, 'Dennis', 400, 'Moscow')])
-    """
-
-
-def test_discover(rdd):
-    assert discover(rdd).subshape[0] == discover(data).subshape[0]
+        [(1, 'Alice', 100, 'NYC'),
+         (1, 'Alice', 100, 'Boston'),
+         (2, 'Bob', 200, None),
+         (3, None, None, 'LA'),
+         (4, 'Dennis', 400, 'Moscow')])

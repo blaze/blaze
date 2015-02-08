@@ -11,7 +11,6 @@ sa = pytest.importorskip('sqlalchemy')
 import pandas as pd
 import pandas.util.testing as tm
 from datashape.predicates import iscollection
-from datashape import dshape
 from blaze import discover, compute, symbol, into, by, sin, exp, join
 from pyspark.sql import SQLContext, Row, DataFrame as SparkDataFrame
 from into.utils import tmpfile
@@ -70,28 +69,6 @@ def ctx(sql, people, cities):
 @pytest.fixture(scope='module')
 def db(ctx):
     return symbol('db', discover(ctx))
-
-
-@xfail(reason='moving to into')
-def test_into_SparkSQL_from_PySpark(db, ctx):
-    srdd = into(ctx, data, schema=db.t.dshape)
-    assert isinstance(srdd, SparkDataFrame)
-
-    # assert into(list, rdd) == into(list, srdd)
-
-
-@xfail(reason='moving to into')
-def test_into_sparksql_from_other(ctx):
-    srdd = into(ctx, df)
-    assert isinstance(srdd, SparkDataFrame)
-    assert into(list, srdd) == into(list, df)
-
-
-@xfail(reason='moving to into')
-def test_discover(db, ctx):
-    srdd = into(ctx, data, schema=db.t.schema)
-    assert discover(srdd).subshape[0] == \
-        dshape('{name: string, amount: int64, id: int64}')
 
 
 def test_projection(db, ctx):

@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 from toolz import compose, identity
-from collections import Iterator
 from datashape.predicates import isscalar
 
-from blaze.expr import *
+from blaze.expr import (Expr, ElemWise, Selection, Sort, Apply, Distinct, Join,
+                        By, Label, Summary, by, ReLabel, Like, Reduction, Head)
 from . import python
 from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
@@ -103,8 +103,9 @@ def compute_up(t, rdd, **kwargs):
         return rdd.mapPartitions(t.func)
     else:
         raise NotImplementedError("Can only apply splittable functions."
-                                  "To apply function to each partition add splittable=True kwarg"
-                                  " to call to apply.  t.apply(func, dshape, splittable=True)")
+                                  "To apply function to each partition add "
+                                  "splittable=True kwarg to call to apply.  "
+                                  "t.apply(func, dshape, splittable=True)")
 
 
 @dispatch(Sort, RDD)
@@ -124,6 +125,14 @@ def compute_up(t, rdd, **kwargs):
     return rdd.distinct()
 
 
+_JOIN_FUNCS = {
+    'inner': RDD.join,
+    'left': RDD.leftOuterJoin,
+    'right': RDD.rightOuterJoin,
+    'outer': RDD.fullOuterJoin,
+}
+
+
 @dispatch(Join, RDD, RDD)
 def compute_up(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
@@ -132,16 +141,8 @@ def compute_up(t, lhs, rhs, **kwargs):
     lhs = lhs.keyBy(on_left)
     rhs = rhs.keyBy(on_right)
 
-    if t.how == 'inner':
-        rdd = lhs.join(rhs)
-    elif t.how == 'left':
-        rdd = lhs.leftOuterJoin(rhs)
-    elif t.how == 'right':
-        rdd = lhs.rightOuterJoin(rhs)
-    elif t.how == 'outer':
-        # https://issues.apache.org/jira/browse/SPARK-546
-        raise NotImplementedError("Spark does not yet support full outer join")
-
+    joiner = _JOIN_FUNCS[t.how]
+    rdd = joiner(lhs, rhs)
     assemble = pair_assemble(t)
 
     return rdd.map(lambda x: assemble(x[1]))
@@ -206,23 +207,3 @@ def compute_up(t, rdd, **kwargs):
 def compute_up(t, rdd, **kwargs):
     predicate = like_regex_predicate(t)
     return rdd.filter(predicate)
-
-
-@dispatch(RDD, RDD)
-def into(a, b):
-    return b
-
-
-@dispatch(SparkContext, (list, tuple, Iterator))
-def into(sc, seq):
-    return sc.parallelize(seq)
-
-
-@dispatch(RDD, (list, tuple))
-def into(rdd, seq):
-    return into(rdd.context, seq)
-
-
-@dispatch(list, RDD)
-def into(seq, rdd):
-    return rdd.collect()
