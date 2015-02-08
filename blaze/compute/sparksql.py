@@ -4,7 +4,8 @@ import datashape
 from datashape import discover
 from datashape.predicates import isrecord
 import sqlalchemy as sa
-from toolz import pipe, curry
+import pandas as pd
+from toolz import pipe, curry, valmap
 from toolz.curried import filter
 from into import convert
 from into.backends.sql import dshape_to_alchemy
@@ -13,21 +14,36 @@ from ..dispatch import dispatch
 from ..expr import Expr, Field, symbol
 from .core import compute
 from .utils import literalquery
+from .spark import Dummy
 
 
 __all__ = []
 
-from pyspark.sql import SQLContext
-import pyspark.sql as sql
+
+try:
+    from pyspark.sql import SQLContext, DataFrame as SparkDataFrame
+    from pyspark.sql import (ByteType, ShortType, IntegerType, LongType,
+                             FloatType, DoubleType, StringType, BinaryType,
+                             BooleanType, TimestampType, DateType)
+    from pyhive.sqlalchemy_hive import HiveDialect
+except ImportError:
+    SparkDataFrame = SQLContext = Dummy
+    ByteType = ShortType = IntegerType = LongType = FloatType = Dummy()
+    DoubleType = StringType = BinaryType = BooleanType = Dummy()
+    TimestampType = DateType = Dummy()
 
 
-@convert.register(list, sql.DataFrame)
+@convert.register(list, SparkDataFrame)
 def sparksql_dataframe_to_list(df, **kwargs):
     return list(map(tuple, df.collect()))
 
 
-@dispatch(Field, SQLContext)
-def compute_up(expr, data, **kwargs):
+@convert.register(pd.DataFrame, SparkDataFrame)
+def sparksql_dataframe_to_pandas_dataframe(df, **kwargs):
+    return pd.DataFrame(convert(list, df, **kwargs), columns=df.columns)
+
+
+def make_sqlalchemy_table(expr, data):
     name = expr._name
     columns = dshape_to_alchemy(expr.dshape)
     return sa.Table(name, sa.MetaData(), *columns)
@@ -67,30 +83,30 @@ def compute_down(expr, data):
 
     # get sqlalchemy tables, we can't go through compute_down here as that will
     # recurse back into this function
-    sa_tables = [compute_up(t, data) for t in tables]
+    sa_tables = [make_sqlalchemy_table(t, data) for t in tables]
 
     # compute using sqlalchemy
     scope = dict(zip(new_leaves, sa_tables))
     query = compute(expr, scope)
 
     # interpolate params
-    qs = str(literalquery(query))
+    qs = str(literalquery(query, dialect=HiveDialect()))
     return data.sql(qs)
 
 
 # see http://spark.apache.org/docs/latest/sql-programming-guide.html#spark-sql-datatype-reference
 sparksql_to_dshape = {
-    sql.ByteType: datashape.int8,
-    sql.ShortType: datashape.int16,
-    sql.IntegerType: datashape.int32,
-    sql.LongType: datashape.int64,
-    sql.FloatType: datashape.float32,
-    sql.DoubleType: datashape.float64,
-    sql.StringType: datashape.string,
-    sql.BinaryType: datashape.bytes_,
-    sql.BooleanType: datashape.bool_,
-    sql.TimestampType: datashape.datetime_,
-    sql.DateType: datashape.date_,
+    ByteType: datashape.int8,
+    ShortType: datashape.int16,
+    IntegerType: datashape.int32,
+    LongType: datashape.int64,
+    FloatType: datashape.float32,
+    DoubleType: datashape.float64,
+    StringType: datashape.string,
+    BinaryType: datashape.bytes_,
+    BooleanType: datashape.bool_,
+    TimestampType: datashape.datetime_,
+    DateType: datashape.date_,
     # sql.ArrayType: ?,
     # sql.MapTYpe: ?,
     # sql.StructType: ?
@@ -130,7 +146,10 @@ def get_catalog(ctx):
 
 @dispatch(SQLContext)
 def discover(ctx):
-    catalog = get_catalog(ctx)
-    tableshapes = [(name, datashape.var * schema_to_dshape(t.schema()))
-                   for name, t in catalog.items()]
-    return datashape.DataShape(datashape.Record(tableshapes))
+    dshapes = valmap(discover, get_catalog(ctx))
+    return datashape.DataShape(datashape.Record(dshapes.items()))
+
+
+@dispatch(SparkDataFrame)
+def discover(df):
+    return datashape.var * schema_to_dshape(df.schema())
