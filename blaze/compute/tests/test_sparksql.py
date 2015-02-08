@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function, division
 
-import os
 import pytest
 
 xfail = pytest.mark.xfail
@@ -10,6 +9,7 @@ pytest.importorskip('pyspark.sql')
 sa = pytest.importorskip('sqlalchemy')
 
 import pandas as pd
+import pandas.util.testing as tm
 from datashape.predicates import iscollection
 from datashape import dshape
 from blaze import discover, compute, symbol, into, by, sin, exp, join
@@ -21,27 +21,50 @@ data = [['Alice', 100.0, 1],
         ['Bob', 200.0, 2],
         ['Alice', 50.0, 3]]
 
+cities_data = [['Alice', 'NYC'],
+               ['Bob', 'Boston']]
+
 df = pd.DataFrame(data, columns=['name', 'amount', 'id'])
+cities_df = pd.DataFrame(cities_data, columns=['name', 'city'])
+
 
 # sc is from conftest.py
 
 
+@pytest.fixture(scope='module')
+def sql(sc):
+    return SQLContext(sc)
+
+
 @pytest.yield_fixture(scope='module')
-def ctx(sc):
-    sql = SQLContext(sc)
+def people(sc):
     with tmpfile('.txt') as fn:
-        lines = os.linesep.join(','.join(map(str, row)) for row in data)
-        lines += os.linesep
-        with open(fn, mode='wb') as f:
-            f.write(lines)
+        df.to_csv(fn, header=False, index=False)
         raw = sc.textFile(fn)
         parts = raw.map(lambda line: line.split(','))
-        people = parts.map(lambda person: Row(name=person[0],
-                                              amount=float(person[1]),
-                                              id=int(person[2])))
-        schema = sql.inferSchema(people)
-        schema.registerTempTable('t')
-        yield sql
+        yield parts.map(lambda person: Row(name=person[0],
+                                           amount=float(person[1]),
+                                           id=int(person[2])))
+
+
+@pytest.yield_fixture(scope='module')
+def cities(sc):
+    with tmpfile('.txt') as fn:
+        cities_df.to_csv(fn, header=False, index=False)
+        raw = sc.textFile(fn)
+        parts = raw.map(lambda line: line.split(','))
+        yield parts.map(lambda person: Row(name=person[0],
+                                           city=person[1]))
+
+
+@pytest.fixture(scope='module')
+def ctx(sql, people, cities):
+    schema = sql.inferSchema(people)
+    schema.registerTempTable('t')
+
+    schema = sql.inferSchema(cities)
+    schema.registerTempTable('s')
+    return sql
 
 
 @pytest.fixture(scope='module')
@@ -82,12 +105,11 @@ def test_symbol_compute(db, ctx):
     assert isinstance(compute(db.t, ctx), SparkDataFrame)
 
 
-@xfail(raises=AssertionError, reason='detuplify')
 def test_field_access(db, ctx):
     expr = db.t.name
     expected = compute(expr, ctx)
     result = compute(expr, {db: {'t': df}})
-    assert into(list, expected) == into(list, result)
+    tm.assert_series_equal(into(pd.Series, expected), result)
 
 
 def test_head(db, ctx):
@@ -113,26 +135,14 @@ def test_by_summary(db, ctx):
     assert into(set, result) == into(set, expected)
 
 
-@xfail(reason='not worked out yet')
 def test_join(db, ctx):
-    accounts = symbol(
-        'accounts', 'var * {name: string, amount: int64, id: int64}')
-    accounts_rdd = into(ctx, data, schema=accounts.schema)
-
-    cities = symbol('cities', 'var * {name: string, city: string}')
-    cities_data = [('Alice', 'NYC'), ('Bob', 'LA')]
-    cities_rdd = into(ctx,
-                      cities_data,
-                      schema='{name: string, city: string}')
-
-    expr = join(accounts, cities)
-
-    result = compute(expr, {cities: cities_rdd, accounts: accounts_rdd})
+    expr = join(db.t, db.s)
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df, 's': cities_df}})
 
     assert isinstance(result, SparkDataFrame)
-
-    assert (str(discover(result)).replace('?', '') ==
-            str(expr.dshape))
+    assert into(set, result) == into(set, expected)
+    assert discover(result) == expr.dshape
 
 
 @xfail(reason='not worked out yet')
