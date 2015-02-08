@@ -6,7 +6,7 @@ from datashape.predicates import isrecord
 import sqlalchemy as sa
 import pandas as pd
 from toolz import pipe, curry, valmap
-from toolz.curried import filter
+from toolz.curried import filter, map
 from into import convert
 from into.backends.sql import dshape_to_alchemy
 
@@ -43,7 +43,7 @@ def sparksql_dataframe_to_pandas_dataframe(df, **kwargs):
     return pd.DataFrame(convert(list, df, **kwargs), columns=df.columns)
 
 
-def make_sqlalchemy_table(expr, data):
+def make_sqlalchemy_table(expr):
     name = expr._name
     columns = dshape_to_alchemy(expr.dshape)
     return sa.Table(name, sa.MetaData(), *columns)
@@ -81,9 +81,8 @@ def compute_down(expr, data):
     # sub them in the expression
     expr = expr._subs(dict(zip(tables, new_leaves)))
 
-    # get sqlalchemy tables, we can't go through compute_down here as that will
-    # recurse back into this function
-    sa_tables = [make_sqlalchemy_table(t, data) for t in tables]
+    # get sqlalchemy tables
+    sa_tables = map(make_sqlalchemy_table, tables)
 
     # compute using sqlalchemy
     scope = dict(zip(new_leaves, sa_tables))
