@@ -7,13 +7,68 @@ Status](https://coveralls.io/repos/ContinuumIO/blaze/badge.png)](https://coveral
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
 </p>
 
-**Blaze** extends the usability of NumPy and Pandas to distributed and
-out-of-core computing.  Blaze provides an interface similar to that of the
-NumPy ND-Array or Pandas DataFrame but maps these familiar interfaces onto a
-variety of other computational engines like Postgres or Spark.
+**Blaze** translates a subset of modified NumPy and Pandas-like syntax to
+databases and other computing systems.  Blaze allows Python users a familiar
+interface to query data living in other data storage systems.
+
 
 Example
 -------
+
+We point blaze to a simple dataset in a foreign database (PostgreSQL).
+Instantly we see results as we would see them in a Pandas DataFrame.
+
+```Python
+>>> import blaze as bz
+>>> iris = bz.Data('postgresql://localhost::iris')
+>>> iris
+    sepal_length  sepal_width  petal_length  petal_width      species
+0            5.1          3.5           1.4          0.2  Iris-setosa
+1            4.9          3.0           1.4          0.2  Iris-setosa
+2            4.7          3.2           1.3          0.2  Iris-setosa
+3            4.6          3.1           1.5          0.2  Iris-setosa
+```
+
+These results occur immediately.  Blaze does not pull data out of Postgres,
+instead it translates your Python commands into SQL (or others.)
+
+```Python
+>>> iris.species.distinct()
+           species
+0      Iris-setosa
+1  Iris-versicolor
+2   Iris-virginica
+
+>>> bz.by(iris.species, smallest=iris.petal_length.min(),
+...                      largest=iris.petal_length.max())
+           species  largest  smallest
+0      Iris-setosa      1.9       1.0
+1  Iris-versicolor      5.1       3.0
+2   Iris-virginica      6.9       4.5
+```
+
+This same example would have worked with a wide range of databases, on-disk text
+or binary files, or remote data.
+
+
+What Blaze is not
+-----------------
+
+Blaze does not perform computation.  It relies on other systems like SQL,
+Spark, or Pandas to do the actual number crunching.  It is not a replacement
+for any of these systems.
+
+Blaze does not implement the entire NumPy/Pandas API, nor does it interact with
+libraries intended to work with NumPy/Pandas.  This is the cost of using more
+and larger data systems.
+
+Blaze is a good way to inspect data living in a large database, perform a small
+but powerful set of operations to query that data, and then transform your
+results into a format suitable for your favorite Python tools.
+
+
+In the Abstract
+---------------
 
 Blaze separates the computations that we want to perform:
 
@@ -60,54 +115,27 @@ iterators to powerful distributed Spark clusters.  Blaze is built to be
 extended to new systems as they evolve.
 
 
-Usable Abstractions
--------------------
-
-Blaze includes a rich set of computational and data primitives useful in
-building and communicating between computational systems.  Blaze primitives can
-help with consistent and robust data migration, as well as remote execution.
-
-<p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
-</p>
-
-Blaze aims to be a foundational project allowing many different users of
-other PyData projects (Pandas, Theano, Numba, SciPy, Scikit-Learn)
-to interoperate at the application level and at the library level with
-the goal of being able to to lift their existing functionality into a
-distributed context.
-
-<p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
-</p>
-
-
 Getting Started
 ---------------
 
-Development installation instructions available [here](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze).  Quick usage available [here](http://blaze.pydata.org/docs/dev/quickstart.html).
+Blaze is available on conda or on PyPI
 
-Blaze is in development.  We reserve the right to break the API.
+    conda install blaze
+    pip install blaze
 
-Blaze needs your help.  Blaze needs users with interesting problems.  Blaze
-needs developers with expertise in new data formats and computational backends.
-Blaze needs core developers to tie everything together.  Please e-mail the
-[Mailing list](mailto:blaze-dev@continuum.io).
+Development builds are accessible
 
-Source code for the latest development version of blaze can
-be obtained [from Github](https://github.com/ContinuumIO/blaze).
+    conda install blaze -c blaze
+    pip install http://github.com/ContinuumIO/blaze --upgrade
 
-
-Documentation
--------------
-
-Documentation is available at
-[blaze.pydata.org/](http://blaze.pydata.org/)
+You may want to view [the docs](http://blaze.pydata.org), [the
+tutorial](http://github.com/ContinuumIO/blaze-tutorial), or [some
+blogposts](http://http://continuum.io/blog/tags/blaze).
 
 
 License
 -------
 
-Blaze development is sponsored by Continuum Analytics.
-
 Released under BSD license. See [LICENSE.txt](LICENSE.txt) for details.
+
+Blaze development is sponsored by Continuum Analytics.
