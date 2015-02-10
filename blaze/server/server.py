@@ -235,7 +235,7 @@ def from_tree(expr, namespace=None):
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
         if 'slice' == op:
-            return slice(*[from_tree(arg, namespace) for arg in args])
+            return expr_utils._slice(*[from_tree(arg, namespace) for arg in args])
         if hasattr(blaze.expr, op):
             cls = getattr(blaze.expr, op)
         else:
