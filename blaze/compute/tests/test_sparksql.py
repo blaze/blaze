@@ -2,17 +2,14 @@ from __future__ import absolute_import, print_function, division
 
 import pytest
 
-xfail = pytest.mark.xfail
-
 pytest.importorskip('pyspark')
-pytest.importorskip('pyspark.sql')
 sa = pytest.importorskip('sqlalchemy')
 
 import pandas as pd
 import pandas.util.testing as tm
 from datashape.predicates import iscollection
 from blaze import discover, compute, symbol, into, by, sin, exp, join
-from pyspark.sql import SQLContext, Row, DataFrame as SparkDataFrame
+from pyspark.sql import SQLContext, Row, SchemaRDD
 from into.utils import tmpfile
 
 
@@ -79,7 +76,7 @@ def test_projection(db, ctx):
 
 
 def test_symbol_compute(db, ctx):
-    assert isinstance(compute(db.t, ctx), SparkDataFrame)
+    assert isinstance(compute(db.t, ctx), SchemaRDD)
 
 
 def test_field_access(db, ctx):
@@ -117,12 +114,12 @@ def test_join(db, ctx):
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df, 's': cities_df}})
 
-    assert isinstance(result, SparkDataFrame)
+    assert isinstance(result, SchemaRDD)
     assert into(set, result) == into(set, expected)
     assert discover(result) == expr.dshape
 
 
-@xfail(reason='not worked out yet')
+@pytest.mark.xfail(reason='not worked out yet')
 def test_comprehensive(sc, ctx, db):
     L = [[100, 1, 'Alice'],
          [200, 2, 'Bob'],

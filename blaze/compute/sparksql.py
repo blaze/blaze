@@ -10,7 +10,6 @@ from __future__ import absolute_import, division, print_function
 
 from datashape.predicates import isrecord
 import sqlalchemy as sa
-import pandas as pd
 from toolz import pipe, curry
 from toolz.curried import filter, map
 from into import convert
@@ -27,19 +26,13 @@ __all__ = []
 
 
 try:
-    from pyspark.sql import SQLContext, DataFrame as SparkDataFrame
-    from pyspark.sql import (ByteType, ShortType, IntegerType, LongType,
-                             FloatType, DoubleType, StringType, BinaryType,
-                             BooleanType, TimestampType, DateType)
+    from pyspark.sql import SQLContext, SchemaRDD
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
-    SparkDataFrame = SQLContext = Dummy
-    ByteType = ShortType = IntegerType = LongType = FloatType = Dummy()
-    DoubleType = StringType = BinaryType = BooleanType = Dummy()
-    TimestampType = DateType = Dummy()
+    SchemaRDD = SQLContext = Dummy
 
 
-@convert.register(list, SparkDataFrame)
+@convert.register(list, SchemaRDD)
 def sparksql_dataframe_to_list(df, **kwargs):
     return list(map(tuple, df.collect()))
 
