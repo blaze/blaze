@@ -42,6 +42,7 @@ Presentations
 -------------
 
 * `See previous presentations about Blaze`_
+* `See previous blog posts about Blaze`_
 
 
 Index
@@ -85,5 +86,6 @@ Older versions of these documents can be found here_.
 .. _here: ../
 
 .. _`See previous presentations about Blaze`: http://blaze.pydata.org/presentations
+.. _`See previous blog posts about Blaze`: http://continuum.io/blog/tags/blaze
 .. _Into: http://into.readthedocs.org/
 .. _Dask.array: http://dask.readthedocs.org/
