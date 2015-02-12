@@ -13,10 +13,25 @@ Ecosystem
 Several projects have come out of Blaze development other than the Blaze
 project itself.
 
-* Blaze: Translates NumPy/Pandas-like syntax to databases.  High level user
-  interaction and analysis.
+* Blaze: Translates NumPy/Pandas-like syntax to databases.
+
+  Blaze presents a pleasant and familiar interface to the user regardless of
+  what database they use.  It mediates their interaction with databases,
+  optimizing and tranlsating their query as appropriate to provide a smooth
+  and interactive session.
+
 * Into_: Migrates data between formats.
+
+  Into moves data between formats (CSV, JSON, databases) and locations
+  (local, remote, HDFS) efficiently and robustly with a dead-simple interface
+  by leveraging a sophisticated and extensible network of conversions.
+
 * Dask.array_: Multi-core / on-disk NumPy arrays
+
+  Dask.arrays provide blocked algorithms on top of NumPy to handle
+  larger-than-memory arrays and to leverage multiple cores.  They are a
+  drop-in replacement for a commonly used subset of NumPy algorithms.
+
 
 The rest of this documentation is just about the Blaze project itself.  See the
 pages linked to above for ``into`` or ``dask.array``.
