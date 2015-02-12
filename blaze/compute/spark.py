@@ -5,7 +5,6 @@ from datashape.predicates import isscalar
 
 from blaze.expr import (Expr, ElemWise, Selection, Sort, Apply, Distinct, Join,
                         By, Label, Summary, by, ReLabel, Like, Reduction, Head)
-from . import python
 from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
@@ -136,18 +135,18 @@ def compute_up(t, lhs, rhs, **kwargs):
     how = t.how
 
     if how == 'inner':
-        joiner = RDD.join
+        joiner = lhs.join
     elif how == 'left':
-        joiner = RDD.leftOuterJoin
+        joiner = lhs.leftOuterJoin
     elif how == 'right':
-        joiner = RDD.rightOuterJoin
+        joiner = lhs.rightOuterJoin
     elif how == 'outer':
-        joiner = RDD.fullOuterJoin
+        joiner = lhs.fullOuterJoin
     else:
-        raise ValueError("Invalid join value %r, must be one of "
+        raise ValueError("Invalid join type %r, must be one of "
                          "{'inner', 'left', 'right', 'outer'}" % how)
 
-    rdd = joiner(lhs, rhs)
+    rdd = joiner(rhs)
     assemble = pair_assemble(t)
 
     return rdd.map(lambda x: assemble(x[1]))
