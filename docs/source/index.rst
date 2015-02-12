@@ -6,24 +6,58 @@
 databases and other computing systems.  Blaze allows Python users a familiar
 interface to query data living in other data storage systems.
 
-Core
-----
 
-The core of Blaze consists of
+Ecosystem
+---------
 
-*   A type system to express data types and layouts
-*   A symbolic expression system
-*   A set of interfaces to common data formats
-*   A set of interfaces to computational engines
+Several projects have come out of Blaze development other than the Blaze
+project itself.
+
+* Blaze: Translates NumPy/Pandas-like syntax to databases.
+
+  Blaze presents a pleasant and familiar interface to the user regardless of
+  what database they use.  It mediates their interaction with databases,
+  optimizing and translating their query as appropriate to provide a smooth
+  and interactive session.
+
+* Into_: Migrates data between formats.
+
+  Into moves data between formats (CSV, JSON, databases) and locations
+  (local, remote, HDFS) efficiently and robustly with a dead-simple interface
+  by leveraging a sophisticated and extensible network of conversions.
+
+* Dask.array_: Multi-core / on-disk NumPy arrays
+
+  Dask.arrays provide blocked algorithms on top of NumPy to handle
+  larger-than-memory arrays and to leverage multiple cores.  They are a
+  drop-in replacement for a commonly used subset of NumPy algorithms.
+
+
+The rest of this documentation is just about the Blaze project itself.  See the
+pages linked to above for ``into`` or ``dask.array``.
+
+
+Blaze
+-----
+
+Blaze is a high-level user interface for databases and array computing systems.
+It consists of the following components:
+
+*   A symbolic expression system to describe and reason about analytic queries
+*   A set of interpreters from that query system to various databases /
+   computational engines
 
 This architecture allows a single Blaze code to run against several
-computational backends.  Blaze depends on and exposes the hard work of
-countless other projects.
+computational backends.  Blaze interacts rapidly with the user and only
+communicates with the database when necessary.  Blaze is also able to analyze
+and optimize queries to improve the interactive experience.
+
 
 Presentations
 -------------
 
 * `See previous presentations about Blaze`_
+* `See previous blog posts about Blaze`_
 
 
 Index
@@ -67,3 +101,6 @@ Older versions of these documents can be found here_.
 .. _here: ../
 
 .. _`See previous presentations about Blaze`: http://blaze.pydata.org/presentations
+.. _`See previous blog posts about Blaze`: http://continuum.io/blog/tags/blaze
+.. _Into: http://into.readthedocs.org/
+.. _Dask.array: http://dask.readthedocs.org/
