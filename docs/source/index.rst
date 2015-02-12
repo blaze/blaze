@@ -44,8 +44,7 @@ Blaze is a high-level user interface for databases and array computing systems.
 It consists of the following components:
 
 *   A symbolic expression system to describe and reason about analytic queries
-*   A set of interpreters from that query system to various databases /
-   computational engines
+*   A set of interpreters from that query system to various databases / computational engines
 
 This architecture allows a single Blaze code to run against several
 computational backends.  Blaze interacts rapidly with the user and only
