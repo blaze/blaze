@@ -44,11 +44,6 @@ def sparksql_dataframe_to_list(df, **kwargs):
     return list(map(tuple, df.collect()))
 
 
-@convert.register(pd.DataFrame, SparkDataFrame)
-def sparksql_dataframe_to_pandas_dataframe(df, **kwargs):
-    return pd.DataFrame(convert(list, df, **kwargs), columns=df.columns)
-
-
 def make_sqlalchemy_table(expr):
     name = expr._name
     columns = dshape_to_alchemy(expr.dshape)
