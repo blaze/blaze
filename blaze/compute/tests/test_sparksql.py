@@ -119,6 +119,16 @@ def test_join(db, ctx):
     assert discover(result) == expr.dshape
 
 
+def test_join_diff_contexts(db, ctx, cities):
+    expr = join(db.t, db.s, 'name')
+    people = ctx.table('t')
+    cities = into(SchemaRDD, cities, dshape=discover(ctx.table('s')))
+    scope = {db: {'t': people, 's': cities}}
+    result = compute(expr, scope)
+    expected = compute(expr, {db: {'t': df, 's': cities_df}})
+    assert into(set, result) == into(set, expected)
+
+
 @pytest.mark.xfail(reason='not worked out yet')
 def test_comprehensive(sc, ctx, db):
     L = [[100, 1, 'Alice'],
