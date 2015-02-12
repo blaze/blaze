@@ -17,7 +17,7 @@ project itself.
 
   Blaze presents a pleasant and familiar interface to the user regardless of
   what database they use.  It mediates their interaction with databases,
-  optimizing and tranlsating their query as appropriate to provide a smooth
+  optimizing and translating their query as appropriate to provide a smooth
   and interactive session.
 
 * Into_: Migrates data between formats.
