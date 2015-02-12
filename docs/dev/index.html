@@ -105,11 +105,23 @@ interface to query data living in other data storage systems.</p>
 <h1>Ecosystem<a class="headerlink" href="#ecosystem" title="Permalink to this headline">¶</a></h1>
 <p>Several projects have come out of Blaze development other than the Blaze
 project itself.</p>
-<ul class="simple">
-<li>Blaze: Translates NumPy/Pandas-like syntax to databases.  High level user
-interaction and analysis.</li>
-<li><a class="reference external" href="http://into.readthedocs.org/">Into</a>: Migrates data between formats.</li>
-<li><a class="reference external" href="http://dask.readthedocs.org/">Dask.array</a>: Multi-core / on-disk NumPy arrays</li>
+<ul>
+<li><p class="first">Blaze: Translates NumPy/Pandas-like syntax to databases.</p>
+<p>Blaze presents a pleasant and familiar interface to the user regardless of
+what database they use.  It mediates their interaction with databases,
+optimizing and tranlsating their query as appropriate to provide a smooth
+and interactive session.</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://into.readthedocs.org/">Into</a>: Migrates data between formats.</p>
+<p>Into moves data between formats (CSV, JSON, databases) and locations
+(local, remote, HDFS) efficiently and robustly with a dead-simple interface
+by leveraging a sophisticated and extensible network of conversions.</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://dask.readthedocs.org/">Dask.array</a>: Multi-core / on-disk NumPy arrays</p>
+<p>Dask.arrays provide blocked algorithms on top of NumPy to handle
+larger-than-memory arrays and to leverage multiple cores.  They are a
+drop-in replacement for a commonly used subset of NumPy algorithms.</p>
+</li>
 </ul>
 <p>The rest of this documentation is just about the Blaze project itself.  See the
 pages linked to above for <tt class="docutils literal"><span class="pre">into</span></tt> or <tt class="docutils literal"><span class="pre">dask.array</span></tt>.</p>
