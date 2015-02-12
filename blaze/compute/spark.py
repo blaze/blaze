@@ -125,14 +125,6 @@ def compute_up(t, rdd, **kwargs):
     return rdd.distinct()
 
 
-_JOIN_FUNCS = {
-    'inner': RDD.join,
-    'left': RDD.leftOuterJoin,
-    'right': RDD.rightOuterJoin,
-    'outer': RDD.fullOuterJoin,
-}
-
-
 @dispatch(Join, RDD, RDD)
 def compute_up(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
@@ -141,25 +133,24 @@ def compute_up(t, lhs, rhs, **kwargs):
     lhs = lhs.keyBy(on_left)
     rhs = rhs.keyBy(on_right)
 
-    joiner = _JOIN_FUNCS[t.how]
+    how = t.how
+
+    if how == 'inner':
+        joiner = RDD.join
+    elif how == 'left':
+        joiner = RDD.leftOuterJoin
+    elif how == 'right':
+        joiner = RDD.rightOuterJoin
+    elif how == 'outer':
+        joiner = RDD.fullOuterJoin
+    else:
+        raise ValueError("Invalid join value %r, must be one of "
+                         "{'inner', 'left', 'right', 'outer'}" % how)
+
     rdd = joiner(lhs, rhs)
     assemble = pair_assemble(t)
 
     return rdd.map(lambda x: assemble(x[1]))
-
-
-python_reductions = {
-    reductions.sum: builtins.sum,
-    reductions.count: builtins.len,
-    reductions.max: builtins.max,
-    reductions.min: builtins.min,
-    reductions.any: builtins.any,
-    reductions.all: builtins.all,
-    reductions.mean: python._mean,
-    reductions.var: python._var,
-    reductions.std: python._std,
-    reductions.nunique: lambda x: len(set(x))
-}
 
 
 @dispatch(By, RDD)
