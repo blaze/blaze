@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -6,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Core &mdash; Blaze 0.7.1 documentation</title>
+    <title>Ecosystem &mdash; Blaze 0.7.1 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +16,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.7.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -83,7 +82,8 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="#"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Core</a></li>
+<li><a class="reference internal" href="#">Ecosystem</a></li>
+<li><a class="reference internal" href="#blaze">Blaze</a></li>
 <li><a class="reference internal" href="#presentations">Presentations</a><ul>
 <li><a class="reference internal" href="#index">Index</a><ul>
 </ul>
@@ -101,23 +101,39 @@
 <p><strong>Blaze</strong> translates a subset of modified NumPy and Pandas-like syntax to
 databases and other computing systems.  Blaze allows Python users a familiar
 interface to query data living in other data storage systems.</p>
-<div class="section" id="core">
-<h1>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h1>
-<p>The core of Blaze consists of</p>
+<div class="section" id="ecosystem">
+<h1>Ecosystem<a class="headerlink" href="#ecosystem" title="Permalink to this headline">¶</a></h1>
+<p>Several projects have come out of Blaze development other than the Blaze
+project itself.</p>
 <ul class="simple">
-<li>A type system to express data types and layouts</li>
-<li>A symbolic expression system</li>
-<li>A set of interfaces to common data formats</li>
-<li>A set of interfaces to computational engines</li>
+<li>Blaze: Translates NumPy/Pandas-like syntax to databases.  High level user
+interaction and analysis.</li>
+<li><a class="reference external" href="http://into.readthedocs.org/">Into</a>: Migrates data between formats.</li>
+<li><a class="reference external" href="http://dask.readthedocs.org/">Dask.array</a>: Multi-core / on-disk NumPy arrays</li>
 </ul>
+<p>The rest of this documentation is just about the Blaze project itself.  See the
+pages linked to above for <tt class="docutils literal"><span class="pre">into</span></tt> or <tt class="docutils literal"><span class="pre">dask.array</span></tt>.</p>
+</div>
+<div class="section" id="blaze">
+<h1>Blaze<a class="headerlink" href="#blaze" title="Permalink to this headline">¶</a></h1>
+<p>Blaze is a high-level user interface for databases and array computing systems.
+It consists of the following components:</p>
+<ul class="simple">
+<li>A symbolic expression system to describe and reason about analytic queries</li>
+<li>A set of interpreters from that query system to various databases /</li>
+</ul>
+<blockquote>
+<div>computational engines</div></blockquote>
 <p>This architecture allows a single Blaze code to run against several
-computational backends.  Blaze depends on and exposes the hard work of
-countless other projects.</p>
+computational backends.  Blaze interacts rapidly with the user and only
+communicates with the database when necessary.  Blaze is also able to analyze
+and optimize queries to improve the interactive experience.</p>
 </div>
 <div class="section" id="presentations">
 <h1>Presentations<a class="headerlink" href="#presentations" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
 <li><a class="reference external" href="http://blaze.pydata.org/presentations">See previous presentations about Blaze</a></li>
+<li><a class="reference external" href="http://continuum.io/blog/tags/blaze">See previous blog posts about Blaze</a></li>
 </ul>
 <div class="section" id="index">
 <h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
