@@ -55,7 +55,7 @@ test:
     - coverage
 
   commands:
-    - python -c "import blaze; blaze.test()"
+    - python -c "import blaze; blaze.test(exit=True)"
 
 about:
   home: http://blaze.pydata.org
