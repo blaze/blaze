@@ -8,10 +8,10 @@ SparkSQL.
 
 from __future__ import absolute_import, division, print_function
 
-from datashape.predicates import isrecord
+from datashape.predicates import isrecord, iscollection
 import sqlalchemy as sa
 from toolz import pipe, curry
-from toolz.curried import filter, map
+from toolz.curried import filter, map, get
 from into import convert
 from into.backends.sql import dshape_to_alchemy
 
@@ -33,8 +33,12 @@ except ImportError:
 
 
 @convert.register(list, SchemaRDD)
-def sparksql_dataframe_to_list(df, **kwargs):
-    return list(map(tuple, df.collect()))
+def sparksql_dataframe_to_list(df, dshape=None, **kwargs):
+    result = list(map(tuple, df.collect()))
+    if (dshape is not None and iscollection(dshape) and
+            not isrecord(dshape.measure)):
+        return list(map(get(0), result))
+    return result
 
 
 def make_sqlalchemy_table(expr):
