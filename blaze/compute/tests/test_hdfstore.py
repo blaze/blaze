@@ -9,6 +9,15 @@ from datetime import datetime
 from into import Chunks, resource, into
 
 
+try:
+    f = pd.HDFStore('foo')
+except (RuntimeError, ImportError) as e:
+    pytest.skip('skipping test_hdfstore.py %s' % e)
+else:
+    f.close()
+    os.remove('foo')
+
+
 df = pd.DataFrame([['a', 1, 10., datetime(2000, 1, 1)],
                    ['ab', 2, 20., datetime(2000, 2, 2)],
                    ['abc', 3, 30., datetime(2000, 3, 3)],

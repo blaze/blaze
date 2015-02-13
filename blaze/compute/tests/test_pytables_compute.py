@@ -2,7 +2,18 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import pytest
+import pandas as pd
 tb = pytest.importorskip('tables')
+
+
+try:
+    f = pd.HDFStore('foo')
+except (RuntimeError, ImportError) as e:
+    pytest.skip('skipping test_hdfstore.py %s' % e)
+else:
+    f.close()
+    os.remove('foo')
+
 
 from blaze.compatibility import xfail
 
