@@ -10,7 +10,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from blaze import discover, compute, symbol, into, by, sin, exp, join
-from pyspark.sql import SQLContext, Row, SchemaRDD
+from pyspark.sql import SQLContext, Row, SchemaRDD, HiveContext
 from into.utils import tmpfile
 
 
@@ -206,13 +206,18 @@ def test_map(ctx, db):
 
 
 @pytest.mark.parametrize(['grouper', 'reducer', 'reduction'],
-                         itertools.product(['name', 'id'],
-                                           ['id', 'amount'],
-                                           ['sum', 'count']))
+                         itertools.chain(itertools.product(['name', 'id',
+                                                            ['id', 'amount']],
+                                                           ['id', 'amount'],
+                                                           ['sum', 'count',
+                                                            'max', 'min',
+                                                            'mean',
+                                                            'nunique']),
+                                         [('name', 'name', 'count'),
+                                          ('name', 'name', 'nunique')]))
 def test_by(ctx, db, grouper, reducer, reduction):
     t = db.t
-    expr = by(getattr(t, grouper), total=getattr(getattr(t, reducer),
-                                                 reduction)())
+    expr = by(t[grouper], total=getattr(t[reducer], reduction)())
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df}})
     assert (set(map(frozenset, into(list, result))) ==
