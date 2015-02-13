@@ -7,6 +7,7 @@ from blaze import symbol, discover, compute
 import pandas as pd
 from datetime import datetime
 from into import Chunks, resource, into
+import os
 
 
 try:
