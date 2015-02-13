@@ -324,3 +324,10 @@ def test_head_compute():
     assert '...' not in s
     result = s.split('\n')[1:]
     assert len(result) == n
+
+
+def test_scalar_sql_compute():
+    t = into('sqlite:///:memory:::t', data,
+            dshape=dshape('var * {name: string, amount: int}'))
+    d = Data(t)
+    assert repr(d.amount.sum()) == '300'
