@@ -13,12 +13,13 @@ Ecosystem
 Several projects have come out of Blaze development other than the Blaze
 project itself.
 
-* Blaze: Translates NumPy/Pandas-like syntax to databases.
+* Blaze: Translates NumPy/Pandas-like syntax to systems like databases.
 
-  Blaze presents a pleasant and familiar interface to the user regardless of
-  what database they use.  It mediates their interaction with databases,
-  optimizing and translating their query as appropriate to provide a smooth
-  and interactive session.
+  Blaze presents a pleasant and familiar interface to us regardless of
+  what computational solution or database we use.  It mediates our
+  interaction with files, data structures, and databases, optimizing and
+  translating our query as appropriate to provide a smooth and interactive
+  session.
 
 * Into_: Migrates data between formats.
 
