@@ -15,6 +15,7 @@ from multipledispatch import halt_ordering, restart_ordering
 halt_ordering() # Turn off multipledispatch ordering
 
 from datashape import dshape, discover
+from .utils import ignoring
 from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
         mean, merge, nunique, relabel, selection, sort, summary, var, transform)
@@ -33,61 +34,36 @@ from .compute.core import *
 from .compute.core import compute
 from .cached import CachedDataset
 
-try:
+with ignoring(ImportError):
     from .server import *
-except ImportError:
-    pass
-
-try:
+with ignoring(ImportError):
     from .sql import *
     from .compute.sql import *
-except ImportError:
-    pass
 
-try:
+with ignoring(ImportError, AttributeError):
     from .spark import *
-except (AttributeError, ImportError):
-    pass
-try:
+with ignoring(ImportError, TypeError):
     from .compute.sparksql import *
     from .sparksql import *
-except (ImportError, TypeError):
-    pass
-try:
+with ignoring(ImportError):
     from dynd import nd
     from .compute.dynd import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.h5py import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.hdfstore import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.pytables import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.chunks import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.bcolz import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .mongo import *
     from .compute.mongo import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .pytables import *
     from .compute.pytables import *
-except ImportError:
-    pass
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
 

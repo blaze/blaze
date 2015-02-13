@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
 
-from into.utils import tmpfile, filetext, filetexts, raises, keywords
+from into.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 
 import psutil
 import numpy as np
