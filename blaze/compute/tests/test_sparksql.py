@@ -5,8 +5,8 @@ import pytest
 pytest.importorskip('pyspark')
 sa = pytest.importorskip('sqlalchemy')
 
+import numpy as np
 import pandas as pd
-import pandas.util.testing as tm
 from datashape.predicates import iscollection
 from blaze import discover, compute, symbol, into, by, sin, exp, join
 from pyspark.sql import SQLContext, Row, SchemaRDD
@@ -80,10 +80,13 @@ def test_symbol_compute(db, ctx):
 
 
 def test_field_access(db, ctx):
-    expr = db.t.name
-    expected = compute(expr, ctx)
-    result = compute(expr, {db: {'t': df}})
-    tm.assert_series_equal(into(pd.Series, expected), result)
+    for field in db.t.fields:
+        expr = getattr(db.t, field)
+        result = into(pd.Series, compute(expr, ctx))
+        expected = compute(expr, {db: {'t': df}})
+        assert result.name == expected.name
+        np.testing.assert_array_equal(result.values,
+                                      expected.values)
 
 
 def test_head(db, ctx):
