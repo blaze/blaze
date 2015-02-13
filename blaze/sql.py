@@ -9,7 +9,9 @@ try:
 except ImportError:
     Table = type(None)
 
+
 __all__ = ()
+
 
 @dispatch(Table, basestring)
 def create_index(s, column, name=None, unique=False):
@@ -25,4 +27,3 @@ def create_index(s, columns, name=None, unique=False):
     args = name,
     args += tuple(getattr(s.c, column) for column in columns)
     sa.Index(*args, unique=unique).create(s.bind)
-
