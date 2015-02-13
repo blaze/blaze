@@ -1,3 +1,6 @@
+import pytest
+tables = pytest.importorskip('tables')
+
 from blaze.compute.hdfstore import *
 from blaze.utils import tmpfile
 from blaze import symbol, discover, compute
