@@ -5,9 +5,10 @@ import pytest
 pytest.importorskip('pyspark')
 sa = pytest.importorskip('sqlalchemy')
 
+import itertools
+
 import numpy as np
 import pandas as pd
-from datashape.predicates import iscollection
 from blaze import discover, compute, symbol, into, by, sin, exp, join
 from pyspark.sql import SQLContext, Row, SchemaRDD
 from into.utils import tmpfile
@@ -100,8 +101,8 @@ def test_literals(db, ctx):
     expr = db.t[db.t.amount >= 100]
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df}})
-    assert list(map(set, into(list, result))) == \
-        list(map(set, into(list, expected)))
+    assert list(map(set, into(list, result))) == list(map(set, into(list,
+                                                                    expected)))
 
 
 def test_by_summary(db, ctx):
@@ -132,63 +133,116 @@ def test_join_diff_contexts(db, ctx, cities):
     assert into(set, result) == into(set, expected)
 
 
-@pytest.mark.xfail(reason='not worked out yet')
-def test_comprehensive(sc, ctx, db):
-    L = [[100, 1, 'Alice'],
-         [200, 2, 'Bob'],
-         [300, 3, 'Charlie'],
-         [400, 4, 'Dan'],
-         [500, 5, 'Edith']]
+def test_field_distinct(ctx, db):
+    expr = db.t.name.distinct()
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
-    df = pd.DataFrame(L, columns=['amount', 'id', 'name'])
 
-    rdd = into(sc, df)
-    srdd = into(ctx, df)
+def test_boolean(ctx, db):
+    expr = db.t.amount > 50
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
+
+def test_selection(ctx, db):
+    expr = db.t[db.t.amount > 50]
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert list(map(set, into(list, result))) == list(map(set, into(list,
+                                                                    expected)))
+
+
+def test_selection_field(ctx, db):
+    expr = db.t[db.t.amount > 50].name
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(set, result, dshape=expr.dshape) == into(set, expected)
+
+
+@pytest.mark.parametrize(['field', 'reduction'],
+                         itertools.product(['id', 'amount'], ['sum', 'max']))
+def test_reductions(ctx, db, field, reduction):
+    expr = getattr(getattr(db.t, field), reduction)()
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(list, result)[0][0] == expected
+
+
+def test_column_arithmetic(ctx, db):
+    expr = db.t.amount + 1
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(set, result, dshape=expr.dshape) == into(set, expected)
+
+
+@pytest.mark.parametrize('function', [pytest.mark.xfail(sin),
+                                      pytest.mark.xfail(exp)])
+def test_math(ctx, db, function):
+    expr = function(db.t.amount)
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(set, result, dshape=expr.dshape) == into(set, expected)
+
+
+@pytest.mark.parametrize(['field', 'ascending'],
+                         itertools.product(['name', 'id'], [True, False]))
+def test_sort(ctx, db, field, ascending):
+    expr = db.t.sort(field, ascending=ascending)
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert list(map(set, into(list, result))) == list(map(set, into(list,
+                                                                    expected)))
+
+
+@pytest.mark.xfail
+def test_map(ctx, db):
+    expr = db.t.id.map(lambda x: x + 1, 'int')
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert into(set, result, dshape=expr.dshape) == into(set, expected)
+
+
+@pytest.mark.parametrize(['grouper', 'reducer', 'reduction'],
+                         itertools.product(['name', 'id'],
+                                           ['id', 'amount'],
+                                           ['sum', 'count']))
+def test_by(ctx, db, grouper, reducer, reduction):
     t = db.t
+    expr = by(getattr(t, grouper), total=getattr(getattr(t, reducer),
+                                                 reduction)())
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert (set(map(frozenset, into(list, result))) ==
+            set(map(frozenset, into(list, expected))))
 
-    expressions = {
-        t: [],
-        t['id']: [],
-        t.id.max(): [],
-        t.amount.sum(): [],
-        t.amount + 1: [],
-        # sparksql without hiveql doesn't support math
-        sin(t.amount): [srdd],
-        # sparksql without hiveql doesn't support math
-        exp(t.amount): [srdd],
-        t.amount > 50: [],
-        t[t.amount > 50]: [],
-        t.sort('name'): [],
-        t.sort('name', ascending=False): [],
-        t.head(3): [],
-        t.name.distinct(): [],
-        t[t.amount > 50]['name']: [],
-        t.id.map(lambda x: x + 1, 'int'): [srdd],  # no udfs yet
-        t[t.amount > 50]['name']: [],
-        by(t.name, total=t.amount.sum()): [],
-        by(t.id, total=t.id.count()): [],
-        by(t[['id', 'amount']], total=t.id.count()): [],
-        by(t[['id', 'amount']], total=(t.amount + 1).sum()): [],
-        by(t[['id', 'amount']], total=t.name.nunique()): [rdd, srdd],
-        by(t.id, total=t.amount.count()): [],
-        by(t.id, total=t.id.nunique()): [rdd, srdd],
-        # by(t, t.count()): [],
-        # by(t.id, t.count()): [df],
-        t[['amount', 'id']]: [],
-        t[['id', 'amount']]: [],
-    }
 
-    for e, exclusions in expressions.items():
-        if rdd not in exclusions:
-            if iscollection(e.dshape):
-                assert into(set, compute(e, rdd)) == into(
-                    set, compute(e, df))
-            else:
-                assert compute(e, rdd) == compute(e, df)
-        if srdd not in exclusions:
-            if iscollection(e.dshape):
-                assert into(set, compute(e, srdd)) == into(
-                    set, compute(e, df))
-            else:
-                assert compute(e, rdd) == compute(e, df)
+@pytest.mark.parametrize(['reducer', 'reduction'],
+                         itertools.product(['id', 'name'],
+                                           ['count', 'nunique']))
+def test_multikey_by(ctx, db, reducer, reduction):
+    t = db.t
+    expr = by(t[['id', 'amount']], total=getattr(getattr(t, reducer),
+                                                 reduction)())
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert (set(map(frozenset, into(list, result))) ==
+            set(map(frozenset, into(list, expected))))
+
+
+def test_grouper_with_arith(ctx, db):
+    expr = by(db.t[['id', 'amount']], total=(db.t.amount + 1).sum())
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert list(map(set, into(list, result))) == list(map(set, into(list,
+                                                                    expected)))
+
+
+def test_by_non_native_ops(ctx, db):
+    expr = by(db.t.id, total=db.t.id.nunique())
+    result = compute(expr, ctx)
+    expected = compute(expr, {db: {'t': df}})
+    assert list(map(set, into(list, result))) == list(map(set, into(list,
+                                                                    expected)))
