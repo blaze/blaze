@@ -228,6 +228,7 @@ def test_can_trivially_create_sqlite_table():
     with Data('sqlite:///'+example('iris.db')+'::iris') as d:
         assert d is not None
 
+@xfail(reason="h5py/pytables mismatch")
 def test_can_trivially_create_pytables():
     pytest.importorskip('tables')
     with Data(example('accounts.h5')+'::/accounts') as d:
