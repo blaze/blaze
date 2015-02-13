@@ -1,28 +1,20 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
-from operator import itemgetter
-import operator
 from toolz import compose, identity
-from collections import Iterator
-from datashape import Record, Tuple
 from datashape.predicates import isscalar
 
-from blaze.expr import *
-from blaze.expr import count as Count
-from . import core, python
+from blaze.expr import (Expr, ElemWise, Selection, Sort, Apply, Distinct, Join,
+                        By, Label, Summary, by, ReLabel, Like, Reduction, Head)
 from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
-from ..utils import listpack
 
 from .core import compute, compute_up
 
-from toolz.curried import get
-
 __all__ = ['RDD', 'pyspark', 'SparkContext']
+
 
 class Dummy(object):
     sum = max = min = count = distinct = mean = variance = stdev = None
@@ -53,7 +45,7 @@ from ..expr.broadcast import broadcast_collect
 
 @dispatch(Expr, RDD)
 def optimize(expr, seq):
-    return broadcast_collect( expr)
+    return broadcast_collect(expr)
 
 
 @dispatch(ElemWise, RDD)
@@ -70,14 +62,14 @@ def compute_up(t, rdd, **kwargs):
 
 
 rdd_reductions = {
-        reductions.sum: RDD.sum,
-        reductions.min: RDD.min,
-        reductions.max: RDD.max,
-        reductions.count: RDD.count,
-        reductions.mean: RDD.mean,
-        reductions.var: RDD.variance,
-        reductions.std: RDD.stdev,
-        reductions.nunique: compose(RDD.count, RDD.distinct)}
+    reductions.sum: RDD.sum,
+    reductions.min: RDD.min,
+    reductions.max: RDD.max,
+    reductions.count: RDD.count,
+    reductions.mean: RDD.mean,
+    reductions.var: RDD.variance,
+    reductions.std: RDD.stdev,
+    reductions.nunique: compose(RDD.count, RDD.distinct)}
 
 
 @dispatch(tuple(rdd_reductions), RDD)
@@ -110,8 +102,9 @@ def compute_up(t, rdd, **kwargs):
         return rdd.mapPartitions(t.func)
     else:
         raise NotImplementedError("Can only apply splittable functions."
-                "To apply function to each partition add splittable=True kwarg"
-                " to call to apply.  t.apply(func, dshape, splittable=True)")
+                                  "To apply function to each partition add "
+                                  "splittable=True kwarg to call to apply.  "
+                                  "t.apply(func, dshape, splittable=True)")
 
 
 @dispatch(Sort, RDD)
@@ -122,8 +115,8 @@ def compute_up(t, rdd, **kwargs):
         key = optimize(t.key, rdd)
         key = rrowfunc(key, t._child)
     return (rdd.keyBy(key)
-                .sortByKey(ascending=t.ascending)
-                .map(lambda x: x[1]))
+            .sortByKey(ascending=t.ascending)
+            .map(lambda x: x[1]))
 
 
 @dispatch(Distinct, RDD)
@@ -139,33 +132,25 @@ def compute_up(t, lhs, rhs, **kwargs):
     lhs = lhs.keyBy(on_left)
     rhs = rhs.keyBy(on_right)
 
+    how = t.how
 
-    if t.how == 'inner':
-        rdd = lhs.join(rhs)
-    elif t.how == 'left':
-        rdd = lhs.leftOuterJoin(rhs)
-    elif t.how == 'right':
-        rdd = lhs.rightOuterJoin(rhs)
-    elif t.how == 'outer':
-        # https://issues.apache.org/jira/browse/SPARK-546
-        raise NotImplementedError("Spark does not yet support full outer join")
+    if how == 'inner':
+        joiner = lhs.join
+    elif how == 'left':
+        joiner = lhs.leftOuterJoin
+    elif how == 'right':
+        joiner = lhs.rightOuterJoin
+    elif how == 'outer':
+        joiner = lhs.fullOuterJoin
+    else:
+        raise ValueError("Invalid join type %r, must be one of "
+                         "{'inner', 'left', 'right', 'outer'}" % how)
 
+    rdd = joiner(rhs)
     assemble = pair_assemble(t)
 
     return rdd.map(lambda x: assemble(x[1]))
 
-
-python_reductions = {
-              reductions.sum: builtins.sum,
-              reductions.count: builtins.len,
-              reductions.max: builtins.max,
-              reductions.min: builtins.min,
-              reductions.any: builtins.any,
-              reductions.all: builtins.all,
-              reductions.mean: python._mean,
-              reductions.var: python._var,
-              reductions.std: python._std,
-              reductions.nunique: lambda x: len(set(x))}
 
 @dispatch(By, RDD)
 def compute_up(t, rdd, **kwargs):
@@ -173,8 +158,8 @@ def compute_up(t, rdd, **kwargs):
     apply = optimize(t.apply, rdd)
     t = by(grouper, apply)
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
-        (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
-                                                for val in t.apply.values))):
+        (isinstance(t.apply, Summary) and
+         builtins.all(type(val) in binops for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
 
         if isscalar(t.grouper.dshape.measure):
@@ -192,9 +177,6 @@ def compute_up(t, rdd, **kwargs):
         return (rdd.keyBy(grouper)
                    .combineByKey(create, binop, combiner)
                    .map(unpack))
-
-
-        d = reduceby(grouper, binop, seq, initial)
     else:
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
@@ -215,23 +197,3 @@ def compute_up(t, rdd, **kwargs):
 def compute_up(t, rdd, **kwargs):
     predicate = like_regex_predicate(t)
     return rdd.filter(predicate)
-
-
-@dispatch(RDD, RDD)
-def into(a, b):
-    return b
-
-
-@dispatch(SparkContext, (list, tuple, Iterator))
-def into(sc, seq):
-    return sc.parallelize(seq)
-
-
-@dispatch(RDD, (list, tuple))
-def into(rdd, seq):
-    return into(rdd.context, seq)
-
-
-@dispatch(list, RDD)
-def into(seq, rdd):
-    return rdd.collect()
