@@ -163,9 +163,12 @@ def test_selection_field(ctx, db):
 
 
 @pytest.mark.parametrize(['field', 'reduction'],
-                         itertools.product(['id', 'amount'], ['sum', 'max']))
+                         itertools.product(['id', 'amount'], ['sum', 'max',
+                                                              'min', 'mean',
+                                                              'count',
+                                                              'nunique']))
 def test_reductions(ctx, db, field, reduction):
-    expr = getattr(getattr(db.t, field), reduction)()
+    expr = getattr(db.t[field], reduction)()
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df}})
     assert into(list, result)[0][0] == expected
