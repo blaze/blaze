@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import datashape as ds
 import pytest
 from toolz import first
@@ -7,9 +8,20 @@ from blaze import into
 from blaze.utils import tmpfile
 from blaze.compatibility import xfail
 from blaze import PyTables, discover
+import pandas as pd
 
 
 tb = pytest.importorskip('tables')
+
+
+try:
+    f = pd.HDFStore('foo')
+except (RuntimeError, ImportError) as e:
+    pytest.skip('skipping test_hdfstore.py %s' % e)
+else:
+    f.close()
+    os.remove('foo')
+
 
 now = np.datetime64('now').astype('datetime64[us]')
 
