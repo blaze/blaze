@@ -12,7 +12,7 @@ from blaze.compute.sql import (compute, computefull, select, lower_column,
                                compute_up)
 from blaze.expr import *
 from blaze.compatibility import xfail
-from blaze.utils import unique
+from toolz import unique
 from pandas import DataFrame
 from into import into, resource
 from blaze.utils import tmpfile

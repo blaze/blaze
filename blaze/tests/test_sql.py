@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip('sqlalchemy')
 import gzip
-from cytoolz import first
+from toolz import first
 import sqlalchemy
 import sqlalchemy as sa
 from sqlalchemy.exc import OperationalError

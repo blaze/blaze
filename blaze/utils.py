@@ -16,7 +16,6 @@ import psutil
 import numpy as np
 
 # Imports that replace older utils.
-from cytoolz import count, unique, partition_all, nth, groupby, reduceby
 from .compatibility import map, zip
 
 from .dispatch import dispatch

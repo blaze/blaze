@@ -10,7 +10,7 @@ import blaze
 from collections import Iterator
 import socket
 import json
-from cytoolz import first, merge, valmap, assoc
+from toolz import first, merge, valmap, assoc
 from functools import partial, wraps
 from blaze import into, compute
 from blaze.expr import utils as expr_utils
