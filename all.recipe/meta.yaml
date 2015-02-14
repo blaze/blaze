@@ -1,0 +1,26 @@
+package:
+  name: blaze
+  version: "0.7.2"
+
+requirements:
+  run:
+    - blaze-core
+    - h5py
+    - cytoolz
+    - pytables
+    - pymongo
+    - numba
+    - bcolz
+    - unittest2 [py26]
+
+test:
+  requires:
+    - pytest
+    - coverage
+
+  commands:
+    - python -c "import blaze; blaze.test(exit=True)"
+
+about:
+  home: http://blaze.pydata.org
+  license: BSD

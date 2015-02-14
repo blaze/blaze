@@ -1,0 +1,45 @@
+package:
+  name: blaze-core
+  version: "0.7.2"
+
+build:
+    number: {{environ.get('BINSTAR_BUILD', 1)}}
+
+requirements:
+  build:
+    - datashape
+    - into
+    - flask
+    - multipledispatch
+    - numpy
+    - pandas
+    - psutil
+    - python
+    - requests
+    - sqlalchemy
+    - toolz
+
+  run:
+    - datashape
+    - into
+    - flask
+    - multipledispatch
+    - numpy
+    - pandas
+    - psutil
+    - python
+    - requests
+    - sqlalchemy
+    - toolz
+
+test:
+  requires:
+    - pytest
+    - coverage
+
+  commands:
+    - python -c "import blaze; blaze.test(exit=True)"
+
+about:
+  home: http://blaze.pydata.org
+  license: BSD

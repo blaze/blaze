@@ -1,0 +1,16 @@
+python
+dynd-python
+numpy
+multipledispatch
+sqlalchemy
+pandas
+h5py
+datashape
+into
+flask
+requests
+cytoolz
+toolz
+bcolz
+pytables
+psutil
