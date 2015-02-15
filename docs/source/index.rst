@@ -72,6 +72,7 @@ User facing
    install
    quickstart
    queries
+   split-apply-combine
    rosetta
    uri
    csv
