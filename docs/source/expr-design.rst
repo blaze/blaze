@@ -59,12 +59,12 @@ expression.
 
         type(z) == pow
 
-*  ``._args``: All children of a node, including parameters.::
+*  ``._args``: All children of a node, including parameters.  Args may include both Blaze expressions and other variables like strings::
 
        z._args == (log(x - 1), y)
        x._args == ('x', 'int64')
 
-*  ``._inputs``: All children of a node, excluding parameters.::
+*  ``._inputs``: All children of a node, excluding parameters.  All inputs are Blaze expressions.::
 
        z._inputs == (log(x - 1), y)
        x._inputs == ()
@@ -79,7 +79,9 @@ transform either all information pertaining to the tree or just the
 expressions.
 
 To clear up confusion between ``._args`` from ``._inputs`` consider the
-following tabular example with sort.
+following tabular example with sort.  ``._inputs`` contains only other Blaze
+expressions while ``._args`` also contains parameters like the string
+``'balance'``.
 
 .. code-block:: Python
 
@@ -101,7 +103,7 @@ Some convenience functions for common traversals already exist:
 
 *  ``._subterms``, a traversal along ``._inputs``::
 
-   >>> list(z._subterms())
+   >>> list(z._traverse())
    [(log(x - 1)) ** y, log(x - 1), x - 1, x, y]
 
 * ``._traverse``, a traversal along ``._args``::
