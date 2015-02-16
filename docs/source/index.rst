@@ -87,6 +87,7 @@ Internal
 .. toctree::
    :maxdepth: 1
 
+   expr-design
    expressions
    backends
    interactivity
