@@ -141,13 +141,13 @@ expression.</p>
 </pre></div>
 </div>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">._args</span></tt>: All children of a node, including parameters.:</p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">._args</span></tt>: All children of a node, including parameters.  Args may include both Blaze expressions and other variables like strings:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">z</span><span class="o">.</span><span class="n">_args</span> <span class="o">==</span> <span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">x</span><span class="o">.</span><span class="n">_args</span> <span class="o">==</span> <span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">._inputs</span></tt>: All children of a node, excluding parameters.:</p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">._inputs</span></tt>: All children of a node, excluding parameters.  All inputs are Blaze expressions.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">z</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">==</span> <span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">x</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">==</span> <span class="p">()</span>
 </pre></div>
@@ -164,7 +164,9 @@ expression.</p>
 transform either all information pertaining to the tree or just the
 expressions.</p>
 <p>To clear up confusion between <tt class="docutils literal"><span class="pre">._args</span></tt> from <tt class="docutils literal"><span class="pre">._inputs</span></tt> consider the
-following tabular example with sort.</p>
+following tabular example with sort.  <tt class="docutils literal"><span class="pre">._inputs</span></tt> contains only other Blaze
+expressions while <tt class="docutils literal"><span class="pre">._args</span></tt> also contains parameters like the string
+<tt class="docutils literal"><span class="pre">'balance'</span></tt>.</p>
 <div class="highlight-Python"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;var * {name: string, balance: int}&#39;</span><span class="p">)</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s">&#39;balance&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">expr</span><span class="o">.</span><span class="n">_args</span>
@@ -184,7 +186,7 @@ following tabular example with sort.</p>
 </div>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">._subterms</span></tt>, a traversal along <tt class="docutils literal"><span class="pre">._inputs</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">_subterms</span><span class="p">())</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">_traverse</span><span class="p">())</span>
 </pre></div>
 </div>
 <p>[(log(x - 1)) ** y, log(x - 1), x - 1, x, y]</p>
