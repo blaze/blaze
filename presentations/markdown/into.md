@@ -1,6 +1,6 @@
 ## `into(target, source)`
 
-![](https://raw.githubusercontent.com/ContinuumIO/into/master/docs/images/conversions.png)
+![](images/into-small.png)
 
 
 ## Q: How do you migrate a CSV file into a Mongo Database?
@@ -51,7 +51,7 @@
 
 ### Into embraces the complexity
 
-![](https://raw.githubusercontent.com/ContinuumIO/into/master/docs/images/conversions.png)
+![](images/into-small.png)
 
 *  Nodes are data types (`DataFrame`, `list`, `sqlalchemy.Table`, ...)
 *  Edges are functions (`DataFrame -> CSV via read_csv`, ...)
@@ -62,7 +62,7 @@
 
 ### Today's graph
 
-![](http://into.readthedocs.org/en/latest/_images/conversions.png)
+![](images/into-big.png)
 
 
 ### How to get and use `into`
