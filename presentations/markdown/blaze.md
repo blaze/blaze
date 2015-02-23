@@ -1,5 +1,4 @@
-Blaze - User Interface
-----------------------
+### `blaze` - a user interface
 
 <img src="http://blaze.pydata.org/docs/dev/_images/xyz.png">
 
@@ -9,6 +8,8 @@ Blaze - User Interface
 
 
 ### We often link interface and implementation
+
+this yields both good and bad consequences
 
 
 <object data="images/frontbackends-numpy-pandas.svg"
@@ -158,7 +159,7 @@ Blaze is generic (that's the point) but we give up *a lot*:
 
 ### Questions?
 
-* Source: [https://github.com/ContinuumIO/blaze](https://github.com/ContinuumIO/blaze
+* Source: [https://github.com/ContinuumIO/blaze](https://github.com/ContinuumIO/blaze)
 * Docs: [http://blaze.pydata.org/](http://blaze.pydata.org/)
 
 ```python
