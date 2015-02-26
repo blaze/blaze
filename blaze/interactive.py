@@ -210,6 +210,7 @@ def numel(shape):
         return 1
     return reduce(lambda x, y: x * y, shape, 1)
 
+
 def short_dshape(ds, nlines=5):
     s = datashape.coretypes.pprint(ds)
     lines = s.split('\n')
@@ -251,7 +252,7 @@ def expr_repr(expr, n=10):
         return repr_tables(expr, 10)
 
     # Smallish arrays
-    if ndim(expr) >= 2 and  numel(expr.shape) and numel(expr.shape) < 1000000:
+    if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
         return repr(compute(expr))
 
     # Other
@@ -307,6 +308,7 @@ def table_length(expr):
 Expr.__repr__ = expr_repr
 Expr._repr_html_ = lambda x: to_html(x)
 Expr.__len__ = table_length
+
 
 def intonumpy(data, dtype=None, **kwargs):
     # TODO: Don't ignore other kwargs like copy
