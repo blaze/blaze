@@ -200,7 +200,7 @@ def repr_tables(expr, n=10):
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
-        return repr(result) # pragma: no cover
+        return repr(result)  # pragma: no cover
 
 
 def numel(shape):
