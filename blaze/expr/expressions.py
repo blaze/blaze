@@ -47,7 +47,7 @@ def isvalid_identifier(s, regex=re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')):
     >>> isvalid_identifier(None)
     False
     """
-    return s and not keyword.iskeyword(s) and regex.match(s) is not None
+    return not not s and not keyword.iskeyword(s) and regex.match(s) is not None
 
 
 def valid_identifier(s):
