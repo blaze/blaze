@@ -241,9 +241,9 @@ def expr_repr(expr, n=10):
         elif 'bool' in str(expr.dshape):
             return repr(coerce_to(bool, result))
         elif 'datetime' in str(expr.dshape):
-            return repr(coerce_to(datetime, result))
+            return repr(coerce_to(datetime.datetime, result))
         elif 'date' in str(expr.dshape):
-            return repr(coerce_to(date, result))
+            return repr(coerce_to(datetime.date, result))
         else:
             return repr(compute(expr))
 
