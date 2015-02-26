@@ -103,12 +103,13 @@ Some convenience functions for common traversals already exist:
 
 *  ``._subterms``, a traversal along ``._inputs``::
 
-   >>> list(z._traverse())
+   >>> list(z._subterms())  # doctest: +NORMALIZE_WHITESPACE
    [(log(x - 1)) ** y, log(x - 1), x - 1, x, y]
+
 
 * ``._traverse``, a traversal along ``._args``::
 
-   >>> list(z._traverse())
+   >>> list(z._traverse())  # doctest: +NORMALIZE_WHITESPACE
    [(log(x - 1)) ** y,
     log(x - 1),
     x - 1,
