@@ -2,8 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 import datetime
-from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
-    to_numpy_dtype, isdimension, var)
+from datashape import discover, Tuple, Record, DataShape, var
 from datashape.predicates import iscollection, isscalar, isrecord
 from pandas import DataFrame, Series
 import itertools
@@ -15,7 +14,7 @@ from collections import Iterator
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
 from into import into, resource
-from .compatibility import _strtypes, unicode
+from .compatibility import _strtypes
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
 
@@ -36,14 +35,14 @@ except ImportError:
     pass
 
 
-def Data(data, dshape=None, name=None, fields=None, columns=None,
-         schema=None, **kwargs):
+def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
+         **kwargs):
     sub_uri = ''
     if isinstance(data, _strtypes):
         if '::' in data:
             data, sub_uri = data.split('::')
-        data = resource(data, schema=schema, dshape=dshape,
-                              columns=columns, **kwargs)
+        data = resource(data, schema=schema, dshape=dshape, columns=columns,
+                        **kwargs)
     if (isinstance(data, Iterator) and
             not isinstance(data, tuple(not_an_iterator))):
         data = tuple(data)
@@ -54,7 +53,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None,
         fields = columns
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
-                " arguments")
+                         " arguments")
     if schema and not dshape:
         dshape = var * schema
     if dshape and isinstance(dshape, _strtypes):
