@@ -12,6 +12,7 @@ import numpy as np
 from ..expr import Head, ElemWise, Distinct, Symbol, Expr, path
 from ..expr.split import split
 from .core import compute
+from .pmap import get_default_pmap
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
 
@@ -29,7 +30,10 @@ def compute_chunk(chunk, chunk_expr, part):
 
 
 @dispatch(Expr, Chunks)
-def compute_down(expr, data, map=map, **kwargs):
+def compute_down(expr, data, map=None, **kwargs):
+    if map is None:
+        map = get_default_pmap()
+
     leaf = expr._leaves()[0]
 
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr)

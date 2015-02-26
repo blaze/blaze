@@ -13,6 +13,7 @@ from ..expr.optimize import lean_projection
 from ..expr.split import split
 from ..partition import partitions
 from .core import compute
+from .pmap import get_default_pmap
 
 from collections import Iterator, Iterable
 import datashape
@@ -101,7 +102,10 @@ def get_chunksize(data):
 
 
 @dispatch(Expr, (bcolz.carray, bcolz.ctable))
-def compute_down(expr, data, chunksize=None, map=map, **kwargs):
+def compute_down(expr, data, chunksize=None, map=None, **kwargs):
+    if map is None:
+        map = get_default_pmap()
+
     leaf = expr._leaves()[0]
 
     if chunksize is None:
