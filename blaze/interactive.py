@@ -75,8 +75,6 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-
-    name = name or next(names)
     result = InteractiveSymbol(data, ds, name)
 
     if sub_uri:
@@ -126,7 +124,9 @@ class InteractiveSymbol(Symbol):
     def __init__(self, data, dshape, name=None):
         self.data = data
         self.dshape = dshape
-        self._name = name or next(names)
+        self._name = name or (next(names)
+                              if isrecord(dshape.measure)
+                              else None)
 
     def _resources(self):
         return {self: self.data}
@@ -191,7 +191,7 @@ def concrete_head(expr, n=10):
 
 
 def repr_tables(expr, n=10):
-    result = concrete_head(expr, n)
+    result = concrete_head(expr, n).rename(columns={None: ''})
 
     if isinstance(result, (DataFrame, Series)):
         s = repr(result)

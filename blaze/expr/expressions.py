@@ -121,8 +121,10 @@ class Expr(Node):
     def fields(self):
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
-        if hasattr(self, '_name'):
+        name = getattr(self, '_name', None)
+        if name is not None:
             return [self._name]
+        return []
 
     def _len(self):
         try:
@@ -256,7 +258,7 @@ class Symbol(Expr):
         self._token = token
 
     def __str__(self):
-        return self._name
+        return self._name or ''
 
     def _resources(self):
         return dict()
