@@ -80,6 +80,7 @@ User facing
    ooc
    server
    datashape
+   what-blaze-isnt
    api
 
 Internal
