@@ -2,8 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 import datetime
-from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
-    to_numpy_dtype, isdimension, var)
+from datashape import discover, Tuple, Record, DataShape, var
 from datashape.predicates import iscollection, isscalar, isrecord
 from pandas import DataFrame, Series
 import itertools
@@ -15,7 +14,7 @@ from collections import Iterator
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
 from into import into, resource
-from .compatibility import _strtypes, unicode
+from .compatibility import _strtypes
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
 
@@ -36,14 +35,14 @@ except ImportError:
     pass
 
 
-def Data(data, dshape=None, name=None, fields=None, columns=None,
-         schema=None, **kwargs):
+def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
+         **kwargs):
     sub_uri = ''
     if isinstance(data, _strtypes):
         if '::' in data:
             data, sub_uri = data.split('::')
-        data = resource(data, schema=schema, dshape=dshape,
-                              columns=columns, **kwargs)
+        data = resource(data, schema=schema, dshape=dshape, columns=columns,
+                        **kwargs)
     if (isinstance(data, Iterator) and
             not isinstance(data, tuple(not_an_iterator))):
         data = tuple(data)
@@ -54,7 +53,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None,
         fields = columns
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
-                " arguments")
+                         " arguments")
     if schema and not dshape:
         dshape = var * schema
     if dshape and isinstance(dshape, _strtypes):
@@ -76,8 +75,6 @@ def Data(data, dshape=None, name=None, fields=None, columns=None,
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-
-    name = name or next(names)
     result = InteractiveSymbol(data, ds, name)
 
     if sub_uri:
@@ -127,7 +124,9 @@ class InteractiveSymbol(Symbol):
     def __init__(self, data, dshape, name=None):
         self.data = data
         self.dshape = dshape
-        self._name = name or next(names)
+        self._name = name or (next(names)
+                              if isrecord(dshape.measure)
+                              else None)
 
     def _resources(self):
         return {self: self.data}
@@ -192,7 +191,7 @@ def concrete_head(expr, n=10):
 
 
 def repr_tables(expr, n=10):
-    result = concrete_head(expr, n)
+    result = concrete_head(expr, n).rename(columns={None: ''})
 
     if isinstance(result, (DataFrame, Series)):
         s = repr(result)
@@ -201,7 +200,7 @@ def repr_tables(expr, n=10):
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
-        return repr(result) # pragma: no cover
+        return repr(result)  # pragma: no cover
 
 
 def numel(shape):
@@ -210,6 +209,7 @@ def numel(shape):
     if not shape:
         return 1
     return reduce(lambda x, y: x * y, shape, 1)
+
 
 def short_dshape(ds, nlines=5):
     s = datashape.coretypes.pprint(ds)
@@ -241,9 +241,9 @@ def expr_repr(expr, n=10):
         elif 'bool' in str(expr.dshape):
             return repr(coerce_to(bool, result))
         elif 'datetime' in str(expr.dshape):
-            return repr(coerce_to(datetime, result))
+            return repr(coerce_to(datetime.datetime, result))
         elif 'date' in str(expr.dshape):
-            return repr(coerce_to(date, result))
+            return repr(coerce_to(datetime.date, result))
         else:
             return repr(compute(expr))
 
@@ -252,7 +252,7 @@ def expr_repr(expr, n=10):
         return repr_tables(expr, 10)
 
     # Smallish arrays
-    if ndim(expr) >= 2 and  numel(expr.shape) and numel(expr.shape) < 1000000:
+    if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
         return repr(compute(expr))
 
     # Other
@@ -308,6 +308,7 @@ def table_length(expr):
 Expr.__repr__ = expr_repr
 Expr._repr_html_ = lambda x: to_html(x)
 Expr.__len__ = table_length
+
 
 def intonumpy(data, dtype=None, **kwargs):
     # TODO: Don't ignore other kwargs like copy

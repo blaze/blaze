@@ -1,5 +1,6 @@
 from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
 
+import datetime
 from into import into, append
 from into.backends.csv import CSV
 from blaze import discover
@@ -332,3 +333,23 @@ def test_scalar_sql_compute():
             dshape=dshape('var * {name: string, amount: int}'))
     d = Data(t)
     assert repr(d.amount.sum()) == '300'
+
+
+def test_no_name_for_simple_data():
+    d = Data([1, 2, 3])
+    assert repr(d) == '    \n0  1\n1  2\n2  3'
+    assert not d._name
+
+    d = Data(1)
+    assert not d._name
+    assert repr(d) == '1'
+
+
+def test_coerce_date_and_datetime():
+    x = datetime.datetime.now().date()
+    d = Data(x)
+    assert repr(d) == repr(x)
+
+    x = datetime.datetime.now()
+    d = Data(x)
+    assert repr(d) == repr(x)
