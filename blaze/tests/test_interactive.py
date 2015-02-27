@@ -338,10 +338,10 @@ def test_scalar_sql_compute():
 def test_no_name_for_simple_data():
     d = Data([1, 2, 3])
     assert repr(d) == '    \n0  1\n1  2\n2  3'
-    assert not str(d)
+    assert not d._name
 
     d = Data(1)
-    assert not str(d)
+    assert not d._name
     assert repr(d) == '1'
 
 
