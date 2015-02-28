@@ -81,8 +81,6 @@ def route(*args, **kwargs):
 @route('/datashape')
 def dataset(data):
     return str(discover(data))
-    return json.dumps(dict((k, str(discover(v))) for k, v in datasets.items()),
-                      default=json_dumps)
 
 
 def to_tree(expr, names=None):
