@@ -8,14 +8,11 @@ except ImportError:
     pass
 
 
-from into import convert, resource
-from toolz import first
-from datashape import dshape, DataShape, Record
-from pandas import DataFrame
+from into import resource
+from datashape import dshape
 
-from ..expr import Expr, symbol
+from ..expr import Expr
 from ..dispatch import dispatch
-from .index import emit_index
 from .server import DEFAULT_PORT
 
 # These are a hack for testing
