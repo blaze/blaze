@@ -72,7 +72,7 @@ def get(ind, coll, lazy=False):
             result = nth(ind, coll)
         else:
             result = coll[ind]
-    if lazy==False and isinstance(result, Iterator):
+    if not lazy and isinstance(result, Iterator):
         result = tuple(result)
     return result
 
