@@ -182,7 +182,7 @@ The full pipeline looks like the following
 5.  Reevaluate ``optimize`` on the expression and ``pre_compute`` on all of the
     data elements.
 6.  Go to step 3
-5.  Call ``post_compute`` on the result
+7.  Call ``post_compute`` on the result
 
 This is outlined in ``blaze/compute/core.py`` in the functions ``compute(Expr,
 dict)`` and ``top_then_bottom_then_top_again_etc``.
