@@ -60,8 +60,8 @@ def get(ind, coll, lazy=False):
     >>> get(slice(1, 4), 'Hello')
     ('e', 'l', 'l')
 
-    >>> get(slice(1, 4), 'Hello', lazy=True)  # doctest: +SKIP
-    <itertools.islice object at 0x25ac470>
+    >>> get(slice(1, 4), 'Hello', lazy=True)
+    <itertools.islice object at ...>
     """
     if isinstance(ind, list):
         result = nth_list(ind, coll)
