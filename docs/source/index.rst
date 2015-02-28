@@ -82,6 +82,8 @@ User facing
    datashape
    what-blaze-isnt
    api
+   releases
+   legal
 
 Internal
 
