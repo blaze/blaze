@@ -75,7 +75,7 @@ Each of these steps is critical to one backend or another.  We describe each in
 turn and then give the complete picture of the entire pipeline.
 
 ``optimize :: expr, data -> expr``
----------------------------------
+----------------------------------
 
 Optimize takes an expression and some data and changes the expression based on
 the data type.
