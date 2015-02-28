@@ -25,17 +25,20 @@ from .server import DEFAULT_PORT
 
 __all__ = 'Client', 'ExprClient'
 
+
 def content(response):
     if isinstance(response, flask.Response):
         return response.data
     if isinstance(response, requests.Response):
         return response.content
 
+
 def ok(response):
     if isinstance(response, flask.Response):
         return 'OK' in response.status
     if isinstance(response, requests.Response):
         return response.ok
+
 
 def reason(response):
     if isinstance(response, flask.Response):
@@ -45,6 +48,7 @@ def reason(response):
 
 
 class Client(object):
+
     """ Client for Blaze Server
 
     Provides programmatic access to datasets living on Blaze Server
@@ -52,7 +56,7 @@ class Client(object):
     Parameters
     ----------
 
-    url: str
+    url : str
         URL of a Blaze server
 
     Examples
@@ -77,6 +81,7 @@ class Client(object):
 
     @property
     def dshape(self):
+        """The datashape of the client"""
         response = requests.get('%s/datashape' % self.url)
 
         if not ok(response):
@@ -102,7 +107,7 @@ def compute_down(expr, ec, **kwargs):
     tree = to_tree(expr)
 
     r = requests.get('%s/compute.json' % ec.url,
-                     data = json.dumps({'expr': tree}),
+                     data=json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 
     if not ok(r):
