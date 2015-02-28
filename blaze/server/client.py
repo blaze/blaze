@@ -60,6 +60,7 @@ class Client(object):
     --------
 
     >>> # This example matches with the docstring of ``Server``
+    >>> from blaze import Data
     >>> c = Client('localhost:6363')
     >>> t = Data(c) # doctest: +SKIP
 
