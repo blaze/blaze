@@ -8,7 +8,7 @@ systems.  Deep knowledge of abstact expressions is not necessary to use Blaze;
 it is essential to develop in it.
 
 
-.. image:: _images/xyz.png
+.. image:: images/xyz.png
     :align: right
     :alt: A simple Blaze expression tree
 
