@@ -101,7 +101,7 @@ Some convenience functions for common traversals already exist:
    >>> z._subs({'x': 'a', 'y': 'b'})
    (log(a - 1)) ** b
 
-*  ``._subterms``, a traversal along ``._inputs``::
+* ``._subterms``, a traversal along ``._inputs``::
 
    >>> list(z._subterms())  # doctest: +NORMALIZE_WHITESPACE
    [(log(x - 1)) ** y, log(x - 1), x - 1, x, y]
