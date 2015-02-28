@@ -99,8 +99,6 @@ def discover(c):
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
-    from ..interactive import Data
-    leaf = expr._leaves()[0]
     tree = to_tree(expr)
 
     r = requests.get('%s/compute.json' % ec.url,
