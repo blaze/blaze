@@ -1,12 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-import tempfile
 import os
-import inspect
 import datetime
+from functools import wraps
 
+from cytoolz import nth
 from itertools import islice
-from contextlib import contextmanager
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
 
@@ -22,6 +21,7 @@ from .dispatch import dispatch
 
 thread_pool = ThreadPool(psutil.NUM_CPUS)
 
+
 def nth_list(n, seq):
     """
 
@@ -33,7 +33,6 @@ def nth_list(n, seq):
     ('H', 'H', 'H')
     """
     seq = iter(seq)
-    sn = sorted(n)
 
     result = []
     old = 0
@@ -111,6 +110,7 @@ def normalize_to_date(dt):
     else:
         return dt
 
+
 def assert_allclose(lhs, rhs):
     for tb in map(zip, lhs, rhs):
         for left, right in tb:
@@ -132,6 +132,7 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 def available_memory():
     return psutil.virtual_memory().available
+
 
 def listpack(x):
     """
