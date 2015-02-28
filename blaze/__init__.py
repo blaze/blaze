@@ -25,6 +25,7 @@ from .expr.arrays import (tensordot, transpose)
 from .expr.functions import *
 from .index import create_index
 from .interactive import *
+from .compute.pmap import set_default_pmap
 from .compute.csv import *
 from .compute.json import *
 from .compute.python import *
