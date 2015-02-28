@@ -38,6 +38,14 @@ class Server(object):
 
     Host local data through a web API
 
+    Parameters
+    ----------
+    data : ``dict`` or ``None``, optional
+        A dictionary mapping dataset name to any data format that blaze
+        understands.
+
+    Examples
+    --------
     >>> from pandas import DataFrame
     >>> df = DataFrame([[1, 'Alice',   100],
     ...                 [2, 'Bob',    -200],
