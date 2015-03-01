@@ -1,5 +1,5 @@
 
-.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
+.. image:: svg/blaze_med.png
    :align: center
 
 **Blaze** translates a subset of modified NumPy and Pandas-like syntax to
@@ -82,6 +82,8 @@ User facing
    datashape
    what-blaze-isnt
    api
+   releases
+   legal
 
 Internal
 

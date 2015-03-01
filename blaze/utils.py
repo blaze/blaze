@@ -1,15 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-import tempfile
 import os
-import inspect
 import datetime
+from functools import wraps
 
+from cytoolz import nth
 from itertools import islice
-from contextlib import contextmanager
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
 
+# these are used throughout blaze, don't remove them
 from into.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 
 import psutil
@@ -22,6 +22,7 @@ from .dispatch import dispatch
 
 thread_pool = ThreadPool(psutil.NUM_CPUS)
 
+
 def nth_list(n, seq):
     """
 
@@ -33,7 +34,6 @@ def nth_list(n, seq):
     ('H', 'H', 'H')
     """
     seq = iter(seq)
-    sn = sorted(n)
 
     result = []
     old = 0
@@ -60,8 +60,8 @@ def get(ind, coll, lazy=False):
     >>> get(slice(1, 4), 'Hello')
     ('e', 'l', 'l')
 
-    >>> get(slice(1, 4), 'Hello', lazy=True)  # doctest: +SKIP
-    <itertools.islice object at 0x25ac470>
+    >>> get(slice(1, 4), 'Hello', lazy=True)
+    <itertools.islice object at ...>
     """
     if isinstance(ind, list):
         result = nth_list(ind, coll)
@@ -72,7 +72,7 @@ def get(ind, coll, lazy=False):
             result = nth(ind, coll)
         else:
             result = coll[ind]
-    if lazy==False and isinstance(result, Iterator):
+    if not lazy and isinstance(result, Iterator):
         result = tuple(result)
     return result
 
@@ -111,6 +111,7 @@ def normalize_to_date(dt):
     else:
         return dt
 
+
 def assert_allclose(lhs, rhs):
     for tb in map(zip, lhs, rhs):
         for left, right in tb:
@@ -132,6 +133,7 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 
 def available_memory():
     return psutil.virtual_memory().available
+
 
 def listpack(x):
     """

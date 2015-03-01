@@ -8,14 +8,11 @@ except ImportError:
     pass
 
 
-from into import convert, resource
-from toolz import first
-from datashape import dshape, DataShape, Record
-from pandas import DataFrame
+from into import resource
+from datashape import dshape
 
-from ..expr import Expr, symbol
+from ..expr import Expr
 from ..dispatch import dispatch
-from .index import emit_index
 from .server import DEFAULT_PORT
 
 # These are a hack for testing
@@ -25,17 +22,20 @@ from .server import DEFAULT_PORT
 
 __all__ = 'Client', 'ExprClient'
 
+
 def content(response):
     if isinstance(response, flask.Response):
         return response.data
     if isinstance(response, requests.Response):
         return response.content
 
+
 def ok(response):
     if isinstance(response, flask.Response):
         return 'OK' in response.status
     if isinstance(response, requests.Response):
         return response.ok
+
 
 def reason(response):
     if isinstance(response, flask.Response):
@@ -45,6 +45,7 @@ def reason(response):
 
 
 class Client(object):
+
     """ Client for Blaze Server
 
     Provides programmatic access to datasets living on Blaze Server
@@ -52,13 +53,14 @@ class Client(object):
     Parameters
     ----------
 
-    url: str
+    url : str
         URL of a Blaze server
 
     Examples
     --------
 
     >>> # This example matches with the docstring of ``Server``
+    >>> from blaze import Data
     >>> c = Client('localhost:6363')
     >>> t = Data(c) # doctest: +SKIP
 
@@ -77,6 +79,7 @@ class Client(object):
 
     @property
     def dshape(self):
+        """The datashape of the client"""
         response = requests.get('%s/datashape' % self.url)
 
         if not ok(response):
@@ -99,12 +102,10 @@ def discover(c):
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
-    from ..interactive import Data
-    leaf = expr._leaves()[0]
     tree = to_tree(expr)
 
     r = requests.get('%s/compute.json' % ec.url,
-                     data = json.dumps({'expr': tree}),
+                     data=json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 
     if not ok(r):

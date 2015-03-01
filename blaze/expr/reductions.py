@@ -7,7 +7,7 @@ import datashape
 from numpy import inf
 
 from .core import common_subexpression
-from .expressions import Expr, symbol, ndim, Slice
+from .expressions import Expr, ndim
 
 
 class Reduction(Expr):
@@ -20,6 +20,7 @@ class Reduction(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
@@ -187,7 +188,7 @@ class nelements(Reduction):
 
     Examples
     --------
-    >>> from blaze import Symbol
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: float64}')
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
@@ -205,6 +206,7 @@ class Summary(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
 
@@ -212,7 +214,7 @@ class Summary(Expr):
     ...         ['Bob', 200, 2],
     ...         ['Alice', 50, 1]]
 
-    >>> from blaze.compute.python import compute
+    >>> from blaze import compute
     >>> compute(expr, data)
     (2, 350)
     """
