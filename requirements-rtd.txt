@@ -2,6 +2,7 @@ numpy >= 1.7
 pandas
 datashape
 into
+cytoolz
 toolz
 multipledispatch >= 0.4.7
 sqlalchemy
