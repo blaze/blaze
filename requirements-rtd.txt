@@ -1,0 +1,18 @@
+datashape
+into
+numpy >= 1.7
+pandas
+multipledispatch >= 0.4.7
+cytoolz
+toolz
+sqlalchemy
+h5py
+flask >= 0.10.1
+requests
+tables
+pymongo
+psutil
+pytest
+bcolz
+numba
+numpydoc
