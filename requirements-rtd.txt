@@ -9,6 +9,7 @@ sqlalchemy
 h5py
 flask >= 0.10.1
 requests
+numexpr
 tables
 pymongo
 psutil
