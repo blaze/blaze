@@ -1,8 +1,6 @@
-
 ============
 Contributors
 ============
-
 
 Current Core Developers
 ```````````````````````

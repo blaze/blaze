@@ -8,13 +8,13 @@ systems.  Deep knowledge of abstact expressions is not necessary to use Blaze;
 it is essential to develop in it.
 
 
-.. image:: _images/xyz.png
+.. image:: images/xyz.png
     :align: right
     :alt: A simple Blaze expression tree
 
 Consider the following example:
 
-.. code-block:: Python
+.. code-block:: python
 
    >>> from blaze import symbol, log
    >>> x = symbol('x', 'int64')
@@ -28,7 +28,7 @@ programming language can be represnted this way.  Blaze encodes this tree as a
 data structure where every node is an object with type corresponding to its
 operation.  For example there exists the following classes
 
-.. code-block:: Python
+.. code-block:: python
 
    class pow(Expr):
        ...
@@ -40,7 +40,7 @@ operation.  For example there exists the following classes
 And our expression, written explicitly as Blaze sees it, would look like the
 following:
 
-.. code-block:: Python
+.. code-block:: python
 
    >>> from blaze.expr import Pow, Sub, log, symbol
    >>> z = Pow(log(Sub(symbol('x', 'int64'), 1)),
@@ -83,7 +83,7 @@ following tabular example with sort.  ``._inputs`` contains only other Blaze
 expressions while ``._args`` also contains parameters like the string
 ``'balance'``.
 
-.. code-block:: Python
+.. code-block:: python
 
    >>> t = symbol('t', 'var * {name: string, balance: int}')
    >>> expr = t.sort('balance', ascending=True)
@@ -101,7 +101,7 @@ Some convenience functions for common traversals already exist:
    >>> z._subs({'x': 'a', 'y': 'b'})
    (log(a - 1)) ** b
 
-*  ``._subterms``, a traversal along ``._inputs``::
+* ``._subterms``, a traversal along ``._inputs``::
 
    >>> list(z._subterms())  # doctest: +NORMALIZE_WHITESPACE
    [(log(x - 1)) ** y, log(x - 1), x - 1, x, y]
