@@ -12,6 +12,7 @@ import warnings
 from collections import Iterator
 
 from .expr import Expr, Symbol, ndim
+from .utils import ignoring
 from .dispatch import dispatch
 from into import into, resource
 from .compatibility import _strtypes
@@ -248,8 +249,9 @@ def expr_repr(expr, n=10):
             return repr(compute(expr))
 
     # Tables
-    if ndim(expr) == 1:
-        return repr_tables(expr, 10)
+    with ignoring(Exception):
+        if ndim(expr) == 1:
+            return repr_tables(expr, 10)
 
     # Smallish arrays
     if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
