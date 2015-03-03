@@ -353,3 +353,9 @@ def test_coerce_date_and_datetime():
     x = datetime.datetime.now()
     d = Data(x)
     assert repr(d) == repr(x)
+
+
+def test_highly_nested_repr():
+    data = [[0, [[1, 2], [3]], 'abc']]
+    d = Data(data)
+    assert 'abc' in repr(d.head())
