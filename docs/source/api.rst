@@ -17,12 +17,6 @@ Interactive Use
 Table Expressions
 -----------------
 
-.. currentmodule:: blaze.expr.table
-
-.. autosummary::
-   TableSymbol
-
-
 .. currentmodule:: blaze.expr.expressions
 
 .. autosummary::
@@ -76,7 +70,31 @@ Definitions
 .. automodule:: blaze.interactive
    :members:
 
-.. automodule:: blaze.expr.table
+.. automodule:: blaze.expr.collections
+   :members:
+
+.. automodule:: blaze.expr.expressions
+   :members:
+
+.. automodule:: blaze.expr.reductions
+   :members:
+
+.. automodule:: blaze.expr.arrays
+   :members:
+
+.. automodule:: blaze.expr.arithmetic
+   :members:
+
+.. automodule:: blaze.expr.math
+   :members:
+
+.. automodule:: blaze.expr.broadcast
+   :members:
+
+.. automodule:: blaze.expr.datetime
+   :members:
+
+.. automodule:: blaze.expr.split_apply_combine
    :members:
 
 .. automodule:: blaze.server.server
