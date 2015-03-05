@@ -7,7 +7,7 @@ SRC_DIR=$RECIPE_DIR/..
 pushd $SRC_DIR
 
 # X.X.X.dev builds
-u_version=`git describe --tags | $PYTHON $SRC_DIR/conda.recipe/version.py`
+u_version=`git describe --tags | $PYTHON $SRC_DIR/core.recipe/version.py`
 
 echo $u_version > __conda_version__.txt
 
