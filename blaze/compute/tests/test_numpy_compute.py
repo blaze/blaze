@@ -409,4 +409,4 @@ def test_join():
 
     expr = join(t, c, 'name')
     result = compute(expr, {t: x, c: cities})
-    assert ('Alice', 1, 100, 'LA') in into(list, result)
+    assert (b'Alice', 1, 100, 'LA') in into(list, result)
