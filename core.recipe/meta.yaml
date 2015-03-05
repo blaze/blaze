@@ -18,6 +18,7 @@ requirements:
     - requests
     - sqlalchemy
     - toolz
+    - cytoolz
 
   run:
     - datashape
@@ -31,6 +32,7 @@ requirements:
     - requests
     - sqlalchemy
     - toolz
+    - cytoolz
 
 test:
   requires:
