@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary, Broadcast
+from blaze.expr import symbol, by, exp, summary, Broadcast, join
 from blaze import sin
 from into import into
 from datashape import discover, to_numpy, dshape
@@ -397,3 +397,16 @@ def test_vector_norm():
 
     expr = s.vnorm(ord=4, axis=0, keepdims=True)
     assert expr.shape == compute(expr, x).shape
+
+
+def test_join():
+    cities = np.array([('Alice', 'NYC'),
+                       ('Alice', 'LA'),
+                       ('Bob', 'Chicago')],
+                      dtype=[('name', 'S7'), ('city', 'O')])
+
+    c = symbol('cities', discover(cities))
+
+    expr = join(t, c, 'name')
+    result = compute(expr, {t: x, c: cities})
+    assert ('Alice', 1, 100, 'LA') in into(list, result)
