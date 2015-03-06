@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from blaze import discover, compute, symbol, into, by, sin, exp, join
 from pyspark.sql import SQLContext, Row, SchemaRDD, HiveContext
-from into.utils import tmpfile
+from odo.utils import tmpfile
 
 
 data = [['Alice', 100.0, 1],

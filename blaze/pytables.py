@@ -11,7 +11,7 @@ import datashape
 
 import shutil
 from blaze.utils import tmpfile
-from into import resource
+from odo import resource
 
 try:
     import tables as tb

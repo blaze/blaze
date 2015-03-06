@@ -6,9 +6,9 @@ from toolz import curry, concat, map
 import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
-from into import into
-from into.chunks import chunks, Chunks
-from into.backends.csv import CSV, csv_to_DataFrame
+from odo import into
+from odo.chunks import chunks, Chunks
+from odo.backends.csv import CSV, csv_to_DataFrame
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch

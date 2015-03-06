@@ -23,7 +23,7 @@ import pandas as pd
 
 
 from ..dispatch import dispatch
-from into import into
+from odo import into
 
 __all__ = ['bcolz']
 

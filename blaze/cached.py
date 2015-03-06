@@ -7,7 +7,7 @@ from .expr import Expr, Field, symbol, ndim
 from .compute import compute
 from .compatibility import unicode
 from collections import Iterator
-from into import into
+from odo import into
 
 
 class CachedDataset(object):

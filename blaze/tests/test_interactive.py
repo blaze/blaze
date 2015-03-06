@@ -1,8 +1,8 @@
 from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
 
 import datetime
-from into import into, append
-from into.backends.csv import CSV
+from odo import into, append
+from odo.backends.csv import CSV
 from blaze import discover
 from blaze.compute.core import compute
 from blaze.compute.python import compute

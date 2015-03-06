@@ -14,7 +14,7 @@ from blaze.expr import *
 from blaze.compatibility import xfail
 from toolz import unique
 from pandas import DataFrame
-from into import into, resource
+from odo import into, resource
 from blaze.utils import tmpfile
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')

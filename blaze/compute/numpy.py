@@ -17,7 +17,7 @@ from ..utils import keywords
 
 from .core import base, compute
 from ..dispatch import dispatch
-from into import into
+from odo import into
 import pandas as pd
 
 __all__ = ['np']

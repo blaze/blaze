@@ -108,7 +108,7 @@ def test_compute_up_on_dict():
 
 
 def test_pre_compute_on_multiple_datasets_is_selective():
-    from into import CSV
+    from odo import CSV
     from blaze import Data
     from blaze.cached import CachedDataset
 

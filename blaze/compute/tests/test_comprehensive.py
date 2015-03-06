@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame
 import numpy as np
-from into import resource, into
+from odo import resource, into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
 from blaze.interactive import Data

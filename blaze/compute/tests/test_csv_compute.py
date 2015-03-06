@@ -7,7 +7,7 @@ from datashape.predicates import iscollection
 import pandas as pd
 from toolz import first
 from collections import Iterator
-from into.chunks import chunks
+from odo.chunks import chunks
 
 def test_pre_compute_on_small_csv_gives_dataframe():
     csv = CSV(example('iris.csv'))

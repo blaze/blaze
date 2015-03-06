@@ -12,8 +12,8 @@ from datashape.predicates import isrecord, iscollection
 import sqlalchemy as sa
 from toolz import pipe, curry
 from toolz.curried import filter, map, get
-from into import convert
-from into.backends.sql import dshape_to_alchemy
+from odo import convert
+from odo.backends.sql import dshape_to_alchemy
 
 from ..dispatch import dispatch
 from ..expr import Expr, Field, symbol
