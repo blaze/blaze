@@ -248,3 +248,8 @@ def test_sqlalchemy_result():
     assert 'OK' in response.status
     result = json.loads(response.data.decode('utf-8'))['data']
     assert all(isinstance(item, (tuple, list)) for item in result)
+
+
+def test_server_accepts_non_nonzero_ables():
+    Server(DataFrame())
+

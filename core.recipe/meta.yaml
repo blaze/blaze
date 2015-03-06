@@ -1,9 +1,13 @@
 package:
   name: blaze-core
-  version: "0.7.2"
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '')}}
 
 build:
-    number: {{environ.get('BINSTAR_BUILD', 1)}}
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  script: python setup.py install
+
+source:
+  git_url: ../
 
 requirements:
   build:
@@ -18,6 +22,7 @@ requirements:
     - requests
     - sqlalchemy
     - toolz
+    - cytoolz
 
   run:
     - datashape
@@ -31,6 +36,7 @@ requirements:
     - requests
     - sqlalchemy
     - toolz
+    - cytoolz
 
 test:
   requires:

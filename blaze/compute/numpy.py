@@ -8,7 +8,7 @@ from datashape import to_numpy, to_numpy_dtype
 from numbers import Number
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
 from ..expr import std, var, count, nunique, Summary
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
@@ -295,3 +295,14 @@ def compute_up(expr, x, **kwargs):
 @dispatch(TensorDot, np.ndarray, np.ndarray)
 def compute_up(expr, lhs, rhs, **kwargs):
     return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])
+
+
+@compute_up.register(Join, DataFrame, np.ndarray)
+@compute_up.register(Join, np.ndarray, DataFrame)
+@compute_up.register(Join, np.ndarray, np.ndarray)
+def join_ndarray(expr, lhs, rhs, **kwargs):
+    if isinstance(lhs, np.ndarray):
+        lhs = DataFrame(lhs)
+    if isinstance(rhs, np.ndarray):
+        rhs = DataFrame(rhs)
+    return compute_up(expr, lhs, rhs, **kwargs)

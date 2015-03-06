@@ -58,7 +58,9 @@ class Server(object):
 
     def __init__(self, data=None):
         app = self.app = Flask('blaze.server.server')
-        self.data = data or dict()
+        if data is None:
+            data = dict()
+        self.data = data
 
         for args, kwargs, func in routes:
             func2 = wraps(func)(partial(func, self.data))
