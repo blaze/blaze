@@ -1,4 +1,4 @@
-package: blaze-core
+package: blaze
 user: blaze
 
 platform:
@@ -21,7 +21,7 @@ before_script:
   - python -V
 
 script:
-  - conda build core.recipe
+  - conda build ../../all.recipe
 
 iotimeout: 600
 

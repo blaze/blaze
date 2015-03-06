@@ -1,6 +1,12 @@
 package:
   name: blaze
-  version: "0.7.2"
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '')}}
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+
+source:
+  git_url: ../
 
 requirements:
   run:
@@ -19,7 +25,7 @@ test:
     - coverage
 
   commands:
-    - python -c "import blaze; blaze.test(exit=True)"
+    - py.test -x --pyargs blaze
 
 about:
   home: http://blaze.pydata.org
