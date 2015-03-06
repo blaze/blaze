@@ -1107,9 +1107,10 @@ def test_no_extraneous_join():
     result = compute(expr, db)
 
     assert normalize(str(result)) == normalize("""
-    SELECT operation, name, datetime_nearest_receiver, aircraft,
-                 temperature_2m, temperature_5cm, humidity, windspeed,
-                 pressure, include, datetime_nearest_close
+    SELECT alias.operation, alias.name, alias.datetime_nearest_receiver,
+           alias.aircraft, alias.temperature_2m, alias.temperature_5cm,
+           alias.humidity, alias.windspeed, alias.pressure,
+           alias.include, alias.datetime_nearest_close
           FROM (SELECT event.name AS name,
                        event.operation AS operation,
                        event.datetime_nearest_receiver AS datetime_nearest_receiver,
@@ -1120,8 +1121,9 @@ def test_no_extraneous_join():
                        event.windspeed AS windspeed,
                        event.pressure AS pressure,
                        event.include AS include
-                FROM event WHERE event.include = 1)
-                JOIN (SELECT operation.datetime_nearest_close
-                      FROM operation)
-                ON event.operation = operation.name
+                FROM event WHERE event.include = 1) AS alias1
+                JOIN (SELECT  operation.name AS name,
+                              operation.datetime_nearest_close as datetime_nearest_close
+                      FROM operation) AS alias2
+                ON alias1.operation = alias2.name
     """)

@@ -216,19 +216,24 @@ def compute_up(t, lhs, rhs, **kwargs):
     else:
         rdict = rhs.c
 
-
-    condition = reduce(and_,
-            [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
-        for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
-
     # Remove joining columns from the non-dominant table
     if isinstance(lhs, Select) and isinstance(rhs, Select):
+        lhs = lhs.alias(next(aliases))
+        rhs = rhs.alias(next(aliases))
+        condition = reduce(and_,
+                [lhs.c.get(l) == rhs.c.get(r)
+            for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
         if t.how == 'inner' or t.how == 'left':
             expr = t.rhs[[c for c in t.rhs.fields if c not in t._on_right]]
             rhs = compute_up(expr, rhs)
         else:
             expr = t.lhs[[c for c in t.lhs.fields if c not in t._on_left]]
             lhs = compute_up(expr, lhs)
+
+    else:
+        condition = reduce(and_,
+                [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
+            for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     # Perform join
     if t.how == 'inner':
