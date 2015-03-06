@@ -29,7 +29,7 @@ build_targets: conda
 
 notifications:
   email:
-    recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io']
+    recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io', 'phillip.cloud@continuum.io']
 
 ---
 platform: win-32
