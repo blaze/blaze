@@ -165,8 +165,6 @@ def test_clean_complex_join():
     WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
 
 
-
-
 def test_multi_column_join():
     metadata = sa.MetaData()
     lhs = sa.Table('aaa', metadata,
@@ -1080,3 +1078,50 @@ def test_head_limit():
     assert compute(t.head(5).head(10), s)._limit == 5
     assert compute(t.head(10).head(5), s)._limit == 5
     assert compute(t.head(10).head(10), s)._limit == 10
+
+
+def test_no_extraneous_join():
+    ds = """ {event: var * {name: ?string,
+                            operation: ?string,
+                            datetime_nearest_receiver: ?datetime,
+                            aircraft: ?string,
+                            temperature_2m: ?float64,
+                            temperature_5cm: ?float64,
+                            humidity: ?float64,
+                            windspeed: ?float64,
+                            pressure: ?float64,
+                            include: int64},
+             operation: var * {name: ?string,
+                               runway: int64,
+                               takeoff: bool,
+                               datetime_nearest_close: ?string}}
+        """
+    db = resource('sqlite:///:memory:', dshape=ds)
+
+    d = symbol('db', dshape=ds)
+
+    expr = join(d.event[d.event.include==True],
+                d.operation[['name', 'datetime_nearest_close']],
+                'operation', 'name')
+
+    result = compute(expr, db)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT operation, name, datetime_nearest_receiver, aircraft,
+                 temperature_2m, temperature_5cm, humidity, windspeed,
+                 pressure, include, datetime_nearest_close
+          FROM (SELECT event.name AS name,
+                       event.operation AS operation,
+                       event.datetime_nearest_receiver AS datetime_nearest_receiver,
+                       event.aircraft AS aircraft,
+                       event.temperature_2m AS temperature_2m,
+                       event.temperature_5cm AS temperature_5cm,
+                       event.humidity AS humidity,
+                       event.windspeed AS windspeed,
+                       event.pressure AS pressure,
+                       event.include AS include
+                FROM event WHERE event.include = 1)
+                JOIN (SELECT operation.datetime_nearest_close
+                      FROM operation)
+                ON event.operation = operation.name
+    """)

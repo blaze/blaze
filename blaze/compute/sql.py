@@ -221,12 +221,22 @@ def compute_up(t, lhs, rhs, **kwargs):
             [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
+    # Remove joining columns from the non-dominant table
+    if isinstance(lhs, Select) and isinstance(rhs, Select):
+        if t.how == 'inner' or t.how == 'left':
+            expr = t.rhs[[c for c in t.rhs.fields if c not in t._on_right]]
+            rhs = compute_up(expr, rhs)
+        else:
+            expr = t.lhs[[c for c in t.lhs.fields if c not in t._on_left]]
+            lhs = compute_up(expr, lhs)
+
+    # Perform join
     if t.how == 'inner':
         join = _join_selectables(lhs, rhs, condition=condition)
         main, other = lhs, rhs
     elif t.how == 'left':
-        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
         main, other = lhs, rhs
+        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
     elif t.how == 'right':
         join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
         main, other = rhs, lhs
@@ -234,11 +244,19 @@ def compute_up(t, lhs, rhs, **kwargs):
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise ValueError("SQLAlchemy doesn't support full outer Join")
 
-    def cols(x):
-        if isinstance(x, Select):
-            return list(x.inner_columns)
-        else:
-            return list(x.columns)
+    """
+    We now need to arrange the columns in the join to match the columns in
+    the expression.  We care about order and don't want repeats
+    """
+    if isinstance(join, Select):
+        def cols(x):
+            if isinstance(x, Select):
+                return list(x.inner_columns)
+            else:
+                return list(x.columns)
+    else:
+        cols = lambda x: list(x.columns)
+
     main_cols = cols(main)
     other_cols = cols(other)
     left_cols = cols(lhs)
