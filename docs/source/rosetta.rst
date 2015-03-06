@@ -74,12 +74,12 @@ Imports and Construction
 |                 |    df.amount.dtype                                              |    df.amount.dshape                               |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 
-Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `into <https://github.com/ContinuumIO/into>`_ library. In many cases, blaze will able to handle datasets that can't fit into main memory, which is something that can't be easily done with pandas.
+Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `odo <https://github.com/ContinuumIO/odo>`_ library. In many cases, blaze will able to handle datasets that can't fit into main memory, which is something that can't be easily done with pandas.
 
 
 .. code-block:: python
 
-   from into import into
+   from odo import odo
 
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Operation       | Pandas                                                          | Blaze                                             |
@@ -92,8 +92,8 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Save result     | .. code-block:: python                                          | .. code-block:: python                            |
 | to CSV file     |                                                                 |                                                   |
-|                 |    df[df.amount < 0].to_csv('output.csv')                       |    into('output.csv',                             |
-|                 |                                                                 |         df[df.amount < 0])                        |
+|                 |    df[df.amount < 0].to_csv('output.csv')                       |    odo(df[df.amount < 0],                         |
+|                 |                                                                 |        'output.csv')                              |
 |                 |                                                                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Read from       | .. code-block:: python                                          | .. code-block:: python                            |

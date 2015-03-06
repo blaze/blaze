@@ -10,9 +10,9 @@ Combining separate, gzipped csv files.
 
 .. doctest::
 
-   >>> from blaze import into
+   >>> from blaze import odo
    >>> from pandas import DataFrame
-   >>> into(DataFrame, 'blaze/examples/data/accounts_*.csv.gz')
+   >>> odo('blaze/examples/data/accounts_*.csv.gz', DataFrame)
       id      name  amount
    0   1     Alice     100
    1   2       Bob     200

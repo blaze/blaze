@@ -86,20 +86,21 @@ them to an efficient binary store like HDF5 (common) or BColz (less common but
 faster).  These storage formats provide better performance on your data and
 also avoid the ambiguity that surrounds CSV files.
 
-One can migrate from CSV files to a binary storage format using the ``into``
+One can migrate from CSV files to a binary storage format using the ``odo``
 function.
 
 .. code-block:: python
 
-   >>> into('myfile.bcolz', 'myfiles-*.csv')  # doctest: +SKIP
+   >>> from odo import odo
+   >>> odo('myfiles-*.csv', 'myfile.bcolz')  # doctest: +SKIP
 
    # or
 
-   >>> into('myfile.hdf5::/mydataset', 'myfiles-*.csv')  # doctest: +SKIP
+   >>> odo('myfiles-*.csv', 'myfile.hdf5::/mydataset')  # doctest: +SKIP
 
    # or
 
-   >>> into('sqlite:///mydb.db::mytable', 'myfiles-*.csv')  # doctest: +SKIP
+   >>> odo('myfiles-*.csv', 'sqlite:///mydb.db::mytable')  # doctest: +SKIP
 
 When migrating from a loosely formatted system like CSV to a more strict system
 like HDF5 or BColz there are a few things to keep in mind
@@ -127,7 +128,8 @@ editing automatically generated datashapes
    # <Copy-Paste>
    >>> ds = dshape("var * {name: string[20, 'ascii'], amount: float64}")  # doctest: +SKIP
 
-   >>> into('myfile.bcolz', 'myfiles-*.csv', dshape=ds)  # doctest: +SKIP
+   >>> from odo import odo
+   >>> odo('myfiles-*.csv', 'myfile.bcolz', dshape=ds)  # doctest: +SKIP
 
 Providing a datashape removes data type ambiguity from the transfer.
 

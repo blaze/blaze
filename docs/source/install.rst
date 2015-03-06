@@ -64,7 +64,7 @@ easy to install on any Numeric Python setup.
 
 * numpy_ >= 1.7
 * datashape_ >= 0.4.0
-* into_ >= 0.1.3
+* odo_ >= 0.3.0
 * toolz_ >= 0.7.0
 * cytoolz_
 * multipledispatch_ >= 0.4.7
@@ -90,7 +90,7 @@ non-trivial to install.  We recommend installation throgh ``conda``.
 
 
 .. _numpy: http://www.numpy.org/
-.. _into: https://github.com/ContinuumIO/into
+.. _odo: https://github.com/ContinuumIO/odo
 .. _h5py: http://docs.h5py.org/en/latest/
 .. _pytest: http://pytest.org/latest/
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
