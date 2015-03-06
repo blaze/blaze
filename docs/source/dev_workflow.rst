@@ -11,14 +11,14 @@ Installing Development Blaze
 ----------------------------
 
 Blaze depends on many other projects, both projects that develop alongside
-blaze (like ``into``) as well a number of community projects (like ``pandas``).
+blaze (like ``odo``) as well a number of community projects (like ``pandas``).
 
 Blaze development happens in the following projects, all of which are available
 on github.com/ContinuumIO/project-name
 
 *  Blaze_
 *  DataShape_
-*  Into_
+*  Odo_
 *  Dask_
 *  DyND_
 
@@ -26,11 +26,11 @@ Bleeding edge binaries are kept up-to-date on the ``blaze`` conda channel.
 New developers likely only need to interact with one or two of these libraries so we recommend downloading everything by the conda channel and then only cloning those git repositories that you actively need::
 
     conda install -c blaze blaze  # install everything from dev channel
-    git clone git@github.com:ContinuumIO/blaze.git  # only clone blaze and into
-    git clone git@github.com:ContinuumIO/into.git  # only clone blaze and into
+    git clone git://github.com/ContinuumIO/blaze.git  # only clone blaze and odo
+    git clone git://github.com/ContinuumIO/odo.git  # only clone blaze and odo
 
 .. _DyND: https://github.com/ContinuumIO/dynd-python
-.. _Into: https://github.com/ContinuumIO/into
+.. _Odo: https://github.com/ContinuumIO/odo
 .. _Dask: https://github.com/ContinuumIO/dask
 .. _Blaze: https://github.com/ContinuumIO/blaze
 .. _DataShape: https://github.com/ContinuumIO/datashape

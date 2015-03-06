@@ -9,7 +9,7 @@ from sqlalchemy.exc import OperationalError
 from datashape import dshape
 import datashape
 import sys
-from into import into, drop
+from odo import into, drop
 
 from blaze import create_index, resource
 from blaze.sql import create_index

@@ -1,6 +1,6 @@
 from .dispatch import dispatch
 from .compatibility import basestring
-from into import resource
+from odo import resource
 
 @dispatch(object, (basestring, list, tuple))
 def create_index(t, column_name_or_names, name=None):

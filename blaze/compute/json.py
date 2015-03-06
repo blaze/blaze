@@ -1,10 +1,10 @@
 from .core import pre_compute
 from ..dispatch import dispatch
 from ..expr import Expr
-from into.backends.json import JSON, JSONLines
-from into import into
+from odo.backends.json import JSON, JSONLines
+from odo import into
 from collections import Iterator
-from into.utils import records_to_tuples
+from odo.utils import records_to_tuples
 
 
 @dispatch(Expr, JSON)

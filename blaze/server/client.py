@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 
-from into import resource
+from odo import resource
 from datashape import dshape
 
 from ..expr import Expr

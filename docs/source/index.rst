@@ -21,9 +21,9 @@ project itself.
   translating our query as appropriate to provide a smooth and interactive
   session.
 
-* Into_: Migrates data between formats.
+* Odo_: Migrates data between formats.
 
-  Into moves data between formats (CSV, JSON, databases) and locations
+  Odo moves data between formats (CSV, JSON, databases) and locations
   (local, remote, HDFS) efficiently and robustly with a dead-simple interface
   by leveraging a sophisticated and extensible network of conversions.
 
@@ -35,7 +35,7 @@ project itself.
 
 
 The rest of this documentation is just about the Blaze project itself.  See the
-pages linked to above for ``into`` or ``dask.array``.
+pages linked to above for ``odo`` or ``dask.array``.
 
 
 Blaze
@@ -107,5 +107,5 @@ Older versions of these documents can be found here_.
 
 .. _`See previous presentations about Blaze`: http://blaze.pydata.org/presentations
 .. _`See previous blog posts about Blaze`: http://continuum.io/blog/tags/blaze
-.. _Into: http://into.readthedocs.org/
+.. _Odo: http://odo.readthedocs.org/
 .. _Dask.array: http://dask.readthedocs.org/

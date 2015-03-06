@@ -9,7 +9,7 @@ from datetime import datetime, date
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join
 from blaze import sin
-from into import into
+from odo import into
 from datashape import discover, to_numpy, dshape
 
 

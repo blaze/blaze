@@ -6,9 +6,9 @@ except ImportError:
     pass
 
 from pandas import DataFrame
-from into import into, convert, append, resource, drop
-from into.backends.csv import CSV
-from into.backends.json import JSON, JSONLines
+from odo import odo, convert, append, resource, drop
+from odo.backends.csv import CSV
+from odo.backends.json import JSON, JSONLines
 
 from multipledispatch import halt_ordering, restart_ordering
 

@@ -6,7 +6,7 @@ from blaze.utils import tmpfile
 from blaze import symbol, discover, compute
 import pandas as pd
 from datetime import datetime
-from into import Chunks, resource, into
+from odo import Chunks, resource, into
 import os
 
 

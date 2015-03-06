@@ -10,7 +10,7 @@ from collections import Iterator
 from multiprocessing.pool import ThreadPool
 
 # these are used throughout blaze, don't remove them
-from into.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
+from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 
 import psutil
 import numpy as np

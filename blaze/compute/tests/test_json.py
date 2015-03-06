@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.utils import example
-from into.backends.json import JSON, JSONLines
-from into import Chunks
+from odo.backends.json import JSON, JSONLines
+from odo import Chunks
 from blaze import symbol, discover, compute, into, resource
 
 

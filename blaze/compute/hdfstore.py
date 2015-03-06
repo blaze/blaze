@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from .core import pre_compute
 from ..expr import Expr, Field
 from ..dispatch import dispatch
-from into import into, chunks
+from odo import into, chunks
 import pandas as pd
 
 @dispatch(Expr, pd.io.pytables.AppendableFrameTable)

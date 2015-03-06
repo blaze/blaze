@@ -129,7 +129,7 @@ by calling ``compute``.
    >>> list(compute(t[t.balance < 0].name))   # Just a raw list
    ['Bob', 'Edith']
 
-Alternatively use the ``into`` operation to push your output into a suitable
+Alternatively use the ``odo`` operation to push your output into a suitable
 container type.
 
 .. code-block:: python
@@ -137,17 +137,17 @@ container type.
    >>> result = by(iris.species,
    ...             avg=iris.petal_width.mean())
 
-   >>> result_list = into(list, result)                     # Push result into a list
+   >>> result_list = odo(result, list)                     # Push result into a list
 
-   >>> into(DataFrame, result)                # Push result into a DataFrame
+   >>> odo(result, DataFrame)                # Push result into a DataFrame
               species    avg
    0      Iris-setosa  0.246
    1  Iris-versicolor  1.326
    2   Iris-virginica  2.026
 
    >>> # Write result to CSV file
-   >>> into('blaze/examples/data/output.csv', result)  # doctest: +SKIP
-   <blaze.data.csv.CSV object at 0x7f2b26fe4710>
+   >>> odo(result, 'blaze/examples/data/output.csv')
+   <odo.backends.csv.CSV object at ...>
 
 
 .. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.csv

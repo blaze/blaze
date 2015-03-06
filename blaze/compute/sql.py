@@ -29,7 +29,7 @@ from copy import copy
 import toolz
 from multipledispatch import MDNotImplementedError
 from datashape.predicates import isscalar, isrecord
-from into.backends.sql import metadata_of_engine
+from odo.backends.sql import metadata_of_engine
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
