@@ -147,7 +147,7 @@ container type.
 
    >>> # Write result to CSV file
    >>> odo(result, 'blaze/examples/data/output.csv')
-   <blaze.data.csv.CSV object at ...>
+   <odo.backends.csv.CSV object at ...>
 
 
 .. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.csv
