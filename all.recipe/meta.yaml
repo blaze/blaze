@@ -10,6 +10,8 @@ source:
 
 requirements:
   run:
+    - python
+    - numpy
     - blaze-core
     - h5py
     - cytoolz
