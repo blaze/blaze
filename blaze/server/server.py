@@ -14,8 +14,8 @@ from functools import partial, wraps
 from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
-from datashape.predicates import iscollection
-from ..interactive import InteractiveSymbol
+from datashape.predicates import iscollection, isscalar
+from ..interactive import InteractiveSymbol, coerce_scalar
 from ..utils import json_dumps
 from ..expr import Expr, symbol
 
@@ -284,6 +284,8 @@ def compserver(dataset):
 
     if iscollection(expr.dshape):
         result = into(list, result)
+    elif isscalar(expr.dshape):
+        result = coerce_scalar(result, str(expr.dshape))
 
     return json.dumps({'datashape': str(expr.dshape),
                        'data': result}, default=json_dumps)
