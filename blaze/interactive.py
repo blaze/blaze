@@ -227,6 +227,21 @@ def coerce_to(typ, x):
         return into(typ, x)
 
 
+def coerce_scalar(result, dshape):
+    if 'float' in dshape:
+        return coerce_to(float, result)
+    elif 'int' in dshape:
+        return coerce_to(int, result)
+    elif 'bool' in dshape:
+        return coerce_to(bool, result)
+    elif 'datetime' in dshape:
+        return coerce_to(datetime.datetime, result)
+    elif 'date' in dshape:
+        return coerce_to(datetime.date, result)
+    else:
+        return result
+
+
 def expr_repr(expr, n=10):
     # Pure Expressions, not interactive
     if not expr._resources():
@@ -234,19 +249,7 @@ def expr_repr(expr, n=10):
 
     # Scalars
     if ndim(expr) == 0 and isscalar(expr.dshape):
-        result = compute(expr)
-        if 'float' in str(expr.dshape):
-            return repr(coerce_to(float, result))
-        elif 'int' in str(expr.dshape):
-            return repr(coerce_to(int, result))
-        elif 'bool' in str(expr.dshape):
-            return repr(coerce_to(bool, result))
-        elif 'datetime' in str(expr.dshape):
-            return repr(coerce_to(datetime.datetime, result))
-        elif 'date' in str(expr.dshape):
-            return repr(coerce_to(datetime.date, result))
-        else:
-            return repr(compute(expr))
+        return repr(coerce_scalar(compute(expr), str(expr.dshape)))
 
     # Tables
     with ignoring(Exception):

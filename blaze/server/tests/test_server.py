@@ -10,6 +10,7 @@ from datetime import datetime
 from pandas import DataFrame
 from toolz import pipe
 
+from odo import odo
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, resource
 from blaze.server.server import Server, to_tree, from_tree
@@ -253,3 +254,13 @@ def test_sqlalchemy_result():
 def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
+
+def test_server_can_compute_sqlalchemy_reductions():
+    expr = t.db.iris.petal_length.sum()
+    query = {'expr': to_tree(expr)}
+    response = test.post('/compute.json',
+                         data=json.dumps(query),
+                         content_type='application/json')
+    assert 'OK' in response.status
+    result = json.loads(response.data.decode('utf-8'))['data']
+    assert result == odo(compute(expr, {t: data}), int)
