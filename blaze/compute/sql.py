@@ -23,7 +23,7 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
-from operator import and_
+from operator import and_, eq
 import itertools
 from copy import copy
 import toolz
@@ -207,26 +207,28 @@ def compute_up(t, lhs, rhs, **kwargs):
     rhs = alias_it(rhs)
 
     if isinstance(lhs, Select):
-        ldict = dict((c.name, c) for c in lhs.inner_columns)
+        lhs = lhs.alias(next(aliases))
+        left_conds = [lhs.c.get(c) for c in listpack(t.on_left)]
     else:
-        ldict = lhs.c
+        ldict = dict((c.name, c) for c in inner_columns(lhs))
+        left_conds = [ldict.get(c) for c in listpack(t.on_left)]
 
     if isinstance(rhs, Select):
-        rdict = dict((c.name, c) for c in rhs.inner_columns)
+        rhs = rhs.alias(next(aliases))
+        right_conds = [rhs.c.get(c) for c in listpack(t.on_right)]
     else:
-        rdict = rhs.c
+        rdict = dict((c.name, c) for c in inner_columns(rhs))
+        right_conds = [rdict.get(c) for c in listpack(t.on_right)]
 
+    condition = reduce(and_, map(eq, left_conds, right_conds))
 
-    condition = reduce(and_,
-            [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
-        for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
-
+    # Perform join
     if t.how == 'inner':
         join = _join_selectables(lhs, rhs, condition=condition)
         main, other = lhs, rhs
     elif t.how == 'left':
-        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
         main, other = lhs, rhs
+        join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
     elif t.how == 'right':
         join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
         main, other = rhs, lhs
@@ -234,11 +236,19 @@ def compute_up(t, lhs, rhs, **kwargs):
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise ValueError("SQLAlchemy doesn't support full outer Join")
 
-    def cols(x):
-        if isinstance(x, Select):
-            return list(x.inner_columns)
-        else:
-            return list(x.columns)
+    """
+    We now need to arrange the columns in the join to match the columns in
+    the expression.  We care about order and don't want repeats
+    """
+    if isinstance(join, Select):
+        def cols(x):
+            if isinstance(x, Select):
+                return list(x.inner_columns)
+            else:
+                return list(x.columns)
+    else:
+        cols = lambda x: list(x.columns)
+
     main_cols = cols(main)
     other_cols = cols(other)
     left_cols = cols(lhs)

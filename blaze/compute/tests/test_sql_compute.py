@@ -150,21 +150,21 @@ def test_clean_complex_join():
 
     result = compute(joined, {L: lhs, R: rhs})
 
+    expected1 = """
+        SELECT amounts.name, amounts.amount, ids.id
+        FROM amounts JOIN ids ON amounts.name = ids.name
+        WHERE amounts.amount > :amount_1"""
 
-    assert (normalize(str(result)) == normalize("""
-    SELECT amounts.name, amounts.amount, ids.id
-    FROM amounts JOIN ids ON amounts.name = ids.name
-    WHERE amounts.amount > :amount_1""")
-
-    or
-
-    normalize(str(result)) == normalize("""
-    SELECT amounts.name, amounts.amount, ids.id
-    FROM amounts, (SELECT amounts.name AS name, amounts.amount AS amount
-    FROM amounts
-    WHERE amounts.amount > :amount_1) JOIN ids ON amounts.name = ids.name"""))
+    expected2 = """
+        SELECT alias.name, alias.amount, ids.id
+        FROM (SELECT amounts.name AS name, amounts.amount AS amount
+              FROM amounts
+              WHERE amounts.amount > :amount_1) AS alias
+        JOIN ids ON alias.name = ids.name"""
 
 
+    assert (normalize(str(result)) == normalize(expected1) or
+            normalize(str(result)) == normalize(expected2))
 
 
 def test_multi_column_join():
@@ -582,13 +582,25 @@ def test_clean_join():
 
 
     expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
-    assert normalize(str(compute(expr, ns))) == normalize("""
+
+    result = compute(expr, ns)
+
+    expected1 = """
     SELECT friends.a, friends.b, name.name, place.city, place.country
     FROM friends
         JOIN name ON friends.a = name.id
         JOIN place ON friends.a = place.id
-        """)
+        """
 
+    expected2 = """
+    SELECT alias.a, alias.b, alias.name, place.city, place.country
+    FROM (SELECT friends.a AS a, friends.b AS b, name.name AS name
+          FROM friends JOIN name ON friends.a = name.id) AS alias
+    JOIN place ON alias.a = place.id
+    """
+
+    assert (normalize(str(result)) == normalize(expected1) or
+            normalize(str(result)) == normalize(expected2))
 
 
 def test_like():
@@ -661,10 +673,20 @@ def test_join_complex_clean():
     expr = join(tname[tname.id > 0], tcity, 'id')
     result = compute(expr, ns)
 
-    assert normalize(str(result)) == normalize("""
-    SELECT name.id, name.name, place.city, place.country
-    FROM name JOIN place ON name.id = place.id
-    WHERE name.id > :id_1""")
+    expected1 = """
+        SELECT name.id, name.name, place.city, place.country
+        FROM name JOIN place ON name.id = place.id
+        WHERE name.id > :id_1"""
+
+    expected2 = """
+        SELECT alias.id, alias.name, place.city, place.country
+        FROM (SELECT name.id as id, name.name AS name
+              FROM name
+              WHERE name.id > :id_1) AS alias
+        JOIN place ON alias.id = place.id"""
+    assert (normalize(str(result)) == normalize(expected1) or
+            normalize(str(result)) == normalize(expected2))
+
 
 
 def test_projection_of_join():
@@ -686,11 +708,24 @@ def test_projection_of_join():
 
     ns = {tname: name, tcity: city}
 
-    assert normalize(str(compute(expr, ns))) == normalize("""
-    SELECT place.country, name.name
-    FROM name JOIN place ON name.id = place.id
-    WHERE place.city = :city_1""")
+    result = compute(expr, ns)
 
+    expected1 = """
+        SELECT place.country, name.name
+        FROM name JOIN place ON name.id = place.id
+        WHERE place.city = :city_1"""
+
+    expected2 = """
+        SELECT alias.country, name.name
+        FROM name
+        JOIN (SELECT place.id AS id, place.city AS city, place.country AS country
+              FROM place
+              WHERE place.city = :city_1) AS alias
+        ON name.id = alias_6.id"""
+
+
+    assert (normalize(str(result)) == normalize(expected1) or
+            normalize(str(result)) == normalize(expected2))
 
 def test_lower_column():
     metadata = sa.MetaData()
@@ -1049,12 +1084,23 @@ def test_join_count():
 
     result = compute(expr, {db: engine}, post_compute=False)
 
-    assert normalize(str(result)) == normalize("""
+    expected1 = """
     SELECT count(alias.x) as count
     FROM (SELECT t1.x AS x, t1.y AS y, t2.b AS b
           FROM t1 JOIN t2 ON t1.x = t2.a
           WHERE t1.x > ?) as alias
-          """)
+          """
+    expected2 = """
+    SELECT count(alias2.x) AS __count
+    FROM (SELECT alias1.x AS x, alias1.y AS y, t2.b AS b
+          FROM (SELECT t1.x AS x, t1.y AS y
+                FROM t1
+                WHERE t1.x > ?) AS alias1
+          JOIN t2 ON alias1.x = t2.a) AS alias2"""
+
+
+    assert (normalize(str(result)) == normalize(expected1) or
+            normalize(str(result)) == normalize(expected2))
 
 
 def test_merge_compute():
@@ -1080,3 +1126,52 @@ def test_head_limit():
     assert compute(t.head(5).head(10), s)._limit == 5
     assert compute(t.head(10).head(5), s)._limit == 5
     assert compute(t.head(10).head(10), s)._limit == 10
+
+
+def test_no_extraneous_join():
+    ds = """ {event: var * {name: ?string,
+                            operation: ?string,
+                            datetime_nearest_receiver: ?datetime,
+                            aircraft: ?string,
+                            temperature_2m: ?float64,
+                            temperature_5cm: ?float64,
+                            humidity: ?float64,
+                            windspeed: ?float64,
+                            pressure: ?float64,
+                            include: int64},
+             operation: var * {name: ?string,
+                               runway: int64,
+                               takeoff: bool,
+                               datetime_nearest_close: ?string}}
+        """
+    db = resource('sqlite:///:memory:', dshape=ds)
+
+    d = symbol('db', dshape=ds)
+
+    expr = join(d.event[d.event.include==True],
+                d.operation[['name', 'datetime_nearest_close']],
+                'operation', 'name')
+
+    result = compute(expr, db)
+
+    assert normalize(str(result)) == normalize("""
+    SELECT alias.operation, alias.name, alias.datetime_nearest_receiver,
+           alias.aircraft, alias.temperature_2m, alias.temperature_5cm,
+           alias.humidity, alias.windspeed, alias.pressure,
+           alias.include, alias.datetime_nearest_close
+          FROM (SELECT event.name AS name,
+                       event.operation AS operation,
+                       event.datetime_nearest_receiver AS datetime_nearest_receiver,
+                       event.aircraft AS aircraft,
+                       event.temperature_2m AS temperature_2m,
+                       event.temperature_5cm AS temperature_5cm,
+                       event.humidity AS humidity,
+                       event.windspeed AS windspeed,
+                       event.pressure AS pressure,
+                       event.include AS include
+                FROM event WHERE event.include = 1) AS alias1
+                JOIN (SELECT  operation.name AS name,
+                              operation.datetime_nearest_close as datetime_nearest_close
+                      FROM operation) AS alias2
+                ON alias1.operation = alias2.name
+    """)
