@@ -23,7 +23,7 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
-from operator import and_
+from operator import and_, eq
 import itertools
 from copy import copy
 import toolz
@@ -207,33 +207,20 @@ def compute_up(t, lhs, rhs, **kwargs):
     rhs = alias_it(rhs)
 
     if isinstance(lhs, Select):
-        ldict = dict((c.name, c) for c in lhs.inner_columns)
+        lhs = lhs.alias(next(aliases))
+        left_conds = [lhs.c.get(c) for c in listpack(t.on_left)]
     else:
-        ldict = lhs.c
+        ldict = dict((c.name, c) for c in inner_columns(lhs))
+        left_conds = [ldict.get(c) for c in listpack(t.on_left)]
 
     if isinstance(rhs, Select):
-        rdict = dict((c.name, c) for c in rhs.inner_columns)
-    else:
-        rdict = rhs.c
-
-    # Remove joining columns from the non-dominant table
-    if isinstance(lhs, Select) and isinstance(rhs, Select):
-        lhs = lhs.alias(next(aliases))
         rhs = rhs.alias(next(aliases))
-        condition = reduce(and_,
-                [lhs.c.get(l) == rhs.c.get(r)
-            for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
-        if t.how == 'inner' or t.how == 'left':
-            expr = t.rhs[[c for c in t.rhs.fields if c not in t._on_right]]
-            rhs = compute_up(expr, rhs)
-        else:
-            expr = t.lhs[[c for c in t.lhs.fields if c not in t._on_left]]
-            lhs = compute_up(expr, lhs)
-
+        right_conds = [rhs.c.get(c) for c in listpack(t.on_right)]
     else:
-        condition = reduce(and_,
-                [lower_column(ldict.get(l)) == lower_column(rdict.get(r))
-            for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
+        rdict = dict((c.name, c) for c in inner_columns(rhs))
+        right_conds = [rdict.get(c) for c in listpack(t.on_right)]
+
+    condition = reduce(and_, map(eq, left_conds, right_conds))
 
     # Perform join
     if t.how == 'inner':
