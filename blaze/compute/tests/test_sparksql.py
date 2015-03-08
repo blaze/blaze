@@ -31,9 +31,19 @@ cities_df = pd.DataFrame(cities_data, columns=['name', 'city'])
 # sc is from conftest.py
 
 
-@pytest.fixture(scope='module')
+@pytest.yield_fixture(scope='module')
 def sql(sc):
-    return SQLContext(sc)
+    try:
+        yield HiveContext(sc)
+    finally:
+        dbpath = 'metastore_db'
+        logpath = 'derby.log'
+        if os.path.exists(dbpath):
+            assert os.path.isdir(dbpath)
+            shutil.rmtree(dbpath)
+        if os.path.exists(logpath):
+            assert os.path.isfile(logpath)
+            os.remove(logpath)
 
 
 @pytest.yield_fixture(scope='module')
@@ -184,13 +194,14 @@ def test_column_arithmetic(ctx, db):
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
-@pytest.mark.parametrize('function', [pytest.mark.xfail(sin),
-                                      pytest.mark.xfail(exp)])
-def test_math(ctx, db, function):
-    expr = function(db.t.amount)
+@pytest.mark.parametrize('func', [sin, cos, tan, exp])
+def test_math(ctx, db, func):
+    expr = func(db.t.amount)
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df}})
-    assert into(set, result, dshape=expr.dshape) == into(set, expected)
+    np.testing.assert_allclose(np.sort(odo(result, np.ndarray,
+                                           dshape=expr.dshape)),
+                               np.sort(odo(expected, np.ndarray)))
 
 
 @pytest.mark.parametrize(['field', 'ascending'],
