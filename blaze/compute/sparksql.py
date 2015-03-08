@@ -48,6 +48,7 @@ def istable(db, t):
 
 @dispatch(Expr, SQLContext)
 def compute_down(expr, data):
+def compute_down(expr, data, **kwargs):
     """ Compile a blaze expression to a sparksql expression"""
     leaves = expr._leaves()
 
