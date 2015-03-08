@@ -5,12 +5,15 @@ import pytest
 pytest.importorskip('pyspark')
 sa = pytest.importorskip('sqlalchemy')
 
+import os
 import itertools
+import shutil
 
 import numpy as np
 import pandas as pd
-from blaze import discover, compute, symbol, into, by, sin, exp, join
-from pyspark.sql import SQLContext, Row, SchemaRDD, HiveContext
+from blaze import discover, compute, symbol, into, by, sin, exp, cos, tan, join
+from pyspark.sql import Row, DataFrame as SparkDataFrame, HiveContext
+from odo import odo
 from odo.utils import tmpfile
 
 
@@ -126,11 +129,12 @@ def test_join(db, ctx):
 def test_join_diff_contexts(db, ctx, cities):
     expr = join(db.t, db.s, 'name')
     people = ctx.table('t')
-    cities = into(SchemaRDD, cities, dshape=discover(ctx.table('s')))
+    cities = into(SparkDataFrame, cities, dshape=discover(ctx.table('s')))
     scope = {db: {'t': people, 's': cities}}
     result = compute(expr, scope)
     expected = compute(expr, {db: {'t': df, 's': cities_df}})
-    assert into(set, result) == into(set, expected)
+    assert (set(map(frozenset, odo(result, set))) ==
+            set(map(frozenset, odo(expected, set))))
 
 
 def test_field_distinct(ctx, db):

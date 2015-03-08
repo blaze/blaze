@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import py4j
+from operator import and_
 from toolz import compose, identity
 from datashape.predicates import isscalar
 
@@ -10,6 +12,7 @@ from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
+from ..utils import listpack
 
 from .core import compute, compute_up
 
@@ -23,12 +26,14 @@ try:
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
+    from pyspark.sql import DataFrame as SparkDataFrame
     RDD.min
 except (AttributeError, ImportError):
     SparkContext = Dummy
     pyspark = Dummy()
     pyspark.rdd = Dummy()
     RDD = Dummy
+    SparkDataFrame = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it
@@ -124,8 +129,30 @@ def compute_up(t, rdd, **kwargs):
     return rdd.distinct()
 
 
-@dispatch(Join, RDD, RDD)
-def compute_up(t, lhs, rhs, **kwargs):
+def jgetattr(data, attr, default=None):
+    """Spark's API doesn't properly implement the ``getattr`` interface, so
+    we work around it.
+    """
+    try:
+        return getattr(data, attr, default)
+    except py4j.protocol.Py4JJavaError:
+        return default
+
+
+@compute_up.register(Join, SparkDataFrame, SparkDataFrame)
+def spark_df_join(t, lhs, rhs, **kwargs):
+    left = listpack(t.on_left)
+    right = listpack(t.on_right)
+    expr = reduce(and_, (getattr(lhs, lattr) == getattr(rhs, rattr)
+                         for lattr, rattr in zip(left, right)))
+    select_exprs = [jgetattr(lhs, field, jgetattr(rhs, field))
+                    for field in t.fields]
+    assert all(select_exprs)
+    return lhs.join(rhs, expr, t.how).select(*select_exprs)
+
+
+@compute_up.register(Join, RDD, RDD)
+def spark_join(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
 
