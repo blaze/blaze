@@ -8,11 +8,10 @@ SparkSQL.
 
 from __future__ import absolute_import, division, print_function
 
-from datashape.predicates import isrecord, iscollection
+from datashape.predicates import isrecord
 import sqlalchemy as sa
 from toolz import pipe, curry
-from toolz.curried import filter, map, get
-from odo import convert
+from toolz.curried import filter, map
 from odo.backends.sql import dshape_to_alchemy
 
 from ..dispatch import dispatch
@@ -26,12 +25,10 @@ __all__ = []
 
 
 try:
-    from pyspark.sql import SQLContext, SchemaRDD
+    from pyspark.sql import SQLContext, DataFrame as SparkDataFrame
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
-    SchemaRDD = SQLContext = Dummy
-
-
+    SparkDataFrame = SQLContext = Dummy
 
 
 def make_sqlalchemy_table(expr):
@@ -47,7 +44,6 @@ def istable(db, t):
 
 
 @dispatch(Expr, SQLContext)
-def compute_down(expr, data):
 def compute_down(expr, data, **kwargs):
     """ Compile a blaze expression to a sparksql expression"""
     leaves = expr._leaves()

@@ -80,7 +80,7 @@ def test_projection(db, ctx):
 
 
 def test_symbol_compute(db, ctx):
-    assert isinstance(compute(db.t, ctx), SchemaRDD)
+    assert isinstance(compute(db.t, ctx), SparkDataFrame)
 
 
 def test_field_access(db, ctx):
@@ -121,7 +121,7 @@ def test_join(db, ctx):
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df, 's': cities_df}})
 
-    assert isinstance(result, SchemaRDD)
+    assert isinstance(result, SparkDataFrame)
     assert into(set, result) == into(set, expected)
     assert discover(result) == expr.dshape
 
