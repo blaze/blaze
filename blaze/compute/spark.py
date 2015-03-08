@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import py4j
 from operator import and_
 from toolz import compose, identity
 from datashape.predicates import isscalar
@@ -23,6 +22,7 @@ class Dummy(object):
     sum = max = min = count = distinct = mean = variance = stdev = None
 
 try:
+    import py4j
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
