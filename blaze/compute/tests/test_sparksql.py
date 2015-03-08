@@ -53,8 +53,7 @@ def cities(sc):
         cities_df.to_csv(fn, header=False, index=False)
         raw = sc.textFile(fn)
         parts = raw.map(lambda line: line.split(','))
-        yield parts.map(lambda person: Row(name=person[0],
-                                           city=person[1]))
+        yield parts.map(lambda person: Row(name=person[0], city=person[1]))
 
 
 @pytest.fixture(scope='module')
