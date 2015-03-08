@@ -68,11 +68,10 @@ def cities(sc):
 
 @pytest.fixture(scope='module')
 def ctx(sql, people, cities):
-    schema = sql.inferSchema(people)
-    schema.registerTempTable('t')
-
-    schema = sql.inferSchema(cities)
-    schema.registerTempTable('s')
+    sql.registerDataFrameAsTable(sql.createDataFrame(people), 't')
+    sql.cacheTable('t')
+    sql.registerDataFrameAsTable(sql.createDataFrame(cities), 's')
+    sql.cacheTable('s')
     return sql
 
 
