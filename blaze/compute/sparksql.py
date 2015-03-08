@@ -32,13 +32,6 @@ except ImportError:
     SchemaRDD = SQLContext = Dummy
 
 
-@convert.register(list, SchemaRDD)
-def sparksql_dataframe_to_list(df, dshape=None, **kwargs):
-    result = list(map(tuple, df.collect()))
-    if (dshape is not None and iscollection(dshape) and
-            not isrecord(dshape.measure)):
-        return list(map(get(0), result))
-    return result
 
 
 def make_sqlalchemy_table(expr):
