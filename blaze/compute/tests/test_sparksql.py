@@ -11,9 +11,9 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from blaze import discover, compute, symbol, into, by, sin, exp, cos, tan, join
+from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
 from pyspark.sql import Row, DataFrame as SparkDataFrame, HiveContext
-from odo import odo
+from odo import odo, discover
 from odo.utils import tmpfile
 
 
