@@ -13,7 +13,7 @@ a new version of Blaze.
 2. Confirm the dependencies and their version numbers in
    /docs/source/install.rst
    /requirements.txt
-   In particular, `datashape`, `into`, etc
+   In particular, `datashape`, `odo`, etc
    will typically be released concurrently with `blaze`,
    so they need to be updated to match.
 
