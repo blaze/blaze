@@ -33,7 +33,8 @@ from odo.backends.sql import metadata_of_engine
 
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
-from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction, count
+from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
+        count, FloorDiv)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
@@ -95,14 +96,24 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-@dispatch(BinOp, ColumnElement, (ColumnElement, base))
-def compute_up(t, lhs, rhs, **kwargs):
+@compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
+@compute_up.register(BinOp, ColumnElement, (ColumnElement, base))
+def binop_sql(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(BinOp, (ColumnElement, base), ColumnElement)
-def compute_up(t, lhs, rhs, **kwargs):
-    return t.op(lhs, rhs)
+@dispatch(FloorDiv, ColumnElement)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return sa.func.floor(data / t.rhs)
+    else:
+        return sa.func.floor(t.rhs / data)
+
+
+@compute_up.register(FloorDiv, (ColumnElement, base), ColumnElement)
+@compute_up.register(FloorDiv, ColumnElement, (ColumnElement, base))
+def binop_sql(t, lhs, rhs, **kwargs):
+    return sa.func.floor(lhs / rhs)
 
 
 @dispatch(UnaryOp, ColumnElement)
