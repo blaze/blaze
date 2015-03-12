@@ -141,14 +141,9 @@ def jgetattr(data, attr, default=None):
 
 @compute_up.register(Join, SparkDataFrame, SparkDataFrame)
 def spark_df_join(t, lhs, rhs, **kwargs):
-    left = listpack(t.on_left)
-    right = listpack(t.on_right)
-    expr = reduce(and_, (getattr(lhs, lattr) == getattr(rhs, rattr)
-                         for lattr, rattr in zip(left, right)))
-    select_exprs = [jgetattr(lhs, field, jgetattr(rhs, field))
-                    for field in t.fields]
-    assert all(select_exprs)
-    return lhs.join(rhs, expr, t.how).select(*select_exprs)
+    # ship to rdd land, so we can reuse handling of combining records code
+    rdd = compute_up(t, lhs.rdd, rhs.rdd, **kwargs)
+    return lhs.sql_ctx.createDataFrame(rdd)
 
 
 @compute_up.register(Join, RDD, RDD)
