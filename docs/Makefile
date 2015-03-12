@@ -155,4 +155,4 @@ doctest:
 capabilities:
 	mkdir -p build/html
 	touch build/html/capabilities.html
-	python source/scripts/capabilities.py
+	# python source/scripts/capabilities.py

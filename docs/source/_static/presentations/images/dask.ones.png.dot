@@ -1,0 +1,9 @@
+strict digraph G {
+"('wrapped_1', 1)" [shape=box];
+"('wrapped_1', 2)" [shape=box];
+"('wrapped_1', 0)" [shape=box];
+"((<function ones at 0x7ff948cc7e60>, (5,)), 'function')" [shape=circle, label=ones];
+"('wrapped_1', 1)" -> "((<function ones at 0x7ff948cc7e60>, (5,)), 'function')";
+"('wrapped_1', 2)" -> "((<function ones at 0x7ff948cc7e60>, (5,)), 'function')";
+"('wrapped_1', 0)" -> "((<function ones at 0x7ff948cc7e60>, (5,)), 'function')";
+}

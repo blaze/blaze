@@ -2,15 +2,21 @@ from __future__ import absolute_import, print_function, division
 
 import pytest
 
-pytest.importorskip('pyspark')
+pyspark = pytest.importorskip('pyspark')
+py4j = pytest.importorskip('py4j')
 sa = pytest.importorskip('sqlalchemy')
 
+import os
 import itertools
+import shutil
 
 import numpy as np
 import pandas as pd
-from blaze import discover, compute, symbol, into, by, sin, exp, join
-from pyspark.sql import SQLContext, Row, SchemaRDD, HiveContext
+from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
+from blaze.compute.spark import SparkDataFrame
+from pyspark import HiveContext, SQLContext
+from pyspark.sql import Row, SchemaRDD
+from odo import odo, discover
 from odo.utils import tmpfile
 
 
@@ -28,9 +34,22 @@ cities_df = pd.DataFrame(cities_data, columns=['name', 'city'])
 # sc is from conftest.py
 
 
-@pytest.fixture(scope='module')
+@pytest.yield_fixture(scope='module')
 def sql(sc):
-    return SQLContext(sc)
+    try:
+        if hasattr(pyspark.sql, 'types'):  # pyspark >= 1.3
+            yield HiveContext(sc)
+        else:
+            yield SQLContext(sc)
+    finally:
+        dbpath = 'metastore_db'
+        logpath = 'derby.log'
+        if os.path.exists(dbpath):
+            assert os.path.isdir(dbpath)
+            shutil.rmtree(dbpath)
+        if os.path.exists(logpath):
+            assert os.path.isfile(logpath)
+            os.remove(logpath)
 
 
 @pytest.yield_fixture(scope='module')
@@ -50,17 +69,19 @@ def cities(sc):
         cities_df.to_csv(fn, header=False, index=False)
         raw = sc.textFile(fn)
         parts = raw.map(lambda line: line.split(','))
-        yield parts.map(lambda person: Row(name=person[0],
-                                           city=person[1]))
+        yield parts.map(lambda person: Row(name=person[0], city=person[1]))
 
 
 @pytest.fixture(scope='module')
 def ctx(sql, people, cities):
-    schema = sql.inferSchema(people)
-    schema.registerTempTable('t')
-
-    schema = sql.inferSchema(cities)
-    schema.registerTempTable('s')
+    try:
+        sql.registerDataFrameAsTable(sql.createDataFrame(people), 't')
+        sql.cacheTable('t')
+        sql.registerDataFrameAsTable(sql.createDataFrame(cities), 's')
+        sql.cacheTable('s')
+    except AttributeError:
+        sql.inferSchema(people).registerTempTable('t')
+        sql.inferSchema(cities).registerTempTable('s')
     return sql
 
 
@@ -77,7 +98,7 @@ def test_projection(db, ctx):
 
 
 def test_symbol_compute(db, ctx):
-    assert isinstance(compute(db.t, ctx), SchemaRDD)
+    assert isinstance(compute(db.t, ctx), (SparkDataFrame, SchemaRDD))
 
 
 def test_field_access(db, ctx):
@@ -118,7 +139,7 @@ def test_join(db, ctx):
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df, 's': cities_df}})
 
-    assert isinstance(result, SchemaRDD)
+    assert isinstance(result, (SparkDataFrame, SchemaRDD))
     assert into(set, result) == into(set, expected)
     assert discover(result) == expr.dshape
 
@@ -126,11 +147,12 @@ def test_join(db, ctx):
 def test_join_diff_contexts(db, ctx, cities):
     expr = join(db.t, db.s, 'name')
     people = ctx.table('t')
-    cities = into(SchemaRDD, cities, dshape=discover(ctx.table('s')))
+    cities = into(ctx, cities, dshape=discover(ctx.table('s')))
     scope = {db: {'t': people, 's': cities}}
     result = compute(expr, scope)
     expected = compute(expr, {db: {'t': df, 's': cities_df}})
-    assert into(set, result) == into(set, expected)
+    assert (set(map(frozenset, odo(result, set))) ==
+            set(map(frozenset, odo(expected, set))))
 
 
 def test_field_distinct(ctx, db):
@@ -181,13 +203,23 @@ def test_column_arithmetic(ctx, db):
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
-@pytest.mark.parametrize('function', [pytest.mark.xfail(sin),
-                                      pytest.mark.xfail(exp)])
-def test_math(ctx, db, function):
-    expr = function(db.t.amount)
+# pyspark doesn't use __version__ so we use this kludge
+# should submit a bug report upstream to get __version__
+fail_on_spark_one_two = pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
+                                          raises=py4j.protocol.Py4JJavaError,
+                                          reason=('math functions only '
+                                                  'supported in HiveContext'))
+
+
+@pytest.mark.parametrize('func', map(fail_on_spark_one_two,
+                                     [sin, cos, tan, exp]))
+def test_math(ctx, db, func):
+    expr = func(db.t.amount)
     result = compute(expr, ctx)
     expected = compute(expr, {db: {'t': df}})
-    assert into(set, result, dshape=expr.dshape) == into(set, expected)
+    np.testing.assert_allclose(np.sort(odo(result, np.ndarray,
+                                           dshape=expr.dshape)),
+                               np.sort(odo(expected, np.ndarray)))
 
 
 @pytest.mark.parametrize(['field', 'ascending'],
