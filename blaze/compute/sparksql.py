@@ -20,15 +20,14 @@ from .core import compute
 from .utils import literalquery
 from .spark import Dummy
 
-
 __all__ = []
 
 
 try:
-    from pyspark.sql import SQLContext, DataFrame as SparkDataFrame
+    from pyspark import SQLContext
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
-    SparkDataFrame = SQLContext = Dummy
+    SQLContext = Dummy
 
 
 def make_sqlalchemy_table(expr):

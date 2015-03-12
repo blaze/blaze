@@ -42,7 +42,7 @@ with ignoring(ImportError):
     from .compute.sql import *
 
 with ignoring(ImportError, AttributeError):
-    from .spark import *
+    from .compute.spark import *
 with ignoring(ImportError, TypeError):
     from .compute.sparksql import *
 with ignoring(ImportError):
