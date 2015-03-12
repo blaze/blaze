@@ -3,10 +3,11 @@ from __future__ import absolute_import, division, print_function
 from toolz import compose, identity
 from datashape.predicates import isscalar
 
-from blaze.expr import (Expr, ElemWise, Selection, Sort, Apply, Distinct, Join,
-                        By, Label, Summary, by, ReLabel, Like, Reduction, Head)
+from ..expr import (Expr, ElemWise, Selection, Sort, Apply, Distinct, Join,
+                    By, Label, Summary, by, ReLabel, Like, Reduction, Head)
 from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
+from ..expr.broadcast import broadcast_collect
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
@@ -20,15 +21,21 @@ class Dummy(object):
     sum = max = min = count = distinct = mean = variance = stdev = None
 
 try:
+    import py4j
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
+    try:
+        from pyspark.sql import DataFrame as SparkDataFrame
+    except ImportError:
+        SparkDataFrame = Dummy
     RDD.min
 except (AttributeError, ImportError):
     SparkContext = Dummy
     pyspark = Dummy()
     pyspark.rdd = Dummy()
     RDD = Dummy
+    SparkDataFrame = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it
@@ -38,9 +45,6 @@ try:
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 except:
     pass
-
-
-from ..expr.broadcast import broadcast_collect
 
 
 @dispatch(Expr, RDD)
@@ -124,8 +128,25 @@ def compute_up(t, rdd, **kwargs):
     return rdd.distinct()
 
 
-@dispatch(Join, RDD, RDD)
-def compute_up(t, lhs, rhs, **kwargs):
+def jgetattr(data, attr, default=None):
+    """Spark's API doesn't properly implement the ``getattr`` interface, so
+    we work around it.
+    """
+    try:
+        return getattr(data, attr, default)
+    except py4j.protocol.Py4JJavaError:
+        return default
+
+
+@compute_up.register(Join, SparkDataFrame, SparkDataFrame)
+def spark_df_join(t, lhs, rhs, **kwargs):
+    # ship to rdd land, so we can reuse handling of combining records code
+    rdd = compute_up(t, lhs.rdd, rhs.rdd, **kwargs)
+    return lhs.sql_ctx.createDataFrame(rdd)
+
+
+@compute_up.register(Join, RDD, RDD)
+def spark_join(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
 

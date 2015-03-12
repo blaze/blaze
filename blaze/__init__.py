@@ -42,10 +42,9 @@ with ignoring(ImportError):
     from .compute.sql import *
 
 with ignoring(ImportError, AttributeError):
-    from .spark import *
+    from .compute.spark import *
 with ignoring(ImportError, TypeError):
     from .compute.sparksql import *
-    from .sparksql import *
 with ignoring(ImportError):
     from dynd import nd
     from .compute.dynd import *
