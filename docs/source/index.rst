@@ -105,7 +105,7 @@ Older versions of these documents can be found here_.
 
 .. _here: ../
 
-.. _`See previous presentations about Blaze`: http://blaze.pydata.org/presentations
+.. _`See previous presentations about Blaze`: _static/presentations/index.html
 .. _`See previous blog posts about Blaze`: http://continuum.io/blog/tags/blaze
-.. _Odo: http://odo.readthedocs.org/
-.. _Dask.array: http://dask.readthedocs.org/
+.. _Odo: http://odo.pydata.org/
+.. _Dask.array: http://dask.pydata.org/

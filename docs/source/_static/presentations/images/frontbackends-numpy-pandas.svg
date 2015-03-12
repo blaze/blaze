@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1"
+	 id="svg2" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" sodipodi:docname="frontbackends-without-blaze.svg" inkscape:version="0.48.4 r9939"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1499.992px"
+	 height="845px" viewBox="-379.933 41.094 1499.992 845" enable-background="new -379.933 41.094 1499.992 845"
+	 xml:space="preserve">
+<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="370.564" y1="886.5938" x2="370.5639" y2="40.5942">
+	<stop  offset="0" style="stop-color:#FFFFFF"/>
+	<stop  offset="1" style="stop-color:#E5EEFA"/>
+</linearGradient>
+<rect x="-378.937" y="40.594" fill="url(#SVGID_1_)" width="1499" height="846"/>
+<sodipodi:namedview  id="base" inkscape:cy="246.68626" showgrid="false" inkscape:zoom="0.7" fit-margin-left="0" borderopacity="1.0" fit-margin-top="0" inkscape:cx="609.47501" pagecolor="#ffffff" bordercolor="#666666" fit-margin-right="0" inkscape:pageshadow="2" inkscape:window-x="2880" inkscape:window-maximized="1" inkscape:window-y="41" inkscape:document-units="px" inkscape:window-width="1680" inkscape:current-layer="layer1" fit-margin-bottom="0" inkscape:window-height="1026" inkscape:pageopacity="0.0">
+	
+		<inkscape:grid  id="grid3800" type="xygrid" enabled="true" visible="true" empspacing="5" originy="8.3571867px" originx="3.1243305px" snapvisiblegridlinesonly="true">
+		</inkscape:grid>
+</sodipodi:namedview>
+<g>
+	
+		<image overflow="visible" opacity="0.2" width="280" height="128" xlink:href="66C22E8019780DBF.png"  transform="matrix(1 0 0 1 90.0635 239.5938)">
+	</image>
+	<g>
+		<path fill="#FFFFFF" d="M363.325,352.947c0,3.312-2.687,5.998-6,5.998H102.802c-3.313,0-6-2.687-6-5.998V250.942
+			c0-3.312,2.687-5.997,6-5.997h254.522c3.313,0,6,2.685,6,5.997V352.947z"/>
+		<path fill="none" stroke="#999999" stroke-miterlimit="10" d="M363.325,352.947c0,3.312-2.687,5.998-6,5.998H102.802
+			c-3.313,0-6-2.687-6-5.998V250.942c0-3.312,2.687-5.997,6-5.997h254.522c3.313,0,6,2.685,6,5.997V352.947z"/>
+	</g>
+</g>
+<path fill="#AAD4F9" stroke="#999999" stroke-miterlimit="10" d="M357.325,244.945H102.802c-3.313,0-6,2.609-6,5.827v1.087v5.179
+	v44.908h266.522v-44.908v-5.179v-1.087C363.325,247.554,360.638,244.945,357.325,244.945z"/>
+<g>
+	
+		<image overflow="visible" opacity="0.2" width="280" height="128" xlink:href="66C22E8019780DBA.png"  transform="matrix(1 0 0 1 370.0635 239.5938)">
+	</image>
+	<g>
+		<path fill="#FFFFFF" d="M643.325,352.947c0,3.312-2.688,5.998-6,5.998H382.802c-3.313,0-6-2.687-6-5.998V250.942
+			c0-3.312,2.687-5.997,6-5.997h254.523c3.312,0,6,2.685,6,5.997V352.947z"/>
+		<path fill="none" stroke="#999999" stroke-miterlimit="10" d="M643.325,352.947c0,3.312-2.688,5.998-6,5.998H382.802
+			c-3.313,0-6-2.687-6-5.998V250.942c0-3.312,2.687-5.997,6-5.997h254.523c3.312,0,6,2.685,6,5.997V352.947z"/>
+	</g>
+</g>
+<path fill="#AAD4F9" stroke="#999999" stroke-miterlimit="10" d="M637.325,244.945H382.802c-3.313,0-6,2.609-6,5.827v1.087v5.179
+	v44.908h266.523v-44.908v-5.179v-1.087C643.325,247.554,640.638,244.945,637.325,244.945z"/>
+<g>
+	<text transform="matrix(1 0 0 1 126.2432 285.3301)" font-family="'Gotham-Book'" font-size="38">numpy.py</text>
+	<text transform="matrix(1 0 0 1 139.2383 342)" font-family="'Gotham-Book'" font-size="38">numpy.c</text>
+	<text transform="matrix(1 0 0 1 413.165 285.3301)" font-family="'Gotham-Book'" font-size="38">pandas.py</text>
+	<text transform="matrix(1 0 0 1 402.2593 342)" font-family="'Gotham-Book'" font-size="38">pandas.pyx</text>
+	<text transform="matrix(1 0 0 1 -9.9321 271)" enable-background="new    "><tspan x="0" y="0" fill="#6B6B6B" font-family="'Gotham-Book'" font-size="18">High-level</tspan><tspan x="0" y="20" fill="#6B6B6B" font-family="'Gotham-Book'" font-size="18">interface</tspan></text>
+	<text transform="matrix(1 0 0 1 -9.9331 328)" enable-background="new    "><tspan x="0" y="0" fill="#6B6B6B" font-family="'Gotham-Book'" font-size="18">Low-level</tspan><tspan x="0" y="20" fill="#6B6B6B" font-family="'Gotham-Book'" font-size="18">fast code</tspan></text>
+</g>
+</svg>
