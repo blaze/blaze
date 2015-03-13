@@ -8,25 +8,21 @@ a new version of Blaze.
 
  * /setup.py
  * /blaze/__init__.py
- * /conda.recipe/meta.yaml
 
 2. Confirm the dependencies and their version numbers in
    /docs/source/install.rst
    /requirements.txt
-   In particular, `datashape`, `into`, etc
+   In particular, `datashape`, `odo`, etc
    will typically be released concurrently with `blaze`,
    so they need to be updated to match.
 
 3. Update the release notes /docs/source/releases.rst
    You may use a github URL like https://github.com/ContinuumIO/blaze/compare/0.6.0...master for assistance.
 
-4. Build and update the documentation in gh-pages.
+4. Verify build is working on all platforms.  Binstar-build
+   can assist with this.
 
-5. Verify build is working on all platforms. The
-   jenkins builder internal to Continuum can assist
-   with this.
-
-6. Tag the release version.
+5. Tag the release version.
 
         git tag -a x.x.x -m 'Version x.x.x'
 
@@ -34,7 +30,7 @@ a new version of Blaze.
 
         git push --tags
 
-7. Release email to blaze-dev@continuum.io.
+6. Release email to blaze-dev@continuum.io.
 
-8. Update this release procedure document to reflect
+7. Update this release procedure document to reflect
    what needed to be done for the release.
