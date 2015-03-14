@@ -1175,3 +1175,20 @@ def test_no_extraneous_join():
                       FROM operation) AS alias2
                 ON alias1.operation = alias2.name
     """)
+
+
+def test_math():
+    result = compute(sin(t.amount), s)
+    assert normalize(str(result)) == normalize("""
+            SELECT sin(accounts.amount) as sin1
+            FROM accounts""")
+
+    result = compute(floor(t.amount), s)
+    assert normalize(str(result)) == normalize("""
+            SELECT floor(accounts.amount) as floor1
+            FROM accounts""")
+
+    result = compute(t.amount // 2, s)
+    assert normalize(str(result)) == normalize("""
+            SELECT floor(accounts.amount / :amount1) AS floor_1
+            FROM accounts""")
