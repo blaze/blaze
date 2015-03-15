@@ -49,7 +49,7 @@ class Node(object):
         return tuple([getattr(self, i) for i in self.__inputs__])
 
     def _leaves(self):
-        """ Leaves of an expresion tree
+        """ Leaves of an expression tree
 
         All nodes without inputs.  Leaves are returned in order, left to right.
 
