@@ -32,7 +32,7 @@ from odo.backends.sql import metadata_of_engine
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, StringFunction)
+                    count, FloorDiv, UnaryStringFunction)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
@@ -554,7 +554,7 @@ def compute_up(t, s, **kwargs):
                           [key.like(pattern) for key, pattern in d.items()]))
 
 
-@dispatch(StringFunction, Column)
+@dispatch(UnaryStringFunction, Column)
 def compute_up(expr, data, **kwargs):
     return getattr(sa.sql.func, type(expr).__name__)(data)
 

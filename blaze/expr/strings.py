@@ -5,7 +5,7 @@ from datashape import String
 from datashape.predicates import isrecord
 from .expressions import Expr, schema_method_list
 
-__all__ = ['Like', 'like', 'length', 'StringFunction']
+__all__ = ['Like', 'like', 'length', 'UnaryStringFunction']
 
 
 class Like(Expr):
@@ -38,7 +38,7 @@ def like(child, **kwargs):
 like.__doc__ = Like.__doc__
 
 
-class StringFunction(Expr):
+class UnaryStringFunction(Expr):
 
     """String function that only takes a single argument.
     """
@@ -49,7 +49,7 @@ class StringFunction(Expr):
         return datashape.var * self._dtype
 
 
-class length(StringFunction):
+class length(UnaryStringFunction):
     _dtype = datashape.int64
 
 

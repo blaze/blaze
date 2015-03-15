@@ -612,9 +612,9 @@ def test_like():
 
 
 def test_string_length():
-    expr = t.name.length().label('namelen')
+    expr = t.name.length().label('len')
     result = normalize(str(compute(expr, s)))
-    expected = normalize("""SELECT length(accounts.name) as namelen FROM accounts""")
+    expected = normalize("""SELECT length(accounts.name) as len FROM accounts""")
     assert result == expected
 
 
