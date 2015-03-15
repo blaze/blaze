@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 from datashape import String
-from datashape.predicates import isrecord
+from datashape.predicates import isrecord, iscollection
 from .expressions import Expr, schema_method_list
 
 __all__ = ['Like', 'like', 'length', 'UnaryStringFunction']
@@ -46,7 +46,9 @@ class UnaryStringFunction(Expr):
 
     @property
     def dshape(self):
-        return datashape.var * self._dtype
+        if iscollection(self._child.dshape):
+            return datashape.var * self._dtype
+        return self._dtype
 
 
 class length(UnaryStringFunction):
