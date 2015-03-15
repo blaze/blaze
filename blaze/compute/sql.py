@@ -554,6 +554,11 @@ def compute_up(t, s, **kwargs):
                           [key.like(pattern) for key, pattern in d.items()]))
 
 
+@dispatch(StringFunction, Column)
+def compute_up(expr, data, **kwargs):
+    return getattr(sa.sql.func, type(expr).__name__)(data)
+
+
 @toolz.memoize
 def table_of_metadata(metadata, name):
     if name not in metadata.tables:

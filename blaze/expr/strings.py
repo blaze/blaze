@@ -1,11 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
+from datashape import String
+from datashape.predicates import isrecord
 from .expressions import Expr, schema_method_list
 
-__all__ = ['Like', 'like']
+__all__ = ['Like', 'like', 'length', 'StringFunction']
+
 
 class Like(Expr):
+
     """ Filter expression by string comparison
 
     >>> from blaze import symbol, like, compute
@@ -33,6 +37,33 @@ def like(child, **kwargs):
     return Like(child, tuple(kwargs.items()))
 like.__doc__ = Like.__doc__
 
+
+class StringFunction(Expr):
+
+    """String function that only takes a single argument.
+    """
+    __slots__ = '_hash', '_child'
+
+    @property
+    def dshape(self):
+        return datashape.var * self._dtype
+
+
+class length(StringFunction):
+    _dtype = datashape.int64
+
+
+def isstring(ds):
+    measure = ds.measure
+    return isinstance(getattr(measure, 'ty', measure), String)
+
+
 schema_method_list.extend([
-    (lambda ds: 'string' in str(ds), set([like])),
-    ])
+    (lambda ds: isstring(ds) or (isrecord(ds.measure) and
+                                 any(isinstance(getattr(typ, 'ty', typ),
+                                                String)
+                                     for typ in ds.measure.types)),
+     set([like])),
+    (lambda ds: isinstance(getattr(ds.measure, 'ty', ds.measure), String),
+     set([length]))
+])
