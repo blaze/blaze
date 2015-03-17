@@ -161,14 +161,14 @@ def compute_up(t, df, **kwargs):
 
 
 string_func_names = {
-    'length': 'len'
+    'strlen': 'len',
 }
 
 
 @dispatch(UnaryStringFunction, Series)
 def compute_up(expr, data, **kwargs):
-    func_name = type(expr).__name__
-    return getattr(data.str, string_func_names.get(func_name, func_name))()
+    name = type(expr).__name__
+    return getattr(data.str, string_func_names.get(name, name))()
 
 
 def unpack(seq):
