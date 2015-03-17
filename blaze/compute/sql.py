@@ -544,14 +544,11 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Like, Select)
 def compute_up(t, s, **kwargs):
-    d = dict()
-    for name, pattern in t.patterns.items():
-        for f in s.froms:
-            if f.c.has_key(name):
-                d[f.c.get(name)] = pattern.replace('*', '%')
+    items = [(f.c.get(name), pattern.replace('*', '%'))
+             for name, pattern in t.patterns.items()
+             for f in s.froms if name in f.c]
+    return s.where(reduce(and_, [key.like(pattern) for key, pattern in items]))
 
-    return s.where(reduce(and_,
-                          [key.like(pattern) for key, pattern in d.items()]))
 
 
 @dispatch(UnaryStringFunction, Column)
