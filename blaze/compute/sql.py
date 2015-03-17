@@ -550,10 +550,15 @@ def compute_up(t, s, **kwargs):
     return s.where(reduce(and_, [key.like(pattern) for key, pattern in items]))
 
 
+string_func_names = {
+    'strlen': 'length'
+}
+
 
 @dispatch(UnaryStringFunction, Column)
 def compute_up(expr, data, **kwargs):
-    return getattr(sa.sql.func, type(expr).__name__)(data)
+    name = type(expr).__name__
+    return getattr(sa.sql.func, string_func_names.get(name, name))(data)
 
 
 @toolz.memoize
