@@ -286,3 +286,12 @@ def test_by_non_native_ops(ctx, db):
     expected = compute(expr, {db: {'t': df}})
     assert list(map(set, into(list, result))) == list(map(set, into(list,
                                                                     expected)))
+
+
+def test_strlen(ctx, db):
+    expr = db.t.name.strlen()
+    result = compute(expr, ctx).toPandas().squeeze()
+    expected = compute(expr, {db: {'t': df}})
+    assert result.name == 'length_1'
+    assert expected.name == 'name'
+    assert odo(result, set) == odo(expected, set)
