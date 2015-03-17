@@ -290,7 +290,7 @@ def test_by_non_native_ops(ctx, db):
 
 def test_strlen(ctx, db):
     expr = db.t.name.strlen()
-    result = compute(expr, ctx).toPandas().squeeze()
+    result = odo(compute(expr, ctx), pd.Series)
     expected = compute(expr, {db: {'t': df}})
     assert result.name == 'length_1'
     assert expected.name == 'name'
