@@ -5,7 +5,7 @@ from datashape import String
 from datashape.predicates import isrecord, iscollection
 from .expressions import Expr, schema_method_list
 
-__all__ = ['Like', 'like', 'length', 'UnaryStringFunction']
+__all__ = ['Like', 'like', 'strlen', 'UnaryStringFunction']
 
 
 class Like(Expr):
@@ -51,7 +51,7 @@ class UnaryStringFunction(Expr):
         return self._dtype
 
 
-class length(UnaryStringFunction):
+class strlen(UnaryStringFunction):
     _dtype = datashape.int64
 
 
@@ -67,5 +67,5 @@ schema_method_list.extend([
                                      for typ in ds.measure.types)),
      set([like])),
     (lambda ds: isinstance(getattr(ds.measure, 'ty', ds.measure), String),
-     set([length]))
+     set([strlen]))
 ])
