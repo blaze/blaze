@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from datashape import String
 from datashape.predicates import isrecord, iscollection
-from .expressions import Expr, schema_method_list
+from .expressions import Expr, schema_method_list, ElemWise
 
 __all__ = ['Like', 'like', 'strlen', 'UnaryStringFunction']
 
@@ -38,21 +38,15 @@ def like(child, **kwargs):
 like.__doc__ = Like.__doc__
 
 
-class UnaryStringFunction(Expr):
+class UnaryStringFunction(ElemWise):
 
     """String function that only takes a single argument.
     """
     __slots__ = '_hash', '_child'
 
-    @property
-    def dshape(self):
-        if iscollection(self._child.dshape):
-            return datashape.var * self._dtype
-        return self._dtype
-
 
 class strlen(UnaryStringFunction):
-    _dtype = datashape.int64
+    schema = datashape.int64
 
 
 def isstring(ds):
