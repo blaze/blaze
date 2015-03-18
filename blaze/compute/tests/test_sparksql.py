@@ -288,6 +288,10 @@ def test_by_non_native_ops(ctx, db):
                                                                     expected)))
 
 
+@pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
+                   reason=('length string function not available without '
+                           'HiveContext'),
+                   raises=py4j.protocol.Py4JJavaError)
 def test_strlen(ctx, db):
     expr = db.t.name.strlen()
     result = odo(compute(expr, ctx), pd.Series)
