@@ -536,6 +536,13 @@ def test_like():
     tm.assert_frame_equal(result, expected)
 
 
+def test_strlen():
+    expr = t.name.strlen()
+    expected = pd.Series([5, 3, 5], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    tm.assert_series_equal(expected, result)
+
+
 def test_rowwise_by():
     f = lambda _, id, name: id + len(name)
     expr = by(t.map(f, 'int'), total=t.amount.sum())

@@ -16,10 +16,9 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
-import operator
 import sqlalchemy as sa
 import sqlalchemy
-from sqlalchemy import sql, Table, MetaData
+from sqlalchemy import sql, Table, MetaData, Column
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
@@ -28,13 +27,12 @@ import itertools
 from copy import copy
 import toolz
 from multipledispatch import MDNotImplementedError
-from datashape.predicates import isscalar, isrecord
 from odo.backends.sql import metadata_of_engine
 
 from ..dispatch import dispatch
-from ..expr import Projection, Selection, Field, Broadcast, Expr, Symbol
+from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-        count, FloorDiv)
+                    count, FloorDiv, UnaryStringFunction)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
@@ -44,13 +42,13 @@ from ..utils import listpack
 __all__ = ['sqlalchemy', 'select']
 
 
-
 def inner_columns(s):
     try:
         return s.inner_columns
     except AttributeError:
         return s.c
     raise TypeError()
+
 
 @dispatch(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
@@ -131,7 +129,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], col) for col in s.inner_columns)
     predicate = compute(t.predicate, toolz.merge(ns, scope),
-                            optimize=False, post_compute=False)
+                        optimize=False, post_compute=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     return s.where(predicate)
@@ -141,7 +139,7 @@ def compute_up(t, s, scope=None, **kwargs):
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
     predicate = compute(t.predicate, toolz.merge(ns, scope),
-                            optimize=False, post_compute=False)
+                        optimize=False, post_compute=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
@@ -169,6 +167,7 @@ def computefull(t, s):
 
 table_names = ('table_%d' % i for i in itertools.count(1))
 
+
 def name(sel):
     """ Name of a selectable """
     if hasattr(sel, 'name'):
@@ -177,6 +176,7 @@ def name(sel):
         if len(sel.froms) == 1:
             return name(sel.froms[0])
     return next(table_names)
+
 
 @dispatch(Select, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
@@ -189,7 +189,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
         raise MDNotImplementedError()
 
     return a.replace_selectable(a.froms[0],
-                a.froms[0].join(b, condition, **kwargs))
+                                a.froms[0].join(b, condition, **kwargs))
 
 
 @dispatch(ClauseElement, Select)
@@ -197,7 +197,8 @@ def _join_selectables(a, b, condition=None, **kwargs):
     if len(b.froms) > 1:
         raise MDNotImplementedError()
     return b.replace_selectable(b.froms[0],
-                a.join(b.froms[0], condition, **kwargs))
+                                a.join(b.froms[0], condition, **kwargs))
+
 
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
@@ -267,10 +268,10 @@ def compute_up(t, lhs, rhs, **kwargs):
 
     fields = [f.replace('_left', '').replace('_right', '') for f in t.fields]
     columns = [c for c in main_cols if c.name in t._on_left]
-    columns += [c for c in left_cols if c.name in fields
-                                    and c.name not in t._on_left]
-    columns += [c for c in right_cols if c.name in fields
-                                     and c.name not in t._on_right]
+    columns += [c for c in left_cols
+                if c.name in fields and c.name not in t._on_left]
+    columns += [c for c in right_cols
+                if c.name in fields and c.name not in t._on_right]
 
     if isinstance(join, Select):
         return join.with_only_columns(columns)
@@ -286,7 +287,7 @@ names = {mean: 'avg',
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
     d = dict((t._child[c], list(inner_columns(s))[i])
-            for i, c in enumerate(t._child.fields))
+             for i, c in enumerate(t._child.fields))
     col = compute(t, d, post_compute=False)
 
     s = copy(s)
@@ -360,14 +361,16 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return select(s).distinct()
 
+
 @dispatch(By, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t._child: s}, post_compute=False)]
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t._child: s}, post_compute=None).label(name)
-                for val, name in zip(t.apply.values, t.apply.fields)]
+        reductions = [compute(val, {t._child: s},
+                              post_compute=None).label(name)
+                      for val, name in zip(t.apply.values, t.apply.fields)]
 
     return sqlalchemy.select([grouper] + reductions).group_by(grouper)
 
@@ -380,13 +383,13 @@ def compute_up(t, s, **kwargs):
         # grouper = [d[col] for col in t.grouper.fields]
         grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
     else:
-        raise ValueError("Grouper must be a projection, got %s"
-                                  % t.grouper)
+        raise ValueError("Grouper must be a projection, got %s" % t.grouper)
     if isinstance(t.apply, Reduction):
         reductions = [compute(t.apply, {t._child: s}, post_compute=False)]
     elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t._child: s}, post_compute=None).label(name)
-                for val, name in zip(t.apply.values, t.apply.fields)]
+        reductions = [compute(val, {t._child: s},
+                              post_compute=None).label(name)
+                      for val, name in zip(t.apply.values, t.apply.fields)]
 
     return sqlalchemy.select(grouper + reductions).group_by(*grouper)
 
@@ -427,12 +430,13 @@ def lower_column(col):
 
 aliases = ('alias_%d' % i for i in itertools.count(1))
 
+
 @toolz.memoize
 def alias_it(s):
     """ Alias a Selectable if it has a group by clause """
     if (hasattr(s, '_group_by_clause') and
-        s._group_by_clause is not None and
-        len(s._group_by_clause)):
+            s._group_by_clause is not None and
+            len(s._group_by_clause)):
         return s.alias(next(aliases))
     else:
         return s
@@ -442,8 +446,7 @@ def alias_it(s):
 def compute_up(t, s, **kwargs):
     if not (isinstance(t.grouper, (Field, Projection))
             or t.grouper is t._child):
-        raise ValueError("Grouper must be a projection, got %s"
-                                  % t.grouper)
+        raise ValueError("Grouper must be a projection, got %s" % t.grouper)
 
     s = alias_it(s)
 
@@ -509,17 +512,17 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     subexpression = common_subexpression(*t.children)
     children = [compute(child, {subexpression: s}, post_compute=False)
-                 for child in t.children]
+                for child in t.children]
     return select(children)
 
 
 @dispatch(Summary, Select)
 def compute_up(t, s, scope=None, **kwargs):
     d = dict((t._child[c], list(inner_columns(s))[i])
-            for i, c in enumerate(t._child.fields))
+             for i, c in enumerate(t._child.fields))
 
     cols = [compute(val, toolz.merge(scope, d), post_compute=None).label(name)
-                for name, val in zip(t.fields, t.values)]
+            for name, val in zip(t.fields, t.values)]
 
     s = copy(s)
     for c in cols:
@@ -531,7 +534,7 @@ def compute_up(t, s, scope=None, **kwargs):
 @dispatch(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
     return select([compute(value, {t._child: s}, post_compute=None).label(name)
-        for value, name in zip(t.values, t.fields)])
+                   for value, name in zip(t.values, t.fields)])
 
 
 @dispatch(Like, Selectable)
@@ -541,14 +544,21 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Like, Select)
 def compute_up(t, s, **kwargs):
-    d = dict()
-    for name, pattern in t.patterns.items():
-        for f in s.froms:
-            if f.c.has_key(name):
-                d[f.c.get(name)] = pattern.replace('*', '%')
+    items = [(f.c.get(name), pattern.replace('*', '%'))
+             for name, pattern in t.patterns.items()
+             for f in s.froms if name in f.c]
+    return s.where(reduce(and_, [key.like(pattern) for key, pattern in items]))
 
-    return s.where(reduce(and_,
-                          [key.like(pattern) for key, pattern in d.items()]))
+
+string_func_names = {
+    'strlen': 'length'
+}
+
+
+@dispatch(UnaryStringFunction, Column)
+def compute_up(expr, data, **kwargs):
+    name = type(expr).__name__
+    return getattr(sa.sql.func, string_func_names.get(name, name))(data)
 
 
 @toolz.memoize

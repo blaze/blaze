@@ -610,6 +610,14 @@ def test_like():
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
 
+
+def test_strlen():
+    expr = t.name.strlen()
+    result = str(compute(expr, s))
+    expected = "SELECT length(accounts.name) as length1 FROM accounts"
+    assert normalize(result) == normalize(expected)
+
+
 def test_columnwise_on_complex_selection():
     assert normalize(str(select(compute(t[t.amount > 0].amount + 1, s)))) == \
             normalize("""

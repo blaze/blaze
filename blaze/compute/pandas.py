@@ -34,7 +34,8 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol,
-                    UTCFromTimestamp, nelements, DateTimeTruncate, count)
+                    UTCFromTimestamp, nelements, DateTimeTruncate, count,
+                    UnaryStringFunction)
 from ..expr import UnaryOp, BinOp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -157,6 +158,17 @@ def compute_up(t, s, **kwargs):
 @dispatch(Distinct, (DataFrame, Series))
 def compute_up(t, df, **kwargs):
     return df.drop_duplicates().reset_index(drop=True)
+
+
+string_func_names = {
+    'strlen': 'len',
+}
+
+
+@dispatch(UnaryStringFunction, Series)
+def compute_up(expr, data, **kwargs):
+    name = type(expr).__name__
+    return getattr(data.str, string_func_names.get(name, name))()
 
 
 def unpack(seq):
