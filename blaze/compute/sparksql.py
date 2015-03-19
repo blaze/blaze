@@ -8,16 +8,13 @@ SparkSQL.
 
 from __future__ import absolute_import, division, print_function
 
-from datashape.predicates import isrecord
-import sqlalchemy as sa
-from toolz import pipe, curry
+from toolz import pipe
 from toolz.curried import filter, map
-from odo.backends.sql import dshape_to_alchemy
 
 from ..dispatch import dispatch
-from ..expr import Expr, Field, symbol
+from ..expr import Expr, symbol
 from .core import compute
-from .utils import literalquery
+from .utils import literalquery, istable, make_sqlalchemy_table
 from .spark import Dummy
 
 __all__ = []
@@ -28,18 +25,6 @@ try:
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
     SQLContext = Dummy
-
-
-def make_sqlalchemy_table(expr):
-    name = expr._name
-    columns = dshape_to_alchemy(expr.dshape)
-    return sa.Table(name, sa.MetaData(), *columns)
-
-
-@curry
-def istable(db, t):
-    return (isinstance(t, Field) and isrecord(t.dshape.measure) and
-            t._child.isidentical(db))
 
 
 @dispatch(Expr, SQLContext)
