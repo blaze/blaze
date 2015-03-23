@@ -4,6 +4,7 @@ import numpy as np
 
 from .core import compute, optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
+from ..expr.strings import isstring
 from ..expr.broadcast import broadcast_collect, Broadcast
 from toolz import memoize
 import datashape
@@ -15,8 +16,15 @@ Broadcastable = Arithmetic, Math, Map, UnaryOp
 
 
 def optimize_ndarray(expr, *data, **kwargs):
-    return broadcast_collect(expr, Broadcastable=Broadcastable,
-                             WantToBroadcast=Broadcastable)
+    dshapes = expr._leaves()
+    for leaf in expr._leaves():
+        if (isstring(leaf.dshape.measure) or
+            isinstance(leaf.dshape.measure, datashape.Record) and
+            any(isstring(dt) for dt in leaf.dshape.measure.types)):
+            return expr
+        else:
+            return broadcast_collect(expr, Broadcastable=Broadcastable,
+                                     WantToBroadcast=Broadcastable)
 
 
 for i in range(1, 11):
