@@ -129,7 +129,7 @@ def test_join():
     assert normalize(str(result)) == normalize("""
     SELECT amounts.name, amounts.amount, ids.id
     FROM amounts JOIN ids ON amounts.name = ids.name
-    ORDER BY amounts.amount""")
+    ORDER BY amounts.amount ASC""")
 
 
 
@@ -405,22 +405,30 @@ def test_join_projection():
 
 def test_sort():
     assert str(compute(t.sort('amount'), s)) == \
-            str(select(s).order_by(s.c.amount))
+            str(select(s).order_by(sa.asc(s.c.amount)))
 
     assert str(compute(t.sort('amount', ascending=False), s)) == \
-            str(select(s).order_by(sqlalchemy.desc(s.c.amount)))
+            str(select(s).order_by(sa.desc(s.c.amount)))
+
+
+def test_multicolumn_sort():
+    assert str(compute(t.sort(['amount', 'id']), s)) == \
+        str(select(s).order_by(sa.asc(s.c.amount), sa.asc(s.c.id)))
+
+    assert str(compute(t.sort(['amount', 'id'], ascending=False), s)) == \
+        str(select(s).order_by(sa.desc(s.c.amount), sa.desc(s.c.id)))
 
 
 def test_sort_on_distinct():
     assert normalize(str(compute(t.amount.sort(), s))) == normalize("""
             SELECT accounts.amount
             FROM accounts
-            ORDER BY accounts.amount""")
+            ORDER BY accounts.amount ASC""")
 
     assert normalize(str(compute(t.amount.distinct().sort(), s))) == normalize("""
             SELECT DISTINCT accounts.amount as amount
             FROM accounts
-            ORDER BY amount""")
+            ORDER BY amount ASC""")
 
 
 
