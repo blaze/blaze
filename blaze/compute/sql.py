@@ -286,6 +286,8 @@ names = {mean: 'avg',
 
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
     d = dict((t._child[c], list(inner_columns(s))[i])
              for i, c in enumerate(t._child.fields))
     col = compute(t, d, post_compute=False)

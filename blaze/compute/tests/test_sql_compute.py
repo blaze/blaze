@@ -221,6 +221,12 @@ def test_reductions():
     assert 'amount_sum' == compute(sum(t['amount']), s, post_compute=False).name
 
 
+@pytest.mark.xfail(raises=ValueError,
+                   reason='axis=1 does not make sense for SQL')
+def test_reduction_with_invalid_axis_argument():
+    compute(t.amount.mean(axis=1))
+
+
 def test_nelements():
     rhs = str(compute(t.count(), s))
     assert str(compute(t.nelements(), s)) == rhs
