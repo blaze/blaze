@@ -221,6 +221,17 @@ def test_reductions():
     assert 'amount_sum' == compute(sum(t['amount']), s, post_compute=False).name
 
 
+def test_reduction_with_invalid_axis_argument():
+    with pytest.raises(ValueError):
+        compute(t.amount.mean(axis=1))
+
+    with pytest.raises(ValueError):
+        compute(t.count(axis=1))
+
+    with pytest.raises(ValueError):
+        compute(t[['amount', 'id']].count(axis=1))
+
+
 def test_nelements():
     rhs = str(compute(t.count(), s))
     assert str(compute(t.nelements(), s)) == rhs

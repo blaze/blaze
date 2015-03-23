@@ -286,6 +286,8 @@ names = {mean: 'avg',
 
 @dispatch((nunique, Reduction), Select)
 def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
     d = dict((t._child[c], list(inner_columns(s))[i])
              for i, c in enumerate(t._child.fields))
     col = compute(t, d, post_compute=False)
@@ -307,6 +309,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Reduction, sql.elements.ClauseElement)
 def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except AttributeError:
@@ -324,12 +328,14 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, sqlalchemy.Table)
 def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
     try:
         c = list(s.primary_key)[0]
     except IndexError:
         c = list(s.columns)[0]
 
-    return sqlalchemy.sql.functions.count(c)
+    return sa.func.count(c)
 
 
 @dispatch(nelements, (Select, ClauseElement))
@@ -339,6 +345,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Select)
 def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
     al = next(aliases)
     try:
         s2 = s.alias(al)
@@ -347,14 +355,16 @@ def compute_up(t, s, **kwargs):
         s2 = s.alias(al)
         col = list(s2.columns)[0]
 
-    result = sqlalchemy.sql.functions.count(col)
+    result = sa.func.count(col)
 
     return select([list(inner_columns(result))[0].label(t._name)])
 
 
 @dispatch(nunique, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
-    return sqlalchemy.sql.functions.count(s.distinct())
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
+    return sa.func.count(s.distinct())
 
 
 @dispatch(Distinct, sqlalchemy.Table)
