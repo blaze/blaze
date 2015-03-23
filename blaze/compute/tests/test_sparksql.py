@@ -223,7 +223,7 @@ def test_math(ctx, db, func):
 
 
 @pytest.mark.parametrize(['field', 'ascending'],
-                         itertools.product(['name', ['name', 'amount']],
+                         itertools.product(['name', 'id', ['name', 'amount']],
                                            [True, False]))
 def test_sort(ctx, db, field, ascending):
     expr = db.t.sort(field, ascending=ascending)
