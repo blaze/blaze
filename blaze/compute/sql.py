@@ -34,7 +34,7 @@ from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements, DateTime
 from ..compatibility import reduce
 from .core import compute_up, compute, base
 from ..utils import listpack
@@ -454,7 +454,7 @@ def alias_it(s):
 
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not (isinstance(t.grouper, (Field, Projection))
+    if not (isinstance(t.grouper, (Field, Projection, DateTime))
             or t.grouper is t._child):
         raise ValueError("Grouper must be a projection, got %s" % t.grouper)
 
