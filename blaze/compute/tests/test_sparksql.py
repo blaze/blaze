@@ -9,7 +9,9 @@ sa = pytest.importorskip('sqlalchemy')
 import os
 import itertools
 import shutil
+import copy
 
+from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
@@ -24,10 +26,23 @@ data = [['Alice', 100.0, 1],
         ['Bob', 200.0, 2],
         ['Alice', 50.0, 3]]
 
+date_data = []
+
+for attr in ('YearBegin', 'MonthBegin', 'Day', 'Hour', 'Minute', 'Second'):
+    rng = pd.date_range(start='now', periods=len(data),
+                        freq=getattr(pd.datetools, attr)()).values
+    date_data += list(zip(np.random.choice(['Alice', 'Bob', 'Joe', 'Lester'],
+                                           size=len(data)),
+                          np.random.rand(len(data)) * 100,
+                          np.random.randint(100, size=3),
+                          rng))
+
+
 cities_data = [['Alice', 'NYC'],
                ['Bob', 'Boston']]
 
 df = pd.DataFrame(data, columns=['name', 'amount', 'id'])
+date_df = pd.DataFrame(date_data, columns=['name', 'amount', 'id', 'ds'])
 cities_df = pd.DataFrame(cities_data, columns=['name', 'city'])
 
 
@@ -72,16 +87,31 @@ def cities(sc):
         yield parts.map(lambda person: Row(name=person[0], city=person[1]))
 
 
+@pytest.yield_fixture(scope='module')
+def date_people(sc):
+    with tmpfile('.txt') as fn:
+        date_df.to_csv(fn, header=False, index=False)
+        raw = sc.textFile(fn)
+        parts = raw.map(lambda line: line.split(','))
+        yield parts.map(lambda person: Row(name=person[0],
+                                           amount=float(person[1]),
+                                           id=int(person[2]),
+                                           ds=pd.Timestamp(person[3]).to_pydatetime()))
+
+
 @pytest.fixture(scope='module')
-def ctx(sql, people, cities):
+def ctx(sql, people, cities, date_people):
     try:
         sql.registerDataFrameAsTable(sql.createDataFrame(people), 't')
         sql.cacheTable('t')
         sql.registerDataFrameAsTable(sql.createDataFrame(cities), 's')
         sql.cacheTable('s')
+        sql.registerDataFrameAsTable(sql.createDataFrame(date_people), 'dates')
+        sql.cacheTable('dates')
     except AttributeError:
         sql.inferSchema(people).registerTempTable('t')
         sql.inferSchema(cities).registerTempTable('s')
+        sql.inferSchema(date_people).registerTempTable('dates')
     return sql
 
 
@@ -299,3 +329,26 @@ def test_strlen(ctx, db):
     assert result.name == 'length_1'
     assert expected.name == 'name'
     assert odo(result, set) == odo(expected, set)
+
+
+date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
+                                attr,
+                                raises=Py4JJavaError,
+                                reason=('date attribute %r not supported '
+                                        'without hive') % attr)
+              for attr in ['year', 'month', 'day', 'hour', 'minute', 'second']]
+
+date_attrs += [pytest.mark.xfail(attr,
+                                 raises=Py4JJavaError,
+                                 reason=('Hive does not support date '
+                                         'attribute %r') % attr)
+               for attr in ['millisecond', 'microsecond']]
+
+
+@pytest.mark.parametrize('attr', date_attrs)
+def test_by_with_date(ctx, db, attr):
+    expr = by(getattr(db.dates.ds, attr),
+              mean=db.dates.amount.mean())
+    result = odo(compute(expr, ctx), set)
+    expected = odo(compute(expr, {db: {'dates': date_df}}), set)
+    assert result == expected
