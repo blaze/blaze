@@ -49,3 +49,7 @@ def test_arithmetic():
     # assert eq(compute(n + 1, nx), nx + 1)
     assert eq(compute(rec.amount + 1, recx), recx.amount + 1)
     assert eq(compute(-rec.amount, recx), 0-recx.amount)
+
+def test_comparisons():
+    assert nd.as_py(compute(rec.amount > 0, recx), tuple=True) == \
+            [(True, True), (True,), (True, True, True)]
