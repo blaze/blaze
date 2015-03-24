@@ -109,7 +109,7 @@ def compute_down(expr, data, chunksize=None, map=None, **kwargs):
     leaf = expr._leaves()[0]
 
     if chunksize is None:
-        chunksize = get_chunksize(data)
+        chunksize = max(2**16, get_chunksize(data))
 
     # If the bottom expression is a projection or field then want to do
     # compute_up first
