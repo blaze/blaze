@@ -33,9 +33,16 @@ project itself.
   larger-than-memory arrays and to leverage multiple cores.  They are a
   drop-in replacement for a commonly used subset of NumPy algorithms.
 
+* DyND_: In-memory dynamic arrays
 
-The rest of this documentation is just about the Blaze project itself.  See the
-pages linked to above for ``odo`` or ``dask.array``.
+  DyND is a dynamic ND-array library like NumPy.  It supports variable length
+  strings, ragged arrays, and GPUs.  It is a standalone C++ codebase with
+  Python bindings.  Generally it is more extensible than NumPy but also less
+  mature.
+
+These projects are mutually independent.  The rest of this documentation is
+just about the Blaze project itself.  See the pages linked to above for ``odo``
+or ``dask.array``.
 
 
 Blaze
@@ -109,3 +116,4 @@ Older versions of these documents can be found here_.
 .. _`See previous blog posts about Blaze`: http://continuum.io/blog/tags/blaze
 .. _Odo: http://odo.pydata.org/
 .. _Dask.array: http://dask.pydata.org/
+.. _DyND: https://github.com/libdynd/libdynd
