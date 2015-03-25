@@ -18,7 +18,7 @@ from __future__ import absolute_import, division, print_function
 
 import sqlalchemy as sa
 import sqlalchemy
-from sqlalchemy import sql, Table, MetaData, Column
+from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
@@ -32,7 +32,7 @@ from odo.backends.sql import metadata_of_engine
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction)
+                    count, FloorDiv, UnaryStringFunction, strlen)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 from ..compatibility import reduce
@@ -558,11 +558,16 @@ def compute_up(t, s, **kwargs):
 
 
 string_func_names = {
-    'strlen': 'length'
+    # <blaze function name>: <SQL function name>
 }
 
 
-@dispatch(UnaryStringFunction, Column)
+@dispatch(strlen, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.sql.functions.char_length(data)
+
+
+@dispatch(UnaryStringFunction, ColumnElement)
 def compute_up(expr, data, **kwargs):
     name = type(expr).__name__
     return getattr(sa.sql.func, string_func_names.get(name, name))(data)

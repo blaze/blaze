@@ -632,9 +632,9 @@ def test_like():
 
 def test_strlen():
     expr = t.name.strlen()
-    result = str(compute(expr, s))
-    expected = "SELECT length(accounts.name) as length1 FROM accounts"
-    assert normalize(result) == normalize(expected)
+    result = str(compute(expr, s)).replace(' \n', ' ').lower()
+    expected = "SELECT char_length(accounts.name) as char_length_1 FROM accounts"
+    assert result == expected.lower()
 
 
 def test_columnwise_on_complex_selection():
