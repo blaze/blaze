@@ -598,16 +598,17 @@ def compute_up(expr, data, **kwargs):
     return sa.extract(expr.attr, data).label(expr._name)
 
 
-@compiles(sa.sql.elements.Extract, 'hive', 'mysql', 'mssql')
-def compile_extract_to_date_function(element, compiler, **kwargs):
+@compiles(sa.sql.elements.Extract, 'hive')
+def hive_extract_to_date_function(element, compiler, **kwargs):
     func = getattr(sa.func, element.field)(element.expr)
     return compiler.visit_function(func, **kwargs)
 
 
-@dispatch((Millisecond, Microsecond),
-          (ClauseElement, sa.sql.elements.ColumnElement))
-def compute_up(expr, data, **kwargs):
-    raise MDNotImplementedError()
+@compiles(sa.sql.elements.Extract, 'mssql')
+def mssql_extract_to_datepart(element, compiler, **kwargs):
+    func = sa.func.datepart(sa.sql.expression.column(element.field),
+                            element.expr)
+    return compiler.visit_function(func, **kwargs)
 
 
 def engine_of(x):
