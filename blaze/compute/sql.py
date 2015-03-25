@@ -489,13 +489,10 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Sort, ClauseElement)
 def compute_up(t, s, **kwargs):
-    if isinstance(t.key, (tuple, list)):
-        raise ValueError("Multi-column sort not yet implemented")
     s = select(s)
-    col = lower_column(getattr(s.c, t.key))
-    if not t.ascending:
-        col = sqlalchemy.desc(col)
-    return s.order_by(col)
+    direction = sa.asc if t.ascending else sa.desc
+    cols = [direction(lower_column(getattr(s.c, c))) for c in listpack(t.key)]
+    return s.order_by(*cols)
 
 
 @dispatch(Head, Select)
