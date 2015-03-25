@@ -20,6 +20,7 @@ import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql, Table, MetaData, Column
 from sqlalchemy.sql import Selectable, Select
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
 from operator import and_, eq
@@ -32,9 +33,10 @@ from odo.backends.sql import metadata_of_engine
 from ..dispatch import dispatch
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction)
+                    count, FloorDiv, UnaryStringFunction, DateTime,
+                    Millisecond, Microsecond)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements, DateTime
 from ..compatibility import reduce
 from .core import compute_up, compute, base
 from ..utils import listpack
@@ -375,33 +377,39 @@ def compute_up(t, s, **kwargs):
 @dispatch(By, sqlalchemy.Column)
 def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
-    if isinstance(t.apply, Reduction):
-        reductions = [compute(t.apply, {t._child: s}, post_compute=False)]
-    elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t._child: s},
-                              post_compute=None).label(name)
-                      for val, name in zip(t.apply.values, t.apply.fields)]
+    scope = {t._child: s}
+    app = t.apply
+    if isinstance(app, Reduction):
+        reductions = [compute(app, scope, post_compute=False)]
+    elif isinstance(app, Summary):
+        reductions = [compute(val, scope, post_compute=None).label(name)
+                      for val, name in zip(app.values, app.fields)]
 
     return sqlalchemy.select([grouper] + reductions).group_by(grouper)
 
 
 @dispatch(By, ClauseElement)
-def compute_up(t, s, **kwargs):
-    if (isinstance(t.grouper, (Field, Projection)) or
-            t.grouper is t._child):
+def compute_up(expr, data, **kwargs):
+    if (isinstance(expr.grouper, (Field, Projection)) or
+            expr.grouper is expr._child):
         # d = dict((c.name, c) for c in inner_columns(s))
-        # grouper = [d[col] for col in t.grouper.fields]
-        grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
+        # grouper = [d[col] for col in expr.grouper.fields]
+        grouper = [lower_column(data.c.get(col))
+                   for col in expr.grouper.fields]
+    elif isinstance(expr.grouper, DateTime):
+        grouper = [compute(expr.grouper, data, post_compute=False)]
     else:
-        raise ValueError("Grouper must be a projection, got %s" % t.grouper)
-    if isinstance(t.apply, Reduction):
-        reductions = [compute(t.apply, {t._child: s}, post_compute=False)]
-    elif isinstance(t.apply, Summary):
-        reductions = [compute(val, {t._child: s},
-                              post_compute=None).label(name)
-                      for val, name in zip(t.apply.values, t.apply.fields)]
+        raise ValueError("Grouper must be a projection, field or "
+                         "DateTime expression, got %s" % expr.grouper)
+    app = expr.apply
+    scope = {expr._child: data}
+    if isinstance(expr.apply, Reduction):
+        reductions = [compute(app, scope, post_compute=False)]
+    elif isinstance(expr.apply, Summary):
+        reductions = [compute(val, scope, post_compute=False).label(name)
+                      for val, name in zip(app.values, app.fields)]
 
-    return sqlalchemy.select(grouper + reductions).group_by(*grouper)
+    return sa.select(grouper + reductions).group_by(*grouper)
 
 
 def lower_column(col):
@@ -454,7 +462,7 @@ def alias_it(s):
 
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not (isinstance(t.grouper, (Field, Projection))
+    if not (isinstance(t.grouper, (Field, Projection, DateTime))
             or t.grouper is t._child):
         raise ValueError("Grouper must be a projection, got %s" % t.grouper)
 
@@ -583,6 +591,24 @@ def table_of_engine(engine, name):
 @dispatch(Field, sqlalchemy.engine.Engine)
 def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
+
+
+@dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
+def compute_up(expr, data, **kwargs):
+    return sa.extract(expr.attr, data).label(expr._name)
+
+
+@compiles(sa.sql.elements.Extract, 'hive')
+def hive_extract_to_date_function(element, compiler, **kwargs):
+    func = getattr(sa.func, element.field)(element.expr)
+    return compiler.visit_function(func, **kwargs)
+
+
+@compiles(sa.sql.elements.Extract, 'mssql')
+def mssql_extract_to_datepart(element, compiler, **kwargs):
+    func = sa.func.datepart(sa.sql.expression.column(element.field),
+                            element.expr)
+    return compiler.visit_function(func, **kwargs)
 
 
 def engine_of(x):
