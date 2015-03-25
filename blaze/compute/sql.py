@@ -20,6 +20,7 @@ import sqlalchemy as sa
 import sqlalchemy
 from sqlalchemy import sql, Table, MetaData, Column
 from sqlalchemy.sql import Selectable, Select
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
 from operator import and_, eq
@@ -594,7 +595,13 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
 def compute_up(expr, data, **kwargs):
-    return getattr(sa.func, expr.attr)(data).label(expr._name)
+    return sa.extract(expr.attr, data).label(expr._name)
+
+
+@compiles(sa.sql.elements.Extract, 'hive', 'mysql', 'mssql')
+def compile_extract_to_date_function(element, compiler, **kwargs):
+    func = getattr(sa.func, element.field)(element.expr)
+    return compiler.visit_function(func, **kwargs)
 
 
 @dispatch((Millisecond, Microsecond),
