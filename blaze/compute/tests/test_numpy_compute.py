@@ -411,9 +411,10 @@ def test_join():
     result = compute(expr, {t: x, c: cities})
     assert (b'Alice', 1, 100, 'LA') in into(list, result)
 
+
 def test_query_with_strings():
     b = np.array([('a', 1), ('b', 2), ('c', 3)],
                  dtype=[('x', 'S1'), ('y', 'i4')])
 
     s = symbol('s', discover(b))
-    assert compute(s[s.x == 'b'], b).tolist() == [('b', 2)]
+    assert compute(s[s.x == b'b'], b).tolist() == [(b'b', 2)]
