@@ -223,7 +223,7 @@ def short_dshape(ds, nlines=5):
 def coerce_to(typ, x):
     try:
         return typ(x)
-    except:
+    except TypeError:
         return into(typ, x)
 
 
@@ -252,9 +252,10 @@ def expr_repr(expr, n=10):
         return repr(coerce_scalar(compute(expr), str(expr.dshape)))
 
     # Tables
-    with ignoring(Exception):
-        if ndim(expr) == 1:
-            return repr_tables(expr, 10)
+    if (ndim(expr) == 1 and
+        (isrecord(expr.dshape.measure) or
+         isscalar(expr.dshape.measure))):
+        return repr_tables(expr, 10)
 
     # Smallish arrays
     if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
