@@ -569,6 +569,7 @@ string_func_names = {
 }
 
 
+# TODO: remove if the alternative fix goes into PyHive
 @compiles(sa.sql.functions.Function, 'hive')
 def compile_char_length_on_hive(element, compiler, **kwargs):
     assert len(element.clauses) == 1, \
