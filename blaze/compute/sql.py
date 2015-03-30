@@ -569,7 +569,7 @@ string_func_names = {
 }
 
 
-@compiles(sa.sql.functions.GenericFunction, 'hive')
+@compiles(sa.sql.functions.Function, 'hive')
 def compile_char_length_on_hive(element, compiler, **kwargs):
     assert len(element.clauses) == 1, \
         'char_length must have a single clause, got %s' % list(element.clauses)
