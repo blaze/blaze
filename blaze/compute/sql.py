@@ -574,8 +574,9 @@ string_func_names = {
 
 @dispatch(UnaryStringFunction, Column)
 def compute_up(expr, data, **kwargs):
-    name = type(expr).__name__
-    return getattr(sa.sql.func, string_func_names.get(name, name))(data)
+    func_name = type(expr).__name__
+    func_name = string_func_names.get(func_name, func_name)
+    return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 
 @toolz.memoize
