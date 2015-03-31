@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import datashape
 import datetime
 from datashape import discover, Tuple, Record, DataShape, var
-from datashape.predicates import iscollection, isscalar, isrecord
+from datashape.predicates import iscollection, isscalar, isrecord, istabular
 from pandas import DataFrame, Series
 import itertools
 from functools import reduce
@@ -12,7 +12,6 @@ import warnings
 from collections import Iterator
 
 from .expr import Expr, Symbol, ndim
-from .utils import ignoring
 from .dispatch import dispatch
 from odo import into, resource
 from .compatibility import _strtypes
@@ -223,7 +222,7 @@ def short_dshape(ds, nlines=5):
 def coerce_to(typ, x):
     try:
         return typ(x)
-    except:
+    except TypeError:
         return into(typ, x)
 
 
@@ -252,9 +251,9 @@ def expr_repr(expr, n=10):
         return repr(coerce_scalar(compute(expr), str(expr.dshape)))
 
     # Tables
-    with ignoring(Exception):
-        if ndim(expr) == 1:
-            return repr_tables(expr, 10)
+    if (ndim(expr) == 1 and (istabular(expr.dshape) or
+                             isscalar(expr.dshape.measure))):
+        return repr_tables(expr, 10)
 
     # Smallish arrays
     if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
