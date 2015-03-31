@@ -327,7 +327,7 @@ def test_strlen(ctx, db):
     expr = db.t.name.strlen()
     result = odo(compute(expr, ctx), pd.Series)
     expected = compute(expr, {db: {'t': df}})
-    assert result.name == 'length_1'
+    assert result.name == 'name'
     assert expected.name == 'name'
     assert odo(result, set) == odo(expected, set)
 

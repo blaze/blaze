@@ -74,7 +74,8 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     d = dict((t._scalars[0][c], list(inner_columns(s))[i])
              for i, c in enumerate(t._scalars[0].fields))
-    result = compute(t._scalar_expr, d, post_compute=False)
+    name = t._scalar_expr._name
+    result = compute(t._scalar_expr, d, post_compute=False).label(name)
 
     s = copy(s)
     s.append_column(result)
@@ -85,7 +86,8 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     d = dict((t._scalars[0][c], list(inner_columns(s))[i])
              for i, c in enumerate(t._scalars[0].fields))
-    return compute(t._scalar_expr, d, post_compute=False)
+    name = t._scalar_expr._name
+    return compute(t._scalar_expr, d, post_compute=False).label(name)
 
 
 @dispatch(BinOp, ColumnElement)
@@ -572,8 +574,9 @@ string_func_names = {
 
 @dispatch(UnaryStringFunction, Column)
 def compute_up(expr, data, **kwargs):
-    name = type(expr).__name__
-    return getattr(sa.sql.func, string_func_names.get(name, name))(data)
+    func_name = type(expr).__name__
+    func_name = string_func_names.get(func_name, func_name)
+    return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 
 @toolz.memoize
