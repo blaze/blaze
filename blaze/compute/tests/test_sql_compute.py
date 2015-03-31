@@ -37,9 +37,9 @@ sbig = sa.Table('accountsbig', metadata,
 
 
 def normalize(s):
-    s2 = ' '.join(s.strip().split()).lower().replace('_', '')
-    s3 = re.sub('alias\d*', 'alias', s2)
-    return s3
+    s = ' '.join(s.strip().split()).lower()
+    s = re.sub(r'(alias)_?\d*', r'\1', s)
+    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
 def test_table():
@@ -633,7 +633,7 @@ def test_like():
 def test_strlen():
     expr = t.name.strlen()
     result = str(compute(expr, s))
-    expected = "SELECT length(accounts.name) as name FROM accounts"
+    expected = "SELECT char_length(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
 
@@ -1118,7 +1118,7 @@ def test_join_count():
           WHERE t1.x > ?) as alias
           """
     expected2 = """
-    SELECT count(alias2.x) AS __count
+    SELECT count(alias2.x) AS count
     FROM (SELECT alias1.x AS x, alias1.y AS y, t2.b AS b
           FROM (SELECT t1.x AS x, t1.y AS y
                 FROM t1
@@ -1217,5 +1217,5 @@ def test_math():
 
     result = compute(t.amount // 2, s)
     assert normalize(str(result)) == normalize("""
-            SELECT floor(accounts.amount / :amount1) AS amount
+            SELECT floor(accounts.amount / :amount_1) AS amount
             FROM accounts""")
