@@ -24,17 +24,17 @@ metadata = sa.MetaData()
 s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
              sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True),
-             )
+             sa.Column('id', sa.Integer, primary_key=True))
 
-tbig = symbol('tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
+tbig = symbol('tbig',
+              'var * {name: string, sex: string[1], amount: int, id: int}')
 
 sbig = sa.Table('accountsbig', metadata,
-             sa.Column('name', sa.String),
-             sa.Column('sex', sa.String),
-             sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True),
-             )
+                sa.Column('name', sa.String),
+                sa.Column('sex', sa.String),
+                sa.Column('amount', sa.Integer),
+                sa.Column('id', sa.Integer, primary_key=True))
+
 
 def normalize(s):
     s2 = ' '.join(s.strip().split()).lower().replace('_', '')
