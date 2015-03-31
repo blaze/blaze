@@ -584,7 +584,7 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
 
 @dispatch(strlen, ColumnElement)
 def compute_up(expr, data, **kwargs):
-    return sa.sql.functions.char_length(data)
+    return sa.sql.functions.char_length(data).label(expr._name)
 
 
 @dispatch(UnaryStringFunction, ColumnElement)
