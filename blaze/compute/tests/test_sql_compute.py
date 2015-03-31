@@ -632,15 +632,15 @@ def test_like():
 
 def test_strlen():
     expr = t.name.strlen()
-    result = str(compute(expr, s)).replace(' \n', ' ').lower()
-    expected = "SELECT char_length(accounts.name) as char_length_1 FROM accounts"
-    assert result == expected.lower()
+    result = str(compute(expr, s))
+    expected = "SELECT length(accounts.name) as name FROM accounts"
+    assert normalize(result) == normalize(expected)
 
 
 def test_columnwise_on_complex_selection():
     assert normalize(str(select(compute(t[t.amount > 0].amount + 1, s)))) == \
             normalize("""
-    SELECT accounts.amount + :amount_1 AS anon_1
+    SELECT accounts.amount + :amount_1 AS amount
     FROM accounts
     WHERE accounts.amount > :amount_2
     """)
@@ -1207,15 +1207,15 @@ def test_no_extraneous_join():
 def test_math():
     result = compute(sin(t.amount), s)
     assert normalize(str(result)) == normalize("""
-            SELECT sin(accounts.amount) as sin1
+            SELECT sin(accounts.amount) as amount
             FROM accounts""")
 
     result = compute(floor(t.amount), s)
     assert normalize(str(result)) == normalize("""
-            SELECT floor(accounts.amount) as floor1
+            SELECT floor(accounts.amount) as amount
             FROM accounts""")
 
     result = compute(t.amount // 2, s)
     assert normalize(str(result)) == normalize("""
-            SELECT floor(accounts.amount / :amount1) AS floor_1
+            SELECT floor(accounts.amount / :amount1) AS amount
             FROM accounts""")
