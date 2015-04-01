@@ -8,23 +8,46 @@ SparkSQL.
 
 from __future__ import absolute_import, division, print_function
 
+from operator import and_
+
 from toolz import pipe
 from toolz.curried import filter, map
 
 from ..dispatch import dispatch
-from ..expr import Expr, symbol
+from ..expr import Expr, symbol, Join
 from .core import compute
 from .utils import literalquery, istable, make_sqlalchemy_table
-from .spark import Dummy
+from ..utils import listpack
+from .spark import Dummy, jgetattr
 
 __all__ = []
 
 
 try:
     from pyspark import SQLContext
+    from pyspark.sql import DataFrame as SparkDataFrame
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
     SQLContext = Dummy
+
+
+join_types = {
+    'left': 'left_outer',
+    'right': 'right_outer'
+}
+
+
+@dispatch(Join, SparkDataFrame, SparkDataFrame)
+def compute_up(t, lhs, rhs, **kwargs):
+    ands = [getattr(lhs, left) == getattr(rhs, right)
+            for left, right in zip(*map(listpack, (t.on_left, t.on_right)))]
+
+    joined = lhs.join(rhs, reduce(and_, ands), join_types.get(t.how, t.how))
+
+    prec, sec = (rhs, lhs) if t.how == 'right' else (lhs, rhs)
+    cols = [jgetattr(prec, f, jgetattr(sec, f, None)) for f in t.fields]
+    assert all(c is not None for c in cols)
+    return joined.select(*cols)
 
 
 @dispatch(Expr, SQLContext)
