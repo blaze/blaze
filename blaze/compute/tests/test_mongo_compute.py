@@ -144,21 +144,21 @@ def test_projection(bank):
 
 
 def test_selection(bank):
-    assert set(compute(t[t.name=='Alice'], bank)) == set([('Alice', 100),
+    assert set(compute(t[t.name == 'Alice'], bank)) == set([('Alice', 100),
                                                             ('Alice', 200)])
-    assert set(compute(t['Alice'==t.name], bank)) == set([('Alice', 100),
+    assert set(compute(t['Alice' == t.name], bank)) == set([('Alice', 100),
                                                             ('Alice', 200)])
     assert set(compute(t[t.amount > 200], bank)) == set([('Bob', 300)])
     assert set(compute(t[t.amount >= 200], bank)) == set([('Bob', 300),
                                                           ('Bob', 200),
                                                           ('Alice', 200)])
-    assert set(compute(t[t.name!='Alice'].name, bank)) == set(['Bob'])
-    assert set(compute(t[(t.name=='Alice') & (t.amount > 150)], bank)) == \
-            set([('Alice', 200)])
-    assert set(compute(t[(t.name=='Alice') | (t.amount > 250)], bank)) == \
-            set([('Alice', 200),
-                    ('Alice', 100),
-                    ('Bob', 300)])
+    assert set(compute(t[t.name != 'Alice'].name, bank)) == set(['Bob'])
+    assert set(compute(t[(t.name == 'Alice') & (t.amount > 150)], bank)) == \
+        set([('Alice', 200)])
+    assert set(compute(t[(t.name == 'Alice') | (t.amount > 250)], bank)) == \
+        set([('Alice', 200),
+             ('Alice', 100),
+             ('Bob', 300)])
 
 
 def test_columnwise(points):
@@ -191,20 +191,20 @@ def test_columnwise_pow(points):
 
 def test_by_one():
     assert compute_up(by(t.name, total=t.amount.sum()), q).query == \
-            ({'$group': {'_id': {'name': '$name'},
-                         'total': {'$sum': '$amount'}}},
-             {'$project': {'total': '$total', 'name': '$_id.name'}})
+        ({'$group': {'_id': {'name': '$name'},
+                     'total': {'$sum': '$amount'}}},
+         {'$project': {'total': '$total', 'name': '$_id.name'}})
 
 
 def test_by(bank):
     assert set(compute(by(t.name, total=t.amount.sum()), bank)) == \
-            set([('Alice', 300), ('Bob', 600)])
+        set([('Alice', 300), ('Bob', 600)])
     assert set(compute(by(t.name, min=t.amount.min()), bank)) == \
-            set([('Alice', 100), ('Bob', 100)])
+        set([('Alice', 100), ('Bob', 100)])
     assert set(compute(by(t.name, max=t.amount.max()), bank)) == \
-            set([('Alice', 200), ('Bob', 300)])
+        set([('Alice', 200), ('Bob', 300)])
     assert set(compute(by(t.name, count=t.name.count()), bank)) == \
-            set([('Alice', 2), ('Bob', 3)])
+        set([('Alice', 2), ('Bob', 3)])
 
 
 def test_reductions(bank):
@@ -219,21 +219,21 @@ def test_distinct(bank):
 
 def test_sort(bank):
     assert compute(t.amount.sort('amount'), bank) == \
-            [100, 100, 200, 200, 300]
+        [100, 100, 200, 200, 300]
     assert compute(t.amount.sort('amount', ascending=False), bank) == \
-            [300, 200, 200, 100, 100]
+        [300, 200, 200, 100, 100]
 
 
 def test_by_multi_column(bank):
     assert set(compute(by(t[['name', 'amount']], count=t.count()), bank)) == \
-            set([(d['name'], d['amount'], 1) for d in bank_raw])
+        set([(d['name'], d['amount'], 1) for d in bank_raw])
 
 
 def test_datetime_handling(events):
     assert set(compute(e[e.time >= datetime(2012, 1, 2, 12, 0, 0)].x,
-                        events)) == set([2, 3])
+                       events)) == set([2, 3])
     assert set(compute(e[e.time >= "2012-01-02"].x,
-                        events)) == set([2, 3])
+                       events)) == set([2, 3])
 
 
 def test_summary_kwargs(bank):
@@ -285,7 +285,8 @@ def test_summary_complex_arith_multiple(bank):
     values = list(mu.values())
     items = expected.items()
     counts = groupby('name', bank.find())
-    items = [x + (float(v) / len(counts[x[0]]),) for x, v in zip(items, values)]
+    items = [x + (float(v) / len(counts[x[0]]),)
+             for x, v in zip(items, values)]
     assert set(result) == set(items)
 
 
@@ -312,27 +313,27 @@ def test_like_mulitple_no_match(big_bank):
 
 def test_missing_values(missing_vals):
     assert discover(missing_vals).subshape[0] == \
-            dshape('{x: int64, y: ?int64, z: ?int64}')
+        dshape('{x: int64, y: ?int64, z: ?int64}')
 
     assert set(compute(p.y, missing_vals)) == set([None, 20, None, 40])
 
 
 def test_datetime_access(date_data):
     t = symbol('t',
-            'var * {amount: float64, id: int64, name: string, when: datetime}')
+               'var * {amount: float64, id: int64, name: string, when: datetime}')
 
-    py_data = into(list, date_data) # a python version of the collection
+    py_data = into(list, date_data)  # a python version of the collection
 
     for attr in ['day', 'minute', 'second', 'year', 'month']:
         assert list(compute(getattr(t.when, attr), date_data)) == \
-                list(compute(getattr(t.when, attr), py_data))
+            list(compute(getattr(t.when, attr), py_data))
 
 
 def test_datetime_access_and_arithmetic(date_data):
     t = symbol('t',
-            'var * {amount: float64, id: int64, name: string, when: datetime}')
+               'var * {amount: float64, id: int64, name: string, when: datetime}')
 
-    py_data = into(list, date_data) # a python version of the collection
+    py_data = into(list, date_data)  # a python version of the collection
 
     expr = t.when.day + t.id
 
