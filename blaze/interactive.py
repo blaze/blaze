@@ -31,6 +31,7 @@ except ImportError:
 try:
     import pymongo
     not_an_iterator.append(pymongo.collection.Collection)
+    not_an_iterator.append(pymongo.database.Database)
 except ImportError:
     pass
 
