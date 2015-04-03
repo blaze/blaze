@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from operator import itemgetter
 import pytest
 pymongo = pytest.importorskip('pymongo')
 
@@ -58,14 +57,14 @@ def date_data(db):
          'id': [1, 2, 3]}
     data = [dict(zip(d.keys(), [d[k][i] for k in d.keys()]))
             for i in range(n)]
-    coll = into(db.date_coll, data)
+    coll = into(db.date_data, data)
     yield coll
     coll.drop()
 
 
 @pytest.yield_fixture
 def bank(db):
-    coll = db.tmp_collection
+    coll = db.bank
     coll = into(coll, bank_raw)
     yield coll
     coll.drop()
@@ -77,7 +76,7 @@ def missing_vals(db):
             {'x': 2, 'y': 20, 'z': 200},
             {'x': 3, 'z': 300},
             {'x': 4, 'y': 40}]
-    coll = db.tmp_collection
+    coll = db.missing_vals
     coll = into(coll, data)
     yield coll
     coll.drop()
@@ -89,7 +88,7 @@ def points(db):
             {'x': 2, 'y': 20, 'z': 200},
             {'x': 3, 'y': 30, 'z': 300},
             {'x': 4, 'y': 40, 'z': 400}]
-    coll = db.tmp_collection
+    coll = db.points
     coll = into(coll, data)
     yield coll
     coll.drop()
@@ -100,7 +99,7 @@ def events(db):
     data = [{'time': datetime(2012, 1, 1, 12, 00, 00), 'x': 1},
             {'time': datetime(2012, 1, 2, 12, 00, 00), 'x': 2},
             {'time': datetime(2012, 1, 3, 12, 00, 00), 'x': 3}]
-    coll = db.tmp_collection
+    coll = db.events
     coll = into(coll, data)
     yield coll
     coll.drop()
@@ -113,6 +112,15 @@ e = symbol('e', 'var * {time: datetime, x: int}')
 
 
 q = MongoQuery('fake', [])
+
+
+def test_compute_on_db(bank, points):
+    assert bank.database == points.database
+    db = bank.database
+
+    d = symbol(db.name, discover(db))
+    assert (compute(d.points.x.sum(), db) ==
+            sum(x['x'] for x in db.points.find()))
 
 
 def test_symbol(bank):
