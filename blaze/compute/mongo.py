@@ -354,7 +354,7 @@ datetime_terms = {Day: 'dayOfMonth',
 
 @dispatch(Field, Database)
 def compute_up(expr, data, **kwargs):
-    return MongoQuery(getattr(data, expr._name), [])
+    return getattr(data, expr._name)
 
 
 @dispatch(Expr, Collection)
