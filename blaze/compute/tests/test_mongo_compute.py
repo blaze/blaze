@@ -6,7 +6,8 @@ pymongo = pytest.importorskip('pymongo')
 from datetime import datetime
 from toolz import pluck, reduceby, groupby
 
-from blaze import into, compute, compute_up, discover, dshape
+from datashape import Record
+from blaze import into, compute, compute_up, discover, dshape, Data
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import symbol, by, floor, ceil
@@ -48,8 +49,6 @@ def big_bank(db):
 
 @pytest.yield_fixture
 def date_data(db):
-    import numpy as np
-    import pandas as pd
     n = 3
     d = {'name': ['Alice', 'Bob', 'Joe'],
          'when': [datetime(2010, 1, 1, i) for i in [1, 2, 3]],
@@ -344,3 +343,8 @@ def test_floor_ceil(bank):
     t = symbol('t', discover(bank))
     assert set(compute(200 * floor(t.amount / 200), bank)) == set([0, 200])
     assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])
+
+
+def test_Data_construct():
+    d = Data('mongodb://localhost/test_db')
+    assert isinstance(d.dshape.measure, Record)
