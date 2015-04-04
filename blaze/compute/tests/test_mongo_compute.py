@@ -346,6 +346,14 @@ def test_floor_ceil(bank):
     assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])
 
 
-def test_Data_construct():
+def test_Data_construct(bank, points):
     d = Data('mongodb://localhost/test_db')
+    assert 'bank' in d.fields
+    assert 'points' in d.fields
     assert isinstance(d.dshape.measure, Record)
+
+
+def test_Data_construct_with_table(bank):
+    d = Data('mongodb://localhost/test_db::bank')
+    assert set(d.fields) == set(('name', 'amount'))
+    assert int(d.count()) == 5
