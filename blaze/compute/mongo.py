@@ -48,6 +48,7 @@ import numbers
 
 try:
     from pymongo.collection import Collection
+    from pymongo.database import Database
 except ImportError:
     Collection = type(None)
 
@@ -57,25 +58,31 @@ from toolz import pluck, first, get
 import toolz
 import datetime
 
-from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
+from ..expr import (Sort, count, nunique, nelements, Selection,
                     mean, Reduction, Head, ReLabel, Distinct, ElemWise, By,
                     Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
                     Eq, Ne, And, Or, Summary, Like, Broadcast, DateTime,
                     Microsecond, Date, Time, Expr, symbol, Arithmetic, floor,
                     ceil, FloorDiv)
+from ..expr.broadcast import broadcast_collect
 from ..expr import math
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
-from .core import compute
 
 from ..dispatch import dispatch
 
 
 __all__ = ['MongoQuery']
 
+
 @dispatch(Expr, Collection)
 def pre_compute(expr, data, scope=None, **kwargs):
     return MongoQuery(data, [])
+
+
+@dispatch(Expr, Database)
+def pre_compute(expr, data, **kwargs):
+    return data
 
 
 class MongoQuery(object):
@@ -114,11 +121,9 @@ class MongoQuery(object):
         return hash((type(self), self.info()))
 
 
-from ..expr.broadcast import broadcast_collect
-
 @dispatch(Expr, (MongoQuery, Collection))
 def optimize(expr, seq):
-    return broadcast_collect( expr)
+    return broadcast_collect(expr)
 
 
 @dispatch(Head, MongoQuery)
@@ -345,6 +350,11 @@ datetime_terms = {Day: 'dayOfMonth',
                   Year: 'year',
                   Minute: 'minute',
                   Second: 'second'}
+
+
+@dispatch(Field, Database)
+def compute_up(expr, data, **kwargs):
+    return getattr(data, expr._name)
 
 
 @dispatch(Expr, Collection)
