@@ -49,7 +49,7 @@ from ..expr import common_subexpression, Summary, Like, nelements
 
 from ..expr.broadcast import broadcast_collect
 
-from ..compatibility import reduce
+from ..compatibility import reduce, map
 
 from ..utils import listpack
 
