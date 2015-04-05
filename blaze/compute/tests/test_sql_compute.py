@@ -448,18 +448,6 @@ def test_relabel():
     assert str(result) == str(expected)
 
 
-def test_merge():
-    col = (t['amount'] * 2).label('new')
-
-    expr = merge(t['name'], col)
-
-    result = str(compute(expr, s))
-
-    assert 'amount * ' in result
-    assert 'FROM accounts' in result
-    assert 'SELECT accounts.name' in result
-    assert 'new' in result
-
 def test_projection_of_selection():
     print(compute(t[t['amount'] < 0][['name', 'amount']], s))
     assert len(str(compute(t[t['amount'] < 0], s))) > \
@@ -1131,6 +1119,20 @@ def test_join_count():
             normalize(str(result)) == normalize(expected2))
 
 
+def test_merge():
+    col = (t['amount'] * 2).label('new')
+
+    expr = merge(t['name'], col)
+
+    result = str(compute(expr, s))
+
+    assert 'amount * ' in result
+    assert 'FROM accounts' in result
+    assert 'SELECT accounts.name' in result
+    assert 'new' in result
+
+
+def test_merge_where():
 def test_merge_compute():
     data = [(1, 'Alice', 100),
             (2, 'Bob', 200),
