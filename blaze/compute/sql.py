@@ -514,6 +514,11 @@ def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
+@dispatch(Label, Selectable)
+def compute_up(t, s, **kwargs):
+    return s.alias(t.label)
+
+
 @dispatch(ReLabel, Selectable)
 def compute_up(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)

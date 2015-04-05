@@ -431,14 +431,27 @@ def test_sort_on_distinct():
             ORDER BY amount ASC""")
 
 
-
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
 
 
 def test_label():
-    assert str(compute((t['amount'] * 10).label('foo'), s, post_compute=False))\
-            == str((s.c.amount * 10).label('foo'))
+    result = str(compute((t['amount'] * 10).label('foo'), s,
+                         post_compute=False))
+    expected = str((s.c.amount * 10).label('foo'))
+    assert result == expected
+
+
+def test_label_on_selectables():
+    r = t[t.amount > 100]
+    expr = transform(r, foo=r.amount * 2)
+    result = str(compute(expr, s, post_compute=False))
+    expected = """SELECT name, amount, id, foo.amount FROM
+    (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+     FROM accounts WHERE accounts.amount > :amount_1),
+    (SELECT accounts.amount * :amount_2 AS amount
+     FROM accounts WHERE accounts.amount > :amount_1) AS foo"""
+    assert normalize(result) == normalize(expected)
 
 
 def test_relabel():
