@@ -1286,3 +1286,17 @@ def test_math():
     assert normalize(str(result)) == normalize("""
             SELECT floor(accounts.amount / :amount_1) AS amount
             FROM accounts""")
+
+
+def test_transform_order():
+    r = transform(t, sin_amount=sin(t.amount), cos_id=cos(t.id))
+    result = compute(r, s)
+    expected = """SELECT
+        accounts.name,
+        accounts.amount,
+        accounts.id,
+        cos(accounts.id) as cos_id,
+        sin(accounts.amount) as sin_amount
+    FROM accounts
+    """
+    assert normalize(str(result)) == normalize(expected)
