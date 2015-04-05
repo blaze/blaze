@@ -2,38 +2,44 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 import datetime
+import operator
+import itertools
+import warnings
+
+from collections import Iterator
+from functools import reduce
+
 from datashape import discover, Tuple, Record, DataShape, var
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
+
 from pandas import DataFrame, Series
-import itertools
-from functools import reduce
+
 import numpy as np
-import warnings
-from collections import Iterator
+
+from odo import resource, odo
+from odo.utils import ignoring
 
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
-from odo import into, resource
 from .compatibility import _strtypes
+
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
 
+
 names = ('_%d' % i for i in itertools.count(1))
-
-
 not_an_iterator = []
 
-try:
+
+with ignoring(ImportError):
     import bcolz
     not_an_iterator.append(bcolz.carray)
-except ImportError:
-    pass
-try:
+
+
+with ignoring(ImportError):
     import pymongo
     not_an_iterator.append(pymongo.collection.Collection)
     not_an_iterator.append(pymongo.database.Database)
-except ImportError:
-    pass
 
 
 def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
@@ -87,7 +93,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
 
 
 class InteractiveSymbol(Symbol):
-    """ Interactive data
+    """Interactive data.
 
     The ``Data`` object presents a familiar view onto a variety of forms of
     data.  This user-level object provides an interactive experience to using
@@ -95,26 +101,23 @@ class InteractiveSymbol(Symbol):
 
     Parameters
     ----------
-
-    data: anything
+    data : object
         Any type with ``discover`` and ``compute`` implementations
-    fields: list of strings - optional
+    fields : list, optional
         Field or column names, will be inferred from datasource if possible
-    dshape: string or DataShape - optional
-        Datashape describing input data
-    name: string - optional
-        A name for the table
+    dshape : str or DataShape, optional
+        DataShape describing input data
+    name : str, optional
+        A name for the data.
 
     Examples
     --------
-
     >>> t = Data([(1, 'Alice', 100),
     ...           (2, 'Bob', -200),
     ...           (3, 'Charlie', 300),
     ...           (4, 'Denis', 400),
     ...           (5, 'Edith', -500)],
     ...          fields=['id', 'name', 'balance'])
-
     >>> t[t.balance < 0].name
         name
     0    Bob
@@ -134,11 +137,14 @@ class InteractiveSymbol(Symbol):
 
     @property
     def _args(self):
-        return (id(self.data), self.dshape, self._name)
+        return id(self.data), self.dshape, self._name
 
     def __setstate__(self, state):
         for slot, arg in zip(self.__slots__, state):
             setattr(self, slot, arg)
+
+
+Data.__doc__ = InteractiveSymbol.__doc__
 
 
 def Table(*args, **kwargs):
@@ -172,11 +178,11 @@ def concrete_head(expr, n=10):
     head = expr.head(n + 1)
 
     if not iscollection(expr.dshape):
-        return into(object, head)
+        return odo(head, object)
     elif isrecord(expr.dshape.measure):
-        return into(DataFrame, head)
+        return odo(head, DataFrame)
     else:
-        df = into(DataFrame, head)
+        df = odo(head, DataFrame)
         df.columns = [expr._name]
         return df
     result = compute(head)
@@ -184,9 +190,9 @@ def concrete_head(expr, n=10):
     if len(result) == 0:
         return DataFrame(columns=expr.fields)
     if isrecord(expr.dshape.measure):
-        return into(DataFrame, result, dshape=expr.dshape)
+        return odo(result, DataFrame, dshape=expr.dshape)
     else:
-        df = into(DataFrame, result, dshape=expr.dshape)
+        df = odo(result, DataFrame, dshape=expr.dshape)
         df.columns = [expr._name]
         return df
 
@@ -197,7 +203,6 @@ def repr_tables(expr, n=10):
     if isinstance(result, (DataFrame, Series)):
         s = repr(result)
         if len(result) > 10:
-            result = result[:10]
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
@@ -209,7 +214,7 @@ def numel(shape):
         return None
     if not shape:
         return 1
-    return reduce(lambda x, y: x * y, shape, 1)
+    return reduce(operator.mul, shape, 1)
 
 
 def short_dshape(ds, nlines=5):
@@ -224,7 +229,7 @@ def coerce_to(typ, x):
     try:
         return typ(x)
     except TypeError:
-        return into(typ, x)
+        return odo(x, typ)
 
 
 def coerce_scalar(result, dshape):
@@ -317,7 +322,7 @@ Expr.__len__ = table_length
 
 def intonumpy(data, dtype=None, **kwargs):
     # TODO: Don't ignore other kwargs like copy
-    result = into(np.ndarray, data)
+    result = odo(data, np.ndarray)
     if dtype and result.dtype != dtype:
         result = result.astype(dtype)
     return result
@@ -328,7 +333,7 @@ def convert_base(typ, x):
     try:
         return typ(x)
     except:
-        return typ(into(typ, x))
+        return typ(odo(x, typ))
 
 Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)
