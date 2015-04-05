@@ -1119,6 +1119,23 @@ def test_join_count():
             normalize(str(result)) == normalize(expected2))
 
 
+def test_clean_transform_where():
+    t2 = t[t.id == 1]
+    expr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
+    result = compute(expr, s)
+
+    expected = normalize("""SELECT
+        accounts.name,
+        accounts.amount,
+        accounts.id,
+        abs(accounts.amount) as abs_amt,
+        sin(accounts.id) as sine
+    FROM accounts
+    WHERE accounts.id = :id_1
+    """)
+    assert normalize(str(result)) == normalize(expected)
+
+
 def test_merge():
     col = (t['amount'] * 2).label('new')
 
@@ -1133,6 +1150,42 @@ def test_merge():
 
 
 def test_merge_where():
+    t2 = t[t.id == 1]
+    expr = merge(t2[['amount', 'name']], t2.id)
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        accounts.name,
+        accounts.amount,
+        accounts.id
+    FROM accounts
+    WHERE accounts.id = :id_1
+    """)
+    assert normalize(str(result)) == expected
+
+
+@pytest.mark.xfail(raises=AssertionError,
+                   reason='We need to rip out ScalarSelects with impunity')
+def test_transform_filter_by():
+    t2 = t[t.amount < 0]
+    tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
+    expr = by(tr.name, avg_amt=tr.abs_amt.mean())
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        anon_1.name,
+        avg(anon_1.abs_amt) AS avg_amt
+    FROM
+        (SELECT
+         accounts.name,
+         accounts.amount,
+         accounts.id,
+         abs(accounts.amount) AS abs_amt,
+         sin(accounts.id) AS sine
+         WHERE accounts.amount < 0) as anon_1
+    GROUP BY anon_1.name
+    """)
+    assert normalize(str(result)) == expected
+
+
 def test_merge_compute():
     data = [(1, 'Alice', 100),
             (2, 'Bob', 200),
