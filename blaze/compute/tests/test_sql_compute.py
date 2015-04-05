@@ -1122,9 +1122,9 @@ def test_join_count():
 def test_transform_where():
     t2 = t[t.id == 1]
     expr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
-    result = normalize(str(compute(expr, s)))
+    result = compute(expr, s)
 
-    expected = normalize("""SELECT
+    expected = """SELECT
         accounts.name,
         accounts.amount,
         accounts.id,
@@ -1132,19 +1132,9 @@ def test_transform_where():
         sin(accounts.id) as sine
     FROM accounts
     WHERE accounts.id = :id_1
-    """)
+    """
 
-    try:
-        # we're exactly equal
-        assert result == expected
-    except AssertionError:
-        # we're equal modulo additional transform columns because the **kwargs
-        # of transform are a dict and python functions don't have access to the
-        # order in which arguments were passed to the function
-        assert result.startswith(
-            'select accounts.name, accounts.amount, accounts.id')
-        assert (result.endswith(' abs(accounts.amount) as abs_amt, sin(accounts.id) as sine from accounts where accounts.id = :id_1') or
-                result.endswith(' sin(accounts.id) as sine, abs(accounts.amount) as abs_amt from accounts where accounts.id = :id_1'))
+    assert normalize(str(result)) == normalize(expected)
 
 
 def test_merge():
