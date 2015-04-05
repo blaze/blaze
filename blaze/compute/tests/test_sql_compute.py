@@ -638,7 +638,8 @@ def test_strlen():
 
 
 def test_columnwise_on_complex_selection():
-    assert normalize(str(select(compute(t[t.amount > 0].amount + 1, s)))) == \
+    result = str(select(compute(t[t.amount > 0].amount + 1, s)))
+    assert normalize(result) == \
             normalize("""
     SELECT accounts.amount + :amount_1 AS amount
     FROM accounts
@@ -655,7 +656,7 @@ def test_reductions_on_complex_selections():
 
 
 def test_clean_summary_by_where():
-    t2 = t[t.id ==1]
+    t2 = t[t.id == 1]
     expr = by(t2.name, sum=t2.amount.sum(), count=t2.amount.count())
     result = compute(expr, s)
 
