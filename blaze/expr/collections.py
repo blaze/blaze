@@ -8,8 +8,8 @@ from datashape.predicates import isscalar, iscollection, isrecord
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform']
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
+           'head', 'sort', 'Join', 'join', 'transform', 'isin']
 
 class Sort(Expr):
     """ Table in sorted order
@@ -424,10 +424,33 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 
 join.__doc__ = Join.__doc__
 
+class IsIn(Expr):
+    """
+    TODO
+    """
+    __slots__ = '_hash', '_child', '_key'
+
+    @property
+    def dshape(self):
+        """ self._child.dshape * number of matched results
+        """
+        return datashape.var * self._child.dshape.measure
+
+
+    def __str__(self):
+        return "%s.isin({%s})" % (self._child, repr(self._key))
+
+
+def isin(child, key):
+    if not hasattr(key, '__iter__'):
+        key = frozenset([key])
+    key = frozenset(key)
+    return IsIn(child, key)
+
 
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
-    (iscollection, set([sort, head])),
+    (iscollection, set([sort, head, isin])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
     ])
