@@ -17,6 +17,7 @@ WHERE accounts.amount < :amount_1
 from __future__ import absolute_import, division, print_function
 
 import itertools
+from itertools import chain
 
 from operator import and_, eq
 from copy import copy
@@ -31,7 +32,8 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat
+from toolz import unique, concat, pipe
+from toolz.curried import map
 
 from multipledispatch import MDNotImplementedError
 
@@ -49,7 +51,7 @@ from ..expr import common_subexpression, Summary, Like, nelements
 
 from ..expr.broadcast import broadcast_collect
 
-from ..compatibility import reduce, map
+from ..compatibility import reduce
 
 from ..utils import listpack
 
@@ -475,8 +477,8 @@ def alias_it(s):
 
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not (isinstance(t.grouper, (Field, Projection, DateTime))
-            or t.grouper is t._child):
+    if not (isinstance(t.grouper, (Field, Projection, DateTime)) or
+            t.grouper is t._child):
         raise ValueError("Grouper must be a projection, got %s" % t.grouper)
 
     s = alias_it(s)
@@ -487,18 +489,23 @@ def compute_up(t, s, **kwargs):
     elif isinstance(t.apply, Summary):
         reduction = compute(t.apply, {t._child: s}, post_compute=False)
 
-    # d = dict((c.name, c) for c in inner_columns(s))
-    # grouper = [d[col] for col in t.grouper.fields]
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
 
-    s2 = reduction.group_by(*grouper)
-
-    for g in grouper:
-        s2.append_column(g)
-
-    cols = list(s2.inner_columns)
-    cols = cols[-len(grouper):] + cols[:-len(grouper)]
-    return s2.with_only_columns(cols)
+    grouper_columns = pipe(grouper, map(get_inner_columns), concat)
+    reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
+                             concat)
+    columns = list(unique(chain(grouper_columns, reduction_columns)))
+    from_obj = (s.froms[0]
+                if not isinstance(s, sa.sql.selectable.Alias)
+                else None)
+    return sa.select(columns,
+                     from_obj=(from_obj
+                               if isinstance(from_obj, sa.sql.selectable.Join)
+                               else None),
+                     group_by=grouper,
+                     order_by=get_clause(s, 'order_by'),
+                     limit=getattr(s, 'element', s)._limit,
+                     whereclause=getattr(s, 'element', s)._whereclause)
 
 
 @dispatch(Sort, ClauseElement)
@@ -546,16 +553,16 @@ def get_inner_columns(c):
     return [c]
 
 
-@dispatch(sa.sql.selectable.ScalarSelect)
-def get_inner_columns(sel):
-    inner_columns = list(sel.inner_columns)
-    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
-    return list(map(lower_column, sel.inner_columns))
+@dispatch(sa.sql.functions.Function)
+def get_inner_columns(f):
+    lowered = list(unique(concat(map(get_inner_columns, f.clauses.clauses))))
+    lowered = [l.label(getattr(l, 'name', None)) for l in lowered]
+    return list(map(getattr(sa.func, f.name), lowered))
 
 
-@dispatch(sa.Table)
-def get_inner_columns(t):
-    return t.c.values()
+@dispatch(sa.Column)
+def get_inner_columns(c):
+    return [c]
 
 
 @dispatch(sa.sql.elements.Label)
@@ -570,6 +577,13 @@ def get_inner_columns(label):
     name = label.name
     return [lower_column(c).label(name)
             for c in get_inner_columns(label.element)]
+
+
+@dispatch(sa.sql.selectable.ScalarSelect)
+def get_inner_columns(sel):
+    inner_columns = list(sel.inner_columns)
+    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
+    return list(map(lower_column, sel.inner_columns))
 
 
 @dispatch(Select)

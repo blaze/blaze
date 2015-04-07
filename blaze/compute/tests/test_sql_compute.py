@@ -1164,25 +1164,17 @@ def test_merge_where():
     assert normalize(str(result)) == expected
 
 
-@pytest.mark.xfail(raises=AssertionError,
-                   reason='We need to rip out ScalarSelects with impunity')
 def test_transform_filter_by():
     t2 = t[t.amount < 0]
     tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
     expr = by(tr.name, avg_amt=tr.abs_amt.mean())
     result = compute(expr, s)
     expected = normalize("""SELECT
-        anon_1.name,
-        avg(anon_1.abs_amt) AS avg_amt
-    FROM
-        (SELECT
-         accounts.name,
-         accounts.amount,
-         accounts.id,
-         abs(accounts.amount) AS abs_amt,
-         sin(accounts.id) AS sine
-         WHERE accounts.amount < 0) as anon_1
-    GROUP BY anon_1.name
+        accounts.name,
+        avg(abs(accounts.amount)) AS avg_amt
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name
     """)
     assert normalize(str(result)) == expected
 
