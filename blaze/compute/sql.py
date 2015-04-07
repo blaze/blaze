@@ -405,6 +405,28 @@ def compute_up(t, s, **kwargs):
     return sa.select([grouper] + reductions).group_by(grouper)
 
 
+@dispatch(By, ClauseElement)
+def compute_up(expr, data, **kwargs):
+    if (isinstance(expr.grouper, (Field, Projection)) or
+            expr.grouper is expr._child):
+        grouper = [lower_column(data.c.get(col))
+                   for col in expr.grouper.fields]
+    elif isinstance(expr.grouper, DateTime):
+        grouper = [compute(expr.grouper, data, post_compute=False)]
+    else:
+        raise ValueError("Grouper must be a projection, field or "
+                         "DateTime expression, got %s" % expr.grouper)
+    app = expr.apply
+    scope = {expr._child: data}
+    if isinstance(expr.apply, Reduction):
+        reductions = [compute(app, scope, post_compute=False)]
+    elif isinstance(expr.apply, Summary):
+        reductions = [compute(val, scope, post_compute=False).label(name)
+                      for val, name in zip(app.values, app.fields)]
+
+    return sa.select(grouper + reductions).group_by(*grouper)
+
+
 def lower_column(col):
     """ Return column from lower level tables if possible
 
@@ -453,7 +475,7 @@ def alias_it(s):
         return s
 
 
-@dispatch(By, (Select, ClauseElement))
+@dispatch(By, Select)
 def compute_up(t, s, **kwargs):
     if not (isinstance(t.grouper, (Field, Projection, DateTime)) or
             t.grouper is t._child):
@@ -473,7 +495,9 @@ def compute_up(t, s, **kwargs):
     reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
                              concat)
     columns = list(unique(chain(grouper_columns, reduction_columns)))
-    if hasattr(s, 'froms') and isinstance(s.froms[0], sa.sql.selectable.Join):
+    if (not isinstance(s, sa.sql.selectable.Alias) or
+            (hasattr(s, 'froms') and isinstance(s.froms[0],
+                                                sa.sql.selectable.Join))):
         from_obj = s.froms[0]
     else:
         from_obj = None
@@ -481,9 +505,8 @@ def compute_up(t, s, **kwargs):
                      from_obj=from_obj,
                      group_by=grouper,
                      order_by=get_clause(s, 'order_by'),
-                     limit=getattr(getattr(s, 'element', s), '_limit', None),
-                     whereclause=getattr(getattr(s, 'element', s),
-                                         '_whereclause', None))
+                     limit=getattr(s, 'element', s)._limit,
+                     whereclause=getattr(s, 'element', s)._whereclause)
 
 
 @dispatch(Sort, ClauseElement)
