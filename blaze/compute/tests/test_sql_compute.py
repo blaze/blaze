@@ -1164,7 +1164,7 @@ def test_merge_where():
     assert normalize(str(result)) == expected
 
 
-def test_transform_filter_by():
+def test_transform_filter_by_single_column():
     t2 = t[t.amount < 0]
     tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
     expr = by(tr.name, avg_amt=tr.abs_amt.mean())
@@ -1172,6 +1172,24 @@ def test_transform_filter_by():
     expected = normalize("""SELECT
         accounts.name,
         avg(abs(accounts.amount)) AS avg_amt
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name
+    """)
+    assert normalize(str(result)) == expected
+
+
+def test_transform_filter_by_multiple_columns():
+    t2 = t[t.amount < 0]
+    tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
+    expr = by(tr.name,
+              avg_amt=tr.abs_amt.mean(),
+              sum_sine=tr.sine.sum())
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        accounts.name,
+        avg(abs(accounts.amount)) AS avg_amt,
+        sum(sin(accounts.id)) as sum_sine
     FROM accounts
     WHERE accounts.amount < :amount_1
     GROUP BY accounts.name
