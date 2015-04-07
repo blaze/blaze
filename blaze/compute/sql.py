@@ -554,16 +554,18 @@ def get_inner_columns(c):
     return [c]
 
 
+@dispatch(sa.sql.selectable.ScalarSelect)
+def get_inner_columns(sel):
+    inner_columns = list(sel.inner_columns)
+    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
+    return list(map(lower_column, sel.inner_columns))
+
+
 @dispatch(sa.sql.functions.Function)
 def get_inner_columns(f):
     lowered = list(unique(concat(map(get_inner_columns, f.clauses.clauses))))
     lowered = [l.label(getattr(l, 'name', None)) for l in lowered]
     return list(map(getattr(sa.func, f.name), lowered))
-
-
-@dispatch(sa.Column)
-def get_inner_columns(c):
-    return [c]
 
 
 @dispatch(sa.sql.elements.Label)
@@ -578,13 +580,6 @@ def get_inner_columns(label):
     name = label.name
     return [lower_column(c).label(name)
             for c in get_inner_columns(label.element)]
-
-
-@dispatch(sa.sql.selectable.ScalarSelect)
-def get_inner_columns(sel):
-    inner_columns = list(sel.inner_columns)
-    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
-    return list(map(lower_column, sel.inner_columns))
 
 
 @dispatch(Select)
