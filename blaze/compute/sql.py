@@ -495,13 +495,14 @@ def compute_up(t, s, **kwargs):
     reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
                              concat)
     columns = list(unique(chain(grouper_columns, reduction_columns)))
-    from_obj = (s.froms[0]
-                if not isinstance(s, sa.sql.selectable.Alias)
-                else None)
+    if (not isinstance(s, sa.sql.selectable.Alias) or
+            (hasattr(s, 'froms') and isinstance(s.froms[0],
+                                                sa.sql.selectable.Join))):
+        from_obj = s.froms[0]
+    else:
+        from_obj = None
     return sa.select(columns,
-                     from_obj=(from_obj
-                               if isinstance(from_obj, sa.sql.selectable.Join)
-                               else None),
+                     from_obj=from_obj,
                      group_by=grouper,
                      order_by=get_clause(s, 'order_by'),
                      limit=getattr(s, 'element', s)._limit,
