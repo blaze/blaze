@@ -105,6 +105,12 @@ def compute_up(t, s, **kwargs):
     return compute(t._scalar_expr, d, post_compute=False).label(name)
 
 
+@dispatch(Broadcast, sa.Column)
+def compute_up(t, s, **kwargs):
+    expr = t._scalar_expr
+    return compute(expr, s, post_compute=False).label(expr._name)
+
+
 @dispatch(BinOp, ColumnElement)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
