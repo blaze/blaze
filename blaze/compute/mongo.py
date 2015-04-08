@@ -365,6 +365,13 @@ def post_compute(e, c, scope=None):
     return post_compute(e, MongoQuery(c, ()), scope=scope)
 
 
+def get_result(result):
+    try:
+        return result['result']
+    except TypeError:
+        return list(result)
+
+
 @dispatch(Expr, MongoQuery)
 def post_compute(e, q, scope=None):
     """
@@ -381,13 +388,13 @@ def post_compute(e, q, scope=None):
     q = q.append(scope)
 
     if not e.dshape.shape:  # not a collection
-        result = q.coll.aggregate(list(q.query))['result'][0]
+        result = get_result(q.coll.aggregate(list(q.query)))[0]
         if isscalar(e.dshape.measure):
             return result[e._name]
         else:
             return get(e.fields, result)
 
-    dicts = q.coll.aggregate(list(q.query))['result']
+    dicts = get_result(q.coll.aggregate(list(q.query)))
 
     if isscalar(e.dshape.measure):
         return list(pluck(e.fields[0], dicts, default=None))  # dicts -> values
@@ -404,7 +411,7 @@ def post_compute(e, q, scope=None):
     scope = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in columns))}
     q = q.append(scope)
-    dicts = q.coll.aggregate(list(q.query))['result']
+    dicts = get_result(q.coll.aggregate(list(q.query)))
 
     assert len(columns) == 1
     return list(pluck(first(columns.keys()), dicts))

@@ -49,10 +49,17 @@ except ImportError:
     pymongo = mongo = None
 if pymongo:
     from blaze.mongo import *
+
     try:
         db = pymongo.MongoClient().db
-        db._test_comprehensive.drop()
-        mongo = into(db._test_comprehensive, df)
+
+        try:
+            coll = db._test_comprehensive
+        except AttributeError:
+            coll = db['_test_comprehensive']
+
+        coll.drop()
+        mongo = into(coll, df)
         sources.append(mongo)
     except pymongo.errors.ConnectionFailure:
         mongo = None
