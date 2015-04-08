@@ -507,12 +507,15 @@ def compute_up(t, s, **kwargs):
         from_obj = s.froms[0]
     else:
         from_obj = None
-    return sa.select(columns,
+    return sa.select(columns=columns,
+                     whereclause=getattr(s, 'element', s)._whereclause,
                      from_obj=from_obj,
+                     distinct=getattr(s, 'element', s)._distinct,
                      group_by=grouper,
-                     order_by=get_clause(s, 'order_by'),
+                     having=None,  # TODO: we don't have an expression for this
                      limit=getattr(s, 'element', s)._limit,
-                     whereclause=getattr(s, 'element', s)._whereclause)
+                     offset=getattr(s, 'element', s)._offset,
+                     order_by=get_clause(getattr(s, 'element', s), 'order_by'))
 
 
 @dispatch(Sort, ClauseElement)
