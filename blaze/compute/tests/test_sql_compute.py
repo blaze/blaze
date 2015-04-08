@@ -1213,6 +1213,27 @@ def test_transform_filter_by_different_order():
     assert normalize(str(result)) == expected
 
 
+@pytest.mark.xfail(raises=ValueError,
+                   reason='Need to allow Merge expressions to be groupers')
+def test_transform_filter_by_projection():
+    t2 = transform(t, abs_amt=abs(t.amount), sine=sin(t.id))
+    tr = t2[t2.amount < 0]
+    expr = by(tr[['name', 'id']],
+              avg_amt=tr.abs_amt.mean(),
+              avg_sine=tr.sine.sum() / tr.sine.count())
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        accounts.name,
+        accounts.id,
+        avg(abs(accounts.amount)) AS avg_amt,
+        sum(sin(accounts.id)) / count(sin(accounts.id)) AS avg_sine
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name, accounts.id
+    """)
+    assert normalize(str(result)) == expected
+
+
 def test_merge_compute():
     data = [(1, 'Alice', 100),
             (2, 'Bob', 200),
