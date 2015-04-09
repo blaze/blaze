@@ -28,7 +28,7 @@ x = into(np.ndarray, df)
 sources = [df, x]
 
 try:
-    import sqlalchemcy
+    import sqlalchemy
     sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
     into(sql, L)
     sources.append(sql)
@@ -145,4 +145,8 @@ def test_base():
                 assert into(tuple, result) == into(tuple, model)
             else:
                 result = compute(expr._subs({t: T}))
+                try:
+                    result = result.scalar()
+                except AttributeError:
+                    pass
                 assert result == model
