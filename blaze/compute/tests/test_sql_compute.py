@@ -1292,12 +1292,14 @@ def test_transform_order():
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_isin_column():
+def test_isin():
     result = t.name.isin(['foo', 'bar'])
     result_sql_expr = str(computefull(result, s))
     expected = """
         SELECT
-            accounts.name
+            accounts.name,
+            accounts.amount,
+            accounts.id
         FROM
             accounts
         WHERE
