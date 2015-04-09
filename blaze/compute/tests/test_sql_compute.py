@@ -19,6 +19,33 @@ from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile
 
+
+@pytest.fixture(scope='module')
+def data():
+    # make the engine
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+
+    # name table
+    name = sa.Table('name', metadata,
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
+    name.create()
+
+    # city table
+    city = sa.Table('city', metadata,
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
+    city.create()
+
+    s = symbol('s', discover(engine))
+    return {'engine': engine, 'metadata': metadata, 'name': name, 'city': city,
+            's': s}
+
+
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
