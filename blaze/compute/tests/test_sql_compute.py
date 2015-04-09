@@ -1290,3 +1290,20 @@ def test_transform_order():
     FROM accounts
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_isin_column():
+    result = t.name.isin(['foo', 'bar'])
+    result_sql_expr = str(computefull(result, s))
+    expected = """
+        SELECT
+            accounts.name
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        IN
+            (:name_1,
+            :name_2)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
