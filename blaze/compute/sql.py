@@ -41,7 +41,7 @@ from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
-from ..expr import Projection, Selection, Field, Broadcast, Expr
+from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
@@ -740,3 +740,8 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Expr, sa.sql.elements.ClauseElement)
 def post_compute(_, s, **kwargs):
     return select(s)
+
+
+@dispatch(IsIn, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return select(s).where(s.in_(t._key))
