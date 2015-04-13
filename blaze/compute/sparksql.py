@@ -28,7 +28,7 @@ try:
     from pyspark.sql import DataFrame as SparkDataFrame
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
-    SQLContext = Dummy
+    SparkDataFrame = SQLContext = Dummy
 
 
 join_types = {
