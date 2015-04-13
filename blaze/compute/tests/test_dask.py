@@ -63,9 +63,9 @@ def test_compute():
         expected = compute(expr, numpy_ns)
         assert isinstance(result, Array)
         if expr.dshape.shape:
-            result2 = into(np.ndarray, result)
+            result2 = np.array(result)
         else:
-            result2 = into(float, result)
+            result2 = float(result)
         assert eq(result2, expected)
 
 
