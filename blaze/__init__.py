@@ -27,6 +27,7 @@ from .index import create_index
 from .interactive import *
 from .compute.pmap import set_default_pmap
 from .compute.csv import *
+from .compute.dask import *
 from .compute.json import *
 from .compute.python import *
 from .compute.pandas import *
