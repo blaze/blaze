@@ -5,8 +5,7 @@ dynd = pytest.importorskip('dynd')
 from dynd import nd
 
 from blaze.compute.core import compute
-from blaze.expr import *
-from blaze.compute.dynd import *
+from blaze import symbol
 
 
 def eq(a, b):

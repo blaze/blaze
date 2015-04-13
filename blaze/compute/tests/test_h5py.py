@@ -5,13 +5,12 @@ import numpy as np
 import pytest
 h5py = pytest.importorskip('h5py')
 
+from datashape import discover
+
 from blaze import compute
 from blaze.expr import symbol
-from datashape import discover
 from blaze.utils import tmpfile
-
-from blaze.compute.h5py import *
-from blaze.compute.h5py import pre_compute, post_compute, optimize
+from blaze.compute.h5py import pre_compute, optimize
 
 
 def eq(a, b):

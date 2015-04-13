@@ -48,7 +48,6 @@ try:
 except ImportError:
     pymongo = mongo = None
 if pymongo:
-    from blaze.mongo import *
 
     try:
         db = pymongo.MongoClient().db
