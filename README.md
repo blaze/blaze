@@ -130,7 +130,7 @@ Development builds are accessible
 
 You may want to view [the docs](http://blaze.pydata.org), [the
 tutorial](http://github.com/ContinuumIO/blaze-tutorial), or [some
-blogposts](http://http://continuum.io/blog/tags/blaze).
+blogposts](http://continuum.io/blog/tags/blaze).
 
 
 License

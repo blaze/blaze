@@ -28,7 +28,7 @@ x = into(np.ndarray, df)
 sources = [df, x]
 
 try:
-    import sqlalchemcy
+    import sqlalchemy
     sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
     into(sql, L)
     sources.append(sql)
@@ -49,10 +49,17 @@ except ImportError:
     pymongo = mongo = None
 if pymongo:
     from blaze.mongo import *
+
     try:
         db = pymongo.MongoClient().db
-        db._test_comprehensive.drop()
-        mongo = into(db._test_comprehensive, df)
+
+        try:
+            coll = db._test_comprehensive
+        except AttributeError:
+            coll = db['_test_comprehensive']
+
+        coll.drop()
+        mongo = into(coll, df)
         sources.append(mongo)
     except pymongo.errors.ConnectionFailure:
         mongo = None
@@ -138,4 +145,8 @@ def test_base():
                 assert into(tuple, result) == into(tuple, model)
             else:
                 result = compute(expr._subs({t: T}))
+                try:
+                    result = result.scalar()
+                except AttributeError:
+                    pass
                 assert result == model

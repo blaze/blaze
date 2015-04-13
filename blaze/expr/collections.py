@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import isdistinct, frequencies, concat, unique, get
+from toolz import isdistinct, frequencies, concat, unique, get, first
 import datashape
 from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection, isrecord
@@ -153,17 +153,17 @@ def merge(*exprs, **kwargs):
             [(k, v)] = kwargs.items()
             return v.label(k)
     # Get common sub expression
-    exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
+    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
     try:
         child = common_subexpression(*exprs)
-    except:
-        raise ValueError("No common sub expression found for input expressions")
+    except Exception:
+        raise ValueError("No common subexpression found for input expressions")
 
     result = Merge(child, exprs)
 
     if not isdistinct(result.fields):
         raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-            frequencies(result.fields).items() if v > 1))
+                         frequencies(result.fields).items() if v > 1))
 
     return result
 
@@ -179,7 +179,7 @@ def transform(t, replace=True, **kwargs):
     if replace and set(t.fields).intersection(set(kwargs)):
         t = t[[c for c in t.fields if c not in kwargs]]
 
-    args = [t] + [v.label(k) for k, v in kwargs.items()]
+    args = [t] + [v.label(k) for k, v in sorted(kwargs.items(), key=first)]
     return merge(*args)
 
 

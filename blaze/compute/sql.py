@@ -16,31 +16,45 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
+import itertools
+
+from operator import and_, eq
+from copy import copy
+
 import sqlalchemy as sa
-import sqlalchemy
+
 from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
-from operator import and_, eq
-import itertools
-from copy import copy
+
 import toolz
+
+from toolz import unique, concat
+
 from multipledispatch import MDNotImplementedError
+
 from odo.backends.sql import metadata_of_engine
 
 from ..dispatch import dispatch
+
+from .core import compute_up, compute, base
+
 from ..expr import Projection, Selection, Field, Broadcast, Expr
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
-from ..compatibility import reduce
-from .core import compute_up, compute, base
+
+from ..expr.broadcast import broadcast_collect
+
+from ..compatibility import reduce, map
+
 from ..utils import listpack
 
-__all__ = ['sqlalchemy', 'select']
+
+__all__ = ['sa', 'select']
 
 
 def inner_columns(s):
@@ -154,11 +168,11 @@ def compute_up(t, s, scope=None, **kwargs):
 def select(s):
     """ Permissive SQL select
 
-    Idempotent sqlalchemy.select
+    Idempotent sa.select
 
     Wraps input in list if neccessary
     """
-    if not isinstance(s, sqlalchemy.sql.Select):
+    if not isinstance(s, sa.sql.Select):
         if not isinstance(s, (tuple, list)):
             s = [s]
         s = sa.select(s)
@@ -279,7 +293,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(join, Select):
         return join.with_only_columns(columns)
     else:
-        return sqlalchemy.sql.select(columns, from_obj=join)
+        return sa.select(columns, from_obj=join)
 
 
 names = {mean: 'avg',
@@ -300,7 +314,7 @@ def compute_up(t, s, **kwargs):
     return s.with_only_columns([col])
 
 
-@dispatch(Distinct, sqlalchemy.Column)
+@dispatch(Distinct, sa.Column)
 def compute_up(t, s, **kwargs):
     return s.distinct().label(t._name)
 
@@ -315,10 +329,10 @@ def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     try:
-        op = getattr(sqlalchemy.sql.functions, t.symbol)
+        op = getattr(sa.sql.functions, t.symbol)
     except AttributeError:
         symbol = names.get(type(t), t.symbol)
-        op = getattr(sqlalchemy.sql.func, symbol)
+        op = getattr(sa.sql.func, symbol)
     result = op(s)
 
     return result.label(t._name)
@@ -329,7 +343,7 @@ def compute_up(t, s, **kwargs):
     return compute_up(t, select(s), **kwargs)
 
 
-@dispatch(count, sqlalchemy.Table)
+@dispatch(count, sa.Table)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -363,19 +377,19 @@ def compute_up(t, s, **kwargs):
     return select([list(inner_columns(result))[0].label(t._name)])
 
 
-@dispatch(nunique, sqlalchemy.Column)
+@dispatch(nunique, sa.Column)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     return sa.func.count(s.distinct())
 
 
-@dispatch(Distinct, sqlalchemy.Table)
+@dispatch(Distinct, sa.Table)
 def compute_up(t, s, **kwargs):
     return select(s).distinct()
 
 
-@dispatch(By, sqlalchemy.Column)
+@dispatch(By, sa.Column)
 def compute_up(t, s, **kwargs):
     grouper = lower_column(s)
     scope = {t._child: s}
@@ -386,15 +400,13 @@ def compute_up(t, s, **kwargs):
         reductions = [compute(val, scope, post_compute=None).label(name)
                       for val, name in zip(app.values, app.fields)]
 
-    return sqlalchemy.select([grouper] + reductions).group_by(grouper)
+    return sa.select([grouper] + reductions).group_by(grouper)
 
 
 @dispatch(By, ClauseElement)
 def compute_up(expr, data, **kwargs):
     if (isinstance(expr.grouper, (Field, Projection)) or
             expr.grouper is expr._child):
-        # d = dict((c.name, c) for c in inner_columns(s))
-        # grouper = [d[col] for col in expr.grouper.fields]
         grouper = [lower_column(data.c.get(col))
                    for col in expr.grouper.fields]
     elif isinstance(expr.grouper, DateTime):
@@ -524,12 +536,88 @@ def compute_up(t, s, **kwargs):
     return select(columns)
 
 
-@dispatch(Merge, Selectable)
-def compute_up(t, s, **kwargs):
-    subexpression = common_subexpression(*t.children)
-    children = [compute(child, {subexpression: s}, post_compute=False)
-                for child in t.children]
-    return select(children)
+@dispatch(sa.sql.FromClause)
+def get_inner_columns(sel):
+    return list(map(lower_column, sel.c.values()))
+
+
+@dispatch(sa.sql.elements.ColumnElement)
+def get_inner_columns(c):
+    return [c]
+
+
+@dispatch(sa.sql.selectable.ScalarSelect)
+def get_inner_columns(sel):
+    inner_columns = list(sel.inner_columns)
+    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
+    return list(map(lower_column, sel.inner_columns))
+
+
+@dispatch(sa.Table)
+def get_inner_columns(t):
+    return t.c.values()
+
+
+@dispatch(sa.sql.elements.Label)
+def get_inner_columns(label):
+    """
+    Notes
+    -----
+    This should only ever return a list of length 1
+
+    This is because we need to turn ScalarSelects into an actual column
+    """
+    name = label.name
+    return [lower_column(c).label(name)
+            for c in get_inner_columns(label.element)]
+
+
+@dispatch(Select)
+def get_all_froms(sel):
+    return list(unique(sel.locate_all_froms()))
+
+
+@dispatch(sa.Table)
+def get_all_froms(t):
+    return [t]
+
+
+@dispatch(sa.sql.elements.ColumnClause)
+def get_all_froms(c):
+    return [c.table]
+
+
+def get_clause(data, kind):
+    # arg SQLAlchemy doesn't allow things like data._group_by_clause or None
+    assert kind == 'order_by' or kind == 'group_by', \
+        'kind must be "order_by" or "group_by"'
+    clause = getattr(data, '_%s_clause' % kind, None)
+    return clause.clauses if clause is not None else None
+
+
+@dispatch(Merge, (Selectable, Select))
+def compute_up(expr, data, **kwargs):
+    # get the common subexpression of all the children in the merge
+    subexpression = common_subexpression(*expr.children)
+
+    # compute each child, including the common subexpression
+    children = [compute(child, {subexpression: data}, post_compute=False)
+                for child in expr.children]
+
+    # Get the original columns from the selection and rip out columns from
+    # Selectables and ScalarSelects
+    columns = list(unique(concat(map(get_inner_columns, [data] + children))))
+
+    # we need these getattrs if data is a ColumnClause or Table
+    return sa.select(columns,
+                     from_obj=get_all_froms(data),
+                     whereclause=getattr(data, '_whereclause', None),
+                     distinct=getattr(data, '_distinct', False),
+                     having=getattr(data, '_having', None),
+                     group_by=get_clause(data, 'group_by'),
+                     limit=getattr(data, '_limit', None),
+                     offset=getattr(data, '_offset', None),
+                     order_by=get_clause(data, 'order_by'))
 
 
 @dispatch(Summary, Select)
@@ -606,7 +694,7 @@ def table_of_engine(engine, name):
     return table_of_metadata(metadata, name)
 
 
-@dispatch(Field, sqlalchemy.engine.Engine)
+@dispatch(Field, sa.engine.Engine)
 def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
 
@@ -639,15 +727,12 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-from ..expr.broadcast import broadcast_collect
-
-
 @dispatch(Expr, sa.sql.elements.ClauseElement)
 def optimize(expr, _):
     return broadcast_collect(expr)
 
 
-@dispatch(Field, sqlalchemy.MetaData)
+@dispatch(Field, sa.MetaData)
 def compute_up(expr, data, **kwargs):
     return table_of_metadata(data, expr._name)
 
