@@ -25,10 +25,14 @@ __all__ = []
 
 try:
     from pyspark import SQLContext
-    from pyspark.sql import DataFrame as SparkDataFrame
     from pyhive.sqlalchemy_hive import HiveDialect
 except ImportError:
-    SparkDataFrame = SQLContext = Dummy
+    SQLContext = Dummy
+
+try:
+    from pyspark.sql import DataFrame as SparkDataFrame
+except ImportError:
+    SparkDataFrame = Dummy
 
 
 join_types = {
