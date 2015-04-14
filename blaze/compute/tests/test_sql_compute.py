@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-sqlalchemy = pytest.importorskip('sqlalchemy')
-sa = sqlalchemy
+
+sa = pytest.importorskip('sqlalchemy')
 
 import re
 
@@ -295,7 +295,7 @@ def test_nunique():
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
-            str(sqlalchemy.sql.functions.any(s.c.amount > 150))
+            str(sa.sql.functions.any(s.c.amount > 150))
 
 
 def test_by():

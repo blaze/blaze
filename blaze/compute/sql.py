@@ -572,8 +572,10 @@ def get_inner_columns(sel):
 
 @dispatch(sa.sql.functions.Function)
 def get_inner_columns(f):
-    lowered = list(unique(concat(map(get_inner_columns, f.clauses.clauses))))
-    lowered = [l.label(getattr(l, 'name', None)) for l in lowered]
+    assert len(f.clauses.clauses) == 1, \
+        'only single argument functions allowed'
+    unique_columns = unique(concat(map(get_inner_columns, f.clauses)))
+    lowered = [x.label(getattr(x, 'name', None)) for x in unique_columns]
     return list(map(getattr(sa.func, f.name), lowered))
 
 
