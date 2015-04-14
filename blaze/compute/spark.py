@@ -138,13 +138,6 @@ def jgetattr(data, attr, default=None):
         return default
 
 
-@compute_up.register(Join, SparkDataFrame, SparkDataFrame)
-def spark_df_join(t, lhs, rhs, **kwargs):
-    # ship to rdd land, so we can reuse handling of combining records code
-    rdd = compute_up(t, lhs.rdd, rhs.rdd, **kwargs)
-    return lhs.sql_ctx.createDataFrame(rdd)
-
-
 @compute_up.register(Join, RDD, RDD)
 def spark_join(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
