@@ -504,9 +504,11 @@ def compute_up(t, s, **kwargs):
     if (not isinstance(s, sa.sql.selectable.Alias) or
             (hasattr(s, 'froms') and isinstance(s.froms[0],
                                                 sa.sql.selectable.Join))):
+        assert len(s.froms) == 1, 'only a single FROM clause supported for now'
         from_obj = s.froms[0]
     else:
         from_obj = None
+
     return sa.select(columns=columns,
                      whereclause=getattr(s, 'element', s)._whereclause,
                      from_obj=from_obj,
@@ -631,8 +633,10 @@ def compute_up(expr, data, **kwargs):
     columns = list(unique(concat(map(get_inner_columns, [data] + children))))
 
     # we need these getattrs if data is a ColumnClause or Table
+    from_obj = get_all_froms(data)
+    assert len(from_obj) == 1, 'only a single FROM clause supported'
     return sa.select(columns,
-                     from_obj=get_all_froms(data),
+                     from_obj=from_obj,
                      whereclause=getattr(data, '_whereclause', None),
                      distinct=getattr(data, '_distinct', False),
                      having=getattr(data, '_having', None),
