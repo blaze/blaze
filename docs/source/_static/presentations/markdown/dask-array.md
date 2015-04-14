@@ -13,18 +13,23 @@ Continuum Analytics
 ### How could it be more useful to you?
 
 
-* Related work
-    *  Parallel BLAS implementations - ScaLAPACK, Plasma, ...
-    *  Distributed arrays - PETSc/Trillinos, Elemental, HPF
-    *  Parallel collections - Hadoop/Spark (Dryad, Disco, ...)
-    *  Task scheduling frameworks - Luigi, swift-lang, ...
-    *  Python big-numpy projects: Distarray, Spartan, Biggus
-    *  Many custom solutions, CESM, ...
-*   Distinguishing features of `dask.array`
-    *  Full ndarray support, no serious linear algebra
-    *  Shared memory parallelism, not distributed
-    *  Immediately usable - `conda/pip` installable
-    *  Dask includes other non-array collections
+### Related work
+
+*  Parallel BLAS implementations - ScaLAPACK, Plasma, ...
+*  Distributed arrays - PETSc/Trillinos, Elemental, HPF
+*  Parallel collections - Hadoop/Spark (Dryad, Disco, ...)
+*  Task scheduling frameworks - Luigi, swift-lang, ...
+*  Python big-numpy projects: Distarray, Spartan, Biggus
+*  Custom solutions with MPI, ZMQ, ...
+
+<hr>
+
+### Distinguishing features of `dask.array`
+
+*  Full ndarray support, no serious linear algebra
+*  Shared memory parallelism, not distributed
+*  Immediately usable - `conda/pip` installable
+*  Dask includes other non-array collections
 
 
 
