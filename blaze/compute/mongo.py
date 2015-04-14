@@ -50,7 +50,7 @@ try:
     from pymongo.collection import Collection
     from pymongo.database import Database
 except ImportError:
-    Collection = type(None)
+    Database = Collection = type(None)
 
 import fnmatch
 from datashape.predicates import isscalar
