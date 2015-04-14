@@ -17,7 +17,7 @@ Existing Backends
 Streaming Python
 ----------------
 
- *via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_*
+via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_
 
 Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit
