@@ -235,8 +235,8 @@ Interact with the ecosystem
     *  Set of associated ndarrays / variables
     *  Pandas index along each axis
 *  Index and reason using named axes with labels
-    * NumPy:  `x[40:100].mean(axis=2)`
-    * XRay: `ds.sel(time='2014-04').mean('time')`
+    * NumPy -- `x[40:100].mean(axis=2)`
+    * XRay -- `ds.sel(time='2014-04').mean('time')`
 
 <hr>
 
