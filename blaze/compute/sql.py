@@ -589,8 +589,9 @@ def get_inner_columns(label):
     This is because we need to turn ScalarSelects into an actual column
     """
     name = label.name
-    return [lower_column(c).label(name)
-            for c in get_inner_columns(label.element)]
+    inner_columns = get_inner_columns(label.element)
+    assert len(inner_columns) == 1
+    return [lower_column(c).label(name) for c in inner_columns]
 
 
 @dispatch(Select)
