@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-sqlalchemy = pytest.importorskip('sqlalchemy')
-sa = sqlalchemy
+
+sa = pytest.importorskip('sqlalchemy')
 
 import re
 
@@ -295,7 +295,7 @@ def test_nunique():
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
-            str(sqlalchemy.sql.functions.any(s.c.amount > 150))
+            str(sa.sql.functions.any(s.c.amount > 150))
 
 
 def test_by():
@@ -1164,25 +1164,72 @@ def test_merge_where():
     assert normalize(str(result)) == expected
 
 
-@pytest.mark.xfail(raises=AssertionError,
-                   reason='We need to rip out ScalarSelects with impunity')
-def test_transform_filter_by():
+def test_transform_filter_by_single_column():
     t2 = t[t.amount < 0]
     tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
     expr = by(tr.name, avg_amt=tr.abs_amt.mean())
     result = compute(expr, s)
     expected = normalize("""SELECT
-        anon_1.name,
-        avg(anon_1.abs_amt) AS avg_amt
-    FROM
-        (SELECT
-         accounts.name,
-         accounts.amount,
-         accounts.id,
-         abs(accounts.amount) AS abs_amt,
-         sin(accounts.id) AS sine
-         WHERE accounts.amount < 0) as anon_1
-    GROUP BY anon_1.name
+        accounts.name,
+        avg(abs(accounts.amount)) AS avg_amt
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name
+    """)
+    assert normalize(str(result)) == expected
+
+
+def test_transform_filter_by_multiple_columns():
+    t2 = t[t.amount < 0]
+    tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
+    expr = by(tr.name, avg_amt=tr.abs_amt.mean(), sum_sine=tr.sine.sum())
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        accounts.name,
+        avg(abs(accounts.amount)) AS avg_amt,
+        sum(sin(accounts.id)) AS sum_sine
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name
+    """)
+    assert normalize(str(result)) == expected
+
+
+def test_transform_filter_by_different_order():
+    t2 = transform(t, abs_amt=abs(t.amount), sine=sin(t.id))
+    tr = t2[t2.amount < 0]
+    expr = by(tr.name,
+              avg_amt=tr.abs_amt.mean(),
+              avg_sine=tr.sine.sum() / tr.sine.count())
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        accounts.name,
+        avg(abs(accounts.amount)) AS avg_amt,
+        sum(sin(accounts.id)) / count(sin(accounts.id)) AS avg_sine
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name
+    """)
+    assert normalize(str(result)) == expected
+
+
+@pytest.mark.xfail(raises=ValueError,
+                   reason='Need to allow Merge expressions to be groupers')
+def test_transform_filter_by_projection():
+    t2 = transform(t, abs_amt=abs(t.amount), sine=sin(t.id))
+    tr = t2[t2.amount < 0]
+    expr = by(tr[['name', 'id']],
+              avg_amt=tr.abs_amt.mean(),
+              avg_sine=tr.sine.sum() / tr.sine.count())
+    result = compute(expr, s)
+    expected = normalize("""SELECT
+        accounts.name,
+        accounts.id,
+        avg(abs(accounts.amount)) AS avg_amt,
+        sum(sin(accounts.id)) / count(sin(accounts.id)) AS avg_sine
+    FROM accounts
+    WHERE accounts.amount < :amount_1
+    GROUP BY accounts.name, accounts.id
     """)
     assert normalize(str(result)) == expected
 
