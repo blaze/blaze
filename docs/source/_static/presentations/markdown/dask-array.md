@@ -42,7 +42,6 @@ Continuum Analytics
 *  using blocked algorithms
 *  and task scheduling
 *  useful for meteorological data
-*  and more.
 
 
 ## NumPy interface
@@ -53,7 +52,7 @@ Continuum Analytics
 *  Reductions along axes, `mean(), max(axis=0), ...`
 *  Slicing, `x[:100, 500:100:-2]`
 *  Fancy indexing, `x[:, [10, 1, 5]]`
-*  Some linear algebra, `tensordot`, `qr, svd`
+*  Some linear algebra, `tensordot, qr, svd`
 
 <hr>
 
@@ -66,19 +65,14 @@ And introduces some novel features
 
 ## Blocked algorithms
 
-Express total computation as network of in-memory computations.  Use existing
-NumPy operations on in-memory blocks of data.
-
-<img src="images/array.png">
-
-
-## Blocked algorithms
-
-Given a trillion element array, cut into million element chunks:
+Problem -- Given a trillion element array:
 
 *  Find the sum of all elements
 *  Find the mean of all elements
 *  Find the mean of all positive elements
+
+Solution -- Break array into blocks that fit in-memory.  Use NumPy on each
+block.
 
 
 ## Blocked algorithms
@@ -88,7 +82,7 @@ Blocked sum
     x = h5py.File('myfile.hdf5')['/x']
 
     sums = []
-    for i in range(1000):
+    for i in range(1000000):
         chunk = x[1000000*i: 1000000*(i+1)]     # Pull out chunk
         sums.append(np.sum(chunk))              # Sum each chunk
 
@@ -103,7 +97,7 @@ Blocked mean on positive elements
 
     sums = []
     counts = []
-    for i in range(1000):
+    for i in range(1000000):
         chunk = x[1000000*i: 1000000*(i+1)]     # Pull out chunk
         chunk = chunk[chunk > 0]                # Filter
         sums.append(np.sum(b))                  # Sum of each chunk
@@ -140,6 +134,7 @@ This was parallelizable
 ## Blocked algorithms
 
 <img src="images/dask_001.png">
+
 
 
 ## Task scheduling
