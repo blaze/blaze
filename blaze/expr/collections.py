@@ -441,11 +441,11 @@ class IsIn(Expr):
         return "%s.isin({%s})" % (self._child, repr(self._key))
 
 
-def isin(child, key):
+def isin(child, key, **kwargs):
     if not hasattr(key, '__iter__'):
         key = frozenset([key])
     key = frozenset(key)
-    return IsIn(child, key)
+    return IsIn(child, key, **kwargs)
 
 
 from .expressions import dshape_method_list
