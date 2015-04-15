@@ -77,6 +77,17 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
             schema = Record(list(zip(fields, types)))
             dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
         elif isrecord(dshape.measure) and fields:
+            ds = discover(data)
+            assert isrecord(ds.measure)
+            names = ds.measure.names
+            if names != fields:
+                raise ValueError('data column names %s\n'
+                                 '\tnot equal to fields parameter %s,\n'
+                                 '\tuse Data(data).relabel(%s) to rename fields'
+                                 % (names,
+                                    fields,
+                                    ', '.join('%s=%r' % (k, v)
+                                              for k, v in zip(names, fields))))
             types = dshape.measure.types
             schema = Record(list(zip(fields, types)))
             dshape = DataShape(*(dshape.shape + (schema,)))
