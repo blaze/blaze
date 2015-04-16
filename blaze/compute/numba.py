@@ -197,8 +197,6 @@ def _get_numba_ufunc(expr):
     else:
         leaves = expr._leaves()
 
-    # we may not have a Broadcast instance because arithmetic expressions can
-    # be vectorized so we use getattr
     s, scope = funcstr(leaves, expr)
 
     scope = dict((k, numba.jit(nopython=True)(v) if callable(v) else v)
