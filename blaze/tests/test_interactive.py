@@ -359,3 +359,12 @@ def test_highly_nested_repr():
     data = [[0, [[1, 2], [3]], 'abc']]
     d = Data(data)
     assert 'abc' in repr(d.head())
+
+
+def test_asarray_fails_on_different_column_names():
+    vs = {'first': [2., 5., 3.],
+          'second': [4., 1., 4.],
+          'third': [6., 4., 3.]}
+    df = pd.DataFrame(vs)
+    with pytest.raises(ValueError):
+        Data(df, fields=list('abc'))

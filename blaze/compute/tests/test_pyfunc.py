@@ -1,9 +1,12 @@
-from blaze.compute.pyfunc import *
-from blaze.compute.pyfunc import _print_python
-from blaze.expr.broadcast import broadcast_collect
 import datetime
 
+from blaze.compute.pyfunc import symbol, lambdify, cos, math, broadcast
+from blaze.compute.pyfunc import _print_python
+from blaze.expr.broadcast import broadcast_collect
+
+
 t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
+
 
 def test_simple():
     f = lambdify([t], t.x + t.y)
@@ -61,11 +64,11 @@ def test_broadcast_collect():
 
 
 def test_pyfunc_works_with_invalid_python_names():
-    x = Symbol('x-y.z', 'int')
+    x = symbol('x-y.z', 'int')
     f = lambdify([x], x + 1)
     assert f(1) == 2
 
-    t = Symbol('t', '{"x.y": int, "y z": int}')
+    t = symbol('t', '{"x.y": int, "y z": int}')
     f = lambdify([t], t.x_y + t.y_z)
     assert f((1, 2)) == 3
 

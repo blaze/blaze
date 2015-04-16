@@ -17,6 +17,7 @@ WHERE accounts.amount < :amount_1
 from __future__ import absolute_import, division, print_function
 
 import itertools
+from itertools import chain
 
 from operator import and_, eq
 from copy import copy
@@ -31,7 +32,8 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat
+from toolz import unique, concat, pipe
+from toolz.curried import map
 
 from multipledispatch import MDNotImplementedError
 
@@ -49,7 +51,7 @@ from ..expr import common_subexpression, Summary, Like, nelements
 
 from ..expr.broadcast import broadcast_collect
 
-from ..compatibility import reduce, map
+from ..compatibility import reduce
 
 from ..utils import listpack
 
@@ -101,6 +103,12 @@ def compute_up(t, s, **kwargs):
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     return compute(t._scalar_expr, d, post_compute=False).label(name)
+
+
+@dispatch(Broadcast, sa.Column)
+def compute_up(t, s, **kwargs):
+    expr = t._scalar_expr
+    return compute(expr, s, post_compute=False).label(expr._name)
 
 
 @dispatch(BinOp, ColumnElement)
@@ -475,8 +483,8 @@ def alias_it(s):
 
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-    if not (isinstance(t.grouper, (Field, Projection, DateTime))
-            or t.grouper is t._child):
+    if not (isinstance(t.grouper, (Field, Projection, DateTime)) or
+            t.grouper is t._child):
         raise ValueError("Grouper must be a projection, got %s" % t.grouper)
 
     s = alias_it(s)
@@ -487,18 +495,29 @@ def compute_up(t, s, **kwargs):
     elif isinstance(t.apply, Summary):
         reduction = compute(t.apply, {t._child: s}, post_compute=False)
 
-    # d = dict((c.name, c) for c in inner_columns(s))
-    # grouper = [d[col] for col in t.grouper.fields]
     grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
 
-    s2 = reduction.group_by(*grouper)
+    grouper_columns = pipe(grouper, map(get_inner_columns), concat)
+    reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
+                             concat)
+    columns = list(unique(chain(grouper_columns, reduction_columns)))
+    if (not isinstance(s, sa.sql.selectable.Alias) or
+            (hasattr(s, 'froms') and isinstance(s.froms[0],
+                                                sa.sql.selectable.Join))):
+        assert len(s.froms) == 1, 'only a single FROM clause supported for now'
+        from_obj = s.froms[0]
+    else:
+        from_obj = None
 
-    for g in grouper:
-        s2.append_column(g)
-
-    cols = list(s2.inner_columns)
-    cols = cols[-len(grouper):] + cols[:-len(grouper)]
-    return s2.with_only_columns(cols)
+    return sa.select(columns=columns,
+                     whereclause=getattr(s, 'element', s)._whereclause,
+                     from_obj=from_obj,
+                     distinct=getattr(s, 'element', s)._distinct,
+                     group_by=grouper,
+                     having=None,  # TODO: we don't have an expression for this
+                     limit=getattr(s, 'element', s)._limit,
+                     offset=getattr(s, 'element', s)._offset,
+                     order_by=get_clause(getattr(s, 'element', s), 'order_by'))
 
 
 @dispatch(Sort, ClauseElement)
@@ -553,9 +572,13 @@ def get_inner_columns(sel):
     return list(map(lower_column, sel.inner_columns))
 
 
-@dispatch(sa.Table)
-def get_inner_columns(t):
-    return t.c.values()
+@dispatch(sa.sql.functions.Function)
+def get_inner_columns(f):
+    assert len(f.clauses.clauses) == 1, \
+        'only single argument functions allowed'
+    unique_columns = unique(concat(map(get_inner_columns, f.clauses)))
+    lowered = [x.label(getattr(x, 'name', None)) for x in unique_columns]
+    return list(map(getattr(sa.func, f.name), lowered))
 
 
 @dispatch(sa.sql.elements.Label)
@@ -568,8 +591,9 @@ def get_inner_columns(label):
     This is because we need to turn ScalarSelects into an actual column
     """
     name = label.name
-    return [lower_column(c).label(name)
-            for c in get_inner_columns(label.element)]
+    inner_columns = get_inner_columns(label.element)
+    assert len(inner_columns) == 1
+    return [lower_column(c).label(name) for c in inner_columns]
 
 
 @dispatch(Select)
@@ -609,8 +633,10 @@ def compute_up(expr, data, **kwargs):
     columns = list(unique(concat(map(get_inner_columns, [data] + children))))
 
     # we need these getattrs if data is a ColumnClause or Table
+    from_obj = get_all_froms(data)
+    assert len(from_obj) == 1, 'only a single FROM clause supported'
     return sa.select(columns,
-                     from_obj=get_all_froms(data),
+                     from_obj=from_obj,
                      whereclause=getattr(data, '_whereclause', None),
                      distinct=getattr(data, '_distinct', False),
                      having=getattr(data, '_having', None),
