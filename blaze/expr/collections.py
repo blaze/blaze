@@ -443,8 +443,8 @@ class IsIn(ElemWise):
         return datashape.bool_
 
 
-def isin(child, key):
-    return IsIn(child, frozenset(key))
+def isin(child, keys):
+    return IsIn(child, frozenset(keys))
 
 
 isin.__doc__ = IsIn.__doc__
