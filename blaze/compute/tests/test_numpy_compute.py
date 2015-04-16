@@ -418,3 +418,14 @@ def test_query_with_strings():
 
     s = symbol('s', discover(b))
     assert compute(s[s.x == b'b'], b).tolist() == [(b'b', 2)]
+
+
+@pytest.mark.parametrize('keys', [['a'], list('bc')])
+def test_isin(keys):
+    b = np.array([('a', 1), ('b', 2), ('c', 3), ('a', 4), ('c', 5), ('b', 6)],
+                 dtype=[('x', 'S1'), ('y', 'i4')])
+
+    s = symbol('s', discover(b))
+    result = compute(s.x.isin(keys), b)
+    expected = np.in1d(b['x'], keys)
+    np.testing.assert_array_equal(result, expected)

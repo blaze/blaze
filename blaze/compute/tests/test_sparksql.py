@@ -353,3 +353,12 @@ def test_by_with_date(ctx, db, attr):
     result = odo(compute(expr, ctx), set)
     expected = odo(compute(expr, {db: {'dates': date_df}}), set)
     assert result == expected
+
+
+@pytest.mark.parametrize('keys', [[1], [1, 2]])
+def test_isin(ctx, db, keys):
+    expr = db.t[db.t.id.isin(keys)]
+    result = odo(compute(expr, ctx), set)
+    expected = odo(compute(expr, {db: {'t': df}}), set)
+    assert (set(map(frozenset, odo(result, list))) ==
+            set(map(frozenset, odo(expected, list))))

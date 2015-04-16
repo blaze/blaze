@@ -33,7 +33,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
-                    ElemWise, DateTime, Millisecond, Expr, Symbol,
+                    ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
                     UnaryStringFunction)
 from ..expr import UnaryOp, BinOp
@@ -546,3 +546,8 @@ units_map = {
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
     return Series(compute_up(expr, into(np.ndarray, data), **kwargs))
+
+
+@dispatch(IsIn, Series)
+def compute_up(expr, data, **kwargs):
+    return data.isin(expr._keys)

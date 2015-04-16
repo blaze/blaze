@@ -9,7 +9,7 @@ from numbers import Number
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
-from ..expr import std, var, count, nunique, Summary
+from ..expr import std, var, count, nunique, Summary, IsIn
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
@@ -295,6 +295,11 @@ def compute_up(expr, x, **kwargs):
 @dispatch(TensorDot, np.ndarray, np.ndarray)
 def compute_up(expr, lhs, rhs, **kwargs):
     return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])
+
+
+@dispatch(IsIn, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return np.in1d(data, tuple(expr._keys))
 
 
 @compute_up.register(Join, DataFrame, np.ndarray)

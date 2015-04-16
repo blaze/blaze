@@ -33,7 +33,7 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Summary, Like,
+                    By, Sort, Head, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise, symbol,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp)
@@ -78,7 +78,7 @@ def pre_compute(expr, seq, scope=None, **kwargs):
 
 @dispatch(Expr, Sequence)
 def optimize(expr, seq):
-    return broadcast_collect( expr)
+    return broadcast_collect(expr)
 
 
 def child(x):
@@ -139,7 +139,12 @@ def rowfunc(t):
 @dispatch(Field)
 def rowfunc(t):
     index = t._child.fields.index(t._name)
-    return lambda x: x[index]
+    return lambda x, index=index: x[index]
+
+
+@dispatch(IsIn)
+def rowfunc(t):
+    return t._keys.__contains__
 
 
 @dispatch(Broadcast)

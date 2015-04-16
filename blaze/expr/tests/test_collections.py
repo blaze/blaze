@@ -1,11 +1,14 @@
-from blaze.expr import *
-from blaze.expr.collections import *
+import pytest
+
+from blaze.expr import symbol
+from blaze.expr.collections import merge, join, transform
 from blaze.utils import raises
 from blaze.compatibility import builtins
 from toolz import isdistinct
 
 
 t = symbol('t', '5 * {name: string, amount: int, x: real}')
+
 
 def test_merge():
     e = symbol('e', '3 * 5 * {name: string, amount: int, x: real}')
@@ -25,7 +28,7 @@ def test_transform():
     assert expr.fields == ['x', 'y', 'z']
 
     assert builtins.any((t.x + t.y).isidentical(node)
-                for node in expr._subterms())
+                        for node in expr._subterms())
 
 
 def test_distinct():
@@ -67,3 +70,17 @@ def test_raise_error_if_join_on_no_columns():
     b = symbol('b', 'var * {y: int}')
 
     assert raises(ValueError, lambda: join(a, b))
+
+
+def test_isin():
+    a = symbol('a', 'var * {x: int, y: string}')
+    assert hasattr(a.x, 'isin')
+    assert hasattr(a.y, 'isin')
+    assert not hasattr(a, 'isin')
+
+
+def test_isin_no_expressions():
+    a = symbol('a', 'var * int')
+    b = symbol('b', 'var * int')
+    with pytest.raises(TypeError):
+        a.isin(b)

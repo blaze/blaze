@@ -831,3 +831,11 @@ def test_compute_up_on_base():
     d = datetime.now()
     s = symbol('s', 'datetime')
     assert compute(s.minute, d) == d.minute
+
+
+@pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])
+def test_isin(keys):
+    expr = t[t.name.isin(keys)]
+    result = list(compute(expr, data))
+    expected = [el for el in data if el[0] in keys]
+    assert result == expected
