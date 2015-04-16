@@ -5,7 +5,7 @@ from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
                     Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
-                    Reduction, symbol)
+                    Reduction, symbol, IsIn)
 from ..expr import Label, Distinct, By, Slice
 from ..expr import Expr
 from ..expr import path
@@ -62,7 +62,7 @@ def compute_down(expr, data, **kwargs):
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
-           Selection, ElemWise, Apply, Reduction, Distinct, By),
+           Selection, ElemWise, Apply, Reduction, Distinct, By, IsIn),
           (bcolz.ctable, bcolz.carray))
 def compute_up(expr, data, **kwargs):
     """ This is only necessary because issubclass(bcolz.carray, Iterator)
