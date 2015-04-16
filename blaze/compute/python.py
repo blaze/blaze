@@ -495,11 +495,6 @@ def reduce_by_funcs(t):
         return grouper, binop2, combiner, tuple(inits)
 
 
-@dispatch(IsIn, Sequence)
-def compute_up(expr, data, **kwargs):
-    return map(expr._keys.__contains__, data)
-
-
 @dispatch(By, Sequence)
 def compute_up(t, seq, **kwargs):
     apply = optimize(t.apply, seq)
