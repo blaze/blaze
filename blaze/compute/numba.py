@@ -1,14 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from toolz import memoize
+import datashape
+import numba
+from numba.npufunc.ufuncbuilder import UFuncBuilder
 
 from .core import compute, optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
 from ..expr.strings import isstring
 from ..expr.broadcast import broadcast_collect, Broadcast
-from toolz import memoize
-import datashape
-import numba
 from .pyfunc import funcstr
 
 
