@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
+import threading
 
 import numpy as np
 from toolz import memoize
 import datashape
 import numba
-from numba.npufunc.ufuncbuilder import UFuncBuilder
 
 from .core import compute, optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
@@ -14,6 +14,7 @@ from .pyfunc import funcstr
 
 
 Broadcastable = Arithmetic, Math, Map, UnaryOp
+lock = threading.Lock()
 
 
 def optimize_ndarray(expr, *data, **kwargs):
@@ -201,9 +202,16 @@ def _get_numba_ufunc(expr):
 
     scope = dict((k, numba.jit(nopython=True)(v) if callable(v) else v)
                  for k, v in scope.items())
+    # get the func
     func = eval(s, scope)
+    # get the signature
     sig = compute_signature(expr)
-    return numba.vectorize([sig], nopython=True)(func)
+    # vectorize is currently not thread safe. So lock the thread.
+    # TODO FIXME remove this when numba has made vectorize thread safe.
+    lock.acquire()
+    ufunc = numba.vectorize([sig], nopython=True)(func)
+    lock.release()
+    return ufunc
 
 
 # do this here so we can run our doctest
