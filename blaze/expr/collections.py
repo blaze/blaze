@@ -444,6 +444,10 @@ class IsIn(ElemWise):
 
 
 def isin(child, keys):
+    if isinstance(keys, Expr):
+        raise TypeError('keys argument cannot be an expression, '
+                        'it must be an iterable object such as a list, '
+                        'tuple or set')
     return IsIn(child, frozenset(keys))
 
 
