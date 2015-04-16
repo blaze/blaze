@@ -298,8 +298,8 @@ def compute_up(expr, lhs, rhs, **kwargs):
 
 
 @dispatch(IsIn, np.ndarray)
-def compute_up(t, ndarr, **kwargs):
-    return np.in1d(ndarr.ravel(), tuple(t._key))
+def compute_up(expr, data, **kwargs):
+    return np.in1d(data, tuple(expr._keys))
 
 
 @compute_up.register(Join, DataFrame, np.ndarray)

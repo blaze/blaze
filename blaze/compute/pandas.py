@@ -548,12 +548,6 @@ def compute_up(expr, data, **kwargs):
     return Series(compute_up(expr, into(np.ndarray, data), **kwargs))
 
 
-@dispatch(IsIn, DataFrame)
-def compute_up(expr, df, **kwargs):
-    return df.loc[df.isin(expr._key)]
-
-
-@dispatch(IsIn, (DataFrame, Series))
-def compute_up(expr, df, **kwargs):
-    k = list(expr._key)
-    return df.loc[df.isin(k)]
+@dispatch(IsIn, Series)
+def compute_up(expr, data, **kwargs):
+    return data.isin(expr._keys)

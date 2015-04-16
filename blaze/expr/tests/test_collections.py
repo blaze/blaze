@@ -67,3 +67,10 @@ def test_raise_error_if_join_on_no_columns():
     b = symbol('b', 'var * {y: int}')
 
     assert raises(ValueError, lambda: join(a, b))
+
+
+def test_isin():
+    a = symbol('a', 'var * {x: int, y: string}')
+    assert hasattr(a.x, 'isin')
+    assert hasattr(a.y, 'isin')
+    assert not hasattr(a, 'isin')

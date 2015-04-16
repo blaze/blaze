@@ -656,8 +656,9 @@ def test_by_with_complex_summary():
     assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
 
 
-def test_isin():
-    name = df.name[0]
-    result = compute(t.name.isin([name]), df)
-    expected = df.loc[df.name.isin([name])]
-    tm.assert_series_equal(result, expected)
+@pytest.mark.parametrize('keys', [[1], [2, 3]])
+def test_isin(keys):
+    expr = t[t.id.isin(keys)]
+    result = compute(expr, df)
+    expected = df.loc[df.id.isin(keys)]
+    tm.assert_frame_equal(result, expected)

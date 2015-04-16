@@ -769,13 +769,5 @@ def post_compute(_, s, **kwargs):
 
 
 @dispatch(IsIn, ColumnElement)
-def compute_up(t, s, **kwargs):
-    result =  select([s.table]).where(s.in_(t._key))
-    return result
-
-
-@dispatch(IsIn, ClauseElement)
-def post_compute(t, s, **kwargs):
-    import pdb; pdb.set_trace()
-    result =  select([s]).where(s.in_(t._key))
-    return result
+def compute_up(expr, data, **kwargs):
+    return data.in_(expr._keys)
