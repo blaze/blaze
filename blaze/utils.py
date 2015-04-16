@@ -4,7 +4,11 @@ import os
 import datetime
 from functools import wraps
 
-from cytoolz import nth
+try:
+    from cytoolz import nth
+except ImportError:
+    from toolz import nth
+
 from itertools import islice
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
