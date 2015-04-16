@@ -78,7 +78,7 @@ def pre_compute(expr, seq, scope=None, **kwargs):
 
 @dispatch(Expr, Sequence)
 def optimize(expr, seq):
-    return broadcast_collect( expr)
+    return broadcast_collect(expr)
 
 
 def child(x):
@@ -139,7 +139,12 @@ def rowfunc(t):
 @dispatch(Field)
 def rowfunc(t):
     index = t._child.fields.index(t._name)
-    return lambda x: x[index]
+    return lambda x, index=index: x[index]
+
+
+@dispatch(IsIn)
+def rowfunc(t):
+    return t._keys.__contains__
 
 
 @dispatch(Broadcast)
@@ -491,15 +496,8 @@ def reduce_by_funcs(t):
 
 
 @dispatch(IsIn, Sequence)
-def compute_up(t, seq, **kwargs):
-    def isin(keys, elem):
-        if elem in keys:
-            return True
-        return False
-    isin_with_keys = partial(isin, t._key)
-    row_isin = lambda x: list(map(isin_with_keys, x))
-    out = list(map(row_isin, seq))
-    return out
+def compute_up(expr, data, **kwargs):
+    return map(expr._keys.__contains__, data)
 
 
 @dispatch(By, Sequence)

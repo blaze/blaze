@@ -833,13 +833,9 @@ def test_compute_up_on_base():
     assert compute(s.minute, d) == d.minute
 
 
-def test_isin():
-    expected = [[False, False, False],
-                [True, False, False],
-                [False, False, False]]
-    assert list(compute(t.isin(['Bob']), data)) == expected
-
-    expected = [[True, False, False],
-                [False, True, True],
-                [True, False, False]]
-    assert list(compute(t.isin(['Alice', 200, 2]), data)) == expected
+@pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])
+def test_isin(keys):
+    expr = t[t.name.isin(keys)]
+    result = list(compute(expr, data))
+    expected = [el for el in data if el[0] in keys]
+    assert result == expected
