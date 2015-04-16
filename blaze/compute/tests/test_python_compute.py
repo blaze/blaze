@@ -831,3 +831,15 @@ def test_compute_up_on_base():
     d = datetime.now()
     s = symbol('s', 'datetime')
     assert compute(s.minute, d) == d.minute
+
+
+def test_isin():
+    expected = [[False, False, False],
+                [True, False, False],
+                [False, False, False]]
+    assert list(compute(t.isin(['Bob']), data)) == expected
+
+    expected = [[True, False, False],
+                [False, True, True],
+                [True, False, False]]
+    assert list(compute(t.isin(['Alice', 200, 2]), data)) == expected

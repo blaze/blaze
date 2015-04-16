@@ -418,3 +418,10 @@ def test_query_with_strings():
 
     s = symbol('s', discover(b))
     assert compute(s[s.x == b'b'], b).tolist() == [(b'b', 2)]
+
+
+def test_isin():
+    data = ([x[0][1], x[3][1]])
+    result = compute(t.name.isin(data), x)
+    expected = np.array([True, False, False, True, False])
+    assert np.all(result == expected)

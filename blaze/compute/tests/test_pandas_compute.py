@@ -654,3 +654,10 @@ def test_by_with_complex_summary():
     result = compute(expr, df)
     assert list(result.columns) == expr.fields
     assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
+
+
+def test_isin():
+    name = df.name[0]
+    result = compute(t.name.isin([name]), df)
+    expected = df.loc[df.name.isin([name])]
+    tm.assert_series_equal(result, expected)

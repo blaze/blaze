@@ -33,7 +33,7 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Summary, Like,
+                    By, Sort, Head, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise, symbol,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp)
@@ -488,6 +488,18 @@ def reduce_by_funcs(t):
             return tuple(c(x, y) for c, x, y in zip(combiners, a, b))
 
         return grouper, binop2, combiner, tuple(inits)
+
+
+@dispatch(IsIn, Sequence)
+def compute_up(t, seq, **kwargs):
+    def isin(keys, elem):
+        if elem in keys:
+            return True
+        return False
+    isin_with_keys = partial(isin, t._key)
+    row_isin = lambda x: list(map(isin_with_keys, x))
+    out = list(map(row_isin, seq))
+    return out
 
 
 @dispatch(By, Sequence)
