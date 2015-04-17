@@ -208,9 +208,8 @@ def _get_numba_ufunc(expr):
     sig = compute_signature(expr)
     # vectorize is currently not thread safe. So lock the thread.
     # TODO FIXME remove this when numba has made vectorize thread safe.
-    lock.acquire()
-    ufunc = numba.vectorize([sig], nopython=True)(func)
-    lock.release()
+    with lock:
+        ufunc = numba.vectorize([sig], nopython=True)(func)
     return ufunc
 
 
