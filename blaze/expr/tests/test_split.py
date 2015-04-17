@@ -1,6 +1,6 @@
 import pytest
 from blaze.expr import (symbol, transform, by, count, summary, var, std, mean,
-                        sqrt)
+                        sqrt, sum)
 from blaze.expr.split import split, path_split
 from datashape import dshape
 from datashape.predicates import isscalar, isrecord, iscollection
