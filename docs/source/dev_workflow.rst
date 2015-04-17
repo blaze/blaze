@@ -10,33 +10,30 @@ then please email blaze-dev@continuum.io.
 Installing Development Blaze
 ----------------------------
 
-Blaze has a number of dependencies, both due to relying on community projects
-and also because it itself is split among a few projects.
+Blaze depends on many other projects, both projects that develop alongside
+blaze (like ``odo``) as well a number of community projects (like ``pandas``).
 
-Install `conda_`, then copy-paste the following ::
+Blaze development happens in the following projects, all of which are available
+on github.com/ContinuumIO/project-name
 
-   # Install most of the requirements through the recent conda release
-   conda install --yes blaze
+*  Blaze_
+*  DataShape_
+*  Odo_
+*  Dask_
+*  DyND_
 
-   # Some requirements are kept up-to-date on PyPI
-   conda install --yes pip
-   pip install git+https://github.com/ContinuumIO/datashape.git --upgrade
-   pip install toolz cytoolz multipledispatch  --upgrade
+Bleeding edge binaries are kept up-to-date on the ``blaze`` conda channel.
+New developers likely only need to interact with one or two of these libraries so we recommend downloading everything by the conda channel and then only cloning those git repositories that you actively need::
 
-   # Get source
-   git clone https://github.com/ContinuumIO/blaze.git
-   cd blaze
-
-   # Install and run tests
-   python setup.py install                      # Install Blaze
-   python -c 'import blaze; blaze.test()'       # Run tests
-
-
-It is possible but challenging to install Blaze without conda.
-Most of the requirements can be installed from PyPI.
-A notable exception is `DyND`_ which must be compiled from source.
+    conda install -c blaze blaze  # install everything from dev channel
+    git clone git://github.com/ContinuumIO/blaze.git  # only clone blaze and odo
+    git clone git://github.com/ContinuumIO/odo.git  # only clone blaze and odo
 
 .. _DyND: https://github.com/ContinuumIO/dynd-python
+.. _Odo: https://github.com/ContinuumIO/odo
+.. _Dask: https://github.com/ContinuumIO/dask
+.. _Blaze: https://github.com/ContinuumIO/blaze
+.. _DataShape: https://github.com/ContinuumIO/datashape
 .. _conda: http://conda.pydata.org/
 .. _Anaconda: http://continuum.io/downloads
 .. _binstar: https://binstar.org/
@@ -81,18 +78,15 @@ Python 2 and Python 3 before a merge.
 .. _Travis CI: https://travis-ci.org/
 
 The Travis tests only run on Linux, but Blaze is supported on Linux,
-OS X, and Windows. Internal to Continuum, a `Jenkins`_ server is
-running which builds and tests Blaze on the following platforms/versions
+OS X, and Windows.   Further tests and bleeding-edge builds are carried out
+using Binstar-build_ which tests and builds Blaze on the following
+platforms/versions
 
 *   Python versions 2.6, 2.7, 3.3, 3.4
 *   Operating systems Windows, OS-X, Linux
 *   32-bit and 64-bit
 
-That these configurations are all working should be verified by someone at
-Continuum ideally after each merge of a pull request and certainly before each
-release.
-
-.. _Jenkins: http://jenkins-ci.org/
+.. _Binstar-build: https://binstar.org/blaze/blaze/builds
 
 
 **Relative Imports:**

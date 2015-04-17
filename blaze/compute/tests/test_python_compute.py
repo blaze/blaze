@@ -103,6 +103,9 @@ def test_reductions():
     assert compute(count(t['amount']), data) == 3
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
+    assert compute(t.amount[0], data) == 100
+    assert compute(t.amount[-1], data) == 50
+
 
 def test_1d_reductions_keepdims():
     for r in [sum, min, max, nunique, count]:
@@ -575,6 +578,16 @@ def test_summary_by():
                                             ('Bob', 1, 201)])
 
 
+def test_summary_by_first():
+    expr = by(t.name, amt=t.amount[0])
+    assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 100)))
+
+
+def test_summary_by_last():
+    expr = by(t.name, amt=t.amount[-1])
+    assert set(compute(expr, data)) == set((('Bob', 200), ('Alice', 50)))
+
+
 def test_reduction_arithmetic():
     expr = t.amount.sum() + 1
     assert compute(expr, data) == 351
@@ -818,3 +831,11 @@ def test_compute_up_on_base():
     d = datetime.now()
     s = symbol('s', 'datetime')
     assert compute(s.minute, d) == d.minute
+
+
+@pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])
+def test_isin(keys):
+    expr = t[t.name.isin(keys)]
+    result = list(compute(expr, data))
+    expected = [el for el in data if el[0] in keys]
+    assert result == expected

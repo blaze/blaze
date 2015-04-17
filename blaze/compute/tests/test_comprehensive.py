@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame
 import numpy as np
-from into import resource, into
+from odo import resource, into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
 from blaze.interactive import Data
@@ -15,11 +15,11 @@ sources = []
 
 t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
-L = [[100, 1, 'Alice'],
-     [200, 2, 'Bob'],
-     [300, 3, 'Charlie'],
-     [400, 4, 'Dan'],
-     [500, 5, 'Edith']]
+L = [[ 100, 1, 'Alice'],
+     [ 200, 2, 'Bob'],
+     [ 300, 3, 'Charlie'],
+     [-400, 4, 'Dan'],
+     [ 500, 5, 'Edith']]
 
 df = DataFrame(L, columns=['amount', 'id', 'name'])
 
@@ -28,7 +28,7 @@ x = into(np.ndarray, df)
 sources = [df, x]
 
 try:
-    import sqlalchemcy
+    import sqlalchemy
     sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
     into(sql, L)
     sources.append(sql)
@@ -48,11 +48,17 @@ try:
 except ImportError:
     pymongo = mongo = None
 if pymongo:
-    from blaze.mongo import *
+
     try:
         db = pymongo.MongoClient().db
-        db._test_comprehensive.drop()
-        mongo = into(db._test_comprehensive, df)
+
+        try:
+            coll = db._test_comprehensive
+        except AttributeError:
+            coll = db['_test_comprehensive']
+
+        coll.drop()
+        mongo = into(coll, df)
         sources.append(mongo)
     except pymongo.errors.ConnectionFailure:
         mongo = None
@@ -61,6 +67,7 @@ if pymongo:
 expressions = {
         t: [],
         t['id']: [],
+        abs(t['amount']): [],
         t.id.max(): [],
         t.amount.sum(): [],
         t.amount.sum(keepdims=True): [],
@@ -79,7 +86,7 @@ expressions = {
         t.head(3): [],
         t.name.distinct(): [],
         t[t.amount > 50]['name']: [], # odd ordering issue
-        t.id.map(lambda x: x + 1, schema='int', name='id'): [sql, mongo],
+        t.id.map(lambda x: x + 1, schema='int64', name='id'): [sql, mongo],
         t[t.amount > 50]['name']: [],
         by(t.name, total=t.amount.sum()): [],
         by(t.id, count=t.id.count()): [],
@@ -119,7 +126,7 @@ def test_base():
         if iscollection(expr.dshape):
             model = into(DataFrame, into(np.ndarray, expr._subs({t: Data(base, t.dshape)})))
         else:
-            model = expr._subs({t: Data(base, t.dshape)})
+            model = compute(expr._subs({t: Data(base, t.dshape)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
@@ -137,4 +144,8 @@ def test_base():
                 assert into(tuple, result) == into(tuple, model)
             else:
                 result = compute(expr._subs({t: T}))
+                try:
+                    result = result.scalar()
+                except AttributeError:
+                    pass
                 assert result == model

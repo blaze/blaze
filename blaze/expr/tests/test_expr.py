@@ -5,6 +5,7 @@ from blaze.expr import *
 from blaze.expr.core import subs
 from blaze.utils import raises
 
+
 def test_Symbol():
     e = symbol('e', '3 * 5 * {name: string, amount: int}')
     assert e.dshape == dshape('3 * 5 * {name: string, amount: int}')
@@ -81,11 +82,6 @@ def test_fields_with_spaces():
     assert e.a_b.isidentical(e['a.b'])
 
 
-def test_iter_raises_not_implemented_Error():
-    e = symbol('e', '5 * {x: int, "a b": int}')
-    assert raises(NotImplementedError, lambda: iter(e))
-
-
 def test_selection_name_matches_child():
     t = symbol('t', 'var * {x: int, "a.b": int}')
     assert t.x[t.x > 0]._name == t.x._name
@@ -98,4 +94,18 @@ def test_symbol_subs():
     e = symbol('e', '{x: int, y: int}')
     f = symbol('f', '{x: int, y: int}')
     d = {'e': 'f'}
-    assert e._subs({'e': 'f'}) is f
+    assert e._subs(d) is f
+
+
+def test_multiple_renames_on_series_fails():
+    t = symbol('s', 'var * {timestamp: datetime}')
+    ts = t.timestamp
+    assert raises(ValueError, lambda: ts.relabel({'timestamp': 'date',
+                                                  'hello': 'world'}))
+
+
+def test_map_with_rename():
+    t = symbol('s', 'var * {timestamp: datetime}')
+    result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
+    assert raises(ValueError, lambda: result.relabel({'timestamp': 'date'}))
+    assert result.fields == ['date']

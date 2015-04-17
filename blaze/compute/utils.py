@@ -1,12 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
-import sqlalchemy
 from datetime import datetime
 from decimal import Decimal
+
+import sqlalchemy as sa
+import sqlalchemy.orm
+from toolz import curry
+from datashape.predicates import isrecord
+from ..expr import Field
+from odo.backends.sql import dshape_to_alchemy
 
 # This was taken from the following StackOverflow post
 # http://stackoverflow.com/questions/5631078/sqlalchemy-print-the-actual-query
 # answer by bukzor http://stackoverflow.com/users/146821/bukzor
+
 
 def literalquery(statement, dialect=None):
     """Generate an SQL expression string with bound parameters rendered inline
@@ -16,7 +23,6 @@ def literalquery(statement, dialect=None):
     purposes only. Executing SQL statements with inline-rendered user values is
     extremely insecure.
     """
-    import sqlalchemy.orm
     if isinstance(statement, sqlalchemy.orm.Query):
         if dialect is None:
             dialect = statement.session.get_bind(
@@ -49,3 +55,13 @@ def literalquery(statement, dialect=None):
                     return value
 
     return LiteralCompiler(dialect, statement)
+
+
+def make_sqlalchemy_table(expr):
+    return sa.Table(expr._name, sa.MetaData(), *dshape_to_alchemy(expr.dshape))
+
+
+@curry
+def istable(db, t):
+    return (isinstance(t, Field) and isrecord(t.dshape.measure) and
+            t._child.isidentical(db))

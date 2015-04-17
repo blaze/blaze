@@ -1,17 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import isdistinct, frequencies, concat, unique, get
+from toolz import isdistinct, frequencies, concat, unique, get, first
 import datashape
 from datashape import Option, Record, Unit, dshape, var
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
+from .expressions import dshape_method_list
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
+
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
            'head', 'sort', 'Join', 'join', 'transform']
 
+
 class Sort(Expr):
+
     """ Table in sorted order
 
     Examples
@@ -33,7 +37,7 @@ class Sort(Expr):
 
     @property
     def key(self):
-        if not self._key:
+        if self._key is () or self._key is None:
             return self._child.fields[0]
         if isinstance(self._key, tuple):
             return list(self._key)
@@ -49,7 +53,7 @@ class Sort(Expr):
 
     def __str__(self):
         return "%s.sort(%s, ascending=%s)" % (self._child, repr(self._key),
-                self.ascending)
+                                              self.ascending)
 
 
 def sort(child, key=None, ascending=True):
@@ -73,6 +77,7 @@ def sort(child, key=None, ascending=True):
 
 
 class Distinct(Expr):
+
     """
     Removes duplicate rows from the table, so every row is distinct
 
@@ -113,6 +118,7 @@ def distinct(expr):
 
 
 class Head(Expr):
+
     """ First ``n`` elements of collection
 
     Examples
@@ -153,17 +159,17 @@ def merge(*exprs, **kwargs):
             [(k, v)] = kwargs.items()
             return v.label(k)
     # Get common sub expression
-    exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
+    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
     try:
         child = common_subexpression(*exprs)
-    except:
-        raise ValueError("No common sub expression found for input expressions")
+    except Exception:
+        raise ValueError("No common subexpression found for input expressions")
 
     result = Merge(child, exprs)
 
     if not isdistinct(result.fields):
         raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-            frequencies(result.fields).items() if v > 1))
+                                                                frequencies(result.fields).items() if v > 1))
 
     return result
 
@@ -179,7 +185,7 @@ def transform(t, replace=True, **kwargs):
     if replace and set(t.fields).intersection(set(kwargs)):
         t = t[[c for c in t.fields if c not in kwargs]]
 
-    args = [t] + [v.label(k) for k, v in kwargs.items()]
+    args = [t] + [v.label(k) for k, v in sorted(kwargs.items(), key=first)]
     return merge(*args)
 
 
@@ -206,6 +212,7 @@ def schema_concat(exprs):
 
 
 class Merge(ElemWise):
+
     """ Merge many fields together
 
     Examples
@@ -263,6 +270,7 @@ def unpack(l):
 
 
 class Join(Expr):
+
     """ Join two tables on common columns
 
     Parameters
@@ -332,25 +340,26 @@ class Join(Expr):
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
         joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
-                        if name in self.on_left]
+                  if name in self.on_left]
 
         left = [[name, dt] for name, dt in
-                zip(self.lhs.fields, types_of_fields(self.lhs.fields, self.lhs))
-                           if name not in self.on_left]
+                zip(self.lhs.fields, types_of_fields(
+                    self.lhs.fields, self.lhs))
+                if name not in self.on_left]
 
         right = [[name, dt] for name, dt in
-                zip(self.rhs.fields, types_of_fields(self.rhs.fields, self.rhs))
-                           if name not in self.on_right]
-
+                 zip(self.rhs.fields, types_of_fields(
+                     self.rhs.fields, self.rhs))
+                 if name not in self.on_right]
 
         # Handle overlapping but non-joined case, e.g.
-        left_other  = [name for name, dt in left  if name not in self.on_left]
+        left_other = [name for name, dt in left if name not in self.on_left]
         right_other = [name for name, dt in right if name not in self.on_right]
         overlap = set.intersection(set(left_other), set(right_other))
-        left = [[name+'_left' if name in overlap else name, dt]
+        left = [[name + '_left' if name in overlap else name, dt]
                 for name, dt in left]
-        right = [[name+'_right' if name in overlap else name, dt]
-                for name, dt in right]
+        right = [[name + '_right' if name in overlap else name, dt]
+                 for name, dt in right]
 
         if self.how in ('right', 'outer'):
             left = [[name, option(dt)] for name, dt in left]
@@ -358,7 +367,6 @@ class Join(Expr):
             right = [[name, option(dt)] for name, dt in right]
 
         return dshape(Record(joined + left + right))
-
 
     @property
     def dshape(self):
@@ -404,14 +412,13 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if isinstance(on_right, tuple):
         on_right = list(on_right)
     if not on_left or not on_right:
-        raise ValueError("Can not Join.  No shared columns between %s and %s"%
-                (lhs, rhs))
+        raise ValueError("Can not Join.  No shared columns between %s and %s" %
+                         (lhs, rhs))
     if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
-                        else on_right)
-
+                 else on_right)
 
     how = how.lower()
     if how not in ('inner', 'outer', 'left', 'right'):
@@ -425,9 +432,30 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
 join.__doc__ = Join.__doc__
 
 
-from .expressions import dshape_method_list
+class IsIn(ElemWise):
+    """Return a boolean expression indicating whether another expression
+    contains values that are members of a collection.
+    """
+    __slots__ = '_hash', '_child', '_keys'
+
+    @property
+    def schema(self):
+        return datashape.bool_
+
+
+def isin(child, keys):
+    if isinstance(keys, Expr):
+        raise TypeError('keys argument cannot be an expression, '
+                        'it must be an iterable object such as a list, '
+                        'tuple or set')
+    return IsIn(child, frozenset(keys))
+
+
+isin.__doc__ = IsIn.__doc__
+
 
 dshape_method_list.extend([
     (iscollection, set([sort, head])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
-    ])
+    (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin])),
+])

@@ -1,0 +1,50 @@
+package:
+  name: blaze-core
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '')}}
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+
+source:
+  git_url: ../
+
+requirements:
+  build:
+    - datashape
+    - odo
+    - flask
+    - multipledispatch
+    - numpy
+    - pandas
+    - psutil
+    - python
+    - requests
+    - sqlalchemy
+    - toolz
+    - cytoolz
+
+  run:
+    - datashape
+    - odo
+    - flask
+    - multipledispatch
+    - numpy
+    - pandas
+    - psutil
+    - python
+    - requests
+    - sqlalchemy
+    - toolz
+    - cytoolz
+
+test:
+  requires:
+    - pytest
+    - coverage
+
+  commands:
+    - py.test -x --pyargs blaze
+
+about:
+  home: http://blaze.pydata.org
+  license: BSD

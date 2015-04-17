@@ -56,21 +56,12 @@ def test_table_name():
     with pytest.raises(AttributeError):
         r.name
 
+
 def test_shape():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.shape
     assert isinstance(t.shape, tuple)
     assert len(t.shape) == 1
-
-def test_table_symbol_bool():
-    t = TableSymbol('t', '10 * {name: string, amount: int}')
-    assert t.__bool__() == True
-
-
-def test_nonzero():
-    t = TableSymbol('t', '10 * {name: string, amount: int}')
-    assert t
-    assert (not not t) is True
 
 
 def test_eq():
@@ -191,7 +182,6 @@ def test_selection_path_check():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     t2 = t[t.name == 'Alice']
     t3 = t2[t2.amount > 0]
-    assert t3
 
 
 def test_path_issue():
@@ -199,7 +189,7 @@ def test_path_issue():
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 
-    assert t2.sizes in t2.children
+    assert builtins.any(t2.sizes.isidentical(node) for node in t2.children)
 
 
 def test_getattr_doesnt_override_properties():
@@ -334,12 +324,9 @@ def test_unary_ops():
 def test_reduction():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = sum(t['amount'])
-    print(type(r.dshape))
-    print(type(dshape('int32')))
-    print(r.dshape)
-    assert r.dshape in (dshape('int32'),
-                        dshape('{amount: int32}'),
-                        dshape('{amount_sum: int32}'))
+    assert r.dshape in (dshape('int64'),
+                        dshape('{amount: int64}'),
+                        dshape('{amount_sum: int64}'))
 
     assert 'amount' not in str(t.count().dshape)
 
@@ -364,8 +351,8 @@ def test_reduction_name():
 
 def test_max_min_class():
     t = TableSymbol('t', '{name: string, amount: int32}')
-    assert str(max(t).dshape) == '{ name : string, amount : int32 }'
-    assert str(min(t).dshape) == '{ name : string, amount : int32 }'
+    assert str(max(t).dshape) == '{name: string, amount: int32}'
+    assert str(min(t).dshape) == '{name: string, amount: int32}'
 
 
 @pytest.fixture
@@ -430,7 +417,7 @@ class TestScalarArithmetic(object):
 def test_summary():
     t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
     s = summary(total=t.amount.sum(), num=t.id.count())
-    assert s.dshape == dshape('{num: int32, total: int32}')
+    assert s.dshape == dshape('{num: int32, total: int64}')
     assert hash(s)
     assert eval(str(s)).isidentical(s)
 
@@ -476,6 +463,7 @@ def test_by_summary():
     b = by(t['name'], summary(sum=sum(t['amount'])))
 
     assert a.isidentical(b)
+
 
 def test_by_summary_printing():
     t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
@@ -658,13 +646,15 @@ def test_common_subexpression():
 def test_schema_of_complex_interaction():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     expr = (a['x'] + a['y']) / a['z']
-    assert expr.schema == dshape('real')
+    assert expr.schema == dshape('float64')
 
     expr = expr.label('foo')
-    assert expr.schema == dshape('real')
+    assert expr.schema == dshape('float64')
+
 
 def iscolumn(x):
     return isscalar(x.dshape.measure)
+
 
 def test_iscolumn():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
@@ -818,7 +808,6 @@ class TestRepr(object):
         assert s == ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
                      " _schema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
-
 
 
 def test_count_values():

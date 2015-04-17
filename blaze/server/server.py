@@ -7,25 +7,20 @@ except ImportError:
     pass
 
 import blaze
-from collections import Iterator
 import socket
 import json
-from cytoolz import first, merge, valmap, assoc
+from toolz import assoc
 from functools import partial, wraps
 from blaze import into, compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
-from datashape.predicates import iscollection
-from ..interactive import InteractiveSymbol
+from datashape.predicates import iscollection, isscalar
+from ..interactive import InteractiveSymbol, coerce_scalar
 from ..utils import json_dumps
-from ..expr import Expr, Symbol, Selection, Broadcast, symbol
-from ..expr.parser import exprify
-from .. import expr
+from ..expr import Expr, symbol
 
-from ..compatibility import map
 from datashape import Mono, discover
 
-from .index import parse_index
 
 __all__ = 'Server', 'to_tree', 'from_tree'
 
@@ -33,11 +28,21 @@ __all__ = 'Server', 'to_tree', 'from_tree'
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
 DEFAULT_PORT = 6363
 
+
 class Server(object):
+
     """ Blaze Data Server
 
     Host local data through a web API
 
+    Parameters
+    ----------
+    data : ``dict`` or ``None``, optional
+        A dictionary mapping dataset name to any data format that blaze
+        understands.
+
+    Examples
+    --------
     >>> from pandas import DataFrame
     >>> df = DataFrame([[1, 'Alice',   100],
     ...                 [2, 'Bob',    -200],
@@ -53,13 +58,16 @@ class Server(object):
 
     def __init__(self, data=None):
         app = self.app = Flask('blaze.server.server')
-        self.data = data or dict()
+        if data is None:
+            data = dict()
+        self.data = data
 
         for args, kwargs, func in routes:
             func2 = wraps(func)(partial(func, self.data))
             app.route(*args, **kwargs)(func2)
 
     def run(self, *args, **kwargs):
+        """Run the server"""
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
         try:
@@ -71,6 +79,7 @@ class Server(object):
 
 routes = list()
 
+
 def route(*args, **kwargs):
     def f(func):
         routes.append((args, kwargs, func))
@@ -81,8 +90,6 @@ def route(*args, **kwargs):
 @route('/datashape')
 def dataset(data):
     return str(discover(data))
-    return json.dumps(dict((k, str(discover(v))) for k, v in datasets.items()),
-                      default=json_dumps)
 
 
 def to_tree(expr, names=None):
@@ -142,7 +149,8 @@ def to_tree(expr, names=None):
         return to_tree(expr.as_slice(), names=names)
     if isinstance(expr, slice):
         return {'op': 'slice',
-                'args': [to_tree(arg, names=names) for arg in [expr.start, expr.stop, expr.step]]}
+                'args': [to_tree(arg, names=names) for arg in
+                         [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, Mono):
         return str(expr)
     elif isinstance(expr, InteractiveSymbol):
@@ -185,8 +193,7 @@ def from_tree(expr, namespace=None):
 
     Parameters
     ----------
-
-    expr: dict
+    expr : dict
 
     Examples
     --------
@@ -235,7 +242,8 @@ def from_tree(expr, namespace=None):
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
         if 'slice' == op:
-            return slice(*[from_tree(arg, namespace) for arg in args])
+            return expr_utils._slice(*[from_tree(arg, namespace)
+                                       for arg in args])
         if hasattr(blaze.expr, op):
             cls = getattr(blaze.expr, op)
         else:
@@ -276,6 +284,8 @@ def compserver(dataset):
 
     if iscollection(expr.dshape):
         result = into(list, result)
+    elif isscalar(expr.dshape):
+        result = coerce_scalar(result, str(expr.dshape))
 
     return json.dumps({'datashape': str(expr.dshape),
                        'data': result}, default=json_dumps)

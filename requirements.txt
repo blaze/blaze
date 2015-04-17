@@ -1,5 +1,5 @@
 datashape
-into
+odo
 numpy >= 1.7
 pandas
 multipledispatch >= 0.4.7
@@ -14,3 +14,4 @@ pymongo
 psutil
 pytest
 bcolz
+numba

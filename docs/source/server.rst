@@ -4,7 +4,7 @@ Server
 
 Blaze provides uniform access to a variety of common data formats.  Blaze
 Server builds off of this uniform interface to host data remotely through a
-simple REST-ful API.
+JSON web API.
 
 Setting up a Blaze Server
 =========================
@@ -43,7 +43,7 @@ Then we host this publicly on port ``6363``
 
 A Server is the following
 
-1.  A mapping of names to datasets
+1.  A dataset that blaze understands or dictionary of such datasets
 2.  A Flask_ app.
 
 With this code our machine is now hosting our CSV file through a
@@ -162,10 +162,10 @@ do work for us
 
    # Client code, run this in a separate process from the Server
 
-   from blaze import *
-   t = Data('blaze://localhost:6363')
+   >>> from blaze import Data, by
+   >>> t = Data('blaze://localhost:6363')  # doctest: +SKIP
 
-   t
+   >>> t  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -179,13 +179,12 @@ do work for us
    9            4.9          3.1           1.5          0.1  Iris-setosa
    ...
 
-   by(t.species, min=t.petal_length.min(),
-                 max=t.petal_length.max())
+   >>> by(t.species, min=t.petal_length.min(),
+   ...               max=t.petal_length.max())  # doctest: +SKIP
               species  max  min
    0   Iris-virginica  6.9  4.5
    1      Iris-setosa  1.9  1.0
    2  Iris-versicolor  5.1  3.0
-
 
 We interact on the client machine through the data object but computations on
 this object cause communications through the web API, resulting in seemlessly

@@ -19,10 +19,13 @@ import operator
 import re
 from collections import Iterator
 from functools import partial
+import toolz
 from toolz import map, filter, compose, juxt, identity, tail
-from cytoolz import groupby, reduceby, unique, take, concat, first, nth, pluck
+try:
+    from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
+except ImportError:
+    from toolz import groupby, reduceby, unique, take, concat, nth, pluck
 import datetime
-import cytoolz
 import toolz
 import math
 from datashape.predicates import isscalar, iscollection
@@ -30,8 +33,8 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Summary, Like,
-                    DateTime, Date, Time, Millisecond, symbol, ElemWise,
+                    By, Sort, Head, Apply, Summary, Like, IsIn,
+                    DateTime, Date, Time, Millisecond, ElemWise, symbol,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp)
 from ..expr import reductions
@@ -42,7 +45,8 @@ from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize, base
 
 from ..utils import listpack
-from .pyfunc import lambdify, broadcast_collect
+from ..expr.broadcast import broadcast_collect
+from .pyfunc import lambdify
 from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
@@ -53,6 +57,7 @@ from math import *
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator, type(dict().items()))
+
 
 @dispatch(Expr, Sequence)
 def pre_compute(expr, seq, scope=None, **kwargs):
@@ -73,7 +78,7 @@ def pre_compute(expr, seq, scope=None, **kwargs):
 
 @dispatch(Expr, Sequence)
 def optimize(expr, seq):
-    return broadcast_collect( expr)
+    return broadcast_collect(expr)
 
 
 def child(x):
@@ -126,15 +131,20 @@ def rowfunc(t):
     See Also:
         compute<Rowwise, Sequence>
     """
-    from cytoolz.curried import get
+    from toolz.itertoolz import getter
     indices = [t._child.fields.index(col) for col in t.fields]
-    return get(indices)
+    return getter(indices)
 
 
 @dispatch(Field)
 def rowfunc(t):
     index = t._child.fields.index(t._name)
-    return lambda x: x[index]
+    return lambda x, index=index: x[index]
+
+
+@dispatch(IsIn)
+def rowfunc(t):
+    return t._keys.__contains__
 
 
 @dispatch(Broadcast)
@@ -145,6 +155,7 @@ def rowfunc(t):
 @dispatch(Arithmetic)
 def rowfunc(expr):
     return eval(funcstr(expr))
+
 
 @dispatch(Map)
 def rowfunc(t):
@@ -163,9 +174,11 @@ def rowfunc(t):
 def rowfunc(t):
     return lambda row: getattr(row, t.attr)
 
+
 @dispatch(UTCFromTimestamp)
 def rowfunc(t):
     return datetime.datetime.utcfromtimestamp
+
 
 @dispatch((Date, Time))
 def rowfunc(t):
@@ -186,13 +199,16 @@ def rowfunc(expr):
 def rowfunc(expr):
     return getattr(math, type(expr).__name__)
 
+
 @dispatch(USub)
 def rowfunc(expr):
     return operator.neg
 
+
 @dispatch(Not)
 def rowfunc(expr):
     return operator.invert
+
 
 @dispatch(Arithmetic)
 def rowfunc(expr):
@@ -262,6 +278,7 @@ def compute_up(t, seq, **kwargs):
     else:
         return func(seq)
 
+
 @dispatch(Broadcast, Sequence)
 def compute_up(t, seq, **kwargs):
     func = rowfunc(t)
@@ -312,7 +329,7 @@ def compute_up_1d(expr, seq, **kwargs):
     try:
         return len(seq)
     except TypeError:
-        return cytoolz.count(seq)
+        return toolz.count(seq)
 
 
 @dispatch(ElemWise, base)
@@ -362,13 +379,13 @@ def _std(seq, unbiased):
 
 @dispatch(count, Sequence)
 def compute_up_1d(t, seq, **kwargs):
-    return cytoolz.count(filter(None, seq))
+    return toolz.count(filter(None, seq))
 
 
 @dispatch(Distinct, Sequence)
 def compute_up(t, seq, **kwargs):
     try:
-        row = first(seq)
+        row = toolz.first(seq)
     except StopIteration:
         return ()
     seq = concat([[row], seq]) # re-add row to seq
@@ -425,6 +442,7 @@ def child(expr):
     if len(expr._inputs) > 1:
         raise ValueError()
     return expr._inputs[0]
+
 
 def reduce_by_funcs(t):
     """ Create grouping func and binary operator for a by-reduction/summary
@@ -508,7 +526,10 @@ def pair_assemble(t):
 
     This is mindful to shared columns as well as missing records
     """
-    from cytoolz import get  # not curried version
+    try:
+        from cytoolz import get  # not curried version
+    except:
+        from toolz import get
     on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
     on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 

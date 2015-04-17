@@ -1,26 +1,28 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape import dshape, real, int_, bool_
-
-from .expressions import Expr
+from datashape import real, int_, bool_
 from .arithmetic import UnaryOp
 
 # Here follows a large number of unary operators.  These were selected by
 # taking the intersection of the functions in ``math`` and ``numpy``
 
-__all__ = ['sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp', 'expm1',
-        'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh', 'atan',
-        'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc', 'isnan',
-        'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
+__all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
+           'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
+           'atan', 'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc',
+           'isnan', 'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
+
 
 class Math(UnaryOp):
     pass
 
+
 class RealMath(Math):
-    """ Mathematical unary operator with real valued dshape like sin, or exp """
+    """Mathematical unary operator with real valued dshape like sin, or exp
+    """
     _dtype = real
 
 
+class abs(RealMath): pass
 class sqrt(RealMath): pass
 
 class sin(RealMath): pass

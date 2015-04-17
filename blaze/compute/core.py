@@ -13,7 +13,7 @@ from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
 
-base = (numbers.Real, basestring, date, datetime)
+base = (numbers.Number, basestring, date, datetime)
 
 
 @dispatch(Expr, object)

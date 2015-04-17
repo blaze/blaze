@@ -41,19 +41,20 @@ Migrate CSV files into a SQL database
 
 .. code-block:: python
 
-   >>> into('sqlite:///myfile.db::iris', 'blaze/examples/data/iris.csv') # doctest: +SKIP
+   >>> from odo import odo
+   >>> odo('blaze/examples/data/iris.csv', 'sqlite:///myfile.db::iris') # doctest: +SKIP
    Table('iris', MetaData(bind=Engine(sqlite:///myfile.db)), ...)
 
-What sorts of URI's does Blaze support?
----------------------------------------
+What sorts of URIs does Blaze support?
+--------------------------------------
 
 * Paths to files on disk, including the following extensions
     * ``.csv``
     * ``.json``
     * ``.csv.gz/json.gz``
     * ``.hdf5`` (uses ``h5py``)
-    * ``.hdf5::/datapath`` (uses ``h5py``)
-    * ``.h5::/datapath`` (uses ``PyTables``)
+    * ``.hdf5::/datapath``
+    * ``hdfstore://filename.hdf5`` (uses special ``pandas.HDFStore`` format)
     * ``.bcolz``
     * ``.xls(x)``
 * SQLAlchemy strings like the following
@@ -71,7 +72,7 @@ In all cases when a location or table name is required in addition to the tradit
 
 How it works
 ------------
-
+Blaze depends on the `Odo <https://github.com/ContinuumIO/odo>`_ library to handle URIs.
 URIs are managed through the ``resource`` function which is dispatched based on regular expressions.  For example a simple resource function to handle ``.json`` files might look like the following (although Blaze's actual solution is a bit more comprehensive):
 
 .. code-block:: python
@@ -84,15 +85,6 @@ URIs are managed through the ``resource`` function which is dispatched based on 
        with open(uri):
            data = json.load(uri)
        return data
-
-
-Where does this work in Blaze?
-------------------------------
-
-URIs are supported through the resource function internally.  Other user-facing functions use resource if they are given a string.  So far this includes the following
-
-*  ``Data`` as shown at the top of this page
-*  ``into`` as shown at the top of this page
 
 
 Can I extend this to my own types?

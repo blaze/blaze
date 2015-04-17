@@ -4,17 +4,20 @@ import datetime
 
 import numpy as np
 from pandas import DataFrame, Series
-from datashape import to_numpy
+from datashape import to_numpy, to_numpy_dtype
+from numbers import Number
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice
-from ..expr import std, var, count, nunique, Summary
+from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
+from ..expr import std, var, count, nunique, Summary, IsIn
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..expr import UTCFromTimestamp, DateTimeTruncate
+from ..expr import Transpose, TensorDot
+from ..utils import keywords
 
 from .core import base, compute
 from ..dispatch import dispatch
-from into import into
+from odo import into
 import pandas as pd
 
 __all__ = ['np']
@@ -26,7 +29,7 @@ def compute_up(c, x, **kwargs):
         return x[c._name]
     if not x.dtype.names and x.shape[1] == len(c._child.fields):
         return x[:, c._child.fields.index(c._name)]
-    raise NotImplementedError() # pragma: no cover
+    raise NotImplementedError()  # pragma: no cover
 
 
 @dispatch(Projection, np.ndarray)
@@ -35,13 +38,21 @@ def compute_up(t, x, **kwargs):
         return x[t.fields]
     if not x.dtype.names and x.shape[1] == len(t._child.fields):
         return x[:, [t._child.fields.index(col) for col in t.fields]]
-    raise NotImplementedError() # pragma: no cover
+    raise NotImplementedError()  # pragma: no cover
 
 
-@dispatch(Broadcast, np.ndarray)
-def compute_up(t, x, **kwargs):
-    d = dict((t._child[c]._expr, x[c]) for c in t._child.fields)
-    return compute(t._expr, d)
+try:
+    from .numba import broadcast_numba as broadcast_ndarray
+except ImportError:
+    def broadcast_ndarray(t, *data, **kwargs):
+        scope = kwargs.pop('scope')
+        d = dict(zip(t._scalar_expr._leaves(), data))
+        return compute(t._scalar_expr, d, **kwargs)
+
+
+compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
+for i in range(2, 6):
+    compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
@@ -77,12 +88,22 @@ def compute_up(t, x, **kwargs):
     return -x
 
 
+inat = np.datetime64('NaT').view('int64')
+
+
 @dispatch(count, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if np.issubdtype(x.dtype, np.float): # scalar dtype
-        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis)
+    result_dtype = to_numpy_dtype(t.dshape)
+    if issubclass(x.dtype.type, (np.floating, np.object_)):
+        return pd.notnull(x).sum(keepdims=t.keepdims, axis=t.axis,
+                                 dtype=result_dtype)
+    elif issubclass(x.dtype.type, np.datetime64):
+        return (x.view('int64') != inat).sum(keepdims=t.keepdims, axis=t.axis,
+                                             dtype=result_dtype)
     else:
-        return np.ones(x.shape).sum(keepdims=t.keepdims, axis=t.axis)
+        return np.ones(x.shape, dtype=result_dtype).sum(keepdims=t.keepdims,
+                                                        axis=t.axis,
+                                                        dtype=result_dtype)
 
 
 @dispatch(nunique, np.ndarray)
@@ -96,10 +117,15 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Reduction, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)(axis=t.axis, keepdims=t.keepdims)
+    # can't use the method here, as they aren't Python functions
+    reducer = getattr(np, t.symbol)
+    if 'dtype' in keywords(reducer):
+        return reducer(x, axis=t.axis, keepdims=t.keepdims,
+                       dtype=to_numpy_dtype(t.schema))
+    return reducer(x, axis=t.axis, keepdims=t.keepdims)
 
 
-def axify(expr, axis):
+def axify(expr, axis, keepdims=False):
     """ inject axis argument into expression
 
     Helper function for compute_up(Summary, np.ndarray)
@@ -110,7 +136,8 @@ def axify(expr, axis):
     >>> axify(expr, axis=0)
     sum(s, axis=(0,))
     """
-    return type(expr)(expr._child, axis=axis)
+    return type(expr)(expr._child, axis=axis, keepdims=keepdims)
+
 
 @dispatch(Summary, np.ndarray)
 def compute_up(expr, data, **kwargs):
@@ -118,7 +145,7 @@ def compute_up(expr, data, **kwargs):
     if shape:
         result = np.empty(shape=shape, dtype=dtype)
         for n, v in zip(expr.names, expr.values):
-            result[n] = compute(axify(v, expr.axis), data)
+            result[n] = compute(axify(v, expr.axis, expr.keepdims), data)
         return result
     else:
         return tuple(compute(axify(v, expr.axis), data) for v in expr.values)
@@ -126,7 +153,8 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch((std, var), np.ndarray)
 def compute_up(t, x, **kwargs):
-    return getattr(x, t.symbol)(ddof=t.unbiased)
+    return getattr(x, t.symbol)(ddof=t.unbiased, axis=t.axis,
+            keepdims=t.keepdims)
 
 
 @dispatch(Distinct, np.ndarray)
@@ -136,13 +164,13 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Sort, np.ndarray)
 def compute_up(t, x, **kwargs):
-    if (t.key in x.dtype.names or
+    if x.dtype.names is None:  # not a struct array
+        result = np.sort(x)
+    elif (t.key in x.dtype.names or  # struct array
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
     elif t.key:
-        raise NotImplementedError("Sort key %s not supported" % str(t.key))
-    else:
-        result = np.sort(x)
+        raise NotImplementedError("Sort key %s not supported" % t.key)
 
     if not t.ascending:
         result = result[::-1]
@@ -153,6 +181,7 @@ def compute_up(t, x, **kwargs):
 @dispatch(Head, np.ndarray)
 def compute_up(t, x, **kwargs):
     return x[:t.n]
+
 
 @dispatch(Label, np.ndarray)
 def compute_up(t, x, **kwargs):
@@ -169,9 +198,11 @@ def compute_up(t, x, **kwargs):
 def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel._child: x})]
 
+
 @dispatch(UTCFromTimestamp, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    return (data * 1e6).astype('M8[us]')
+    return (data * 1e6).astype('datetime64[us]')
+
 
 @dispatch(Slice, np.ndarray)
 def compute_up(expr, x, **kwargs):
@@ -254,3 +285,29 @@ def chunks(x, chunksize=1024):
     while start < n:
         yield x[start:start + chunksize]
         start += chunksize
+
+
+@dispatch(Transpose, np.ndarray)
+def compute_up(expr, x, **kwargs):
+    return np.transpose(x, axes=expr.axes)
+
+
+@dispatch(TensorDot, np.ndarray, np.ndarray)
+def compute_up(expr, lhs, rhs, **kwargs):
+    return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])
+
+
+@dispatch(IsIn, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return np.in1d(data, tuple(expr._keys))
+
+
+@compute_up.register(Join, DataFrame, np.ndarray)
+@compute_up.register(Join, np.ndarray, DataFrame)
+@compute_up.register(Join, np.ndarray, np.ndarray)
+def join_ndarray(expr, lhs, rhs, **kwargs):
+    if isinstance(lhs, np.ndarray):
+        lhs = DataFrame(lhs)
+    if isinstance(rhs, np.ndarray):
+        rhs = DataFrame(rhs)
+    return compute_up(expr, lhs, rhs, **kwargs)

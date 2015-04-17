@@ -2,14 +2,14 @@ import pytest
 
 pytest.importorskip('sqlalchemy')
 import gzip
-from cytoolz import first
+from toolz import first
 import sqlalchemy
 import sqlalchemy as sa
 from sqlalchemy.exc import OperationalError
 from datashape import dshape
 import datashape
 import sys
-from into import into, drop
+from odo import into, drop
 
 from blaze import create_index, resource
 from blaze.sql import create_index
@@ -29,11 +29,11 @@ def sql():
 def test_column(sql):
     t = Data(sql)
 
-    r = compute(t['x'])
+    r = list(t['x'])
     assert r == [1, 10, 100]
-    assert compute(t[['x']]) == [(1,), (10,), (100,)]
+    assert list(t[['x']]) == [(1,), (10,), (100,)]
 
-    assert compute(t.count()) == 3
+    assert int(t.count()) == 3
 
 
 def test_drop(sql):

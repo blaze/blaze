@@ -1,23 +1,27 @@
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import pytest
+
+import numpy as np
+import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary
-from into import into
-from datashape import discover, to_numpy
+from blaze.expr import symbol, by, exp, summary, Broadcast, join
+from blaze import sin
+from odo import into
+from datashape import discover, to_numpy, dshape
 
-
-t = symbol('t', 'var * {id: int, name: string, amount: int}')
 
 x = np.array([(1, 'Alice', 100),
               (2, 'Bob', -200),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)],
-            dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
+             dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
+
+t = symbol('t', discover(x))
+
 
 def eq(a, b):
     c = a == b
@@ -53,6 +57,9 @@ def test_UnaryOp():
     assert eq(compute(exp(t['amount']), x),
               np.exp(x['amount']))
 
+    assert eq(compute(abs(-t['amount']), x),
+              abs(-x['amount']))
+
 
 def test_Neg():
     assert eq(compute(-t['amount'], x),
@@ -77,9 +84,19 @@ def test_Reductions():
     assert compute(t['amount'].std(unbiased=True), x) == x['amount'].std(ddof=1)
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
+    assert compute(t['amount'][0], x) == x['amount'][0]
+    assert compute(t['amount'][-1], x) == x['amount'][-1]
+
+
+def test_count_string():
+    s = symbol('name', 'var * ?string')
+    x = np.array(['Alice', np.nan, 'Bob', 'Denis', 'Edith'], dtype='object')
+    assert compute(s.count(), x) == 4
+
 
 def test_reductions_on_recarray():
     assert compute(t.count(), x) == len(x)
+
 
 def test_count_nan():
     t = symbol('t', '3 * ?real')
@@ -111,6 +128,9 @@ def test_sort():
 
     assert eq(compute(t.sort(['amount', 'id']), x),
               np.sort(x, order=['amount', 'id']))
+
+    assert eq(compute(t.amount.sort(), x),
+              np.sort(x['amount']))
 
 
 def test_head():
@@ -147,19 +167,22 @@ def test_compute_up_projection():
     assert eq(compute_up(t[['name', 'amount']], x), x[['name', 'amount']])
 
 
-def test_slice():
-    for s in [0, slice(2), slice(1, 3), slice(None, None, 2)]:
-        assert (compute(t[s], x) == x[s]).all()
-
-
-
 ax = np.arange(30, dtype='f4').reshape((5, 3, 2))
 
 a = symbol('a', discover(ax))
 
+def test_slice():
+    inds = [0, slice(2), slice(1, 3), slice(None, None, 2), [1, 2, 3],
+            (0, 1), (0, slice(1, 3)), (slice(0, 3), slice(3, 1, -1)),
+            (0, [1, 2])]
+    for s in inds:
+        assert (compute(a[s], ax) == ax[s]).all()
+
+
 def test_array_reductions():
     for axis in [None, 0, 1, (0, 1), (2, 1)]:
         assert eq(compute(a.sum(axis=axis), ax), ax.sum(axis=axis))
+        assert eq(compute(a.std(axis=axis), ax), ax.std(axis=axis))
 
 
 def test_array_reductions_with_keepdims():
@@ -174,7 +197,7 @@ def test_summary_on_ndarray():
 
     result = compute(summary(total=a.sum(), min=a.min(), keepdims=True), ax)
     expected = np.array([(ax.min(), ax.sum())],
-                        dtype=[('min', 'f4'), ('total', 'f4')])
+                        dtype=[('min', 'float32'), ('total', 'float64')])
     assert result.ndim == ax.ndim
     assert eq(expected, result)
 
@@ -236,7 +259,6 @@ def test_datetime_truncation():
     assert into(list, compute(s.truncate(1, 'week'), dts))[0].isoweekday() == 7
 
 
-
 def test_hour():
     dts = [datetime(2000, 6, 20,  1, 00, 00),
            datetime(2000, 6, 20, 12, 59, 59),
@@ -277,3 +299,133 @@ def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
     p = datetime(2014, 11, 11)
     expr = s.truncate(1, 'week')
     assert compute(expr, n) == compute(expr, p)
+
+
+def test_add_multiple_ndarrays():
+    a = symbol('a', '5 * 4 * int64')
+    b = symbol('b', '5 * 4 * float32')
+    x = np.arange(9, dtype='int64').reshape(3, 3)
+    y = (x + 1).astype('float32')
+    expr = sin(a) + 2 * b
+    scope = {a: x, b: y}
+    expected = sin(x) + 2 * y
+
+    # check that we cast correctly
+    assert expr.dshape == dshape('5 * 4 * float64')
+
+    np.testing.assert_array_equal(compute(expr, scope), expected)
+    np.testing.assert_array_equal(compute(expr, scope, optimize=False),
+                                  expected)
+
+
+nA = np.arange(30, dtype='f4').reshape((5, 6))
+ny = np.arange(6, dtype='f4')
+
+A = symbol('A', discover(nA))
+y = symbol('y', discover(ny))
+
+
+def test_transpose():
+    assert eq(compute(A.T, nA), nA.T)
+    assert eq(compute(A.transpose((0, 1)), nA), nA)
+
+
+def test_dot():
+    assert eq(compute(y.dot(y), {y: ny}), np.dot(ny, ny))
+    assert eq(compute(A.dot(y), {A: nA, y: ny}), np.dot(nA, ny))
+
+
+def test_subexpr_datetime():
+    data = pd.date_range(start='01/01/2010', end='01/04/2010', freq='D').values
+    s = symbol('s', discover(data))
+    result = compute(s.truncate(days=2).day, data)
+    expected = np.array([31, 2, 2, 4])
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_mixed_types():
+    x = np.array([[(4, 180), (4, 184), (4, 188), (4, 192), (4, 196)],
+                  [(4, 660), (4, 664), (4, 668), (4, 672), (4, 676)],
+                  [(4, 1140), (4, 1144), (4, 1148), (4, 1152), (4, 1156)],
+                  [(4, 1620), (4, 1624), (4, 1628), (4, 1632), (4, 1636)],
+                  [(4, 2100), (4, 2104), (4, 2108), (4, 2112), (4, 2116)]],
+                 dtype=[('count', '<i4'), ('total', '<i8')])
+    aggregate = symbol('aggregate', discover(x))
+    result = compute(aggregate.total.sum(axis=(0,)) /
+                     aggregate.count.sum(axis=(0,)), x)
+    expected = (x['total'].sum(axis=0, keepdims=True) /
+                x['count'].sum(axis=0, keepdims=True)).squeeze()
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_broadcast_compute_against_numbers_and_arrays():
+    A = symbol('A', '5 * float32')
+    a = symbol('a', 'float32')
+    b = symbol('b', 'float32')
+    x = np.arange(5, dtype='f4')
+    expr = Broadcast((A, b), (a, b), a + b)
+    result = compute(expr, {A: x, b: 10})
+    assert eq(result, x + 10)
+
+
+def test_map():
+    pytest.importorskip('numba')
+    a = np.arange(10.0)
+    f = lambda x: np.sin(x) + 1.03 * np.cos(x) ** 2
+    x = symbol('x', discover(a))
+    expr = x.map(f, 'float64')
+    result = compute(expr, a)
+    expected = f(a)
+
+    # make sure we're not going to pandas here
+    assert type(result) == np.ndarray
+    assert type(result) == type(expected)
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_vector_norm():
+    x = np.arange(30).reshape((5, 6))
+    s = symbol('x', discover(x))
+
+    assert eq(compute(s.vnorm(), x),
+              np.linalg.norm(x))
+    assert eq(compute(s.vnorm(ord=1), x),
+              np.linalg.norm(x.flatten(), ord=1))
+    assert eq(compute(s.vnorm(ord=4, axis=0), x),
+              np.linalg.norm(x, ord=4, axis=0))
+
+    expr = s.vnorm(ord=4, axis=0, keepdims=True)
+    assert expr.shape == compute(expr, x).shape
+
+
+def test_join():
+    cities = np.array([('Alice', 'NYC'),
+                       ('Alice', 'LA'),
+                       ('Bob', 'Chicago')],
+                      dtype=[('name', 'S7'), ('city', 'O')])
+
+    c = symbol('cities', discover(cities))
+
+    expr = join(t, c, 'name')
+    result = compute(expr, {t: x, c: cities})
+    assert (b'Alice', 1, 100, 'LA') in into(list, result)
+
+
+def test_query_with_strings():
+    b = np.array([('a', 1), ('b', 2), ('c', 3)],
+                 dtype=[('x', 'S1'), ('y', 'i4')])
+
+    s = symbol('s', discover(b))
+    assert compute(s[s.x == b'b'], b).tolist() == [(b'b', 2)]
+
+
+@pytest.mark.parametrize('keys', [['a'], list('bc')])
+def test_isin(keys):
+    b = np.array([('a', 1), ('b', 2), ('c', 3), ('a', 4), ('c', 5), ('b', 6)],
+                 dtype=[('x', 'S1'), ('y', 'i4')])
+
+    s = symbol('s', discover(b))
+    result = compute(s.x.isin(keys), b)
+    expected = np.in1d(b['x'], keys)
+    np.testing.assert_array_equal(result, expected)

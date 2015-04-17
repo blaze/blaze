@@ -1,24 +1,33 @@
 from __future__ import absolute_import, division, print_function
 
+try:
+    import h5py  # if we import h5py after tables we segfault
+except ImportError:
+    pass
+
 from pandas import DataFrame
-from into import into, convert, append, resource, drop
-from into.backends.csv import CSV
+from odo import odo, convert, append, resource, drop
+from odo.backends.csv import CSV
+from odo.backends.json import JSON, JSONLines
 
 from multipledispatch import halt_ordering, restart_ordering
 
 halt_ordering() # Turn off multipledispatch ordering
 
 from datashape import dshape, discover
-from .expr import (Symbol, TableSymbol, symbol)
+from .utils import ignoring
+from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
         mean, merge, nunique, relabel, selection, sort, summary, var, transform)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
+from .expr.arrays import (tensordot, transpose)
 from .expr.functions import *
 from .index import create_index
-from .json import *
 from .interactive import *
+from .compute.pmap import set_default_pmap
 from .compute.csv import *
+from .compute.json import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
@@ -26,65 +35,42 @@ from .compute.core import *
 from .compute.core import compute
 from .cached import CachedDataset
 
-try:
+with ignoring(ImportError):
     from .server import *
-except ImportError:
-    pass
-
-try:
+with ignoring(ImportError):
     from .sql import *
     from .compute.sql import *
-except ImportError:
-    pass
 
-try:
-    from .spark import *
-except (AttributeError, ImportError):
-    pass
-try:
+with ignoring(ImportError, AttributeError):
+    from .compute.spark import *
+with ignoring(ImportError, TypeError):
     from .compute.sparksql import *
-    from .sparksql import *
-except (ImportError, TypeError):
-    pass
-try:
+with ignoring(ImportError):
     from dynd import nd
     from .compute.dynd import *
-except ImportError:
-    pass
-try:
-    from .h5py import *
+with ignoring(ImportError):
     from .compute.h5py import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
+    from .compute.hdfstore import *
+with ignoring(ImportError):
     from .compute.pytables import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.chunks import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .compute.bcolz import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .mongo import *
     from .compute.mongo import *
-except ImportError:
-    pass
-try:
+with ignoring(ImportError):
     from .pytables import *
     from .compute.pytables import *
-except ImportError:
-    pass
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
 
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.7.0'
+__version__ = '0.7.3'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog

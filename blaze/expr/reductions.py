@@ -1,13 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
 import toolz
-from toolz import first
-from datashape import Record, DataShape
+from datashape import Record, DataShape, dshape
 from datashape import coretypes as ct
+import datashape
+from numpy import inf
 
 from .core import common_subexpression
-from .expressions import Expr, symbol, ndim
-from ..compatibility import builtins
+from .expressions import Expr, ndim
 
 
 class Reduction(Expr):
@@ -20,6 +20,7 @@ class Reduction(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
@@ -32,7 +33,6 @@ class Reduction(Expr):
     350
     """
     __slots__ = '_hash', '_child', 'axis', 'keepdims'
-    _dtype = None
 
     def __init__(self, _child, axis=None, keepdims=False):
         self._child = _child
@@ -43,8 +43,6 @@ class Reduction(Expr):
         if not isinstance(axis, tuple):
             axis = (axis,)
         axis = tuple(sorted(axis))
-        # if builtins.any(ax >= ndim(_child) for ax in axis):
-        #     raise ValueError("Passed axes %s that are greater than ndim" % axis)
         self.axis = axis
         self.keepdims = keepdims
 
@@ -58,7 +56,16 @@ class Reduction(Expr):
             shape = tuple(d
                           for i, d in enumerate(self._child.shape)
                           if i not in axis)
-        return DataShape(*(shape + (self._dtype,)))
+        return DataShape(*(shape + (self.schema,)))
+
+    @property
+    def schema(self):
+        schema = self._child.schema[0]
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            result = toolz.first(schema.types)
+        else:
+            result = schema
+        return DataShape(result)
 
     @property
     def symbol(self):
@@ -88,40 +95,30 @@ class Reduction(Expr):
 
 
 class any(Reduction):
-    _dtype = ct.bool_
+    schema = dshape(ct.bool_)
+
 
 class all(Reduction):
-    _dtype = ct.bool_
+    schema = dshape(ct.bool_)
+
 
 class sum(Reduction):
     @property
-    def _dtype(self):
-        schema = self._child.schema[0]
-        if isinstance(schema, Record) and len(schema.types) == 1:
-            return first(schema.types)
-        else:
-            return schema
+    def schema(self):
+        return DataShape(datashape.maxtype(super(sum, self).schema))
+
 
 class max(Reduction):
-    @property
-    def _dtype(self):
-        schema = self._child.schema[0]
-        if isinstance(schema, Record) and len(schema.types) == 1:
-            return first(schema.types)
-        else:
-            return schema
+    pass
+
 
 class min(Reduction):
-    @property
-    def _dtype(self):
-        schema = self._child.schema[0]
-        if isinstance(schema, Record) and len(schema.types) == 1:
-            return first(schema.types)
-        else:
-            return schema
+    pass
+
 
 class mean(Reduction):
-    _dtype = ct.real
+    schema = dshape(ct.real)
+
 
 class var(Reduction):
     """Variance
@@ -137,11 +134,11 @@ class var(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    _dtype = ct.real
+    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, child, *args, **kwargs)
+        super(var, self).__init__(child, *args, **kwargs)
 
 
 class std(Reduction):
@@ -166,19 +163,21 @@ class std(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    _dtype = ct.real
+    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
-        Reduction.__init__(self, child, *args, **kwargs)
+        super(std, self).__init__(child, *args, **kwargs)
 
 
 class count(Reduction):
     """ The number of non-null elements """
-    _dtype = ct.int_
+    schema = dshape(ct.int32)
+
 
 class nunique(Reduction):
-    _dtype = ct.int_
+    schema = dshape(ct.int32)
+
 
 class nelements(Reduction):
     """Compute the number of elements in a collection, including missing values.
@@ -189,12 +188,12 @@ class nelements(Reduction):
 
     Examples
     --------
-    >>> from blaze import Symbol
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: float64}')
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
     """
-    _dtype = ct.int_
+    schema = dshape(ct.int32)
 
 
 def nrows(expr):
@@ -207,6 +206,7 @@ class Summary(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
 
@@ -214,7 +214,7 @@ class Summary(Expr):
     ...         ['Bob', 200, 2],
     ...         ['Alice', 50, 1]]
 
-    >>> from blaze.compute.python import compute
+    >>> from blaze import compute
     >>> compute(expr, data)
     (2, 350)
     """
@@ -238,7 +238,7 @@ class Summary(Expr):
                           for i, d in enumerate(self._child.shape)
                           if i not in axis)
         measure = Record(list(zip(self.names,
-                                  [v._dtype for v in self.values])))
+                                  [v.schema for v in self.values])))
         return DataShape(*(shape + (measure,)))
 
     def __str__(self):
@@ -252,8 +252,8 @@ class Summary(Expr):
 
 
 def summary(keepdims=False, axis=None, **kwargs):
-    items = sorted(kwargs.items(), key=first)
-    names = tuple(map(first, items))
+    items = sorted(kwargs.items(), key=toolz.first)
+    names = tuple(map(toolz.first, items))
     values = tuple(map(toolz.second, items))
     child = common_subexpression(*values)
 
@@ -277,9 +277,27 @@ def summary(keepdims=False, axis=None, **kwargs):
 summary.__doc__ = Summary.__doc__
 
 
+def vnorm(expr, ord=None, axis=None, keepdims=False):
+    """ Vector norm
+
+    See np.linalg.norm
+    """
+    if ord is None or ord == 'fro':
+        ord = 2
+    if ord == inf:
+        return max(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord == -inf:
+        return min(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord == 1:
+        return sum(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord % 2 == 0:
+        return sum(expr**ord, axis=axis, keepdims=keepdims)**(1./ord)
+    else:
+        return sum(abs(expr)**ord, axis=axis, keepdims=keepdims)**(1./ord)
+
+
 from datashape.predicates import iscollection, isboolean, isnumeric
-from .expressions import (schema_method_list, dshape_method_list,
-                          method_properties)
+from .expressions import dshape_method_list, method_properties
 
 dshape_method_list.extend([
     (iscollection, set([count, min, max, nelements])),
@@ -288,7 +306,7 @@ dshape_method_list.extend([
     (lambda ds: iscollection(ds) and isboolean(ds),
         set([any, all, sum])),
     (lambda ds: iscollection(ds) and isnumeric(ds),
-        set([mean, sum, mean, min, max, std, var])),
+        set([mean, sum, mean, min, max, std, var, vnorm])),
     ])
 
 method_properties.update([nrows])

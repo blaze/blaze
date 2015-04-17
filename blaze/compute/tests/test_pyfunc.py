@@ -1,8 +1,12 @@
-from blaze.compute.pyfunc import *
-from blaze.compute.pyfunc import _print_python
 import datetime
 
+from blaze.compute.pyfunc import symbol, lambdify, cos, math, broadcast
+from blaze.compute.pyfunc import _print_python
+from blaze.expr.broadcast import broadcast_collect
+
+
 t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
+
 
 def test_simple():
     f = lambdify([t], t.x + t.y)
@@ -23,13 +27,13 @@ def inc(x):
 
 
 def test_map():
-    f = lambdify([t], t.x + t.y.map(inc))
+    f = lambdify([t], t.x + t.y.map(inc, 'int'))
     assert f((1, 2, 3, 4)) == 1 + inc(2)
 
 
 def test_math():
-    f = lambdify([t], t.x + cos(t.y))
-    assert f((1, 0, 3, 4)) == 1 + math.cos(0.0)
+    f = lambdify([t], abs(t.x) + cos(t.y))
+    assert f((-1, 0, 3, 4)) == 1 + math.cos(0.0)
 
 
 def test_datetime_literals_and__print_python():
@@ -47,23 +51,39 @@ def test_broadcast_collect():
     t = symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
 
     expr = t.distinct()
-    expr = expr.x + 2*expr.y
+    expr = expr.x + 2 * expr.y
     expr = expr.distinct()
 
     result = broadcast_collect(expr)
 
     expected = t.distinct()
-    expected = broadcast(expected.x + 2*expected.y, [expected])
+    expected = broadcast(expected.x + 2 * expected.y, [expected])
     expected = expected.distinct()
 
     assert result.isidentical(expected)
 
 
 def test_pyfunc_works_with_invalid_python_names():
-    x = Symbol('x-y.z', 'int')
+    x = symbol('x-y.z', 'int')
     f = lambdify([x], x + 1)
     assert f(1) == 2
 
-    t = Symbol('t', '{"x.y": int, "y z": int}')
+    t = symbol('t', '{"x.y": int, "y z": int}')
     f = lambdify([t], t.x_y + t.y_z)
     assert f((1, 2)) == 3
+
+
+def test_usub():
+    x = symbol('x', 'float64')
+    f = lambdify([x], -x)
+    assert f(1.0) == -1.0
+
+
+def test_not():
+    x = symbol('x', 'bool')
+    f = lambdify([x], ~x)
+    r = f(True)
+    assert isinstance(r, bool) and not r
+
+    r = f(False)
+    assert isinstance(r, bool) and r

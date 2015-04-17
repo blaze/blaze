@@ -10,8 +10,9 @@ from datetime import datetime
 from pandas import DataFrame
 from toolz import pipe
 
+from odo import odo
 from blaze.utils import example
-from blaze import discover, symbol, by, CSV, compute, join, into
+from blaze import discover, symbol, by, CSV, compute, join, into, resource
 from blaze.server.server import Server, to_tree, from_tree
 
 
@@ -25,9 +26,12 @@ events = DataFrame([[1, datetime(2000, 1, 1, 12, 0, 0)],
                     [2, datetime(2000, 1, 2, 12, 0, 0)]],
                    columns=['value', 'when'])
 
+db = resource('sqlite:///' + example('iris.db'))
+
 data = {'accounts': accounts,
           'cities': cities,
-          'events': events}
+          'events': events,
+              'db': db}
 
 server = Server(data)
 
@@ -65,7 +69,7 @@ def test_to_tree():
                               {'op': 'Symbol',
                                'args': [
                                     't',
-                                    'var * { name : string, amount : int32 }',
+                                    'var * {name: string, amount: int32}',
                                     None
                                     ]
                                },
@@ -232,3 +236,31 @@ def test_leaf_symbol():
     b = into(list, cities)
 
     assert list(map(tuple, a)) == b
+
+
+def test_sqlalchemy_result():
+    expr = t.db.iris.head(5)
+    query = {'expr': to_tree(expr)}
+
+    response = test.post('/compute.json',
+                         data = json.dumps(query),
+                         content_type='application/json')
+
+    assert 'OK' in response.status
+    result = json.loads(response.data.decode('utf-8'))['data']
+    assert all(isinstance(item, (tuple, list)) for item in result)
+
+
+def test_server_accepts_non_nonzero_ables():
+    Server(DataFrame())
+
+
+def test_server_can_compute_sqlalchemy_reductions():
+    expr = t.db.iris.petal_length.sum()
+    query = {'expr': to_tree(expr)}
+    response = test.post('/compute.json',
+                         data=json.dumps(query),
+                         content_type='application/json')
+    assert 'OK' in response.status
+    result = json.loads(response.data.decode('utf-8'))['data']
+    assert result == odo(compute(expr, {t: data}), int)

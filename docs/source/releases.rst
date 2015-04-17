@@ -2,6 +2,13 @@
 Release Notes
 =============
 
+Release 0.7.3
+-------------
+
+* General maturation of many backends through use.
+* Renamed ``into`` to ``odo``
+
+
 Release 0.7.0
 -------------
 

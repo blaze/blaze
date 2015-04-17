@@ -2,12 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datashape import discover, dshape, coretypes as ct
+from datashape import discover, dshape
 
 from blaze.compute.core import (compute_up, compute, bottom_up_until_type_break,
                                 top_then_bottom_then_top_again_etc,
                                 swap_resources_into_scope)
-from blaze.expr import by, symbol, Expr, Symbol, Reduction
+from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises
 from blaze.utils import example
@@ -49,7 +49,7 @@ def test_bottom_up_until_type_break():
 
     e = (s.amount + 1).distinct()
     expr, scope = bottom_up_until_type_break(e, {s: data})
-    amount = symbol('amount', 'var * real', token=1)
+    amount = symbol('amount', 'var * int64', token=1)
     assert expr.isidentical(amount)
     assert len(scope) == 1
     assert amount in scope
@@ -60,7 +60,7 @@ def test_bottom_up_until_type_break():
 
     e = s.amount.sum() + 1
     expr, scope = bottom_up_until_type_break(e, {s: data})
-    amount_sum = symbol('amount_sum', 'int')
+    amount_sum = symbol('amount_sum', 'int64')
     assert expr.isidentical(amount_sum + 1)
     assert len(scope) == 1
     assert amount_sum in scope
@@ -77,7 +77,7 @@ def test_bottom_up_until_type_break():
 
 
 def test_top_then_bottom_then_top_again_etc():
-    s = symbol('s', 'var * {name: string, amount: int}')
+    s = symbol('s', 'var * {name: string, amount: int32}')
     data = np.array([('Alice', 100), ('Bob', 200), ('Charlie', 300)],
                     dtype=[('name', 'S7'), ('amount', 'i4')])
 
@@ -108,7 +108,7 @@ def test_compute_up_on_dict():
 
 
 def test_pre_compute_on_multiple_datasets_is_selective():
-    from into import CSV
+    from odo import CSV
     from blaze import Data
     from blaze.cached import CachedDataset
 

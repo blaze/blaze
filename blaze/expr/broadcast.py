@@ -7,11 +7,12 @@ from toolz import curry
 
 from .expressions import *
 from .expressions import Field, Map
-from .arithmetic import maxshape, Arithmetic, Add
+from .arithmetic import maxshape, Arithmetic, UnaryOp
 from .math import Math, sin
 from .datetime import DateTime
 
 __all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
+
 
 def broadcast(expr, leaves, scalars=None):
     scalars = scalars or scalar_symbols(leaves)
@@ -99,8 +100,8 @@ def scalar_symbols(exprs):
     return scalars
 
 
-Broadcastable = (Arithmetic, Math, Map, Field, DateTime)
-WantToBroadcast = (Arithmetic, Math, Map, DateTime)
+Broadcastable = (Arithmetic, Math, Map, Field, DateTime, UnaryOp)
+WantToBroadcast = (Arithmetic, Math, Map, DateTime, UnaryOp)
 
 
 def broadcast_collect(expr, Broadcastable=Broadcastable,
@@ -115,6 +116,11 @@ def broadcast_collect(expr, Broadcastable=Broadcastable,
 
     >>> broadcast_collect(expr)
     distinct(Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * t.y)))
+
+    >>> from blaze import exp
+    >>> expr = t.x + 2 * exp(-(t.x - 1.3) ** 2)
+    >>> broadcast_collect(expr)
+    Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * (exp(-((t.x - 1.3) ** 2)))))
     """
     if (isinstance(expr, WantToBroadcast) and
         iscollection(expr.dshape)):

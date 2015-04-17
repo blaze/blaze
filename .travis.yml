@@ -1,10 +1,16 @@
+sudo: false
+
 language: python
 
-python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
+matrix:
+  include:
+    - python: 2.6
+    - python: 2.7
+      env: SPARK_VERSION=1.2
+    - python: 2.7
+      env: SPARK_VERSION=1.3
+    - python: 3.3
+    - python: 3.4
 
 branches:
   only:
@@ -25,19 +31,25 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
   - source activate test-environment
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive spark=$SPARK_VERSION -c blaze -c https://conda.binstar.org/blaze/channel/dev; fi
 
   - pip install psycopg2
+
+  # functional libs
+  - pip install git+https://github.com/mrocklin/multipledispatch
+  - pip install git+https://github.com/pytoolz/toolz
+  - pip install git+https://github.com/pytoolz/cytoolz
 
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 
   # Install into
-  - pip install git+http://github.com/ContinuumIO/into
+  - pip install git+http://github.com/ContinuumIO/odo
 
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
@@ -77,10 +89,6 @@ install:
   # - export PYTHONPATH=$PYTHONPATH:$PWD
   # - popd
   #
-  - pip install git+https://github.com/mrocklin/multipledispatch
-  - pip install git+https://github.com/pytoolz/toolz
-  - pip install git+https://github.com/pytoolz/cytoolz
-
   # Install coveralls
   - pip install coveralls --use-mirrors
 
@@ -95,7 +103,7 @@ script:
   - echo '[pytest]' > pytest.ini
   - echo 'addopts = -v -r sxX --doctest-modules --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
-  - coverage run $(which py.test)
+  - coverage run --include='blaze/*' $(which py.test)
   - coverage report --show-missing
 
 after_success:

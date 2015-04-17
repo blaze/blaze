@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import datashape as ds
 import pytest
 from toolz import first
@@ -6,10 +7,21 @@ from toolz import first
 from blaze import into
 from blaze.utils import tmpfile
 from blaze.compatibility import xfail
-from blaze import PyTables, discover, Data
+from blaze import PyTables, discover
+import pandas as pd
 
 
 tb = pytest.importorskip('tables')
+
+
+try:
+    f = pd.HDFStore('foo')
+except (RuntimeError, ImportError) as e:
+    pytest.skip('skipping test_hdfstore.py %s' % e)
+else:
+    f.close()
+    os.remove('foo')
+
 
 now = np.datetime64('now').astype('datetime64[us]')
 
@@ -151,15 +163,6 @@ class TestPyTablesLight(object):
         lhs, rhs = map(discover, (t, dt_data))
         t._v_file.close()
         assert lhs == rhs
-
-
-    def test_context_manager(self, dt_tb, dt_data):
-        """ check the context manager auto-closes the resources """
-
-        with Data("{0}::dt".format(dt_tb)) as t:
-            f = first(t._resources().values())
-            assert f.isopen
-        assert not f.isopen
 
     def test_no_extra_files_around(self, dt_tb):
         """ check the context manager auto-closes the resources """

@@ -1,0 +1,29 @@
+strict digraph G {
+"-5559165775281348128" [shape=circle, label=apply];
+"('f-12', 0)" [shape=box];
+584190624031756547 [shape=circle, label=apply];
+"-7268493500755381654" [shape=circle, label=apply];
+97023219449674268 [shape=circle, label=DataFrame];
+"('f-11', 0)" [shape=box, label="('f-11', 0)"];
+"('f-11', 1)" [shape=box, label="('f-11', 1)"];
+"('f-11', 2)" [shape=box, label="('f-11', 2)"];
+"-6292191960271350542" [shape=circle, label=DataFrame];
+"('from-array-1', 2)" [shape=box, label="('from-array-1', 2)"];
+"-6833178345205854086" [shape=circle, label=DataFrame];
+"('from-array-1', 1)" [shape=box, label="('from-array-1', 1)"];
+6680825370834289340 [shape=circle, label=<lambda>];
+"('from-array-1', 0)" [shape=box, label="('from-array-1', 0)"];
+"-5559165775281348128" -> "('from-array-1', 0)";
+"('f-12', 0)" -> 6680825370834289340;
+584190624031756547 -> "('from-array-1', 1)";
+"-7268493500755381654" -> "('from-array-1', 2)";
+"('f-11', 0)" -> "-5559165775281348128";
+"('f-11', 1)" -> 584190624031756547;
+"('f-11', 2)" -> "-7268493500755381654";
+"('from-array-1', 2)" -> 97023219449674268;
+"('from-array-1', 1)" -> "-6833178345205854086";
+6680825370834289340 -> "('f-11', 2)";
+6680825370834289340 -> "('f-11', 0)";
+6680825370834289340 -> "('f-11', 1)";
+"('from-array-1', 0)" -> "-6292191960271350542";
+}

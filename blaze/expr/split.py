@@ -78,8 +78,6 @@ def path_split(leaf, expr):
         elif not isinstance(node, can_split):
             return last
         last = node
-    if not node:
-        raise ValueError()
     return node
 
 
@@ -110,7 +108,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
     """
     center = path_split(leaf, expr)
-    if not chunk:
+    if chunk is None:
         if leaf.ndim > 1:
             raise ValueError("Please provide a chunk symbol")
         else:
@@ -120,7 +118,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
                                             keepdims=True)
 
-    if not agg:
+    if agg is None:
         agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
         agg = symbol('aggregate', agg_dshape)
@@ -167,7 +165,7 @@ def _split_agg(expr, leaf=None, agg=None):
     total = agg.total.sum(axis=expr.axis, keepdims=expr.keepdims)
     count = agg.count.sum(axis=expr.axis, keepdims=expr.keepdims)
 
-    return 1.0 * total / count
+    return total / count
 
 @dispatch((std, var))
 def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
@@ -179,7 +177,7 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
 def _split_agg(expr, leaf=None, agg=None):
     x = agg.x.sum(axis=expr.axis, keepdims=expr.keepdims)
     x2 = agg.x2.sum(axis=expr.axis, keepdims=expr.keepdims)
-    n = agg.n.sum(axis=expr.axis, keepdims=expr.keepdims) * 1.0
+    n = agg.n.sum(axis=expr.axis, keepdims=expr.keepdims)
 
     result = (x2 / n) - (x / n)**2
 
@@ -192,7 +190,7 @@ def _split_agg(expr, leaf=None, agg=None):
 def _split_agg(expr, leaf=None, agg=None):
     x = agg.x.sum(axis=expr.axis, keepdims=expr.keepdims)
     x2 = agg.x2.sum(axis=expr.axis, keepdims=expr.keepdims)
-    n = agg.n.sum(axis=expr.axis, keepdims=expr.keepdims) * 1.0
+    n = agg.n.sum(axis=expr.axis, keepdims=expr.keepdims)
 
     result = (x2 / n) - (x / n)**2
 

@@ -75,7 +75,7 @@ Each of these steps is critical to one backend or another.  We describe each in
 turn and then give the complete picture of the entire pipeline.
 
 ``optimize :: expr, data -> expr``
----------------------------------
+----------------------------------
 
 Optimize takes an expression and some data and changes the expression based on
 the data type.
@@ -118,8 +118,8 @@ of tuples or sequences of dicts.  ``precompute(expr, Sequence)`` detects which
 case we are in and normalizes to sequences of tuples.  This pre-computation
 allows the rest of the Python backend to make useful assumptions.
 
-Another use case is computation on CSV files.  If the csv file is small we'd
-like to transform it into a pandas dataframe.  If it is large we'd like to
+Another use case is computation on CSV files.  If the CSV file is small we'd
+like to transform it into a pandas DataFrame.  If it is large we'd like to
 transform it into a Python iterator.  This logic can be encoded as a
 ``pre_compute`` function and so will be triggered whenever a ``CSV`` object is
 first found.
@@ -182,7 +182,7 @@ The full pipeline looks like the following
 5.  Reevaluate ``optimize`` on the expression and ``pre_compute`` on all of the
     data elements.
 6.  Go to step 3
-5.  Call ``post_compute`` on the result
+7.  Call ``post_compute`` on the result
 
 This is outlined in ``blaze/compute/core.py`` in the functions ``compute(Expr,
 dict)`` and ``top_then_bottom_then_top_again_etc``.

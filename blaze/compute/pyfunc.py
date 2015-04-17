@@ -1,20 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
-        Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin, cos,
-        Map, UTCFromTimestamp, DateTimeTruncate, symbol)
+                    Date, Time, DateTime, Millisecond, Microsecond, broadcast,
+                    sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
+                    USub, Not)
+from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
-from ..expr.broadcast import broadcast_collect
 from ..dispatch import dispatch
 from . import pydatetime
 import datetime
-from datashape import iscollection
 import math
 import toolz
 import itertools
 
 
 funcnames = ('func_%d' % i for i in itertools.count())
+
 
 def parenthesize(s):
     if ' ' in s:
@@ -83,12 +84,29 @@ def _print_python(expr, leaves=None):
                          parenthesize(rhs)),
             toolz.merge(left_scope, right_scope))
 
+
+@dispatch(USub)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return '%s%s' % (expr.symbol, parenthesize(child)), scope
+
+
+@dispatch(Not)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return 'not %s' % parenthesize(child), scope
+
+
 @dispatch(Math)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('math.%s(%s)' % (type(expr).__name__, child),
             toolz.merge(scope, {'math': math}))
 
+@dispatch(expr_math.abs)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return ('abs(%s)' % child, scope)
 
 @dispatch(Date)
 def _print_python(expr, leaves=None):

@@ -1,13 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 from .expressions import Expr, ElemWise
-from datashape import dshape, Record, DataShape, Unit, Option, date_, datetime_
+from datashape import dshape
 import datashape
 
+
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
-        'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
-        'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-        'time', 'UTCFromTimestamp', 'DateTimeTruncate']
+           'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
+           'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
+           'time', 'UTCFromTimestamp', 'DateTimeTruncate']
+
 
 class DateTime(ElemWise):
     """ Superclass for datetime accessors """
@@ -32,76 +34,117 @@ class DateTime(ElemWise):
 class Date(DateTime):
     _dtype = datashape.date_
 
+
 def date(expr):
     return Date(expr)
+
 
 class Year(DateTime):
     _dtype = datashape.int32
 
+
 def year(expr):
     return Year(expr)
 
+
 class Month(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
+
 
 def month(expr):
     return Month(expr)
 
+
 class Day(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
+
 
 def day(expr):
     return Day(expr)
 
+
 class Time(DateTime):
     _dtype = datashape.time_
+
 
 def time(expr):
     return Time(Expr)
 
+
 class Hour(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
+
 
 def hour(expr):
     return Hour(expr)
 
+
 class Minute(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
+
 
 def minute(expr):
     return Minute(expr)
 
+
 class Second(DateTime):
-    _dtype = datashape.int32
+    _dtype = datashape.int64
+
 
 def second(expr):
     return Second(expr)
 
+
 class Millisecond(DateTime):
     _dtype = datashape.int64
+
 
 def millisecond(expr):
     return Millisecond(expr)
 
+
 class Microsecond(DateTime):
     _dtype = datashape.int64
+
 
 def microsecond(expr):
     return Microsecond(expr)
 
+
 class UTCFromTimestamp(DateTime):
     _dtype = datashape.datetime_
+
 
 def utcfromtimestamp(expr):
     return UTCFromTimestamp(expr)
 
-units = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second',
-'millisecond', 'microsecond', 'nanosecond']
+
+units = [
+    'year',
+    'month',
+    'week',
+    'day',
+    'hour',
+    'minute',
+    'second',
+    'millisecond',
+    'microsecond',
+    'nanosecond'
+]
 
 
-_unit_aliases = {'y': 'year', 'w': 'week', 'd': 'day', 'date': 'day',
-    'h': 'hour', 's': 'second', 'ms': 'millisecond', 'us': 'microsecond',
-    'ns': 'nanosecond'}
+_unit_aliases = {
+    'y': 'year',
+    'w': 'week',
+    'd': 'day',
+    'date': 'day',
+    'h': 'hour',
+    's': 'second',
+    'ms': 'millisecond',
+    'us': 'microsecond',
+    'ns': 'nanosecond'
+}
+
 
 def normalize_time_unit(s):
     """ Normalize time input to one of 'year', 'second', 'millisecond', etc..
@@ -139,6 +182,9 @@ class DateTimeTruncate(DateTime):
     def _name(self):
         return self._child._name
 
+    def __str__(self):
+        return '%s.truncate(%ss=%g)' % (self._child, self.unit, self.measure)
+
 
 def truncate(expr, *args, **kwargs):
     """ Truncate datetime expression
@@ -163,11 +209,16 @@ def truncate(expr, *args, **kwargs):
     >>> # expr = s.truncate(2, 'weeks')
     >>> expr = s.truncate(weeks=2)
     """
+    if not args and not kwargs:
+        raise TypeError('truncate takes exactly 2 positional arguments, '
+                        'e.g., truncate(2, "days") or 1 keyword argument, '
+                        'e.g., truncate(days=2)')
     if args:
-        assert not kwargs
+        assert not kwargs, ('only positional arguments allowed if any are '
+                            'passed in')
         measure, unit = args
     if kwargs:
-        assert not args
+        assert not args, 'only keyword arguments allowed if any are passed in'
         [(unit, measure)] = kwargs.items()
     return DateTimeTruncate(expr, measure, normalize_time_unit(unit))
 

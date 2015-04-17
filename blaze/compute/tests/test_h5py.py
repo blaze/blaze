@@ -5,13 +5,12 @@ import numpy as np
 import pytest
 h5py = pytest.importorskip('h5py')
 
+from datashape import discover
+
 from blaze import compute
 from blaze.expr import symbol
-from datashape import discover
 from blaze.utils import tmpfile
-
-from blaze.compute.h5py import *
-from blaze.compute.h5py import pre_compute, post_compute, optimize
+from blaze.compute.h5py import pre_compute, optimize
 
 
 def eq(a, b):
@@ -29,6 +28,7 @@ def file():
         d[:] = x
         yield f
         f.close()
+
 
 @pytest.yield_fixture
 def data(file):
@@ -73,12 +73,11 @@ def test_slicing(data):
 
 
 def test_reductions(data):
-    assert eq(compute(s.sum(), data),
-              x.sum())
-    assert eq(compute(s.sum(axis=1), data),
-              x.sum(axis=1))
-    assert eq(compute(s.sum(axis=0), data),
-              x.sum(axis=0))
+    assert eq(compute(s.sum(), data), x.sum())
+    assert eq(compute(s.sum(axis=1), data), x.sum(axis=1))
+    assert eq(compute(s.sum(axis=0), data), x.sum(axis=0))
+    assert eq(compute(s[0], data), x[0])
+    assert eq(compute(s[-1], data), x[-1])
 
 
 def test_mixed(recdata):
@@ -123,6 +122,7 @@ def test_nelements_array(data):
     rhs = np.prod(data.shape)
     np.testing.assert_array_equal(lhs, rhs)
 
+
 def test_field_access_on_file(file):
     s = symbol('s', '{x: 20 * 24 * float32}')
     d = compute(s.x, file)
@@ -135,6 +135,7 @@ def test_field_access_on_group(file):
     d = compute(s.x, file['/'])
     # assert isinstance(d, h5py.Dataset)
     assert eq(d[:], x)
+
 
 def test_compute_on_file(file):
     s = symbol('s', discover(file))
@@ -150,11 +151,13 @@ def test_compute_on_1d_chunks(data_1d_chunks):
     assert eq(compute(s.sum(), data_1d_chunks),
               x.sum())
 
+
 def test_arithmetic_on_small_array(data):
     s = symbol('s', discover(data))
 
     assert eq(compute(s + 1, data),
               compute(s + 1, x))
+
 
 def test_arithmetic_on_small_array_from_file(file):
     """ Want to make sure that we call pre_compute on Dataset
@@ -163,6 +166,7 @@ def test_arithmetic_on_small_array_from_file(file):
 
     assert eq(compute(s.x + 1, file),
               x + 1)
+
 
 def test_pre_compute_doesnt_collapse_slices(data):
     s = symbol('s', discover(data))
