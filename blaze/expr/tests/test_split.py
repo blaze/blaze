@@ -333,3 +333,12 @@ def test_splittable_apply():
             chunk.amount.apply(f, 'var * int', splittable=True))
 
     assert agg_expr.isidentical(agg)
+
+
+def test_elemwise_with_multiple_paths():
+    s = symbol('s', 'var * {x: int, y: int, z: int}')
+    expr = s.x.sum() / s.y.sum()
+
+    (chunk, chunk_expr), (agg, agg_expr) = split(s, expr)
+    assert chunk_expr.isidentical(summary(x=chunk.x.sum(), y=chunk.y.sum()))
+    assert agg_expr.isidentical(agg.x / agg.y)
