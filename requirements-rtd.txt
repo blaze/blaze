@@ -1,10 +1,10 @@
 numpy >= 1.7
-pandas
-datashape
-odo
+pandas >= 0.15.0
+datashape >= 0.4.4
+odo >= 0.3.1
 cytoolz
 toolz
 multipledispatch >= 0.4.7
-sqlalchemy
+sqlalchemy >= 0.8.0
 psutil
 numpydoc
