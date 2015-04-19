@@ -39,11 +39,11 @@ requirements:
 
 test:
   requires:
-    - pytest
+    - pytest >=2.7.0
     - coverage
 
   commands:
-    - py.test -x --pyargs blaze
+    - py.test -x --doctest-modules --doctest-ignore-import-errors --pyargs blaze
 
 about:
   home: http://blaze.pydata.org

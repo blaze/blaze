@@ -18,40 +18,35 @@ from ..expr import Expr, symbol, Join
 from .core import compute
 from .utils import literalquery, istable, make_sqlalchemy_table
 from ..utils import listpack
-from .spark import Dummy, jgetattr
+from .spark import jgetattr
+from pyhive.sqlalchemy_hive import HiveDialect
+from pyspark import SQLContext
 
 __all__ = []
-
-
-try:
-    from pyspark import SQLContext
-    from pyhive.sqlalchemy_hive import HiveDialect
-except ImportError:
-    SQLContext = Dummy
-
-try:
-    from pyspark.sql import DataFrame as SparkDataFrame
-except ImportError:
-    SparkDataFrame = Dummy
-
 
 join_types = {
     'left': 'left_outer',
     'right': 'right_outer'
 }
 
+try:
+    from pyspark.sql import DataFrame as SparkDataFrame
+except ImportError:
+    pass
+else:
+    @dispatch(Join, SparkDataFrame, SparkDataFrame)
+    def compute_up(t, lhs, rhs, **kwargs):
+        ands = [getattr(lhs, left) == getattr(rhs, right)
+                for left, right in zip(*map(listpack,
+                                            (t.on_left, t.on_right)))]
 
-@dispatch(Join, SparkDataFrame, SparkDataFrame)
-def compute_up(t, lhs, rhs, **kwargs):
-    ands = [getattr(lhs, left) == getattr(rhs, right)
-            for left, right in zip(*map(listpack, (t.on_left, t.on_right)))]
+        joined = lhs.join(rhs, reduce(and_, ands),
+                          join_types.get(t.how, t.how))
 
-    joined = lhs.join(rhs, reduce(and_, ands), join_types.get(t.how, t.how))
-
-    prec, sec = (rhs, lhs) if t.how == 'right' else (lhs, rhs)
-    cols = [jgetattr(prec, f, jgetattr(sec, f, None)) for f in t.fields]
-    assert all(c is not None for c in cols)
-    return joined.select(*cols)
+        prec, sec = (rhs, lhs) if t.how == 'right' else (lhs, rhs)
+        cols = [jgetattr(prec, f, jgetattr(sec, f, None)) for f in t.fields]
+        assert all(c is not None for c in cols)
+        return joined.select(*cols)
 
 
 @dispatch(Expr, SQLContext)

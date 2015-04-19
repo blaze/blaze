@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 from multipledispatch import MDNotImplementedError
-from odo import Chunks, chunks, convert, discover, into
+from odo import Chunks, convert, into
 from collections import Iterator, Iterable
-from toolz import curry, concat, map
+from toolz import curry, concat
 from datashape.dispatch import dispatch
 
 import pandas as pd
@@ -15,6 +15,7 @@ from .core import compute
 from .pmap import get_default_pmap
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
+
 
 @dispatch(Head, Chunks)
 def pre_compute(expr, data, **kwargs):

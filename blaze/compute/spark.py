@@ -14,28 +14,13 @@ from ..dispatch import dispatch
 
 from .core import compute, compute_up
 
+import py4j
+from pyspark import SparkContext
+import pyspark
+from pyspark.rdd import RDD
+
 __all__ = ['RDD', 'pyspark', 'SparkContext']
 
-
-class Dummy(object):
-    sum = max = min = count = distinct = mean = variance = stdev = None
-
-try:
-    import py4j
-    from pyspark import SparkContext
-    import pyspark
-    from pyspark.rdd import RDD
-    try:
-        from pyspark.sql import DataFrame as SparkDataFrame
-    except ImportError:
-        SparkDataFrame = Dummy
-    RDD.min
-except (AttributeError, ImportError):
-    SparkContext = Dummy
-    pyspark = Dummy()
-    pyspark.rdd = Dummy()
-    RDD = Dummy
-    SparkDataFrame = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it

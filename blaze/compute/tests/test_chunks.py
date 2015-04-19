@@ -1,4 +1,4 @@
-from blaze.compute.chunks import chunks, Chunks
+from odo import chunks
 from blaze import discover, into, compute, symbol
 from datashape.predicates import iscollection
 
