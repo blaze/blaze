@@ -26,6 +26,7 @@ requirements:
 test:
   requires:
     - pytest
+    - dynd-python
 
   commands:
     - py.test -vx --pyargs blaze -rsxX
