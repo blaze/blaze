@@ -33,7 +33,7 @@ test:
     - pytest
 
   commands:
-    - py.test -x --pyargs blaze
+    - py.test -vx --pyargs blaze -rsxX
 
 about:
   home: http://blaze.pydata.org
