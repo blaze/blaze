@@ -152,3 +152,7 @@ def test(verbose=False, junitfile=None, exit=False):
     if exit:
         return sys.exit(error_code)
     return error_code == 0
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
