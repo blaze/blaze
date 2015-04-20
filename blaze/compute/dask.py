@@ -58,7 +58,7 @@ for i in range(5):
 @dispatch(Reduction, Array)
 def compute_up(expr, data, **kwargs):
     leaf = expr._leaves()[0]
-    chunk = symbol('chunk', DataShape(*(tuple(map(first, data.blockdims)) +
+    chunk = symbol('chunk', DataShape(*(tuple(map(first, data.chunks)) +
                                         (leaf.dshape.measure,))))
     (chunk, chunk_expr), (agg, agg_expr) = split(expr._child, expr,
                                                  chunk=chunk)
