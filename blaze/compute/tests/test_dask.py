@@ -20,19 +20,19 @@ def eq(a, b):
 
 
 nx = np.arange(600).reshape((20, 30))
-dx = from_array(nx, blockshape=(4, 5))
+dx = from_array(nx, (4, 5))
 sx = symbol('x', discover(dx))
 
 ny = np.arange(600).reshape((30, 20))
-dy = from_array(ny, blockshape=(5, 4))
+dy = from_array(ny, (5, 4))
 sy = symbol('y', discover(dy))
 
 na = np.arange(20)
-da = from_array(na, blockshape=(4,))
+da = from_array(na, (4,))
 sa = symbol('a', discover(da))
 
 nb = np.arange(30).reshape((30, 1))
-db = from_array(nb, blockshape=(5, 1))
+db = from_array(nb, (5, 1))
 sb = symbol('b', discover(db))
 
 dask_ns = {sx: dx, sy: dy, sa: da, sb: db}
@@ -82,13 +82,13 @@ def test_ragged_blockdims():
            ('x', 1, 0): np.ones((5, 2)),
            ('x', 1, 1): np.ones((5, 3))}
 
-    a = Array(dsk, 'x', shape=(7, 5), blockdims=[(2, 5), (2, 3)])
+    a = Array(dsk, 'x', chunks=[(2, 5), (2, 3)], shape=(7, 5))
     s = symbol('s', '7 * 5 * int')
 
-    assert compute(s.sum(axis=0), a).blockdims == ((2, 3),)
-    assert compute(s.sum(axis=1), a).blockdims == ((2, 5),)
+    assert compute(s.sum(axis=0), a).chunks == ((2, 3),)
+    assert compute(s.sum(axis=1), a).chunks == ((2, 5),)
 
-    assert compute(s + 1, a).blockdims == a.blockdims
+    assert compute(s + 1, a).chunks == a.chunks
 
 
 def test_slicing_with_singleton_dimensions():
@@ -103,7 +103,7 @@ def test_slicing_with_singleton_dimensions():
 
 def test_slicing_with_lists():
     nx = np.arange(20).reshape((4, 5))
-    dx = from_array(nx, blockshape=(2, 2))
+    dx = from_array(nx, (2, 2))
     sx = symbol('x', discover(dx))
 
     expr = sx[[2, 0, 3]]
@@ -130,7 +130,7 @@ def test_slicing_with_lists():
 
 def test_slicing_on_boundary_lines():
     nx = np.arange(100).reshape((10, 10))
-    dx = from_array(nx, blockshape=(3, 3))
+    dx = from_array(nx, (3, 3))
     sx = symbol('x', discover(dx))
     expr = sx[0, [1, 3, 9, 3]]
 
@@ -140,19 +140,19 @@ def test_slicing_on_boundary_lines():
 
 def test_slicing_with_newaxis():
     nx = np.arange(20).reshape((4, 5))
-    dx = from_array(nx, blockshape=(2, 2))
+    dx = from_array(nx, (2, 2))
     sx = symbol('x', discover(dx))
 
     expr = sx[:, None, :]
     result = compute(expr, dx)
 
     assert result.shape == (4, 1, 5)
-    assert result.blockdims == ((2, 2), (1,), (2, 2, 1))
+    assert result.chunks == ((2, 2), (1,), (2, 2, 1))
     assert eq(np.array(result), compute(expr, nx))
 
     expr = sx[None, [2, 1, 3], None, None, :, None]
     result = compute(expr, dx)
 
     assert result.shape == (1, 3, 1, 1, 5, 1)
-    assert result.blockdims == ((1,), (3,), (1,), (1,), (2, 2, 1), (1,))
+    assert result.chunks == ((1,), (3,), (1,), (1,), (2, 2, 1), (1,))
     assert eq(np.array(result), compute(expr, nx))
