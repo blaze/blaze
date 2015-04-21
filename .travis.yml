@@ -37,8 +37,8 @@ install:
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install spark=$SPARK_VERSION -c blaze -c https://conda.binstar.org/blaze/channel/dev; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install git+https://github.com/dropbox/PyHive; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive spark=$SPARK_VERSION -c blaze -c https://conda.binstar.org/blaze/channel/dev; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda remove pyhive && pip install git+https://github.com/dropbox/PyHive; fi
 
   - pip install psycopg2
 
