@@ -44,6 +44,12 @@ with ignoring(ImportError):
 
 def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
          **kwargs):
+    if columns:
+        raise ValueError("columns argument deprecated, use fields instead")
+    if schema and dshape:
+        raise ValueError("Please specify one of schema= or dshape= keyword"
+                         " arguments")
+
     sub_uri = ''
     if isinstance(data, _strtypes):
         if '::' in data:
@@ -53,14 +59,6 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
     if (isinstance(data, Iterator) and
             not isinstance(data, tuple(not_an_iterator))):
         data = tuple(data)
-    if columns:
-        warnings.warn("columns kwarg deprecated.  Use fields instead",
-                      DeprecationWarning)
-    if columns and not fields:
-        fields = columns
-    if schema and dshape:
-        raise ValueError("Please specify one of schema= or dshape= keyword"
-                         " arguments")
     if schema and not dshape:
         dshape = var * schema
     if dshape and isinstance(dshape, _strtypes):
@@ -83,11 +81,12 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
             if names != fields:
                 raise ValueError('data column names %s\n'
                                  '\tnot equal to fields parameter %s,\n'
-                                 '\tuse Data(data).relabel(%s) to rename fields'
-                                 % (names,
-                                    fields,
-                                    ', '.join('%s=%r' % (k, v)
-                                              for k, v in zip(names, fields))))
+                                 '\tuse Data(data).relabel(%s) to rename '
+                                 'fields' % (names,
+                                             fields,
+                                             ', '.join('%s=%r' % (k, v)
+                                                       for k, v in
+                                                       zip(names, fields))))
             types = dshape.measure.types
             schema = Record(list(zip(fields, types)))
             dshape = DataShape(*(dshape.shape + (schema,)))
