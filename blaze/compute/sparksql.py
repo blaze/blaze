@@ -9,9 +9,13 @@ SparkSQL.
 from __future__ import absolute_import, division, print_function
 
 from operator import and_
+from distutils.version import LooseVersion
 
 from toolz import pipe
 from toolz.curried import filter, map
+
+from sqlalchemy.ext.compiler import compiles
+import sqlalchemy as sa
 
 from ..dispatch import dispatch
 from ..expr import Expr, symbol, Join
@@ -39,6 +43,13 @@ join_types = {
     'left': 'left_outer',
     'right': 'right_outer'
 }
+
+
+if LooseVersion(sa.__version__) >= '1.0.0':
+    # a bug in spark sql prevents labels from being referenced properly
+    @compiles(sa.sql.elements._label_reference, 'hive')
+    def compile_label_reference(element, compiler, **kwargs):
+        return compiler.process(element.element, **kwargs)
 
 
 @dispatch(Join, SparkDataFrame, SparkDataFrame)
