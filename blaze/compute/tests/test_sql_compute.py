@@ -1,24 +1,50 @@
 from __future__ import absolute_import, division, print_function
 
+import re
+from distutils.version import LooseVersion
+
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
-import re
-from distutils.version import LooseVersion
-
 import datashape
-import sqlalchemy as sa
-
-from blaze.compute.sql import computefull, select, lower_column, compute_up
-from blaze import (compute, discover, by, join, transform, sin, floor, cos,
-                   merge, summary, nunique, sum)
-from blaze.expr import symbol, exp, mean, count
-from blaze.compatibility import xfail
-from toolz import unique
-from pandas import DataFrame
 from odo import into, resource
+from pandas import DataFrame
+from toolz import unique
+
+from blaze.compute.sql import (compute, computefull, select, lower_column,
+                               compute_up)
+from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
+                        floor, cos, merge, nunique, mean, sum, count, exp)
+from blaze.compatibility import xfail
 from blaze.utils import tmpfile
+
+
+@pytest.fixture(scope='module')
+def data():
+    # make the engine
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+
+    # name table
+    name = sa.Table('name', metadata,
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
+    name.create()
+
+    # city table
+    city = sa.Table('city', metadata,
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
+    city.create()
+
+    s = symbol('s', discover(engine))
+    return {'engine': engine, 'metadata': metadata, 'name': name, 'city': city,
+            's': s}
+
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
@@ -207,8 +233,6 @@ def test_unary_op():
     assert str(compute(exp(t['amount']), s, post_compute=False)) == \
             str(sa.func.exp(s.c.amount))
 
-
-def test_unary_op():
     assert str(compute(-t['amount'], s, post_compute=False)) == \
             str(-s.c.amount)
 
@@ -269,6 +293,7 @@ def test_count_on_table():
         FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
               FROM accounts
               WHERE accounts.amount > :amount_1) as alias"""))
+
 
 def test_distinct():
     result = str(compute(t['amount'].distinct(), s, post_compute=False))
@@ -682,8 +707,6 @@ def test_join_complex_clean():
              sa.Column('country', sa.String),
              )
 
-    sel = select(name).where(name.c.id > 10)
-
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
 
@@ -761,8 +784,6 @@ def test_lower_column():
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
 
-    ns = {tname: name, tcity: city}
-
     assert lower_column(name.c.id) is name.c.id
     assert lower_column(select(name).c.id) is name.c.id
 
@@ -839,65 +860,36 @@ def test_join_on_same_table():
     """)
 
 
-def test_field_access_on_engines():
-    engine = sa.create_engine('sqlite:///:memory:')
-    metadata = sa.MetaData(engine)
-    name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
-    name.create()
-
-    city = sa.Table('city', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
-    city.create()
-
-    s = symbol('s', discover(engine))
+def test_field_access_on_engines(data):
+    s, engine = data['s'], data['engine']
     result = compute_up(s.city, engine)
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
 
 
-def test_computation_directly_on_sqlalchemy_Tables():
-    engine = sa.create_engine('sqlite:///:memory:')
-    metadata = sa.MetaData(engine)
-    name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
-    name.create()
-
+def test_computation_directly_on_sqlalchemy_Tables(data):
+    name = data['name']
     s = symbol('s', discover(name))
     result = into(list, compute(s.id + 1, name))
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
 
 
-def test_computation_directly_on_metadata():
-    engine = sa.create_engine('sqlite:///:memory:')
-    metadata = sa.MetaData(engine)
-    name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
-    name.create()
-
+def test_computation_directly_on_metadata(data):
+    metadata = data['metadata']
+    name = data['name']
     s = symbol('s', discover(metadata))
-
     result = compute(s.name, {s: metadata}, post_compute=False)
     assert result == name
 
 
 sql_bank = sa.Table('bank', sa.MetaData(),
-                 sa.Column('id', sa.Integer),
-                 sa.Column('name', sa.String),
-                 sa.Column('amount', sa.Integer))
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    sa.Column('amount', sa.Integer))
 sql_cities = sa.Table('cities', sa.MetaData(),
-                   sa.Column('name', sa.String),
-                   sa.Column('city', sa.String))
+                      sa.Column('name', sa.String),
+                      sa.Column('city', sa.String))
 
 bank = symbol('bank', discover(sql_bank))
 cities = symbol('cities', discover(sql_cities))
