@@ -1399,3 +1399,13 @@ def test_date_grouper_repeats():
     GROUP BY ds_year
     """
     assert normalize(result) == normalize(expected)
+
+
+def test_transform_then_project_single_column():
+    expr = transform(t, foo=t.id + 1)[['foo', 'id']]
+    result = normalize(str(compute(expr, s)))
+    expected = normalize("""SELECT
+        accounts.id,
+        accounts.id + :id_1 as foo
+    FROM accounts""")
+    assert result == expected
