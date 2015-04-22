@@ -619,7 +619,7 @@ def get_clause(data, kind):
     return clause.clauses if clause is not None else None
 
 
-@dispatch(Merge, (Selectable, Select))
+@dispatch(Merge, (Selectable, Select, sa.Column))
 def compute_up(expr, data, **kwargs):
     # get the common subexpression of all the children in the merge
     subexpression = common_subexpression(*expr.children)
@@ -630,7 +630,7 @@ def compute_up(expr, data, **kwargs):
 
     # Get the original columns from the selection and rip out columns from
     # Selectables and ScalarSelects
-    columns = list(unique(concat(map(get_inner_columns, [data] + children))))
+    columns = list(unique(concat(map(get_inner_columns, children))))
 
     # we need these getattrs if data is a ColumnClause or Table
     from_obj = get_all_froms(data)

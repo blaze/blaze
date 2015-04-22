@@ -1150,8 +1150,8 @@ def test_merge_where():
     expr = merge(t2[['amount', 'name']], t2.id)
     result = compute(expr, s)
     expected = normalize("""SELECT
-        accounts.name,
         accounts.amount,
+        accounts.name,
         accounts.id
     FROM accounts
     WHERE accounts.id = :id_1
@@ -1391,3 +1391,24 @@ def test_date_grouper_repeats():
     GROUP BY ds_year
     """
     assert normalize(result) == normalize(expected)
+
+
+def test_transform_then_project_single_column():
+    expr = transform(t, foo=t.id + 1)[['foo', 'id']]
+    result = normalize(str(compute(expr, s)))
+    expected = normalize("""SELECT
+        accounts.id + :id_1 as foo,
+        accounts.id
+    FROM accounts""")
+    assert result == expected
+
+
+def test_transform_then_project():
+    proj = ['foo', 'id']
+    expr = transform(t, foo=t.id + 1)[proj]
+    result = normalize(str(compute(expr, s)))
+    expected = normalize("""SELECT
+        accounts.id + :id_1 as foo,
+        accounts.id
+    FROM accounts""")
+    assert result == expected
