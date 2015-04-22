@@ -15,6 +15,8 @@ from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, resource
 from blaze.server.server import Server, to_tree, from_tree
 
+from blaze.server.tests.fixtures import make_app_context_fixture
+
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
                      columns=['name', 'amount'])
@@ -38,12 +40,15 @@ server = Server(data)
 test = server.app.test_client()
 
 
-def test_datasets():
+app_context = make_app_context_fixture(server)
+
+
+def test_datasets(app_context):
     response = test.get('/datashape')
     assert response.data.decode('utf-8') == str(discover(data))
 
 
-def test_bad_responses():
+def test_bad_responses(app_context):
     assert 'OK' not in test.post('/compute/accounts.json',
                                  data = json.dumps(500),
                                  content_type='application/json').status
@@ -53,13 +58,13 @@ def test_bad_responses():
     assert 'OK' not in test.post('/compute/accounts.json').status
 
 
-def test_to_from_json():
+def test_to_from_json(app_context):
     t = symbol('t', 'var * {name: string, amount: int}')
     assert from_tree(to_tree(t)).isidentical(t)
     assert from_tree(to_tree(t.amount + 1)).isidentical(t.amount + 1)
 
 
-def test_to_tree():
+def test_to_tree(app_context):
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
     expected = {'op': 'sum',
@@ -110,7 +115,7 @@ def test_from_tree_is_robust_to_unnecessary_namespace():
 t = symbol('t', discover(data))
 
 
-def test_compute():
+def test_compute(app_context):
     expr = t.accounts.amount.sum()
     query = {'expr': to_tree(expr)}
     expected = 300
@@ -123,7 +128,7 @@ def test_compute():
     assert json.loads(response.data.decode('utf-8'))['data'] == expected
 
 
-def test_get_datetimes():
+def test_get_datetimes(app_context):
     expr = t.events
     query = {'expr': to_tree(expr)}
 
@@ -138,7 +143,7 @@ def test_get_datetimes():
     assert into(list, result) == into(list, events)
 
 
-def dont_test_compute_with_namespace():
+def dont_test_compute_with_namespace(app_context):
     query = {'expr': {'op': 'Field',
                       'args': ['accounts', 'name']}}
     expected = ['Alice', 'Bob']
@@ -152,9 +157,12 @@ def dont_test_compute_with_namespace():
 
 
 @pytest.fixture
-def iris_server():
+def iris_server(request):
     iris = CSV(example('iris.csv'))
     server = Server(iris)
+    ctx = server.context()
+    request.addfinalizer(lambda: ctx.__exit__(None, None, None))
+    ctx.__enter__()
     return server.app.test_client()
 
 
@@ -210,7 +218,7 @@ def test_compute_column_wise(iris_server):
     assert list(map(tuple, result)) == into(list, expected)
 
 
-def test_multi_expression_compute():
+def test_multi_expression_compute(app_context):
     s = symbol('s', discover(data))
 
     expr = join(s.accounts, s.cities)
@@ -226,7 +234,7 @@ def test_multi_expression_compute():
     assert list(map(tuple, result))== into(list, expected)
 
 
-def test_leaf_symbol():
+def test_leaf_symbol(app_context):
     query = {'expr': {'op': 'Field', 'args': [':leaf', 'cities']}}
     resp = test.post('/compute.json',
                      data=json.dumps(query),
@@ -238,7 +246,7 @@ def test_leaf_symbol():
     assert list(map(tuple, a)) == b
 
 
-def test_sqlalchemy_result():
+def test_sqlalchemy_result(app_context):
     expr = t.db.iris.head(5)
     query = {'expr': to_tree(expr)}
 
@@ -255,7 +263,7 @@ def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
 
-def test_server_can_compute_sqlalchemy_reductions():
+def test_server_can_compute_sqlalchemy_reductions(app_context):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post('/compute.json',

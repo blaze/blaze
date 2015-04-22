@@ -8,8 +8,10 @@ from blaze import compute, Data, by, into, discover
 from blaze.expr import Expr, symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
-from blaze.server.index import parse_index, emit_index
 from blaze.server.client import Client, resource
+
+from blaze.server.tests.fixtures import make_app_context_fixture
+
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
                columns=['name', 'amount'])
@@ -27,15 +29,7 @@ from blaze.server import client
 client.requests = test # OMG monkey patching
 
 
-@pytest.fixture(scope='function')
-def app_context(request):
-    """
-    Fixture to mark that this test uses the flask application
-    context.
-    """
-    ctx = server.context()
-    request.addfinalizer(lambda: ctx.__exit__(None, None, None))
-    return ctx.__enter__()
+app_context = make_app_context_fixture(server)
 
 
 def test_client(app_context):
