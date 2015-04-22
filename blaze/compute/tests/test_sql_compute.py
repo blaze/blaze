@@ -320,6 +320,10 @@ def test_nunique():
     assert 'amount' in result.lower()
 
 
+def test_nunique_table():
+    result = str(compute(t.nunique(), s))
+
+
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
