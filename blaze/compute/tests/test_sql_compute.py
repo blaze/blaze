@@ -237,6 +237,20 @@ def test_unary_op():
             str(-s.c.amount)
 
 
+@pytest.mark.parametrize('unbiased', [True, False])
+def test_std(unbiased):
+    assert str(compute(t.amount.std(unbiased=unbiased), s, post_compute=False)) == \
+        str(getattr(sa.func,
+                    'stddev_%s' % ('samp' if unbiased else 'pop'))(s.c.amount))
+
+
+@pytest.mark.parametrize('unbiased', [True, False])
+def test_var(unbiased):
+    assert str(compute(t.amount.var(unbiased=unbiased), s, post_compute=False)) == \
+        str(getattr(sa.func,
+                    'var_%s' % ('samp' if unbiased else 'pop'))(s.c.amount))
+
+
 def test_reductions():
     assert str(compute(sum(t['amount']), s, post_compute=False)) == \
             str(sa.sql.functions.sum(s.c.amount))
