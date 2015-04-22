@@ -7,6 +7,7 @@ except ImportError:
     pass
 
 import blaze
+from contextlib import contextmanager
 import socket
 import json
 from toolz import assoc
@@ -65,14 +66,18 @@ class Server(object):
             data = dict()
         self.data = data
 
+    @contextmanager
+    def context(self):
+        with self.app.app_context():
+            flask.g.data = data = self.data
+            yield data
+
     def run(self, *args, **kwargs):
         """Run the server"""
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
-        app = self.app
         try:
-            with app.app_context():
-                flask.g.data = self.data
+            with self.context():
                 self.app.run(*args, port=port, **kwargs)
         except socket.error:
             print("\tOops, couldn't connect on port %d.  Is it busy?" % port)

@@ -27,7 +27,18 @@ from blaze.server import client
 client.requests = test # OMG monkey patching
 
 
-def test_client():
+@pytest.fixture(scope='function')
+def app_context(request):
+    """
+    Fixture to mark that this test uses the flask application
+    context.
+    """
+    ctx = server.context()
+    request.addfinalizer(lambda: ctx.__exit__(None, None, None))
+    return ctx.__enter__()
+
+
+def test_client(app_context):
     c = Client('localhost:6363')
     assert str(discover(c)) == str(discover(data))
 
@@ -40,7 +51,7 @@ def test_client():
     assert compute(t.accounts.name, c) == ['Alice', 'Bob']
 
 
-def test_expr_client_interactive():
+def test_expr_client_interactive(app_context):
     c = Client('localhost:6363')
     t = Data(c)
 
@@ -49,7 +60,8 @@ def test_expr_client_interactive():
                                                   max=t.accounts.amount.max())))
             == set([('Alice', 100, 100), ('Bob', 200, 200)]))
 
-def test_compute_client_with_multiple_datasets():
+
+def test_compute_client_with_multiple_datasets(app_context):
     c = resource('blaze://localhost:6363')
     s = symbol('s', discover(c))
 
@@ -57,23 +69,23 @@ def test_compute_client_with_multiple_datasets():
                     {s: c}) == 600
 
 
-def test_resource():
+def test_resource(app_context):
     c = resource('blaze://localhost:6363')
     assert isinstance(c, Client)
     assert str(discover(c)) == str(discover(data))
 
 
-def test_resource_default_port():
+def test_resource_default_port(app_context):
     ec = resource('blaze://localhost')
     assert str(discover(ec)) == str(discover(data))
 
 
-def test_resource_non_default_port():
+def test_resource_non_default_port(app_context):
     ec = resource('blaze://localhost:6364')
     assert ec.url == 'http://localhost:6364'
 
 
-def test_resource_all_in_one():
+def test_resource_all_in_one(app_context):
     ec = resource('blaze://localhost:6363')
     assert str(discover(ec)) == str(discover(data))
 
@@ -91,13 +103,13 @@ def compute_up(expr, data, **kwargs):
     return data
 
 
-def test_custom_expressions():
+def test_custom_expressions(app_context):
     ec = Client('localhost:6363')
     t = symbol('t', discover(ec))
 
     assert list(map(tuple, compute(CustomExpr(t.accounts), ec))) == into(list, df)
 
 
-def test_client_dataset():
+def test_client_dataset(app_context):
     d = Data('blaze://localhost::accounts')
     assert list(map(tuple, into(list, d))) == into(list, df)
