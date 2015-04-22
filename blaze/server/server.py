@@ -264,11 +264,11 @@ def from_tree(expr, namespace=None):
 @route('/compute.json', methods=['POST', 'PUT', 'GET'])
 def compserver(dataset):
     if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
+        return ("Expected JSON data", 415)  # 415: Unsupported Media Type
     try:
         payload = json.loads(request.data.decode('utf-8'))
     except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
+        return ("Bad JSON.  Got %s " % request.data, 400)  # 400: Bad Request
 
     ns = payload.get('namespace', dict())
     ns[':leaf'] = symbol('leaf', discover(dataset))
@@ -279,7 +279,11 @@ def compserver(dataset):
 
     try:
         result = compute(expr, {leaf: dataset})
+    except NotImplementedError as e:
+        # 501: Not Implemented
+        return ("Computation not supported:\n%s" % e, 501)
     except Exception as e:
+        # 500: Internal Server Error
         return ("Computation failed with message:\n%s" % e, 500)
 
     if iscollection(expr.dshape):
