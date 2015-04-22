@@ -5,12 +5,15 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 
 import re
+from distutils.version import LooseVersion
 
 import datashape
+import sqlalchemy as sa
 
-from blaze.compute.sql import (compute, computefull, select, lower_column,
-                               compute_up)
-from blaze.expr import *
+from blaze.compute.sql import computefull, select, lower_column, compute_up
+from blaze import (compute, discover, by, join, transform, sin, floor, cos,
+                   merge, summary, nunique, sum)
+from blaze.expr import symbol, exp, mean, count
 from blaze.compatibility import xfail
 from toolz import unique
 from pandas import DataFrame
@@ -243,7 +246,7 @@ def test_nelements():
 @pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
                    " Record datashapes")
 def test_nelements_axis_1():
-    assert compute(nelements(t, axis=1), s) == len(s.columns)
+    assert compute(t.nelements(axis=1), s) == len(s.columns)
 
 
 def test_count_on_table():
@@ -268,7 +271,7 @@ def test_count_on_table():
               WHERE accounts.amount > :amount_1) as alias"""))
 
 def test_distinct():
-    result = str(compute(Distinct(t['amount']), s, post_compute=False))
+    result = str(compute(t['amount'].distinct(), s, post_compute=False))
 
     assert 'distinct' in result.lower()
     assert 'amount' in result.lower()
@@ -896,8 +899,8 @@ sql_cities = sa.Table('cities', sa.MetaData(),
                    sa.Column('name', sa.String),
                    sa.Column('city', sa.String))
 
-bank = Symbol('bank', discover(sql_bank))
-cities = Symbol('cities', discover(sql_cities))
+bank = symbol('bank', discover(sql_bank))
+cities = symbol('cities', discover(sql_cities))
 
 
 def test_aliased_views_with_two_group_bys():
@@ -1032,8 +1035,8 @@ def test_aliased_views_with_computation():
     sql_aaa = metadata.tables['aaa']
     sql_bbb = metadata.tables['bbb']
 
-    L = Symbol('aaa', discover(df_aaa))
-    R = Symbol('bbb', discover(df_bbb))
+    L = symbol('aaa', discover(df_aaa))
+    R = symbol('bbb', discover(df_bbb))
 
     expr = join(by(L.x, y_total=L.y.sum()),
                 R)
@@ -1356,3 +1359,43 @@ def test_isin():
             :name_2)
     """
     assert normalize(result_sql_expr) == normalize(expected)
+
+
+@pytest.mark.skipif(LooseVersion(sa.__version__) >= '1.0.0',
+                    reason="SQLAlchemy generates different code in >= 1.0.0")
+def test_date_grouper_repeats_not_one_point_oh():
+    columns = [sa.Column('amount', sa.REAL),
+               sa.Column('ds', sa.TIMESTAMP)]
+    data = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(data))
+    expr = by(t.ds.year, avg_amt=t.amount.mean())
+    result = str(compute(expr, data))
+
+    # FYI spark sql isn't able to parse this correctly
+    expected = """SELECT
+        EXTRACT(year FROM t.ds) as ds_year,
+        AVG(t.amount) as avg_amt
+    FROM t
+    GROUP BY EXTRACT(year FROM t.ds)
+    """
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.mark.skipif(LooseVersion(sa.__version__) < '1.0.0',
+                    reason="SQLAlchemy generates different code in < 1.0.0")
+def test_date_grouper_repeats():
+    columns = [sa.Column('amount', sa.REAL),
+               sa.Column('ds', sa.TIMESTAMP)]
+    data = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(data))
+    expr = by(t.ds.year, avg_amt=t.amount.mean())
+    result = str(compute(expr, data))
+
+    # FYI spark sql isn't able to parse this correctly
+    expected = """SELECT
+        EXTRACT(year FROM t.ds) as ds_year,
+        AVG(t.amount) as avg_amt
+    FROM t
+    GROUP BY ds_year
+    """
+    assert normalize(result) == normalize(expected)

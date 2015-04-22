@@ -4,6 +4,8 @@ package:
 
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  {% if environ.get('GIT_DESCRIBE_NUMBER', '0') == '0' %}string: py{{ environ.get('PY_VER').replace('.', '') }}_0
+  {% else %}string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}{% endif %}
 
 source:
   git_url: ../
@@ -11,12 +13,12 @@ source:
 requirements:
   run:
     - python
-    - numpy
+    - numpy >=1.7
     - blaze-core
     - h5py
     - cytoolz
-    - pytables
-    - pymongo
+    - pytables >=3.0.0
+    - pymongo >=2.8
     - numba
     - bcolz
     - unittest2 [py26]
@@ -24,10 +26,10 @@ requirements:
 test:
   requires:
     - pytest
-    - coverage
+    - dynd-python
 
   commands:
-    - py.test -x --pyargs blaze
+    - py.test -vx --pyargs blaze -rsxX
 
 about:
   home: http://blaze.pydata.org
