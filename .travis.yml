@@ -46,6 +46,9 @@ install:
   - pip install git+https://github.com/pytoolz/toolz
   - pip install git+https://github.com/pytoolz/cytoolz
 
+  # Install dask
+  - pip install git+https://github.com/ContinuumIO/dask
+
   # Install PyMongo
   - pip install pymongo
 
