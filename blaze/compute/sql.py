@@ -619,7 +619,7 @@ def get_clause(data, kind):
     return clause.clauses if clause is not None else None
 
 
-@dispatch(Merge, (Selectable, Select))
+@dispatch(Merge, (Selectable, Select, sa.Column))
 def compute_up(expr, data, **kwargs):
     # get the common subexpression of all the children in the merge
     subexpression = common_subexpression(*expr.children)
