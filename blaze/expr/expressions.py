@@ -13,7 +13,7 @@ import re
 from datashape import dshape, DataShape, Record, Var, Mono, Fixed
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
-from ..compatibility import _strtypes, builtins
+from ..compatibility import _strtypes, builtins, boundmethod
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
@@ -179,8 +179,7 @@ class Expr(Node):
                     if func in method_properties:
                         result = func(self)
                     else:
-                        result = functools.update_wrapper(partial(func, self),
-                                                          func)
+                        result = boundmethod(func, self)
                 else:
                     raise
         _attr_cache[(self, key)] = result
