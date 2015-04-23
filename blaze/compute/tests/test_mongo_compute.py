@@ -217,6 +217,10 @@ def test_distinct(bank):
     assert set(compute(t.name.distinct(), bank)) == set(['Alice', 'Bob'])
 
 
+def test_nunique_collection(bank):
+    assert compute(t.nunique(), bank) == len(bank_raw)
+
+
 def test_sort(bank):
     assert compute(t.amount.sort('amount'), bank) == \
         [100, 100, 200, 200, 300]
