@@ -46,11 +46,8 @@ from __future__ import absolute_import, division, print_function
 
 import numbers
 
-try:
-    from pymongo.collection import Collection
-    from pymongo.database import Database
-except ImportError:
-    Database = Collection = type(None)
+from pymongo.collection import Collection
+from pymongo.database import Database
 
 import fnmatch
 from datashape.predicates import isscalar

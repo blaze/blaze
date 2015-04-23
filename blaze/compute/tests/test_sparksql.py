@@ -9,13 +9,15 @@ sa = pytest.importorskip('sqlalchemy')
 import os
 import itertools
 import shutil
-import copy
 
 from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
-from blaze.compute.spark import SparkDataFrame
+try:
+    from pyspark.sql import DataFrame as SparkDataFrame
+except ImportError:
+    from pyspark.sql import SchemaRDD as SparkDataFrame
 from pyspark import HiveContext, SQLContext
 from pyspark.sql import Row, SchemaRDD
 from odo import odo, discover

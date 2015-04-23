@@ -30,10 +30,10 @@ requirements:
 
 test:
   requires:
-    - pytest
+    - pytest >=2.7.0
 
   commands:
-    - py.test -vx --pyargs blaze -rsxX
+    - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX
 
 about:
   home: http://blaze.pydata.org

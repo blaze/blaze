@@ -1,9 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-try:
-    from dynd.nd import array
-except ImportError:
-    array = type(None)
+from dynd.nd import array
 
 from ..expr import *
 from .core import compute
@@ -48,4 +45,4 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(USub, array)
 def compute_up(t, x, **kwargs):
-    return 0-x
+    return 0 - x

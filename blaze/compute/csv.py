@@ -2,13 +2,13 @@ from __future__ import absolute_import, division, print_function
 
 import pandas
 import os
-from toolz import curry, concat, map
+from toolz import curry, concat
 import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
 from odo import into
-from odo.chunks import chunks, Chunks
-from odo.backends.csv import CSV, csv_to_DataFrame
+from odo.chunks import chunks
+from odo.backends.csv import CSV
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch

@@ -13,10 +13,11 @@ from ..dispatch import dispatch
 
 __all__ = ['drop', 'create_index']
 
+
 @dispatch(tb.Table)
 def discover(t):
     return t.shape[0] * Record([[col, discover(getattr(t.cols, col))]
-                                   for col in t.colnames])
+                                for col in t.colnames])
 
 
 @dispatch(tb.Column)
