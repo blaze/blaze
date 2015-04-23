@@ -1,10 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import namedtuple
+
 from .core import pre_compute
 from ..expr import Expr, Field
 from ..dispatch import dispatch
+
 from odo import into, chunks
+
 import pandas as pd
+
 
 @dispatch(Expr, pd.io.pytables.AppendableFrameTable)
 def pre_compute(expr, data, **kwargs):
@@ -25,7 +30,6 @@ def compute_up(expr, data, **kwargs):
         return HDFGroup(data, key)
 
 
-from collections import namedtuple
 HDFGroup = namedtuple('HDFGroup', 'parent,datapath')
 
 
