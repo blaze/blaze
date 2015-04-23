@@ -19,12 +19,15 @@ BinOp
 UnaryOp
 Arithmetic
 Add
+Concat
 Mult
+Repeat
 Sub
 Div
 FloorDiv
 Pow
 Mod
+Interp
 USub
 Relational
 Eq
@@ -161,7 +164,18 @@ class Add(Arithmetic):
     op = operator.add
 
 
+class Concat(Arithmetic):
+    symbol = '+'
+    op = operator.add
+
+
 class Mult(Arithmetic):
+    symbol = '*'
+    op = operator.mul
+
+
+class Repeat(Arithmetic):
+    # Sequence repeat
     symbol = '*'
     op = operator.mul
 
@@ -201,6 +215,12 @@ class Pow(Arithmetic):
 
 
 class Mod(Arithmetic):
+    symbol = '%'
+    op = operator.mod
+
+
+class Interp(Arithmetic):
+    # String interpolation
     symbol = '%'
     op = operator.mod
 
@@ -299,12 +319,15 @@ def _mkbin(name, cons, reflected=True):
 
 
 _add, _radd = _mkbin('add', Add)
+_concat, _rconcat = _mkbin('add', Concat)  # name is 'add' on purpose
 _div, _rdiv = _mkbin('div', Div)
 _floordiv, _rfloordiv = _mkbin('floordiv', FloorDiv)
 _mod, _rmod = _mkbin('mod', Mod)
 _mul, _rmul = _mkbin('mul', Mult)
 _pow, _rpow = _mkbin('pow', Pow)
+_repeat, _rrepeat = _mkbin('mul', Repeat)  # name is 'mul' on purpose
 _sub, _rsub = _mkbin('sub', Sub)
+_interp, _rinterp = _mkbin('mod', Interp)  # name is 'mod' on purpose
 
 
 class Relational(Arithmetic):
@@ -392,5 +415,5 @@ schema_method_list.extend([
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
     (isboolean, set([_or, _ror, _and, _rand, _invert])),
     (lambda t: isinstance(t, ct.String),
-     set([_add, _radd, _mul, _rmul, _mod, _rmod])),
+     set([_concat, _rconcat, _repeat, _rrepeat, _interp, _rinterp])),
     ])

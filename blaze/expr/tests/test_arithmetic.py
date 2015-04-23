@@ -1,4 +1,4 @@
-from blaze.expr import Add, USub, Not, Gt, Mult, Mod
+from blaze.expr import Add, USub, Not, Gt, Mult, Concat, Interp, Repeat
 from blaze import symbol
 from datashape import dshape
 import pytest
@@ -75,9 +75,9 @@ def test_arith_ops_promote_dtype():
 
 
 def test_str_arith():
-    assert isinstance(cs + cs, Add)
-    assert isinstance(cs * 1, Mult)
-    assert isinstance(cs % cs, Mod)
+    assert isinstance(cs + cs, Concat)
+    assert isinstance(cs * 1, Repeat)
+    assert isinstance(cs % cs, Interp)
 
     with pytest.raises(Exception):
         cs / 1
