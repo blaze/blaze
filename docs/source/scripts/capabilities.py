@@ -92,7 +92,7 @@ capabilities = {
 colormap = {True: "#5EDA9E", False: "#FFFFFF"}
 
 backends = sorted(capabilities.keys())
-operations = sorted(capabilities.values()[0].keys())
+operations = sorted(tuple(capabilities.values())[0].keys())
 
 statuses = [capabilities[backend][op] for backend in backends
             for op in operations]
