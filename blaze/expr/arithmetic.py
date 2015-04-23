@@ -448,11 +448,13 @@ BitOr = Or
 
 from .expressions import schema_method_list
 
+
 schema_method_list.extend([
     (isnumeric,
-            set([_add, _radd, _mul,
-            _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
-            _rpow, _mod, _rmod,  _neg])),
+     set([_add, _radd, _mul, _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub,
+          _rsub, _pow, _rpow, _mod, _rmod,  _neg])),
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
     (isboolean, set([_or, _ror, _and, _rand, _invert])),
+    (lambda t: isinstance(t, ct.String),
+     set([_add, _radd, _mul, _rmul, _mod, _rmod])),
     ])
