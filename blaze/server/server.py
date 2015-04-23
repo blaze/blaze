@@ -11,10 +11,11 @@ from contextlib import contextmanager
 import socket
 import json
 from toolz import assoc
-from blaze import into, compute
+from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection, isscalar
+from odo import odo
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..utils import json_dumps
 from ..expr import Expr, symbol
@@ -281,7 +282,7 @@ def compserver():
         result = compute(expr, {leaf: dataset})
 
         if iscollection(expr.dshape):
-            result = into(list, result)
+            result = odo(result, list)
         elif isscalar(expr.dshape):
             result = coerce_scalar(result, str(expr.dshape))
     except NotImplementedError as e:
