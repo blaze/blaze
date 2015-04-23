@@ -12,6 +12,7 @@ from blaze.utils import tmpfile, example
 from blaze.compatibility import xfail
 import pytest
 import sys
+from types import MethodType
 
 import pandas as pd
 import pandas.util.testing as tm
@@ -373,3 +374,20 @@ def test_asarray_fails_on_different_column_names():
 def test_data_does_not_accept_columns_kwarg():
     with pytest.raises(ValueError):
         Data([(1, 2), (3, 4)], columns=list('ab'))
+
+
+def test_functions_as_bound_methods():
+    """
+    Test that all functions on an InteractiveSymbol are instance methods
+    of that object.
+    """
+    # Filter out __class__ and friends that are special, these can be
+    # callables without being instance methods.
+    callable_attrs = filter(
+        callable,
+        (getattr(t, a, None) for a in dir(t) if not a.startswith('__')),
+    )
+    for attr in callable_attrs:
+        assert isinstance(attr, MethodType)
+        # Make sure this is bound to the correct object.
+        assert attr.__self__ is t

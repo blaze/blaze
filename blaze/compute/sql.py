@@ -304,9 +304,9 @@ def compute_up(t, lhs, rhs, **kwargs):
         return sa.select(columns, from_obj=join)
 
 
-names = {mean: 'avg',
-         var: 'variance',
-         std: 'stdev'}
+names = {
+    mean: 'avg'
+}
 
 
 @dispatch((nunique, Reduction), Select)
@@ -339,11 +339,23 @@ def compute_up(t, s, **kwargs):
     try:
         op = getattr(sa.sql.functions, t.symbol)
     except AttributeError:
-        symbol = names.get(type(t), t.symbol)
-        op = getattr(sa.sql.func, symbol)
-    result = op(s)
+        op = getattr(sa.sql.func, names.get(type(t), t.symbol))
+    return op(s).label(t._name)
 
-    return result.label(t._name)
+
+prefixes = {
+    std: 'stddev',
+    var: 'var'
+}
+
+
+@dispatch((std, var), sql.elements.ColumnElement)
+def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
+    funcname = 'samp' if t.unbiased else 'pop'
+    full_funcname = '%s_%s' % (prefixes[type(t)], funcname)
+    return getattr(sa.func, full_funcname)(s).label(t._name)
 
 
 @dispatch(count, Selectable)
