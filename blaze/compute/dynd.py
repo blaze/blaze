@@ -45,4 +45,4 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(USub, array)
 def compute_up(t, x, **kwargs):
-    return 0-x
+    return 0 - x
