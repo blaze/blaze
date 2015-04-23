@@ -299,19 +299,21 @@ def _neg(self):
     return USub(self)
 
 
-def _mkbin(name, cons, reflected=True):
+def _mkbin(name, cons, private=True, reflected=True):
+    prefix = '_' if private else ''
+
     def _bin(self, other):
         result = cons(self, scalar_coerce(self.dshape, other))
         result.dshape  # Check that shapes and dtypes match up
         return result
-    _bin.__name__ = '_' + name
+    _bin.__name__ = prefix + name
 
     if reflected:
         def _rbin(self, other):
             result = cons(scalar_coerce(self.dshape, other), self)
             result.dshape  # Check that shapes and dtypes match up
             return result
-        _rbin.__name__ = '_r' + name
+        _rbin.__name__ = prefix + 'r' + name
 
         return _bin, _rbin
 
@@ -319,15 +321,15 @@ def _mkbin(name, cons, reflected=True):
 
 
 _add, _radd = _mkbin('add', Add)
-_concat, _rconcat = _mkbin('add', Concat)  # name is 'add' on purpose
+concat = _mkbin('concat', Concat, reflected=False, private=False)
 _div, _rdiv = _mkbin('div', Div)
 _floordiv, _rfloordiv = _mkbin('floordiv', FloorDiv)
 _mod, _rmod = _mkbin('mod', Mod)
 _mul, _rmul = _mkbin('mul', Mult)
 _pow, _rpow = _mkbin('pow', Pow)
-_repeat, _rrepeat = _mkbin('mul', Repeat)  # name is 'mul' on purpose
+repeat = _mkbin('repeat', Repeat, reflected=False, private=False)
 _sub, _rsub = _mkbin('sub', Sub)
-_interp, _rinterp = _mkbin('mod', Interp)  # name is 'mod' on purpose
+interp = _mkbin('interp', Interp, reflected=False, private=False)
 
 
 class Relational(Arithmetic):
@@ -414,6 +416,4 @@ schema_method_list.extend([
           _rsub, _pow, _rpow, _mod, _rmod,  _neg])),
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
     (isboolean, set([_or, _ror, _and, _rand, _invert])),
-    (lambda t: isinstance(t, ct.String),
-     set([_concat, _rconcat, _repeat, _rrepeat, _interp, _rinterp])),
     ])
