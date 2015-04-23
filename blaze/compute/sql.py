@@ -385,11 +385,16 @@ def compute_up(t, s, **kwargs):
     return select([list(inner_columns(result))[0].label(t._name)])
 
 
-@dispatch(nunique, (Select, Selectable, sa.Column))
+@dispatch(nunique, sa.Column)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     return sa.func.count(s.distinct())
+
+
+@dispatch(nunique, (Select, Selectable))
+def compute_up(t, s, **kwargs):
+    return compute_up(t._child.distinct().count(), s)
 
 
 @dispatch(Distinct, sa.Table)
