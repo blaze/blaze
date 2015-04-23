@@ -404,7 +404,12 @@ def compute_up(t, s, **kwargs):
     return sa.func.count(s.distinct())
 
 
-@dispatch(Distinct, sa.Table)
+@dispatch(nunique, Selectable)
+def compute_up(expr, data, **kwargs):
+    return select(data).distinct().alias(next(aliases)).count()
+
+
+@dispatch(Distinct, Selectable)
 def compute_up(t, s, **kwargs):
     return select(s).distinct()
 

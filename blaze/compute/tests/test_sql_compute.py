@@ -334,10 +334,18 @@ def test_nunique():
     assert 'amount' in result.lower()
 
 
+def test_nunique_table():
+    result = normalize(str(computefull(t.nunique(), s)))
+    expected = normalize("""SELECT count(alias.id) AS tbl_row_count
+FROM (SELECT DISTINCT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+FROM accounts) as alias""")
+    assert result == expected
+
+
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
-            str(sa.sql.functions.any(s.c.amount > 150))
+        str(sa.sql.functions.any(s.c.amount > 150))
 
 
 def test_by():

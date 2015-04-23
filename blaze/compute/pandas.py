@@ -35,7 +35,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction)
+                    UnaryStringFunction, nunique)
 from ..expr import UnaryOp, BinOp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -158,6 +158,11 @@ def compute_up(t, s, **kwargs):
 @dispatch(Distinct, (DataFrame, Series))
 def compute_up(t, df, **kwargs):
     return df.drop_duplicates().reset_index(drop=True)
+
+
+@dispatch(nunique, DataFrame)
+def compute_up(expr, data, **kwargs):
+    return compute_up(expr._child.distinct().count(), data, **kwargs)
 
 
 string_func_names = {
