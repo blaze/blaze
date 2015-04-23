@@ -336,9 +336,9 @@ def test_nunique():
 
 def test_nunique_table():
     result = normalize(str(computefull(t.nunique(), s)))
-    expected = normalize("""SELECT count(id) AS tbl_row_count
+    expected = normalize("""SELECT count(alias.id) AS tbl_row_count
 FROM (SELECT DISTINCT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
-FROM accounts)""")
+FROM accounts) as alias""")
     assert result == expected
 
 
