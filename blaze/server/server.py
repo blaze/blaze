@@ -2,19 +2,20 @@ from __future__ import absolute_import, division, print_function
 
 try:
     import flask
-    from flask import Flask, request
+    from flask import Blueprint, Flask, request
 except ImportError:
     pass
 
 import blaze
+from contextlib import contextmanager
 import socket
 import json
 from toolz import assoc
-from functools import partial, wraps
-from blaze import into, compute
+from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 from datashape.predicates import iscollection, isscalar
+from odo import odo
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..utils import json_dumps
 from ..expr import Expr, symbol
@@ -27,6 +28,9 @@ __all__ = 'Server', 'to_tree', 'from_tree'
 # http://www.speedguide.net/port.php?port=6363
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
 DEFAULT_PORT = 6363
+
+
+api = Blueprint('api', __name__)
 
 
 class Server(object):
@@ -58,38 +62,34 @@ class Server(object):
 
     def __init__(self, data=None):
         app = self.app = Flask('blaze.server.server')
+        app.register_blueprint(api)
         if data is None:
             data = dict()
         self.data = data
 
-        for args, kwargs, func in routes:
-            func2 = wraps(func)(partial(func, self.data))
-            app.route(*args, **kwargs)(func2)
+    @contextmanager
+    def context(self):
+        with self.app.app_context():
+            flask.g.data = data = self.data
+            yield data
 
     def run(self, *args, **kwargs):
         """Run the server"""
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
         try:
-            self.app.run(*args, port=port, **kwargs)
+            with self.context():
+                self.app.run(*args, port=port, **kwargs)
         except socket.error:
             print("\tOops, couldn't connect on port %d.  Is it busy?" % port)
-            self.run(*args, **assoc(kwargs, 'port', port + 1))
+            if kwargs.get('retry', True):
+                # Attempt to start the server on a new port.
+                self.run(*args, **assoc(kwargs, 'port', port + 1))
 
 
-routes = list()
-
-
-def route(*args, **kwargs):
-    def f(func):
-        routes.append((args, kwargs, func))
-        return func
-    return f
-
-
-@route('/datashape')
-def dataset(data):
-    return str(discover(data))
+@api.route('/datashape')
+def dataset():
+    return str(discover(flask.g.data))
 
 
 def to_tree(expr, names=None):
@@ -261,8 +261,8 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@route('/compute.json', methods=['POST', 'PUT', 'GET'])
-def compserver(dataset):
+@api.route('/compute.json', methods=['POST', 'PUT', 'GET'])
+def compserver():
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 415)  # 415: Unsupported Media Type
     try:
@@ -271,6 +271,7 @@ def compserver(dataset):
         return ("Bad JSON.  Got %s " % request.data, 400)  # 400: Bad Request
 
     ns = payload.get('namespace', dict())
+    dataset = flask.g.data
     ns[':leaf'] = symbol('leaf', discover(dataset))
 
     expr = from_tree(payload['expr'], namespace=ns)
@@ -279,17 +280,17 @@ def compserver(dataset):
 
     try:
         result = compute(expr, {leaf: dataset})
+
+        if iscollection(expr.dshape):
+            result = odo(result, list)
+        elif isscalar(expr.dshape):
+            result = coerce_scalar(result, str(expr.dshape))
     except NotImplementedError as e:
         # 501: Not Implemented
         return ("Computation not supported:\n%s" % e, 501)
     except Exception as e:
         # 500: Internal Server Error
         return ("Computation failed with message:\n%s" % e, 500)
-
-    if iscollection(expr.dshape):
-        result = into(list, result)
-    elif isscalar(expr.dshape):
-        result = coerce_scalar(result, str(expr.dshape))
 
     return json.dumps({'datashape': str(expr.dshape),
                        'data': result}, default=json_dumps)

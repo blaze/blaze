@@ -267,6 +267,27 @@ or a Blaze server
    >>> server = Server(cached)  # doctest: +SKIP
 
 
+Flask Blueprint
+---------------
+
+If you would like to use the blaze server endpoints from within another flask
+application, you can register the blaze api blueprint with your app. For
+example:
+
+.. code-block:: python
+
+   >>> from blaze.server import api  # doctest: +SKIP
+   >>> app.register_blueprint(api)  # doctest: +SKIP
+   >>> with app.app_context():  # doctest: +SKIP
+   >>>     flask.g.data = dset  # doctest: +SKIP
+   >>>     app.run()  # doctest: +SKIP
+
+
+When using the blaze flask blueprint, be sure to register your dataset in the
+flask application context ``flask.g`` so that it is available to the API
+endpoints.
+
+
 Conclusion
 ==========
 
