@@ -335,8 +335,10 @@ def test_nunique():
 
 
 def test_nunique_table():
-    result = normalize(str(compute(t.nunique(), s)))
-    expected = normalize("SELECT count(accounts.id) as count_1 from accounts")
+    result = normalize(str(computefull(t.nunique(), s)))
+    expected = normalize("""SELECT count(id) AS tbl_row_count
+FROM (SELECT DISTINCT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+FROM accounts)""")
     assert result == expected
 
 
