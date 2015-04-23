@@ -429,3 +429,12 @@ def test_isin(keys):
     result = compute(s.x.isin(keys), b)
     expected = np.in1d(b['x'], keys)
     np.testing.assert_array_equal(result, expected)
+
+
+def test_nunique_recarray():
+    b = np.array([('a', 1), ('b', 2), ('c', 3), ('a', 4), ('c', 5), ('b', 6),
+                  ('a', 1), ('b', 2)],
+                 dtype=[('x', 'S1'), ('y', 'i4')])
+    s = symbol('s', discover(b))
+    expr = s.nunique()
+    assert compute(expr, b) == len(np.unique(b))
