@@ -1,17 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-from ..expr import (Expr, Symbol, Field, Arithmetic, RealMath, Map, Not,
-        USub, Date, Time, DateTime, Millisecond, Microsecond, broadcast, sin,
-        cos, isnan, UnaryOp, symbol)
-import datetime
-from datashape import iscollection
-import math
+from ..expr import (Expr, Symbol, Field, Arithmetic, RealMath, Not,
+                    USub, Date, Time, DateTime, Millisecond, Microsecond,
+                    broadcast, sin, cos, isnan, UnaryOp, symbol)
 from toolz import curry
 import itertools
 from ..expr.broadcast import broadcast_collect
 
 
 funcnames = ('func_%d' % i for i in itertools.count())
+
 
 def parenthesize(s):
     if ' ' in s:

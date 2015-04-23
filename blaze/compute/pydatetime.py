@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
 from datetime import datetime, date, timedelta
-from math import floor
 import sys
+
 
 def identity(x):
     return x
+
 
 def asday(dt):
     if isinstance(dt, datetime):
@@ -13,24 +14,30 @@ def asday(dt):
     else:
         return dt
 
+
 def asweek(dt):
     if isinstance(dt, datetime):
         dt = dt.date()
     return dt - timedelta(days=dt.isoweekday() - 1)
 
+
 def ashour(dt):
     return datetime(dt.year, dt.month, dt.day, dt.hour, tzinfo=dt.tzinfo)
 
+
 def asminute(dt):
-    return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, tzinfo=dt.tzinfo)
+    return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute,
+                    tzinfo=dt.tzinfo)
+
 
 def assecond(dt):
     return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute,
-            dt.second, tzinfo=dt.tzinfo)
+                    dt.second, tzinfo=dt.tzinfo)
+
 
 def asmillisecond(dt):
     return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute,
-            dt.second, dt.microsecond // 1000, tzinfo=dt.tzinfo)
+                    dt.second, dt.microsecond // 1000, tzinfo=dt.tzinfo)
 
 if sys.version_info < (2, 7):
     def total_seconds(td):
@@ -43,7 +50,6 @@ else:
     total_seconds = timedelta.total_seconds
 
 
-
 unit_map = {'year': 'asyear',
             'month': 'asmonth',
             'week': 'asweek',
@@ -53,6 +59,7 @@ unit_map = {'year': 'asyear',
             'second': 'assecond',
             'millisecond': 'asmillisecond',
             'microsecond': identity}
+
 
 def truncate_year(dt, measure):
     """
@@ -81,7 +88,7 @@ def truncate_month(dt, measure):
     """
     months = dt.year * 12 + dt.month
     months = months // measure * measure
-    return date((months - 1) // 12, (months -1) % 12 + 1, 1)
+    return date((months - 1) // 12, (months - 1) % 12 + 1, 1)
 
 
 def truncate_day(dt, measure):
@@ -101,6 +108,7 @@ def truncate_day(dt, measure):
 
 oneday = timedelta(days=1)
 
+
 def truncate_week(dt, measure):
     """
     Truncate by weeks
@@ -119,6 +127,8 @@ def truncate_week(dt, measure):
 
 
 epoch = datetime.utcfromtimestamp(0)
+
+
 def utctotimestamp(dt):
     """
     Convert a timestamp to seconds
@@ -158,6 +168,7 @@ def truncate_hour(dt, measure):
     """
     return ashour(truncate_second(dt, measure * 3600))
 
+
 def truncate_second(dt, measure):
     """
     Truncate by second
@@ -166,10 +177,10 @@ def truncate_second(dt, measure):
     >>> truncate_second(dt, 15)
     datetime.datetime(2000, 1, 1, 12, 30, 30)
     """
-    d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
+    d = datetime(
+        dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)  # local zero for seconds
     seconds = total_seconds(dt - d) // measure * measure
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
-
 
 
 def truncate_millisecond(dt, measure):
@@ -180,7 +191,8 @@ def truncate_millisecond(dt, measure):
     >>> truncate_millisecond(dt, 5)
     datetime.datetime(2000, 1, 1, 12, 30, 38, 10000)
     """
-    d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
+    d = datetime(
+        dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)  # local zero for seconds
     seconds = total_seconds(dt - d) * 1000 // measure * measure / 1000. + 1e-7
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
@@ -193,7 +205,8 @@ def truncate_microsecond(dt, measure):
     >>> truncate_microsecond(dt, 100)
     datetime.datetime(2000, 1, 1, 12, 30, 38, 12300)
     """
-    d = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo) # local zero for seconds
+    d = datetime(
+        dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)  # local zero for seconds
     seconds = total_seconds(dt - d) * 1000000 // measure * measure / 1000000
     return dt.utcfromtimestamp(seconds + utctotimestamp(d))
 
