@@ -362,3 +362,8 @@ def test_isin(ctx, db, keys):
     expected = odo(compute(expr, {db: {'t': df}}), set)
     assert (set(map(frozenset, odo(result, list))) ==
             set(map(frozenset, odo(expected, list))))
+
+
+def test_nunique_spark_dataframe(ctx, db):
+    assert (odo(compute(db.t.nunique(), ctx), int) ==
+            ctx.table('t').distinct().count())
