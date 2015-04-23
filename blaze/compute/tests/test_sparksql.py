@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
 try:
-    from pyspark.sql import SparkDataFrame
+    from pyspark.sql import DataFrame as SparkDataFrame
 except ImportError:
     from pyspark.sql import SchemaRDD as SparkDataFrame
 from pyspark import HiveContext, SQLContext
