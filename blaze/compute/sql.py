@@ -393,8 +393,8 @@ def compute_up(t, s, **kwargs):
 
 
 @dispatch(nunique, (Select, Selectable))
-def compute_up(t, s, **kwargs):
-    return compute_up(t._child.distinct().count(), s)
+def compute_up(expr, data, **kwargs):
+    return compute_up(expr._child.distinct().count(), data)
 
 
 @dispatch(Distinct, sa.Table)
