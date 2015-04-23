@@ -662,3 +662,9 @@ def test_isin(keys):
     result = compute(expr, df)
     expected = df.loc[df.id.isin(keys)]
     tm.assert_frame_equal(result, expected)
+
+
+def test_nunique_table():
+    expr = t.nunique()
+    result = compute(expr, df)
+    assert result == len(df.drop_duplicates())

@@ -12,6 +12,7 @@ from blaze.utils import tmpfile, example
 from blaze.compatibility import xfail
 import pytest
 import sys
+from types import MethodType
 
 import pandas as pd
 import pandas.util.testing as tm
@@ -26,7 +27,7 @@ L = [[1, 'Alice',   100],
      [4, 'Denis',   400],
      [5, 'Edith',  -500]]
 
-t = Data(data, columns=['name', 'amount'])
+t = Data(data, fields=['name', 'amount'])
 
 x = np.ones((2, 2))
 
@@ -66,7 +67,7 @@ def test_create_with_schema():
 
 
 def test_create_with_raw_data():
-    t = Data(data, columns=['name', 'amount'])
+    t = Data(data, fields=['name', 'amount'])
     assert t.schema == dshape('{name: string, amount: int64}')
     assert t.name
     assert t.data == data
@@ -368,3 +369,25 @@ def test_asarray_fails_on_different_column_names():
     df = pd.DataFrame(vs)
     with pytest.raises(ValueError):
         Data(df, fields=list('abc'))
+
+
+def test_data_does_not_accept_columns_kwarg():
+    with pytest.raises(ValueError):
+        Data([(1, 2), (3, 4)], columns=list('ab'))
+
+
+def test_functions_as_bound_methods():
+    """
+    Test that all functions on an InteractiveSymbol are instance methods
+    of that object.
+    """
+    # Filter out __class__ and friends that are special, these can be
+    # callables without being instance methods.
+    callable_attrs = filter(
+        callable,
+        (getattr(t, a, None) for a in dir(t) if not a.startswith('__')),
+    )
+    for attr in callable_attrs:
+        assert isinstance(attr, MethodType)
+        # Make sure this is bound to the correct object.
+        assert attr.__self__ is t

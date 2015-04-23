@@ -41,7 +41,7 @@ def reason(response):
     if isinstance(response, flask.Response):
         return response.status
     if isinstance(response, requests.Response):
-        return response.reason
+        return response.text
 
 
 class Client(object):

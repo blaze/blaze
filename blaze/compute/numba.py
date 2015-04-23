@@ -1,18 +1,20 @@
 from __future__ import absolute_import, division, print_function
+import threading
 
 import numpy as np
+from toolz import memoize
+import datashape
+import numba
 
 from .core import compute, optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
 from ..expr.strings import isstring
 from ..expr.broadcast import broadcast_collect, Broadcast
-from toolz import memoize
-import datashape
-import numba
 from .pyfunc import funcstr
 
 
 Broadcastable = Arithmetic, Math, Map, UnaryOp
+lock = threading.Lock()
 
 
 def optimize_ndarray(expr, *data, **kwargs):
@@ -196,15 +198,19 @@ def _get_numba_ufunc(expr):
     else:
         leaves = expr._leaves()
 
-    # we may not have a Broadcast instance because arithmetic expressions can
-    # be vectorized so we use getattr
     s, scope = funcstr(leaves, expr)
 
     scope = dict((k, numba.jit(nopython=True)(v) if callable(v) else v)
                  for k, v in scope.items())
+    # get the func
     func = eval(s, scope)
+    # get the signature
     sig = compute_signature(expr)
-    return numba.vectorize([sig], nopython=True)(func)
+    # vectorize is currently not thread safe. So lock the thread.
+    # TODO FIXME remove this when numba has made vectorize thread safe.
+    with lock:
+        ufunc = numba.vectorize([sig], nopython=True)(func)
+    return ufunc
 
 
 # do this here so we can run our doctest

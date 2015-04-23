@@ -1,21 +1,50 @@
 from __future__ import absolute_import, division, print_function
 
+import re
+from distutils.version import LooseVersion
+
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
-import re
-
 import datashape
+from odo import into, resource
+from pandas import DataFrame
+from toolz import unique
 
 from blaze.compute.sql import (compute, computefull, select, lower_column,
                                compute_up)
-from blaze.expr import *
+from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
+                        floor, cos, merge, nunique, mean, sum, count, exp)
 from blaze.compatibility import xfail
-from toolz import unique
-from pandas import DataFrame
-from odo import into, resource
 from blaze.utils import tmpfile
+
+
+@pytest.fixture(scope='module')
+def data():
+    # make the engine
+    engine = sa.create_engine('sqlite:///:memory:')
+    metadata = sa.MetaData(engine)
+
+    # name table
+    name = sa.Table('name', metadata,
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
+    name.create()
+
+    # city table
+    city = sa.Table('city', metadata,
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
+    city.create()
+
+    s = symbol('s', discover(engine))
+    return {'engine': engine, 'metadata': metadata, 'name': name, 'city': city,
+            's': s}
+
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
@@ -204,10 +233,22 @@ def test_unary_op():
     assert str(compute(exp(t['amount']), s, post_compute=False)) == \
             str(sa.func.exp(s.c.amount))
 
-
-def test_unary_op():
     assert str(compute(-t['amount'], s, post_compute=False)) == \
             str(-s.c.amount)
+
+
+@pytest.mark.parametrize('unbiased', [True, False])
+def test_std(unbiased):
+    assert str(compute(t.amount.std(unbiased=unbiased), s, post_compute=False)) == \
+        str(getattr(sa.func,
+                    'stddev_%s' % ('samp' if unbiased else 'pop'))(s.c.amount))
+
+
+@pytest.mark.parametrize('unbiased', [True, False])
+def test_var(unbiased):
+    assert str(compute(t.amount.var(unbiased=unbiased), s, post_compute=False)) == \
+        str(getattr(sa.func,
+                    'var_%s' % ('samp' if unbiased else 'pop'))(s.c.amount))
 
 
 def test_reductions():
@@ -243,7 +284,7 @@ def test_nelements():
 @pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
                    " Record datashapes")
 def test_nelements_axis_1():
-    assert compute(nelements(t, axis=1), s) == len(s.columns)
+    assert compute(t.nelements(axis=1), s) == len(s.columns)
 
 
 def test_count_on_table():
@@ -267,8 +308,9 @@ def test_count_on_table():
               FROM accounts
               WHERE accounts.amount > :amount_1) as alias"""))
 
+
 def test_distinct():
-    result = str(compute(Distinct(t['amount']), s, post_compute=False))
+    result = str(compute(t['amount'].distinct(), s, post_compute=False))
 
     assert 'distinct' in result.lower()
     assert 'amount' in result.lower()
@@ -292,10 +334,18 @@ def test_nunique():
     assert 'amount' in result.lower()
 
 
+def test_nunique_table():
+    result = normalize(str(computefull(t.nunique(), s)))
+    expected = normalize("""SELECT count(alias.id) AS tbl_row_count
+FROM (SELECT DISTINCT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
+FROM accounts) as alias""")
+    assert result == expected
+
+
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
-            str(sa.sql.functions.any(s.c.amount > 150))
+        str(sa.sql.functions.any(s.c.amount > 150))
 
 
 def test_by():
@@ -679,8 +729,6 @@ def test_join_complex_clean():
              sa.Column('country', sa.String),
              )
 
-    sel = select(name).where(name.c.id > 10)
-
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
 
@@ -758,8 +806,6 @@ def test_lower_column():
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
 
-    ns = {tname: name, tcity: city}
-
     assert lower_column(name.c.id) is name.c.id
     assert lower_column(select(name).c.id) is name.c.id
 
@@ -836,68 +882,39 @@ def test_join_on_same_table():
     """)
 
 
-def test_field_access_on_engines():
-    engine = sa.create_engine('sqlite:///:memory:')
-    metadata = sa.MetaData(engine)
-    name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
-    name.create()
-
-    city = sa.Table('city', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
-    city.create()
-
-    s = symbol('s', discover(engine))
+def test_field_access_on_engines(data):
+    s, engine = data['s'], data['engine']
     result = compute_up(s.city, engine)
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
 
 
-def test_computation_directly_on_sqlalchemy_Tables():
-    engine = sa.create_engine('sqlite:///:memory:')
-    metadata = sa.MetaData(engine)
-    name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
-    name.create()
-
+def test_computation_directly_on_sqlalchemy_Tables(data):
+    name = data['name']
     s = symbol('s', discover(name))
     result = into(list, compute(s.id + 1, name))
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
 
 
-def test_computation_directly_on_metadata():
-    engine = sa.create_engine('sqlite:///:memory:')
-    metadata = sa.MetaData(engine)
-    name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
-    name.create()
-
+def test_computation_directly_on_metadata(data):
+    metadata = data['metadata']
+    name = data['name']
     s = symbol('s', discover(metadata))
-
     result = compute(s.name, {s: metadata}, post_compute=False)
     assert result == name
 
 
 sql_bank = sa.Table('bank', sa.MetaData(),
-                 sa.Column('id', sa.Integer),
-                 sa.Column('name', sa.String),
-                 sa.Column('amount', sa.Integer))
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    sa.Column('amount', sa.Integer))
 sql_cities = sa.Table('cities', sa.MetaData(),
-                   sa.Column('name', sa.String),
-                   sa.Column('city', sa.String))
+                      sa.Column('name', sa.String),
+                      sa.Column('city', sa.String))
 
-bank = Symbol('bank', discover(sql_bank))
-cities = Symbol('cities', discover(sql_cities))
+bank = symbol('bank', discover(sql_bank))
+cities = symbol('cities', discover(sql_cities))
 
 
 def test_aliased_views_with_two_group_bys():
@@ -1032,8 +1049,8 @@ def test_aliased_views_with_computation():
     sql_aaa = metadata.tables['aaa']
     sql_bbb = metadata.tables['bbb']
 
-    L = Symbol('aaa', discover(df_aaa))
-    R = Symbol('bbb', discover(df_bbb))
+    L = symbol('aaa', discover(df_aaa))
+    R = symbol('bbb', discover(df_bbb))
 
     expr = join(by(L.x, y_total=L.y.sum()),
                 R)
@@ -1155,8 +1172,8 @@ def test_merge_where():
     expr = merge(t2[['amount', 'name']], t2.id)
     result = compute(expr, s)
     expected = normalize("""SELECT
-        accounts.name,
         accounts.amount,
+        accounts.name,
         accounts.id
     FROM accounts
     WHERE accounts.id = :id_1
@@ -1356,3 +1373,64 @@ def test_isin():
             :name_2)
     """
     assert normalize(result_sql_expr) == normalize(expected)
+
+
+@pytest.mark.skipif(LooseVersion(sa.__version__) >= '1.0.0',
+                    reason="SQLAlchemy generates different code in >= 1.0.0")
+def test_date_grouper_repeats_not_one_point_oh():
+    columns = [sa.Column('amount', sa.REAL),
+               sa.Column('ds', sa.TIMESTAMP)]
+    data = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(data))
+    expr = by(t.ds.year, avg_amt=t.amount.mean())
+    result = str(compute(expr, data))
+
+    # FYI spark sql isn't able to parse this correctly
+    expected = """SELECT
+        EXTRACT(year FROM t.ds) as ds_year,
+        AVG(t.amount) as avg_amt
+    FROM t
+    GROUP BY EXTRACT(year FROM t.ds)
+    """
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.mark.skipif(LooseVersion(sa.__version__) < '1.0.0',
+                    reason="SQLAlchemy generates different code in < 1.0.0")
+def test_date_grouper_repeats():
+    columns = [sa.Column('amount', sa.REAL),
+               sa.Column('ds', sa.TIMESTAMP)]
+    data = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(data))
+    expr = by(t.ds.year, avg_amt=t.amount.mean())
+    result = str(compute(expr, data))
+
+    # FYI spark sql isn't able to parse this correctly
+    expected = """SELECT
+        EXTRACT(year FROM t.ds) as ds_year,
+        AVG(t.amount) as avg_amt
+    FROM t
+    GROUP BY ds_year
+    """
+    assert normalize(result) == normalize(expected)
+
+
+def test_transform_then_project_single_column():
+    expr = transform(t, foo=t.id + 1)[['foo', 'id']]
+    result = normalize(str(compute(expr, s)))
+    expected = normalize("""SELECT
+        accounts.id + :id_1 as foo,
+        accounts.id
+    FROM accounts""")
+    assert result == expected
+
+
+def test_transform_then_project():
+    proj = ['foo', 'id']
+    expr = transform(t, foo=t.id + 1)[proj]
+    result = normalize(str(compute(expr, s)))
+    expected = normalize("""SELECT
+        accounts.id + :id_1 as foo,
+        accounts.id
+    FROM accounts""")
+    assert result == expected

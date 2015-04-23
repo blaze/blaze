@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+from types import MethodType
 
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
@@ -46,11 +47,15 @@ if PY2:
     unicode = builtins.unicode
     basestring = builtins.basestring
     _strtypes = (str, unicode)
+
+    def boundmethod(func, instance):
+        return MethodType(func, instance, type(instance))
 else:
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
     basestring = str
+    boundmethod = MethodType
 
 
 import io

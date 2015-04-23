@@ -304,9 +304,9 @@ def compute_up(t, lhs, rhs, **kwargs):
         return sa.select(columns, from_obj=join)
 
 
-names = {mean: 'avg',
-         var: 'variance',
-         std: 'stdev'}
+names = {
+    mean: 'avg'
+}
 
 
 @dispatch((nunique, Reduction), Select)
@@ -339,11 +339,23 @@ def compute_up(t, s, **kwargs):
     try:
         op = getattr(sa.sql.functions, t.symbol)
     except AttributeError:
-        symbol = names.get(type(t), t.symbol)
-        op = getattr(sa.sql.func, symbol)
-    result = op(s)
+        op = getattr(sa.sql.func, names.get(type(t), t.symbol))
+    return op(s).label(t._name)
 
-    return result.label(t._name)
+
+prefixes = {
+    std: 'stddev',
+    var: 'var'
+}
+
+
+@dispatch((std, var), sql.elements.ColumnElement)
+def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
+    funcname = 'samp' if t.unbiased else 'pop'
+    full_funcname = '%s_%s' % (prefixes[type(t)], funcname)
+    return getattr(sa.func, full_funcname)(s).label(t._name)
 
 
 @dispatch(count, Selectable)
@@ -392,7 +404,12 @@ def compute_up(t, s, **kwargs):
     return sa.func.count(s.distinct())
 
 
-@dispatch(Distinct, sa.Table)
+@dispatch(nunique, Selectable)
+def compute_up(expr, data, **kwargs):
+    return select(data).distinct().alias(next(aliases)).count()
+
+
+@dispatch(Distinct, Selectable)
 def compute_up(t, s, **kwargs):
     return select(s).distinct()
 
@@ -619,7 +636,7 @@ def get_clause(data, kind):
     return clause.clauses if clause is not None else None
 
 
-@dispatch(Merge, (Selectable, Select))
+@dispatch(Merge, (Selectable, Select, sa.Column))
 def compute_up(expr, data, **kwargs):
     # get the common subexpression of all the children in the merge
     subexpression = common_subexpression(*expr.children)
@@ -630,7 +647,7 @@ def compute_up(expr, data, **kwargs):
 
     # Get the original columns from the selection and rip out columns from
     # Selectables and ScalarSelects
-    columns = list(unique(concat(map(get_inner_columns, [data] + children))))
+    columns = list(unique(concat(map(get_inner_columns, children))))
 
     # we need these getattrs if data is a ColumnClause or Table
     from_obj = get_all_froms(data)

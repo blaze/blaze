@@ -1,16 +1,16 @@
-datashape
-odo
+datashape >= 0.4.4
+odo >= 0.3.1
 numpy >= 1.7
-pandas
+pandas >= 0.15.0
 multipledispatch >= 0.4.7
 cytoolz
 toolz
-sqlalchemy
+sqlalchemy >= 0.8.0
 h5py
 flask >= 0.10.1
 requests
-tables
-pymongo
+tables >= 3.0.0
+pymongo >= 2.8
 psutil
 pytest
 bcolz
