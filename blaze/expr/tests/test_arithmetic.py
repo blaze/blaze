@@ -1,4 +1,4 @@
-from blaze.expr import Add, USub, Not, Gt, Mult
+from blaze.expr import Add, USub, Not, Gt, Mult, Mod
 from blaze import symbol
 from datashape import dshape
 import pytest
@@ -9,8 +9,8 @@ y = symbol('y', '5 * 3 * int32')
 w = symbol('w', '5 * 3 * float32')
 z = symbol('z', '5 * 3 * int64')
 a = symbol('a', 'int32')
-
 b = symbol('b', '5 * 3 * bool')
+cs = symbol('cs', 'string')
 
 
 def test_arithmetic_dshape_on_collections():
@@ -72,3 +72,15 @@ def test_dir():
 def test_arith_ops_promote_dtype():
     r = w + z
     assert r.dshape == dshape('5 * 3 * float64')
+
+
+def test_str_arith():
+    assert isinstance(cs + cs, Add)
+    assert isinstance(cs * 1, Mult)
+    assert isinstance(cs % cs, Mod)
+
+    with pytest.raises(Exception):
+        cs / 1
+
+    with pytest.raises(Exception):
+        cs // 1
