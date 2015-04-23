@@ -162,7 +162,7 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(nunique, DataFrame)
 def compute_up(expr, data, **kwargs):
-    return compute_up(expr._child.distinct().count(), data)
+    return compute_up(expr._child.distinct().count(), data, **kwargs)
 
 
 string_func_names = {
