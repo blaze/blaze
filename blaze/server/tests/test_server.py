@@ -156,14 +156,12 @@ def dont_test_compute_with_namespace(app_context):
     assert json.loads(response.data.decode('utf-8'))['data'] == expected
 
 
-@pytest.fixture
+@pytest.yield_fixture
 def iris_server(request):
     iris = CSV(example('iris.csv'))
     server = Server(iris)
-    ctx = server.context()
-    request.addfinalizer(lambda: ctx.__exit__(None, None, None))
-    ctx.__enter__()
-    return server.app.test_client()
+    with server.context():
+        yield server.app.test_client()
 
 
 iris = CSV(example('iris.csv'))
