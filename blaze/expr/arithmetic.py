@@ -14,8 +14,30 @@ from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
 
-__all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
-Relational Eq Ne Ge Lt Le Gt Gt And Or Not'''.split()
+__all__ = '''
+BinOp
+UnaryOp
+Arithmetic
+Add
+Mult
+Sub
+Div
+FloorDiv
+Pow
+Mod
+USub
+Relational
+Eq
+Ne
+Ge
+Lt
+Le
+Gt
+Gt
+And
+Or
+Not
+'''.split()
 
 
 def name(o):
