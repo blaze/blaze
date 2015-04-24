@@ -36,6 +36,7 @@ def find_packages(where='blaze', exclude=('ez_setup', 'distribute_setup'),
                                               for exc in exclude)
     return list(filter(func, [x[0] for x in os.walk(where)]))
 
+
 def check_remove_blaze_install(site_packages):
     blaze_path = join(site_packages, "blaze")
     if not (exists(blaze_path) and isdir(blaze_path)):
@@ -62,9 +63,10 @@ def find_data_files(exts, where='blaze'):
             if any(fnmatch(f, pat) for pat in exts):
                 yield os.path.join(root, f)
 
+
 def getsitepackages():
-    _is_64bit = (getattr(sys, 'maxsize', None)
-                 or getattr(sys, 'maxint')) > 2**32
+    _is_64bit = (getattr(sys, 'maxsize', None) or
+                 getattr(sys, 'maxint')) > 2**32
     _is_pypy = hasattr(sys, 'pypy_version_info')
     _is_jython = sys.platform[:4] == 'java'
 
@@ -82,8 +84,10 @@ def getsitepackages():
         elif _is_pypy:
             sitedirs = [os.path.join(prefix, 'site-packages')]
         elif sys.platform == 'darwin' and prefix == sys.prefix:
-            if prefix.startswith("/System/Library/Frameworks/"):  # Apple's Python
-                sitedirs = [os.path.join("/Library/Python", sys.version[:3], "site-packages"),
+            # Apple's Python
+            if prefix.startswith("/System/Library/Frameworks/"):
+                sitedirs = [os.path.join("/Library/Python", sys.version[:3],
+                                         "site-packages"),
                             os.path.join(prefix, "Extras", "lib", "python")]
 
             else:  # any other Python distros on OSX work this way
@@ -97,9 +101,12 @@ def getsitepackages():
                                      "site-packages"),
                         os.path.join(prefix, "lib", "site-python"),
                         ]
-            lib64_dir = os.path.join(prefix, "lib64", "python" + sys.version[:3], "site-packages")
+            lib64_dir = os.path.join(prefix, "lib64",
+                                     "python" + sys.version[:3],
+                                     "site-packages")
             if (os.path.exists(lib64_dir) and
-                os.path.realpath(lib64_dir) not in [os.path.realpath(p) for p in sitedirs]):
+                    os.path.realpath(lib64_dir) not in
+                    [os.path.realpath(p) for p in sitedirs]):
                 if _is_64bit:
                     sitedirs.insert(0, lib64_dir)
                 else:
@@ -142,7 +149,6 @@ def getsitepackages():
 
     sitepackages = [p for p in sitepackages if os.path.isdir(p)]
     return sitepackages
-
 
 
 # Parse command line args
