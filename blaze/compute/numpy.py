@@ -10,7 +10,7 @@ from numbers import Number
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
 from ..expr import std, var, count, nunique, Summary, IsIn
-from ..expr import BinOp, UnaryOp, USub, Not, nelements
+from ..expr import BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
 from ..utils import keywords
@@ -53,6 +53,61 @@ except ImportError:
 compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
 for i in range(2, 6):
     compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
+
+
+@dispatch(Repeat, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return np.char.multiply(data, t.rhs)
+    else:
+        return np.char.multiply(t.lhs, data)
+
+
+@dispatch(Repeat, np.ndarray, (np.ndarray, base))
+def compute_up(t, lhs, rhs, **kwargs):
+    return np.char.multiply(lhs, rhs)
+
+
+@dispatch(Repeat, base, np.ndarray)
+def compute_up(t, lhs, rhs, **kwargs):
+    return np.char.multiply(lhs, rhs)
+
+
+@dispatch(Concat, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return np.char.add(data, t.rhs)
+    else:
+        return np.char.add(t.lhs, data)
+
+
+@dispatch(Concat, np.ndarray, (np.ndarray, base))
+def compute_up(t, lhs, rhs, **kwargs):
+    return np.char.add(lhs, rhs)
+
+
+@dispatch(Concat, base, np.ndarray)
+def compute_up(t, lhs, rhs, **kwargs):
+    return np.char.add(lhs, rhs)
+
+
+@dispatch(Interp, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return np.char.mod(data, t.rhs)
+    else:
+        return np.char.mod(t.lhs, data)
+
+
+@dispatch(Interp, np.ndarray, (np.ndarray, base))
+def compute_up(t, lhs, rhs, **kwargs):
+    return np.char.mod(lhs, rhs)
+
+
+@dispatch(Interp, base, np.ndarray)
+def compute_up(t, lhs, rhs, **kwargs):
+    return np.char.mod(lhs, rhs)
+
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
