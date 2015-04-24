@@ -7,7 +7,6 @@ except ImportError:
     pass
 
 import blaze
-from contextlib import contextmanager
 import socket
 import json
 from toolz import assoc
@@ -31,6 +30,31 @@ DEFAULT_PORT = 6363
 
 
 api = Blueprint('api', __name__)
+
+
+def _register_api(app, options, first_registration=False):
+    """
+    Register the data with the blueprint.
+    """
+    try:
+        _get_data.cache[app] = options['data']
+    except KeyError:
+        # Provides a more informative error message.
+        raise TypeError('The blaze api must be registered with data')
+
+    # Call the original register function.
+    Blueprint.register(api, app, options, first_registration)
+
+api.register = _register_api
+
+
+def _get_data():
+    """
+    Retrieve the current application's data for use in the blaze server
+    endpoints.
+    """
+    return _get_data.cache[flask.current_app]
+_get_data.cache = {}
 
 
 class Server(object):
@@ -62,24 +86,17 @@ class Server(object):
 
     def __init__(self, data=None):
         app = self.app = Flask('blaze.server.server')
-        app.register_blueprint(api)
         if data is None:
             data = dict()
+        app.register_blueprint(api, data=data)
         self.data = data
-
-    @contextmanager
-    def context(self):
-        with self.app.app_context():
-            flask.g.data = data = self.data
-            yield data
 
     def run(self, *args, **kwargs):
         """Run the server"""
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
         try:
-            with self.context():
-                self.app.run(*args, port=port, **kwargs)
+            self.app.run(*args, port=port, **kwargs)
         except socket.error:
             print("\tOops, couldn't connect on port %d.  Is it busy?" % port)
             if kwargs.get('retry', True):
@@ -89,7 +106,7 @@ class Server(object):
 
 @api.route('/datashape')
 def dataset():
-    return str(discover(flask.g.data))
+    return str(discover(_get_data()))
 
 
 def to_tree(expr, names=None):
@@ -271,7 +288,7 @@ def compserver():
         return ("Bad JSON.  Got %s " % request.data, 400)  # 400: Bad Request
 
     ns = payload.get('namespace', dict())
-    dataset = flask.g.data
+    dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
 
     expr = from_tree(payload['expr'], namespace=ns)
