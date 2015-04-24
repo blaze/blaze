@@ -26,7 +26,9 @@ requirements:
 test:
   requires:
     - pytest >=2.7.0
+    - dask
     - dynd-python
+    - pytables
 
   commands:
     - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX
