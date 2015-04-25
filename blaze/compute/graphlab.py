@@ -48,7 +48,7 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Sort, SFrame)
 def compute_up(expr, data, **kwargs):
-    return data.sort(expr._key, ascending=expr.ascending)
+    return data.sort(list(expr._key), ascending=expr.ascending)
 
 
 @dispatch(Head, (SFrame, SArray))
