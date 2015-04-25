@@ -65,6 +65,8 @@ with ignoring(ImportError):
 with ignoring(ImportError):
     from .pytables import *
     from .compute.pytables import *
+with ignoring(ImportError):
+    from .compute.graphlab import *
 
 restart_ordering()  # Restart multipledispatch ordering and do ordering
 
