@@ -83,6 +83,17 @@ def compute_up(expr, data, **kwargs):
                         operations=operations)
 
 
+@dispatch(Join, SFrame, SFrame)
+def compute_up(expr, lhs, rhs, **kwargs):
+    # TODO: make sure this is robust to the kind of join
+    columns = list(unique(chain(lhs.column_names(), rhs.column_names())))
+    result = lhs.join(rhs,
+                      on=list(concat(unique((tuple(expr.on_left),
+                                             tuple(expr.on_right))))),
+                      how=expr.how)[columns]
+    return result
+
+
 @convert.register(pd.DataFrame, SFrame)
 def convert_sframe_to_dataframe(sf, **kwargs):
     return sf.to_dataframe()

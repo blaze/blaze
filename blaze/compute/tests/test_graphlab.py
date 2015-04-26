@@ -75,5 +75,14 @@ def test_by(t, sf):
     expr = by(t.b, a_sum=t.a.sum())
     result = compute(expr, sf)
     expected = sf.groupby('b', operations={'a_sum': agg.SUM('a')})
+
+
+@pytest.mark.parametrize(['how', 'field'],
+                         product(['inner', 'outer', 'left', 'right'],
+                                 ['a', list('ab')]))
+def test_join(t, s, tf, sf, how, field):
+    expr = join(t, s, field, how=how)
+    result = compute(expr, {t: tf, s: sf})
+    expected = tf.join(sf, on=field, how=how)[tf.column_names()]
     tm.assert_frame_equal(odo(result, pd.DataFrame),
                           odo(expected, pd.DataFrame))
