@@ -86,11 +86,8 @@ def compute_up(expr, data, **kwargs):
 def compute_up(expr, lhs, rhs, **kwargs):
     # TODO: make sure this is robust to the kind of join
     columns = list(unique(chain(lhs.column_names(), rhs.column_names())))
-    result = lhs.join(rhs,
-                      on=list(concat(unique((tuple(expr.on_left),
-                                             tuple(expr.on_right))))),
-                      how=expr.how)[columns]
-    return result
+    on = list(concat(unique((tuple(expr.on_left), tuple(expr.on_right)))))
+    return lhs.join(rhs, on=on, how=expr.how)[columns]
 
 
 @convert.register(pd.DataFrame, SFrame)
