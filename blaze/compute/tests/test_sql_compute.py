@@ -1445,3 +1445,15 @@ FROM accounts GROUP BY accounts.name)
  SELECT max(alias.counts) AS counts_max
 FROM alias"""
     assert normalize(result) == normalize(expected)
+
+
+def test_normalize_reduction():
+    expr = by(t.name, counts=t.count())
+    expr = transform(expr, normed_counts=expr.counts / expr.counts.max())
+    result = str(compute(expr, s))
+    expected = """WITH alias AS
+(SELECT count(accounts.id) AS counts
+FROM accounts GROUP BY accounts.name)
+ SELECT alias.counts / max(alias.counts) AS normed_counts
+FROM alias"""
+    assert normalize(result) == normalize(expected)
