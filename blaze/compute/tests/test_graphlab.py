@@ -35,7 +35,7 @@ def sf():
     return gl.SFrame(
         pd.DataFrame({'a': [1, 2, 3, 3, 1, 1, 2, 3, 4, 4, 3, 1],
                       'b': list('bacbaccaacbb'),
-                      'c': np.random.randn(12)}))
+                      'c': np.random.rand(12)}))
 
 
 def test_projection(t, tf):
@@ -101,3 +101,18 @@ def test_join(t, s, tf, sf, how, field):
     expected = tf.join(sf, on=field, how=how)[tf.column_names()]
     tm.assert_frame_equal(odo(result, pd.DataFrame),
                           odo(expected, pd.DataFrame))
+
+
+def test_selection_table(t, tf):
+    expr = t[t.c > 0.5]
+    result = compute(expr, tf)
+    expected = tf[tf['c'] > 0.5]
+    tm.assert_frame_equal(odo(result, pd.DataFrame),
+                          odo(expected, pd.DataFrame))
+
+
+def test_selection_column(t, tf):
+    expr = t.c[t.c > 0.5]
+    result = compute(expr, tf)
+    expected = tf['c'][tf['c'] > 0.5]
+    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))

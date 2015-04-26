@@ -10,10 +10,10 @@ from toolz import unique, concat
 
 from .core import base
 from datashape import Record, string, int64, float64
-from blaze import discover, dispatch
+from blaze import discover, dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
-                        By, Join)
+                        By, Join, Selection)
 
 
 python_type_to_datashape = {
@@ -71,6 +71,11 @@ def compute_up(expr, data, **kwargs):
 @compute_up.register(BinOp, base, SArray)
 def compute_up_binop_sarray_base(expr, lhs, rhs, **kwargs):
     return expr.op(lhs, rhs)
+
+
+@dispatch(Selection, (SFrame, SArray))
+def compute_up(expr, data, **kwargs):
+    return data[compute(expr.predicate, {expr._child: data})]
 
 
 @dispatch(By, SFrame)
