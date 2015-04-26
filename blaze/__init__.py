@@ -27,7 +27,6 @@ from .index import create_index
 from .interactive import *
 from .compute.pmap import set_default_pmap
 from .compute.csv import *
-from .compute.dask import *
 from .compute.json import *
 from .compute.python import *
 from .compute.pandas import *
@@ -41,7 +40,8 @@ with ignoring(ImportError):
 with ignoring(ImportError):
     from .sql import *
     from .compute.sql import *
-
+with ignoring(ImportError):
+    from .compute.dask import *
 with ignoring(ImportError, AttributeError):
     from .compute.spark import *
 with ignoring(ImportError, TypeError):
