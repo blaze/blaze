@@ -310,16 +310,15 @@ names = {
 
 
 @dispatch((nunique, Reduction), Select)
-def compute_up(t, s, **kwargs):
-    if t.axis != (0,):
+def compute_up(expr, data, **kwargs):
+    if expr.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
-    d = dict((t._child[c], list(inner_columns(s))[i])
-             for i, c in enumerate(t._child.fields))
-    col = compute(t, d, post_compute=False)
-
-    s = copy(s)
-    s.append_column(col)
-    return s.with_only_columns([col])
+    data = data.cte(name=next(aliases))
+    cols = list(inner_columns(data))
+    d = dict((expr._child[c], cols[i])
+             for i, c in enumerate(expr._child.fields))
+    col = [compute(expr, d, post_compute=False)]
+    return select(data.c.values() + col).with_only_columns(col)
 
 
 @dispatch(Distinct, sa.Column)
