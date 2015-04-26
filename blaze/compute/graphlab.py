@@ -2,15 +2,18 @@ from __future__ import absolute_import, print_function, division
 
 from graphlab import SFrame, SArray
 import graphlab.aggregate as agg
+from itertools import chain
 
 import pandas as pd
 from odo import convert
+from toolz import unique, concat
 
 from .core import base
 from datashape import Record, string, int64, float64
 from blaze import discover, dispatch
+from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
-                        By)
+                        By, Join)
 
 
 python_type_to_datashape = {
@@ -64,13 +67,9 @@ def compute_up(expr, data, **kwargs):
         return expr.op(expr.lhs, data)
 
 
-@dispatch(BinOp, SArray, (SArray, base))
-def compute_up(expr, lhs, rhs, **kwargs):
-    return expr.op(lhs, rhs)
-
-
-@dispatch(BinOp, base, SArray)
-def compute_up(expr, lhs, rhs, **kwargs):
+@compute_up.register(BinOp, SArray, (SArray, base))
+@compute_up.register(BinOp, base, SArray)
+def compute_up_binop_sarray_base(expr, lhs, rhs, **kwargs):
     return expr.op(lhs, rhs)
 
 
