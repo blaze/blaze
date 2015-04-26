@@ -1434,3 +1434,14 @@ def test_transform_then_project():
         accounts.id
     FROM accounts""")
     assert result == expected
+
+
+def test_reduce_does_not_compose():
+    expr = by(t.name, counts=t.count()).counts.max()
+    result = str(compute(expr, s))
+    expected = """WITH alias AS
+(SELECT count(accounts.id) AS counts
+FROM accounts GROUP BY accounts.name)
+ SELECT max(alias.counts) AS counts_max
+FROM alias"""
+    assert normalize(result) == normalize(expected)
