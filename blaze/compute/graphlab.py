@@ -53,7 +53,7 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Field, SArray)
 def compute_up(expr, data, **kwargs):
-    return data.unpack('')[expr._name]
+    return data.unpack('', limit=expr.fields)[expr._name]
 
 
 @dispatch(Reduction, SArray)
