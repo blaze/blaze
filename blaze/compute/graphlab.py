@@ -15,7 +15,7 @@ from datashape import Record, string, int64, float64, Option, var
 from blaze import discover, dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
-                        By, Join, Selection, common_subexpression)
+                        By, Join, Selection)
 
 
 python_type_to_datashape = {
