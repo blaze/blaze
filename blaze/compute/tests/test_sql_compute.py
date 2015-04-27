@@ -84,44 +84,45 @@ def test_table():
 def test_projection():
     print(compute(t[['name', 'amount']], s))
     assert str(compute(t[['name', 'amount']], s)) == \
-            str(sa.select([s.c.name, s.c.amount]))
+        str(sa.select([s.c.name, s.c.amount]))
 
 
 def test_eq():
     assert str(compute(t['amount'] == 100, s, post_compute=False)) == \
-            str(s.c.amount == 100)
+        str(s.c.amount == 100)
 
 
 def test_eq_unicode():
     assert str(compute(t['name'] == u'Alice', s, post_compute=False)) == \
-            str(s.c.name == u'Alice')
+        str(s.c.name == u'Alice')
 
 
 def test_selection():
     assert str(compute(t[t['amount'] == 0], s)) == \
-            str(sa.select([s]).where(s.c.amount == 0))
+        str(sa.select([s]).where(s.c.amount == 0))
     assert str(compute(t[t['amount'] > 150], s)) == \
-            str(sa.select([s]).where(s.c.amount > 150))
+        str(sa.select([s]).where(s.c.amount > 150))
 
 
 def test_arithmetic():
     assert str(compute(t['amount'] + t['id'], s)) == \
-            str(sa.select([s.c.amount + s.c.id]))
+        str(sa.select([s.c.amount + s.c.id]))
     assert str(compute(t['amount'] + t['id'], s, post_compute=False)) == \
-            str(s.c.amount + s.c.id)
+        str(s.c.amount + s.c.id)
     assert str(compute(t['amount'] * t['id'], s, post_compute=False)) == \
-            str(s.c.amount * s.c.id)
+        str(s.c.amount * s.c.id)
 
     assert str(compute(t['amount'] * 2, s, post_compute=False)) == \
-            str(s.c.amount * 2)
+        str(s.c.amount * 2)
     assert str(compute(2 * t['amount'], s, post_compute=False)) == \
-            str(2 * s.c.amount)
+        str(2 * s.c.amount)
 
     assert (str(compute(~(t['amount'] > 10), s, post_compute=False)) ==
             "~(accounts.amount > :amount_1)")
 
     assert str(compute(t['amount'] + t['id'] * 2, s)) == \
-            str(sa.select([s.c.amount + s.c.id * 2]))
+        str(sa.select([s.c.amount + s.c.id * 2]))
+
 
 def test_join():
     metadata = sa.MetaData()
@@ -135,7 +136,7 @@ def test_join():
 
     expected = lhs.join(rhs, lhs.c.name == rhs.c.name)
     expected = select(list(unique(expected.columns, key=lambda c:
-        c.name))).select_from(expected)
+                                  c.name))).select_from(expected)
 
     L = symbol('L', 'var * {name: string, amount: int}')
     R = symbol('R', 'var * {name: string, id: int}')
@@ -159,7 +160,6 @@ def test_join():
     SELECT amounts.name, amounts.amount, ids.id
     FROM amounts JOIN ids ON amounts.name = ids.name
     ORDER BY amounts.amount ASC""")
-
 
 
 def test_clean_complex_join():
@@ -191,7 +191,6 @@ def test_clean_complex_join():
               WHERE amounts.amount > :amount_1) AS alias
         JOIN ids ON alias.name = ids.name"""
 
-
     assert (normalize(str(result)) == normalize(expected1) or
             normalize(str(result)) == normalize(expected2))
 
@@ -213,9 +212,9 @@ def test_multi_column_join():
     joined = join(L, R, ['x', 'y'])
 
     expected = lhs.join(rhs, (lhs.c.x == rhs.c.x)
-                           & (lhs.c.y == rhs.c.y))
+                        & (lhs.c.y == rhs.c.y))
     expected = select(list(unique(expected.columns, key=lambda c:
-        c.name))).select_from(expected)
+                                  c.name))).select_from(expected)
 
     result = compute(joined, {L: lhs, R: rhs})
 
@@ -231,10 +230,10 @@ def test_multi_column_join():
 
 def test_unary_op():
     assert str(compute(exp(t['amount']), s, post_compute=False)) == \
-            str(sa.func.exp(s.c.amount))
+        str(sa.func.exp(s.c.amount))
 
     assert str(compute(-t['amount'], s, post_compute=False)) == \
-            str(-s.c.amount)
+        str(-s.c.amount)
 
 
 @pytest.mark.parametrize('unbiased', [True, False])
@@ -253,13 +252,14 @@ def test_var(unbiased):
 
 def test_reductions():
     assert str(compute(sum(t['amount']), s, post_compute=False)) == \
-            str(sa.sql.functions.sum(s.c.amount))
+        str(sa.sql.functions.sum(s.c.amount))
     assert str(compute(mean(t['amount']), s, post_compute=False)) == \
-            str(sa.sql.func.avg(s.c.amount))
+        str(sa.sql.func.avg(s.c.amount))
     assert str(compute(count(t['amount']), s, post_compute=False)) == \
-            str(sa.sql.func.count(s.c.amount))
+        str(sa.sql.func.count(s.c.amount))
 
-    assert 'amount_sum' == compute(sum(t['amount']), s, post_compute=False).name
+    assert 'amount_sum' == compute(
+        sum(t['amount']), s, post_compute=False).name
 
 
 def test_reduction_with_invalid_axis_argument():
@@ -388,7 +388,7 @@ def test_by_two():
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
                            sa.sql.functions.sum(sbig.c.amount).label('total')])
-                        .group_by(sbig.c.name, sbig.c.sex))
+                .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
 
@@ -404,6 +404,7 @@ def test_by_three():
            sum(accountsbig.id + accountsbig.amount) AS total
     FROM accountsbig GROUP BY accountsbig.name, accountsbig.sex
     """)
+
 
 def test_by_summary_clean():
     expr = by(t.name, min=t.amount.min(), max=t.amount.max())
@@ -431,7 +432,6 @@ def test_by_summary_single_column():
     assert normalize(str(result)) == normalize(expected)
 
 
-
 def test_join_projection():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -455,10 +455,10 @@ def test_join_projection():
 
 def test_sort():
     assert str(compute(t.sort('amount'), s)) == \
-            str(select(s).order_by(sa.asc(s.c.amount)))
+        str(select(s).order_by(sa.asc(s.c.amount)))
 
     assert str(compute(t.sort('amount', ascending=False), s)) == \
-            str(select(s).order_by(sa.desc(s.c.amount)))
+        str(select(s).order_by(sa.desc(s.c.amount)))
 
 
 def test_multicolumn_sort():
@@ -481,14 +481,13 @@ def test_sort_on_distinct():
             ORDER BY amount ASC""")
 
 
-
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
 
 
 def test_label():
     assert str(compute((t['amount'] * 10).label('foo'), s, post_compute=False))\
-            == str((s.c.amount * 10).label('foo'))
+        == str((s.c.amount * 10).label('foo'))
 
 
 def test_relabel():
@@ -501,7 +500,7 @@ def test_relabel():
 def test_projection_of_selection():
     print(compute(t[t['amount'] < 0][['name', 'amount']], s))
     assert len(str(compute(t[t['amount'] < 0], s))) > \
-            len(str(compute(t[t['amount'] < 0][['name', 'amount']], s)))
+        len(str(compute(t[t['amount'] < 0][['name', 'amount']], s)))
 
 
 def test_outer_join():
@@ -513,16 +512,16 @@ def test_outer_join():
         engine = resource(uri)
 
         _left = [(1, 'Alice', 100),
-                (2, 'Bob', 200),
-                (4, 'Dennis', 400)]
+                 (2, 'Bob', 200),
+                 (4, 'Dennis', 400)]
 
         left = resource(uri, 'left', dshape=L.dshape)
         into(left, _left)
 
         _right = [('NYC', 1),
-                 ('Boston', 1),
-                 ('LA', 3),
-                 ('Moscow', 4)]
+                  ('Boston', 1),
+                  ('LA', 3),
+                  ('Moscow', 4)]
         right = resource(uri, 'right', dshape=R.dshape)
         into(right, _right)
 
@@ -534,9 +533,9 @@ def test_outer_join():
         result = list(map(tuple, conn.execute(query).fetchall()))
 
         assert set(result) == set(
-                [(1, 'Alice', 100, 'NYC'),
-                 (1, 'Alice', 100, 'Boston'),
-                 (4, 'Dennis', 400, 'Moscow')])
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
 
         query = compute(join(L, R, how='left'),
                         {L: left, R: right},
@@ -544,10 +543,10 @@ def test_outer_join():
         result = list(map(tuple, conn.execute(query).fetchall()))
 
         assert set(result) == set(
-                [(1, 'Alice', 100, 'NYC'),
-                 (1, 'Alice', 100, 'Boston'),
-                 (2, 'Bob', 200, None),
-                 (4, 'Dennis', 400, 'Moscow')])
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (4, 'Dennis', 400, 'Moscow')])
 
         query = compute(join(L, R, how='right'),
                         {L: left, R: right},
@@ -557,10 +556,10 @@ def test_outer_join():
         print(result)
 
         assert set(result) == set(
-                [(1, 'Alice', 100, 'NYC'),
-                 (1, 'Alice', 100, 'Boston'),
-                 (3, None, None, 'LA'),
-                 (4, 'Dennis', 400, 'Moscow')])
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
 
         # SQLAlchemy doesn't support full outer join
         """
@@ -613,18 +612,18 @@ def test_summary_by():
 def test_clean_join():
     metadata = sa.MetaData()
     name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
     city = sa.Table('place', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
     friends = sa.Table('friends', metadata,
-             sa.Column('a', sa.Integer),
-             sa.Column('b', sa.Integer),
-             )
+                       sa.Column('a', sa.Integer),
+                       sa.Column('b', sa.Integer),
+                       )
 
     tcity = symbol('city', discover(city))
     tfriends = symbol('friends', discover(friends))
@@ -636,7 +635,6 @@ def test_clean_join():
     assert normalize(str(compute(expr, ns))) == normalize("""
     SELECT friends.a, friends.b, name.name
     FROM friends JOIN name on friends.a = name.id""")
-
 
     expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
 
@@ -678,19 +676,23 @@ def test_strlen():
 def test_columnwise_on_complex_selection():
     result = str(select(compute(t[t.amount > 0].amount + 1, s)))
     assert normalize(result) == \
-            normalize("""
+        normalize("""
     SELECT accounts.amount + :amount_1 AS amount
     FROM accounts
     WHERE accounts.amount > :amount_2
     """)
 
-def test_reductions_on_complex_selections():
 
+def test_reductions_on_complex_selections():
     assert normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) == \
-            normalize("""
-    SELECT sum(accounts.id) as id_sum
-    FROM accounts
-    WHERE accounts.amount > :amount_1 """)
+        normalize("""
+    with alias as
+        (select accounts.id as id
+         from
+            accounts
+         where
+            accounts.amount > :amount_1)
+    select sum(alias.id) as id_sum from alias""")
 
 
 def test_clean_summary_by_where():
@@ -720,14 +722,14 @@ def test_by_on_count():
 def test_join_complex_clean():
     metadata = sa.MetaData()
     name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
     city = sa.Table('place', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
 
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
@@ -752,18 +754,17 @@ def test_join_complex_clean():
             normalize(str(result)) == normalize(expected2))
 
 
-
 def test_projection_of_join():
     metadata = sa.MetaData()
     name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
     city = sa.Table('place', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
 
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
@@ -787,21 +788,21 @@ def test_projection_of_join():
               WHERE place.city = :city_1) AS alias
         ON name.id = alias_6.id"""
 
-
     assert (normalize(str(result)) == normalize(expected1) or
             normalize(str(result)) == normalize(expected2))
+
 
 def test_lower_column():
     metadata = sa.MetaData()
     name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
     city = sa.Table('place', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
 
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
@@ -818,14 +819,14 @@ def test_lower_column():
 def test_selection_of_join():
     metadata = sa.MetaData()
     name = sa.Table('name', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('name', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('name', sa.String),
+                    )
     city = sa.Table('place', metadata,
-             sa.Column('id', sa.Integer),
-             sa.Column('city', sa.String),
-             sa.Column('country', sa.String),
-             )
+                    sa.Column('id', sa.Integer),
+                    sa.Column('city', sa.String),
+                    sa.Column('country', sa.String),
+                    )
 
     tname = symbol('name', discover(name))
     tcity = symbol('city', discover(city))
@@ -845,9 +846,9 @@ def test_selection_of_join():
 def test_join_on_same_table():
     metadata = sa.MetaData()
     T = sa.Table('tab', metadata,
-             sa.Column('a', sa.Integer),
-             sa.Column('b', sa.Integer),
-             )
+                 sa.Column('a', sa.Integer),
+                 sa.Column('b', sa.Integer),
+                 )
 
     t = symbol('tab', discover(T))
     expr = join(t, t, 'a')
@@ -865,10 +866,12 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    SELECT sum(tab_left.b) as b_left_sum
-    FROM tab AS tab_left JOIN tab AS tab_right
-    ON tab_left.a = tab_right.a
-    """)
+   with alias as
+    (select tab_left.b as b
+     from tab as tab_left
+        join tab as tab_right
+        on tab_left.a = tab_right.a)
+    select sum(alias.b) as b_left_sum from alias""")
 
     expr = join(t, t, 'a')
     expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
@@ -932,7 +935,6 @@ def test_aliased_views_with_two_group_bys():
     """)
 
 
-
 def test_aliased_views_with_join():
     joined = join(bank, cities)
     expr = by(joined.city, total=joined.amount.sum())
@@ -960,7 +962,7 @@ def test_select_field_on_alias():
 
 
 @pytest.mark.xfail(raises=Exception,
-        reason="sqlalchemy.join seems to drop unnecessary tables")
+                   reason="sqlalchemy.join seems to drop unnecessary tables")
 def test_join_on_single_column():
     expr = join(cities[['name']], bank)
     result = compute(expr, {bank: sql_bank, cities: sql_cities})
@@ -968,7 +970,6 @@ def test_join_on_single_column():
     assert normalize(str(result)) == """
     SELECT bank.id, bank.name, bank.amount
     FROM bank join cities ON bank.name = cities.name"""
-
 
     expr = join(bank, cities.name)
     result = compute(expr, {bank: sql_bank, cities: sql_cities})
@@ -1109,7 +1110,8 @@ def test_distinct_count_on_projection():
 
 
 def test_join_count():
-    ds = datashape.dshape('{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}')
+    ds = datashape.dshape(
+        '{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}')
     engine = resource('sqlite:///:memory:', dshape=ds)
     db = symbol('db', ds)
 
@@ -1130,7 +1132,6 @@ def test_join_count():
                 FROM t1
                 WHERE t1.x > ?) AS alias1
           JOIN t2 ON alias1.x = t2.a) AS alias2"""
-
 
     assert (normalize(str(result)) == normalize(expected1) or
             normalize(str(result)) == normalize(expected2))
@@ -1267,7 +1268,7 @@ def test_merge_compute():
 
         assert result == [(1, 'Alice', 100, 1000),
                           (2, 'Bob',   200, 2000),
-                          (4, 'Dennis',400, 4000)]
+                          (4, 'Dennis', 400, 4000)]
 
 
 def test_head_limit():
@@ -1296,7 +1297,7 @@ def test_no_extraneous_join():
 
     d = symbol('db', dshape=ds)
 
-    expr = join(d.event[d.event.include==True],
+    expr = join(d.event[d.event.include == True],
                 d.operation[['name', 'datetime_nearest_close']],
                 'operation', 'name')
 
@@ -1434,3 +1435,27 @@ def test_transform_then_project():
         accounts.id
     FROM accounts""")
     assert result == expected
+
+
+def test_reduce_does_not_compose():
+    expr = by(t.name, counts=t.count()).counts.max()
+    result = str(compute(expr, s))
+    expected = """WITH alias AS
+(SELECT count(accounts.id) AS counts
+FROM accounts GROUP BY accounts.name)
+ SELECT max(alias.counts) AS counts_max
+FROM alias"""
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_normalize_reduction():
+    expr = by(t.name, counts=t.count())
+    expr = transform(expr, normed_counts=expr.counts / expr.counts.max())
+    result = str(compute(expr, s))
+    expected = """WITH alias AS
+(SELECT count(accounts.id) AS counts
+FROM accounts GROUP BY accounts.name)
+ SELECT alias.counts / max(alias.counts) AS normed_counts
+FROM alias"""
+    assert normalize(result) == normalize(expected)
