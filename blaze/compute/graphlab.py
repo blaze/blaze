@@ -4,12 +4,14 @@ from graphlab import SFrame, SArray
 import graphlab.aggregate as agg
 from itertools import chain
 
+import array
 import pandas as pd
 from odo import convert
 from toolz import unique, concat
+from cytoolz import take
 
 from .core import base
-from datashape import Record, string, int64, float64
+from datashape import Record, string, int64, float64, Option, var
 from blaze import discover, dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
@@ -24,9 +26,19 @@ python_type_to_datashape = {
 
 
 @discover.register(SFrame)
-def discover_sframe(sf):
-    types = [python_type_to_datashape[t] for t in sf.dtype()]
-    return len(sf) * Record(list(zip(sf.column_names(), types)))
+def discover_sframe(sf, n=1000):
+    columns = sf.column_names()
+    types = map(lambda x, n=n: discover(x, n=n).measure,
+                (sf[name] for name in columns))
+    return var * Record(list(zip(columns, types)))
+
+
+@discover.register(SArray)
+def discover_sarray(sa, n=1000):
+    dtype = sa.dtype()
+    if issubclass(dtype, (dict, list, array.array)):
+        return var * discover(list(take(n, sa))).measure
+    return var * Option(python_type_to_datashape[dtype])
 
 
 @dispatch(Projection, SFrame)
@@ -37,6 +49,11 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Field, SFrame)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
+
+
+@dispatch(Field, SArray)
+def compute_up(expr, data, **kwargs):
+    return data.unpack('')[expr._name]
 
 
 @dispatch(Reduction, SArray)

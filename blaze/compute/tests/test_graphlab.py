@@ -14,6 +14,18 @@ from blaze import by, compute, symbol, discover, join
 
 
 @pytest.fixture
+def nested():
+    return gl.SFrame({'a': [{'b': 1}, {'a': 2, 'b': 3}, {'b': 3}, {'b': 4},
+                            {'b': 5}, {'c': 6, 'b': 3}],
+                      'b': list('abcab') + [None]})
+
+
+@pytest.fixture
+def nt(nested):
+    return symbol('nt', discover(nested))
+
+
+@pytest.fixture
 def t(tf):
     return symbol('t', discover(tf))
 
@@ -116,3 +128,10 @@ def test_selection_column(t, tf):
     result = compute(expr, tf)
     expected = tf['c'][tf['c'] > 0.5]
     tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
+
+
+def test_nested_sframe(nt, nested):
+    expr = nt.a.b
+    result = compute(expr, nested)
+    expected = nested['a'].unpack('')['b']
+    assert list(result) == list(expected)
