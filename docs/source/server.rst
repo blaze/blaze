@@ -277,15 +277,12 @@ example:
 .. code-block:: python
 
    >>> from blaze.server import api  # doctest: +SKIP
-   >>> app.register_blueprint(api)  # doctest: +SKIP
-   >>> with app.app_context():  # doctest: +SKIP
-   >>>     flask.g.data = dset  # doctest: +SKIP
-   >>>     app.run()  # doctest: +SKIP
+   >>> my_app.register_blueprint(api, data=my_data)  # doctest: +SKIP
 
 
-When using the blaze flask blueprint, be sure to register your dataset in the
-flask application context ``flask.g`` so that it is available to the API
-endpoints.
+When registering the api, you must pass the data that the api endpoints will
+serve.
+
 
 
 Conclusion
