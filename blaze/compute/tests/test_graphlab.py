@@ -135,3 +135,11 @@ def test_nested_sframe(nt, nested):
     result = compute(expr, nested)
     expected = nested['a'].unpack('')['b']
     assert list(result) == list(expected)
+
+
+def test_groupby_on_nested(nt, nested):
+    expr = by(nt.a.b, avg=nt.a.c.mean())
+    result = compute(expr, nested)
+    unpacked = nested['a'].unpack('')
+    expected = unpacked.groupby('b', operations={'avg': agg.MEAN('c')})
+    assert list(result) == list(expected)

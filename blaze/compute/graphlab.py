@@ -15,7 +15,7 @@ from datashape import Record, string, int64, float64, Option, var
 from blaze import discover, dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
-                        By, Join, Selection)
+                        By, Join, Selection, common_subexpression)
 
 
 python_type_to_datashape = {
@@ -95,13 +95,14 @@ def compute_up(expr, data, **kwargs):
     return data[compute(expr.predicate, {expr._child: data})]
 
 
-@dispatch(By, SFrame)
+@dispatch(By, (SFrame, SArray))
 def compute_up(expr, data, **kwargs):
     app = expr.apply
     operations = dict((k, getattr(agg, v.symbol.upper())(v._child._name))
                       for k, v in zip(app.fields, app.values))
-    return data.groupby(key_columns=expr.grouper.fields,
-                        operations=operations)
+    if isinstance(data, SArray):
+        data = data.unpack('')
+    return data.groupby(expr.grouper.fields, operations=operations)
 
 
 @dispatch(Join, SFrame, SFrame)
