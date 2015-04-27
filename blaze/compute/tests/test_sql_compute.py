@@ -1448,6 +1448,7 @@ FROM alias"""
     assert normalize(result) == normalize(expected)
 
 
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_normalize_reduction():
     expr = by(t.name, counts=t.count())
     expr = transform(expr, normed_counts=expr.counts / expr.counts.max())
