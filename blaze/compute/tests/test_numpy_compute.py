@@ -438,3 +438,24 @@ def test_nunique_recarray():
     s = symbol('s', discover(b))
     expr = s.nunique()
     assert compute(expr, b) == len(np.unique(b))
+
+
+def test_str_concat():
+    a = np.array(('a', 'b', 'c'))
+    s = symbol('s', discover(a))
+    expr = s.concat('a')
+    assert all(compute(expr, a) == np.char.add(a, 'a'))
+
+
+def test_str_repeat():
+    a = np.array(('a', 'b', 'c'))
+    s = symbol('s', discover(a))
+    expr = s.repeat(3)
+    assert all(compute(expr, a) == np.char.multiply(a, 3))
+
+
+def test_str_interp():
+    a = np.array(('%s', '%s', '%s'))
+    s = symbol('s', discover(a))
+    expr = s.interp(1)
+    assert all(compute(expr, a) == np.char.mod(a, 1))
