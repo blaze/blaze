@@ -317,8 +317,7 @@ def compute_up(expr, data, **kwargs):
     cols = list(inner_columns(data))
     d = dict((expr._child[c], cols[i])
              for i, c in enumerate(expr._child.fields))
-    col = [compute(expr, d, post_compute=False)]
-    return select(data.c.values() + col).with_only_columns(col)
+    return select([compute(expr, d, post_compute=False)])
 
 
 @dispatch(Distinct, sa.Column)
