@@ -63,13 +63,9 @@ def compute_up(t, data, **kwargs):
         return np.char.multiply(t.lhs, data)
 
 
-@dispatch(Repeat, np.ndarray, (np.ndarray, base))
-def compute_up(t, lhs, rhs, **kwargs):
-    return np.char.multiply(lhs, rhs)
-
-
-@dispatch(Repeat, base, np.ndarray)
-def compute_up(t, lhs, rhs, **kwargs):
+@compute_up.register(Repeat, np.ndarray, (np.ndarray, base))
+@compute_up.register(Repeat, base, np.ndarray)
+def compute_up_np_repeat(t, lhs, rhs, **kwargs):
     return np.char.multiply(lhs, rhs)
 
 
@@ -81,13 +77,9 @@ def compute_up(t, data, **kwargs):
         return np.char.add(t.lhs, data)
 
 
-@dispatch(Concat, np.ndarray, (np.ndarray, base))
-def compute_up(t, lhs, rhs, **kwargs):
-    return np.char.add(lhs, rhs)
-
-
-@dispatch(Concat, base, np.ndarray)
-def compute_up(t, lhs, rhs, **kwargs):
+@compute_up.register(Concat, np.ndarray, (np.ndarray, base))
+@compute_up.register(Concat, base, np.ndarray)
+def compute_up_np_concat(t, lhs, rhs, **kwargs):
     return np.char.add(lhs, rhs)
 
 
@@ -99,13 +91,9 @@ def compute_up(t, data, **kwargs):
         return np.char.mod(t.lhs, data)
 
 
-@dispatch(Interp, np.ndarray, (np.ndarray, base))
-def compute_up(t, lhs, rhs, **kwargs):
-    return np.char.mod(lhs, rhs)
-
-
-@dispatch(Interp, base, np.ndarray)
-def compute_up(t, lhs, rhs, **kwargs):
+@compute_up.register(Interp, np.ndarray, (np.ndarray, base))
+@compute_up.register(Interp, base, np.ndarray)
+def compute_up_np_interp(t, lhs, rhs, **kwargs):
     return np.char.mod(lhs, rhs)
 
 
