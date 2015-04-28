@@ -15,7 +15,7 @@ from datashape import Record, string, int64, float64, Option, var
 from blaze import discover, dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
-                        By, Join, Selection)
+                        By, Join, Selection, common_subexpression, nelements)
 
 
 python_type_to_datashape = {
@@ -114,8 +114,17 @@ def compute_up(expr, data, **kwargs):
     app = expr.apply
     operations = dict((k, getattr(agg, v.symbol.upper())(v._child._name))
                       for k, v in zip(app.fields, app.values))
+
+    # get the fields (meaning we're a dict dtype) if we're an SArray
     if isinstance(data, SArray):
-        data = data.unpack('')
+        all_fields = frozenset(common_subexpression(expr.grouper, app).fields)
+
+        # only rip out the fields we need
+        limit = list(chain(expr.grouper.fields,
+                           (f._name for f in app._subterms()
+                            if isinstance(f, Field) and
+                               f._name in all_fields)))
+        data = data.unpack('', limit=limit)
     return data.groupby(expr.grouper.fields, operations=operations)
 
 
