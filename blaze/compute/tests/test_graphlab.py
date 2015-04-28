@@ -143,3 +143,8 @@ def test_groupby_on_nested(nt, nested):
     unpacked = nested['a'].unpack('')
     expected = unpacked.groupby('b', operations={'avg': agg.MEAN('c')})
     assert list(result) == list(expected)
+
+
+def test_nelements(t, tf):
+    assert compute(t.nrows, tf) == len(tf)
+    assert compute(t.a.nrows, tf) == len(tf)
