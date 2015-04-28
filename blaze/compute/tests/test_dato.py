@@ -10,7 +10,7 @@ import pandas as pd
 import pandas.util.testing as tm
 from odo import odo
 from graphlab import aggregate as agg
-from blaze import by, compute, symbol, discover, join
+from blaze import by, compute, symbol, discover, join, transform
 
 
 @pytest.fixture
@@ -219,3 +219,22 @@ def test_datetime_attr_high_precision(d, dfu, freq):
     expected = dfu['dates'].split_datetime('', limit=[freq])[freq]
     assert any(expected)
     tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
+
+
+def test_transform(t, tf):
+    expr = transform(t, foo=t.a + t.a)
+    result = compute(expr, tf)
+    expected = gl.SFrame(tf).add_column(tf['a'] + tf['a'], name='foo')
+    tm.assert_frame_equal(odo(result, pd.DataFrame),
+                          odo(expected, pd.DataFrame))
+
+
+def test_relabel_sframe(t, tf):
+    result = compute(t.relabel(a='d', b='e'), tf)
+    expected = tf.rename(dict(a='d', b='e'))
+    tm.assert_frame_equal(odo(result, pd.DataFrame),
+                          odo(expected, pd.DataFrame))
+
+
+def test_label_does_nothing_on_sarray(t, tf):
+    assert all(compute(t.a.label('b'), tf) == tf['a'])

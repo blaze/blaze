@@ -11,7 +11,8 @@ from blaze import dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
                         By, Join, Selection, common_subexpression, nelements,
-                        DateTime, Millisecond, Distinct, nunique)
+                        DateTime, Millisecond, Distinct, nunique, Merge, count,
+                        ReLabel, Label)
 
 
 @dispatch(Projection, SFrame)
@@ -34,18 +35,21 @@ def compute_up(expr, data, **kwargs):
     return getattr(data, expr.symbol)()
 
 
-@dispatch(nelements, SFrame)
+@dispatch(count, SFrame)
+def compute_up(expr, data, **kwargs):
+    return len(data)
+
+
+@dispatch(count, SArray)
+def compute_up(expr, data, **kwargs):
+    return len(data) - data.num_missing()
+
+
+@dispatch(nelements, (SFrame, SArray))
 def compute_up(expr, data, **kwargs):
     if expr.axis != (0,):
         raise ValueError('axis != 0 not allowed on tables')
-    return data.num_rows()
-
-
-@dispatch(nelements, SArray)
-def compute_up(expr, data, **kwargs):
-    if expr.axis != (0,):
-        raise ValueError('axis != 0 not allowed on vectors')
-    return data.size()
+    return len(data)
 
 
 @dispatch(Sort, SArray)
@@ -85,20 +89,19 @@ def compute_up(expr, data, **kwargs):
 @dispatch(By, (SFrame, SArray))
 def compute_up(expr, data, **kwargs):
     app = expr.apply
+    grouper = expr.grouper
     operations = dict((k, getattr(agg, v.symbol.upper())(v._child._name))
                       for k, v in zip(app.fields, app.values))
 
     # get the fields (meaning we're a dict dtype) if we're an SArray
     if isinstance(data, SArray):
-        all_fields = frozenset(common_subexpression(expr.grouper, app).fields)
+        all_fields = frozenset(common_subexpression(grouper, app).fields)
+        names = [f._name for f in app._subterms()
+                 if isinstance(f, Field) and f._name in all_fields]
 
         # only rip out the fields we need
-        limit = list(chain(expr.grouper.fields,
-                           (f._name for f in app._subterms()
-                            if isinstance(f, Field) and
-                               f._name in all_fields)))
-        data = data.unpack('', limit=limit)
-    return data.groupby(expr.grouper.fields, operations=operations)
+        data = data.unpack('', limit=grouper.fields + names)
+    return data.groupby(grouper.fields, operations=operations)
 
 
 @dispatch(Join, SFrame, SFrame)
@@ -114,14 +117,19 @@ def compute_up(expr, data, **kwargs):
     return data.unique()
 
 
-@dispatch(nunique, SArray)
+@dispatch(nunique, (SArray, SFrame))
 def compute_up(expr, data, **kwargs):
-    return data.unique().dropna().size()
+    return len(data.unique().dropna())
 
 
-@dispatch(nunique, SFrame)
+@dispatch(ReLabel, SFrame)
 def compute_up(expr, data, **kwargs):
-    return data.unique().dropna().num_rows()
+    return SFrame(data).rename(dict(expr.labels))
+
+
+@dispatch(Label, SArray)
+def compute_up(expr, data, **kwargs):
+    return data
 
 
 @dispatch(DateTime, SArray)
@@ -133,3 +141,12 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Millisecond, SArray)
 def compute_up(expr, data, **kwargs):
     return compute(expr._child.microsecond // 1000, {expr._child: data})
+
+
+@dispatch(Merge, SFrame)
+def compute_up(expr, data, **kwargs):
+    children = expr.children
+    scope = {common_subexpression(*children): data}
+    columns = [compute(child, scope) for child in children[1:]]
+    namelist = [child._name for child in children[1:]]
+    return SFrame(data).add_columns(columns, namelist=namelist)
