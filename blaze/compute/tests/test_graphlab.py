@@ -32,9 +32,9 @@ def t(tf):
 
 @pytest.fixture
 def tf():
-    return gl.SFrame(
-        pd.DataFrame({'a': [1, 2, 3, 4, 5, 6], 'b': list('abcabc'),
-                      'c': np.random.randn(6)}))
+    return gl.SFrame({'a': [1, 2, 3, 4, 5, 6],
+                      'b': list('abcabc'),
+                      'c': np.random.randn(6)})
 
 
 @pytest.fixture
@@ -44,10 +44,9 @@ def s(sf):
 
 @pytest.fixture
 def sf():
-    return gl.SFrame(
-        pd.DataFrame({'a': [1, 2, 3, 3, 1, 1, 2, 3, 4, 4, 3, 1],
+    return gl.SFrame({'a': [1, 2, 3, 3, 1, 1, 2, 3, 4, 4, 3, 1],
                       'b': list('bacbaccaacbb'),
-                      'c': np.random.rand(12)}))
+                      'c': np.random.rand(12)})
 
 
 def test_projection(t, tf):
