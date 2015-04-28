@@ -61,6 +61,20 @@ def compute_up(expr, data, **kwargs):
     return getattr(data, expr.symbol)()
 
 
+@dispatch(nelements, SFrame)
+def compute_up(expr, data, **kwargs):
+    if expr.axis != (0,):
+        raise ValueError('axis != 0 not allowed on tables')
+    return data.num_rows()
+
+
+@dispatch(nelements, SArray)
+def compute_up(expr, data, **kwargs):
+    if expr.axis != (0,):
+        raise ValueError('axis != 0 not allowed on vectors')
+    return data.size()
+
+
 @dispatch(Sort, SArray)
 def compute_up(expr, data, **kwargs):
     return data.sort(ascending=expr.ascending)
