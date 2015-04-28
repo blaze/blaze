@@ -11,7 +11,7 @@ from blaze import dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
                         By, Join, Selection, common_subexpression, nelements,
-                        DateTime)
+                        DateTime, Millisecond)
 
 
 @dispatch(Projection, SFrame)
@@ -113,3 +113,8 @@ def compute_up(expr, lhs, rhs, **kwargs):
 def compute_up(expr, data, **kwargs):
     name = expr.attr
     return data.split_datetime('', limit=[name])[name]
+
+
+@dispatch(Millisecond, SArray)
+def compute_up(expr, data, **kwargs):
+    return compute(expr._child.microsecond // 1000, {expr._child: data})

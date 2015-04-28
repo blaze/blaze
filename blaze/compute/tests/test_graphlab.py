@@ -188,18 +188,10 @@ def test_datetime_attr(d, df, freq):
     tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='no microseconds yet')
-def test_datetime_attr(d, dfu):
-    freq = 'microsecond'
-    result = compute(getattr(d.dates, freq), dfu)
-    expected = dfu['dates'].split_datetime('', limit=[freq])[freq]
-    assert any(expected)
-    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
-
-
-@pytest.mark.xfail(raises=AssertionError, reason='no milliseconds yet')
-def test_datetime_attr_millisecond(d, dfu):
-    freq = 'millisecond'
+@pytest.mark.xfail(raises=(TypeError, AssertionError),
+                   reason='No micro- or milliseconds yet')
+@pytest.mark.parametrize('freq', ['millisecond', 'microsecond'])
+def test_datetime_attr_high_precision(d, dfu, freq):
     result = compute(getattr(d.dates, freq), dfu)
     expected = dfu['dates'].split_datetime('', limit=[freq])[freq]
     assert any(expected)
