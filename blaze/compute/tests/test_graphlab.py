@@ -63,6 +63,15 @@ def df(sf):
     return sf
 
 
+@pytest.fixture
+def dfu(sf):
+    dates = [x.to_pydatetime() for x in pd.date_range(start='20140101',
+                                                      freq='U',
+                                                      periods=len(sf))]
+    sf['dates'] = gl.SArray(dates)
+    return sf
+
+
 def test_projection(t, tf):
     expr = t[['a', 'c']]
     result = compute(expr, tf)
@@ -179,11 +188,19 @@ def test_datetime_attr(d, df, freq):
     tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
 
 
-@pytest.mark.xfail(raises=AssertionError)
-@pytest.mark.parametrize('freq', ['millisecond', 'microsecond'])
-def test_datetime_attr_high_precision(d, df, freq):
-    expr = getattr(d.dates, freq)
-    result = compute(expr, df)
-    expected = df['dates'].split_datetime('', limit=[freq])[freq]
+@pytest.mark.xfail(raises=AssertionError, reason='no microseconds yet')
+def test_datetime_attr(d, dfu):
+    freq = 'microsecond'
+    result = compute(getattr(d.dates, freq), dfu)
+    expected = dfu['dates'].split_datetime('', limit=[freq])[freq]
+    assert any(expected)
+    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
+
+
+@pytest.mark.xfail(raises=AssertionError, reason='no milliseconds yet')
+def test_datetime_attr_millisecond(d, dfu):
+    freq = 'millisecond'
+    result = compute(getattr(d.dates, freq), dfu)
+    expected = dfu['dates'].split_datetime('', limit=[freq])[freq]
     assert any(expected)
     tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
