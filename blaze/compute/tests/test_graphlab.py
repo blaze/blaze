@@ -134,6 +134,7 @@ def test_nested_sframe(nt, nested):
     expr = nt.a.b
     result = compute(expr, nested)
     expected = nested['a'].unpack('')['b']
+    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
     assert list(result) == list(expected)
 
 
@@ -142,9 +143,16 @@ def test_groupby_on_nested(nt, nested):
     result = compute(expr, nested)
     unpacked = nested['a'].unpack('')
     expected = unpacked.groupby('b', operations={'avg': agg.MEAN('c')})
-    assert list(result) == list(expected)
+    tm.assert_frame_equal(odo(result, pd.DataFrame),
+                          odo(expected, pd.DataFrame))
 
 
 def test_nelements(t, tf):
     assert compute(t.nrows, tf) == len(tf)
     assert compute(t.a.nrows, tf) == len(tf)
+
+    with pytest.raises(ValueError):
+        compute(t.nelements(axis=1), tf)
+
+    with pytest.raises(ValueError):
+        compute(t.a.nelements(axis=1), tf)
