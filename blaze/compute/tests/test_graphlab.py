@@ -49,6 +49,20 @@ def sf():
                       'c': np.random.rand(12)})
 
 
+@pytest.fixture
+def d(df):
+    return symbol('d', discover(df))
+
+
+@pytest.fixture
+def df(sf):
+    dates = [x.to_pydatetime() for x in pd.date_range(start='20140101',
+                                                      freq='S',
+                                                      periods=len(sf))]
+    sf['dates'] = gl.SArray(dates)
+    return sf
+
+
 def test_projection(t, tf):
     expr = t[['a', 'c']]
     result = compute(expr, tf)
@@ -132,9 +146,8 @@ def test_selection_column(t, tf):
 def test_nested_sframe(nt, nested):
     expr = nt.a.b
     result = compute(expr, nested)
-    expected = nested['a'].unpack('')['b']
+    expected = nested['a'].unpack('', limit=['b'])['b']
     tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
-    assert list(result) == list(expected)
 
 
 def test_groupby_on_nested(nt, nested):
@@ -155,3 +168,22 @@ def test_nelements(t, tf):
 
     with pytest.raises(ValueError):
         compute(t.a.nelements(axis=1), tf)
+
+
+@pytest.mark.parametrize('freq',
+                         ['year', 'month', 'day', 'hour', 'minute', 'second'])
+def test_datetime_attr(d, df, freq):
+    expr = getattr(d.dates, freq)
+    result = compute(expr, df)
+    expected = df['dates'].split_datetime('', limit=[freq])[freq]
+    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
+
+
+@pytest.mark.xfail(raises=AssertionError)
+@pytest.mark.parametrize('freq', ['millisecond', 'microsecond'])
+def test_datetime_attr_high_precision(d, df, freq):
+    expr = getattr(d.dates, freq)
+    result = compute(expr, df)
+    expected = df['dates'].split_datetime('', limit=[freq])[freq]
+    assert any(expected)
+    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
