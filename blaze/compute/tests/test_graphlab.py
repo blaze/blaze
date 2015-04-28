@@ -179,6 +179,29 @@ def test_nelements(t, tf):
         compute(t.a.nelements(axis=1), tf)
 
 
+def test_nunique_sframe(t, tf):
+    assert compute(t.nunique(), tf) == tf.dropna().unique().num_rows()
+
+
+def test_nunique_sarray(t, tf):
+    assert compute(t.a.nunique(), tf) == tf['a'].dropna().unique().size()
+
+
+def test_distinct_sframe(t, tf):
+    expr = t.distinct()
+    result = compute(expr, tf)
+    expected = tf.unique()
+    tm.assert_frame_equal(odo(result, pd.DataFrame),
+                          odo(expected, pd.DataFrame))
+
+
+def test_distinct_sarray(t, tf):
+    expr = t.b.distinct()
+    result = compute(expr, tf)
+    expected = tf['b'].unique()
+    tm.assert_series_equal(odo(result, pd.Series), odo(expected, pd.Series))
+
+
 @pytest.mark.parametrize('freq',
                          ['year', 'month', 'day', 'hour', 'minute', 'second'])
 def test_datetime_attr(d, df, freq):

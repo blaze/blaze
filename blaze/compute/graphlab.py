@@ -11,7 +11,7 @@ from blaze import dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
                         By, Join, Selection, common_subexpression, nelements,
-                        DateTime, Millisecond)
+                        DateTime, Millisecond, Distinct, nunique)
 
 
 @dispatch(Projection, SFrame)
@@ -107,6 +107,21 @@ def compute_up(expr, lhs, rhs, **kwargs):
     columns = list(unique(chain(expr.lhs.fields, expr.rhs.fields)))
     on = list(concat(unique((tuple(expr.on_left), tuple(expr.on_right)))))
     return lhs.join(rhs, on=on, how=expr.how)[columns]
+
+
+@dispatch(Distinct, (SFrame, SArray))
+def compute_up(expr, data, **kwargs):
+    return data.unique()
+
+
+@dispatch(nunique, SArray)
+def compute_up(expr, data, **kwargs):
+    return data.unique().dropna().size()
+
+
+@dispatch(nunique, SFrame)
+def compute_up(expr, data, **kwargs):
+    return data.unique().dropna().num_rows()
 
 
 @dispatch(DateTime, SArray)
