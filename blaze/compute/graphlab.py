@@ -4,41 +4,13 @@ from graphlab import SFrame, SArray
 import graphlab.aggregate as agg
 from itertools import chain
 
-import array
-import pandas as pd
-from odo import convert
 from toolz import unique, concat
-from cytoolz import take
 
 from .core import base
-from datashape import Record, string, int64, float64, Option, var
-from blaze import discover, dispatch, compute
+from blaze import dispatch, compute
 from blaze.compute.core import compute_up
 from blaze.expr import (Projection, Field, Reduction, Head, Expr, BinOp, Sort,
                         By, Join, Selection, common_subexpression, nelements)
-
-
-python_type_to_datashape = {
-    str: string,
-    int: int64,
-    float: float64,
-}
-
-
-@discover.register(SFrame)
-def discover_sframe(sf, n=1000):
-    columns = sf.column_names()
-    types = map(lambda x, n=n: discover(x, n=n).measure,
-                (sf[name] for name in columns))
-    return var * Record(list(zip(columns, types)))
-
-
-@discover.register(SArray)
-def discover_sarray(sa, n=1000):
-    dtype = sa.dtype()
-    if issubclass(dtype, (dict, list, array.array)):
-        return var * discover(list(take(n, sa))).measure
-    return var * Option(python_type_to_datashape[dtype])
 
 
 @dispatch(Projection, SFrame)
@@ -131,16 +103,6 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Join, SFrame, SFrame)
 def compute_up(expr, lhs, rhs, **kwargs):
     # TODO: make sure this is robust to the kind of join
-    columns = list(unique(chain(lhs.column_names(), rhs.column_names())))
+    columns = list(unique(chain(expr.lhs.fields, expr.rhs.fields)))
     on = list(concat(unique((tuple(expr.on_left), tuple(expr.on_right)))))
     return lhs.join(rhs, on=on, how=expr.how)[columns]
-
-
-@convert.register(pd.DataFrame, SFrame)
-def convert_sframe_to_dataframe(sf, **kwargs):
-    return sf.to_dataframe()
-
-
-@convert.register(pd.Series, SArray)
-def convert_sarray_to_series(sa, **kwargs):
-    return pd.Series(sa)
