@@ -162,7 +162,7 @@ def test_nested_sframe(nt, nested):
 def test_groupby_on_nested(nt, nested):
     expr = by(nt.a.b, avg=nt.a.c.mean())
     result = compute(expr, nested)
-    unpacked = nested['a'].unpack('')
+    unpacked = nested['a'].unpack('', limit=list('bc'))
     expected = unpacked.groupby('b', operations={'avg': agg.MEAN('c')})
     tm.assert_frame_equal(odo(result, pd.DataFrame),
                           odo(expected, pd.DataFrame))
