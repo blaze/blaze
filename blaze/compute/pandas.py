@@ -79,15 +79,15 @@ def compute_up(t, s, **kwargs):
 @dispatch(Interp, Series)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
-        return np.char.mod(data.values % t.rhs)
+        return pd.Series(data.values % t.rhs)
     else:
-        return np.char.mod(t.lhs, data.values)
+        return pd.Series(t.lhs % data.values)
 
 
 @compute_up.register(Interp, Series, (Series, base))
 @compute_up.register(Interp, base, Series)
-def compute_up_np_interp(t, lhs, rhs, **kwargs):
-    return np.char.mod(lhs.values, rhs.values)
+def compute_up_pd_interp(t, lhs, rhs, **kwargs):
+    return pd.Series(lhs.values % rhs.values)
 
 
 

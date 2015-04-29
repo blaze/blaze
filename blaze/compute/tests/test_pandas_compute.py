@@ -668,3 +668,24 @@ def test_nunique_table():
     expr = t.nunique()
     result = compute(expr, df)
     assert result == len(df.drop_duplicates())
+
+
+def test_str_concat():
+    a = Series(('a', 'b', 'c'))
+    s = symbol('s', "3 * string[1, 'U32']")
+    expr = s.concat('a')
+    assert (compute(expr, a) == (a + 'a')).all()
+
+
+def test_str_repeat():
+    a = Series(('a', 'b', 'c'))
+    s = symbol('s', "3 * string[1, 'U32']")
+    expr = s.repeat(3)
+    assert (compute(expr, a) == (a * 3)).all()
+
+
+def test_str_interp():
+    a = Series(('%s', '%s', '%s'))
+    s = symbol('s', "3 * string[1, 'U32']")
+    expr = s.interp(1)
+    assert (compute(expr, a) == (a % 1)).all()
