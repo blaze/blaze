@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 import datashape
-import functools
 import keyword
 import numpy as np
 
