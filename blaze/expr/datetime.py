@@ -1,14 +1,22 @@
 from __future__ import absolute_import, division, print_function
 
 from .expressions import Expr, ElemWise
+from .expressions import schema_method_list, method_properties
+
+from .split_apply_combine import By, summary
+from .reductions import Reduction
+from .collections import Merge
+
 from datashape import dshape
+from datashape.predicates import isdatelike, isnumeric
 import datashape
 
 
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
            'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
            'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-           'time', 'UTCFromTimestamp', 'DateTimeTruncate']
+           'time', 'UTCFromTimestamp', 'DateTimeTruncate', 'Resample',
+           'resample']
 
 
 class DateTime(ElemWise):
@@ -223,14 +231,27 @@ def truncate(expr, *args, **kwargs):
     return DateTimeTruncate(expr, measure, normalize_time_unit(unit))
 
 
-from .expressions import schema_method_list, method_properties
-from datashape.predicates import isdatelike, isnumeric
-
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
                       millisecond, microsecond, truncate])),
     (isnumeric, set([utcfromtimestamp]))
-    ])
+])
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,
                           microsecond, date, time, utcfromtimestamp])
+
+
+class Resample(By):
+    __slots__ = '_hash', 'grouper', 'apply'
+
+
+def resample(child, **kwargs):
+    if isinstance(child, Merge) and not all(isinstance(c, DateTimeTruncate)
+                                            for c in child.children):
+        raise TypeError('Children of a Merge expression input to resample'
+                        ' must all be DateTimeTruncate expressions')
+    if not isinstance(child, DateTimeTruncate):
+        raise TypeError('Grouper must have date or datetime datshape')
+    if not all(isinstance(v, Reduction) for v in kwargs.values()):
+        raise TypeError('Arguments must all be reductions')
+    return Resample(child, summary(**kwargs))
