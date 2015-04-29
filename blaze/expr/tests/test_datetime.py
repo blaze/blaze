@@ -70,6 +70,12 @@ def test_truncate_raises_with_no_arguments():
 
 
 def test_resample():
-    t = symbol('t', '10 * {id: int64, when: datetime, amount: float64}')
-    expr = resample(t.when.truncate(weeks=1), weekly_avg=t.amount.mean())
-    assert repr(expr) == "resample(t.when.truncate(weeks=1), weekly_avg=mean(t.amount))"
+    dshape = '10 * {id: int64, when: datetime, amount: float64, size: int64}'
+    t = symbol('t', dshape)
+    expr = resample(t.when.truncate(weeks=1),
+                    weekly_avg=t.amount.mean(),
+                    weekly_max_size=t.size.max())
+    expected = ("resample(t.when.truncate(weeks=1), "
+                "weekly_avg=mean(t.amount), "
+                "weekly_max_size=max(t.size))")
+    assert repr(expr) == expected
