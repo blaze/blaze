@@ -12,7 +12,7 @@ from blaze.compute.core import compute
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
-                        all, var, std)
+                        var, std, resample)
 from blaze.compatibility import builtins, xfail
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
@@ -668,3 +668,13 @@ def test_nunique_table():
     expr = t.nunique()
     result = compute(expr, df)
     assert result == len(df.drop_duplicates())
+
+
+def test_resample():
+    df = tm.makeTimeDataFrame().reset_index().rename(columns=dict(index='on'))
+    t = symbol('t', discover(df))
+    expr = resample(t.on.truncate(days=2), two_day_avg=t.A.mean())
+    result = compute(expr, df)
+    expected = df.set_index('on').A.resample('2D', how='mean').reset_index()
+    tm.assert_frame_equal(result,
+                          expected.rename(columns=dict(A='two_day_avg')))
