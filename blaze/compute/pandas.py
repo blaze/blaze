@@ -35,7 +35,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique)
+                    UnaryStringFunction, nunique, Resample)
 from ..expr import UnaryOp, BinOp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -556,3 +556,33 @@ def compute_up(expr, data, **kwargs):
 @dispatch(IsIn, Series)
 def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
+
+
+freq_map = {
+    'year': 'Y',
+    'month': 'M',
+    'week': 'W',
+    'day': 'D',
+    'hour': 'H',
+    'minute': 'm',
+    'second': 'S',
+    'millisecond': 'L',
+    'microsecond': 'U',
+    'nanosecond': 'N'
+}
+
+
+@dispatch(Resample, DataFrame)
+def compute_up(expr, data, **kwargs):
+    grouper = expr.grouper
+    app = expr.apply
+    columns = [v._child._name for v in app.values]
+    hows = dict(zip(columns, [v.symbol for v in app.values]))
+    key = grouper._child._name
+    freq = '%d%s' % (grouper.measure, freq_map[grouper.unit])
+    grouper = pd.Grouper(key=key, freq=freq)
+
+    # TODO: implement multiple aggs in pandas
+    agg = hows.values()[0]  # This should really just be hows.values()
+    result = data.groupby(grouper)[columns].agg(agg)
+    return result.rename(columns=dict(zip(columns, app.fields))).reset_index()
