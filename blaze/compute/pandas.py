@@ -36,7 +36,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
                     UnaryStringFunction, nunique)
-from ..expr import UnaryOp, BinOp, Repeat, Concat, Interp
+from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
 from ..compatibility import _inttypes
@@ -74,6 +74,21 @@ def compute_up(t, df, **kwargs):
 @dispatch(Broadcast, Series)
 def compute_up(t, s, **kwargs):
     return compute_up(t, s.to_frame(), **kwargs)
+
+
+@dispatch(Interp, Series)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return np.char.mod(data.values % t.rhs)
+    else:
+        return np.char.mod(t.lhs, data.values)
+
+
+@compute_up.register(Interp, Series, (Series, base))
+@compute_up.register(Interp, base, Series)
+def compute_up_np_interp(t, lhs, rhs, **kwargs):
+    return np.char.mod(lhs.values, rhs.values)
+
 
 
 @dispatch(BinOp, Series)
@@ -163,21 +178,6 @@ def compute_up(t, df, **kwargs):
 @dispatch(nunique, DataFrame)
 def compute_up(expr, data, **kwargs):
     return compute_up(expr._child.distinct().count(), data, **kwargs)
-
-
-@dispatch(Repeat, Series)
-def compute_up(expr, data, **kwargs):
-    return expr.lhs.str.repeat(data)
-
-
-@dispatch(Concat, Series)
-def compute_up(expr, data, **kwargs):
-    return expr.lhs.str.cat(data)
-
-
-@dispatch(Interp, Series)
-def compute_up(expr, data, **kwargs):
-    return expr.lhs % data
 
 
 string_func_names = {
