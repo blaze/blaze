@@ -8,6 +8,7 @@ from datashape import dshape, Record, Option, Unit, var
 
 __all__ = ['by', 'By', 'count_values']
 
+
 def _names_and_types(expr):
     schema = expr.dshape.measure
     if isinstance(schema, Option):
@@ -20,6 +21,7 @@ def _names_and_types(expr):
 
 
 class By(Expr):
+
     """ Split-Apply-Combine Operator
 
     Examples
@@ -59,25 +61,22 @@ class By(Expr):
         return var * self.schema
 
     def __str__(self):
-        s = 'by('
-        s += str(self.grouper) + ', '
-        if isinstance(self.apply, Summary):
-            s += str(self.apply)[len('summary('):-len(')')]
-        else:
-            s += str(self.apply)
-        s += ')'
-        return s
+        app = str(self.apply)[len('summary('):-len(')')]
+        return '%s(%s, %s)' % (type(self).__name__.lower(), self.grouper, app)
+
 
 @dispatch(Expr, Reduction)
 def by(grouper, s):
     raise ValueError("This syntax has been removed.\n"
-    "Please name reductions with keyword arguments.\n"
-    "Before:   by(t.name, t.amount.sum())\n"
-    "After:    by(t.name, total=t.amount.sum())")
+                     "Please name reductions with keyword arguments.\n"
+                     "Before:   by(t.name, t.amount.sum())\n"
+                     "After:    by(t.name, total=t.amount.sum())")
+
 
 @dispatch(Expr, Summary)
 def by(grouper, s):
     return By(grouper, s)
+
 
 @dispatch(Expr)
 def by(grouper, **kwargs):
@@ -97,9 +96,8 @@ def count_values(expr, sort=True):
     return result
 
 
-from datashape.predicates import iscollection
 from .expressions import dshape_method_list
 
 dshape_method_list.extend([
     (lambda ds: len(ds.shape) == 1, set([count_values])),
-    ])
+])
