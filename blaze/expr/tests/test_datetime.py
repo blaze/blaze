@@ -1,3 +1,4 @@
+from blaze import resample
 from blaze.expr import symbol
 from blaze.expr.datetime import isdatelike
 from blaze.compatibility import builtins
@@ -66,3 +67,9 @@ def test_truncate_raises_with_no_arguments():
     t = symbol('t', '5 * {name: string, when: datetime}')
     with pytest.raises(TypeError):
         t.when.truncate()
+
+
+def test_resample():
+    t = symbol('t', '10 * {id: int64, when: datetime, amount: float64}')
+    expr = resample(t.when.truncate(weeks=1), weekly_avg=t.amount.mean())
+    assert repr(expr) == "resample(t.when.truncate(weeks=1), weekly_avg=mean(t.amount))"
