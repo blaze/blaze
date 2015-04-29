@@ -17,6 +17,7 @@ Name: name, dtype: object
 from __future__ import absolute_import, division, print_function
 
 import pandas as pd
+import pandas.core.datetools as dt
 from pandas.core.generic import NDFrame
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
@@ -559,17 +560,29 @@ def compute_up(expr, data, **kwargs):
 
 
 freq_map = {
-    'year': 'Y',
-    'month': 'M',
-    'week': 'W',
-    'day': 'D',
-    'hour': 'H',
-    'minute': 'm',
-    'second': 'S',
-    'millisecond': 'L',
-    'microsecond': 'U',
-    'nanosecond': 'N'
+    'year': dt.YearBegin(),
+    'month': dt.MonthBegin(),
+    'week': dt.Week(),
+    'day': dt.Day(),
+    'hour': dt.Hour(),
+    'minute': dt.Minute(),
+    'second': dt.Second(),
+    'millisecond': dt.Milli(),
+    'microsecond': dt.Micro(),
+    'nanosecond': dt.Nano(),
 }
+
+
+@dispatch(Merge, DataFrame)
+def compute_resample_groupers(grouper, data):
+    return list(concat(compute_resample_groupers(c, data)
+                       for c in grouper.children[1:]))
+
+
+@dispatch(DateTimeTruncate, DataFrame)
+def compute_resample_groupers(grouper, data):
+    freq = grouper.measure * freq_map[grouper.unit]
+    return [pd.Grouper(key=grouper._child._name, freq=freq)]
 
 
 @dispatch(Resample, DataFrame)
@@ -578,11 +591,5 @@ def compute_up(expr, data, **kwargs):
     app = expr.apply
     columns = [v._child._name for v in app.values]
     hows = dict(zip(columns, [v.symbol for v in app.values]))
-    key = grouper._child._name
-    freq = '%d%s' % (grouper.measure, freq_map[grouper.unit])
-    grouper = pd.Grouper(key=key, freq=freq)
-
-    # TODO: implement multiple aggs in pandas
-    agg = hows.values()[0]  # This should really just be hows.values()
-    result = data.groupby(grouper)[columns].agg(agg)
+    result = data.groupby(compute_resample_groupers(grouper, data)).agg(hows)
     return result.rename(columns=dict(zip(columns, app.fields))).reset_index()
