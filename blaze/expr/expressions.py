@@ -538,7 +538,7 @@ class ReLabel(ElemWise):
     ValueError: Cannot relabel non-existent child fields: {'not_a_column'}
     >>> s = symbol('s', 'var * {"0": int64}')
     >>> s.relabel({'0': 'foo'})
-    s.relabel(0='foo')
+    s.relabel({'0': 'foo'})
     >>> s.relabel(0='foo')
     Traceback (most recent call last):
         ...
@@ -568,8 +568,12 @@ class ReLabel(ElemWise):
                                  for name, dtype in param]))
 
     def __str__(self):
-        return ('%s.relabel(%s)' %
-                (self._child, ', '.join('%s=%r' % l for l in self.labels)))
+        labels = self.labels
+        if all(map(isvalid_identifier, map(first, labels))):
+            rest = ', '.join('%s=%r' % l for l in labels)
+        else:
+            rest = '{%s}' % ', '.join('%r: %r' % l for l in labels)
+        return '%s.relabel(%s)' % (self._child, rest)
 
 
 def relabel(child, labels=None, **kwargs):
