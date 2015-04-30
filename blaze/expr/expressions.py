@@ -2,13 +2,14 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 import datashape
-import functools
-import keyword
+import re
+
+from keyword import iskeyword
+
 import numpy as np
 
-from toolz import concat, memoize, partial
+from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
-import re
 
 from datashape import dshape, DataShape, Record, Var, Mono, Fixed
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
@@ -27,7 +28,7 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
 _attr_cache = dict()
 
 
-def isvalid_identifier(s, regex=re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')):
+def isvalid_identifier(s):
     """Check whether a string is a valid Python identifier
 
     Examples
@@ -47,7 +48,9 @@ def isvalid_identifier(s, regex=re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')):
     >>> isvalid_identifier(None)
     False
     """
-    return not not s and not keyword.iskeyword(s) and regex.match(s) is not None
+    # the re module compiles and caches regexs so no need to compile it
+    return (s is not None and not iskeyword(s) and
+            re.match(r'^[_a-zA-Z][_a-zA-Z0-9]*$', s) is not None)
 
 
 def valid_identifier(s):
