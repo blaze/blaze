@@ -1376,8 +1376,9 @@ def test_isin():
     assert normalize(result_sql_expr) == normalize(expected)
 
 
-@pytest.mark.skipif(LooseVersion(sa.__version__) >= '1.0.0',
-                    reason="SQLAlchemy generates different code in >= 1.0.0")
+@pytest.mark.skipif('1.0.0' <= LooseVersion(sa.__version__) <= '1.0.1',
+                    reason=("SQLAlchemy generates different code in 1.0.0"
+                            " and 1.0.1"))
 def test_date_grouper_repeats_not_one_point_oh():
     columns = [sa.Column('amount', sa.REAL),
                sa.Column('ds', sa.TIMESTAMP)]
@@ -1396,8 +1397,10 @@ def test_date_grouper_repeats_not_one_point_oh():
     assert normalize(result) == normalize(expected)
 
 
-@pytest.mark.skipif(LooseVersion(sa.__version__) < '1.0.0',
-                    reason="SQLAlchemy generates different code in < 1.0.0")
+@pytest.mark.skipif(LooseVersion(sa.__version__) < '1.0.0' or
+                    LooseVersion(sa.__version__) >= '1.0.2',
+                    reason=("SQLAlchemy generates different code in < 1.0.0 "
+                            "and >= 1.0.2"))
 def test_date_grouper_repeats():
     columns = [sa.Column('amount', sa.REAL),
                sa.Column('ds', sa.TIMESTAMP)]
