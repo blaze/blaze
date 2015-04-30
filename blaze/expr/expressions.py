@@ -533,6 +533,23 @@ class ReLabel(ElemWise):
     Traceback (most recent call last):
         ...
     ValueError: Cannot relabel non-existent child fields: {'not_a_column'}
+    >>> s = symbol('s', 'var * {"0": int64}')
+    >>> s.relabel({'0': 'foo'})
+    s.relabel(0='foo')
+    >>> s.relabel(0='foo')
+    Traceback (most recent call last):
+        ...
+    SyntaxError: keyword can't be an expression
+
+    Notes
+    -----
+    When names are not valid Python names, such as integers, you must pass a
+    dictionary to ``relabel``. For example
+
+    .. code-block:: python
+
+       s = symbol('s', 'var * {"0": int64}')
+       s.relabel({'0': 'foo'})
 
     See Also
     --------
