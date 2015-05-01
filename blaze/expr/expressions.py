@@ -539,7 +539,7 @@ class ReLabel(ElemWise):
     >>> s = symbol('s', 'var * {"0": int64}')
     >>> s.relabel({'0': 'foo'})
     s.relabel({'0': 'foo'})
-    >>> s.relabel(0='foo')
+    >>> s.relabel(0='foo') # doctest: +SKIP
     Traceback (most recent call last):
         ...
     SyntaxError: keyword can't be an expression
