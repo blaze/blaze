@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
+
+import pytest
 from datashape import dshape
 
-from blaze.expr import *
-from blaze.expr.core import subs
-from blaze.utils import raises
+from blaze.expr import symbol, label, Field
 
 
 def test_Symbol():
@@ -12,12 +12,15 @@ def test_Symbol():
     assert e.shape == (3, 5)
     assert str(e) == 'e'
 
+
 def test_symbol_caches():
     assert symbol('e', 'int') is symbol('e', 'int')
 
+
 def test_Symbol_tokens():
-    assert symbol('x', 'int').isidentical(Symbol('x', 'int'))
-    assert not symbol('x', 'int').isidentical(Symbol('x', 'int', 1))
+    assert symbol('x', 'int').isidentical(symbol('x', 'int'))
+    assert not symbol('x', 'int').isidentical(symbol('x', 'int', 1))
+
 
 def test_Field():
     e = symbol('e', '3 * 5 * {name: string, amount: int}')
@@ -28,11 +31,14 @@ def test_Field():
 
 
 def test_nested_fields():
-    e = symbol('e', '3 * {name: string, payments: var * {amount: int, when: datetime}}')
-    assert e.payments.dshape == dshape('3 * var * {amount: int, when: datetime}')
+    e = symbol(
+        'e', '3 * {name: string, payments: var * {amount: int, when: datetime}}')
+    assert e.payments.dshape == dshape(
+        '3 * var * {amount: int, when: datetime}')
     assert e.payments.schema == dshape('{amount: int, when: datetime}')
     assert 'amount' in dir(e.payments)
     assert e.payments.amount.dshape == dshape('3 * var * int')
+
 
 def test_partialed_methods_have_docstrings():
     e = symbol('e', '3 * 5 * {name: string, amount: int}')
@@ -43,9 +49,15 @@ def test_relabel():
     e = symbol('e', '{name: string, amount: int}')
     assert e.relabel(amount='balance').fields == ['name', 'balance']
 
+
 def test_meaningless_relabel_doesnt_change_input():
     e = symbol('e', '{name: string, amount: int}')
     assert e.relabel(amount='amount').isidentical(e)
+
+
+def test_relabel_with_invalid_identifiers_reprs_as_dict():
+    s = symbol('s', '{"0": int64}')
+    assert repr(s.relabel({'0': 'foo'})) == "s.relabel({'0': 'foo'})"
 
 
 def test_dir():
@@ -99,13 +111,13 @@ def test_symbol_subs():
 
 def test_multiple_renames_on_series_fails():
     t = symbol('s', 'var * {timestamp: datetime}')
-    ts = t.timestamp
-    assert raises(ValueError, lambda: ts.relabel({'timestamp': 'date',
-                                                  'hello': 'world'}))
+    with pytest.raises(ValueError):
+        t.timestamp.relabel(timestamp='date', hello='world')
 
 
 def test_map_with_rename():
     t = symbol('s', 'var * {timestamp: datetime}')
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
-    assert raises(ValueError, lambda: result.relabel({'timestamp': 'date'}))
+    with pytest.raises(ValueError):
+        result.relabel(timestamp='date')
     assert result.fields == ['date']

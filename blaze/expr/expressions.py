@@ -2,12 +2,14 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 import datashape
-import keyword
+import re
+
+from keyword import iskeyword
+
 import numpy as np
 
-from toolz import concat, memoize, partial
+from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
-import re
 
 from datashape import dshape, DataShape, Record, Var, Mono, Fixed
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
@@ -26,7 +28,7 @@ __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
 _attr_cache = dict()
 
 
-def isvalid_identifier(s, regex=re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')):
+def isvalid_identifier(s):
     """Check whether a string is a valid Python identifier
 
     Examples
@@ -46,7 +48,9 @@ def isvalid_identifier(s, regex=re.compile('^[_a-zA-Z][_a-zA-Z0-9]*$')):
     >>> isvalid_identifier(None)
     False
     """
-    return not not s and not keyword.iskeyword(s) and regex.match(s) is not None
+    # the re module compiles and caches regexs so no need to compile it
+    return (s is not None and not iskeyword(s) and
+            re.match(r'^[_a-zA-Z][_a-zA-Z0-9]*$', s) is not None)
 
 
 def valid_identifier(s):
@@ -532,6 +536,23 @@ class ReLabel(ElemWise):
     Traceback (most recent call last):
         ...
     ValueError: Cannot relabel non-existent child fields: {'not_a_column'}
+    >>> s = symbol('s', 'var * {"0": int64}')
+    >>> s.relabel({'0': 'foo'})
+    s.relabel({'0': 'foo'})
+    >>> s.relabel(0='foo') # doctest: +SKIP
+    Traceback (most recent call last):
+        ...
+    SyntaxError: keyword can't be an expression
+
+    Notes
+    -----
+    When names are not valid Python names, such as integers, you must pass a
+    dictionary to ``relabel``. For example
+
+    .. code-block:: python
+
+       s = symbol('s', 'var * {"0": int64}')
+       s.relabel({'0': 'foo'})
 
     See Also
     --------
@@ -547,8 +568,12 @@ class ReLabel(ElemWise):
                                  for name, dtype in param]))
 
     def __str__(self):
-        return ('%s.relabel(%s)' %
-                (self._child, ', '.join('%s=%r' % l for l in self.labels)))
+        labels = self.labels
+        if all(map(isvalid_identifier, map(first, labels))):
+            rest = ', '.join('%s=%r' % l for l in labels)
+        else:
+            rest = '{%s}' % ', '.join('%r: %r' % l for l in labels)
+        return '%s.relabel(%s)' % (self._child, rest)
 
 
 def relabel(child, labels=None, **kwargs):
