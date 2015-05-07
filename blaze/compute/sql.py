@@ -510,12 +510,10 @@ def compute_up(t, s, **kwargs):
     elif isinstance(t.apply, Summary):
         reduction = compute(t.apply, {t._child: s}, post_compute=False)
 
-    grouper = [lower_column(s.c.get(col)) for col in t.grouper.fields]
-
-    grouper_columns = pipe(grouper, map(get_inner_columns), concat)
+    grouper = get_inner_columns(compute(t.grouper, {t._child: s}))
     reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
                              concat)
-    columns = list(unique(chain(grouper_columns, reduction_columns)))
+    columns = list(unique(chain(grouper, reduction_columns)))
     if (not isinstance(s, sa.sql.selectable.Alias) or
             (hasattr(s, 'froms') and isinstance(s.froms[0],
                                                 sa.sql.selectable.Join))):
@@ -572,7 +570,10 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(sa.sql.FromClause)
 def get_inner_columns(sel):
-    return list(map(lower_column, sel.c.values()))
+    try:
+        return list(sel.inner_columns)
+    except AttributeError:
+        return list(map(lower_column, sel.c.values()))
 
 
 @dispatch(sa.sql.elements.ColumnElement)
@@ -589,11 +590,9 @@ def get_inner_columns(sel):
 
 @dispatch(sa.sql.functions.Function)
 def get_inner_columns(f):
-    assert len(f.clauses.clauses) == 1, \
-        'only single argument functions allowed'
     unique_columns = unique(concat(map(get_inner_columns, f.clauses)))
     lowered = [x.label(getattr(x, 'name', None)) for x in unique_columns]
-    return list(map(getattr(sa.func, f.name), lowered))
+    return [getattr(sa.func, f.name)(*lowered)]
 
 
 @dispatch(sa.sql.elements.Label)
