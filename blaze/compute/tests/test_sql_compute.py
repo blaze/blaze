@@ -1479,7 +1479,7 @@ FROM alias"""
     assert normalize(result) == normalize(expected)
 
 
-def test_do_not_erase_group_by_functions():
+def test_do_not_erase_group_by_functions_with_datetime():
     t, s = tdate, sdate
     expr = by(t[t.amount < 0].occurred_on.date,
               avg_amount=t[t.amount < 0].amount.mean())
