@@ -46,14 +46,15 @@ def data():
             's': s}
 
 
-t = symbol('t', 'var * {name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int, id: int, when: datetime}')
 
 metadata = sa.MetaData()
 
 s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
              sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True))
+             sa.Column('id', sa.Integer, primary_key=True),
+             sa.Column('when', sa.DateTime))
 
 tbig = symbol('tbig',
               'var * {name: string, sex: string[1], amount: int, id: int}')
@@ -1461,4 +1462,21 @@ def test_normalize_reduction():
 FROM accounts GROUP BY accounts.name)
  SELECT alias.counts / max(alias.counts) AS normed_counts
 FROM alias"""
+    assert normalize(result) == normalize(expected)
+
+
+def test_do_not_erase_group_by_functions():
+    expr = by(t[t.amount < 0].when.date,
+              avg_amount=t[t.amount < 0].amount.mean())
+    result = str(compute(expr, s))
+    expected = """SELECT
+        extract(date from accounts."when") as when_date,
+        avg(accounts.amount) as avg_amount
+    FROM
+        accounts
+    WHERE
+        accounts.amount < :amount_1
+    GROUP BY
+        extract(date from accounts."when")
+    """
     assert normalize(result) == normalize(expected)
