@@ -498,17 +498,21 @@ def alias_it(s):
 
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
+
+    # TODO: this should restrict according to dshape, not expression type
     if not (isinstance(t.grouper, (Field, Projection, DateTime)) or
             t.grouper is t._child):
-        raise ValueError("Grouper must be a projection, got %s" % t.grouper)
+        raise ValueError("Grouper must be a Field, Projection or DateTime, "
+                         "got %s of type %r" % (t.grouper,
+                                                type(t.grouper).__name__))
 
     s = alias_it(s)
 
-    if isinstance(t.apply, Reduction):
+    # TODO: Do we need to be this restrictive here?
+    if isinstance(t.apply, (Summary, Reduction)):
         reduction = compute(t.apply, {t._child: s}, post_compute=False)
-
-    elif isinstance(t.apply, Summary):
-        reduction = compute(t.apply, {t._child: s}, post_compute=False)
+    else:
+        raise TypeError('apply must be a Summary or Reduction expression')
 
     grouper = get_inner_columns(compute(t.grouper, {t._child: s}))
     reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
