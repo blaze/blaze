@@ -46,15 +46,29 @@ def data():
             's': s}
 
 
-t = symbol('t', 'var * {name: string, amount: int, id: int, when: datetime}')
+t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
 
 s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
              sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True),
-             sa.Column('when', sa.DateTime))
+             sa.Column('id', sa.Integer, primary_key=True))
+
+tdate = symbol('t',
+               """var * {
+                    name: string,
+                    amount: int,
+                    id: int,
+                    occurred_on: datetime
+                }""")
+
+sdate = sa.Table('accdate', metadata,
+                 sa.Column('name', sa.String),
+                 sa.Column('amount', sa.Integer),
+                 sa.Column('id', sa.Integer, primary_key=True),
+                 sa.Column('occurred_on', sa.DateTime))
+
 
 tbig = symbol('tbig',
               'var * {name: string, sex: string[1], amount: int, id: int}')
@@ -1466,17 +1480,18 @@ FROM alias"""
 
 
 def test_do_not_erase_group_by_functions():
-    expr = by(t[t.amount < 0].when.date,
+    t, s = tdate, sdate
+    expr = by(t[t.amount < 0].occurred_on.date,
               avg_amount=t[t.amount < 0].amount.mean())
     result = str(compute(expr, s))
     expected = """SELECT
-        extract(date from accounts."when") as when_date,
-        avg(accounts.amount) as avg_amount
+        extract(date from accdate.occurred_on) as occurred_on_date,
+        avg(accdate.amount) as avg_amount
     FROM
-        accounts
+        accdate
     WHERE
-        accounts.amount < :amount_1
+        accdate.amount < :amount_1
     GROUP BY
-        extract(date from accounts."when")
+        extract(date from accdate.occurred_on)
     """
     assert normalize(result) == normalize(expected)
