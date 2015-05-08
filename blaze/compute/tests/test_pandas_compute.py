@@ -670,11 +670,75 @@ def test_nunique_table():
     assert result == len(df.drop_duplicates())
 
 
-def test_resample():
+@pytest.fixture
+def tsdf():
     df = tm.makeTimeDataFrame().reset_index().rename(columns=dict(index='on'))
-    t = symbol('t', discover(df))
-    expr = resample(t.on.truncate(days=2), two_day_avg=t.A.mean())
-    result = compute(expr, df)
-    expected = df.set_index('on').A.resample('2D', how='mean').reset_index()
+    df['when'] = df.on.copy()
+    return df
+
+
+@pytest.fixture
+def ts(tsdf):
+    return symbol('ts', discover(tsdf))
+
+
+def test_resample(ts, tsdf):
+    expr = resample(ts.on.truncate(days=2), two_day_avg=ts.A.mean())
+    result = compute(expr, tsdf)
+    expected = tsdf.set_index('on').A.resample('2D', how='mean').reset_index()
     tm.assert_frame_equal(result,
                           expected.rename(columns=dict(A='two_day_avg')))
+
+
+def test_resample_single_frequency_two_aggs_different_columns(ts, tsdf):
+    expr = resample(ts.on.truncate(days=2),
+                    avg_a=ts.A.mean(), sum_b=ts.B.sum())
+    result = compute(expr, tsdf)
+    expected = tsdf.resample('2D',
+                             how=[{'A': 'mean', 'B': 'sum'}]).reset_index()
+    tm.assert_frame_equal(result, expected)
+
+
+def test_resample_single_frequency_two_aggs_same_column(ts, tsdf):
+    expr = resample(ts.on.truncate(days=2),
+                    avg_a=ts.A.mean(), sum_a=ts.A.sum())
+    result = compute(expr, tsdf)
+    expected = (tsdf.set_index('on')
+                    .A
+                    .resample('2D', how=['mean', 'sum'])
+                    .reset_index())
+    tm.assert_frame_equal(result,
+                          expected.rename(columns={'sum': 'sum_a',
+                                                   'mean': 'avg_a'}))
+
+
+def test_resample_two_frequencies_two_aggs(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2), ts.on.truncate(month=1)),
+                    two_day_avg=ts.A.mean(),
+                    three_day_avg=ts.B.mean())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper(key='on', freq='2D'),
+                pd.Grouper(key='on', freq='M')]
+    expected = tsdf.groupby(groupers).agg({'A': 'mean',
+                                           'B': 'mean'}).reset_index()
+    tm.assert_frame_equal(result, expected)
+
+
+def test_resample_two_frequencies_one_agg(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2), ts.on.truncate(days=3)),
+                    two_day_avg=ts.A.mean())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper()]
+    expected = tsdf.groupby(groupers).aggs({'A': 'mean'})
+    tm.assert_frame_equal(result, expected)
+
+
+def test_resample_two_frequencies_on_different_columns_two_aggs(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2), ts.when.truncate(days=3)),
+                    two_day_avg=ts.A.mean(),
+                    three_day_max=ts.B.max())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper(key='on', freq='2D'),
+                pd.Grouper(key='when', freq='3D')]
+    expected = tsdf.groupby(groupers).aggs({'A': 'mean', 'B': 'max'})
+    tm.assert_frame_equal(result, expected)
