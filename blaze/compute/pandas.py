@@ -16,6 +16,8 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
+from collections import defaultdict
+
 import pandas as pd
 import pandas.core.datetools as dt
 from pandas.core.generic import NDFrame
@@ -573,23 +575,48 @@ freq_map = {
 }
 
 
-@dispatch(Merge, DataFrame)
-def compute_resample_groupers(grouper, data):
-    return list(concat(compute_resample_groupers(c, data)
-                       for c in grouper.children[1:]))
+@dispatch(Merge, Reduction, DataFrame)
+def compute_resample(expr, agg, data):
+    """Multiple frequencies, single reduction"""
+    groupers = [pd.Grouper(key=g._child._name,
+                           freq=g.measure * freq_map[g.unit])
+                for g in expr.children[1:]]
+    return data.groupby(groupers).agg({agg._child._name: agg.symbol})
 
 
-@dispatch(DateTimeTruncate, DataFrame)
-def compute_resample_groupers(grouper, data):
-    freq = grouper.measure * freq_map[grouper.unit]
-    return [pd.Grouper(key=grouper._child._name, freq=freq)]
+@dispatch(Merge, Summary, DataFrame)
+def compute_resample(expr, agg, data):
+    """Multiple frequencies, multiple reductions"""
+    groupers = [pd.Grouper(key=key, freq=g.measure * freq_map[g.unit])
+                for key, g in zip(agg.fields, agg.values)]
+    how = defaultdict(list)
+    for f in agg.values:
+        how[f._child._name].append(f.symbol)
+    return data.groupby(groupers).agg(how)
+
+
+@dispatch(DateTimeTruncate, Summary, DataFrame)
+def compute_resample(expr, agg, data):
+    """Single frequency, multiple reductions"""
+    how = defaultdict(list)
+    for f in agg.values:
+        how[f._child._name].append(f.symbol)
+    grouper = pd.Grouper(key=expr._child._name,
+                         freq=expr.measure * freq_map[expr.unit])
+    return data.groupby(grouper).agg(dict(how))
+
+
+@dispatch(DateTimeTruncate, Reduction, DataFrame)
+def compute_resample(expr, agg, data):
+    """Single frequency, single reduction"""
+    freq = expr.measure * freq_map[expr.unit]
+
+    # keep as a single column DataFrame
+    return data[[expr._child._name]].resample(freq, how=agg.symbol)
 
 
 @dispatch(Resample, DataFrame)
 def compute_up(expr, data, **kwargs):
-    grouper = expr.grouper
-    app = expr.apply
-    columns = [v._child._name for v in app.values]
-    hows = dict(zip(columns, [v.symbol for v in app.values]))
-    result = data.groupby(compute_resample_groupers(grouper, data)).agg(hows)
-    return result.rename(columns=dict(zip(columns, app.fields))).reset_index()
+    result = compute_resample(expr.grouper, expr.apply, data)
+    result.columns = expr.apply.fields
+    return result.reset_index()
