@@ -1499,7 +1499,7 @@ def test_do_not_erase_group_by_functions_with_datetime():
 
 def test_slice():
     start, stop = 50, 100
-    result = str(compute(t[start:stop]), s)
+    result = str(compute(t[start:stop], s))
 
     # Verifies that compute is translating the query correctly
     assert result == str(select(s).offset(start).limit(stop))
