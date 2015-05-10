@@ -1495,3 +1495,19 @@ def test_do_not_erase_group_by_functions_with_datetime():
         extract(date from accdate.occurred_on)
     """
     assert normalize(result) == normalize(expected)
+
+
+def test_slice():
+    start, stop = 50, 100
+    result = str(compute(t[start:stop]))
+
+    # Verifies that compute is translating the query correctly
+    assert result == str(select(s).offset(start).limit(stop))
+
+    #Verifies the query against expected SQL query
+    expected = """
+    SELECT accounts.name, accounts.amount, accounts.id FROM accounts
+    LIMIT :param_1 OFFSET :param_2
+    """
+
+    assert normalize(str(result)) == normalize(str(expected))
