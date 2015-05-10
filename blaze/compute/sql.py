@@ -805,12 +805,15 @@ def compute_up(expr, data, **kwargs):
         if stop < 0:
             raise ValueError('stop value of slice cannot be negative')
         if index.step is not None:
-            raise ValueError('step parameter in slice objects not supported')
+            raise ValueError('step parameter in slice objects not supported'
+                             'with SQL backend')
     elif isinstance(index, (np.integer, numbers.Integral)):
         if index < 0:
-            raise ValueError('integer slice cannot be negative for the SQL backend')
+            raise ValueError('integer slice cannot be negative for the SQL backend'
+                             'with SQL backend')
         start = index
         stop = start + 1
     else:
-        raise TypeError('type %r not supported for slicing' % type(index).__name__)
+        raise TypeError('type %r not supported for slicing wih SQL backend'
+                         % type(index).__name__)
     return select(data).offset(start).limit(stop - start)
