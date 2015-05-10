@@ -796,24 +796,33 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Slice, ClauseElement)
 def compute_up(expr, data, **kwargs):
-    index = expr.index[0]  # [0] replace_slices returns tuple of ((start, stop), )
+    index = expr.index[0]  # [0] replace_slices returns tuple ((start, stop), )
     if isinstance(index, slice):
-        start = index.start
+        start = index.start or 0
         if start < 0:
-            raise ValueError('start value of slice cannot be negative')
+            raise ValueError('start value of slice cannot be negative'
+                             ' with a SQL backend')
+
         stop = index.stop
-        if stop < 0:
-            raise ValueError('stop value of slice cannot be negative')
+        if stop is not None and stop < 0:
+            raise ValueError('stop value of slice cannot be negative with a '
+                             'SQL backend.')
+
         if index.step is not None:
             raise ValueError('step parameter in slice objects not supported'
                              'with SQL backend')
+
     elif isinstance(index, (np.integer, numbers.Integral)):
         if index < 0:
-            raise ValueError('integer slice cannot be negative for the SQL backend'
-                             'with SQL backend')
+            raise ValueError('integer slice cannot be negative for the'
+                             ' SQL backend')
         start = index
         stop = start + 1
     else:
         raise TypeError('type %r not supported for slicing wih SQL backend'
                          % type(index).__name__)
-    return select(data).offset(start).limit(stop - start)
+
+    if stop is None:  # Represents open-ended slice. e.g. [3:]
+        return select(data).offset(start)
+    else:
+        return select(data).offset(start).limit(stop - start)
