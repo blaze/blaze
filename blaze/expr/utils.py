@@ -58,7 +58,6 @@ def hashable_index(index):
     return index
 
 
-
 def replace_slices(index):
     """
     Takes input from Slice expression and returns either a list,
@@ -81,5 +80,3 @@ def replace_slices(index):
     elif isinstance(index, tuple):
         return tuple(map(replace_slices, index))
     return index
-
-
