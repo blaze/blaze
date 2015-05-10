@@ -563,7 +563,7 @@ def compute_up(expr, data, **kwargs):
 
 freq_map = {
     'year': dt.YearBegin(),
-    'month': dt.MonthBegin(),
+    'month': dt.MonthEnd(),
     'week': dt.Week(),
     'day': dt.Day(),
     'hour': dt.Hour(),
