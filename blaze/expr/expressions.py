@@ -415,6 +415,17 @@ def sliceit(child, index):
 
 
 class Slice(Expr):
+    """
+    Elements `start` until `stop`
+
+    Examples
+    -------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts[2:7].dshape
+    dshape("5 * {name: string, amount: int32}")
+
+    """
     __slots__ = '_hash', '_child', '_index'
 
     @property
