@@ -35,6 +35,9 @@ import toolz
 from toolz import unique, concat, pipe
 from toolz.curried import map
 
+import numpy as np
+import numbers
+
 from multipledispatch import MDNotImplementedError
 
 from odo.backends.sql import metadata_of_engine
@@ -43,7 +46,7 @@ from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
-from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn
+from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
@@ -789,3 +792,25 @@ def post_compute(_, s, **kwargs):
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
+
+
+@dispatch(Slice, ClauseElement)
+def compute_up(expr, data, **kwargs):
+    index = expr.index[0]  # [0] replace_slices returns tuple of ((start, stop), )
+    if isinstance(index, slice):
+        start = index.start
+        if start < 0:
+            raise ValueError('start value of slice cannot be negative')
+        stop = index.stop
+        if stop < 0:
+            raise ValueError('stop value of slice cannot be negative')
+        if index.step is not None:
+            raise ValueError('step parameter in slice objects not supported')
+    elif isinstance(index, (np.integer, numbers.Integral)):
+        if index < 0:
+            raise ValueError('integer slice cannot be negative for the SQL backend')
+        start = index
+        stop = start + 1
+    else:
+        raise TypeError('type %r not supported for slicing' % type(index).__name__)
+    return select(data).offset(start).limit(stop - start)
