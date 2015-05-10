@@ -3,12 +3,12 @@ from __future__ import absolute_import, division, print_function
 from .expressions import Expr, ElemWise
 from .expressions import schema_method_list, method_properties
 
+from toolz.compatibility import map
+
 from .split_apply_combine import By, summary
-from .reductions import Reduction
-from .collections import Merge
 
 from datashape import dshape
-from datashape.predicates import isdatelike, isnumeric
+from datashape.predicates import isdatelike, isnumeric, isscalar, isrecord
 import datashape
 
 
@@ -246,12 +246,12 @@ class Resample(By):
 
 
 def resample(child, **kwargs):
-    if isinstance(child, Merge) and not all(isinstance(c, DateTimeTruncate)
-                                            for c in child.children):
-        raise TypeError('Children of a Merge expression input to resample'
-                        ' must all be DateTimeTruncate expressions')
-    if not isinstance(child, DateTimeTruncate):
-        raise TypeError('Grouper must have date or datetime datshape')
-    if not all(isinstance(v, Reduction) for v in kwargs.values()):
-        raise TypeError('Arguments must all be reductions')
+    if (not isdatelike(child.dshape) and
+        isrecord(child.dshape) and not all(map(isdatelike,
+                                               child.dshape.measure.types))):
+        raise TypeError('Input expression must have a date or datetime dshape '
+                        'or be a Record dshape with all date or datetime '
+                        'columns')
+    if not all(f.dshape for f in kwargs.values()):
+        raise TypeError('Arguments must all have a scalar dshape')
     return Resample(child, summary(**kwargs))
