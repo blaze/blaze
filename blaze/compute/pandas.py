@@ -575,20 +575,30 @@ freq_map = {
 }
 
 
+def get_measure_unit(expr):
+    try:
+        return expr.measure, expr.unit
+    except AttributeError:
+        return expr._child.measure, expr._child.unit
+
+
 @dispatch(Merge, Reduction, DataFrame)
 def compute_resample(expr, agg, data):
     """Multiple frequencies, single reduction"""
-    groupers = [pd.Grouper(key=g._child._name,
-                           freq=g.measure * freq_map[g.unit])
-                for g in expr.children[1:]]
+    children = expr.children
+    groupers = [pd.Grouper(key=g._child._name, freq=measure * freq_map[unit])
+                for g, (measure, unit) in zip(children,
+                                              map(get_measure_unit, children))]
     return data.groupby(groupers).agg({agg._child._name: agg.symbol})
 
 
 @dispatch(Merge, Summary, DataFrame)
 def compute_resample(expr, agg, data):
     """Multiple frequencies, multiple reductions"""
-    groupers = [pd.Grouper(key=key, freq=g.measure * freq_map[g.unit])
-                for key, g in zip(agg.fields, agg.values)]
+    children = expr.children
+    groupers = [pd.Grouper(key=g._child._name, freq=measure * freq_map[unit])
+                for g, (measure, unit) in zip(children,
+                                              map(get_measure_unit, children))]
     how = defaultdict(list)
     for f in agg.values:
         how[f._child._name].append(f.symbol)
@@ -601,8 +611,9 @@ def compute_resample(expr, agg, data):
     how = defaultdict(list)
     for f in agg.values:
         how[f._child._name].append(f.symbol)
-    grouper = pd.Grouper(key=expr._child._name,
-                         freq=expr.measure * freq_map[expr.unit])
+
+    measure, unit = get_measure_unit(expr)
+    grouper = pd.Grouper(key=expr._child._name, freq=measure * freq_map[unit])
     return data.groupby(grouper).agg(dict(how))
 
 
