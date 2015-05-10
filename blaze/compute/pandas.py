@@ -628,8 +628,8 @@ def compute_resample(expr, agg, data):
 
 @dispatch(Resample, DataFrame)
 def compute_up(expr, data, **kwargs):
-    result = compute_resample(expr.grouper, expr.apply,
-                              data).sort_index(axis=1)
-    result.index.names = expr.grouper.fields
-    result.columns = expr.apply.fields
+    grouper, app = expr.grouper, expr.apply
+    result = compute_resample(grouper, app, data).sort_index(axis=1)
+    result.index.names = grouper.fields
+    result.columns = app.fields
     return result.reset_index()
