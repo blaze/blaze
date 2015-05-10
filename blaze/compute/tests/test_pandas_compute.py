@@ -713,6 +713,8 @@ def test_resample_single_frequency_two_aggs_same_column(ts, tsdf):
 
 
 def test_resample_two_frequencies_two_aggs(ts, tsdf):
+@pytest.mark.xfail(raises=ValueError, reason='Repeated columns')
+def test_resample_two_frequencies_no_repeat_columns_two_aggs(ts, tsdf):
     expr = resample(merge(ts.on.truncate(days=2), ts.on.truncate(month=1)),
                     two_day_avg=ts.A.mean(),
                     three_day_avg=ts.B.mean())
@@ -724,12 +726,13 @@ def test_resample_two_frequencies_two_aggs(ts, tsdf):
     tm.assert_frame_equal(result, expected)
 
 
-def test_resample_two_frequencies_one_agg(ts, tsdf):
+@pytest.mark.xfail(raises=ValueError, reason='Repeated columns')
+def test_resample_two_frequencies_no_repeat_columns_one_agg(ts, tsdf):
     expr = resample(merge(ts.on.truncate(days=2), ts.on.truncate(days=3)),
                     two_day_avg=ts.A.mean())
     result = compute(expr, tsdf)
     groupers = [pd.Grouper()]
-    expected = tsdf.groupby(groupers).aggs({'A': 'mean'})
+    expected = tsdf.groupby(groupers).agg({'A': 'mean'})
     tm.assert_frame_equal(result, expected)
 
 
