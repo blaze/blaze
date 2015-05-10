@@ -60,6 +60,20 @@ def hashable_index(index):
 
 
 def replace_slices(index):
+    """
+    Takes input from Slice expression and returns either a list,
+    slice object, or tuple.
+
+    Examples
+    -------
+    >>> replace_slices([1,2,345,12])
+    [1,2,345,12]
+    >>> type(replace_slices(_slice(1,5, None))) is slice
+    True
+    >>> type(replace_slices((2,5))) is tuple
+    True
+
+    """
     if isinstance(index, hashable_list):
         return list(index)
     elif isinstance(index, _slice):
