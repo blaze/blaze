@@ -38,6 +38,8 @@ from toolz.curried import map
 import numpy as np
 import numbers
 
+import warnings
+
 from multipledispatch import MDNotImplementedError
 
 from odo.backends.sql import metadata_of_engine
@@ -794,7 +796,7 @@ def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
 
 
-@dispatch(Slice, ClauseElement)
+@dispatch(Slice, (Select, Selectable, ColumnElement))
 def compute_up(expr, data, **kwargs):
     index = expr.index[0]  # [0] replace_slices returns tuple ((start, stop), )
     if isinstance(index, slice):
@@ -808,8 +810,8 @@ def compute_up(expr, data, **kwargs):
             raise ValueError('stop value of slice cannot be negative with a '
                              'SQL backend.')
 
-        if index.step is not None:
-            raise ValueError('step parameter in slice objects not supported'
+        if index.step is not None and index.step != 1:
+            raise ValueError('step parameter in slice objects not supported '
                              'with SQL backend')
 
     elif isinstance(index, (np.integer, numbers.Integral)):
@@ -821,6 +823,9 @@ def compute_up(expr, data, **kwargs):
     else:
         raise TypeError('type %r not supported for slicing wih SQL backend'
                          % type(index).__name__)
+
+    warnings.warn('The order of the result set from a Slice expression '
+                  'computed against the SQL backend is not deterministic.')
 
     if stop is None:  # Represents open-ended slice. e.g. [3:]
         return select(data).offset(start)

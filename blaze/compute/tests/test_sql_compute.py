@@ -1498,7 +1498,7 @@ def test_do_not_erase_group_by_functions_with_datetime():
 
 
 def test_slice():
-    start, stop = 50, 100
+    start, stop, step = 50, 100, 1
     result = str(compute(t[start:stop], s))
 
     # Verifies that compute is translating the query correctly
@@ -1511,3 +1511,13 @@ def test_slice():
     """
 
     assert normalize(str(result)) == normalize(str(expected))
+
+    # Step size of 1 should be alright
+    compute(t[start:stop:step], s)
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_slice_step():
+    start, stop, step = 50, 100, 2
+    compute(t[start:stop:step], s)
+
