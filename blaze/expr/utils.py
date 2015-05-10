@@ -66,7 +66,7 @@ def replace_slices(index):
     Examples
     -------
     >>> replace_slices([1,2,345,12])
-    [1,2,345,12]
+    [1, 2, 345, 12]
     >>> type(replace_slices(_slice(1,5, None))) is slice
     True
     >>> type(replace_slices((2,5))) is tuple
