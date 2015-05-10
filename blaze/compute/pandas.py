@@ -621,13 +621,15 @@ def compute_resample(expr, agg, data):
 def compute_resample(expr, agg, data):
     """Single frequency, single reduction"""
     freq = expr.measure * freq_map[expr.unit]
-
-    # keep as a single column DataFrame
-    return data[[expr._child._name]].resample(freq, how=agg.symbol)
+    key = expr._child._name
+    name = agg._child._name
+    return data.groupby(pd.Grouper(key=key, freq=freq)).agg({name: agg.symbol})
 
 
 @dispatch(Resample, DataFrame)
 def compute_up(expr, data, **kwargs):
-    result = compute_resample(expr.grouper, expr.apply, data)
+    result = compute_resample(expr.grouper, expr.apply,
+                              data).sort_index(axis=1)
+    result.index.names = expr.grouper.fields
     result.columns = expr.apply.fields
     return result.reset_index()
