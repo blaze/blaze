@@ -1,13 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
+from numpy import inf
+
 import toolz
+
+import datashape
+
 from datashape import Record, DataShape, dshape
 from datashape import coretypes as ct
-import datashape
-from numpy import inf
+from datashape.predicates import iscollection, isboolean, isnumeric
 
 from .core import common_subexpression
 from .expressions import Expr, ndim
+from .strings import isstring
+from .expressions import dshape_method_list, method_properties
 
 
 class Reduction(Expr):
@@ -296,17 +302,16 @@ def vnorm(expr, ord=None, axis=None, keepdims=False):
         return sum(abs(expr)**ord, axis=axis, keepdims=keepdims)**(1./ord)
 
 
-from datashape.predicates import iscollection, isboolean, isnumeric
-from .expressions import dshape_method_list, method_properties
-
 dshape_method_list.extend([
     (iscollection, set([count, nelements])),
+    (lambda ds: iscollection(ds) and (isstring(ds) or isnumeric(ds)),
+     set([min, max])),
     (lambda ds: len(ds.shape) == 1,
-        set([nrows, nunique])),
+     set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),
-        set([any, all, sum])),
+     set([any, all])),
     (lambda ds: iscollection(ds) and isnumeric(ds),
-        set([mean, sum, mean, min, max, std, var, vnorm])),
-    ])
+     set([mean, sum, mean, std, var, vnorm])),
+])
 
 method_properties.update([nrows])
