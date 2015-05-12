@@ -1,3 +1,5 @@
+import pytest
+
 from blaze.expr import symbol, summary
 from datashape import dshape
 
@@ -14,7 +16,8 @@ def test_keepdims():
     x = symbol('x', '5 * 3 * float32')
     assert x.sum(axis=0, keepdims=True).dshape == dshape('1 * 3 * float64')
     assert x.sum(axis=1, keepdims=True).dshape == dshape('5 * 1 * float64')
-    assert x.sum(axis=(0, 1), keepdims=True).dshape == dshape('1 * 1 * float64')
+    assert x.sum(axis=(0, 1), keepdims=True).dshape == dshape(
+        '1 * 1 * float64')
 
     assert x.std(axis=0, keepdims=True).shape == (1, 3)
 
@@ -22,19 +25,19 @@ def test_keepdims():
 def test_summary_keepdims():
     x = symbol('x', '5 * 3 * float32')
     assert summary(a=x.min(), b=x.max()).dshape == \
-            dshape('{a: float32, b: float32}')
+        dshape('{a: float32, b: float32}')
     assert summary(a=x.min(), b=x.max(), keepdims=True).dshape == \
-            dshape('1 * 1 * {a: float32, b: float32}')
+        dshape('1 * 1 * {a: float32, b: float32}')
 
 
 def test_summary_axis():
     x = symbol('x', '5 * 3 * float32')
     assert summary(a=x.min(), b=x.max(), axis=0).dshape == \
-            dshape('3 * {a: float32, b: float32}')
+        dshape('3 * {a: float32, b: float32}')
     assert summary(a=x.min(), b=x.max(), axis=1).dshape == \
-            dshape('5 * {a: float32, b: float32}')
+        dshape('5 * {a: float32, b: float32}')
     assert summary(a=x.min(), b=x.max(), axis=1, keepdims=True).dshape == \
-            dshape('5 * 1 * {a: float32, b: float32}')
+        dshape('5 * 1 * {a: float32, b: float32}')
 
 
 def test_summary_str():
