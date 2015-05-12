@@ -69,3 +69,10 @@ def test_norms():
     assert x.vnorm().isidentical(x.vnorm(2))
     assert x.vnorm(axis=0).shape == (3,)
     assert x.vnorm(axis=0, keepdims=True).shape == (1, 3)
+
+
+@pytest.mark.parametrize('reduc', ['max', 'min', 'sum', 'mean', 'std', 'var'])
+def test_reductions_on_record_dshape(reduc):
+    t = symbol('t', '10 * {a: int64, b: string}')
+    with pytest.raises(AttributeError):
+        getattr(t, reduc)

@@ -391,10 +391,3 @@ def test_functions_as_bound_methods():
         assert isinstance(attr, MethodType)
         # Make sure this is bound to the correct object.
         assert attr.__self__ is t
-
-
-@pytest.mark.parametrize('func', ['max', 'min', 'sum', 'mean', 'std', 'var'])
-def test_reduction_on_frame(func):
-    t = Data(pd.DataFrame(np.random.randn(10, 2), columns=list('ab')))
-    with pytest.raises(AttributeError):
-        getattr(t, func)
