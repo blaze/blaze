@@ -300,7 +300,7 @@ from datashape.predicates import iscollection, isboolean, isnumeric
 from .expressions import dshape_method_list, method_properties
 
 dshape_method_list.extend([
-    (iscollection, set([count, min, max, nelements])),
+    (iscollection, set([count, nelements])),
     (lambda ds: len(ds.shape) == 1,
         set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),
