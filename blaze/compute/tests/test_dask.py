@@ -1,8 +1,13 @@
 from __future__ import absolute_import, division, print_function
+
+import pytest
+
+dask = pytest.importorskip('dask')
+
 import numpy as np
 
 from dask.array import Array, from_array
-from odo import discover, into
+from odo import discover
 from operator import getitem
 
 from blaze import compute, symbol
@@ -40,24 +45,24 @@ numpy_ns = {sx: nx, sy: ny, sa: na, sb: nb}
 
 
 def test_compute():
-    exprs = [2*sx + 1,
-            sx.sum(axis=0),
-            sx.mean(axis=0),
-            sx + sx,
-            sx.T,
-            sx.T + sy,
-            sx.dot(sy),
-            sy.dot(sx),
-            sx.sum(),
-            sx - sx.sum(),
-            sx.dot(sx.T),
-            sx.sum(axis=1),
-            sy + sa,
-            sy + sb,
-            sx[3:17],
-            sx[3:10, 10:25:2] + 1,
-            sx[:5, 10],
-            sx[0, 0] ]
+    exprs = [2 * sx + 1,
+             sx.sum(axis=0),
+             sx.mean(axis=0),
+             sx + sx,
+             sx.T,
+             sx.T + sy,
+             sx.dot(sy),
+             sy.dot(sx),
+             sx.sum(),
+             sx - sx.sum(),
+             sx.dot(sx.T),
+             sx.sum(axis=1),
+             sy + sa,
+             sy + sb,
+             sx[3:17],
+             sx[3:10, 10:25:2] + 1,
+             sx[:5, 10],
+             sx[0, 0]]
     for expr in exprs:
         result = compute(expr, dask_ns)
         expected = compute(expr, numpy_ns)
@@ -72,7 +77,7 @@ def test_compute():
 def test_elemwise_broadcasting():
     arr = compute(sy + sb, dask_ns)
     expected = [[(arr.name, i, j) for j in range(5)]
-                                  for i in range(6)]
+                for i in range(6)]
     assert arr._keys() == expected
 
 
@@ -96,7 +101,8 @@ def test_slicing_with_singleton_dimensions():
     x = dx.name
     y = arr.name
     assert arr.dask[(y, 0)] == (getitem, (x, 1, 2), (slice(1, 4, 1), 2))
-    assert arr.dask[(y, 1)] == (getitem, (x, 2, 2), (slice(None, None, None), 2))
+    assert arr.dask[(y, 1)] == (
+        getitem, (x, 2, 2), (slice(None, None, None), 2))
     assert arr.dask[(y, 2)] == (getitem, (x, 3, 2), (slice(0, 3, 1), 2))
     assert all(len(k) == 2 for k in arr._keys())
 
