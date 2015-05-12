@@ -63,6 +63,7 @@ exprs = [2 * sx + 1,
          sx[0, 0]]
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize('expr', exprs)
 def test_compute(expr):
     result = compute(expr, dask_ns)
