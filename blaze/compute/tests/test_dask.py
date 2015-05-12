@@ -43,35 +43,36 @@ sb = symbol('b', discover(db))
 dask_ns = {sx: dx, sy: dy, sa: da, sb: db}
 numpy_ns = {sx: nx, sy: ny, sa: na, sb: nb}
 
+exprs = [2 * sx + 1,
+         sx.sum(axis=0),
+         sx.mean(axis=0),
+         sx + sx,
+         sx.T,
+         sx.T + sy,
+         sx.dot(sy),
+         sy.dot(sx),
+         sx.sum(),
+         sx - sx.sum(),
+         sx.dot(sx.T),
+         sx.sum(axis=1),
+         sy + sa,
+         sy + sb,
+         sx[3:17],
+         sx[3:10, 10:25:2] + 1,
+         sx[:5, 10],
+         sx[0, 0]]
 
-def test_compute():
-    exprs = [2 * sx + 1,
-             sx.sum(axis=0),
-             sx.mean(axis=0),
-             sx + sx,
-             sx.T,
-             sx.T + sy,
-             sx.dot(sy),
-             sy.dot(sx),
-             sx.sum(),
-             sx - sx.sum(),
-             sx.dot(sx.T),
-             sx.sum(axis=1),
-             sy + sa,
-             sy + sb,
-             sx[3:17],
-             sx[3:10, 10:25:2] + 1,
-             sx[:5, 10],
-             sx[0, 0]]
-    for expr in exprs:
-        result = compute(expr, dask_ns)
-        expected = compute(expr, numpy_ns)
-        assert isinstance(result, Array)
-        if expr.dshape.shape:
-            result2 = np.array(result)
-        else:
-            result2 = float(result)
-        assert eq(result2, expected)
+
+@pytest.mark.parametrize('expr', exprs)
+def test_compute(expr):
+    result = compute(expr, dask_ns)
+    expected = compute(expr, numpy_ns)
+    assert isinstance(result, Array)
+    if expr.dshape.shape:
+        result2 = np.array(result)
+    else:
+        result2 = float(result)
+    assert eq(result2, expected)
 
 
 def test_elemwise_broadcasting():
