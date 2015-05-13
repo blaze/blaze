@@ -377,6 +377,7 @@ class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
     _dtype = ct.bool_
+
     def __str__(self):
         return '~%s' % parenthesize(eval_str(self._child))
 
