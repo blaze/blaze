@@ -133,7 +133,7 @@ def test_arithmetic():
         str(2 * s.c.amount)
 
     assert (str(compute(~(t['amount'] > 10), s, post_compute=False)) ==
-            "~(accounts.amount > :amount_1)")
+            "accounts.amount <= :amount_1")
 
     assert str(compute(t['amount'] + t['id'] * 2, s)) == \
         str(sa.select([s.c.amount + s.c.id * 2]))
