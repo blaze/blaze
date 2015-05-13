@@ -6,9 +6,9 @@ import toolz
 
 import datashape
 
-from datashape import Record, DataShape, dshape
+from datashape import Record, DataShape, dshape, TimeDelta
 from datashape import coretypes as ct
-from datashape.predicates import iscollection, isboolean, isnumeric
+from datashape.predicates import iscollection, isboolean, isnumeric, isdatelike
 
 from .core import common_subexpression
 from .expressions import Expr, ndim
@@ -312,7 +312,8 @@ def vnorm(expr, ord=None, axis=None, keepdims=False):
 dshape_method_list.extend([
     (iscollection, set([count, nelements])),
     (lambda ds: (iscollection(ds) and
-                 (isstring(ds) or isnumeric(ds) or isboolean(ds))),
+                 (isstring(ds) or isnumeric(ds) or isboolean(ds) or
+                  isdatelike(ds) or isinstance(ds, TimeDelta))),
      set([min, max])),
     (lambda ds: len(ds.shape) == 1,
      set([nrows, nunique])),

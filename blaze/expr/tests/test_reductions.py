@@ -1,3 +1,5 @@
+from itertools import product
+
 import pytest
 
 from blaze.expr import symbol, summary
@@ -84,3 +86,10 @@ def test_reductions_on_record_dshape(reduc):
 @pytest.mark.parametrize('reduc', ['max', 'min', 'sum', 'mean', 'std', 'var'])
 def test_boolean_has_reductions(reduc):
     assert hasattr(symbol('t', 'var * bool'), reduc)
+
+
+@pytest.mark.parametrize(['reduc', 'measure'],
+                         product(['max', 'min'],
+                                 ['date', 'datetime', 'timedelta']))
+def test_max_min_on_datetime_and_timedelta(reduc, measure):
+    assert hasattr(symbol('t', 'var * %s' % measure), reduc)
