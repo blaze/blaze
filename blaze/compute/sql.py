@@ -141,13 +141,11 @@ def binop_sql(t, lhs, rhs, **kwargs):
 
 @dispatch(UnaryOp, ColumnElement)
 def compute_up(t, s, **kwargs):
-    op = getattr(sa.func, t.symbol)
-    return op(s)
-
-
-@dispatch(USub, (sa.Column, Selectable))
-def compute_up(t, s, **kwargs):
-    return -s
+    try:
+        return t.op(s)
+    except AttributeError:
+        symbol = t.symbol
+        return getattr(sa.sql.functions, symbol, getattr(sa.func, symbol))(s)
 
 
 @dispatch(Selection, Select)
