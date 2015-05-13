@@ -25,7 +25,7 @@ from copy import copy
 import sqlalchemy as sa
 
 from sqlalchemy import sql, Table, MetaData
-from sqlalchemy.sql import Selectable, Select
+from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement
 from sqlalchemy.engine import Engine
@@ -141,11 +141,8 @@ def binop_sql(t, lhs, rhs, **kwargs):
 
 @dispatch(UnaryOp, ColumnElement)
 def compute_up(t, s, **kwargs):
-    try:
-        return t.op(s)
-    except AttributeError:
-        symbol = t.symbol
-        return getattr(sa.sql.functions, symbol, getattr(sa.func, symbol))(s)
+    sym = t.symbol
+    return getattr(t, 'op', getattr(safuncs, sym, getattr(sa.func, sym)))(s)
 
 
 @dispatch(Selection, Select)
