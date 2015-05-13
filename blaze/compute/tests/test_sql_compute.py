@@ -133,7 +133,7 @@ def test_arithmetic():
         str(2 * s.c.amount)
 
     assert (str(compute(~(t['amount'] > 10), s, post_compute=False)) ==
-            "~(accounts.amount > :amount_1)")
+            "accounts.amount <= :amount_1")
 
     assert str(compute(t['amount'] + t['id'] * 2, s)) == \
         str(sa.select([s.c.amount + s.c.id * 2]))
@@ -1493,5 +1493,18 @@ def test_do_not_erase_group_by_functions_with_datetime():
         accdate.amount < :amount_1
     GROUP BY
         extract(date from accdate.occurred_on)
+    """
+    assert normalize(result) == normalize(expected)
+
+
+def test_not():
+    expr = t.amount[~t.name.isin(('Billy', 'Bob'))]
+    result = str(compute(expr, s))
+    expected = """SELECT
+        accounts.amount
+    FROM
+        accounts
+    WHERE
+        accounts.name not in (:name_1, :name_2)
     """
     assert normalize(result) == normalize(expected)
