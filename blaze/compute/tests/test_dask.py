@@ -45,7 +45,8 @@ numpy_ns = {sx: nx, sy: ny, sa: na, sb: nb}
 
 exprs = [2 * sx + 1,
          sx.sum(axis=0),
-         sx.mean(axis=0),
+         pytest.mark.skipif(True, sx.mean(axis=0),
+                            reason="Segfaulting and remote process error"),
          sx + sx,
          sx.T,
          sx.T + sy,
@@ -63,7 +64,6 @@ exprs = [2 * sx + 1,
          sx[0, 0]]
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize('expr', exprs)
 def test_compute(expr):
     result = compute(expr, dask_ns)
