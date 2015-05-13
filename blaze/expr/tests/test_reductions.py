@@ -92,4 +92,4 @@ def test_boolean_has_reductions(reduc):
                          product(['max', 'min'],
                                  ['date', 'datetime', 'timedelta']))
 def test_max_min_on_datetime_and_timedelta(reduc, measure):
-    assert hasattr(symbol('t', 'var * datetime'))
+    assert hasattr(symbol('t', 'var * %s' % measure), reduc)
