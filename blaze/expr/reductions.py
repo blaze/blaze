@@ -17,6 +17,7 @@ from .expressions import dshape_method_list, method_properties
 
 
 class Reduction(Expr):
+
     """ A column-wise reduction
 
     Blaze supports the same class of reductions as NumPy and Pandas.
@@ -90,7 +91,8 @@ class Reduction(Expr):
             kwargs.append('keepdims=True')
         if self.axis != tuple(range(self._child.ndim)):
             kwargs.append('axis=' + str(self.axis))
-        other = sorted(set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
+        other = sorted(
+            set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
         for slot in other:
             kwargs.append('%s=%s' % (slot, getattr(self, slot)))
         name = type(self).__name__
@@ -109,6 +111,7 @@ class all(Reduction):
 
 
 class sum(Reduction):
+
     @property
     def schema(self):
         return DataShape(datashape.maxtype(super(sum, self).schema))
@@ -127,6 +130,7 @@ class mean(Reduction):
 
 
 class var(Reduction):
+
     """Variance
 
     Parameters
@@ -148,6 +152,7 @@ class var(Reduction):
 
 
 class std(Reduction):
+
     """Standard Deviation
 
     Parameters
@@ -177,6 +182,7 @@ class std(Reduction):
 
 
 class count(Reduction):
+
     """ The number of non-null elements """
     schema = dshape(ct.int32)
 
@@ -186,6 +192,7 @@ class nunique(Reduction):
 
 
 class nelements(Reduction):
+
     """Compute the number of elements in a collection, including missing values.
 
     See Also
@@ -207,6 +214,7 @@ def nrows(expr):
 
 
 class Summary(Expr):
+
     """ A collection of named reductions
 
     Examples
@@ -250,7 +258,7 @@ class Summary(Expr):
     def __str__(self):
         s = 'summary('
         s += ', '.join('%s=%s' % (name, str(val))
-                         for name, val in zip(self.fields, self.values))
+                       for name, val in zip(self.fields, self.values))
         if self.keepdims:
             s += ', keepdims=True'
         s += ')'
@@ -297,21 +305,21 @@ def vnorm(expr, ord=None, axis=None, keepdims=False):
     elif ord == 1:
         return sum(abs(expr), axis=axis, keepdims=keepdims)
     elif ord % 2 == 0:
-        return sum(expr**ord, axis=axis, keepdims=keepdims)**(1./ord)
-    else:
-        return sum(abs(expr)**ord, axis=axis, keepdims=keepdims)**(1./ord)
+        return sum(expr ** ord, axis=axis, keepdims=keepdims) ** (1.0 / ord)
+    return sum(abs(expr) ** ord, axis=axis, keepdims=keepdims) ** (1.0 / ord)
 
 
 dshape_method_list.extend([
     (iscollection, set([count, nelements])),
-    (lambda ds: iscollection(ds) and (isstring(ds) or isnumeric(ds)),
+    (lambda ds: (iscollection(ds) and
+                 (isstring(ds) or isnumeric(ds) or isboolean(ds))),
      set([min, max])),
     (lambda ds: len(ds.shape) == 1,
      set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),
      set([any, all])),
     (lambda ds: iscollection(ds) and isnumeric(ds),
-     set([mean, sum, mean, std, var, vnorm])),
+     set([mean, sum, std, var, vnorm])),
 ])
 
 method_properties.update([nrows])
