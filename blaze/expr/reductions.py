@@ -318,7 +318,7 @@ dshape_method_list.extend([
      set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),
      set([any, all])),
-    (lambda ds: iscollection(ds) and isnumeric(ds),
+    (lambda ds: iscollection(ds) and (isnumeric(ds) or isboolean(ds)),
      set([mean, sum, std, var, vnorm])),
 ])
 

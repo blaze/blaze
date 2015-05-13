@@ -79,3 +79,8 @@ def test_reductions_on_record_dshape(reduc):
     t = symbol('t', '10 * {a: int64, b: string}')
     with pytest.raises(AttributeError):
         getattr(t, reduc)
+
+
+@pytest.mark.parametrize('reduc', ['max', 'min', 'sum', 'mean', 'std', 'var'])
+def test_boolean_has_reductions(reduc):
+    assert hasattr(symbol('t', 'var * bool'), reduc)
