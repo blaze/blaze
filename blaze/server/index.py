@@ -4,6 +4,7 @@ from ..compatibility import _strtypes, _inttypes
 
 __all__ = 'parse_index', 'emit_index'
 
+
 def parse_index(ind, inside=False):
     """ Parse structured index into Pythonic form
 
