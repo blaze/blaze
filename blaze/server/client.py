@@ -1,12 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-try:
-    import flask
-    from flask import json
-    import requests
-except ImportError:
-    pass
-
+import flask
+from flask import json
+import requests
 
 from odo import resource
 from datashape import dshape
