@@ -1495,3 +1495,16 @@ def test_do_not_erase_group_by_functions_with_datetime():
         extract(date from accdate.occurred_on)
     """
     assert normalize(result) == normalize(expected)
+
+
+def test_not():
+    expr = t.amount[~t.name.isin(('Billy', 'Bob'))]
+    result = str(compute(expr, s))
+    expected = """SELECT
+        accounts.amount
+    FROM
+        accounts
+    WHERE
+        accounts.name not in (:name_1, :name_2)
+    """
+    assert normalize(result) == normalize(expected)
