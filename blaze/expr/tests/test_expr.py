@@ -1,7 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+import pandas as pd
+
 import pytest
-from datashape import dshape
+
+from datashape import dshape, var, datetime_
 
 from blaze.expr import symbol, label, Field
 
@@ -121,3 +124,14 @@ def test_map_with_rename():
     with pytest.raises(ValueError):
         result.relabel(timestamp='date')
     assert result.fields == ['date']
+
+
+def test_hash_to_different_values():
+    s = symbol('s', var * datetime_)
+    expr = s >= pd.Timestamp('20121001')
+    expr2 = s >= '20121001'
+    assert expr2 & expr is not None
+    assert hash(expr) == hash(expr2)
+
+    from blaze.expr.expressions import _attr_cache
+    assert (expr, '_and') in _attr_cache
