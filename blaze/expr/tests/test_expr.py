@@ -135,3 +135,4 @@ def test_hash_to_different_values():
 
     from blaze.expr.expressions import _attr_cache
     assert (expr, '_and') in _attr_cache
+    assert (expr2, '_and') in _attr_cache
