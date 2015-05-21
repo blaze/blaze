@@ -361,3 +361,10 @@ def test_Data_construct_with_table(bank):
     d = Data('mongodb://localhost/test_db::bank')
     assert set(d.fields) == set(('name', 'amount'))
     assert int(d.count()) == 5
+
+
+def test_and_same_key(bank):
+    expr = t[(t.amount > 100) & (t.amount < 300)]
+    result = compute(expr, bank)
+    expected = [('Alice', 200), ('Bob', 200)]
+    assert result == expected
