@@ -31,7 +31,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas=0.16.0 h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
   - source activate test-environment
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
@@ -70,7 +70,7 @@ before_script:
 
 script:
   - echo '[pytest]' > pytest.ini
-  - echo 'addopts = -v -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
+  - echo 'addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
   - coverage run --include='blaze/*' $(which py.test)
   - coverage report --show-missing

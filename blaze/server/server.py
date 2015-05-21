@@ -1,20 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-try:
-    import flask
-    from flask import Blueprint, Flask, request
-except ImportError:
-    pass
-
-import blaze
 import socket
 import json
+
+import flask
+from flask import Blueprint, Flask, request
+
 from toolz import assoc
+
+from datashape.predicates import iscollection, isscalar
+from odo import odo
+
+import blaze
 from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
-from datashape.predicates import iscollection, isscalar
-from odo import odo
+
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..utils import json_dumps
 from ..expr import Expr, symbol
