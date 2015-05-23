@@ -1508,3 +1508,29 @@ def test_not():
         accounts.name not in (:name_1, :name_2)
     """
     assert normalize(result) == normalize(expected)
+
+
+def test_slice():
+    start, stop, step = 50, 100, 1
+    result = str(compute(t[start:stop], s))
+
+    # Verifies that compute is translating the query correctly
+    assert result == str(select(s).offset(start).limit(stop))
+
+    #Verifies the query against expected SQL query
+    expected = """
+    SELECT accounts.name, accounts.amount, accounts.id FROM accounts
+    LIMIT :param_1 OFFSET :param_2
+    """
+
+    assert normalize(str(result)) == normalize(str(expected))
+
+    # Step size of 1 should be alright
+    compute(t[start:stop:step], s)
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_slice_step():
+    start, stop, step = 50, 100, 2
+    compute(t[start:stop:step], s)
+
