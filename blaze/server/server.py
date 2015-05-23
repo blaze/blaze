@@ -1,6 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 import socket
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import json
 
 import flask
@@ -31,6 +35,7 @@ DEFAULT_PORT = 6363
 
 
 api = Blueprint('api', __name__)
+pickle_extension_api = Blueprint('pickle_extension_api', __name__)
 
 
 def _register_api(app, options, first_registration=False):
@@ -85,11 +90,13 @@ class Server(object):
     """
     __slots__ = 'app', 'data', 'port'
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, allow_pickle=False):
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
         app.register_blueprint(api, data=data)
+        if allow_pickle:
+            app.register_blueprint(pickle_extension_api)
         self.data = data
 
     def run(self, *args, **kwargs):
@@ -280,13 +287,15 @@ def from_tree(expr, namespace=None):
 
 
 @api.route('/compute.json', methods=['POST', 'PUT', 'GET'])
-def compserver():
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 415)  # 415: Unsupported Media Type
+def compserver(serial=json):
+    if serial is json:
+        data = request.data.encode('utf-8')
+    else:
+        data = request.data
     try:
-        payload = json.loads(request.data.decode('utf-8'))
+        payload = serial.loads(data)
     except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 400)  # 400: Bad Request
+        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
 
     ns = payload.get('namespace', dict())
     dataset = _get_data()
@@ -310,5 +319,12 @@ def compserver():
         # 500: Internal Server Error
         return ("Computation failed with message:\n%s" % e, 500)
 
-    return json.dumps({'datashape': str(expr.dshape),
-                       'data': result}, default=json_dumps)
+    return serial.dumps(
+        {'datashape': str(expr.dshape), 'data': result},
+        **({'default': json_dumps} if serial is json else {})
+    )
+
+
+@pickle_extension_api.route('/compute.pickle', methods=['POST', 'PUT', 'GET'])
+def comppickle():
+    return compserver(pickle)

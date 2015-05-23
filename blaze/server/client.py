@@ -3,6 +3,10 @@ from __future__ import absolute_import, division, print_function
 import flask
 from flask import json
 import requests
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from odo import resource
 from datashape import dshape
@@ -65,13 +69,17 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url'
+    __slots__ = 'url', 'mode', 'serial'
 
-    def __init__(self, url, **kwargs):
+    def __init__(self, url, mode='json', **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
+        if mode not in ('json', 'pickle'):
+            raise ValueError('mode must be either pickle or json')
+        self.mode = mode
+        self.serial = json if mode == json else pickle
 
     @property
     def dshape(self):
@@ -100,16 +108,18 @@ def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     tree = to_tree(expr)
 
-    r = requests.get('%s/compute.json' % ec.url,
-                     data=json.dumps({'expr': tree}),
-                     headers={'Content-Type': 'application/json'})
+    serial = ec.serial
+    r = requests.get('%s/compute.%s' % (ec.url, ec.mode),
+                     data=serial.dumps({'expr': tree}))
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
 
-    data = json.loads(content(r).decode('utf-8'))
-
-    return data['data']
+    if serial is json:
+        raw = content(r).decode('utf-8')
+    else:
+        raw = content(r)
+    return serial.loads(raw)['data']
 
 
 @resource.register('blaze://.+')
