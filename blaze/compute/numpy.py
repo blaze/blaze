@@ -56,45 +56,56 @@ for i in range(2, 6):
 
 
 @dispatch(Repeat, np.ndarray)
-def compute_up(t, data, **kwargs):
+def compute_up(t, data, _char_mul=np.char.multiply, **kwargs):
     if isinstance(t.lhs, Expr):
-        return np.char.multiply(data, t.rhs)
+        return _char_mul(data, t.rhs)
     else:
-        return np.char.multiply(t.lhs, data)
+        return _char_mul(t.lhs, data)
 
 
 @compute_up.register(Repeat, np.ndarray, (np.ndarray, base))
 @compute_up.register(Repeat, base, np.ndarray)
-def compute_up_np_repeat(t, lhs, rhs, **kwargs):
-    return np.char.multiply(lhs, rhs)
+def compute_up_np_repeat(t, lhs, rhs, _char_mul=np.char.multiply, **kwargs):
+    return _char_mul(lhs, rhs)
 
 
 @dispatch(Concat, np.ndarray)
-def compute_up(t, data, **kwargs):
+def compute_up(t, data, _char_add=np.char.add, **kwargs):
     if isinstance(t.lhs, Expr):
-        return np.char.add(data, t.rhs)
+        return _char_add(data, t.rhs)
     else:
-        return np.char.add(t.lhs, data)
+        return _char_add(t.lhs, data)
 
 
 @compute_up.register(Concat, np.ndarray, (np.ndarray, base))
 @compute_up.register(Concat, base, np.ndarray)
-def compute_up_np_concat(t, lhs, rhs, **kwargs):
-    return np.char.add(lhs, rhs)
+def compute_up_np_concat(t, lhs, rhs, _char_add=np.char.add, **kwargs):
+    return _char_add(lhs, rhs)
+
+
+def _interp(arr, v, _Series=pd.Series, _charmod=np.char.mod):
+    """
+    Delegate to the most efficient string formatting technique based on
+    the length of the array.
+    """
+    if len(arr) >= 145:
+        return _Series(arr) % v
+
+    return _charmod(arr, v)
 
 
 @dispatch(Interp, np.ndarray)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
-        return np.char.mod(data, t.rhs)
+        return _interp(data, t.rhs)
     else:
-        return np.char.mod(t.lhs, data)
+        return _interp(t.lhs, data)
 
 
 @compute_up.register(Interp, np.ndarray, (np.ndarray, base))
 @compute_up.register(Interp, base, np.ndarray)
 def compute_up_np_interp(t, lhs, rhs, **kwargs):
-    return np.char.mod(lhs, rhs)
+    return _interp(lhs, rhs)
 
 
 
