@@ -50,9 +50,9 @@ def _register_api(app, options, first_registration=False):
     Register the data with the blueprint.
     """
     _get_data.cache[app] = _get_option('data', options)
-    _get_format.cache[app] = {
-        f.name: f for f in _get_option('formats', options)
-    }
+    _get_format.cache[app] = dict(
+        (f.name, f) for f in _get_option('formats', options)
+    )
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
 
