@@ -16,6 +16,12 @@ else:
     apply = builtins.apply
 
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+
 # Portions of this taken from the six library, licensed as follows.
 #
 # Copyright (c) 2010-2013 Benjamin Peterson

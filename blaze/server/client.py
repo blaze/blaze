@@ -1,12 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import flask
-from flask import json
 import requests
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 from odo import resource
 from datashape import dshape
@@ -14,6 +9,7 @@ from datashape import dshape
 from ..expr import Expr
 from ..dispatch import dispatch
 from .server import DEFAULT_PORT
+from .serialization import json
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
@@ -56,6 +52,11 @@ class Client(object):
     url : str
         URL of a Blaze server
 
+    serial : SerializationFormat, optional
+        The serialization format object to use. Defaults to JSON.
+        A serialization format is an object that supports:
+        name, loads, and dumps.
+
     Examples
     --------
 
@@ -69,17 +70,14 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'mode', 'serial'
+    __slots__ = 'url', 'serial'
 
-    def __init__(self, url, mode='json', **kwargs):
+    def __init__(self, url, serial=json, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
-        if mode not in ('json', 'pickle'):
-            raise ValueError('mode must be either pickle or json')
-        self.mode = mode
-        self.serial = json if mode == json else pickle
+        self.serial = serial
 
     @property
     def dshape(self):
@@ -109,17 +107,12 @@ def compute_down(expr, ec, **kwargs):
     tree = to_tree(expr)
 
     serial = ec.serial
-    r = requests.get('%s/compute.%s' % (ec.url, ec.mode),
+    r = requests.get('%s/compute.%s' % (ec.url, serial.name),
                      data=serial.dumps({'expr': tree}))
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
-
-    if serial is json:
-        raw = content(r).decode('utf-8')
-    else:
-        raw = content(r)
-    return serial.loads(raw)['data']
+    return serial.loads(content(r))['data']
 
 
 @resource.register('blaze://.+')
