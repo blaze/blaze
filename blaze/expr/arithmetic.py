@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import operator
 from toolz import first
 import numpy as np
+import pandas as pd
 from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric
@@ -220,7 +221,7 @@ def scalar_coerce(_, val):
 
 @dispatch(ct.DateTime, _strtypes)
 def scalar_coerce(_, val):
-    return dt_parse(val)
+    return pd.Timestamp(val)
 
 
 @dispatch(ct.CType, _strtypes)
