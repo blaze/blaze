@@ -191,10 +191,7 @@ def compute_sub(t):
                           x]}
     elif isinstance(t, ceil):
         x = compute_sub(t._child)
-        return {'$add': [x,
-                         {'$subtract': [1,
-                                        {'$mod': [x, 1]}]}
-                          ]}
+        return {'$add': [x, {'$subtract': [1, {'$mod': [x, 1]}]}]}
     elif isinstance(t, tuple(datetime_terms)):
         op = datetime_terms[type(t)]
         return {'$%s' % op: compute_sub(t._child)}
@@ -465,10 +462,10 @@ def match(expr):
     if isinstance(expr, Ge):
         return {name(expr.lhs): {'$gte': expr.rhs}}
     if isinstance(expr, And):
-        return toolz.merge(match(expr.lhs), match(expr.rhs))
+        return {'$and': [match(expr.lhs), match(expr.rhs)]}
     if isinstance(expr, Or):
         return {'$or': [match(expr.lhs), match(expr.rhs)]}
     if isinstance(expr, Ne):
         return {name(expr.lhs): {'$ne': expr.rhs}}
-    raise NotImplementedError("Matching not supported on expressions of type %s"
-            % type(expr).__name__)
+    raise NotImplementedError("Matching not supported on expressions of type "
+                              "%r" % type(expr).__name__)

@@ -55,6 +55,21 @@ s = sa.Table('accounts', metadata,
              sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True))
 
+tdate = symbol('t',
+               """var * {
+                    name: string,
+                    amount: int,
+                    id: int,
+                    occurred_on: datetime
+                }""")
+
+sdate = sa.Table('accdate', metadata,
+                 sa.Column('name', sa.String),
+                 sa.Column('amount', sa.Integer),
+                 sa.Column('id', sa.Integer, primary_key=True),
+                 sa.Column('occurred_on', sa.DateTime))
+
+
 tbig = symbol('tbig',
               'var * {name: string, sex: string[1], amount: int, id: int}')
 
@@ -118,7 +133,7 @@ def test_arithmetic():
         str(2 * s.c.amount)
 
     assert (str(compute(~(t['amount'] > 10), s, post_compute=False)) ==
-            "~(accounts.amount > :amount_1)")
+            "accounts.amount <= :amount_1")
 
     assert str(compute(t['amount'] + t['id'] * 2, s)) == \
         str(sa.select([s.c.amount + s.c.id * 2]))
@@ -1461,4 +1476,35 @@ def test_normalize_reduction():
 FROM accounts GROUP BY accounts.name)
  SELECT alias.counts / max(alias.counts) AS normed_counts
 FROM alias"""
+    assert normalize(result) == normalize(expected)
+
+
+def test_do_not_erase_group_by_functions_with_datetime():
+    t, s = tdate, sdate
+    expr = by(t[t.amount < 0].occurred_on.date,
+              avg_amount=t[t.amount < 0].amount.mean())
+    result = str(compute(expr, s))
+    expected = """SELECT
+        extract(date from accdate.occurred_on) as occurred_on_date,
+        avg(accdate.amount) as avg_amount
+    FROM
+        accdate
+    WHERE
+        accdate.amount < :amount_1
+    GROUP BY
+        extract(date from accdate.occurred_on)
+    """
+    assert normalize(result) == normalize(expected)
+
+
+def test_not():
+    expr = t.amount[~t.name.isin(('Billy', 'Bob'))]
+    result = str(compute(expr, s))
+    expected = """SELECT
+        accounts.amount
+    FROM
+        accounts
+    WHERE
+        accounts.name not in (:name_1, :name_2)
+    """
     assert normalize(result) == normalize(expected)
