@@ -10,14 +10,18 @@ import os
 import itertools
 import shutil
 
+from distutils.version import StrictVersion
+
 from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
+
 try:
     from pyspark.sql import DataFrame as SparkDataFrame
 except ImportError:
     from pyspark.sql import SchemaRDD as SparkDataFrame
+
 from pyspark import HiveContext, SQLContext
 from pyspark.sql import Row, SchemaRDD
 from odo import odo, discover
@@ -29,6 +33,8 @@ data = [['Alice', 100.0, 1],
         ['Alice', 50.0, 3]]
 
 date_data = []
+
+np.random.seed(0)
 
 for attr in ('YearBegin', 'MonthBegin', 'Day', 'Hour', 'Minute', 'Second'):
     rng = pd.date_range(start='now', periods=len(data),
@@ -334,9 +340,10 @@ def test_strlen(ctx, db):
     assert odo(result, set) == odo(expected, set)
 
 
-date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
+date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types') or
+                                pd.__version__ == StrictVersion('0.16.1'),
                                 attr,
-                                raises=Py4JJavaError,
+                                raises=(Py4JJavaError, AssertionError),
                                 reason=('date attribute %r not supported '
                                         'without hive') % attr)
               for attr in ['year', 'month', 'day', 'hour', 'minute', 'second']]
