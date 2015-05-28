@@ -59,7 +59,8 @@ Continuum Analytics
 And introduces some novel features
 
 *  Ghosting
-*  Integration with HDF5, scikit learn, ...
+*  Integration with HDF5
+*  Parallel variants (quantiles, topk, ...)
 
 
 
@@ -75,9 +76,9 @@ Solution -- Break array into blocks that fit in-memory.  Use NumPy on each
 block.
 
 
-## Blocked algorithms
+## Blocked algorithms - Sum
 
-Blocked sum
+Blocked Sum
 
     x = h5py.File('myfile.hdf5')['/x']
 
@@ -89,9 +90,9 @@ Blocked sum
     total = sum(sums)                           # Sum intermediate sums
 
 
-## Blocked algorithms
+## Blocked algorithms - Mean
 
-Blocked mean on positive elements
+Blocked mean of positive elements
 
     x = h5py.File('myfile.hdf5')['/x']
 
