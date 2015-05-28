@@ -1,11 +1,11 @@
-
-
 ### `numpy` and `pandas` provide foundational data structures
 
 ![](images/jenga.png)
 
 
-### `numpy` and `pandas` provide composition between different projects
+### `numpy` and `pandas` provide foundational data structures
+
+### Data structures ease interactions between projects
 
 Can use projects together without developer coordination
 
@@ -38,10 +38,10 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 **TODO: Standard image of CPU**
 
 * Multiple cores
-   *  4 -- cheap laptop
-   *  32 -- workstation
+   *  4 cores -- cheap laptop
+   *  32 cores -- workstation
 * Distributed memory clusters in big data warehousing
-* Fast Solid State Drives (disk as extended memory)
+* Fast Solid State Drives (disk is now extended memory)
 
 
 ### Python has limitations
@@ -51,6 +51,7 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 * Poor support for in-process parallelism
    * The Global Interpreter Lock (GIL) stops two Python threads from
      manipulating Python objects simultaneously
+   * We can cheat the GIL because we usually use C/Fortran code
 
 
 ### PyData rests on single-threaded foundations
@@ -67,13 +68,14 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 ![](images/jenga.png)  **TODO: Add Numba**
 
 
-### Can we parallelize the entire ecosystem in some clever way?
+### Can we parallelize the entire ecosystem in some clever way without
+requiring downstream projects to do any work?
 
 
 ### *no*
 
 
-### But it might be straightforward
+### But that work might be straightforward
 
 
 ### And we have an effective community

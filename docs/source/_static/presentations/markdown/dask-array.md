@@ -41,7 +41,6 @@ Continuum Analytics
 *  that copies the `numpy` interface
 *  using blocked algorithms
 *  and task scheduling
-*  useful for meteorological data
 
 
 ## NumPy interface
@@ -58,22 +57,21 @@ Continuum Analytics
 
 And introduces some novel features
 
-*  Ghosting
+*  Overlapping boundaries
+*  Parallel variant algorithms (quantiles, topk, ...)
 *  Integration with HDF5
-*  Parallel variants (quantiles, topk, ...)
 
 
 
 ## Blocked algorithms
 
-Problem -- Given a trillion element array:
+*  Problem -- Given a trillion element array:
+    *  Find the sum of all elements
+    *  Find the mean of all elements
+    *  Find the mean of all positive elements
+*   Solution -- Break array into blocks that fit in-memory.
 
-*  Find the sum of all elements
-*  Find the mean of all elements
-*  Find the mean of all positive elements
-
-Solution -- Break array into blocks that fit in-memory.  Use NumPy on each
-block.
+    Use NumPy on each block.
 
 
 ## Blocked algorithms - Sum
@@ -154,16 +152,12 @@ Sometimes this fails (but that's ok)
 <img src="images/fail-case.gif">
 
 
+## Notable Users
 
-## Questions?
-
-<img src="images/fail-case.gif">
-
-[http://dask.pydata.org/](http://dask.pydata.org/)
-
-
-## I have questions
-
-*  What operations do you need?
-*  What bandwidths would satisfy you?
-*  What hardware do you use?  How flexible are you on this?
+*   [xray](http://xray.readthedocs.org)
+    by [Stephan Hoyer](http://http://stephanhoyer.com/)
+    at Climate Corp
+*   [Scikit-image](http://scikit-image.org/) for parallelizing some filters
+*   [Mariano Tepper](http://www.marianotepper.com.ar/) (Maths postdoc at Duke)
+    builds `dask.array.linalg`
+*   I use it daily for internal projects
