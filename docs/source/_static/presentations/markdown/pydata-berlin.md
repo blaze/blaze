@@ -23,5 +23,5 @@
     *  Multicore parallelism with blocked algorithms
     *  Out-of-core execution with task scheduling
     *  Recent integrations
-* Dask in general
-* Future wish list
+* Dask.core
+* PyData and the GIL

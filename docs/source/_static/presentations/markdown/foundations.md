@@ -3,11 +3,9 @@
 ![](images/jenga.png)
 
 
-### `numpy` and `pandas` provide foundational data structures
+### Data structures ease cross-project interactions
 
-### Data structures ease interactions between projects
-
-Can use projects together without developer coordination
+### ... without coordination
 
 
 ### But `NumPy` is old
@@ -31,11 +29,14 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 
 *  Single Threaded (mostly)
 *  In-memory data (mostly)
+*  Variable length strings
+*  Missing data
+*  ...
 
 
 ### Hardware has changed since 1999
 
-**TODO: Standard image of CPU**
+![](images/multicore-cpu.png)
 
 * Multiple cores
    *  4 cores -- cheap laptop
@@ -51,7 +52,9 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 * Poor support for in-process parallelism
    * The Global Interpreter Lock (GIL) stops two Python threads from
      manipulating Python objects simultaneously
-   * We can cheat the GIL because we usually use C/Fortran code
+   * PyData can cheat the GIL
+
+       we usually use C/Fortran code
 
 
 ### PyData rests on single-threaded foundations
@@ -68,14 +71,13 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 ![](images/jenga.png)  **TODO: Add Numba**
 
 
-### Can we parallelize the entire ecosystem in some clever way without
-requiring downstream projects to do any work?
+### Can we parallelize the ecosystem without touching downstream projects?
 
 
-### *no*
+### *probably not*
 
 
-### But that work might be straightforward
+### But this work might be straightforward
 
 
 ### And we have an effective community

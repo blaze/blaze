@@ -152,12 +152,10 @@ Sometimes this fails (but that's ok)
 <img src="images/fail-case.gif">
 
 
-## Notable Users
+## Notable Use Cases
 
-*   [xray](http://xray.readthedocs.org)
-    by [Stephan Hoyer](http://http://stephanhoyer.com/)
-    at Climate Corp
-*   [Scikit-image](http://scikit-image.org/) for parallelizing some filters
-*   [Mariano Tepper](http://www.marianotepper.com.ar/) (Maths postdoc at Duke)
-    builds `dask.array.linalg`
-*   I use it daily for internal projects
+*   Large stacks of weather data.  Recently integrated into
+    [xray](http://xray.readthedocs.org).
+*   Multi-core image analysis.  Recently integrated into [scikit-image](http://scikit-image.org/)
+*   Stats/Machine learning in the tall-and-skinny case.  See `dask.array.linalg` (built by [Mariano Tepper](http://www.marianotepper.com.ar/)) and `dask.array.learn`
+*   ???
