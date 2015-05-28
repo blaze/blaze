@@ -11,8 +11,8 @@ Blaze can be most easily installed from conda_
 
    $ conda install blaze
 
-More up-to-date builds are available on the ``blaze`` binstar channel:
-http://binstar.org/blaze
+More up-to-date builds are available on the ``blaze`` anaconda channel:
+http://anaconda.org/blaze
 
 ::
 
