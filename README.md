@@ -129,8 +129,8 @@ Development builds are accessible
     pip install http://github.com/ContinuumIO/blaze --upgrade
 
 You may want to view [the docs](http://blaze.pydata.org), [the
-tutorial](http://github.com/ContinuumIO/blaze-tutorial), or [some
-blogposts](http://continuum.io/blog/tags/blaze).
+tutorial](http://github.com/ContinuumIO/blaze-tutorial), [some
+blogposts](http://continuum.io/blog/tags/blaze), or the [mailing list archives](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev).
 
 
 License
