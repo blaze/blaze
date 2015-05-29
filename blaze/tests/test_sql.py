@@ -1,21 +1,14 @@
 import pytest
 
 pytest.importorskip('sqlalchemy')
-import gzip
+
 from toolz import first
-import sqlalchemy
-import sqlalchemy as sa
 from sqlalchemy.exc import OperationalError
-from datashape import dshape
-import datashape
-import sys
 from odo import into, drop
 
 from blaze import create_index, resource
 from blaze.sql import create_index
-from blaze import compute, Data, symbol, discover
-from blaze.utils import raises, filetext, tmpfile
-from blaze.compatibility import PY2
+from blaze import Data
 
 
 @pytest.fixture
