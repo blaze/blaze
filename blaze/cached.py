@@ -38,10 +38,13 @@ def compute_down(expr, data, **kwargs):
     # Do work
     result = compute(expr, {leaf: data.data}, **kwargs)
 
-    # If the result is ephemeral then make it concrete
-    if isinstance(result, Iterator):
-        ds = expr.dshape
-        result = into(concrete_type(ds), result, dshape=ds)
+    ds = expr.dshape
+    new_type = concrete_type(ds)
+
+    # If the result is not the concrete data type for the datashape then make
+    # it concrete
+    if not isinstance(result, new_type):
+        result = odo(result, new_type, dshape=ds)
 
     # Cache result
     data.cache[expr] = result
