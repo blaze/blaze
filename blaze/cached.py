@@ -1,5 +1,5 @@
-from datashape import dshape, discover
-from datashape.predicates import isscalar, isrecord, iscollection
+from __future__ import print_function, division, absolute_import
+
 import numpy as np
 import pandas as pd
 from .dispatch import dispatch
@@ -7,7 +7,8 @@ from .expr import Expr, Field, symbol, ndim
 from .compute import compute
 from .compatibility import unicode
 from collections import Iterator
-from odo import into
+
+from odo import odo
 
 
 class CachedDataset(object):
