@@ -29,6 +29,10 @@ Dead simple task scheduling
 
 ## Dask works for more than just arrays
 
+* `dask.array` = `numpy` + `threading`
+* `dask.bag` = `toolz` + `multiprocessing`
+* `dask.dataframe` = `pandas` + `multiprocessing/threading?`
+
 
 ## `dask.bag`
 
