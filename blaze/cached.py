@@ -3,10 +3,9 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 import pandas as pd
 from .dispatch import dispatch
-from .expr import Expr, Field, symbol, ndim
+from .expr import Expr, Field, ndim
 from .compute import compute
 from .compatibility import unicode
-from collections import Iterator
 
 from odo import odo
 
