@@ -37,7 +37,7 @@ def compute_down(expr, data, **kwargs):
     if expr in data.cache:
         return data.cache[expr]
 
-    leaf = expr._leaves()[0]
+    leaf, = expr._leaves()
 
     # Do work
     result = compute(expr, {leaf: data.data}, **kwargs)
