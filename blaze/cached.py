@@ -64,5 +64,6 @@ def concrete_type(ds):
     if ndim(ds) == 1 and isrecord(ds.measure):
         return pd.DataFrame
     if ndim(ds) > 1 or isscalar(ds.measure):
+    if ndim(ds) > 1:
         return np.ndarray
     return list
