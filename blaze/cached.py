@@ -50,12 +50,47 @@ def compute_down(expr, data, **kwargs):
 
 
 def concrete_type(ds):
-    """ A type into which we can safely deposit streaming data
+    """A type into which we can safely deposit streaming data.
 
-    >>> concrete_type('5 * int').__name__
-    'ndarray'
-    >>> concrete_type('var * {name: string, amount: int}').__name__
-    'DataFrame'
+    Parameters
+    ----------
+    ds : DataShape
+
+    Returns
+    -------
+    type : type
+        The concrete type corresponding to the DataShape `ds`
+
+    Notes
+    -----
+    * This will return a Python type if possible
+    * Option types are not handled specially. The base type of the option type
+      is returned.
+
+    Examples
+    --------
+    >>> concrete_type('5 * int')
+    <class 'pandas.core.series.Series'>
+    >>> concrete_type('var * {name: string, amount: int}')
+    <class 'pandas.core.frame.DataFrame'>
+    >>> concrete_type('float64')
+    <type 'float'>
+    >>> concrete_type('float32')
+    <type 'float'>
+    >>> concrete_type('int64')
+    <type 'int'>
+    >>> concrete_type('int32')
+    <type 'int'>
+    >>> concrete_type('uint8')
+    <type 'int'>
+    >>> concrete_type('bool')
+    <type 'bool'>
+    >>> concrete_type('complex[float64]')
+    <type 'complex'>
+    >>> concrete_type('complex[float32]')
+    <type 'complex'>
+    >>> concrete_type('?int64')
+    <type 'int'>
     """
     if isinstance(ds, (str, unicode)):
         ds = dshape(ds)
