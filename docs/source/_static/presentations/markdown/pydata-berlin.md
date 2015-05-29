@@ -34,4 +34,4 @@ Continuum Analytics
 
 *  Gigabyte - Fits in memory, need one core  (laptop)
 *  Terabyte - Fits on disk, need ten cores  (workstation)
-*  Petabyte - Fits on many disks, need 1000 cores (distributed cluster)
+*  Petabyte - Fits on many disks, need 1000 cores (cluster)

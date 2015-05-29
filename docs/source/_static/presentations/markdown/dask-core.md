@@ -27,7 +27,7 @@ Dead simple task scheduling
 ![](images/embarrassing.gif)
 
 
-## Useful for more than just arrays
+## Dask works for more than just arrays
 
 
 ## `dask.bag`

@@ -1,3 +1,6 @@
+### PyData builds off of NumPy and Pandas
+
+
 ### NumPy and Pandas provide foundational data structures
 
 <img src="images/jenga.png" width="100%">
@@ -37,7 +40,7 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 ### These limitations affect the PyData ecosystem
 
 
-### Hardware has changed since 1999
+### Hardware has changed since 2001
 
 ![](images/multicore-cpu.png)
 
@@ -48,7 +51,18 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 * Fast Solid State Drives (disk is now extended memory)
 
 
-### Problems have changed since 1999
+### Hardware has changed since 2001
+
+![](images/xeon-phi.jpb)
+
+* Multiple cores
+   *  4 cores -- cheap laptop
+   *  32 cores -- workstation
+* Distributed memory clusters in big data warehousing
+* Fast Solid State Drives (disk is now extended memory)
+
+
+### Problems have changed since 2001
 
 *  Larger datasets
 *  Messier data
@@ -67,12 +81,9 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 
 *  The Global Interpreter Lock (GIL) stops two Python threads from
    manipulating Python objects simultaneously
-*  Can use multiple processes in simple cases
-*  PyData could cheat the GIL
-
-   because we rely on C/Fortran code
-
-   but we don't take advantage of this
+*  Solutions:
+    * Compute in separate processes (hard to share data)
+    * Release the GIL and use C/Fortran code
 
 
 ### PyData rests on single-threaded foundations
