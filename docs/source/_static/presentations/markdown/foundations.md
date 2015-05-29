@@ -53,7 +53,7 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 
 ### Hardware has changed since 2001
 
-![](images/xeon-phi.jpb)
+![](images/xeon-phi.jpg)
 
 * Multiple cores
    *  4 cores -- cheap laptop
