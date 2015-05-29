@@ -59,6 +59,18 @@ def concrete_type(ds):
     """
     if isinstance(ds, (str, unicode)):
         ds = dshape(ds)
+    if not iscollection(ds) and isscalar(ds.measure):
+        measure = getattr(ds.measure, 'ty', ds.measure)
+        if measure in integral.types:
+            return int
+        elif measure in floating.types:
+            return float
+        elif measure in boolean.types:
+            return bool
+        elif measure in complexes.types:
+            return complex
+        else:
+            return ds.measure.to_numpy_dtype().type
     if not iscollection(ds):
         return type(ds)
     if ndim(ds) == 1:
