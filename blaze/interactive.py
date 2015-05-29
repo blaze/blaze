@@ -18,6 +18,7 @@ import numpy as np
 
 from odo import resource, odo
 from odo.utils import ignoring
+from odo.compatibility import unicode
 
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
@@ -311,7 +312,7 @@ def to_html(o):
     return o.replace('\n', '<br>')
 
 
-@dispatch((object, type, str), Expr)
+@dispatch((object, type, str, unicode), Expr)
 def into(a, b, **kwargs):
     result = compute(b, **kwargs)
     kwargs['dshape'] = b.dshape
