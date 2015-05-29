@@ -50,7 +50,7 @@ class TestCreateIndex(object):
             create_index(sql, 'x', name='idx')
 
     def test_create_index_fails(self, sql):
-        with pytest.raises(AttributeError):
+        with pytest.raises(KeyError):
             create_index(sql, 'z', name='zidx')
         with pytest.raises(ValueError):
             create_index(sql, 'x')
