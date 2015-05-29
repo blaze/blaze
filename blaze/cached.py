@@ -15,11 +15,11 @@ from odo import odo
 
 
 class CachedDataset(object):
+    __slots__ = 'data', 'cache'
+
     def __init__(self, data, cache=None):
         self.data = data
-        if cache is None:
-            cache = dict()
-        self.cache = cache
+        self.cache = cache if cache is not None else {}
 
 
 @dispatch(CachedDataset)
