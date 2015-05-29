@@ -2,6 +2,10 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 import pandas as pd
+
+from datashape import dshape, discover, integral, floating, boolean, complexes
+from datashape.predicates import isscalar, isrecord, iscollection
+
 from .dispatch import dispatch
 from .expr import Expr, Field, ndim
 from .compute import compute
