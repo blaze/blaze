@@ -27,7 +27,7 @@ Point to a bunch of NetCDF datasets
 Wrap each with `dask.array`
 
     >>> import dask.array as da
-    >>> arrays = [da.from_array(t, blockshape=(4, 200, 200)) for t in temps]
+    >>> arrays = [da.from_array(t, chunks=(4, 200, 200)) for t in temps]
 
 Manipulate arrays with numpy syntax
 

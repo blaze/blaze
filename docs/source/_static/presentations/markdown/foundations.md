@@ -1,17 +1,18 @@
-### `numpy` and `pandas` provide foundational data structures
+### NumPy and Pandas provide foundational data structures
 
-![](images/jenga.png)
-
-
-### Data structures ease cross-project interactions
-
-### ... without coordination
+<img src="images/jenga.png" width="100%">
 
 
-### But `NumPy` is old
+### Data structures enable composition
+
+### ... cross-project interactions without coordination
+
+
+### But NumPy is old
 
 ```
 mrocklin@notebook:~/scipy$ git log | tail
+
 Author: Travis Oliphant <oliphant@enthought.com>
 Date:   Fri Feb 2 05:08:11 2001 +0000
 
@@ -29,9 +30,11 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 
 *  Single Threaded (mostly)
 *  In-memory data (mostly)
-*  Variable length strings
-*  Missing data
+*  Poor support for variable length strings
+*  Poor support for missing data
 *  ...
+
+### These limitations affect the PyData ecosystem
 
 
 ### Hardware has changed since 1999
@@ -45,30 +48,40 @@ Date:   Thu Feb 1 08:32:30 2001 +0000
 * Fast Solid State Drives (disk is now extended memory)
 
 
+### Problems have changed since 1999
+
+*  Larger datasets
+*  Messier data
+*  More text data
+
+
 ### Python has limitations
 
 * Started in 1991
 * Heritage outside of numerics
 * Poor support for in-process parallelism
-   * The Global Interpreter Lock (GIL) stops two Python threads from
-     manipulating Python objects simultaneously
-   * PyData can cheat the GIL
 
-       we usually use C/Fortran code
+<hr>
+
+### Global Interpreter Lock
+
+*  The Global Interpreter Lock (GIL) stops two Python threads from
+   manipulating Python objects simultaneously
+*  Can use multiple processes in simple cases
+*  PyData could cheat the GIL
+
+   because we rely on C/Fortran code
+
+   but we don't take advantage of this
 
 
 ### PyData rests on single-threaded foundations
 
-![](images/jenga.png)
+<img src="images/jenga.png" width="100%">
 
 * Incredible domain expertise
 * Optimal single-core execution (Scientific heritage)
 * But painful to parallelize
-
-
-### How do we refactor the ecosystem?
-
-![](images/jenga.png)  **TODO: Add Numba**
 
 
 ### Can we parallelize the ecosystem without touching downstream projects?

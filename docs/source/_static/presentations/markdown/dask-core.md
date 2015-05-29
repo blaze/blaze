@@ -1,6 +1,8 @@
-## Dask
+## `dask.core`
 
 Dead simple task scheduling
+
+[dask.pydata.org](http://dask.pydata.org/en/latest/)
 
 
 ## We've seen `dask.array`
@@ -25,15 +27,36 @@ Dead simple task scheduling
 ![](images/embarrassing.gif)
 
 
-## Works for more than just arrays
+## Useful for more than just arrays
+
+
+## `dask.bag`
+
+* Unordered collection of Python objects
+* Good for log files, JSON blobs, etc..
+* Uses `multiprocessing` by default
+
+<hr>
 
     import dask.bag as db
-
     b = db.from_filenames("data/2014-*.json.gz").map(json.loads)
-
     b.groupby("username")
 
-![](images/dask-bag-shuffle.png)
+<img src="images/dask-bag-shuffle.png"
+     width="30%">
+
+
+## `dask.dataframe`
+
+* Partition Pandas DataDrames
+* Uses single-threaded or multiprocessing
+* Not yet robust for public use
+
+<hr>
+
+    import dask.dataframe as dd
+    df = dd.read_csv('data/data.*.csv', parse_dates=...)
+    df.groupby(df.account).balance.mean()
 
 
 *  Collections build graphs
@@ -43,6 +66,9 @@ Dead simple task scheduling
      width="100%">
 
 *  Neither side needs the other
+
+
+### Q: What constitutes a dask graph?
 
 
 <img src="images/dask-simple.png"
@@ -137,17 +163,7 @@ Dead simple task scheduling
            "analyze": (analyze, ["preprocess-%d" % i for i in [1, 2, 3]]),
            "store": (store, "analyze")}
 
-
-### Example - custom graph
-
-    dsk = {"load-1": (load, "myfile.a.data"),
-           "load-2": (load, "myfile.b.data"),
-           "load-3": (load, "myfile.c.data"),
-           "preprocess-1": (clean, "load-1"),
-           "preprocess-2": (clean, "load-2"),
-           "preprocess-3": (clean, "load-3"),
-           "analyze": (analyze, ["preprocess-%d" % i for i in [1, 2, 3]]),
-           "store": (store, "analyze")}
+.
 
     from dask.multiprocessing import get
     result = get(dsk, ["store"])
@@ -157,8 +173,9 @@ Dead simple task scheduling
 
 ### ... even if your workflow isn't arrays
 
-*  Dead simple way to describe data dependencies
-*  Relies on battle-tested schedulers
+*  Simple description of computation with data dependencies
+*  Uses battle-tested schedulers
 *  Raw dicts probably not for end users
 *  But maybe for library developers
 *  Regardless, the community should search for a parallelism abstraction
+    (*many good options*)

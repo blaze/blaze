@@ -8,9 +8,14 @@ Continuum Analytics
 [http://dask.pydata.org/](http://dask.pydata.org/)
 
 
-## I have a big array library
+## tl;dr
 
-### How could it be more useful to you?
+`dask.array` is...
+
+*  an out-of-core, multi-core, n-dimensional array library
+*  that copies the `numpy` interface
+*  using blocked algorithms
+*  and task scheduling
 
 
 ### Related work
@@ -32,7 +37,6 @@ Continuum Analytics
 *  Dask includes other non-array collections
 
 
-
 ## tl;dr
 
 `dask.array` is...
@@ -43,22 +47,28 @@ Continuum Analytics
 *  and task scheduling
 
 
-## NumPy interface
+### NumPy interface
 
 `dask.array` supports the following interface from numpy.
 
-*  Arithmetic and scalar mathematics, `+, *, exp, ...`
-*  Reductions along axes, `mean(), max(axis=0), ...`
-*  Slicing, `x[:100, 500:100:-2]`
-*  Fancy indexing, `x[:, [10, 1, 5]]`
-*  Some linear algebra, `tensordot, qr, svd`
+*  Arithmetic -- `+, *, log, exp, ...`
+*  Reductions -- `mean(), max(axis=0), ...`
+*  Slicing -- `x[:100, 500:100:-2]`
+*  Fancy indexing -- `x[:, [10, 1, 5]]`
+*  Some linear algebra -- `tensordot, qr, svd`
 
 <hr>
 
-And introduces some novel features
+`dask.array` excludes some operations
 
-*  Overlapping boundaries
-*  Parallel variant algorithms (quantiles, topk, ...)
+*  Sort, Eigenvalue solve, Mutation, ...
+
+<hr>
+
+`dask.array` introduces some new operations
+
+*  Parallel algorithms (approximate quantiles, topk, ...)
+*  Slightly overlapping arrays
 *  Integration with HDF5
 
 
@@ -78,12 +88,12 @@ And introduces some novel features
 
 Blocked Sum
 
-    x = h5py.File('myfile.hdf5')['/x']
+    x = h5py.File('myfile.hdf5')['/x']          # Trillion element array on disk
 
     sums = []
-    for i in range(1000000):
+    for i in range(1000000):                    # One million times
         chunk = x[1000000*i: 1000000*(i+1)]     # Pull out chunk
-        sums.append(np.sum(chunk))              # Sum each chunk
+        sums.append(np.sum(chunk))              # Sum chunk
 
     total = sum(sums)                           # Sum intermediate sums
 
@@ -92,38 +102,38 @@ Blocked Sum
 
 Blocked mean of positive elements
 
-    x = h5py.File('myfile.hdf5')['/x']
+    x = h5py.File('myfile.hdf5')['/x']          # Trillion element array on disk
 
     sums = []
     counts = []
-    for i in range(1000000):
+    for i in range(1000000):                    # One million times
         chunk = x[1000000*i: 1000000*(i+1)]     # Pull out chunk
         chunk = chunk[chunk > 0]                # Filter
-        sums.append(np.sum(b))                  # Sum of each chunk
-        counts.append(len(b))                   # Count of each chunk
+        sums.append(np.sum(b))                  # Sum chunk
+        counts.append(len(b))                   # Count chunk
 
     result = sum(sums) / sum(counts)            # Aggregate results
 
 
 ## Blocked algorithms
 
-Blocked matrix algorithms look like their in-memory equivalents.
-
 Consider matrix multiply:
 
 <img src="images/Matrix_multiplication_diagram.svg.png">
+
+Blocked matrix algorithms look like their in-memory equivalents.
 
 
 ## Blocked algorithms
 
 We didn't need the for loop.
 
-    x = h5py.File('myfile.hdf5')['/x']
+    x = h5py.File('myfile.hdf5')['/x']          # Trillion element array on disk
 
     sums = []
-    for i in range(1000):
+    for i in range(1000000):                    # One million times
         chunk = x[1000000*i: 1000000*(i+1)]     # Pull out chunk
-        sums.append(np.sum(chunk))              # Sum each chunk
+        sums.append(np.sum(chunk))              # Sum chunk
 
     total = sum(sums)                           # Sum intermediate sums
 
@@ -150,12 +160,3 @@ And try to keep a small memory footprint
 Sometimes this fails (but that's ok)
 
 <img src="images/fail-case.gif">
-
-
-## Notable Use Cases
-
-*   Large stacks of weather data.  Recently integrated into
-    [xray](http://xray.readthedocs.org).
-*   Multi-core image analysis.  Recently integrated into [scikit-image](http://scikit-image.org/)
-*   Stats/Machine learning in the tall-and-skinny case.  See `dask.array.linalg` (built by [Mariano Tepper](http://www.marianotepper.com.ar/)) and `dask.array.learn`
-*   ???
