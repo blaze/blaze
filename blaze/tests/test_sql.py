@@ -70,9 +70,9 @@ class TestCreateIndex(object):
             create_index(sql, ['x', 'y'], name='idx_xy')
 
     def test_composite_index_fails(self, sql):
-        with pytest.raises(AttributeError):
+        with pytest.raises(KeyError):
             create_index(sql, ['z', 'bizz'], name='idx_name')
 
     def test_composite_index_fails_with_existing_columns(self, sql):
-        with pytest.raises(AttributeError):
+        with pytest.raises(KeyError):
             create_index(sql, ['x', 'z', 'bizz'], name='idx_name')
