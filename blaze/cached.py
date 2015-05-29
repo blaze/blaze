@@ -19,8 +19,8 @@ class CachedDataset(object):
 
 
 @dispatch(CachedDataset)
-def discover(d):
-    return discover(d.data)
+def discover(d, **kwargs):
+    return discover(d.data, **kwargs)
 
 
 @dispatch(Field, CachedDataset)
