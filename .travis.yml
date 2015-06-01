@@ -59,7 +59,7 @@ install:
   - conda install -c mwiebe dynd-python
 
   # Install coveralls
-  - pip install coveralls --use-mirrors
+  - pip install coveralls
 
   # Install Blaze
   - python setup.py install
