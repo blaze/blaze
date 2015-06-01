@@ -2,7 +2,6 @@ import numpy as np
 import os
 import datashape as ds
 import pytest
-from toolz import first
 
 from blaze import into
 from blaze.utils import tmpfile
