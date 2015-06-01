@@ -81,23 +81,23 @@ def concrete_type(ds):
     >>> concrete_type('var * {name: string, amount: int}')
     <class 'pandas.core.frame.DataFrame'>
     >>> concrete_type('float64')
-    <type 'float'>
+    <... 'float'>
     >>> concrete_type('float32')
-    <type 'float'>
+    <... 'float'>
     >>> concrete_type('int64')
-    <type 'int'>
+    <... 'int'>
     >>> concrete_type('int32')
-    <type 'int'>
+    <... 'int'>
     >>> concrete_type('uint8')
-    <type 'int'>
+    <... 'int'>
     >>> concrete_type('bool')
-    <type 'bool'>
+    <... 'bool'>
     >>> concrete_type('complex[float64]')
-    <type 'complex'>
+    <... 'complex'>
     >>> concrete_type('complex[float32]')
-    <type 'complex'>
+    <... 'complex'>
     >>> concrete_type('?int64')
-    <type 'int'>
+    <... 'int'>
     """
     if isinstance(ds, (str, unicode)):
         ds = dshape(ds)
