@@ -6,7 +6,7 @@ import pytest
 from blaze import into
 from blaze.utils import tmpfile
 from blaze.compatibility import xfail
-from blaze import PyTables, discover
+from odo import PyTables, discover
 import pandas as pd
 
 
