@@ -40,7 +40,7 @@ def x():
 def tbfile(x):
     with tmpfile('.h5') as filename:
         f = tb.open_file(filename, mode='w')
-        d = f.create_table('/', 'title',  x)
+        d = f.create_table('/', 'title', x)
         d.close()
         f.close()
         yield filename
@@ -95,6 +95,7 @@ def dt_tb(dt_data):
 
 
 class TestPyTablesLight(object):
+
     def test_read(self, tbfile):
         t = PyTables(path=tbfile, datapath='/title')
         shape = t.shape
@@ -137,7 +138,7 @@ class TestPyTablesLight(object):
             for k in res.dtype.fields:
                 lhs, rhs = res[k], dt_data[k]
                 if (issubclass(np.datetime64, lhs.dtype.type) and
-                    issubclass(np.datetime64, rhs.dtype.type)):
+                        issubclass(np.datetime64, rhs.dtype.type)):
                     lhs, rhs = lhs.astype('M8[us]'), rhs.astype('M8[us]')
                 assert np.array_equal(lhs, rhs)
         finally:
@@ -147,11 +148,12 @@ class TestPyTablesLight(object):
         dtype = ds.from_numpy(dt_data.shape, dt_data.dtype)
         t = PyTables(dt_tb, '/out', dtype)
         try:
-            res = into(np.ndarray, into(t, dt_data, filename=dt_tb, datapath='/out'))
+            res = into(
+                np.ndarray, into(t, dt_data, filename=dt_tb, datapath='/out'))
             for k in res.dtype.fields:
                 lhs, rhs = res[k], dt_data[k]
                 if (issubclass(np.datetime64, lhs.dtype.type) and
-                    issubclass(np.datetime64, rhs.dtype.type)):
+                        issubclass(np.datetime64, rhs.dtype.type)):
                     lhs, rhs = lhs.astype('M8[us]'), rhs.astype('M8[us]')
                 assert np.array_equal(lhs, rhs)
         finally:
