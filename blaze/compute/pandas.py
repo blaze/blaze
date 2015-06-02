@@ -36,7 +36,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
                     UnaryStringFunction, nunique)
-from ..expr import UnaryOp, BinOp
+from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
 from ..compatibility import _inttypes
@@ -74,6 +74,21 @@ def compute_up(t, df, **kwargs):
 @dispatch(Broadcast, Series)
 def compute_up(t, s, **kwargs):
     return compute_up(t, s.to_frame(), **kwargs)
+
+
+@dispatch(Interp, Series)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return data % t.rhs
+    else:
+        return t.lhs % data
+
+
+@compute_up.register(Interp, Series, (Series, base))
+@compute_up.register(Interp, base, Series)
+def compute_up_pd_interp(t, lhs, rhs, **kwargs):
+    return lhs % rhs
+
 
 
 @dispatch(BinOp, Series)
