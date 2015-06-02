@@ -25,3 +25,16 @@ pickle = SerializationFormat(
     pickle.loads,
     partial(pickle.dumps, protocol=pickle.HIGHEST_PROTOCOL),
 )
+
+
+all_formats = (
+    json,
+    pickle,
+)
+
+
+__all__ = [
+    'all_formats',
+    'json',
+    'pickle',
+]
