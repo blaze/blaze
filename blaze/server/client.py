@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import flask
-from flask import json
 import requests
 
 from odo import resource
@@ -10,6 +9,7 @@ from datashape import dshape
 from ..expr import Expr
 from ..dispatch import dispatch
 from .server import DEFAULT_PORT
+from .serialization import json
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
@@ -52,6 +52,11 @@ class Client(object):
     url : str
         URL of a Blaze server
 
+    serial : SerializationFormat, optional
+        The serialization format object to use. Defaults to JSON.
+        A serialization format is an object that supports:
+        name, loads, and dumps.
+
     Examples
     --------
 
@@ -65,13 +70,14 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url'
+    __slots__ = 'url', 'serial'
 
-    def __init__(self, url, **kwargs):
+    def __init__(self, url, serial=json, **kwargs):
         url = url.strip('/')
         if not url[:4] == 'http':
             url = 'http://' + url
         self.url = url
+        self.serial = serial
 
     @property
     def dshape(self):
@@ -100,16 +106,13 @@ def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     tree = to_tree(expr)
 
-    r = requests.get('%s/compute.json' % ec.url,
-                     data=json.dumps({'expr': tree}),
-                     headers={'Content-Type': 'application/json'})
+    serial = ec.serial
+    r = requests.get('%s/compute.%s' % (ec.url, serial.name),
+                     data=serial.dumps({'expr': tree}))
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
-
-    data = json.loads(content(r).decode('utf-8'))
-
-    return data['data']
+    return serial.loads(content(r))['data']
 
 
 @resource.register('blaze://.+')
