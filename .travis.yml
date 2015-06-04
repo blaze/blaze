@@ -12,10 +12,6 @@ matrix:
     - python: 3.3
     - python: 3.4
 
-branches:
-  only:
-    - master
-
 services:
     - mongodb
 
