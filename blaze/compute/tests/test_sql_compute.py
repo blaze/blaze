@@ -4,6 +4,7 @@ import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
+from datetime import timedelta
 import itertools
 import re
 from distutils.version import LooseVersion
@@ -11,8 +12,8 @@ from distutils.version import LooseVersion
 
 import datashape
 from odo import into, resource, drop, odo
+import pandas as pd
 from pandas import DataFrame
-import pandas.util.testing as tm
 from toolz import unique
 
 from blaze.compute.sql import (compute, computefull, select, lower_column,
@@ -1548,3 +1549,29 @@ def test_datetime_to_date():
         accdate
     """
     assert normalize(result) == normalize(expected)
+
+
+@pytest.yield_fixture
+def sql_with_dts(url):
+    try:
+        t = resource(url, dshape='var * {A: datetime}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(d,) for d in pd.date_range('2014-01-01', '2014-02-01')], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_timedelta_arith(sql_with_dts):
+    delta = timedelta(days=1)
+    dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
+    sym = symbol('s', '32 * datetime')
+    assert (
+        odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
+    ).all()
+    assert (
+        odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
+    ).all()
