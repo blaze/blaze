@@ -39,15 +39,19 @@ def test_spider(tmpdir):
         f.create_dataset(name='fooh5', shape=data.shape,
                          dtype=data.dtype, data=data)
     jsonf = tmpdir.mkdir('sub').join('foo.json')
-    jsonf.write(json.dumps({'a': 2,
-                            'b': 3,
-                            'c': str(pd.Timestamp('now'))}))
+    jsonf.write(json.dumps([{'a': 2,
+                             'b': 3.14,
+                             'c': str(pd.Timestamp('now'))},
+                            {'a': 2,
+                             'b': 4.2,
+                             'c': None,
+                             'd': 'foobar'}]))
     result = spider(str(tmpdir))
     ss = """{
     %r: {
         'foo.csv': var * {a: int64, b: int64},
         'foo.hdf5': {fooh5: 10 * 2 * float64},
-        sub: {'foo.json': {a: int64, b: int64, c: datetime}}
+        sub: {'foo.json': 2 * {a: int64, b: float64, c: ?datetime, d: ?string}}
     }
 }""" % os.path.basename(str(tmpdir))
     assert dshape(discover(result)) == dshape(ss)
