@@ -46,7 +46,7 @@ def sql(url):
 
 
 def test_postgres_create(sql):
-    assert odo(sql, list)
+    assert odo(sql, list) == [('a', 1), ('b', 2)]
 
 
 @pytest.fixture(scope='module')
