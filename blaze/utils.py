@@ -15,6 +15,7 @@ from multiprocessing.pool import ThreadPool
 
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
+from odo import resource
 
 import psutil
 import numpy as np
@@ -162,3 +163,25 @@ def json_dumps(dt):
     if not dt.tzname():
         s += 'Z'
     return s
+
+
+def _spider(resource_path, ignore):
+    resources = dict()
+    for filename in (os.path.join(resource_path, x)
+                     for x in os.listdir(resource_path)
+                     if x != os.curdir and x != os.pardir):
+        basename = os.path.basename(filename)
+        if os.path.isdir(filename):
+            new_resources = _spider(filename, ignore=ignore)
+            if new_resources:
+                resources[basename] = new_resources
+        else:
+            with ignoring(*ignore):
+                resources[basename] = resource(filename)
+    return resources
+
+
+def spider(resource_path, ignore=(ValueError, NotImplementedError)):
+    return {
+        os.path.basename(resource_path): _spider(resource_path, ignore=ignore)
+    }
