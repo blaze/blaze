@@ -1,15 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-import re
-from distutils.version import LooseVersion
-
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
+import itertools
+import re
+from distutils.version import LooseVersion
+
+
 import datashape
-from odo import into, resource
+from odo import into, resource, drop, odo
 from pandas import DataFrame
+import pandas.util.testing as tm
 from toolz import unique
 
 from blaze.compute.sql import (compute, computefull, select, lower_column,
@@ -18,6 +21,32 @@ from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
                         floor, cos, merge, nunique, mean, sum, count, exp)
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile
+
+
+names = ('tbl%d' % i for i in itertools.count())
+
+
+@pytest.fixture
+def url():
+    return 'postgresql://postgres@localhost/test::%s' % next(names)
+
+
+@pytest.yield_fixture
+def sql(url):
+    try:
+        t = resource(url, dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_create(sql):
+    assert odo(sql, list)
 
 
 @pytest.fixture(scope='module')
