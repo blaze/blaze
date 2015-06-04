@@ -24,7 +24,7 @@ def elemwise_array(expr, *data, **kwargs):
     leaves = expr._inputs
     expr_inds = tuple(range(ndim(expr)))[::-1]
     return atop(curry(compute_it, expr, leaves, **kwargs),
-                next(names), expr_inds,
+                expr_inds,
                 *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data))
 
 
@@ -36,7 +36,7 @@ try:
         expr_inds = tuple(range(ndim(expr)))[::-1]
         func = get_numba_ufunc(expr)
         return atop(func,
-                    next(names), expr_inds,
+                    expr_inds,
                     *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data))
 
     def optimize_array(expr, *data):
@@ -64,13 +64,12 @@ def compute_up(expr, data, **kwargs):
                                                  chunk=chunk)
 
     inds = tuple(range(ndim(leaf)))
-    tmp = atop(curry(compute_it, chunk_expr, [chunk], **kwargs),
-               next(names), inds,
-               data, inds)
+    tmp = atop(curry(compute_it, chunk_expr, [chunk], **kwargs), inds, data,
+               inds)
 
     return atop(compose(curry(compute_it, agg_expr, [agg], **kwargs),
                         curry(_concatenate2, axes=expr.axis)),
-                next(names), tuple(i for i in inds if i not in expr.axis),
+                tuple(i for i in inds if i not in expr.axis),
                 tmp, inds)
 
 
