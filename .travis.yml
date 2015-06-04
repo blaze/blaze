@@ -12,12 +12,11 @@ matrix:
     - python: 3.3
     - python: 3.4
 
-branches:
-  only:
-    - master
-
 services:
     - mongodb
+
+addons:
+  postgresql: "9.3"
 
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
@@ -67,6 +66,7 @@ install:
 before_script:
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
+  - psql -c "create database test;" -U postgres
 
 script:
   - echo '[pytest]' > pytest.ini
