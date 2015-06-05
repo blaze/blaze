@@ -15,6 +15,8 @@ interface to query data living in other data storage systems.
 Example
 -------
 
+[![Join the chat at https://gitter.im/ContinuumIO/blaze](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ContinuumIO/blaze?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 We point blaze to a simple dataset in a foreign database (PostgreSQL).
 Instantly we see results as we would see them in a Pandas DataFrame.
 
