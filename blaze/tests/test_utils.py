@@ -1,5 +1,8 @@
+import sys
 import os
 import json
+
+import pytest
 
 from datetime import datetime
 
@@ -30,7 +33,8 @@ def test_json_encoder():
     assert json.loads(result) == [1, "2000-01-01T12:30:00Z"]
 
 
-def test_spider(tmpdir):
+@pytest.fixture
+def data(tmpdir):
     csvf = tmpdir.join('foo.csv')
     csvf.write('a,b\n1,2\n3,4')
     h5f = tmpdir.join('foo.hdf5')
@@ -46,12 +50,36 @@ def test_spider(tmpdir):
                              'b': 4.2,
                              'c': None,
                              'd': 'foobar'}]))
-    result = spider(str(tmpdir))
+    return tmpdir
+
+
+@pytest.fixture
+def data_with_cycle(data):
+    data.join('cycle').mksymlinkto(data)
+    return data
+
+
+def test_spider(data):
+    result = spider(str(data))
     ss = """{
     %r: {
         'foo.csv': var * {a: int64, b: int64},
         'foo.hdf5': {fooh5: 10 * 2 * float64},
         sub: {'foo.json': 2 * {a: int64, b: float64, c: ?datetime, d: ?string}}
     }
-}""" % os.path.basename(str(tmpdir))
+}""" % os.path.basename(str(data))
     assert dshape(discover(result)) == dshape(ss)
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='Windows does not have symlinks')
+def test_spider_cycle(data_with_cycle):
+    result = spider(str(data_with_cycle), followlinks=True)
+    ss = """{
+    %r: {
+        'foo.csv': var * {a: int64, b: int64},
+        'foo.hdf5': {fooh5: 10 * 2 * float64},
+        sub: {'foo.json': 2 * {a: int64, b: float64, c: ?datetime, d: ?string}}
+    }
+}""" % os.path.basename(str(data_with_cycle))
+    assert dshape(discover(result)) != dshape(ss)
