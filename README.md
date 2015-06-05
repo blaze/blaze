@@ -2,6 +2,8 @@
 Status](https://travis-ci.org/ContinuumIO/blaze.png)](https://travis-ci.org/ContinuumIO/blaze)
 [![Coverage
 Status](https://coveralls.io/repos/ContinuumIO/blaze/badge.png)](https://coveralls.io/r/ContinuumIO/blaze)
+[![Join the chat at
+https://gitter.im/ContinuumIO/blaze](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ContinuumIO/blaze?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
