@@ -1568,7 +1568,7 @@ def sql_with_dts(url):
 def test_timedelta_arith(sql_with_dts):
     delta = timedelta(days=1)
     dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
-    sym = symbol('s', '32 * datetime')
+    sym = symbol('s', discover(dates))
     assert (
         odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
     ).all()

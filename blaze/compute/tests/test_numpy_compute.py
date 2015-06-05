@@ -459,3 +459,11 @@ def test_str_interp():
     s = symbol('s', discover(a))
     expr = s.interp(1)
     assert all(compute(expr, a) == np.char.mod(a, 1))
+
+
+def test_timedelta_arith():
+    dates = np.arange('2014-01-01', '2014-02-01', dtype='datetime64')
+    delta = np.timedelta64(1, 'D')
+    sym = symbol('s', discover(dates))
+    assert (compute(sym + delta, dates) == dates + delta).all()
+    assert (compute(sym - delta, dates) == dates - delta).all()

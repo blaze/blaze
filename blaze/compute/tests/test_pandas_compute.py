@@ -693,7 +693,7 @@ def test_str_interp():
 
 def test_timedelta_arith():
     series = Series(pd.date_range('2014-01-01', '2014-02-01'))
-    sym = symbol('s', '32 * datetime')
+    sym = symbol('s', discover(series))
     delta = timedelta(days=1)
     assert (compute(sym + delta, series) == series + delta).all()
     assert (compute(sym - delta, series) == series - delta).all()
