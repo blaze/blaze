@@ -6,7 +6,9 @@ from toolz import memoize
 import datashape
 import numba
 
-from .core import compute, optimize
+from datashape import isdatelike, TimeDelta
+
+from .core import optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
 from ..expr.strings import isstring
 from ..expr.broadcast import broadcast_collect, Broadcast
@@ -18,15 +20,20 @@ lock = threading.Lock()
 
 
 def optimize_ndarray(expr, *data, **kwargs):
-    dshapes = expr._leaves()
     for leaf in expr._leaves():
-        if (isstring(leaf.dshape.measure) or
+        leaf_measure = leaf.dshape.measure
+
+        # TODO: remove datelike skipping when numba/numba#1202 is fixed
+        if (isstring(leaf_measure) or
+            isdatelike(leaf_measure) or
+            isinstance(leaf_measure, TimeDelta) or
             isinstance(leaf.dshape.measure, datashape.Record) and
-            any(isstring(dt) for dt in leaf.dshape.measure.types)):
+            any(isstring(dt) or isdatelike(dt) or isinstance(dt, TimeDelta)
+                for dt in leaf.dshape.measure.types)):
             return expr
-        else:
-            return broadcast_collect(expr, Broadcastable=Broadcastable,
-                                     WantToBroadcast=Broadcastable)
+    else:
+        return broadcast_collect(expr, Broadcastable=Broadcastable,
+                                 WantToBroadcast=Broadcastable)
 
 
 for i in range(1, 11):
@@ -218,9 +225,4 @@ get_numba_ufunc = memoize(_get_numba_ufunc)
 
 
 def broadcast_numba(t, *data, **kwargs):
-    try:
-        ufunc = get_numba_ufunc(t)
-    except TypeError:  # strings and objects aren't supported very well yet
-        return compute(t, dict(zip(t._leaves(), data)))
-    else:
-        return ufunc(*data)
+    return get_numba_ufunc(t)(*data)
