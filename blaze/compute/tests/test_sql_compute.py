@@ -1485,14 +1485,14 @@ def test_do_not_erase_group_by_functions_with_datetime():
               avg_amount=t[t.amount < 0].amount.mean())
     result = str(compute(expr, s))
     expected = """SELECT
-        extract(date from accdate.occurred_on) as occurred_on_date,
+        date(accdate.occurred_on) as occurred_on_date,
         avg(accdate.amount) as avg_amount
     FROM
         accdate
     WHERE
         accdate.amount < :amount_1
     GROUP BY
-        extract(date from accdate.occurred_on)
+        date(accdate.occurred_on)
     """
     assert normalize(result) == normalize(expected)
 
@@ -1506,5 +1506,16 @@ def test_not():
         accounts
     WHERE
         accounts.name not in (:name_1, :name_2)
+    """
+    assert normalize(result) == normalize(expected)
+
+
+def test_datetime_to_date():
+    expr = tdate.occurred_on.date
+    result = str(compute(expr, sdate))
+    expected = """SELECT
+        DATE(accdate.occurred_on) as occurred_on_date
+    FROM
+        accdate
     """
     assert normalize(result) == normalize(expected)
