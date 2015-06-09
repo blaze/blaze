@@ -1,14 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-import re
-from distutils.version import LooseVersion
-
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
+from datetime import timedelta
+import itertools
+import re
+from distutils.version import LooseVersion
+
+
 import datashape
-from odo import into, resource
+from odo import into, resource, drop, odo
+import pandas as pd
 from pandas import DataFrame
 from toolz import unique
 
@@ -18,6 +22,32 @@ from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
                         floor, cos, merge, nunique, mean, sum, count, exp)
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile
+
+
+names = ('tbl%d' % i for i in itertools.count())
+
+
+@pytest.fixture
+def url():
+    return 'postgresql://postgres@localhost/test::%s' % next(names)
+
+
+@pytest.yield_fixture
+def sql(url):
+    try:
+        t = resource(url, dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_create(sql):
+    assert odo(sql, list) == [('a', 1), ('b', 2)]
 
 
 @pytest.fixture(scope='module')
@@ -1485,14 +1515,14 @@ def test_do_not_erase_group_by_functions_with_datetime():
               avg_amount=t[t.amount < 0].amount.mean())
     result = str(compute(expr, s))
     expected = """SELECT
-        extract(date from accdate.occurred_on) as occurred_on_date,
+        date(accdate.occurred_on) as occurred_on_date,
         avg(accdate.amount) as avg_amount
     FROM
         accdate
     WHERE
         accdate.amount < :amount_1
     GROUP BY
-        extract(date from accdate.occurred_on)
+        date(accdate.occurred_on)
     """
     assert normalize(result) == normalize(expected)
 
@@ -1517,7 +1547,7 @@ def test_slice():
     # Verifies that compute is translating the query correctly
     assert result == str(select(s).offset(start).limit(stop))
 
-    #Verifies the query against expected SQL query
+    # Verifies the query against expected SQL query
     expected = """
     SELECT accounts.name, accounts.amount, accounts.id FROM accounts
     LIMIT :param_1 OFFSET :param_2
@@ -1534,3 +1564,39 @@ def test_slice_step():
     start, stop, step = 50, 100, 2
     compute(t[start:stop:step], s)
 
+
+def test_datetime_to_date():
+    expr = tdate.occurred_on.date
+    result = str(compute(expr, sdate))
+    expected = """SELECT
+        DATE(accdate.occurred_on) as occurred_on_date
+    FROM
+        accdate
+    """
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.yield_fixture
+def sql_with_dts(url):
+    try:
+        t = resource(url, dshape='var * {A: datetime}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(d,) for d in pd.date_range('2014-01-01', '2014-02-01')], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_timedelta_arith(sql_with_dts):
+    delta = timedelta(days=1)
+    dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
+    sym = symbol('s', discover(dates))
+    assert (
+        odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
+    ).all()
+    assert (
+        odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
+    ).all()

@@ -43,8 +43,8 @@ def test_datetime_literals_and__print_python():
 
 def test_datetime_literals():
     f = lambdify([t], t.when > '2000-01-01')
-    assert f((1, 0, 3, datetime.datetime(2000, 1, 2))) == True
-    assert f((1, 0, 3, datetime.datetime(1999, 1, 2))) == False
+    assert f((1, 0, 3, datetime.datetime(2000, 1, 2)))
+    assert not f((1, 0, 3, datetime.datetime(1999, 1, 2)))
 
 
 def test_broadcast_collect():

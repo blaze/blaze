@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import pandas as pd
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
@@ -63,7 +64,7 @@ def _print_python(expr, leaves=None):
 
 @dispatch((datetime.datetime, datetime.date))
 def _print_python(expr, leaves=None):
-    return repr(expr), {'datetime': datetime}
+    return repr(expr), {'datetime': datetime, 'Timestamp': pd.Timestamp}
 
 @dispatch(Symbol)
 def _print_python(expr, leaves=None):

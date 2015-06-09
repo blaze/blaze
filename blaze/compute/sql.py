@@ -745,6 +745,9 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
 def compute_up(expr, data, **kwargs):
+    if expr.attr == 'date':
+        return sa.func.date(data).label(expr._name)
+
     return sa.extract(expr.attr, data).label(expr._name)
 
 

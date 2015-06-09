@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import pandas.util.testing as tm
 import numpy as np
@@ -668,3 +668,32 @@ def test_nunique_table():
     expr = t.nunique()
     result = compute(expr, df)
     assert result == len(df.drop_duplicates())
+
+
+def test_str_concat():
+    a = Series(('a', 'b', 'c'))
+    s = symbol('s', "3 * string[1, 'U32']")
+    expr = s.concat('a')
+    assert (compute(expr, a) == (a + 'a')).all()
+
+
+def test_str_repeat():
+    a = Series(('a', 'b', 'c'))
+    s = symbol('s', "3 * string[1, 'U32']")
+    expr = s.repeat(3)
+    assert (compute(expr, a) == (a * 3)).all()
+
+
+def test_str_interp():
+    a = Series(('%s', '%s', '%s'))
+    s = symbol('s', "3 * string[1, 'U32']")
+    expr = s.interp(1)
+    assert (compute(expr, a) == (a % 1)).all()
+
+
+def test_timedelta_arith():
+    series = Series(pd.date_range('2014-01-01', '2014-02-01'))
+    sym = symbol('s', discover(series))
+    delta = timedelta(days=1)
+    assert (compute(sym + delta, series) == series + delta).all()
+    assert (compute(sym - delta, series) == series - delta).all()

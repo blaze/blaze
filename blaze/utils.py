@@ -160,5 +160,5 @@ def listpack(x):
 def json_dumps(dt):
     s = dt.isoformat()
     if not dt.tzname():
-        s = s + 'Z'
+        s += 'Z'
     return s

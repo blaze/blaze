@@ -10,7 +10,7 @@ from numbers import Number
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
 from ..expr import std, var, count, nunique, Summary, IsIn
-from ..expr import BinOp, UnaryOp, USub, Not, nelements
+from ..expr import BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
 from ..utils import keywords
@@ -45,7 +45,6 @@ try:
     from .numba import broadcast_numba as broadcast_ndarray
 except ImportError:
     def broadcast_ndarray(t, *data, **kwargs):
-        scope = kwargs.pop('scope')
         d = dict(zip(t._scalar_expr._leaves(), data))
         return compute(t._scalar_expr, d, **kwargs)
 
@@ -53,6 +52,60 @@ except ImportError:
 compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
 for i in range(2, 6):
     compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
+
+
+@dispatch(Repeat, np.ndarray)
+def compute_up(t, data, _char_mul=np.char.multiply, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return _char_mul(data, t.rhs)
+    else:
+        return _char_mul(t.lhs, data)
+
+
+@compute_up.register(Repeat, np.ndarray, (np.ndarray, base))
+@compute_up.register(Repeat, base, np.ndarray)
+def compute_up_np_repeat(t, lhs, rhs, _char_mul=np.char.multiply, **kwargs):
+    return _char_mul(lhs, rhs)
+
+
+@dispatch(Concat, np.ndarray)
+def compute_up(t, data, _char_add=np.char.add, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return _char_add(data, t.rhs)
+    else:
+        return _char_add(t.lhs, data)
+
+
+@compute_up.register(Concat, np.ndarray, (np.ndarray, base))
+@compute_up.register(Concat, base, np.ndarray)
+def compute_up_np_concat(t, lhs, rhs, _char_add=np.char.add, **kwargs):
+    return _char_add(lhs, rhs)
+
+
+def _interp(arr, v, _Series=pd.Series, _charmod=np.char.mod):
+    """
+    Delegate to the most efficient string formatting technique based on
+    the length of the array.
+    """
+    if len(arr) >= 145:
+        return _Series(arr) % v
+
+    return _charmod(arr, v)
+
+
+@dispatch(Interp, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return _interp(data, t.rhs)
+    else:
+        return _interp(t.lhs, data)
+
+
+@compute_up.register(Interp, np.ndarray, (np.ndarray, base))
+@compute_up.register(Interp, base, np.ndarray)
+def compute_up_np_interp(t, lhs, rhs, **kwargs):
+    return _interp(lhs, rhs)
+
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))

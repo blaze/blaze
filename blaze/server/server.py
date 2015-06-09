@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import socket
-import json
 
 import flask
 from flask import Blueprint, Flask, request
@@ -16,8 +15,8 @@ from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
+from .serialization import json
 from ..interactive import InteractiveSymbol, coerce_scalar
-from ..utils import json_dumps
 from ..expr import Expr, symbol
 
 from datashape import Mono, discover
@@ -31,18 +30,29 @@ DEFAULT_PORT = 6363
 
 
 api = Blueprint('api', __name__)
+pickle_extension_api = Blueprint('pickle_extension_api', __name__)
+
+
+def _get_option(option, options):
+    try:
+        return options[option]
+    except KeyError:
+        # Provides a more informative error message.
+        raise TypeError(
+            'The blaze api must be registered with {option}'.format(
+                option=option,
+            ),
+        )
 
 
 def _register_api(app, options, first_registration=False):
     """
     Register the data with the blueprint.
     """
-    try:
-        _get_data.cache[app] = options['data']
-    except KeyError:
-        # Provides a more informative error message.
-        raise TypeError('The blaze api must be registered with data')
-
+    _get_data.cache[app] = _get_option('data', options)
+    _get_format.cache[app] = dict(
+        (f.name, f) for f in _get_option('formats', options)
+    )
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
 
@@ -58,6 +68,11 @@ def _get_data():
 _get_data.cache = {}
 
 
+def _get_format(name):
+    return _get_format.cache[flask.current_app][name]
+_get_format.cache = {}
+
+
 class Server(object):
 
     """ Blaze Data Server
@@ -69,6 +84,12 @@ class Server(object):
     data : ``dict`` or ``None``, optional
         A dictionary mapping dataset name to any data format that blaze
         understands.
+
+    formats : ``iterable[SerializationFormat]``, optional
+        An iterable of supported serialization formats. By default, the
+        server will support JSON.
+        A serialization format is an object that supports:
+        name, loads, and dumps.
 
     Examples
     --------
@@ -85,11 +106,15 @@ class Server(object):
     """
     __slots__ = 'app', 'data', 'port'
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, formats=None):
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
-        app.register_blueprint(api, data=data)
+        app.register_blueprint(
+            api,
+            data=data,
+            formats=formats if formats is not None else (json,),
+        )
         self.data = data
 
     def run(self, *args, **kwargs):
@@ -279,14 +304,17 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@api.route('/compute.json', methods=['POST', 'PUT', 'GET'])
-def compserver():
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 415)  # 415: Unsupported Media Type
+@api.route('/compute.<serial_format>', methods=['POST', 'PUT', 'GET'])
+def compserver(serial_format):
     try:
-        payload = json.loads(request.data.decode('utf-8'))
+        serial = _get_format(serial_format)
+    except KeyError:
+        return 'Unsupported serialization format', 404
+
+    try:
+        payload = serial.loads(request.data)
     except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 400)  # 400: Bad Request
+        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
 
     ns = payload.get('namespace', dict())
     dataset = _get_data()
@@ -310,5 +338,4 @@ def compserver():
         # 500: Internal Server Error
         return ("Computation failed with message:\n%s" % e, 500)
 
-    return json.dumps({'datashape': str(expr.dshape),
-                       'data': result}, default=json_dumps)
+    return serial.dumps({'datashape': str(expr.dshape), 'data': result})
