@@ -1,14 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-import re
-from distutils.version import LooseVersion
-
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
+from datetime import timedelta
+import itertools
+import re
+from distutils.version import LooseVersion
+
+
 import datashape
-from odo import into, resource
+from odo import into, resource, drop, odo
+import pandas as pd
 from pandas import DataFrame
 from toolz import unique
 
@@ -18,6 +22,32 @@ from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
                         floor, cos, merge, nunique, mean, sum, count, exp)
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile
+
+
+names = ('tbl%d' % i for i in itertools.count())
+
+
+@pytest.fixture
+def url():
+    return 'postgresql://postgres@localhost/test::%s' % next(names)
+
+
+@pytest.yield_fixture
+def sql(url):
+    try:
+        t = resource(url, dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_create(sql):
+    assert odo(sql, list) == [('a', 1), ('b', 2)]
 
 
 @pytest.fixture(scope='module')
@@ -1519,3 +1549,29 @@ def test_datetime_to_date():
         accdate
     """
     assert normalize(result) == normalize(expected)
+
+
+@pytest.yield_fixture
+def sql_with_dts(url):
+    try:
+        t = resource(url, dshape='var * {A: datetime}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(d,) for d in pd.date_range('2014-01-01', '2014-02-01')], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_timedelta_arith(sql_with_dts):
+    delta = timedelta(days=1)
+    dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
+    sym = symbol('s', discover(dates))
+    assert (
+        odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
+    ).all()
+    assert (
+        odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
+    ).all()
