@@ -269,7 +269,7 @@ def test_join_by_arcs():
 
 def test_join_suffixes():
     df = pd.DataFrame(
-        list({k: n for k in ascii_lowercase[:5]} for n in range(5))
+        list(dict((k, n) for k in ascii_lowercase[:5]) for n in range(5)),
     )
     a = symbol('a', discover(df))
     b = symbol('b', discover(df))
