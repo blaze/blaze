@@ -232,7 +232,8 @@ def test_clean_complex_join():
     L = symbol('L', 'var * {name: string, amount: int}')
     R = symbol('R', 'var * {name: string, id: int}')
 
-    joined = join(L[L.amount > 0], R, 'name')
+    suffixes = '_l', '_r'
+    joined = join(L[L.amount > 0], R, 'name', suffixes=suffixes)
 
     result = compute(joined, {L: lhs, R: rhs})
 
@@ -940,6 +941,26 @@ def test_join_on_same_table():
     FROM tab AS tab_left JOIN tab AS tab_right
     ON tab_left.a = tab_right.a
     """)
+
+
+def test_join_suffixes():
+    metadata = sa.MetaData()
+    T = sa.Table('tab', metadata,
+                 sa.Column('a', sa.Integer),
+                 sa.Column('b', sa.Integer),
+                 )
+
+    t = symbol('tab', discover(T))
+    suffixes = '_l', '_r'
+    expr = join(t, t, 'a', suffixes=suffixes)
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT tab{l}.a, tab{l}.b, tab{r}.b
+    FROM tab AS tab{l} JOIN tab AS tab{r}
+    ON tab{l}.a = tab{r}.a
+    """.format(l=suffixes[0], r=suffixes[1]))
 
 
 def test_field_access_on_engines(data):
