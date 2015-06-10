@@ -56,6 +56,15 @@ def test_join_on_same_table():
     assert len(c.fields) == 3
 
 
+def test_join_suffixes():
+    a = symbol('a', 'var * {x: int, y: int}')
+    b = join(a, a, 'x', suffixes=('_l', '_r'))
+
+    assert isdistinct(b.fields)
+    assert len(b.fields) == 3
+    assert set(b.fields) == set(['x', 'y_l', 'y_r'])
+
+
 def test_join_on_single_column():
     a = symbol('a', 'var * {x: int, y: int, z: int}')
     b = symbol('b', 'var * {x: int, y: int, w: int}')

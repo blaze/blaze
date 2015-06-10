@@ -7,6 +7,7 @@ import pandas as pd
 import pandas.util.testing as tm
 import numpy as np
 from pandas import DataFrame, Series
+from string import ascii_lowercase
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
@@ -264,6 +265,21 @@ def test_join_by_arcs():
 
     tm.assert_frame_equal(result, expected)
     assert list(result.columns) == ['name', 'count']
+
+
+def test_join_suffixes():
+    df = pd.DataFrame(
+        list({k: n for k in ascii_lowercase[:5]} for n in range(5))
+    )
+    a = symbol('a', discover(df))
+    b = symbol('b', discover(df))
+
+    suffixes = '_x', '_y'
+    joined = join(a, b, 'a', suffixes=suffixes)
+
+    expected = pd.merge(df, df, on='a', suffixes=suffixes)
+    result = compute(joined, {a: df, b: df})
+    tm.assert_frame_equal(result, expected)
 
 
 def test_sort():
