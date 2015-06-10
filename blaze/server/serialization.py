@@ -2,7 +2,12 @@ from collections import namedtuple
 from functools import partial
 import json as json_module
 
-from ..compatibility import pickle, unicode
+try:
+    import msgpack as msgpack_module
+except ImportError:
+    msgpack_module = None
+
+from ..compatibility import pickle as pickle_module, unicode
 from ..utils import json_dumps
 
 
@@ -22,19 +27,21 @@ json = SerializationFormat(
 )
 pickle = SerializationFormat(
     'pickle',
-    pickle.loads,
-    partial(pickle.dumps, protocol=pickle.HIGHEST_PROTOCOL),
+    pickle_module.loads,
+    partial(pickle_module.dumps, protocol=pickle_module.HIGHEST_PROTOCOL),
+)
+
+if msgpack_module is not None:
+    msgpack = SerializationFormat(
+        'msgpack',
+        partial(msgpack_module.unpackb, encoding='utf-8'),
+        partial(msgpack_module.packb, default=json_dumps),
+    )
+
+
+all_formats = frozenset(
+    g for _, g in globals().items() if isinstance(g, SerializationFormat)
 )
 
 
-all_formats = (
-    json,
-    pickle,
-)
-
-
-__all__ = [
-    'all_formats',
-    'json',
-    'pickle',
-]
+__all__ = ['all_formats'] + list(f.name for f in all_formats)
