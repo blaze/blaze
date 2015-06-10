@@ -232,8 +232,7 @@ def test_clean_complex_join():
     L = symbol('L', 'var * {name: string, amount: int}')
     R = symbol('R', 'var * {name: string, id: int}')
 
-    suffixes = '_l', '_r'
-    joined = join(L[L.amount > 0], R, 'name', suffixes=suffixes)
+    joined = join(L[L.amount > 0], R, 'name')
 
     result = compute(joined, {L: lhs, R: rhs})
 
