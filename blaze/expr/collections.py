@@ -279,6 +279,7 @@ class Join(Expr):
     rhs : Expr
     on_left : string
     on_right : string
+    suffixes: pair
 
     Examples
     --------
