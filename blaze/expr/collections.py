@@ -298,7 +298,9 @@ class Join(Expr):
 
     blaze.expr.collections.Merge
     """
-    __slots__ = '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how'
+    __slots__ = (
+        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes',
+    )
     __inputs__ = 'lhs', 'rhs'
 
     @property
@@ -356,9 +358,10 @@ class Join(Expr):
         left_other = [name for name, dt in left if name not in self.on_left]
         right_other = [name for name, dt in right if name not in self.on_right]
         overlap = set.intersection(set(left_other), set(right_other))
-        left = [[name + '_left' if name in overlap else name, dt]
+        left_suffix, right_suffix = self.suffixes
+        left = [[name + left_suffix if name in overlap else name, dt]
                 for name, dt in left]
-        right = [[name + '_right' if name in overlap else name, dt]
+        right = [[name + right_suffix if name in overlap else name, dt]
                  for name, dt in right]
 
         if self.how in ('right', 'outer'):
@@ -400,7 +403,8 @@ def types_of_fields(fields, expr):
         return expr.dshape.measure
 
 
-def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
+def join(lhs, rhs, on_left=None, on_right=None,
+         how='inner', suffixes=('_left', '_right')):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
             set(lhs.fields) & set(rhs.fields),
@@ -426,7 +430,7 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
                          "\n\tinner, outer, left, right."
                          "\nGot: %s" % how)
 
-    return Join(lhs, rhs, _on_left, _on_right, how)
+    return Join(lhs, rhs, _on_left, _on_right, how, suffixes)
 
 
 join.__doc__ = Join.__doc__

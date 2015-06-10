@@ -134,9 +134,14 @@ def compute_up(t, lhs, rhs, **kwargs):
     dataframe, perform the join, and then reset the index back to the left
     side's original index.
     """
-    result = pd.merge(lhs, rhs,
-                      left_on=t.on_left, right_on=t.on_right,
-                      how=t.how)
+    result = pd.merge(
+        lhs,
+        rhs,
+        left_on=t.on_left,
+        right_on=t.on_right,
+        how=t.how,
+        suffixes=t.suffixes,
+    )
     return result.reset_index()[t.fields]
 
 
