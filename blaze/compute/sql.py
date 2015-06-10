@@ -537,11 +537,19 @@ def compute_up(t, s, **kwargs):
                      order_by=get_clause(getattr(s, 'element', s), 'order_by'))
 
 
-@dispatch(Sort, ClauseElement)
+@dispatch(Sort, (Selectable, Select))
+def compute_up(t, s, **kwargs):
+    s = select(s.cte())
+    direction = sa.asc if t.ascending else sa.desc
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
+    return s.order_by(*cols)
+
+
+@dispatch(Sort, (sa.Table, ColumnElement))
 def compute_up(t, s, **kwargs):
     s = select(s)
     direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(getattr(s.c, c))) for c in listpack(t.key)]
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
 
