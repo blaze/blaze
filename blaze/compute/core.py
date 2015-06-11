@@ -448,9 +448,11 @@ def compute(expr, d, **kwargs):
     post_compute_ = kwargs.get('post_compute', post_compute)
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
-        d3 = dict([(e, pre_compute_(e, dat, **kwargs))
-                        for e, dat in d2.items()
-                        if e in expr2])
+        d3 = dict(
+            (e, pre_compute_(e, dat, **kwargs))
+            for e, dat in d2.items()
+            if e in expr2
+        )
     else:
         d3 = d2
 
