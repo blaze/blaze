@@ -415,6 +415,20 @@ def sliceit(child, index):
 
 
 class Slice(Expr):
+    """
+    Elements `start` until `stop`. On many backends, a `step` parameter
+    is also allowed.
+
+    Examples
+    -------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts[2:7].dshape
+    dshape("5 * {name: string, amount: int32}")
+    >>> accounts[2:7:2].dshape
+    dshape("3 * {name: string, amount: int32}")
+
+    """
     __slots__ = '_hash', '_child', '_index'
 
     @property

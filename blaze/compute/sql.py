@@ -35,6 +35,11 @@ import toolz
 from toolz import unique, concat, pipe
 from toolz.curried import map
 
+import numpy as np
+import numbers
+
+import warnings
+
 from multipledispatch import MDNotImplementedError
 
 from odo.backends.sql import metadata_of_engine
@@ -43,7 +48,7 @@ from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
-from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn
+from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
@@ -538,11 +543,19 @@ def compute_up(t, s, **kwargs):
                      order_by=get_clause(getattr(s, 'element', s), 'order_by'))
 
 
-@dispatch(Sort, ClauseElement)
+@dispatch(Sort, (Selectable, Select))
+def compute_up(t, s, **kwargs):
+    s = select(s.cte())
+    direction = sa.asc if t.ascending else sa.desc
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
+    return s.order_by(*cols)
+
+
+@dispatch(Sort, (sa.Table, ColumnElement))
 def compute_up(t, s, **kwargs):
     s = select(s)
     direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(getattr(s.c, c))) for c in listpack(t.key)]
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
 
@@ -793,3 +806,40 @@ def post_compute(_, s, **kwargs):
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
+
+
+@dispatch(Slice, (Select, Selectable, ColumnElement))
+def compute_up(expr, data, **kwargs):
+    index = expr.index[0]  # [0] replace_slices returns tuple ((start, stop), )
+    if isinstance(index, slice):
+        start = index.start or 0
+        if start < 0:
+            raise ValueError('start value of slice cannot be negative'
+                             ' with a SQL backend')
+
+        stop = index.stop
+        if stop is not None and stop < 0:
+            raise ValueError('stop value of slice cannot be negative with a '
+                             'SQL backend.')
+
+        if index.step is not None and index.step != 1:
+            raise ValueError('step parameter in slice objects not supported '
+                             'with SQL backend')
+
+    elif isinstance(index, (np.integer, numbers.Integral)):
+        if index < 0:
+            raise ValueError('integer slice cannot be negative for the'
+                             ' SQL backend')
+        start = index
+        stop = start + 1
+    else:
+        raise TypeError('type %r not supported for slicing wih SQL backend'
+                         % type(index).__name__)
+
+    warnings.warn('The order of the result set from a Slice expression '
+                  'computed against the SQL backend is not deterministic.')
+
+    if stop is None:  # Represents open-ended slice. e.g. [3:]
+        return select(data).offset(start)
+    else:
+        return select(data).offset(start).limit(stop - start)
