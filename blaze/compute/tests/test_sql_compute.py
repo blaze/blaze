@@ -11,9 +11,11 @@ from distutils.version import LooseVersion
 
 
 import datashape
+import numpy as np
 from odo import into, resource, drop, odo
 import pandas.util.testing as tm
 import pandas as pd
+import pandas.util.testing as tm
 from pandas import DataFrame
 from toolz import unique
 
@@ -1681,4 +1683,39 @@ def test_insert_from_subselect(sql_with_float):
     tm.assert_frame_equal(
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
+    )
+
+
+@pytest.yield_fixture
+def sql_two_tables(url):
+    dshape = 'var * {a: int32}'
+    try:
+        t = resource(url, dshape=dshape)
+        u = resource(url, dshape=dshape)
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield u, t
+        finally:
+            drop(t)
+            drop(u)
+
+
+def test_vstack(sql_two_tables):
+    t_table, u_table = sql_two_tables
+    t_data = pd.DataFrame(np.arange(5), columns=['a'])
+    u_data = pd.DataFrame(np.arange(5, 10), columns=['a'])
+    odo(t_data, t_table)
+    odo(u_data, u_table)
+
+    t = symbol('t', discover(t_data))
+    u = symbol('u', discover(u_data))
+
+    tm.assert_frame_equal(
+        odo(
+            compute(join(t, u).sort('a'), {t: t_table, u: u_table}),
+            pd.DataFrame,
+        ),
+        pd.DataFrame(np.arange(10), columns=['a']),
     )
