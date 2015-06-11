@@ -114,7 +114,10 @@ class sum(Reduction):
 
     @property
     def schema(self):
-        return DataShape(datashape.maxtype(super(sum, self).schema))
+        if super(sum, self).schema.measure == datashape.bool_:
+            return DataShape(datashape.int64)
+        else:
+            return DataShape(datashape.maxtype(super(sum, self).schema))
 
 
 class max(Reduction):
