@@ -12,6 +12,7 @@ from distutils.version import LooseVersion
 
 import datashape
 from odo import into, resource, drop, odo
+import pandas.util.testing as tm
 import pandas as pd
 from pandas import DataFrame
 from toolz import unique
@@ -1650,3 +1651,14 @@ def test_postgres_isnan(sql_with_float):
     table = odo(data, sql_with_float)
     sym = symbol('s', discover(data))
     assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]
+
+
+def test_insert_from_subselect(sql_with_float):
+    data = pd.DataFrame([{'c': 2.0}, {'c': 1.0}])
+    tbl = odo(data, sql_with_float)
+    s = symbol('s', discover(data))
+    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl), sql_with_float),
+    tm.assert_frame_equal(
+        odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
+        pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
+    )
