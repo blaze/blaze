@@ -42,14 +42,16 @@ import warnings
 
 from multipledispatch import MDNotImplementedError
 
-from odo.backends.sql import metadata_of_engine
+import datashape
+
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
 from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
-from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
+from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
@@ -344,7 +346,7 @@ def compute_up(t, s, **kwargs):
         op = getattr(sa.sql.functions, t.symbol)
     except AttributeError:
         op = getattr(sa.sql.func, names.get(type(t), t.symbol))
-    return op(s).label(t._name)
+    return op(sa.cast(s, dshape_to_alchemy(t.dshape.measure))).label(t._name)
 
 
 prefixes = {
