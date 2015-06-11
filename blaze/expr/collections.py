@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from toolz import isdistinct, frequencies, concat, unique, get, first
 import datashape
-from datashape import Option, Record, Unit, dshape, var
+from datashape import Option, Record, Unit, dshape, var, Fixed
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
@@ -11,7 +11,7 @@ from .expressions import dshape_method_list
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform']
+           'head', 'sort', 'Join', 'join', 'transform', 'VStack', 'vstack']
 
 
 class Sort(Expr):
@@ -435,6 +435,60 @@ def join(lhs, rhs, on_left=None, on_right=None,
 
 
 join.__doc__ = Join.__doc__
+
+
+class VStack(Expr):
+
+    """ Stack tables on common columns
+
+    Parameters
+    ----------
+    lhs : Expr
+    rhs : Expr
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> names = symbol('names', '5 * {name: string, id: int}')
+    >>> more_names = symbol('more_names', '7 * {name: int, id: int}')
+
+    Vertically stack these tables.
+    >>> stacked = vstack(names, more_names)
+    >>> stacked.dshape
+    dshape("12 * {name: string, id: int32")
+
+    See Also
+    --------
+
+    blaze.expr.collections.Merge
+    """
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
+
+    @property
+    def dshape(self):
+        lhs_dshape = self.lhs.dshape
+        lrows = lhs_dshape.shape[0]
+        rrows = self.rhs.dshape.shape[0]
+        return (
+            Fixed(lrows.val + rrows.val)
+            if isinstance(lrows, Fixed) and isinstance(rrows, Fixed)
+            else var
+        ) * lhs_dshape.subarray(1)
+
+
+def vstack(lhs, rhs):
+    if lhs.dshape.subarray(1) != rhs.dshape.subarray(1):
+        raise ValueError(
+            'Mismatched subarray types: {0} != {1}'.format(
+                lhs.dshape.subarray(1), rhs.dshape.subarray(1),
+            ),
+        )
+
+    return VStack(lhs, rhs)
+
+
+vstack.__doc__ = VStack.__doc__
 
 
 class IsIn(ElemWise):
