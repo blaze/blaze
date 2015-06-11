@@ -1,14 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-import re
-from distutils.version import LooseVersion
-
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
+from datetime import timedelta
+import itertools
+import re
+from distutils.version import LooseVersion
+
+
 import datashape
-from odo import into, resource
+from odo import into, resource, drop, odo
+import pandas as pd
 from pandas import DataFrame
 from toolz import unique
 
@@ -18,6 +22,32 @@ from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
                         floor, cos, merge, nunique, mean, sum, count, exp)
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile
+
+
+names = ('tbl%d' % i for i in itertools.count())
+
+
+@pytest.fixture
+def url():
+    return 'postgresql://postgres@localhost/test::%s' % next(names)
+
+
+@pytest.yield_fixture
+def sql(url):
+    try:
+        t = resource(url, dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_create(sql):
+    assert odo(sql, list) == [('a', 1), ('b', 2)]
 
 
 @pytest.fixture(scope='module')
@@ -172,9 +202,21 @@ def test_join():
 
     result = compute(joined.sort('amount'), {L: lhs, R: rhs})
     assert normalize(str(result)) == normalize("""
-    SELECT amounts.name, amounts.amount, ids.id
-    FROM amounts JOIN ids ON amounts.name = ids.name
-    ORDER BY amounts.amount ASC""")
+    with anon_1 as (select
+            amounts.name as name,
+            amounts.amount as amount,
+            ids.id as id from amounts
+        join
+            ids
+        on
+            amounts.name = ids.name) select
+        anon_1.name,
+        anon_1.amount,
+        anon_1.id
+    from
+        anon_1
+    order by
+        anon_1.amount asc""")
 
 
 def test_clean_complex_join():
@@ -1485,14 +1527,14 @@ def test_do_not_erase_group_by_functions_with_datetime():
               avg_amount=t[t.amount < 0].amount.mean())
     result = str(compute(expr, s))
     expected = """SELECT
-        extract(date from accdate.occurred_on) as occurred_on_date,
+        date(accdate.occurred_on) as occurred_on_date,
         avg(accdate.amount) as avg_amount
     FROM
         accdate
     WHERE
         accdate.amount < :amount_1
     GROUP BY
-        extract(date from accdate.occurred_on)
+        date(accdate.occurred_on)
     """
     assert normalize(result) == normalize(expected)
 
@@ -1508,3 +1550,103 @@ def test_not():
         accounts.name not in (:name_1, :name_2)
     """
     assert normalize(result) == normalize(expected)
+
+
+def test_slice():
+    start, stop, step = 50, 100, 1
+    result = str(compute(t[start:stop], s))
+
+    # Verifies that compute is translating the query correctly
+    assert result == str(select(s).offset(start).limit(stop))
+
+    # Verifies the query against expected SQL query
+    expected = """
+    SELECT accounts.name, accounts.amount, accounts.id FROM accounts
+    LIMIT :param_1 OFFSET :param_2
+    """
+
+    assert normalize(str(result)) == normalize(str(expected))
+
+    # Step size of 1 should be alright
+    compute(t[start:stop:step], s)
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_slice_step():
+    start, stop, step = 50, 100, 2
+    compute(t[start:stop:step], s)
+
+
+def test_datetime_to_date():
+    expr = tdate.occurred_on.date
+    result = str(compute(expr, sdate))
+    expected = """SELECT
+        DATE(accdate.occurred_on) as occurred_on_date
+    FROM
+        accdate
+    """
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.yield_fixture
+def sql_with_dts(url):
+    try:
+        t = resource(url, dshape='var * {A: datetime}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(d,) for d in pd.date_range('2014-01-01', '2014-02-01')], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_timedelta_arith(sql_with_dts):
+    delta = timedelta(days=1)
+    dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
+    sym = symbol('s', discover(dates))
+    assert (
+        odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
+    ).all()
+    assert (
+        odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
+    ).all()
+
+
+def test_sort_compose():
+    expr = t.name[:5].sort()
+    result = compute(expr, s)
+    expected = """with anon_1 as (select
+            accounts.name as name
+        from
+            accounts
+        limit :param_1
+        offset :param_2) select
+            anon_1.name
+        from
+            anon_1
+        order by
+            anon_1.name asc"""
+    assert normalize(str(result)) == normalize(expected)
+    assert normalize(str(compute(t.sort('name').name[:5], s))) != normalize(expected)
+
+
+@pytest.yield_fixture
+def sql_with_float(url):
+    try:
+        t = resource(url, dshape='var * {c: float64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_isnan(sql_with_float):
+    data = (1.0,), (float('nan'),)
+    table = odo(data, sql_with_float)
+    sym = symbol('s', discover(data))
+    assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
-from datashape.predicates import isscalar, isboolean, isnumeric
+from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from datashape import coretypes as ct, discover, unsigned, promote, optionify
 
 from .core import parenthesize, eval_str
@@ -418,4 +418,5 @@ schema_method_list.extend([
           _rsub, _pow, _rpow, _mod, _rmod,  _neg])),
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
     (isboolean, set([_or, _ror, _and, _rand, _invert])),
+    (isdatelike, set([_add, _radd, _sub, _rsub])),
     ])
