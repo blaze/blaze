@@ -13,7 +13,7 @@ from blaze.compute.core import compute
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
-                        all, var, std)
+                        var, std, vstack)
 from blaze.compatibility import builtins, xfail
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
@@ -713,3 +713,16 @@ def test_timedelta_arith():
     delta = timedelta(days=1)
     assert (compute(sym + delta, series) == series + delta).all()
     assert (compute(sym - delta, series) == series - delta).all()
+
+
+def test_vstack():
+    s_data = DataFrame(np.arange(15).reshape(5, 3), columns=list('abc'))
+    t_data = DataFrame(np.arange(15, 30).reshape(5, 3), columns=list('abc'))
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    tm.assert_frame_equal(
+        compute(vstack(s, t), {s: s_data, t: t_data}),
+        DataFrame(np.arange(30).reshape(10, 3), columns=list('abc')),
+    )
