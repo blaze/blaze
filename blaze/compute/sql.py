@@ -52,7 +52,7 @@ from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements, VStack
 
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
@@ -109,6 +109,11 @@ def compute_up(t, s, **kwargs):
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     return compute(t._scalar_expr, d, post_compute=False).label(name)
+
+
+@dispatch(VStack, (Select, Selectable), (Select, Selectable))
+def compute_up(t, lhs, rhs, **kwargs):
+    return select(lhs).union_all(select(rhs)).alias()
 
 
 @dispatch(Broadcast, sa.Column)
