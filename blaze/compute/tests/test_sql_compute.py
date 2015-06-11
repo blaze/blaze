@@ -1620,3 +1620,23 @@ def test_sort_compose():
     expected = """with anon_1 as (select accounts.name as name from accounts limit :param_1 offset :param_2) select anon_1.name from anon_1 order by anon_1.name asc"""
     assert normalize(str(result)) == normalize(expected)
     assert normalize(str(compute(t.sort('name').name[:5], s))) != normalize(expected)
+
+
+@pytest.yield_fixture
+def sql_with_float(url):
+    try:
+        t = resource(url, dshape='var * {c: float64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_isnan(sql_with_float):
+    data = (1.0,), (float('nan'),)
+    table = odo(data, sql_with_float)
+    sym = symbol('s', discover(data))
+    assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]
