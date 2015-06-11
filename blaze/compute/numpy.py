@@ -9,7 +9,7 @@ from numbers import Number
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
-from ..expr import std, var, count, nunique, Summary, IsIn
+from ..expr import std, var, count, nunique, Summary, IsIn, VStack
 from ..expr import BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
@@ -53,6 +53,11 @@ except ImportError:
 compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
 for i in range(2, 6):
     compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
+
+
+@dispatch(VStack, np.ndarray, np.ndarray)
+def compute_up(t, lhs, rhs, _vstack=np.vstack, **kwargs):
+    return _vstack((lhs, rhs))
 
 
 @dispatch(Repeat, np.ndarray)
