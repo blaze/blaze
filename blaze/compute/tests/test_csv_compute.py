@@ -1,12 +1,15 @@
 from blaze.compute.csv import pre_compute, CSV
-from blaze import compute, discover, dshape, into, resource
+from blaze import compute, discover, dshape, into, resource, join
 from blaze.utils import example, filetext, filetexts
-from blaze.expr import Expr, symbol
+from blaze.expr import symbol
 from pandas import DataFrame, Series
+import pandas.util.testing as tm
 from datashape.predicates import iscollection
+import numpy as np
 import pandas as pd
 from toolz import first
 from collections import Iterator
+from odo import odo
 from odo.chunks import chunks
 
 def test_pre_compute_on_small_csv_gives_dataframe():
@@ -77,3 +80,22 @@ def test_multiple_csv_files():
             if iscollection(e.dshape):
                 a, b = into(set, a), into(set, b)
             assert a == b
+
+
+def test_csv_join():
+    d = {'a.csv': 'a,b,c\n0,1,2\n3,4,5',
+         'b.csv': 'c,d,e\n2,3,4\n5,6,7'}
+
+    with filetexts(d):
+        resource_a = resource('a.csv')
+        resource_b = resource('b.csv')
+        a = symbol('a', discover(resource_a))
+        b = symbol('b', discover(resource_b))
+        tm.assert_frame_equal(
+            odo(
+                compute(join(a, b, 'c'), {a: resource_a, b: resource_b}),
+                pd.DataFrame,
+            ),
+            pd.DataFrame(np.array([[2, 0, 1, 3, 4],
+                                   [5, 3, 4, 6, 7]]), columns=list('cabde'))
+        )
