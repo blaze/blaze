@@ -50,6 +50,7 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 
 from ..expr.broadcast import broadcast_collect
+from ..expr.math import isnan
 
 from ..compatibility import reduce
 
@@ -137,6 +138,11 @@ def compute_up(t, data, **kwargs):
 @compute_up.register(FloorDiv, ColumnElement, (ColumnElement, base))
 def binop_sql(t, lhs, rhs, **kwargs):
     return sa.func.floor(lhs / rhs)
+
+
+@dispatch(isnan, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return s == float('nan')
 
 
 @dispatch(UnaryOp, ColumnElement)

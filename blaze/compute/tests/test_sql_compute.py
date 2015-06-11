@@ -1575,3 +1575,24 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+
+
+
+@pytest.yield_fixture
+def sql_with_float(url):
+    try:
+        t = resource(url, dshape='var * {c: float64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_postgres_isnan(sql_with_float):
+    data = (1.0,), (float('nan'),)
+    table = odo(data, sql_with_float)
+    sym = symbol('s', discover(data))
+    assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]
