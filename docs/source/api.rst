@@ -41,6 +41,7 @@ Table Expressions
    Head
    Merge
    Join
+   VStack
 
 .. currentmodule:: blaze.expr.split_apply_combine
 
