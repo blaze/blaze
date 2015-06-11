@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary, Broadcast, join
+from blaze.expr import symbol, by, exp, summary, Broadcast, join, vstack
 from blaze import sin
 from odo import into
 from datashape import discover, to_numpy, dshape
@@ -467,3 +467,16 @@ def test_timedelta_arith():
     sym = symbol('s', discover(dates))
     assert (compute(sym + delta, dates) == dates + delta).all()
     assert (compute(sym - delta, dates) == dates - delta).all()
+
+
+def test_vstack():
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(vstack(s, t), {s: s_data, t: t_data}) ==
+        np.arange(30).reshape(10, 3)
+    ).all()
