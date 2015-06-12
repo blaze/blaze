@@ -1662,3 +1662,11 @@ def test_insert_from_subselect(sql_with_float):
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
     )
+
+
+def test_sum_on_bool_expr():
+    result = compute((t.amount > 1).sum(), s)
+    expected = """SELECT
+            sum(cast(accounts.amount > :amount_1 AS BIGINT)) AS amount_sum
+        FROM accounts"""
+    assert normalize(str(result)) == normalize(expected)
