@@ -944,6 +944,26 @@ def test_join_on_same_table():
     """)
 
 
+def test_join_suffixes():
+    metadata = sa.MetaData()
+    T = sa.Table('tab', metadata,
+                 sa.Column('a', sa.Integer),
+                 sa.Column('b', sa.Integer),
+                 )
+
+    t = symbol('tab', discover(T))
+    suffixes = '_l', '_r'
+    expr = join(t, t, 'a', suffixes=suffixes)
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT tab{l}.a, tab{l}.b, tab{r}.b
+    FROM tab AS tab{l} JOIN tab AS tab{r}
+    ON tab{l}.a = tab{r}.a
+    """.format(l=suffixes[0], r=suffixes[1]))
+
+
 def test_field_access_on_engines(data):
     s, engine = data['s'], data['engine']
     result = compute_up(s.city, engine)

@@ -167,7 +167,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        scope3 = dict((e, pre_compute_(expr2, datum,
+        scope3 = dict((e, pre_compute_(e, datum,
                                        **assoc(kwargs, 'scope', scope2)))
                         for e, datum in scope2.items())
     else:
@@ -446,12 +446,13 @@ def compute(expr, d, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     post_compute_ = kwargs.get('post_compute', post_compute)
-
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
-        d3 = dict([(e, pre_compute_(expr2, dat, **kwargs))
-                        for e, dat in d2.items()
-                        if e in expr2])
+        d3 = dict(
+            (e, pre_compute_(e, dat, **kwargs))
+            for e, dat in d2.items()
+            if e in expr2
+        )
     else:
         d3 = d2
 
