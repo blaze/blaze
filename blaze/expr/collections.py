@@ -449,8 +449,8 @@ class VStack(Expr):
     Examples
     --------
     >>> from blaze import symbol
-    >>> names = symbol('names', '5 * {name: string, id: int}')
-    >>> more_names = symbol('more_names', '7 * {name: int, id: int}')
+    >>> names = symbol('names', '5 * {name: string, id: int32}')
+    >>> more_names = symbol('more_names', '7 * {name: string, id: int32}')
 
     Vertically stack these tables.
     >>> stacked = vstack(names, more_names)
