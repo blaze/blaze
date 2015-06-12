@@ -547,7 +547,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Sort, (Selectable, Select))
 def compute_up(t, s, **kwargs):
-    s = select(s.cte())
+    s = select(s.alias())
     direction = sa.asc if t.ascending else sa.desc
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
