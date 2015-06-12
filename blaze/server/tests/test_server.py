@@ -5,7 +5,6 @@ pytest.importorskip('flask')
 
 import datashape
 import numpy as np
-from flask import json
 from datetime import datetime
 from pandas import DataFrame
 from toolz import pipe
@@ -138,7 +137,9 @@ def test_compute(serial):
     )
 
     assert 'OK' in response.status
-    assert serial.loads(response.data)['data'] == expected
+    data = serial.loads(response.data)
+    assert data['data'] == expected
+    assert data['names'] == ['amount_sum']
 
 
 @pytest.mark.parametrize(
@@ -159,6 +160,7 @@ def test_get_datetimes(serial):
     ds = datashape.dshape(data['datashape'])
     result = into(np.ndarray, data['data'], dshape=ds)
     assert into(list, result) == into(list, events)
+    assert data['names'] == events.columns.tolist()
 
 
 @pytest.mark.parametrize(
@@ -176,7 +178,9 @@ def dont_test_compute_with_namespace(serial):
     )
 
     assert 'OK' in response.status
-    assert serial.loads(response.data)['data'] == expected
+    data = serial.loads(response.data)
+    assert data['data'] == expected
+    assert data['names'] == ['name']
 
 
 @pytest.fixture
@@ -206,9 +210,11 @@ def test_compute_with_variable_in_namespace(iris_server, serial):
     )
 
     assert 'OK' in resp.status
-    result = serial.loads(resp.data)['data']
+    data = serial.loads(resp.data)
+    result = data['data']
     expected = list(compute(expr._subs({pl: 5}), {t: iris}))
     assert result == expected
+    assert data['names'] == ['species']
 
 
 @pytest.mark.parametrize(
@@ -230,10 +236,12 @@ def test_compute_by_with_summary(iris_server, serial):
         data=blob,
     )
     assert 'OK' in resp.status
-    result = DataFrame(serial.loads(resp.data)['data']).values
+    data = serial.loads(resp.data)
+    result = DataFrame(data['data']).values
     expected = compute(expr, iris).values
     np.testing.assert_array_equal(result[:, 0], expected[:, 0])
     np.testing.assert_array_almost_equal(result[:, 1:], expected[:, 1:])
+    assert data['names'] == ['species', 'max', 'sum']
 
 
 @pytest.mark.parametrize(
@@ -254,9 +262,11 @@ def test_compute_column_wise(iris_server, serial):
     )
 
     assert 'OK' in resp.status
-    result = serial.loads(resp.data)['data']
+    data = serial.loads(resp.data)
+    result = data['data']
     expected = compute(expr, iris)
     assert list(map(tuple, result)) == into(list, expected)
+    assert data['names'] == t.fields
 
 
 @pytest.mark.parametrize(
@@ -274,10 +284,12 @@ def test_multi_expression_compute(serial):
     )
 
     assert 'OK' in resp.status
-    result = serial.loads(resp.data)['data']
+    respdata = serial.loads(resp.data)
+    result = respdata['data']
     expected = compute(expr, {s: data})
 
     assert list(map(tuple, result)) == into(list, expected)
+    assert respdata['names'] == expr.fields
 
 
 @pytest.mark.parametrize(
@@ -291,10 +303,12 @@ def test_leaf_symbol(serial):
         data=serial.dumps(query),
     )
 
-    a = serial.loads(resp.data)['data']
+    data = serial.loads(resp.data)
+    a = data['data']
     b = into(list, cities)
 
     assert list(map(tuple, a)) == b
+    assert data['names'] == cities.columns.tolist()
 
 
 @pytest.mark.parametrize(
@@ -311,8 +325,10 @@ def test_sqlalchemy_result(serial):
     )
 
     assert 'OK' in response.status
-    result = serial.loads(response.data)['data']
+    data = serial.loads(response.data)
+    result = data['data']
     assert all(isinstance(item, (tuple, list)) for item in result)
+    assert data['names'] == t.db.iris.fields
 
 
 def test_server_accepts_non_nonzero_ables():
@@ -331,8 +347,10 @@ def test_server_can_compute_sqlalchemy_reductions(serial):
         data=serial.dumps(query),
     )
     assert 'OK' in response.status
-    result = serial.loads(response.data)['data']
+    respdata = serial.loads(response.data)
+    result = respdata['data']
     assert result == odo(compute(expr, {t: data}), int)
+    assert respdata['names'] == ['petal_length_sum']
 
 
 @pytest.mark.parametrize(
@@ -347,5 +365,7 @@ def test_serialization_endpoints(serial):
         data=serial.dumps(query),
     )
     assert 'OK' in response.status
-    result = serial.loads(response.data)['data']
+    respdata = serial.loads(response.data)
+    result = respdata['data']
     assert result == odo(compute(expr, {t: data}), int)
+    assert respdata['names'] == ['petal_length_sum']
