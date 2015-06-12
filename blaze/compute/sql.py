@@ -42,8 +42,6 @@ import warnings
 
 from multipledispatch import MDNotImplementedError
 
-import datashape
-
 from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
 from ..dispatch import dispatch
@@ -52,7 +50,8 @@ from .core import compute_up, compute, base
 
 from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
 from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction, strlen, DateTime)
+                    count, FloorDiv, UnaryStringFunction, strlen, DateTime,
+                    sum)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 
@@ -338,7 +337,7 @@ def compute_up(t, s, **kwargs):
     return s.distinct()
 
 
-@dispatch(Reduction, sql.elements.ClauseElement)
+@dispatch(Reduction, sql.elements.ColumnElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -346,7 +345,24 @@ def compute_up(t, s, **kwargs):
         op = getattr(sa.sql.functions, t.symbol)
     except AttributeError:
         op = getattr(sa.sql.func, names.get(type(t), t.symbol))
-    return op(sa.cast(s, dshape_to_alchemy(t.dshape.measure))).label(t._name)
+    return op(s).label(t._name)
+
+
+@dispatch((sum, mean), sql.elements.ColumnElement)
+def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
+    try:
+        op = getattr(sa.sql.functions, t.symbol)
+    except AttributeError:
+        op = getattr(sa.sql.func, names.get(type(t), t.symbol))
+
+    # if we're coming from an expression whose dshape doesn't match the dshape
+    # of the reduction, we cast for consistent output types across different
+    # RDBMSs
+    if t._child.dshape.measure != t.dshape.measure:
+        s = sa.cast(s, dshape_to_alchemy(t.dshape.measure))
+    return op(s).label(t._name)
 
 
 prefixes = {
@@ -381,7 +397,7 @@ def compute_up(t, s, **kwargs):
     return sa.func.count(c)
 
 
-@dispatch(nelements, (Select, ClauseElement))
+@dispatch(nelements, (Select, Selectable, ColumnElement))
 def compute_up(t, s, **kwargs):
     return compute_up(t._child.count(), s)
 
