@@ -338,4 +338,8 @@ def compserver(serial_format):
         # 500: Internal Server Error
         return ("Computation failed with message:\n%s" % e, 500)
 
-    return serial.dumps({'datashape': str(expr.dshape), 'data': result})
+    return serial.dumps({
+        'datashape': str(expr.dshape),
+        'data': result,
+        'names': expr.fields
+    })
