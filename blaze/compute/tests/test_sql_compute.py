@@ -15,7 +15,6 @@ import numpy as np
 from odo import into, resource, drop, odo
 import pandas.util.testing as tm
 import pandas as pd
-import pandas.util.testing as tm
 from pandas import DataFrame
 from toolz import unique
 
