@@ -5,6 +5,12 @@ import socket
 import flask
 from flask import Blueprint, Flask, request
 
+try:
+    from flask.ext.cors import CORS
+except ImportError:
+    def CORS(app, *args, **kwargs):
+        return app
+
 from toolz import assoc
 
 from datashape.predicates import iscollection, isscalar
@@ -104,7 +110,7 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'data', 'port'
+    __slots__ = 'app', 'cors', 'data', 'port'
 
     def __init__(self, data=None, formats=None):
         app = self.app = Flask('blaze.server.server')
@@ -115,6 +121,7 @@ class Server(object):
             data=data,
             formats=formats if formats is not None else (json,),
         )
+        self.cors = CORS(app)
         self.data = data
 
     def run(self, *args, **kwargs):
@@ -144,8 +151,8 @@ def to_tree(expr, names=None):
 
     Parameters
     ----------
-
-    expr: Blaze Expression
+    expr : Expr
+        A Blaze expression
 
     Examples
     --------

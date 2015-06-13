@@ -33,21 +33,27 @@ data = {'accounts': accounts,
           'events': events,
               'db': db}
 
-server = Server(data, all_formats)
 
-test = server.app.test_client()
+@pytest.fixture(scope='module')
+def server():
+    s = Server(data, all_formats)
+    s.app.testing = True
+    return s
 
 
-def test_datasets():
+@pytest.yield_fixture
+def test(server):
+    with server.app.test_client() as c:
+        yield c
+
+
+def test_datasets(test):
     response = test.get('/datashape')
     assert response.data.decode('utf-8') == str(discover(data))
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_bad_responses(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_bad_responses(test, serial):
     assert 'OK' not in test.post(
         '/compute/accounts.{name}'.format(name=serial.name),
         data=serial.dumps(500),
@@ -88,10 +94,7 @@ def test_to_tree():
     assert to_tree(expr) == expected
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
+@pytest.mark.parametrize('serial', all_formats)
 def test_to_tree_slice(serial):
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t[:5]
@@ -122,11 +125,8 @@ def test_from_tree_is_robust_to_unnecessary_namespace():
 t = symbol('t', discover(data))
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_compute(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_compute(test, serial):
     expr = t.accounts.amount.sum()
     query = {'expr': to_tree(expr)}
     expected = 300
@@ -142,11 +142,8 @@ def test_compute(serial):
     assert data['names'] == ['amount_sum']
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_get_datetimes(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_get_datetimes(test, serial):
     expr = t.events
     query = {'expr': to_tree(expr)}
 
@@ -163,11 +160,8 @@ def test_get_datetimes(serial):
     assert data['names'] == events.columns.tolist()
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def dont_test_compute_with_namespace(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def dont_test_compute_with_namespace(test, serial):
     query = {'expr': {'op': 'Field',
                       'args': ['accounts', 'name']}}
     expected = ['Alice', 'Bob']
@@ -183,19 +177,19 @@ def dont_test_compute_with_namespace(serial):
     assert data['names'] == ['name']
 
 
-@pytest.fixture
-def iris_server(request):
+@pytest.yield_fixture
+def iris_server():
     iris = CSV(example('iris.csv'))
-    return Server(iris, all_formats).app.test_client()
+    s = Server(iris, all_formats)
+    s.app.testing = True
+    with s.app.test_client() as c:
+        yield c
 
 
 iris = CSV(example('iris.csv'))
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
+@pytest.mark.parametrize('serial', all_formats)
 def test_compute_with_variable_in_namespace(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))
@@ -217,10 +211,7 @@ def test_compute_with_variable_in_namespace(iris_server, serial):
     assert data['names'] == ['species']
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
+@pytest.mark.parametrize('serial', all_formats)
 def test_compute_by_with_summary(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))
@@ -244,10 +235,7 @@ def test_compute_by_with_summary(iris_server, serial):
     assert data['names'] == ['species', 'max', 'sum']
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
+@pytest.mark.parametrize('serial', all_formats)
 def test_compute_column_wise(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))
@@ -269,11 +257,8 @@ def test_compute_column_wise(iris_server, serial):
     assert data['names'] == t.fields
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_multi_expression_compute(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_multi_expression_compute(test, serial):
     s = symbol('s', discover(data))
 
     expr = join(s.accounts, s.cities)
@@ -292,11 +277,8 @@ def test_multi_expression_compute(serial):
     assert respdata['names'] == expr.fields
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_leaf_symbol(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_leaf_symbol(test, serial):
     query = {'expr': {'op': 'Field', 'args': [':leaf', 'cities']}}
     resp = test.post(
         '/compute.{name}'.format(name=serial.name),
@@ -311,11 +293,8 @@ def test_leaf_symbol(serial):
     assert data['names'] == cities.columns.tolist()
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_sqlalchemy_result(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_sqlalchemy_result(test, serial):
     expr = t.db.iris.head(5)
     query = {'expr': to_tree(expr)}
 
@@ -335,11 +314,8 @@ def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_server_can_compute_sqlalchemy_reductions(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_server_can_compute_sqlalchemy_reductions(test, serial):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post(
@@ -353,11 +329,8 @@ def test_server_can_compute_sqlalchemy_reductions(serial):
     assert respdata['names'] == ['petal_length_sum']
 
 
-@pytest.mark.parametrize(
-    'serial',
-    all_formats,
-)
-def test_serialization_endpoints(serial):
+@pytest.mark.parametrize('serial', all_formats)
+def test_serialization_endpoints(test, serial):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post(
@@ -369,3 +342,37 @@ def test_serialization_endpoints(serial):
     result = respdata['data']
     assert result == odo(compute(expr, {t: data}), int)
     assert respdata['names'] == ['petal_length_sum']
+
+
+@pytest.fixture
+def has_bokeh():
+    try:
+        from bokeh.server.crossdomain import crossdomain
+    except ImportError as e:
+        pytest.skip(str(e))
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_cors_compute(test, serial, has_bokeh):
+    expr = t.db.iris.petal_length.sum()
+    res = test.post('/compute.{name}'.format(name=serial.name),
+                    data=serial.dumps(dict(expr=to_tree(expr))))
+    assert res.status_code == 200
+    assert res.headers['Access-Control-Allow-Origin'] == '*'
+    assert 'HEAD' in res.headers['Access-Control-Allow-Methods']
+    assert 'OPTIONS' in res.headers['Access-Control-Allow-Methods']
+    assert 'GET' in res.headers['Access-Control-Allow-Methods']
+
+
+@pytest.mark.parametrize('method',
+                         ['get',
+                          pytest.mark.xfail('head', raises=AssertionError),
+                          pytest.mark.xfail('options', raises=AssertionError),
+                          pytest.mark.xfail('post', raises=AssertionError)])
+def test_cors_datashape(test, method, has_bokeh):
+    res = getattr(test, method)('/datashape')
+    assert res.status_code == 200
+    assert res.headers['Access-Control-Allow-Origin'] == '*'
+    assert 'HEAD' not in res.headers['Access-Control-Allow-Methods']
+    assert 'OPTIONS' not in res.headers['Access-Control-Allow-Methods']
+    assert 'GET' in res.headers['Access-Control-Allow-Methods']
