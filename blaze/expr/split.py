@@ -291,7 +291,7 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     if expr._splittable:
         return expr._subs({leaf: chunk})
     else:
-        raise NotIimplementedError()
+        raise NotImplementedError()
 
 @dispatch(Apply)
 def _split_agg(expr, leaf=None, agg=None):

@@ -243,8 +243,9 @@ def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(rhs, ColumnElement):
         rhs = select(rhs)
     if name(lhs) == name(rhs):
-        lhs = lhs.alias('%s_left' % name(lhs))
-        rhs = rhs.alias('%s_right' % name(rhs))
+        left_suffix, right_suffix = t.suffixes
+        lhs = lhs.alias('%s%s' % (name(lhs), left_suffix))
+        rhs = rhs.alias('%s%s' % (name(rhs), right_suffix))
 
     lhs = alias_it(lhs)
     rhs = alias_it(rhs)
@@ -297,7 +298,10 @@ def compute_up(t, lhs, rhs, **kwargs):
     left_cols = cols(lhs)
     right_cols = cols(rhs)
 
-    fields = [f.replace('_left', '').replace('_right', '') for f in t.fields]
+    left_suffix, right_suffix = t.suffixes
+    fields = [
+        f.replace(left_suffix, '').replace(right_suffix, '') for f in t.fields
+    ]
     columns = [c for c in main_cols if c.name in t._on_left]
     columns += [c for c in left_cols
                 if c.name in fields and c.name not in t._on_left]
@@ -545,7 +549,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Sort, (Selectable, Select))
 def compute_up(t, s, **kwargs):
-    s = select(s.cte())
+    s = select(s.alias())
     direction = sa.asc if t.ascending else sa.desc
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)

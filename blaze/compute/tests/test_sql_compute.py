@@ -12,6 +12,7 @@ from distutils.version import LooseVersion
 
 import datashape
 from odo import into, resource, drop, odo
+import pandas.util.testing as tm
 import pandas as pd
 from pandas import DataFrame
 from toolz import unique
@@ -202,19 +203,20 @@ def test_join():
 
     result = compute(joined.sort('amount'), {L: lhs, R: rhs})
     assert normalize(str(result)) == normalize("""
-    with anon_1 as (select
-            amounts.name as name,
-            amounts.amount as amount,
-            ids.id as id from amounts
-        join
-            ids
-        on
-            amounts.name = ids.name) select
+     select
         anon_1.name,
         anon_1.amount,
         anon_1.id
-    from
-        anon_1
+    from (select
+              amounts.name as name,
+              amounts.amount as amount,
+              ids.id as id
+          from
+              amounts
+          join
+              ids
+          on
+              amounts.name = ids.name) as anon_1
     order by
         anon_1.amount asc""")
 
@@ -942,6 +944,26 @@ def test_join_on_same_table():
     """)
 
 
+def test_join_suffixes():
+    metadata = sa.MetaData()
+    T = sa.Table('tab', metadata,
+                 sa.Column('a', sa.Integer),
+                 sa.Column('b', sa.Integer),
+                 )
+
+    t = symbol('tab', discover(T))
+    suffixes = '_l', '_r'
+    expr = join(t, t, 'a', suffixes=suffixes)
+
+    result = compute(expr, {t: T})
+
+    assert normalize(str(result)) == normalize("""
+    SELECT tab{l}.a, tab{l}.b, tab{r}.b
+    FROM tab AS tab{l} JOIN tab AS tab{r}
+    ON tab{l}.a = tab{r}.a
+    """.format(l=suffixes[0], r=suffixes[1]))
+
+
 def test_field_access_on_engines(data):
     s, engine = data['s'], data['engine']
     result = compute_up(s.city, engine)
@@ -1617,15 +1639,14 @@ def test_timedelta_arith(sql_with_dts):
 def test_sort_compose():
     expr = t.name[:5].sort()
     result = compute(expr, s)
-    expected = """with anon_1 as (select
-            accounts.name as name
-        from
-            accounts
-        limit :param_1
-        offset :param_2) select
+    expected = """select
             anon_1.name
-        from
-            anon_1
+        from (select
+                  accounts.name as name
+              from
+                  accounts
+              limit :param_1
+              offset :param_2) as anon_1
         order by
             anon_1.name asc"""
     assert normalize(str(result)) == normalize(expected)
@@ -1650,3 +1671,14 @@ def test_postgres_isnan(sql_with_float):
     table = odo(data, sql_with_float)
     sym = symbol('s', discover(data))
     assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]
+
+
+def test_insert_from_subselect(sql_with_float):
+    data = pd.DataFrame([{'c': 2.0}, {'c': 1.0}])
+    tbl = odo(data, sql_with_float)
+    s = symbol('s', discover(data))
+    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl), sql_with_float),
+    tm.assert_frame_equal(
+        odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
+        pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
+    )
