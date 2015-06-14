@@ -343,3 +343,34 @@ def compserver(serial_format):
         'data': result,
         'names': expr.fields
     })
+
+
+if __name__ == '__main__':
+    import argparse
+    import os
+
+    from blaze import spider
+
+    p = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument('directory', type=str, help='Directory of data to serve')
+    p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
+                   help='Port number')
+    p.add_argument('-l', '--follow-links', action='store_true',
+                   help='Follow links when listing files')
+    p.add_argument('-e', '--ignored-exception', nargs='*',
+                   default=['Exception'],
+                   help='Exceptions to ignore when calling resource on a file')
+    p.add_argument('-H', '--hidden', action='store_true',
+                   help='Call resource on hidden files')
+    p.add_argument('-g', '--glob', nargs='*',
+                   help=('Try these glob patterns instead of calling resource '
+                         'on an individual file'), default=[])
+    args = p.parse_args()
+    resources = spider(os.path.expanduser(args.directory),
+                       followlinks=args.follow_links,
+                       ignore=tuple(getattr(__builtins__, e)
+                                    for e in args.ignored_exceptions),
+                       hidden=args.hidden,
+                       globs=args.globs)
+    Server(resources).run(port=args.port)
