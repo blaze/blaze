@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import datetime
-from functools import wraps
+import glob
 
 try:
     from cytoolz import nth
@@ -165,16 +165,24 @@ def json_dumps(dt):
     return s
 
 
-def _spider(resource_path, ignore, followlinks):
-    resources = dict()
+def _spider(resource_path, ignore, followlinks, hidden, globs):
+    resources = {}
     for filename in (os.path.join(resource_path, x)
                      for x in os.listdir(resource_path)):
         basename = os.path.basename(filename)
+        if (basename.startswith(os.curdir) and not hidden or
+                os.path.islink(filename) and not followlinks):
+            continue
         if os.path.isdir(filename):
-            if os.path.islink(filename) and not followlinks:
-                continue
-            new_resources = _spider(filename, ignore=ignore,
-                                    followlinks=followlinks)
+            for g in globs:
+                path = os.path.join(filename, g)
+                if glob.glob(path):
+                    new_resources = resource(path)
+                    break
+            else:
+                new_resources = _spider(filename, ignore=ignore,
+                                        followlinks=followlinks, hidden=hidden,
+                                        globs=globs)
             if new_resources:
                 resources[basename] = new_resources
         else:
@@ -184,8 +192,10 @@ def _spider(resource_path, ignore, followlinks):
 
 
 def spider(resource_path, ignore=(ValueError, NotImplementedError),
-           followlinks=True):
+           followlinks=True, hidden=False, globs=()):
     return {
         os.path.basename(resource_path): _spider(resource_path, ignore=ignore,
-                                                 followlinks=followlinks)
+                                                 followlinks=followlinks,
+                                                 hidden=hidden,
+                                                 globs=globs)
     }
