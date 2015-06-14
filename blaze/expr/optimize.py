@@ -208,6 +208,11 @@ def _lean(expr, fields=None):
     return expr._subs({expr._child: child})[sorted(fields)], new_fields
 
 
+@dispatch(Join)
+def _lean(expr, fields=None):
+    return expr, fields
+
+
 @dispatch(Expr)
 def _lean(expr, fields=None):
     """ Lean projection version of expression
