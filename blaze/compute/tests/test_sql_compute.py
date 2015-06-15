@@ -13,6 +13,7 @@ from distutils.version import LooseVersion
 import datashape
 from odo import into, resource, drop, odo
 import pandas.util.testing as tm
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from toolz import unique
@@ -1688,6 +1689,19 @@ def sql_with_float(url):
             drop(t)
 
 
+@pytest.yield_fixture
+def sql_with_bool(url):
+    try:
+        t = resource(url, dshape='var * {c: bool}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
 def test_postgres_isnan(sql_with_float):
     data = (1.0,), (float('nan'),)
     table = odo(data, sql_with_float)
@@ -1709,6 +1723,14 @@ def test_insert_from_subselect(sql_with_float):
 def test_sum_on_bool_expr():
     result = compute((t.amount > 1).sum(), s)
     expected = """SELECT
-            sum(cast(accounts.amount > :amount_1 AS BIGINT)) AS amount_sum
+            sum(cast(accounts.amount > :amount_1 AS INTEGER)) AS amount_sum
         FROM accounts"""
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_sum_on_bool_expr_compute(sql_with_bool):
+    d = pd.DataFrame(dict(c=np.random.rand(5) > 0.5))
+    s = odo(d, sql_with_bool)
+    result = compute(symbol('t', discover(sql_with_bool)).c.sum(), s).scalar()
+    expected = d.c.sum()
+    assert result == expected
