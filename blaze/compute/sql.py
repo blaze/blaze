@@ -362,8 +362,11 @@ def compute_up(t, s, **kwargs):
     # if we're coming from an expression whose dshape doesn't match the dshape
     # of the reduction, we cast for consistent output types across different
     # RDBMSs
-    if t._child.dshape.measure != t.dshape.measure:
-        if t._child.dshape.measure == datashape.bool_:
+    measure = t._child.dshape.measure
+    child_measure = getattr(measure, 'ty', measure)
+    reduction_measure = t.dshape.measure
+    if child_measure != reduction_measure:
+        if child_measure == datashape.bool_:
             cast_type = datashape.int32
         else:
             cast_type = t.dshape.measure
