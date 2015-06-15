@@ -1492,7 +1492,7 @@ def test_date_grouper_repeats_not_one_point_oh():
     # FYI spark sql isn't able to parse this correctly
     expected = """SELECT
         EXTRACT(year FROM t.ds) as ds_year,
-        AVG(cast(t.amount as float)) as avg_amt
+        AVG(t.amount) as avg_amt
     FROM t
     GROUP BY EXTRACT(year FROM t.ds)
     """
