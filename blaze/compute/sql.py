@@ -22,6 +22,8 @@ from itertools import chain
 from operator import and_, eq
 from copy import copy
 
+import datashape
+
 import sqlalchemy as sa
 
 from sqlalchemy import sql, Table, MetaData
@@ -352,7 +354,7 @@ def compute_up(t, s, **kwargs):
     return op(s).label(t._name)
 
 
-@dispatch(sum, sql.elements.ColumnElement)
+@dispatch((sum, mean), sql.elements.ColumnElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -361,31 +363,25 @@ def compute_up(t, s, **kwargs):
     # of the reduction, we cast for consistent output types across different
     # RDBMSs
     if t._child.dshape.measure != t.dshape.measure:
-        s = sa.cast(s, dshape_to_alchemy(t.dshape.measure))
-    return sa.sql.functions.sum(s).label(t._name)
+        if t._child.dshape.measure == datashape.bool_:
+            cast_type = datashape.int32
+        else:
+            cast_type = t.dshape.measure
+        s = sa.cast(s, dshape_to_alchemy(cast_type))
+    agg = _sum_based_aggs[type(t)]
+    return agg(s).label(t._name)
 
 
 class avg(sa.sql.functions.GenericFunction):
     name = 'avg'
+
+_sum_based_aggs = {sum: sa.sql.functions.sum, mean: avg}
 
 
 @compiles(avg)
 @compiles(sa.sql.functions.sum)
 def compile_avg(element, compiler, **kwargs):
     return '%s(%s)' % (element.name, compiler.process(element.clauses))
-
-
-@dispatch(mean, sql.elements.ColumnElement)
-def compute_up(t, s, **kwargs):
-    if t.axis != (0,):
-        raise ValueError('axis not equal to 0 not defined for SQL reductions')
-
-    # if we're coming from an expression whose dshape doesn't match the dshape
-    # of the reduction, we cast for consistent output types across different
-    # RDBMSs
-    if t._child.dshape.measure != t.dshape.measure:
-        s = sa.cast(s, dshape_to_alchemy(t.dshape.measure))
-    return avg(s).label(t._name)
 
 
 prefixes = {
