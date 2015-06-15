@@ -1692,7 +1692,7 @@ def sql_with_float(url):
 @pytest.yield_fixture
 def sql_with_bool(url):
     try:
-        t = resource(url, dshape='var * {c: bool}')
+        t = resource(url, dshape='var * {c: bool, d: ?bool}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -1729,8 +1729,9 @@ def test_sum_on_bool_expr():
 
 
 def test_sum_on_bool_expr_compute(sql_with_bool):
-    d = pd.DataFrame(dict(c=np.random.rand(5) > 0.5))
+    d = pd.DataFrame(dict(c=np.random.rand(5) > 0.5,
+                          d=np.random.rand(5) > 0.5))
     s = odo(d, sql_with_bool)
-    result = compute(symbol('t', discover(sql_with_bool)).c.sum(), s).scalar()
-    expected = d.c.sum()
-    assert result == expected
+    t = symbol('t', discover(sql_with_bool))
+    assert compute(t.c.sum(), s).scalar() == d.c.sum()
+    assert compute(t.d.sum(), s).scalar() == d.d.sum()
