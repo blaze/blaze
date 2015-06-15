@@ -25,7 +25,7 @@ from .compatibility import map, zip
 
 from .dispatch import dispatch
 
-thread_pool = ThreadPool(psutil.NUM_CPUS)
+thread_pool = ThreadPool(psutil.cpu_count())
 
 
 def nth_list(n, seq):
