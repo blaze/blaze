@@ -12,7 +12,7 @@ from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
 from ..expr import std, var, count, nunique, Summary, IsIn
 from ..expr import BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp
 from ..expr import UTCFromTimestamp, DateTimeTruncate
-from ..expr import Transpose, TensorDot
+from ..expr import Transpose, TensorDot, Coerce
 from ..utils import keywords
 
 from .core import base, compute
@@ -364,3 +364,8 @@ def join_ndarray(expr, lhs, rhs, **kwargs):
     if isinstance(rhs, np.ndarray):
         rhs = DataFrame(rhs)
     return compute_up(expr, lhs, rhs, **kwargs)
+
+
+@dispatch(Coerce, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return data.astype(to_numpy_dtype(expr.schema))
