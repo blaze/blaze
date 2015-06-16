@@ -22,7 +22,7 @@ from ..dispatch import dispatch
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
            'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label',
-           'symbol']
+           'symbol', 'Coerce', 'coerce']
 
 
 _attr_cache = dict()
@@ -705,6 +705,21 @@ class Apply(Expr):
         return dshape(self._dshape)
 
 
+class Coerce(Expr):
+    __slots__ = '_hash', '_child', 'to'
+
+    @property
+    def schema(self):
+        return self.to
+
+    @property
+    def dshape(self):
+        return DataShape(*(self._child.shape + (self.schema,)))
+
+    def __str__(self):
+        return '%s.coerce(to=%r)' % (self._child, str(self.schema))
+
+
 def apply(expr, func, dshape, splittable=False):
     return Apply(expr, func, datashape.dshape(dshape), splittable)
 
@@ -757,13 +772,18 @@ def ndim(expr):
     return len(shape(expr))
 
 
+def coerce(expr, to):
+    return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
+
+
 dshape_method_list.extend([
     (lambda ds: True, set([apply])),
     (iscollection, set([shape, ndim])),
+    (lambda ds: iscollection(ds) and isscalar(ds.measure), set([coerce]))
 ])
 
 schema_method_list.extend([
-    (isscalar, set([label, relabel])),
+    (isscalar, set([label, relabel, coerce])),
     (isrecord, set([relabel])),
 ])
 
