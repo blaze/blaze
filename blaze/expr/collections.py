@@ -460,7 +460,7 @@ class Concat(Expr):
     Vertically stack these tables.
     >>> stacked = concat(names, more_names)
     >>> stacked.dshape
-    dshape("12 * {name: string, id: int32")
+    dshape("12 * {name: string, id: int32}")
 
     >>> mat_a = symbol('a', '3 * 5 * int32')
     >>> mat_b = symbol('b', '3 * 5 * int32')
