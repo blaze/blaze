@@ -1682,3 +1682,23 @@ def test_insert_from_subselect(sql_with_float):
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
     )
+
+
+def test_coerce(sql):
+    n = sql.name
+    t = symbol(n, discover(sql))
+    expr = t.B.coerce(to='float64')
+
+    # "B" because we're capitalized
+    expected = 'SELECT cast({t}."B" AS FLOAT(53)) AS "B" FROM {t}'.format(t=n)
+    result = compute(expr, sql)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_coerce_bool_and_sum(sql):
+    n = sql.name
+    t = symbol(n, discover(sql))
+    expr = (t.B > 1.0).coerce(to='int32').sum()
+    result = compute(expr, sql).scalar()
+    expected = odo(compute(t.B, sql), pd.Series).gt(1).sum()
+    assert result == expected
