@@ -713,3 +713,11 @@ def test_timedelta_arith():
     delta = timedelta(days=1)
     assert (compute(sym + delta, series) == series + delta).all()
     assert (compute(sym - delta, series) == series - delta).all()
+
+
+def test_coerce_series():
+    s = pd.Series(list('123'), name='a')
+    t = symbol('t', discover(s))
+    result = compute(t.coerce(to='int64'), s)
+    expected = pd.Series([1, 2, 3], name=s.name)
+    tm.assert_series_equal(result, expected)
