@@ -141,3 +141,10 @@ def test_hash_to_different_values():
 def test_coerce():
     s = symbol('s', var * float32)
     assert str(s.coerce('int64')) == "s.coerce(to='int64')"
+
+
+@pytest.mark.xfail(raises=AttributeError, reason='Should this be valid?')
+def test_coerce_record():
+    s = symbol('s', 'var * {a: int64, b: float64}')
+    expr = s.coerce('{a: float64, b: float32}')
+    assert str(expr) == "s.coerce(to='{a: float64, b: float32}')"
