@@ -1,18 +1,25 @@
 from __future__ import absolute_import, division, print_function
 
 import socket
+import functools
 
 import flask
 from flask import Blueprint, Flask, request
 
 try:
-    from flask.ext.cors import CORS
+    from bokeh.server.crossdomain import crossdomain
 except ImportError:
-    def CORS(app, *args, **kwargs):
-        return app
+    def crossdomain(*args, **kwargs):
+        def wrapper(f):
+            @functools.wraps(f)
+            def wrapped(*a, **k):
+                return f(*a, **k)
+            return wrapped
+        return wrapper
 
 from toolz import assoc
 
+from datashape import Mono, discover
 from datashape.predicates import iscollection, isscalar
 from odo import odo
 
@@ -24,8 +31,6 @@ from blaze.compute import compute_up
 from .serialization import json
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..expr import Expr, symbol
-
-from datashape import Mono, discover
 
 
 __all__ = 'Server', 'to_tree', 'from_tree'
@@ -110,7 +115,7 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'cors', 'data', 'port'
+    __slots__ = 'app', 'data', 'port'
 
     def __init__(self, data=None, formats=None):
         app = self.app = Flask('blaze.server.server')
@@ -121,7 +126,6 @@ class Server(object):
             data=data,
             formats=formats if formats is not None else (json,),
         )
-        self.cors = CORS(app)
         self.data = data
 
     def run(self, *args, **kwargs):
@@ -137,8 +141,9 @@ class Server(object):
                 self.run(*args, **assoc(kwargs, 'port', port + 1))
 
 
-@api.route('/datashape')
-def dataset():
+@api.route('/datashape', methods=['GET'])
+@crossdomain(origin='*', methods=['GET'])
+def shape():
     return str(discover(_get_data()))
 
 
@@ -311,7 +316,9 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@api.route('/compute.<serial_format>', methods=['POST', 'PUT', 'GET'])
+@api.route('/compute.<serial_format>',
+           methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
 def compserver(serial_format):
     try:
         serial = _get_format(serial_format)
