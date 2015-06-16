@@ -4,7 +4,7 @@ import pandas as pd
 
 import pytest
 
-from datashape import dshape, var, datetime_
+from datashape import dshape, var, datetime_, float32
 
 from blaze.expr import symbol, label, Field
 
@@ -136,3 +136,8 @@ def test_hash_to_different_values():
     from blaze.expr.expressions import _attr_cache
     assert (expr, '_and') in _attr_cache
     assert (expr2, '_and') in _attr_cache
+
+
+def test_coerce():
+    s = symbol('s', var * float32)
+    assert str(s.coerce('int64')) == "s.coerce(to='int64')"
