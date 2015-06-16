@@ -16,29 +16,40 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
+import fnmatch
+import itertools
+
+import numpy as np
+
 import pandas as pd
+
 from pandas.core.generic import NDFrame
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
-import numpy as np
+
 from toolz import merge as merge_dicts
 from toolz.curried import pipe, filter, map, concat
-import fnmatch
-from datashape.predicates import isscalar
+
 import datashape
-import itertools
+
+from datashape import to_numpy_dtype
+from datashape.predicates import isscalar
 
 from odo import into
+
 from ..dispatch import dispatch
+
+from .core import compute, compute_up, base
+
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique)
+                    UnaryStringFunction, nunique, Coerce)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
-from .core import compute, compute_up, base
+
 from ..compatibility import _inttypes
 
 __all__ = []
@@ -576,3 +587,8 @@ def compute_up(expr, data, **kwargs):
 @dispatch(IsIn, Series)
 def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
+
+
+@dispatch(Coerce, Series)
+def compute_up(expr, data, **kwargs):
+    return data.astype(to_numpy_dtype(expr.schema))
