@@ -1,17 +1,20 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import isdistinct, frequencies, concat, unique, get, first
+from toolz import (
+    isdistinct, frequencies, concat as tconcat, unique, get, first,
+)
 import datashape
-from datashape import Option, Record, Unit, dshape, var, Fixed
+from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label
 from .expressions import dshape_method_list
+from ..compatibility import zip_longest
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform', 'VStack', 'vstack']
+           'head', 'sort', 'Join', 'join', 'transform', 'Concat', 'concat']
 
 
 class Sort(Expr):
@@ -230,7 +233,7 @@ class Merge(ElemWise):
 
     @property
     def fields(self):
-        return list(concat(child.fields for child in self.children))
+        return list(tconcat(child.fields for child in self.children))
 
     def _subterms(self):
         yield self
@@ -252,7 +255,7 @@ class Merge(ElemWise):
         return merge(*[self[c] for c in key])
 
     def _leaves(self):
-        return list(unique(concat(i._leaves() for i in self.children)))
+        return list(unique(tconcat(i._leaves() for i in self.children)))
 
 
 def unpack(l):
@@ -437,7 +440,7 @@ def join(lhs, rhs, on_left=None, on_right=None,
 join.__doc__ = Join.__doc__
 
 
-class VStack(Expr):
+class Concat(Expr):
 
     """ Stack tables on common columns
 
@@ -445,6 +448,8 @@ class VStack(Expr):
     ----------
     lhs : Expr
     rhs : Expr
+    axis : int, optional
+        The axis to concatenate on.
 
     Examples
     --------
@@ -453,42 +458,82 @@ class VStack(Expr):
     >>> more_names = symbol('more_names', '7 * {name: string, id: int32}')
 
     Vertically stack these tables.
-    >>> stacked = vstack(names, more_names)
+    >>> stacked = concat(names, more_names)
     >>> stacked.dshape
     dshape("12 * {name: string, id: int32")
+
+    >>> mat_a = symbol('a', '3 * 5 * int32')
+    >>> mat_b = symbol('b', '3 * 5 * int32')
+
+    Vertically stack these matricies.
+    >>> vstacked = concat(mat_a, mat_b, axis=0)
+    >>> vstacked.dshape
+    dshape("6 * 5 * int32")
+
+    Horizontally stack these matricies.
+    >>> hstacked = concat(mat_a, mat_b, axis=1)
+    >>> hstacked.dshape
+    dshape("3 * 10 * int32")
 
     See Also
     --------
 
     blaze.expr.collections.Merge
     """
-    __slots__ = '_hash', 'lhs', 'rhs'
+    __slots__ = '_hash', 'lhs', 'rhs', 'axis'
     __inputs__ = 'lhs', 'rhs'
 
     @property
     def dshape(self):
-        lhs_dshape = self.lhs.dshape
-        lrows = lhs_dshape.shape[0]
-        rrows = self.rhs.dshape.shape[0]
-        return (
-            Fixed(lrows.val + rrows.val)
-            if isinstance(lrows, Fixed) and isinstance(rrows, Fixed)
-            else var
-        ) * lhs_dshape.subarray(1)
+        axis = self.axis
+        ldshape = self.lhs.dshape
+        lshape = ldshape.shape
+        return DataShape(
+            *(lshape[:axis] + (
+                _shape_add(lshape[axis], self.rhs.dshape.shape[axis]),
+            ) + lshape[axis + 1:] + (ldshape.measure,))
+        )
 
 
-def vstack(lhs, rhs):
-    if lhs.dshape.subarray(1) != rhs.dshape.subarray(1):
+def _shape_add(a, b):
+    if isinstance(a, Var) or isinstance(b, Var):
+        return var
+    return Fixed(a.val + b.val)
+
+
+def concat(lhs, rhs, axis=0):
+    if axis < 0:
+        raise ValueError('axis must be greater than or equal to 0')
+
+    ldshape = lhs.dshape
+    rdshape = rhs.dshape
+    if ldshape.measure != rdshape.measure:
         raise ValueError(
-            'Mismatched subarray types: {0} != {1}'.format(
-                lhs.dshape.subarray(1), rhs.dshape.subarray(1),
+            'Mismatched measures: {l} != {r}'.format(
+                l=ldshape.measure, r=rdshape.measure
             ),
         )
 
-    return VStack(lhs, rhs)
+    lshape = ldshape.shape
+    rshape = rdshape.shape
+    for n, (a, b) in enumerate(zip_longest(lshape, rshape, fillvalue=None)):
+        if n != axis and a != b:
+            raise ValueError(
+                "Shapes are not equal along axis '{n}': {a} != {b}".format(
+                    n=n, a=a, b=b,
+                ),
+            )
+    if 0 < len(lshape) <= axis:
+        raise ValueError(
+            "Invalid axis '{a}', must be in range: [0, {n})".format(
+                a=axis, n=len(lshape)
+            ),
+        )
+
+    return Concat(lhs, rhs, axis)
 
 
-vstack.__doc__ = VStack.__doc__
+concat.__doc__ = Concat.__doc__
 
 
 class IsIn(ElemWise):

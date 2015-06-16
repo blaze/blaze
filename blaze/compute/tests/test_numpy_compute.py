@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary, Broadcast, join, vstack
+from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
 from blaze import sin
 from odo import into
 from datashape import discover, to_numpy, dshape
@@ -440,13 +440,6 @@ def test_nunique_recarray():
     assert compute(expr, b) == len(np.unique(b))
 
 
-def test_str_concat():
-    a = np.array(('a', 'b', 'c'))
-    s = symbol('s', discover(a))
-    expr = s.concat('a')
-    assert all(compute(expr, a) == np.char.add(a, 'a'))
-
-
 def test_str_repeat():
     a = np.array(('a', 'b', 'c'))
     s = symbol('s', discover(a))
@@ -469,7 +462,20 @@ def test_timedelta_arith():
     assert (compute(sym - delta, dates) == dates - delta).all()
 
 
-def test_vstack():
+def test_concat_arr():
+    s_data = np.arange(15)
+    t_data = np.arange(15, 30)
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(concat(s, t), {s: s_data, t: t_data}) ==
+        np.arange(30)
+    ).all()
+
+
+def test_concat_mat():
     s_data = np.arange(15).reshape(5, 3)
     t_data = np.arange(15, 30).reshape(5, 3)
 
@@ -477,6 +483,10 @@ def test_vstack():
     t = symbol('t', discover(t_data))
 
     assert (
-        compute(vstack(s, t), {s: s_data, t: t_data}) ==
+        compute(concat(s, t), {s: s_data, t: t_data}) ==
         np.arange(30).reshape(10, 3)
+    ).all()
+    assert (
+        compute(concat(s, t, axis=1), {s: s_data, t: t_data}) ==
+        np.concatenate((s_data, t_data), axis=1)
     ).all()

@@ -116,6 +116,8 @@ def test_concat():
         b = symbol('b', discover(b_rsc))
 
         tm.assert_frame_equal(
-            odo(compute(concat(a, b), {a: a_rsc, b: b_rsc}), pd.DataFrame),
+            odo(
+                compute(concat(a, b), {a: a_rsc, b: b_rsc}), pd.DataFrame,
+            ).reset_index(drop=True),
             pd.DataFrame(np.arange(1, 9).reshape(4, 2), columns=list('ab')),
         )

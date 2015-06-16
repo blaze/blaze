@@ -1,7 +1,9 @@
 import pytest
 
+from datashape import dshape
+
 from blaze.expr import symbol
-from blaze.expr.collections import merge, join, transform
+from blaze.expr.collections import merge, join, transform, concat
 from blaze.utils import raises
 from blaze.compatibility import builtins
 from toolz import isdistinct
@@ -93,3 +95,33 @@ def test_isin_no_expressions():
     b = symbol('b', 'var * int')
     with pytest.raises(TypeError):
         a.isin(b)
+
+
+def test_concat_table():
+    a = symbol('a', '3 * {a: int32, b: int32}')
+    b = symbol('a', '5 * {a: int32, b: int32}')
+    v = symbol('v', 'var * {a: int32, b: int32}')
+
+    assert concat(a, b).dshape == dshape('8 * {a: int32, b: int32}')
+    assert concat(a, v).dshape == dshape('var * {a: int32, b: int32}')
+
+
+def test_concat_mat():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * int32')
+    v = symbol('v', 'var * 5 * int32')
+    u = symbol('u', '3 * var * int32')
+
+    assert concat(a, b, axis=0).dshape == dshape('6 * 5 * int32')
+    assert concat(a, b, axis=1).dshape == dshape('3 * 10 * int32')
+    assert concat(a, v, axis=0).dshape == dshape('var * 5 * int32')
+    assert concat(a, u, axis=1).dshape == dshape('3 * var * int32')
+
+
+def test_concat_arr():
+    a = symbol('a', '3 * int32')
+    b = symbol('b', '5 * int32')
+    v = symbol('v', 'var * int32')
+
+    assert concat(a, b).dshape == dshape('8 * int32')
+    assert concat(a, v).dshape == dshape('var * int32')

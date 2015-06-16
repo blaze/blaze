@@ -4,7 +4,7 @@ import datashape
 from datashape import String
 from datashape.predicates import isrecord
 from .expressions import Expr, schema_method_list, ElemWise
-from .arithmetic import Concat, Interp, Repeat, _mkbin, concat, repeat, interp
+from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
 
 __all__ = ['Like', 'like', 'strlen', 'UnaryStringFunction']
 
@@ -55,14 +55,12 @@ def isstring(ds):
     return isinstance(getattr(measure, 'ty', measure), String)
 
 
-_add, _radd = _mkbin('add', Concat)
 _mod, _rmod = _mkbin('mod', Interp)
 _mul, _rmul = _mkbin('mul', Repeat)
 
 
 schema_method_list.extend([
-    (isstring, set([_add, _radd, _mod, _rmod, _mul, _rmul,
-                    concat, repeat, interp])),
+    (isstring, set([_add, _radd, _mod, _rmod, _mul, _rmul, repeat, interp])),
     (lambda ds: isstring(ds) or (isrecord(ds.measure) and
                                  any(isinstance(getattr(typ, 'ty', typ),
                                                 String)

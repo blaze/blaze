@@ -52,7 +52,7 @@ from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
 from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
                     count, FloorDiv, UnaryStringFunction, strlen, DateTime)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements, VStack
+from ..expr import common_subexpression, Summary, Like, nelements, Concat
 
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
@@ -111,8 +111,13 @@ def compute_up(t, s, **kwargs):
     return compute(t._scalar_expr, d, post_compute=False).label(name)
 
 
-@dispatch(VStack, (Select, Selectable), (Select, Selectable))
+@dispatch(Concat, (Select, Selectable), (Select, Selectable))
 def compute_up(t, lhs, rhs, **kwargs):
+    if t.axis != 0:
+        raise NotImplementedError(
+            'Cannot concat along a non-zero axis in sql',
+        )
+
     return select(lhs).union_all(select(rhs)).alias()
 
 

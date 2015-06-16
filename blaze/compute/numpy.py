@@ -9,7 +9,7 @@ from numbers import Number
 
 from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
 from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
-from ..expr import std, var, count, nunique, Summary, IsIn, VStack
+from ..expr import std, var, count, nunique, Summary, IsIn
 from ..expr import BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp
 from ..expr import UTCFromTimestamp, DateTimeTruncate
 from ..expr import Transpose, TensorDot
@@ -55,11 +55,6 @@ for i in range(2, 6):
     compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
 
 
-@dispatch(VStack, np.ndarray, np.ndarray)
-def compute_up(t, lhs, rhs, _vstack=np.vstack, **kwargs):
-    return _vstack((lhs, rhs))
-
-
 @dispatch(Repeat, np.ndarray)
 def compute_up(t, data, _char_mul=np.char.multiply, **kwargs):
     if isinstance(t.lhs, Expr):
@@ -72,20 +67,6 @@ def compute_up(t, data, _char_mul=np.char.multiply, **kwargs):
 @compute_up.register(Repeat, base, np.ndarray)
 def compute_up_np_repeat(t, lhs, rhs, _char_mul=np.char.multiply, **kwargs):
     return _char_mul(lhs, rhs)
-
-
-@dispatch(Concat, np.ndarray)
-def compute_up(t, data, _char_add=np.char.add, **kwargs):
-    if isinstance(t.lhs, Expr):
-        return _char_add(data, t.rhs)
-    else:
-        return _char_add(t.lhs, data)
-
-
-@compute_up.register(Concat, np.ndarray, (np.ndarray, base))
-@compute_up.register(Concat, base, np.ndarray)
-def compute_up_np_concat(t, lhs, rhs, _char_add=np.char.add, **kwargs):
-    return _char_add(lhs, rhs)
 
 
 def _interp(arr, v, _Series=pd.Series, _charmod=np.char.mod):
@@ -370,3 +351,8 @@ def join_ndarray(expr, lhs, rhs, **kwargs):
     if isinstance(rhs, np.ndarray):
         rhs = DataFrame(rhs)
     return compute_up(expr, lhs, rhs, **kwargs)
+
+
+@dispatch(Concat, np.ndarray, np.ndarray)
+def compute_up(expr, lhs, rhs, _concat=np.concatenate, **kwargs):
+    return _concat((lhs, rhs), axis=expr.axis)

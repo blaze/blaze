@@ -75,8 +75,6 @@ def test_arith_ops_promote_dtype():
 
 
 def test_str_arith():
-    assert isinstance(cs + cs, Concat)
-    assert isinstance(cs + 'a', Concat)
     assert isinstance(cs * 1, Repeat)
     assert isinstance(cs % cs, Interp)
     assert isinstance(cs % 'a', Interp)

@@ -13,7 +13,7 @@ from blaze.compute.core import compute
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
-                        var, std, vstack)
+                        var, std, concat)
 from blaze.compatibility import builtins, xfail
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
@@ -689,7 +689,7 @@ def test_nunique_table():
 def test_str_concat():
     a = Series(('a', 'b', 'c'))
     s = symbol('s', "3 * string[1, 'U32']")
-    expr = s.concat('a')
+    expr = s + 'a'
     assert (compute(expr, a) == (a + 'a')).all()
 
 
@@ -715,7 +715,20 @@ def test_timedelta_arith():
     assert (compute(sym - delta, series) == series - delta).all()
 
 
-def test_vstack():
+def test_concat_arr():
+    s_data = Series(np.arange(15))
+    t_data = Series(np.arange(15, 30))
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(concat(s, t), {s: s_data, t: t_data}).reset_index(drop=True) ==
+        Series(np.arange(30))
+    ).all()
+
+
+def test_concat_mat():
     s_data = DataFrame(np.arange(15).reshape(5, 3), columns=list('abc'))
     t_data = DataFrame(np.arange(15, 30).reshape(5, 3), columns=list('abc'))
 
@@ -723,6 +736,6 @@ def test_vstack():
     t = symbol('t', discover(t_data))
 
     tm.assert_frame_equal(
-        compute(vstack(s, t), {s: s_data, t: t_data}),
-        DataFrame(np.arange(30).reshape(10, 3), columns=list('abc')),
+        compute(concat(s, t), {s: s_data, t: t_data}).reset_index(drop=True),
+        pd.DataFrame(np.arange(30).reshape(10, 3), columns=list('abc')),
     )

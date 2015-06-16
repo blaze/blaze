@@ -35,7 +35,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, VStack)
+                    UnaryStringFunction, nunique, Concat)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 from .core import compute, compute_up, base
@@ -145,14 +145,15 @@ def compute_up(t, lhs, rhs, **kwargs):
     return result.reset_index()[t.fields]
 
 
-@dispatch(VStack, DataFrame, DataFrame)
-def compute_up(t, lhs, rhs, _vstack=np.vstack, **kwargs):
-    return DataFrame(_vstack((lhs.values, rhs.values)), columns=lhs.columns)
+pandas_structure = DataFrame, Series, DataFrameGroupBy, SeriesGroupBy
 
 
-@dispatch(Symbol, (DataFrameGroupBy, SeriesGroupBy))
-def compute_up(t, gb, **kwargs):
-    return gb
+@dispatch(Concat, pandas_structure, pandas_structure)
+def compute_up(t, lhs, rhs, _concat=pd.concat, **kwargs):
+    if not (isinstance(lhs, type(rhs)) or isinstance(rhs, type(lhs))):
+        raise TypeError('lhs and rhs must be the same type')
+
+    return _concat((lhs, rhs), axis=t.axis)
 
 
 def get_scalar(result):
