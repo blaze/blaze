@@ -153,7 +153,7 @@ def compute_up(t, lhs, rhs, _concat=pd.concat, **kwargs):
     if not (isinstance(lhs, type(rhs)) or isinstance(rhs, type(lhs))):
         raise TypeError('lhs and rhs must be the same type')
 
-    return _concat((lhs, rhs), axis=t.axis)
+    return _concat((lhs, rhs), axis=t.axis, ignore_index=True)
 
 
 def get_scalar(result):

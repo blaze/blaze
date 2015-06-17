@@ -723,8 +723,7 @@ def test_concat_arr():
     t = symbol('t', discover(t_data))
 
     assert (
-        compute(concat(s, t), {s: s_data, t: t_data}).reset_index(drop=True) ==
-        Series(np.arange(30))
+        compute(concat(s, t), {s: s_data, t: t_data}) == Series(np.arange(30))
     ).all()
 
 
@@ -736,6 +735,6 @@ def test_concat_mat():
     t = symbol('t', discover(t_data))
 
     tm.assert_frame_equal(
-        compute(concat(s, t), {s: s_data, t: t_data}).reset_index(drop=True),
+        compute(concat(s, t), {s: s_data, t: t_data}),
         pd.DataFrame(np.arange(30).reshape(10, 3), columns=list('abc')),
     )
