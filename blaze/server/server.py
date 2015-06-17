@@ -367,7 +367,9 @@ def _main():
 
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument('directory', type=str, help='Directory of data to serve')
+    p.add_argument('path', type=str,
+                   help=('A directory to recurse into or a YAML file '
+                         'specifying the resources to conjure up'))
     p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                    help='Port number')
     p.add_argument('-l', '--follow-links', action='store_true',
