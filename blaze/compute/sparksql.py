@@ -20,10 +20,12 @@ import sqlalchemy as sa
 from ..dispatch import dispatch
 from ..expr import Expr, symbol, Join
 from .core import compute
+from .sql import avg
 from .utils import literalquery, istable, make_sqlalchemy_table
 from ..utils import listpack
 from .spark import jgetattr
 from pyhive.sqlalchemy_hive import HiveDialect
+import pyspark
 from pyspark import SQLContext
 
 __all__ = []
@@ -55,6 +57,15 @@ if LooseVersion(sa.__version__) >= '1.0.0':
     @compiles(sa.sql.elements._label_reference, 'hive')
     def compile_label_reference(element, compiler, **kwargs):
         return compiler.process(element.element, **kwargs)
+
+
+if not hasattr(pyspark.sql, 'types'):
+    @compiles(sa.sql.functions.sum, 'hive')
+    @compiles(avg, 'hive')
+    def recompile_non_castable_functions(element, compiler, **kwargs):
+        clauses = [e if not isinstance(e, sa.sql.elements.Cast)
+                   else e.clause for e in element.clauses.clauses]
+        return compiler.visit_function(type(element)(*clauses))
 
 
 @dispatch(Expr, SQLContext)

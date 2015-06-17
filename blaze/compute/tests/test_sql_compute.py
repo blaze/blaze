@@ -13,6 +13,7 @@ from distutils.version import LooseVersion
 import datashape
 from odo import into, resource, drop, odo
 import pandas.util.testing as tm
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from toolz import unique
@@ -77,38 +78,38 @@ def data():
             's': s}
 
 
-t = symbol('t', 'var * {name: string, amount: int, id: int}')
+t = symbol('t', 'var * {name: string, amount: int64, id: int64}')
 
 metadata = sa.MetaData()
 
 s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
-             sa.Column('amount', sa.Integer),
-             sa.Column('id', sa.Integer, primary_key=True))
+             sa.Column('amount', sa.BIGINT),
+             sa.Column('id', sa.BIGINT, primary_key=True))
 
 tdate = symbol('t',
                """var * {
                     name: string,
-                    amount: int,
-                    id: int,
+                    amount: int64,
+                    id: int64,
                     occurred_on: datetime
                 }""")
 
 sdate = sa.Table('accdate', metadata,
                  sa.Column('name', sa.String),
-                 sa.Column('amount', sa.Integer),
-                 sa.Column('id', sa.Integer, primary_key=True),
+                 sa.Column('amount', sa.BIGINT),
+                 sa.Column('id', sa.BIGINT, primary_key=True),
                  sa.Column('occurred_on', sa.DateTime))
 
 
 tbig = symbol('tbig',
-              'var * {name: string, sex: string[1], amount: int, id: int}')
+              'var * {name: string, sex: string[1], amount: int64, id: int64}')
 
 sbig = sa.Table('accountsbig', metadata,
                 sa.Column('name', sa.String),
                 sa.Column('sex', sa.String),
-                sa.Column('amount', sa.Integer),
-                sa.Column('id', sa.Integer, primary_key=True))
+                sa.Column('amount', sa.BIGINT),
+                sa.Column('id', sa.BIGINT, primary_key=True))
 
 
 def normalize(s):
@@ -313,7 +314,7 @@ def test_reductions():
     assert str(compute(sum(t['amount']), s, post_compute=False)) == \
         str(sa.sql.functions.sum(s.c.amount))
     assert str(compute(mean(t['amount']), s, post_compute=False)) == \
-        str(sa.sql.func.avg(s.c.amount))
+        str(sa.sql.func.avg(sa.cast(s.c.amount, sa.FLOAT)))
     assert str(compute(count(t['amount']), s, post_compute=False)) == \
         str(sa.sql.func.count(s.c.amount))
 
@@ -930,7 +931,7 @@ def test_join_on_same_table():
      from tab as tab_left
         join tab as tab_right
         on tab_left.a = tab_right.a)
-    select sum(alias.b) as b_left_sum from alias""")
+    select sum(cast(alias.b as bigint)) as b_left_sum from alias""")
 
     expr = join(t, t, 'a')
     expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
@@ -938,7 +939,7 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    SELECT min(tab_right.b) as smallest, sum(tab_left.a) as total
+    SELECT min(tab_right.b) as smallest, sum(cast(tab_left.a as bigint)) as total
     FROM tab AS tab_left JOIN tab AS tab_right
     ON tab_left.a = tab_right.a
     """)
@@ -1005,13 +1006,16 @@ def test_aliased_views_with_two_group_bys():
 
     result = compute(expr2, {bank: sql_bank, cities: sql_cities})
 
-    assert normalize(str(result)) == normalize("""
-    SELECT alias.total, count(alias.name) as count
-    FROM (SELECT bank.name AS name, sum(bank.amount) AS total
-          FROM bank
-          GROUP BY bank.name) as alias
-    GROUP BY alias.total
-    """)
+    assert normalize(str(result)) == normalize("""SELECT
+                alias.total,
+                count(alias.name) as count
+            FROM
+                (SELECT
+                    bank.name AS name,
+                    sum(cast(bank.amount as bigint)) AS total
+              FROM bank
+              GROUP BY bank.name) as alias
+            GROUP BY alias.total""")
 
 
 def test_aliased_views_with_join():
@@ -1021,14 +1025,16 @@ def test_aliased_views_with_join():
 
     result = compute(expr2, {bank: sql_bank, cities: sql_cities})
 
-    assert normalize(str(result)) == normalize("""
-    SELECT alias.total, count(DISTINCT alias.city) AS count
-    FROM (SELECT cities.city AS city, sum(bank.amount) AS total
+    assert normalize(str(result)) == normalize("""SELECT
+                alias.total,
+                count(DISTINCT alias.city) AS count
+        FROM (SELECT
+                cities.city AS city,
+                sum(cast(bank.amount as bigint)) AS total
           FROM bank
-          JOIN cities ON bank.name = cities.name
+              JOIN cities ON bank.name = cities.name
           GROUP BY cities.city) as alias
-    GROUP BY alias.total
-    """)
+    GROUP BY alias.total""")
 
 
 def test_select_field_on_alias():
@@ -1078,22 +1084,35 @@ def test_aliased_views_more():
 
     result = compute(expr, {L: lhs, R: rhs})
 
-    assert normalize(str(result)) == normalize("""
-        SELECT alias.x, alias.y_total, bbb.w, bbb.y
-        FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+    assert normalize(str(result)) == normalize("""SELECT
+            alias.x,
+            alias.y_total,
+            bbb.w,
+            bbb.y
+        FROM (SELECT
+                aaa.x as x,
+                sum(cast(aaa.y as bigint)) as y_total
               FROM aaa
               GROUP BY aaa.x) AS alias
-        JOIN bbb ON alias.x = bbb.x """)
+        JOIN bbb ON alias.x = bbb.x""")
 
     expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
 
     result2 = compute(expr2, {L: lhs, R: rhs})
 
     assert (
-        normalize(str(result2)) == normalize("""
-            SELECT alias_2.w, count(alias_2.x) as count, sum(alias_2.y_total) as total2
-            FROM (SELECT alias.x, alias.y_total, bbb.w, bbb.y
-                  FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+        normalize(str(result2)) == normalize("""SELECT
+                alias_2.w,
+                count(alias_2.x) as count,
+                sum(alias_2.y_total) as total2
+            FROM (SELECT
+                    alias.x,
+                    alias.y_total,
+                    bbb.w,
+                    bbb.y
+                  FROM (SELECT
+                            aaa.x as x,
+                            sum(cast(aaa.y as bigint)) as y_total
                         FROM aaa
                         GROUP BY aaa.x) AS alias
                   JOIN bbb ON alias.x = bbb.x) AS alias_2
@@ -1101,9 +1120,13 @@ def test_aliased_views_more():
 
         or
 
-        normalize(str(result2)) == normalize("""
-            SELECT bbb.w, count(alias.x) as count, sum(alias.y_total) as total2
-            FROM (SELECT aaa.x as x, sum(aaa.y) as y_total
+        normalize(str(result2)) == normalize("""SELECT
+                bbb.w,
+                count(alias.x) as count,
+                sum(alias.y_total) as total2
+            FROM (SELECT
+                    aaa.x as x,
+                    sum(cast(aaa.y as bigint)) as y_total
                   FROM aaa
                   GROUP BY aaa.x) as alias
               JOIN bbb ON alias.x = bbb.x
@@ -1550,7 +1573,7 @@ def test_do_not_erase_group_by_functions_with_datetime():
     result = str(compute(expr, s))
     expected = """SELECT
         date(accdate.occurred_on) as occurred_on_date,
-        avg(accdate.amount) as avg_amount
+        avg(cast(accdate.amount as float)) as avg_amount
     FROM
         accdate
     WHERE
@@ -1666,6 +1689,19 @@ def sql_with_float(url):
             drop(t)
 
 
+@pytest.yield_fixture
+def sql_with_bool(url):
+    try:
+        t = resource(url, dshape='var * {c: bool, d: ?bool}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
 def test_postgres_isnan(sql_with_float):
     data = (1.0,), (float('nan'),)
     table = odo(data, sql_with_float)
@@ -1682,3 +1718,20 @@ def test_insert_from_subselect(sql_with_float):
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
     )
+
+
+def test_sum_on_bool_expr():
+    result = compute((t.amount > 1).sum(), s)
+    expected = """SELECT
+            sum(cast(accounts.amount > :amount_1 AS INTEGER)) AS amount_sum
+        FROM accounts"""
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_sum_on_bool_expr_compute(sql_with_bool):
+    d = pd.DataFrame(dict(c=np.random.rand(5) > 0.5,
+                          d=np.random.rand(5) > 0.5))
+    s = odo(d, sql_with_bool)
+    t = symbol('t', discover(sql_with_bool))
+    assert compute(t.c.sum(), s).scalar() == d.c.sum()
+    assert compute(t.d.sum(), s).scalar() == d.d.sum()

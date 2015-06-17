@@ -22,6 +22,8 @@ from itertools import chain
 from operator import and_, eq
 from copy import copy
 
+import datashape
+
 import sqlalchemy as sa
 
 from sqlalchemy import sql, Table, MetaData
@@ -42,15 +44,16 @@ import warnings
 
 from multipledispatch import MDNotImplementedError
 
-from odo.backends.sql import metadata_of_engine
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
 from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
-from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction, strlen, DateTime)
+from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction,
+                    count, FloorDiv, UnaryStringFunction, strlen, DateTime,
+                    sum)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements
 
@@ -340,7 +343,7 @@ def compute_up(t, s, **kwargs):
     return s.distinct()
 
 
-@dispatch(Reduction, sql.elements.ClauseElement)
+@dispatch(Reduction, sql.elements.ColumnElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -349,6 +352,39 @@ def compute_up(t, s, **kwargs):
     except AttributeError:
         op = getattr(sa.sql.func, names.get(type(t), t.symbol))
     return op(s).label(t._name)
+
+
+@dispatch((sum, mean), sql.elements.ColumnElement)
+def compute_up(t, s, **kwargs):
+    if t.axis != (0,):
+        raise ValueError('axis not equal to 0 not defined for SQL reductions')
+
+    # if we're coming from an expression whose dshape doesn't match the dshape
+    # of the reduction, we cast for consistent output types across different
+    # RDBMSs
+    measure = t._child.dshape.measure
+    child_measure = getattr(measure, 'ty', measure)
+    reduction_measure = t.dshape.measure
+    if child_measure != reduction_measure:
+        if child_measure == datashape.bool_:
+            cast_type = datashape.int32
+        else:
+            cast_type = t.dshape.measure
+        s = sa.cast(s, dshape_to_alchemy(cast_type))
+    agg = _sum_based_aggs[type(t)]
+    return agg(s).label(t._name)
+
+
+class avg(sa.sql.functions.GenericFunction):
+    name = 'avg'
+
+_sum_based_aggs = {sum: sa.sql.functions.sum, mean: avg}
+
+
+@compiles(avg)
+@compiles(sa.sql.functions.sum)
+def compile_avg(element, compiler, **kwargs):
+    return '%s(%s)' % (element.name, compiler.process(element.clauses))
 
 
 prefixes = {
@@ -383,7 +419,7 @@ def compute_up(t, s, **kwargs):
     return sa.func.count(c)
 
 
-@dispatch(nelements, (Select, ClauseElement))
+@dispatch(nelements, (Select, Selectable, ColumnElement))
 def compute_up(t, s, **kwargs):
     return compute_up(t._child.count(), s)
 
