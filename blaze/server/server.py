@@ -359,7 +359,7 @@ def compserver(serial_format):
     })
 
 
-if __name__ == '__main__':
+def _main():
     import argparse
     import os
 
@@ -388,3 +388,7 @@ if __name__ == '__main__':
                        hidden=args.hidden,
                        globs=args.globs)
     Server(resources).run(port=args.port)
+
+
+if __name__ == '__main__':
+    _main()
