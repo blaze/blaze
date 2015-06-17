@@ -358,6 +358,8 @@ date_attrs += [pytest.mark.xfail(attr,
 @pytest.mark.parametrize('attr', date_attrs)
 def test_by_with_date(ctx, db, attr):
     # TODO: investigate CSV writing precision between pandas 0.16.0 and 0.16.1
+    # TODO: see if we can use odo to convert the dshape of an existing
+    #       DataFrame
     expr = by(getattr(db.dates.ds, attr),
               mean=db.dates.amount.mean())
     result = odo(compute(expr, ctx), pd.DataFrame).sort('mean')
