@@ -165,7 +165,7 @@ def json_dumps(dt):
     return s
 
 
-def _spider(resource_path, ignore, followlinks, hidden, globs):
+def _spider(resource_path, ignore, followlinks, hidden):
     resources = {}
     for filename in (os.path.join(resource_path, x)
                      for x in os.listdir(resource_path)):
@@ -174,15 +174,8 @@ def _spider(resource_path, ignore, followlinks, hidden, globs):
                 os.path.islink(filename) and not followlinks):
             continue
         if os.path.isdir(filename):
-            for g in globs:
-                path = os.path.join(filename, g)
-                if glob.glob(path):
-                    new_resources = resource(path)
-                    break
-            else:
-                new_resources = _spider(filename, ignore=ignore,
-                                        followlinks=followlinks, hidden=hidden,
-                                        globs=globs)
+            new_resources = _spider(filename, ignore=ignore,
+                                    followlinks=followlinks, hidden=hidden)
             if new_resources:
                 resources[basename] = new_resources
         else:
@@ -196,6 +189,5 @@ def spider(resource_path, ignore=(ValueError, NotImplementedError),
     return {
         os.path.basename(resource_path): _spider(resource_path, ignore=ignore,
                                                  followlinks=followlinks,
-                                                 hidden=hidden,
-                                                 globs=globs)
+                                                 hidden=hidden)
     }
