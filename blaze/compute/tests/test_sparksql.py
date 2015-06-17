@@ -15,6 +15,7 @@ from distutils.version import StrictVersion
 from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
+import pandas.util.testing as tm
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
 
 try:
@@ -340,8 +341,7 @@ def test_strlen(ctx, db):
     assert odo(result, set) == odo(expected, set)
 
 
-date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types') or
-                                pd.__version__ == StrictVersion('0.16.1'),
+date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
                                 attr,
                                 raises=(Py4JJavaError, AssertionError),
                                 reason=('date attribute %r not supported '
@@ -357,11 +357,14 @@ date_attrs += [pytest.mark.xfail(attr,
 
 @pytest.mark.parametrize('attr', date_attrs)
 def test_by_with_date(ctx, db, attr):
+    # TODO: investigate CSV writing precision between pandas 0.16.0 and 0.16.1
+    # TODO: see if we can use odo to convert the dshape of an existing
+    #       DataFrame
     expr = by(getattr(db.dates.ds, attr),
               mean=db.dates.amount.mean())
-    result = odo(compute(expr, ctx), set)
-    expected = odo(compute(expr, {db: {'dates': date_df}}), set)
-    assert result == expected
+    result = odo(compute(expr, ctx), pd.DataFrame).sort('mean')
+    expected = compute(expr, {db: {'dates': date_df}}).sort('mean')
+    tm.assert_frame_equal(result, expected, check_dtype=False)
 
 
 @pytest.mark.parametrize('keys', [[1], [1, 2]])

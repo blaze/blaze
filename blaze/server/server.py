@@ -1,12 +1,25 @@
 from __future__ import absolute_import, division, print_function
 
 import socket
+import functools
 
 import flask
 from flask import Blueprint, Flask, request
 
+try:
+    from bokeh.server.crossdomain import crossdomain
+except ImportError:
+    def crossdomain(*args, **kwargs):
+        def wrapper(f):
+            @functools.wraps(f)
+            def wrapped(*a, **k):
+                return f(*a, **k)
+            return wrapped
+        return wrapper
+
 from toolz import assoc
 
+from datashape import Mono, discover
 from datashape.predicates import iscollection, isscalar
 from odo import odo
 
@@ -18,8 +31,6 @@ from blaze.compute import compute_up
 from .serialization import json
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..expr import Expr, symbol
-
-from datashape import Mono, discover
 
 
 __all__ = 'Server', 'to_tree', 'from_tree'
@@ -130,8 +141,9 @@ class Server(object):
                 self.run(*args, **assoc(kwargs, 'port', port + 1))
 
 
-@api.route('/datashape')
-def dataset():
+@api.route('/datashape', methods=['GET'])
+@crossdomain(origin='*', methods=['GET'])
+def shape():
     return str(discover(_get_data()))
 
 
@@ -144,8 +156,8 @@ def to_tree(expr, names=None):
 
     Parameters
     ----------
-
-    expr: Blaze Expression
+    expr : Expr
+        A Blaze expression
 
     Examples
     --------
@@ -304,7 +316,9 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@api.route('/compute.<serial_format>', methods=['POST', 'PUT', 'GET'])
+@api.route('/compute.<serial_format>',
+           methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
 def compserver(serial_format):
     try:
         serial = _get_format(serial_format)
