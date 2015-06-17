@@ -377,9 +377,6 @@ def _main():
                    help='Exceptions to ignore when calling resource on a file')
     p.add_argument('-H', '--hidden', action='store_true',
                    help='Call resource on hidden files')
-    p.add_argument('-g', '--glob', nargs='*',
-                   help=('Try these glob patterns instead of calling resource '
-                         'on an individual file'), default=[])
     args = p.parse_args()
     resources = spider(os.path.expanduser(args.directory),
                        followlinks=args.follow_links,
