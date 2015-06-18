@@ -1,0 +1,5 @@
+iriscsv:
+  uri: ../examples/data/iris.csv
+accounts:
+  uri: ../examples/data/accounts.json.gz
+  dshape: "var * {name: string, amount: float64}"
