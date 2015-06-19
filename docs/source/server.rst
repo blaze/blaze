@@ -50,6 +50,36 @@ With this code our machine is now hosting our CSV file through a
 web-application on port 6363.  We can now access our CSV file, through Blaze,
 as a service from a variety of applications.
 
+Serving Data from the Command Line
+==================================
+
+Blaze ships with a command line tool to serve up data in two ways:
+
+  1. Traversing a directory tree and calling resource on the files in that tree
+
+  .. code-block:: shell
+
+     # serve data from the current directory on port 5000 and try to load hidden files
+     $ blaze-server . --port=5000 --hidden
+
+  2. Explicitly specifying the resources to load in a YAML file
+
+  .. code-block:: shell
+
+     # YAML file specifying resources to load and optionally their datashape
+     $ cat example.yaml
+     iriscsv:
+       source: ../examples/data/iris.csv
+     irisdb:
+       source: sqlite:///../examples/data/iris.db
+     accounts:
+       source: ../examples/data/accounts.json.gz
+       dshape: "var * {name: string, amount: float64}"
+
+     # serve data specified in a YAML file and follow symbolic links
+     $ blaze-server example.yaml --follow-links
+
+
 Interacting with the Web Server from the Client
 ===============================================
 
