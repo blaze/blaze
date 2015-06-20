@@ -45,6 +45,7 @@ try:
     from .numba import broadcast_numba as broadcast_ndarray
 except ImportError:
     def broadcast_ndarray(t, *data, **kwargs):
+        del kwargs['scope']
         d = dict(zip(t._scalar_expr._leaves(), data))
         return compute(t._scalar_expr, d, **kwargs)
 
