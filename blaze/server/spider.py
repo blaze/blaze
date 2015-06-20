@@ -111,12 +111,14 @@ def _parse_args():
                    help='A YAML file specifying the resources to load')
     p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                    help='Port number')
+    p.add_argument('-H', '--host', type=str, default='127.0.0.1',
+                   help='Host name')
     p.add_argument('-l', '--follow-links', action='store_true',
                    help='Follow links when listing files')
     p.add_argument('-e', '--ignored-exception', nargs='*',
                    default=['Exception'],
                    help='Exceptions to ignore when calling resource on a file')
-    p.add_argument('-H', '--hidden', action='store_true',
+    p.add_argument('-d', '--hidden', action='store_true',
                    help='Call resource on hidden files')
     return p.parse_args()
 
@@ -129,7 +131,7 @@ def _main():
     followlinks = args.follow_links
     resources = from_yaml(path, ignore=ignore, followlinks=followlinks,
                           hidden=hidden)
-    Server(resources).run(port=args.port)
+    Server(resources).run(host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
