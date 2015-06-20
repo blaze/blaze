@@ -502,9 +502,6 @@ def _shape_add(a, b):
 
 
 def concat(lhs, rhs, axis=0):
-    if axis < 0:
-        raise ValueError('axis must be greater than or equal to 0')
-
     ldshape = lhs.dshape
     rdshape = rhs.dshape
     if ldshape.measure != rdshape.measure:
