@@ -47,17 +47,18 @@ def from_yaml(filename, ignore=(ValueError, NotImplementedError),
     with open(filename, 'rt') as f:
         spec = yaml.load(f.read())
     resources = {}
-    for name, info in spec.items():
-        if 'uri' not in info:
-            raise ValueError('uri not found for data source %r' % name)
-        uri = info['uri']
-        if os.path.isdir(uri):
-            resources = spider(os.path.expanduser(uri),
-                               ignore=ignore,
-                               followlinks=followlinks,
-                               hidden=hidden)
+    for name, info in yaml.load(path.read()).items():
+        if 'source' not in info:
+            raise ValueError('source key not found for data source named %r' %
+                             name)
+        source = info['source']
+        if os.path.isdir(source):
+            resources[name] = spider(os.path.expanduser(source),
+                                     ignore=ignore,
+                                     followlinks=followlinks,
+                                     hidden=hidden)
         else:
-            resources[name] = resource(uri, dshape=info.get('dshape'))
+            resources[name] = resource(source, dshape=info.get('dshape'))
     return resources
 
 
