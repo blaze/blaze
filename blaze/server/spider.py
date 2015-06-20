@@ -45,8 +45,6 @@ def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     }
 
 
-    with open(filename, 'rt') as f:
-        spec = yaml.load(f.read())
 def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
               hidden=False):
     resources = {}
