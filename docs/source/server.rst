@@ -53,21 +53,34 @@ as a service from a variety of applications.
 Serving Data from the Command Line
 ==================================
 
-Blaze ships with a command line tool to serve up data in two ways:
+Blaze ships with a command line tool called ``blaze-server`` to serve up data specified in a YAML file.
 
-  1. Traversing a directory tree and calling resource on the files in that tree
+YAML Specification
+------------------
 
-  .. code-block:: shell
+The structure of the specification file is as follows:
 
-     # serve data from the current directory on port 5000 and try to load hidden files
-     $ blaze-server . --port=5000 --hidden
+  .. code-block:: yaml
 
-  2. Explicitly specifying the resources to load in a YAML file
+     name1:
+       source: path or uri
+       dshape: optional datashape
+     name2:
+       source: path or uri
+       dshape: optional datashape
+     ...
+     nameN:
+       source: path or uri
+       dshape: optional datashape
 
-  .. code-block:: shell
+.. note::
 
-     # YAML file specifying resources to load and optionally their datashape
-     $ cat example.yaml
+   When ``source`` is a directory, Blaze will recurse into the directory tree and call ``odo.resource`` on the leaves of the tree.
+
+Here's an example specification file:
+
+  .. code-block:: yaml
+
      iriscsv:
        source: ../examples/data/iris.csv
      irisdb:
@@ -76,8 +89,58 @@ Blaze ships with a command line tool to serve up data in two ways:
        source: ../examples/data/accounts.json.gz
        dshape: "var * {name: string, amount: float64}"
 
-     # serve data specified in a YAML file and follow symbolic links
-     $ blaze-server example.yaml --follow-links
+
+The previous YAML specification will serve the following dictionary:
+
+  .. code-block:: python
+
+     >>> from odo import resource
+     >>> {
+     ...   'iriscsv': resource('../examples/data/iris.csv'),
+     ...   'irisdb': resource('sqlite:///../examples/data/iris.db'),
+     ...   'accounts': resource('../examples/data/accounts.json.gz',
+     ...                        dshape="var * {name: string, amount: float64}")
+     ... }
+
+
+The only required key for each named data source is the ``source`` key, which is passed to ``odo.resource``. You can optionally specify a ``dshape`` parameter, which is passed into ``odo.resource`` along with the ``source`` key.
+
+Command Line Interface
+----------------------
+
+  1. UNIX
+
+    .. code-block:: shell
+
+       # YAML file specifying resources to load and optionally their datashape
+       $ cat example.yaml
+       iriscsv:
+         source: ../examples/data/iris.csv
+       irisdb:
+         source: sqlite:///../examples/data/iris.db
+       accounts:
+         source: ../examples/data/accounts.json.gz
+         dshape: "var * {name: string, amount: float64}"
+
+       # serve data specified in a YAML file and follow symbolic links
+       $ blaze-server example.yaml --follow-links
+
+       # You can also construct a YAML file from a heredoc to pipe to blaze-server
+       $ cat <<EOF
+       datadir:
+         source: /path/to/data/directory
+       EOF | blaze-server
+
+  2. Windows
+
+    .. code-block:: batch
+
+       :: If you're on Windows you can do this with the ^ character
+       C:\> echo ^
+       datadir:^
+         source: path\to\data\directory^
+       echo | blaze-server
+
 
 
 Interacting with the Web Server from the Client
