@@ -95,11 +95,11 @@ The previous YAML specification will serve the following dictionary:
   .. code-block:: python
 
      >>> from odo import resource
-     >>> {
-     ...   'iriscsv': resource('../examples/data/iris.csv'),
-     ...   'irisdb': resource('sqlite:///../examples/data/iris.db'),
-     ...   'accounts': resource('../examples/data/accounts.json.gz',
-     ...                        dshape="var * {name: string, amount: float64}")
+     >>> resources = {
+     ...  'iriscsv': resource('../examples/data/iris.csv'),
+     ...  'irisdb': resource('sqlite:///../examples/data/iris.db'),
+     ...  'accounts': resource('../examples/data/accounts.json.gz',
+     ...                       dshape="var * {name: string, amount: float64}")
      ... }
 
 
