@@ -14,7 +14,7 @@ from odo.utils import ignoring
 from .server import Server, DEFAULT_PORT
 
 
-__all__ = 'spider',
+__all__ = 'spider', 'from_yaml'
 
 
 def _spider(resource_path, ignore, followlinks, hidden):
