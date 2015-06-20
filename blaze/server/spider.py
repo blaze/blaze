@@ -3,6 +3,10 @@
 from __future__ import absolute_import
 
 import os
+import sys
+import argparse
+
+import yaml
 
 from odo import resource
 from odo.utils import ignoring
@@ -43,7 +47,6 @@ def spider(resource_path, ignore=(ValueError, NotImplementedError),
 
 def from_yaml(filename, ignore=(ValueError, NotImplementedError),
               followlinks=True, hidden=False):
-    import yaml
     with open(filename, 'rt') as f:
         spec = yaml.load(f.read())
     resources = {}
@@ -63,7 +66,6 @@ def from_yaml(filename, ignore=(ValueError, NotImplementedError),
 
 
 def _parse_args():
-    import argparse
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument('path', type=argparse.FileType('r'), nargs='?',
