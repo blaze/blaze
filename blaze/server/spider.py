@@ -86,9 +86,8 @@ def _main():
     ignore = tuple(getattr(__builtins__, e) for e in args.ignored_exception)
     hidden = args.hidden
     followlinks = args.follow_links
-    func = spider if os.path.isdir(path) else from_yaml
-    resources = func(path, ignore=ignore, followlinks=followlinks,
-                     hidden=hidden)
+    resources = from_yaml(path, ignore=ignore, followlinks=followlinks,
+                          hidden=hidden)
     Server(resources).run(port=args.port)
 
 
