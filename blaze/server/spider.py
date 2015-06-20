@@ -36,19 +36,19 @@ def _spider(resource_path, ignore, followlinks, hidden):
     return resources
 
 
-def spider(resource_path, ignore=(ValueError, NotImplementedError),
-           followlinks=True, hidden=False):
+def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
+           hidden=False):
     return {
-        os.path.basename(resource_path): _spider(resource_path, ignore=ignore,
-                                                 followlinks=followlinks,
-                                                 hidden=hidden)
+        os.path.basename(path): _spider(path, ignore=ignore,
+                                        followlinks=followlinks,
+                                        hidden=hidden)
     }
 
 
-def from_yaml(filename, ignore=(ValueError, NotImplementedError),
-              followlinks=True, hidden=False):
     with open(filename, 'rt') as f:
         spec = yaml.load(f.read())
+def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
+              hidden=False):
     resources = {}
     for name, info in yaml.load(path.read()).items():
         if 'source' not in info:
