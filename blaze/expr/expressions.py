@@ -706,6 +706,18 @@ class Apply(Expr):
 
 
 class Coerce(Expr):
+    """Coerce an expression to a different type.
+
+    Examples
+    --------
+    >>> t = symbol('t', '100 * float64')
+    >>> t.coerce(to='int64')
+    t.coerce(to='int64')
+    >>> t.coerce('float32')
+    t.coerce(to='float32')
+    >>> t.coerce('int8').dshape
+    dshape("100 * int8")
+    """
     __slots__ = '_hash', '_child', 'to'
 
     @property
@@ -774,6 +786,9 @@ def ndim(expr):
 
 def coerce(expr, to):
     return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
+
+
+coerce.__doc__ = Coerce.__doc__
 
 
 dshape_method_list.extend([
