@@ -125,3 +125,35 @@ def test_concat_arr():
 
     assert concat(a, b).dshape == dshape('8 * int32')
     assert concat(a, v).dshape == dshape('var * int32')
+
+
+def test_concat_different_measure():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * float64')
+
+    with pytest.raises(TypeError):
+        concat(a, b)
+
+
+def test_concat_different_along_concat_axis():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 6 * int32')
+
+    with pytest.raises(TypeError):
+        concat(a, b, axis=0)
+
+
+def test_concat_negative_axis():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * int32')
+
+    with pytest.raises(ValueError):
+        concat(a, b, axis=-1)
+
+
+def test_concat_axis_too_great():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * int32')
+
+    with pytest.raises(ValueError):
+        concat(a, b, axis=2)
