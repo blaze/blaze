@@ -4,7 +4,7 @@ import pandas as pd
 
 import pytest
 
-from datashape import dshape, var, datetime_, float32
+from datashape import dshape, var, datetime_, float32, int64
 
 from blaze.expr import symbol, label, Field
 
@@ -141,6 +141,7 @@ def test_hash_to_different_values():
 def test_coerce():
     s = symbol('s', var * float32)
     assert str(s.coerce('int64')) == "s.coerce(to='int64')"
+    assert s.coerce('int64').dshape == var * int64
 
 
 @pytest.mark.xfail(raises=AttributeError, reason='Should this be valid?')
