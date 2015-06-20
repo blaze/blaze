@@ -66,9 +66,9 @@ def _parse_args():
     import argparse
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument('path', type=str,
-                   help=('A directory to recurse into or a YAML file '
-                         'specifying the resources to conjure up'))
+    p.add_argument('path', type=argparse.FileType('r'), nargs='?',
+                   default=sys.stdin,
+                   help='A YAML file specifying the resources to load')
     p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                    help='Port number')
     p.add_argument('-l', '--follow-links', action='store_true',
