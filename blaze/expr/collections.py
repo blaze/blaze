@@ -508,7 +508,7 @@ def concat(lhs, rhs, axis=0):
     ldshape = lhs.dshape
     rdshape = rhs.dshape
     if ldshape.measure != rdshape.measure:
-        raise ValueError(
+        raise TypeError(
             'Mismatched measures: {l} != {r}'.format(
                 l=ldshape.measure, r=rdshape.measure
             ),
@@ -518,8 +518,8 @@ def concat(lhs, rhs, axis=0):
     rshape = rdshape.shape
     for n, (a, b) in enumerate(zip_longest(lshape, rshape, fillvalue=None)):
         if n != axis and a != b:
-            raise ValueError(
-                "Shapes are not equal along axis '{n}': {a} != {b}".format(
+            raise TypeError(
+                'Shapes are not equal along axis {n}: {a} != {b}'.format(
                     n=n, a=a, b=b,
                 ),
             )
