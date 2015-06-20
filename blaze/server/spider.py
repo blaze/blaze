@@ -38,6 +38,24 @@ def _spider(resource_path, ignore, followlinks, hidden):
 
 def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
            hidden=False):
+    """Traverse a directory and call ``odo.resource`` on its contentso
+
+    Parameters
+    ----------
+    path : str
+        Path to a directory of resources to load
+    ignore : tuple of Exception, optional
+        Ignore these exceptions when calling resource
+    followlinks : bool, optional
+        Follow symbolic links
+    hidden : bool, optional
+        Load hidden files
+
+    Returns
+    -------
+    dict
+        Possibly nested dictionary of containing basenames mapping to resources
+    """
     return {
         os.path.basename(path): _spider(path, ignore=ignore,
                                         followlinks=followlinks,
@@ -47,6 +65,28 @@ def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
 
 def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
               hidden=False):
+    """Construct a dictionary of resources from a YAML specification.
+
+    Parameters
+    ----------
+    path : str
+        Path to a YAML specification of resources to load
+    ignore : tuple of Exception, optional
+        Ignore these exceptions when calling resource
+    followlinks : bool, optional
+        Follow symbolic links
+    hidden : bool, optional
+        Load hidden files
+
+    Returns
+    -------
+    dict
+        A dictionary mapping top level keys in a YAML file to resources.
+
+    See Also
+    --------
+    spider : Traverse a directory tree for resources
+    """
     resources = {}
     for name, info in yaml.load(path.read()).items():
         if 'source' not in info:
