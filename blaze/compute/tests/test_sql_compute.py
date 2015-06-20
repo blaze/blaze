@@ -1719,3 +1719,22 @@ def test_concat(sql_two_tables):
         ),
         pd.DataFrame(np.arange(10), columns=['a']),
     )
+
+
+def test_concat_invalid_axis(sql_two_tables):
+    t_table, u_table = sql_two_tables
+    t_data = pd.DataFrame(np.arange(5), columns=['a'])
+    u_data = pd.DataFrame(np.arange(5, 10), columns=['a'])
+    odo(t_data, t_table)
+    odo(u_data, u_table)
+
+    # We need to force the shape to not be a record here so we can
+    # create the `Concat` node with an axis=1.
+    t = symbol('t', '5 * 1 * int32')
+    u = symbol('u', '5 * 1 * int32')
+
+    with pytest.raises(ValueError) as e:
+        compute(concat(t, u, axis=1), {t: t_table, u: u_table})
+
+    # Preserve the suggestion to use merge.
+    assert "'merge'" in str(e.value)
