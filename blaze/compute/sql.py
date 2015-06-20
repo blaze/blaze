@@ -114,8 +114,9 @@ def compute_up(t, s, **kwargs):
 @dispatch(Concat, (Select, Selectable), (Select, Selectable))
 def compute_up(t, lhs, rhs, **kwargs):
     if t.axis != 0:
-        raise NotImplementedError(
-            'Cannot concat along a non-zero axis in sql',
+        raise ValueError(
+            'Cannot concat along a non-zero axis in sql; perhaps you want'
+            " 'merge'?",
         )
 
     return select(lhs).union_all(select(rhs)).alias()
