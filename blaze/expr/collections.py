@@ -520,7 +520,7 @@ def concat(lhs, rhs, axis=0):
                     n=n, a=a, b=b,
                 ),
             )
-    if 0 < len(lshape) <= axis:
+    if axis < 0 or 0 < len(lshape) <= axis:
         raise ValueError(
             "Invalid axis '{a}', must be in range: [0, {n})".format(
                 a=axis, n=len(lshape)
