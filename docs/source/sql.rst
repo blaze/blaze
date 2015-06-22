@@ -103,4 +103,21 @@ to that database with the following code
 
 One can then query and compute results as with a normal blaze workflow.
 
+
+Connecting to a non-default schema
+----------------------------------
+
+To connect to a non-default schema, one may pass a ``sqlalchemy.MetaData``
+object to ``Data``. For example:
+
+
+.. code-block:: python
+
+   >>> from blaze import Data
+   >>> from sqlalchemy import MetaData
+   >>> ds = Data(MetaData('postgresql://localhost/test', schema='my_schema'))  # doctest: +SKIP
+   >>> ds.dshape  # doctest: +SKIP
+   dshape("{table_a: var * {a: ?int32}, table_b: var * {b: ?int32}}")
+
+
 .. _`Lahman baseball statistics database`: https://github.com/jknecht/baseball-archive-sqlite/raw/master/lahman2013.sqlite
