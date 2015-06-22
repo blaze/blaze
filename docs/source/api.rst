@@ -41,6 +41,7 @@ Table Expressions
    Head
    Merge
    Join
+   Concat
 
 .. currentmodule:: blaze.expr.split_apply_combine
 

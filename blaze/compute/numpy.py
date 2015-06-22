@@ -69,20 +69,6 @@ def compute_up_np_repeat(t, lhs, rhs, _char_mul=np.char.multiply, **kwargs):
     return _char_mul(lhs, rhs)
 
 
-@dispatch(Concat, np.ndarray)
-def compute_up(t, data, _char_add=np.char.add, **kwargs):
-    if isinstance(t.lhs, Expr):
-        return _char_add(data, t.rhs)
-    else:
-        return _char_add(t.lhs, data)
-
-
-@compute_up.register(Concat, np.ndarray, (np.ndarray, base))
-@compute_up.register(Concat, base, np.ndarray)
-def compute_up_np_concat(t, lhs, rhs, _char_add=np.char.add, **kwargs):
-    return _char_add(lhs, rhs)
-
-
 def _interp(arr, v, _Series=pd.Series, _charmod=np.char.mod):
     """
     Delegate to the most efficient string formatting technique based on
@@ -365,3 +351,8 @@ def join_ndarray(expr, lhs, rhs, **kwargs):
     if isinstance(rhs, np.ndarray):
         rhs = DataFrame(rhs)
     return compute_up(expr, lhs, rhs, **kwargs)
+
+
+@dispatch(Concat, np.ndarray, np.ndarray)
+def compute_up(expr, lhs, rhs, _concat=np.concatenate, **kwargs):
+    return _concat((lhs, rhs), axis=expr.axis)

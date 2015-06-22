@@ -1,5 +1,5 @@
 from blaze.compute.csv import pre_compute, CSV
-from blaze import compute, discover, dshape, into, resource, join
+from blaze import compute, discover, dshape, into, resource, join, concat
 from blaze.utils import example, filetext, filetexts
 from blaze.expr import symbol
 from pandas import DataFrame, Series
@@ -11,6 +11,7 @@ from toolz import first
 from collections import Iterator
 from odo import odo
 from odo.chunks import chunks
+
 
 def test_pre_compute_on_small_csv_gives_dataframe():
     csv = CSV(example('iris.csv'))
@@ -56,6 +57,7 @@ def test_pre_compute_calls_lean_projection():
     assert set(first(result).columns) == \
             set(['sepal_length', 'species'])
 
+
 def test_unused_datetime_columns():
     ds = dshape('2 * {val: string, when: datetime}')
     with filetext("val,when\na,2000-01-01\nb,2000-02-02") as fn:
@@ -63,6 +65,7 @@ def test_unused_datetime_columns():
 
         s = symbol('s', discover(csv))
         assert into(list, compute(s.val, csv)) == ['a', 'b']
+
 
 def test_multiple_csv_files():
     d = {'mult1.csv': 'name,val\nAlice,1\nBob,2',
@@ -98,4 +101,23 @@ def test_csv_join():
             ),
             pd.DataFrame(np.array([[2, 0, 1, 3, 4],
                                    [5, 3, 4, 6, 7]]), columns=list('cabde'))
+        )
+
+
+def test_concat():
+    d = {'a.csv': 'a,b\n1,2\n3,4',
+         'b.csv': 'a,b\n5,6\n7,8'}
+
+    with filetexts(d):
+        a_rsc = resource('a.csv')
+        b_rsc = resource('b.csv')
+
+        a = symbol('a', discover(a_rsc))
+        b = symbol('b', discover(b_rsc))
+
+        tm.assert_frame_equal(
+            odo(
+                compute(concat(a, b), {a: a_rsc, b: b_rsc}), pd.DataFrame,
+            ),
+            pd.DataFrame(np.arange(1, 9).reshape(4, 2), columns=list('ab')),
         )

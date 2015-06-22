@@ -56,12 +56,16 @@ if PY2:
 
     def boundmethod(func, instance):
         return MethodType(func, instance, type(instance))
+
+    from itertools import izip_longest as zip_longest
 else:
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
     basestring = str
     boundmethod = MethodType
+
+    from itertools import zip_longest
 
 
 import io
