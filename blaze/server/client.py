@@ -1,10 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import warnings
-from contextlib import closing
-
-import flask
-import requests
 
 from datashape import dshape
 import flask
@@ -16,7 +12,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from ..expr import Expr
 from ..dispatch import dispatch
 from .server import DEFAULT_PORT
-from .serialization import json, msgpack
+from .serialization import json
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
