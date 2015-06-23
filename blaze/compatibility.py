@@ -60,6 +60,20 @@ if PY2:
         return MethodType(func, instance, type(instance))
 
     from itertools import izip_longest as zip_longest
+
+    from abc import ABCMeta
+    import collections
+    from types import ModuleType
+    collections_abc = ModuleType('compatibility.abc')
+    for k, v in vars(collections).items():
+        # Construct a collections.abc module with the abc's from collections.
+        if isinstance(v, ABCMeta):
+            setattr(collections_abc, k, v)
+    del ABCMeta
+    del ModuleType
+    del collections
+    del k
+    del v
 else:
     _inttypes = (int,)
     _strtypes = (str,)
@@ -68,6 +82,7 @@ else:
     boundmethod = MethodType
 
     from itertools import zip_longest
+    from collections import abc as collections_abc
 
 
 import io

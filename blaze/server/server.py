@@ -22,7 +22,7 @@ from toolz import assoc
 
 from datashape import Mono, discover
 from datashape.predicates import iscollection, isscalar
-from odo import odo
+from odo import odo, chunks
 
 import blaze
 from blaze import compute
@@ -31,6 +31,7 @@ from blaze.compute import compute_up
 
 from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol, coerce_scalar
+from ..compatibility import collections_abc
 from ..expr import Expr, symbol
 
 
@@ -352,6 +353,56 @@ def from_tree(expr, namespace=None):
         return expr
 
 
+class _ComputationFailed(Exception):
+    def __init__(self, msg, status):
+        self._msg = msg
+        self._status = status
+
+    @property
+    def astuple(self):
+        return self._msg, self._status
+
+
+def _process_request(serial):
+    try:
+        payload = serial.loads(request.data)
+    except ValueError:
+        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+
+    chunksize = payload.get('chunksize', 0)
+    ns = payload.get('namespace', dict())
+    dataset = _get_data()
+    ns[':leaf'] = symbol('leaf', discover(dataset))
+
+    expr = from_tree(payload['expr'], namespace=ns)
+    assert len(expr._leaves()) == 1
+    leaf = expr._leaves()[0]
+
+    try:
+        result = compute(expr, {leaf: dataset})
+
+        if iscollection(expr.dshape):
+            result = odo(
+                result,
+                chunks(list) if chunksize > 0 else list,
+                chunksize=chunksize,
+            )
+        elif isscalar(expr.dshape):
+            result = coerce_scalar(result, str(expr.dshape))
+    except NotImplementedError as e:
+        # 501: Not Implemented
+        raise _ComputationFailed(
+            "Computation not supported:\n%s" % e, 501
+        )
+    except Exception as e:
+        # 500: Internal Server Error
+        raise _ComputationFailed(
+            "Computation failed with message:\n%s" % e, 500
+        )
+
+    return expr, result, chunksize > 0
+
+
 mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
                             '|'.join(x.name for x in all_formats))
 
@@ -369,40 +420,28 @@ def compserver():
     try:
         serial = _get_format(matched.groups()[0])
     except KeyError:
-        return (
-            "Unsupported serialization format '%s'" % matched.groups()[0],
-            415,
-        )
+        return 'Unsupported serialization format %s' % matched, 415
 
     try:
-        payload = serial.loads(request.data)
-    except ValueError:
-        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+        expr, result, streaming = _process_request(serial)
+    except _ComputationFailed as e:
+        return e.astuple
 
-    ns = payload.get('namespace', dict())
-    dataset = _get_data()
-    ns[':leaf'] = symbol('leaf', discover(dataset))
+    if streaming:
+        if isinstance(result, collections_abc.Iterable):
+            def gen(_dumps=serial.dumps):
+                for block in result:
+                    yield _dumps(block)
 
-    expr = from_tree(payload['expr'], namespace=ns)
-    assert len(expr._leaves()) == 1
-    leaf = expr._leaves()[0]
+        else:
+            def gen():
+                yield serial.dumps(result)
 
-    try:
-        result = compute(expr, {leaf: dataset})
+        return Response(gen())
 
-        if iscollection(expr.dshape):
-            result = odo(result, list)
-        elif isscalar(expr.dshape):
-            result = coerce_scalar(result, str(expr.dshape))
-    except NotImplementedError as e:
-        # 501: Not Implemented
-        return ("Computation not supported:\n%s" % e, 501)
-    except Exception as e:
-        # 500: Internal Server Error
-        return ("Computation failed with message:\n%s" % e, 500)
-
-    return serial.dumps({
-        'datashape': str(expr.dshape),
-        'data': result,
-        'names': expr.fields
-    })
+    else:
+        return serial.dumps({
+            'datashape': str(expr.dshape),
+            'data': result,
+            'names': expr.fields
+        })

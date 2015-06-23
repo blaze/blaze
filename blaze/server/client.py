@@ -1,6 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 import warnings
+from contextlib import closing
+
+import flask
+import requests
 
 from datashape import dshape
 import flask
@@ -12,7 +16,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from ..expr import Expr
 from ..dispatch import dispatch
 from .server import DEFAULT_PORT
-from .serialization import json
+from .serialization import json, msgpack
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
@@ -90,6 +94,10 @@ class Client(object):
         The username and password to use when connecting to the server.
         If not provided, no auth header will be sent.
 
+    chunksize : int, optional
+        The size of the chunks to use on the server when making queries.
+        If this value is <= 0 then no chunking will be used.
+
     Examples
     --------
 
@@ -103,9 +111,15 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'serial', 'verify_ssl', 'auth'
+    __slots__ = 'url', 'serial', 'verify_ssl', 'auth', 'chunksize'
 
-    def __init__(self, url, serial=json, verify_ssl=True, auth=None, **kwargs):
+    def __init__(self, url, serial=json,
+                 verify_ssl=True, auth=None, chunksize=None):
+        if chunksize and serial.stream_unpacker is None:
+            raise TypeError(
+                'serial must support stream_unpacker if chunksize > 0',
+            )
+
         url = url.strip('/')
         if not url.startswith('http'):
             url = 'http://' + url
@@ -113,6 +127,7 @@ class Client(object):
         self.serial = serial
         self.verify_ssl = verify_ssl
         self.auth = auth
+        self.chunksize = chunksize
 
     @property
     def dshape(self):
@@ -158,7 +173,14 @@ def compute_down(expr, ec, **kwargs):
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
-    return serial.loads(content(r))['data']
+
+    raw_data = content(r)
+    if ec.chunksize:
+        unpacker = serial.stream_unpacker()
+        unpacker.feed(raw_data)
+        return sum(unpacker, [])
+    else:
+        return serial.loads(raw_data)['data']
 
 
 @resource.register('blaze://.+')
