@@ -21,6 +21,9 @@ from ..expr.optimize import lean_projection
 from .pmap import get_default_pmap
 
 
+__all__ = ['optimize', 'pre_compute', 'compute_chunk', 'compute_down']
+
+
 @dispatch(Expr, CSV)
 def optimize(expr, _):
     return lean_projection(expr)  # This is handled in pre_compute

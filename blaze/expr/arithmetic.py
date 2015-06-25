@@ -20,7 +20,6 @@ BinOp
 UnaryOp
 Arithmetic
 Add
-Concat
 Mult
 Repeat
 Sub
@@ -161,11 +160,6 @@ class Arithmetic(BinOp):
 
 
 class Add(Arithmetic):
-    symbol = '+'
-    op = operator.add
-
-
-class Concat(Arithmetic):
     symbol = '+'
     op = operator.add
 
@@ -322,7 +316,6 @@ def _mkbin(name, cons, private=True, reflected=True):
 
 
 _add, _radd = _mkbin('add', Add)
-concat = _mkbin('concat', Concat, reflected=False, private=False)
 _div, _rdiv = _mkbin('div', Div)
 _floordiv, _rfloordiv = _mkbin('floordiv', FloorDiv)
 _mod, _rmod = _mkbin('mod', Mod)

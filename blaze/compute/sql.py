@@ -52,7 +52,7 @@ from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
 from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
                     FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements, Concat
 
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
@@ -109,6 +109,17 @@ def compute_up(t, s, **kwargs):
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     return compute(t._scalar_expr, d, post_compute=False).label(name)
+
+
+@dispatch(Concat, (Select, Selectable), (Select, Selectable))
+def compute_up(t, lhs, rhs, **kwargs):
+    if t.axis != 0:
+        raise ValueError(
+            'Cannot concat along a non-zero axis in sql; perhaps you want'
+            " 'merge'?",
+        )
+
+    return select(lhs).union_all(select(rhs)).alias()
 
 
 @dispatch(Broadcast, sa.Column)
@@ -746,6 +757,8 @@ def compute_up(expr, data, **kwargs):
 
 @toolz.memoize
 def table_of_metadata(metadata, name):
+    if metadata.schema is not None:
+        name = '.'.join((metadata.schema, name))
     if name not in metadata.tables:
         metadata.reflect(views=metadata.bind.dialect.supports_views)
     return metadata.tables[name]

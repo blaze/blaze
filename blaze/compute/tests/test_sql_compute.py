@@ -4,51 +4,27 @@ import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 
-from datetime import timedelta
 import itertools
 import re
 from distutils.version import LooseVersion
 
 
 import datashape
-from odo import into, resource, drop, odo
-import pandas.util.testing as tm
-import pandas as pd
+from odo import into, resource
 from pandas import DataFrame
 from toolz import unique
 
 from blaze.compute.sql import (compute, computefull, select, lower_column,
                                compute_up)
-from blaze.expr import (symbol, discover, transform, summary, by, sin, join,
-                        floor, cos, merge, nunique, mean, sum, count, exp)
+from blaze.expr import (
+    symbol, discover, transform, summary, by, sin, join,
+    floor, cos, merge, nunique, mean, sum, count, exp, concat,
+)
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile
 
 
 names = ('tbl%d' % i for i in itertools.count())
-
-
-@pytest.fixture
-def url():
-    return 'postgresql://postgres@localhost/test::%s' % next(names)
-
-
-@pytest.yield_fixture
-def sql(url):
-    try:
-        t = resource(url, dshape='var * {A: string, B: int64}')
-    except sa.exc.OperationalError as e:
-        pytest.skip(str(e))
-    else:
-        t = odo([('a', 1), ('b', 2)], t)
-        try:
-            yield t
-        finally:
-            drop(t)
-
-
-def test_postgres_create(sql):
-    assert odo(sql, list) == [('a', 1), ('b', 2)]
 
 
 @pytest.fixture(scope='module')
@@ -1610,32 +1586,6 @@ def test_datetime_to_date():
     assert normalize(result) == normalize(expected)
 
 
-@pytest.yield_fixture
-def sql_with_dts(url):
-    try:
-        t = resource(url, dshape='var * {A: datetime}')
-    except sa.exc.OperationalError as e:
-        pytest.skip(str(e))
-    else:
-        t = odo([(d,) for d in pd.date_range('2014-01-01', '2014-02-01')], t)
-        try:
-            yield t
-        finally:
-            drop(t)
-
-
-def test_timedelta_arith(sql_with_dts):
-    delta = timedelta(days=1)
-    dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
-    sym = symbol('s', discover(dates))
-    assert (
-        odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
-    ).all()
-    assert (
-        odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
-    ).all()
-
-
 def test_sort_compose():
     expr = t.name[:5].sort()
     result = compute(expr, s)
@@ -1650,55 +1600,14 @@ def test_sort_compose():
         order by
             anon_1.name asc"""
     assert normalize(str(result)) == normalize(expected)
-    assert normalize(str(compute(t.sort('name').name[:5], s))) != normalize(expected)
+    assert (normalize(str(compute(t.sort('name').name[:5], s))) !=
+            normalize(expected))
 
 
-@pytest.yield_fixture
-def sql_with_float(url):
-    try:
-        t = resource(url, dshape='var * {c: float64}')
-    except sa.exc.OperationalError as e:
-        pytest.skip(str(e))
-    else:
-        try:
-            yield t
-        finally:
-            drop(t)
-
-
-def test_postgres_isnan(sql_with_float):
-    data = (1.0,), (float('nan'),)
-    table = odo(data, sql_with_float)
-    sym = symbol('s', discover(data))
-    assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]
-
-
-def test_insert_from_subselect(sql_with_float):
-    data = pd.DataFrame([{'c': 2.0}, {'c': 1.0}])
-    tbl = odo(data, sql_with_float)
-    s = symbol('s', discover(data))
-    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl), sql_with_float),
-    tm.assert_frame_equal(
-        odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
-        pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
-    )
-
-
-def test_coerce(sql):
-    n = sql.name
-    t = symbol(n, discover(sql))
-    expr = t.B.coerce(to='float64')
-
-    # "B" because we're capitalized
-    expected = 'SELECT cast({t}."B" AS FLOAT(53)) AS "B" FROM {t}'.format(t=n)
-    result = compute(expr, sql)
+def test_coerce():
+    expr = t.amount.coerce(to='int64')
+    expected = """SELECT
+        cast(accounts.amount AS BIGINT)) AS amount
+    FROM accounts"""
+    result = compute(expr, s)
     assert normalize(str(result)) == normalize(expected)
-
-
-def test_coerce_bool_and_sum(sql):
-    n = sql.name
-    t = symbol(n, discover(sql))
-    expr = (t.B > 1.0).coerce(to='int32').sum()
-    result = compute(expr, sql).scalar()
-    expected = odo(compute(t.B, sql), pd.Series).gt(1).sum()
-    assert result == expected

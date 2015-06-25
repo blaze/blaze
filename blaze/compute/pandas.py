@@ -46,7 +46,7 @@ from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Coerce)
+                    UnaryStringFunction, nunique, Coerce, Concat)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 
@@ -156,9 +156,15 @@ def compute_up(t, lhs, rhs, **kwargs):
     return result.reset_index()[t.fields]
 
 
-@dispatch(Symbol, (DataFrameGroupBy, SeriesGroupBy))
-def compute_up(t, gb, **kwargs):
-    return gb
+pandas_structure = DataFrame, Series, DataFrameGroupBy, SeriesGroupBy
+
+
+@dispatch(Concat, pandas_structure, pandas_structure)
+def compute_up(t, lhs, rhs, _concat=pd.concat, **kwargs):
+    if not (isinstance(lhs, type(rhs)) or isinstance(rhs, type(lhs))):
+        raise TypeError('lhs and rhs must be the same type')
+
+    return _concat((lhs, rhs), axis=t.axis, ignore_index=True)
 
 
 def get_scalar(result):

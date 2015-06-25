@@ -1,8 +1,19 @@
+import sys
 import os
-
-from blaze.utils import tmpfile, json_dumps
 import json
+
+import pytest
+
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
+import h5py
+
+from datashape import dshape
+
+from blaze import discover
+from blaze.utils import tmpfile, json_dumps
 
 
 def test_tmpfile():

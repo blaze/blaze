@@ -208,7 +208,7 @@ def _lean(expr, fields=None):
     return expr._subs({expr._child: child})[sorted(fields)], new_fields
 
 
-@dispatch(Join)
+@dispatch((Join, Concat))
 def _lean(expr, fields=None):
     return expr, fields
 
