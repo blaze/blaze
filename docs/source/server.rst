@@ -133,14 +133,13 @@ Command Line Interface
 
   2. Windows
 
-    .. code-block:: batch
+    .. code-block:: powershell
 
-       :: If you're on Windows you can do this with the ^ character
-       C:\> echo ^
-       datadir:^
-         source: path\to\data\directory^
-       echo | blaze-server
-
+       :: If you're on Windows you can do this with powershell
+       PS C:\> @'
+       datadir:
+         source: /path/to/data/directory
+       '@ | blaze-server
 
 
 Interacting with the Web Server from the Client
