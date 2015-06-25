@@ -135,7 +135,7 @@ Command Line Interface
 
     .. code-block:: powershell
 
-       :: If you're on Windows you can do this with powershell
+       # If you're on Windows you can do this with powershell
        PS C:\> @'
        datadir:
          source: C:\path\to\data\directory
