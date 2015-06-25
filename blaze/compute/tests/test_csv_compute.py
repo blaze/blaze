@@ -99,8 +99,11 @@ def test_csv_join():
                 compute(join(a, b, 'c'), {a: resource_a, b: resource_b}),
                 pd.DataFrame,
             ),
+
+            # windows needs explicit int64 construction b/c default is int32
             pd.DataFrame(np.array([[2, 0, 1, 3, 4],
-                                   [5, 3, 4, 6, 7]]), columns=list('cabde'))
+                                   [5, 3, 4, 6, 7]], dtype='int64'),
+                         columns=list('cabde'))
         )
 
 
@@ -119,5 +122,8 @@ def test_concat():
             odo(
                 compute(concat(a, b), {a: a_rsc, b: b_rsc}), pd.DataFrame,
             ),
-            pd.DataFrame(np.arange(1, 9).reshape(4, 2), columns=list('ab')),
+
+            # windows needs explicit int64 construction b/c default is int32
+            pd.DataFrame(np.arange(1, 9, dtype='int64').reshape(4, 2),
+                         columns=list('ab')),
         )
