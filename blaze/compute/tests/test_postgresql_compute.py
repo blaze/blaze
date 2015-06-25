@@ -148,3 +148,12 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+
+
+def test_coerce_bool_and_sum(sql):
+    n = sql.name
+    t = symbol(n, discover(sql))
+    expr = (t.B > 1.0).coerce(to='int32').sum()
+    result = compute(expr, sql).scalar()
+    expected = odo(compute(t.B, sql), pd.Series).gt(1).sum()
+    assert result == expected
