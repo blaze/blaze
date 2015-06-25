@@ -138,7 +138,7 @@ Command Line Interface
        :: If you're on Windows you can do this with powershell
        PS C:\> @'
        datadir:
-         source: /path/to/data/directory
+         source: C:\path\to\data\directory
        '@ | blaze-server
 
 
