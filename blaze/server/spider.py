@@ -120,6 +120,8 @@ def _parse_args():
                    help='Exceptions to ignore when calling resource on a file')
     p.add_argument('-d', '--hidden', action='store_true',
                    help='Call resource on hidden files')
+    p.add_argument('-D', '--debug', action='store_true',
+                   help='Start the Flask server in debug mode')
     return p.parse_args()
 
 
@@ -130,7 +132,7 @@ def _main():
                           ignore=ignore,
                           followlinks=args.follow_links,
                           hidden=args.hidden)
-    Server(resources).run(host=args.host, port=args.port)
+    Server(resources).run(host=args.host, port=args.port, debug=args.debug)
 
 
 if __name__ == '__main__':
