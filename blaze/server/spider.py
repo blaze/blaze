@@ -112,7 +112,7 @@ def _parse_args():
     p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                    help='Port number')
     p.add_argument('-H', '--host', type=str, default='127.0.0.1',
-                   help='Host name')
+                   help='Host name. Use 0.0.0.0 to listen on all public IPs')
     p.add_argument('-l', '--follow-links', action='store_true',
                    help='Follow links when listing files')
     p.add_argument('-e', '--ignored-exception', nargs='*',
