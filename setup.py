@@ -83,6 +83,9 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    entry_points={
+        'console_scripts': ['blaze-server = blaze.server.spider:_main']
+    },
     package_data={'blaze': package_data},
     packages=packages
 )
