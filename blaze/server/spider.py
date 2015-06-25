@@ -125,12 +125,11 @@ def _parse_args():
 
 def _main():
     args = _parse_args()
-    path = os.path.expanduser(args.path)
     ignore = tuple(getattr(__builtins__, e) for e in args.ignored_exception)
-    hidden = args.hidden
-    followlinks = args.follow_links
-    resources = from_yaml(path, ignore=ignore, followlinks=followlinks,
-                          hidden=hidden)
+    resources = from_yaml(args.path,
+                          ignore=ignore,
+                          followlinks=args.follow_links,
+                          hidden=args.hidden)
     Server(resources).run(host=args.host, port=args.port)
 
 
