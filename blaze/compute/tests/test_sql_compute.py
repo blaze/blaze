@@ -1607,7 +1607,7 @@ def test_sort_compose():
 def test_coerce():
     expr = t.amount.coerce(to='int64')
     expected = """SELECT
-        cast(accounts.amount AS BIGINT)) AS amount
+        cast(accounts.amount AS BIGINT) AS amount
     FROM accounts"""
     result = compute(expr, s)
     assert normalize(str(result)) == normalize(expected)
