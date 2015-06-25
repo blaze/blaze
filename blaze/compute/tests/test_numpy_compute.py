@@ -462,6 +462,13 @@ def test_timedelta_arith():
     assert (compute(sym - delta, dates) == dates - delta).all()
 
 
+def test_coerce():
+    x = np.arange(1, 3)
+    s = symbol('s', discover(x))
+    np.testing.assert_array_equal(compute(s.coerce('float64'), x),
+                                  np.arange(1.0, 3.0))
+
+
 def test_concat_arr():
     s_data = np.arange(15)
     t_data = np.arange(15, 30)

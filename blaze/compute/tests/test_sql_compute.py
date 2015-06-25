@@ -1600,4 +1600,14 @@ def test_sort_compose():
         order by
             anon_1.name asc"""
     assert normalize(str(result)) == normalize(expected)
-    assert normalize(str(compute(t.sort('name').name[:5], s))) != normalize(expected)
+    assert (normalize(str(compute(t.sort('name').name[:5], s))) !=
+            normalize(expected))
+
+
+def test_coerce():
+    expr = t.amount.coerce(to='int64')
+    expected = """SELECT
+        cast(accounts.amount AS BIGINT) AS amount
+    FROM accounts"""
+    result = compute(expr, s)
+    assert normalize(str(result)) == normalize(expected)

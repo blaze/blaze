@@ -42,15 +42,15 @@ import warnings
 
 from multipledispatch import MDNotImplementedError
 
-from odo.backends.sql import metadata_of_engine
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
 from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
-from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction, strlen, DateTime)
+from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
+                    FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Summary, Like, nelements, Concat
 
@@ -851,7 +851,7 @@ def compute_up(expr, data, **kwargs):
         stop = start + 1
     else:
         raise TypeError('type %r not supported for slicing wih SQL backend'
-                         % type(index).__name__)
+                        % type(index).__name__)
 
     warnings.warn('The order of the result set from a Slice expression '
                   'computed against the SQL backend is not deterministic.')
@@ -860,3 +860,8 @@ def compute_up(expr, data, **kwargs):
         return select(data).offset(start)
     else:
         return select(data).offset(start).limit(stop - start)
+
+
+@dispatch(Coerce, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)

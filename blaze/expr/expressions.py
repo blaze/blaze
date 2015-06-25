@@ -22,7 +22,7 @@ from ..dispatch import dispatch
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
            'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label',
-           'symbol']
+           'symbol', 'Coerce']
 
 
 _attr_cache = dict()
@@ -705,6 +705,33 @@ class Apply(Expr):
         return dshape(self._dshape)
 
 
+class Coerce(Expr):
+    """Coerce an expression to a different type.
+
+    Examples
+    --------
+    >>> t = symbol('t', '100 * float64')
+    >>> t.coerce(to='int64')
+    t.coerce(to='int64')
+    >>> t.coerce('float32')
+    t.coerce(to='float32')
+    >>> t.coerce('int8').dshape
+    dshape("100 * int8")
+    """
+    __slots__ = '_hash', '_child', 'to'
+
+    @property
+    def schema(self):
+        return self.to
+
+    @property
+    def dshape(self):
+        return DataShape(*(self._child.shape + (self.schema,)))
+
+    def __str__(self):
+        return '%s.coerce(to=%r)' % (self._child, str(self.schema))
+
+
 def apply(expr, func, dshape, splittable=False):
     return Apply(expr, func, datashape.dshape(dshape), splittable)
 
@@ -757,13 +784,21 @@ def ndim(expr):
     return len(shape(expr))
 
 
+def coerce(expr, to):
+    return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
+
+
+coerce.__doc__ = Coerce.__doc__
+
+
 dshape_method_list.extend([
     (lambda ds: True, set([apply])),
     (iscollection, set([shape, ndim])),
+    (lambda ds: iscollection(ds) and isscalar(ds.measure), set([coerce]))
 ])
 
 schema_method_list.extend([
-    (isscalar, set([label, relabel])),
+    (isscalar, set([label, relabel, coerce])),
     (isrecord, set([relabel])),
 ])
 
