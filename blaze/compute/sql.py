@@ -757,6 +757,8 @@ def compute_up(expr, data, **kwargs):
 
 @toolz.memoize
 def table_of_metadata(metadata, name):
+    if metadata.schema is not None:
+        name = '.'.join((metadata.schema, name))
     if name not in metadata.tables:
         metadata.reflect(views=metadata.bind.dialect.supports_views)
     return metadata.tables[name]
