@@ -51,7 +51,6 @@ execute in the future.
 
    >>> deadbeats
    accounts[accounts.balance < 0].name
-
    >>> deadbeats.dshape
    dshape("var * string")
 
@@ -69,7 +68,6 @@ split-apply-combine workflows.
    ...    total=accounts.balance.sum())  # Apply and reduction
    by(accounts.name, total=sum(accounts.balance))
 
-
 This operation groups the collection by name and then sums the balance of each
 group.  It finds out how much all of the "Alice"s, "Bob"s, etc. of the world
 have in total.
@@ -77,7 +75,6 @@ have in total.
 Note the reduction ``sum`` in the third apply argument.  Blaze supports the
 standard reductions of numpy like ``sum``, ``min``, ``max`` and also the
 reductions of Pandas like ``count`` and ``nunique``.
-
 
 Join
 ----
