@@ -90,6 +90,7 @@ User facing
    what-blaze-isnt
    api
    releases
+   people
    legal
 
 Internal
