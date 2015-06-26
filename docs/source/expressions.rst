@@ -43,8 +43,8 @@ names of those accounts with negative balance.
 
    >>> deadbeats = accounts[accounts.balance < 0].name
 
-Internally this doesn't do any actual work (we haven't specified a data
-source.)  Instead it builds a symbolic representation of a comutation to
+Internally this doesn't do any actual work because we haven't specified a data
+source. Instead it builds a symbolic representation of a computation to
 execute in the future.
 
 .. code-block:: python
