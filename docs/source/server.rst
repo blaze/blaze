@@ -248,7 +248,7 @@ Alternatively we build a query to grab a single column
 
 .. code-block:: python
 
-   >>> to_tree(t.species, names={t: ':leaf'})
+   >>> pprint(to_tree(t.species, names={t: ':leaf'}))
    {'args': [':leaf', 'species'], 'op': 'Field'}
 
 
