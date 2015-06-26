@@ -32,7 +32,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    ...
 
 
-Then we host this publicly on port ``6363``
+Then we host this publicly on port 6363
 
 
 .. code-block:: python
