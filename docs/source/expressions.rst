@@ -11,7 +11,10 @@ Tables
 ======
 
 Table expressions track operations found in relational algebra or your standard
-Pandas/R DataFrame object.  Operations include projecting columns, filtering, mapping and basic mathematics, reductions, split-apply-combine (groupby) operations, and joining.  This compact set of operations can express a surprisingly large set of common computations.  They are widely supported.
+Pandas/R DataFrame object.  Operations include projecting columns, filtering,
+mapping and basic mathematics, reductions, split-apply-combine (group by)
+operations, and joining.  This compact set of operations can express a
+surprisingly large set of common computations.  They are widely supported.
 
 Symbol
 ------
