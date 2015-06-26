@@ -24,9 +24,8 @@ and a datashape.
 
 .. code-block:: python
 
-   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
-
    >>> from blaze import symbol
+   >>> accounts = symbol('accounts', 'var * {id: int, name: string, balance: int}')
 
 Projections, Selection, Arithmetic
 ----------------------------------
@@ -39,8 +38,7 @@ names of those accounts with negative balance.
 
 .. code-block:: python
 
-   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
-
+   >>> accounts = symbol('accounts', 'var * {id: int, name: string, balance: int}')
    >>> deadbeats = accounts[accounts.balance < 0].name
 
 Internally this doesn't do any actual work because we haven't specified a data
@@ -84,10 +82,8 @@ queries to span multiple collections.
 
 .. code-block:: python
 
-   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
-   >>> cities = Symbol('cities', 'var * {name: string, city: string}')
-
    >>> from blaze import join
+   >>> cities = symbol('cities', 'var * {name: string, city: string}')
    >>> join(accounts, cities, 'name')
    Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner', suffixes=('_left', '_right'))
 
