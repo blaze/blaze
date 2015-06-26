@@ -89,12 +89,12 @@ either as methods or as base functions.
 
 .. code-block:: python
 
-   >>> iris.sepal_length.mean()
-   5.843333333333334
+   >>> iris.sepal_length.mean()  # doctest: +ELLIPSIS
+   5.84333333333333...
 
    >>> from blaze import mean
-   >>> mean(iris.sepal_length)
-   5.843333333333334
+   >>> mean(iris.sepal_length)  # doctest: +ELLIPSIS
+   5.84333333333333...
 
 
 Split-Apply-Combine
