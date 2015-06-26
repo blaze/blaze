@@ -1,7 +1,3 @@
-.. contents::
-   :depth: 3
-..
-
 |Build Status| |Coverage Status| |Join the chat at
 https://gitter.im/ContinuumIO/blaze|
 
