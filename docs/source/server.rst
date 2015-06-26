@@ -103,7 +103,9 @@ The previous YAML specification will serve the following dictionary:
      ... }
 
 
-The only required key for each named data source is the ``source`` key, which is passed to ``odo.resource``. You can optionally specify a ``dshape`` parameter, which is passed into ``odo.resource`` along with the ``source`` key.
+The only required key for each named data source is the ``source`` key, which
+is passed to ``odo.resource``. You can optionally specify a ``dshape``
+parameter, which is passed into ``odo.resource`` along with the ``source`` key.
 
 Command Line Interface
 ----------------------
