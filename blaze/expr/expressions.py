@@ -18,6 +18,8 @@ from ..compatibility import _strtypes, builtins, boundmethod
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
+from .utils import hashable_index, replace_slices
+
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
@@ -289,25 +291,28 @@ class ElemWise(Expr):
 
 class Field(ElemWise):
     """
-    A single field from an expression
+    A single field from an expression.
 
-    Get a single field from an expression with record-type schema.  Collapses
-    that record.  We store the name of the field in the ``_name`` attribute.
+    Get a single field from an expression with record-type schema.
+    We store the name of the field in the ``_name`` attribute.
 
-    SELECT a
-    FROM table
-
+    Examples
+    --------
     >>> points = symbol('points', '5 * 3 * {x: int32, y: int32}')
     >>> points.x.dshape
     dshape("5 * 3 * int32")
+
+    For fields that aren't valid Python identifiers, use ``[]`` syntax:
+
+    >>> points = symbol('points', '5 * 3 * {"space station": float64}')
+    >>> points['space station'].dshape
+    dshape("5 * 3 * float64")
     """
     __slots__ = '_hash', '_child', '_name'
 
     def __str__(self):
-        if re.match('^\w+$', self._name):
-            return '%s.%s' % (self._child, self._name)
-        else:
-            return "%s['%s']" % (self._child, self._name)
+        fmt = '%s.%s' if isvalid_identifier(self._name) else '%s[%r]'
+        return fmt % (self._child, self._name)
 
     @property
     def _expr(self):
@@ -324,10 +329,7 @@ class Field(ElemWise):
 
 
 class Projection(ElemWise):
-    """ Select fields from data
-
-    SELECT a, b, c
-    FROM table
+    """Select a subset of fields from data.
 
     Examples
     --------
@@ -335,7 +337,6 @@ class Projection(ElemWise):
     ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{name: string, amount: int32}")
-
     >>> accounts[['name', 'amount']]
     accounts[['name', 'amount']]
 
@@ -382,9 +383,6 @@ def projection(expr, names):
 projection.__doc__ = Projection.__doc__
 
 
-from .utils import hashable_index, replace_slices
-
-
 def sanitize_index_lists(ind):
     """ Handle lists/arrays of integers/bools as indexes
 
@@ -415,19 +413,17 @@ def sliceit(child, index):
 
 
 class Slice(Expr):
-    """
-    Elements `start` until `stop`. On many backends, a `step` parameter
+    """Elements `start` until `stop`. On many backends, a `step` parameter
     is also allowed.
 
     Examples
-    -------
+    --------
     >>> from blaze import symbol
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts[2:7].dshape
     dshape("5 * {name: string, amount: int32}")
     >>> accounts[2:7:2].dshape
     dshape("3 * {name: string, amount: int32}")
-
     """
     __slots__ = '_hash', '_child', '_index'
 
@@ -440,10 +436,11 @@ class Slice(Expr):
         return replace_slices(self._index)
 
     def __str__(self):
-        if type(self.index) == tuple:
-            return '%s[%s]' % (self._child, ', '.join(map(str, self._index)))
+        if isinstance(self.index, tuple):
+            index = ', '.join(map(str, self._index))
         else:
-            return '%s[%s]' % (self._child, self._index)
+            index = str(self._index)
+        return '%s[%s]' % (self._child, index)
 
 
 class Selection(Expr):
@@ -491,7 +488,7 @@ selection.__doc__ = Selection.__doc__
 
 
 class Label(ElemWise):
-    """A Labeled expression
+    """An expression with a name.
 
     Examples
     --------
@@ -519,11 +516,10 @@ class Label(ElemWise):
     def _get_field(self, key):
         if key[0] == self.fields[0]:
             return self
-        else:
-            raise ValueError("Column Mismatch: %s" % key)
+        raise ValueError("Column Mismatch: %s" % key)
 
     def __str__(self):
-        return "label(%s, %r)" % (self._child, self.label)
+        return 'label(%s, %r)' % (self._child, self.label)
 
 
 def label(expr, lab):
@@ -560,13 +556,17 @@ class ReLabel(ElemWise):
 
     Notes
     -----
-    When names are not valid Python names, such as integers, you must pass a
-    dictionary to ``relabel``. For example
+    When names are not valid Python names, such as integers or string with
+    spaces, you must pass a dictionary to ``relabel``. For example
 
     .. code-block:: python
 
-       s = symbol('s', 'var * {"0": int64}')
+       >>> s = symbol('s', 'var * {"0": int64}')
+       >>> s.relabel({'0': 'foo'})
        s.relabel({'0': 'foo'})
+       >>> t = symbol('t', 'var * {"whoo hoo": ?float32}')
+       >>> t.relabel({"whoo hoo": 'foo'})
+       t.relabel({'whoo hoo': 'foo'})
 
     See Also
     --------
@@ -679,7 +679,7 @@ class Apply(Expr):
 
     You must provide the datashape of the result with the ``dshape=`` keyword.
     For datashape examples see
-        http://datashape.pydata.org/grammar.html#some-simple-examples
+    http://datashape.pydata.org/grammar.html#some-simple-examples
 
     If using a chunking backend and your operation may be safely split and
     concatenated then add the ``splittable=True`` keyword argument
@@ -688,7 +688,6 @@ class Apply(Expr):
 
     See Also
     --------
-
     blaze.expr.expressions.Map
     """
     __slots__ = '_hash', '_child', 'func', '_dshape', '_splittable'
