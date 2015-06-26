@@ -24,9 +24,9 @@ and a datashape.
 
 .. code-block:: python
 
-   >>> from blaze import *
    >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
 
+   >>> from blaze import symbol
 
 Projections, Selection, Arithmetic
 ----------------------------------
@@ -64,6 +64,7 @@ split-apply-combine workflows.
 
 .. code-block:: python
 
+   >>> from blaze import by
    >>> by(accounts.name,                 # Splitting/grouping element
    ...    total=accounts.balance.sum())  # Apply and reduction
    by(accounts.name, total=sum(accounts.balance))
@@ -89,6 +90,7 @@ queries to span multiple collections.
    >>> accounts = Symbol('accounts', 'var * {id: int, name: string, balance: int}')
    >>> cities = Symbol('cities', 'var * {name: string, city: string}')
 
+   >>> from blaze import join
    >>> join(accounts, cities, 'name')
    Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner', suffixes=('_left', '_right'))
 
