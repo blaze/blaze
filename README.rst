@@ -5,11 +5,8 @@
 |Build Status| |Coverage Status| |Join the chat at
 https://gitter.im/ContinuumIO/blaze|
 
-.. raw:: html
-
-   <p align="center" style="padding: 20px">
-     <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
-   </p>
+.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
+   :align: center
 
 **Blaze** translates a subset of modified NumPy and Pandas-like syntax
 to databases and other computing systems. Blaze allows Python users a
