@@ -195,6 +195,30 @@ We interact on the client machine through the data object but computations on
 this object cause communications through the web API, resulting in seemlessly
 interactive remote computation.
 
+The blaze server and client can be configured to support various serialization
+formats. These formats are exposed in the ``blaze.server`` module. The server
+and client must both be told to use the same serialization format.
+For example:
+
+.. code-block:: python
+
+    # Server setup.
+    >>> from blaze import Server
+    >>> from blaze.server import msgpack_format, json_format
+    >>> Server(my_data, formats=(msgpack_format, json_format).run()  # doctest: +SKIP
+
+    # Client code, run this in a separate process from the Server
+    >>> from blaze import Client, Data
+    >>> from blaze.server import msgpack_format, json_format
+    >>> msgpack_client = Data(Client('localhost', msgpack_format))  # doctest: +SKIP
+    >>> json_client = Data(Client('localhost', json_format))  # doctest +SKIP
+
+In this example, ``msgpack_client`` will make requests to the
+``/compute.msgpack`` endpoint and will send and receive data using the msgpack
+protocol; however, the ``json_client`` will make requests to the
+``/compute.json`` endpoint and will send and receive data using the json
+protocol.
+
 Using the Python Requests Library
 ---------------------------------
 
@@ -377,12 +401,14 @@ For example:
 
 .. code-block:: python
 
-   >>> from blaze.server import api
-   >>> my_app.register_blueprint(api, data=my_data)  # doctest: +SKIP
+   >>> from blaze.server import api, json_format
+   >>> my_app.register_blueprint(api, data=my_data, formats=(json_format,))  # doctest: +SKIP
 
 
 When registering the API, you must pass the data that the API endpoints will
 serve.
+You must also pass an iterable of serialization format objects that the server
+will respond to.
 
 
 
