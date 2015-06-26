@@ -2,7 +2,7 @@
 https://gitter.im/ContinuumIO/blaze|
 
 .. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
-   :align: center
+   :align: middle
 
 **Blaze** translates a subset of modified NumPy and Pandas-like syntax
 to databases and other computing systems. Blaze allows Python users a
