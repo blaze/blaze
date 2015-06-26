@@ -101,8 +101,8 @@ to that database with the following code
 One can then query and compute results as with a normal blaze workflow.
 
 
-Connecting to a non-default schema
-----------------------------------
+Connecting to a Schema Other than ``public`` with PostgreSQL
+------------------------------------------------------------
 
 To connect to a non-default schema, one may pass a ``sqlalchemy.MetaData``
 object to ``Data``. For example:
