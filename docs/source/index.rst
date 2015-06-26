@@ -80,7 +80,8 @@ User facing
    quickstart
    queries
    split-apply-combine
-   rosetta
+   rosetta-pandas
+   rosetta-sql
    uri
    csv
    sql
