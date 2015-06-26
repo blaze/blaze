@@ -99,6 +99,21 @@ the two collections.
 
    >>> shared_names = join(accounts, cities)
 
+Type Conversion
+---------------
+
+Type conversion of expressions can be done with the ``coerce`` expression.
+Here's how to compute the average account balance for all the deadbeats in my
+``accounts`` table and then cast the result to a 64-bit integer:
+
+.. code-block:: python
+
+   >>> deadbeats = accounts[accounts.balance < 0]
+   >>> avg_deliquency = deadbeats.balance.mean()
+   >>> chopped = avg_deliquency.coerce(to='int64')
+   >>> chopped
+   mean(accounts[accounts.balance < 0].balance).coerce(to='int64')
+
 Other
 -----
 
