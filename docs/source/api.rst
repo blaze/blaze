@@ -2,7 +2,8 @@ API
 ===
 
 This page contains a comprehensive list of functionality within ``blaze``.
-Docstrings should provide sufficient understanding for any individual function.
+Docstrings should provide sufficient understanding for any individual function
+or class.
 
 
 Interactive Use
