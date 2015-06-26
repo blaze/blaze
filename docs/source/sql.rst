@@ -69,7 +69,6 @@ to that database with the following code
    >>> from blaze import *
 
    >>> db = Data('sqlite:///Downloads/lahman2013.sqlite') # doctest: +SKIP
-
    >>> db.<tab>  # see available tables  # doctest: +SKIP
    db.AllstarFull          db.FieldingOF           db.Schools              db.fields
    db.Appearances          db.FieldingPost         db.SchoolsPlayers       db.isidentical
@@ -80,7 +79,6 @@ to that database with the following code
    db.Batting              db.Pitching             db.apply                db.temp
    db.BattingPost          db.PitchingPost         db.data
    db.Fielding             db.Salaries             db.dshape
-
    >>> db.Teams  # view one particular database  # doctest: +SKIP
        yearID lgID teamID franchID divID  Rank   G  Ghome   W   L     ...       \
    0     1871   NA    BS1      BNA  None     3  31    NaN  20  10     ...
@@ -118,6 +116,5 @@ object to ``Data``. For example:
    >>> ds = Data(MetaData('postgresql://localhost/test', schema='my_schema'))  # doctest: +SKIP
    >>> ds.dshape  # doctest: +SKIP
    dshape("{table_a: var * {a: ?int32}, table_b: var * {b: ?int32}}")
-
 
 .. _`Lahman baseball statistics database`: https://github.com/jknecht/baseball-archive-sqlite/raw/master/lahman2013.sqlite
