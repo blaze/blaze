@@ -66,8 +66,7 @@ to that database with the following code
 
 .. code-block:: python
 
-   >>> from blaze import *
-
+   >>> from blaze import Data
    >>> db = Data('sqlite:///Downloads/lahman2013.sqlite') # doctest: +SKIP
    >>> db.<tab>  # see available tables  # doctest: +SKIP
    db.AllstarFull          db.FieldingOF           db.Schools              db.fields
