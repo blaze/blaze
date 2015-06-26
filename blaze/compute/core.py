@@ -124,8 +124,8 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     3.  Re-optimize expression and re-pre-compute data
     4.  Go to step 1
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> import numpy as np
 
@@ -408,8 +408,8 @@ def swap_resources_into_scope(expr, scope):
     expr/compute perspective, this is a hack.  We push the resources onto the
     scope and return simple unadorned expressions instead.
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> from blaze import Data
     >>> t = Data([1, 2, 3], dshape='3 * int', name='t')

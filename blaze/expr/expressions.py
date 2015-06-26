@@ -239,8 +239,8 @@ class Symbol(Expr):
     """
     Symbolic data.  The leaf of a Blaze expression
 
-    Example
-    -------
+    Examples
+    --------
     >>> points = symbol('points', '5 * 3 * {x: int, y: int}')
     >>> points
     points
