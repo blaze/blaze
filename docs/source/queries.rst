@@ -8,9 +8,9 @@ We use the well known iris dataset
 
 .. code-block:: python
 
-   >>> from blaze import *
+   >>> from blaze import Data
    >>> iris = Data('blaze/examples/data/iris.csv')
-   >>> iris  # doctest: +SKIP
+   >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -26,7 +26,7 @@ Select individual columns using attributes
 
 .. code-block:: python
 
-   >>> iris.species  # doctest: +SKIP
+   >>> iris.species
            species
    0   Iris-setosa
    1   Iris-setosa
@@ -38,7 +38,7 @@ Or item access
 
 .. code-block:: python
 
-   >>> iris['species']  # doctest: +SKIP
+   >>> iris['species']
            species
    0   Iris-setosa
    1   Iris-setosa
@@ -50,7 +50,7 @@ Select many columns using a list of names
 
 .. code-block:: python
 
-   >>> iris[['sepal_length', 'species']]  # doctest: +SKIP
+   >>> iris[['sepal_length', 'species']]
        sepal_length      species
    0            5.1  Iris-setosa
    1            4.9  Iris-setosa
@@ -66,7 +66,8 @@ Use mathematical operators and functions as normal
 
 .. code-block:: python
 
-   >>> log(iris.sepal_length * 10)  # doctest: +SKIP
+   >>> from blaze import log
+   >>> log(iris.sepal_length * 10)
        sepal_length
    0       3.931826
    1       3.891820
@@ -88,10 +89,11 @@ either as methods or as base functions.
 
 .. code-block:: python
 
-   >>> iris.sepal_length.mean()  # doctest: +SKIP
+   >>> iris.sepal_length.mean()
    5.843333333333334
 
-   >>> mean(iris.sepal_length)  # doctest: +SKIP
+   >>> from blaze import mean
+   >>> mean(iris.sepal_length)
    5.843333333333334
 
 
@@ -112,6 +114,7 @@ length by species.
 
 .. code-block:: python
 
+   >>> from blaze import by
    >>> by(iris.species, shortest=iris.petal_length.min(),
    ...                   longest=iris.petal_length.max(),
    ...                   average=iris.petal_length.mean())
