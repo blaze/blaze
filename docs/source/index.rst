@@ -80,7 +80,8 @@ User facing
    quickstart
    queries
    split-apply-combine
-   rosetta
+   rosetta-pandas
+   rosetta-sql
    uri
    csv
    sql
@@ -90,6 +91,7 @@ User facing
    what-blaze-isnt
    api
    releases
+   people
    legal
 
 Internal

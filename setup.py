@@ -54,7 +54,7 @@ package_data += [x.replace('blaze' + os.sep, '')
                  for x in find_data_files(exts)]
 
 
-with open('README.md') as f:
+with open('README.rst') as f:
     longdesc = f.read()
 
 with open('requirements-strict.txt') as f:

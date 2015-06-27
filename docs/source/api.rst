@@ -2,7 +2,8 @@ API
 ===
 
 This page contains a comprehensive list of functionality within ``blaze``.
-Docstrings should provide sufficient understanding for any individual function.
+Docstrings should provide sufficient understanding for any individual function
+or class.
 
 
 Interactive Use
@@ -11,6 +12,7 @@ Interactive Use
 .. currentmodule:: blaze.interactive
 
 .. autosummary::
+
    Data
 
 
@@ -20,6 +22,7 @@ Table Expressions
 .. currentmodule:: blaze.expr.expressions
 
 .. autosummary::
+
    Projection
    Field
    Selection
@@ -31,11 +34,13 @@ Table Expressions
 .. currentmodule:: blaze.expr.reductions
 
 .. autosummary::
+
    Reduction
 
 .. currentmodule:: blaze.expr.collections
 
 .. autosummary::
+
    Sort
    Distinct
    Head
@@ -46,14 +51,16 @@ Table Expressions
 .. currentmodule:: blaze.expr.split_apply_combine
 
 .. autosummary::
+
    By
 
-Data Server
------------
+Blaze Server
+------------
 
 .. currentmodule:: blaze.server.server
 
 .. autosummary::
+
    Server
    to_tree
    from_tree
@@ -61,9 +68,8 @@ Data Server
 .. currentmodule:: blaze.server.client
 
 .. autosummary::
+
    Client
-
-
 
 Definitions
 -----------

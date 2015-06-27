@@ -45,11 +45,9 @@ except OSError:
 
 # -- Docstrings ---------------------------------------------------------------
 
-try:
-    import numpydoc
-    extensions += ['numpydoc']
-except ImportError:
-    pass
+import numpydoc
+extensions += ['numpydoc']
+numpydoc_show_class_members = False
 
 # -- Diagrams -----------------------------------------------------------------
 

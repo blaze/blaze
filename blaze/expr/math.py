@@ -70,8 +70,8 @@ class isnan(BooleanMath): pass
 def truncate(expr, precision):
     """ Truncate number to precision
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> from blaze import symbol, compute
     >>> x = symbol('x', 'real')

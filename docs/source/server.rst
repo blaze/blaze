@@ -32,7 +32,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    ...
 
 
-Then we host this publicly on port ``6363``
+Then we host this publicly on port 6363
 
 
 .. code-block:: python
@@ -103,7 +103,9 @@ The previous YAML specification will serve the following dictionary:
      ... }
 
 
-The only required key for each named data source is the ``source`` key, which is passed to ``odo.resource``. You can optionally specify a ``dshape`` parameter, which is passed into ``odo.resource`` along with the ``source`` key.
+The only required key for each named data source is the ``source`` key, which
+is passed to ``odo.resource``. You can optionally specify a ``dshape``
+parameter, which is passed into ``odo.resource`` along with the ``source`` key.
 
 Command Line Interface
 ----------------------
@@ -146,107 +148,18 @@ Interacting with the Web Server from the Client
 ===============================================
 
 Computation is now available on this server at
-``hostname:6363/compute.json``.  To communicate the computation to be done
+``localhost:6363/compute.json``. To communicate the computation to be done
 we pass Blaze expressions in JSON format through the request.  See the examples
 below.
-
-Using ``curl``
---------------
-
-We can use standard command line tools to interact with this web service::
-
-   $ curl \
-       -H "Content-Type: application/json" \
-       -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
-       localhost:6363/compute.json
-
-   {
-     "data": [
-         "Iris-setosa",
-         "Iris-setosa",
-         ...
-         ],
-     "datashape": "var * {species: string}",
-   }
-
-   $ curl \
-       -H "Content-Type: application/json" \
-       -d  '{"expr": {"op": "sum", \
-                      "args": [{"op": "Field", \
-                                "args": [":leaf", "petal_Length"]}]}}' \
-       localhost:6363/compute.json
-
-   {
-     "data": 563.8000000000004,
-     "datashape": "{petal_length_sum: float64}",
-   }
-
-These queries deconstruct the Blaze expression as nested JSON.  The ``":leaf"``
-string is a special case pointing to the base data.  Constructing these queries
-can be difficult to do by hand, fortunately Blaze can help you to build them.
-
-
-Using the Python Requests Library
----------------------------------
-
-First we repeat the same experiment as before, this time using the Python
-``requests`` library instead of the command line tool ``curl``.
-
-.. code-block:: python
-
-   # Client code, run this in a separate process from the Server
-
-   import json
-   import requests
-
-   query = {'expr': {'op': 'sum',
-                     'args': [{'op': 'Field',
-                               'args': [':leaf', 'petal_length']}]}}
-
-   r = requests.get('http://localhost:6363/compute.json',
-                   data=json.dumps(query),
-                   headers={'Content-Type': 'application/json'})
-
-   json.loads(r.content)
-
-  {u'data': 563.8000000000004,
-   u'datashape': u'{petal_length_sum: float64}'}
-
-Now we use Blaze to generate the query programmatically
-
-.. code-block:: python
-
-   >>> from blaze import *
-
-   >>> # Build a Symbol like our served iris data
-   >>> dshape= "var * {sepal_length: float64, sepal_width: float64, petal_length: float64, petal_width: float64, species: string}"  # matching schema to csv file
-   >>> t = symbol('t', dshape)
-   >>> expr = t.petal_length.sum()
-
-   >>> from blaze.server import to_tree
-
-   >>> d = to_tree(expr, names={t: ':leaf'})
-
-   >>> query = {'expr': d}
-   >>> query  # doctest: +SKIP
-   {'expr': {'args': [{'args': [':leaf', 'petal_length'],
-                         'op': 'Field'},
-                      [0],
-                      False],
-               'op': 'sum'}}
-
-Alternatively we build a query to grab a single column
-
-.. code-block:: python
-
-   >>> to_tree(t.species, names={t: ':leaf'})  # doctest: +SKIP
-   {'args': [':leaf', 'species'], 'op': 'Field'}
-
 
 Fully Interactive Python-to-Python Remote work
 ----------------------------------------------
 
-Alternatively we can use this API to have one Blaze process control another.
+The highest level of abstraction and the level that most will probably want to
+work at is interactively sending computations to a Blaze server process from a
+client.
+
+We can use Blaze server to have one Blaze process control another.
 Given our iris web server we can use Blaze on the client to drive the server to
 do work for us
 
@@ -282,6 +195,125 @@ We interact on the client machine through the data object but computations on
 this object cause communications through the web API, resulting in seemlessly
 interactive remote computation.
 
+The blaze server and client can be configured to support various serialization
+formats. These formats are exposed in the ``blaze.server`` module. The server
+and client must both be told to use the same serialization format.
+For example:
+
+.. code-block:: python
+
+    # Server setup.
+    >>> from blaze import Server
+    >>> from blaze.server import msgpack_format, json_format
+    >>> Server(my_data, formats=(msgpack_format, json_format).run()  # doctest: +SKIP
+
+    # Client code, run this in a separate process from the Server
+    >>> from blaze import Client, Data
+    >>> from blaze.server import msgpack_format, json_format
+    >>> msgpack_client = Data(Client('localhost', msgpack_format))  # doctest: +SKIP
+    >>> json_client = Data(Client('localhost', json_format))  # doctest +SKIP
+
+In this example, ``msgpack_client`` will make requests to the
+``/compute.msgpack`` endpoint and will send and receive data using the msgpack
+protocol; however, the ``json_client`` will make requests to the
+``/compute.json`` endpoint and will send and receive data using the json
+protocol.
+
+Using the Python Requests Library
+---------------------------------
+
+Moving down the stack, we can interact at the HTTP request level with Blaze
+serer using the ``requests`` library.
+
+.. code-block:: python
+
+   # Client code, run this in a separate process from the Server
+
+   >>> import json
+   >>> import requests
+   >>> query = {'expr': {'op': 'sum',
+   ...                   'args': [{'op': 'Field',
+   ...                             'args': [':leaf', 'petal_length']}]}}
+   >>> r = requests.get('http://localhost:6363/compute.json',
+   ...                  data=json.dumps(query),
+   ...                  headers={'Content-Type': 'application/json'})  # doctest: +SKIP
+   >>> json.loads(r.content)  # doctest: +SKIP
+   {u'data': 563.8000000000004,
+    u'names': ['petal_length_sum'],
+    u'datashape': u'{petal_length_sum: float64}'}
+
+Now we use Blaze to generate the query programmatically
+
+.. code-block:: python
+
+   >>> from blaze import symbol
+   >>> from blaze.server import to_tree
+   >>> from pprint import pprint
+
+   >>> # Build a Symbol like our served iris data
+   >>> dshape = """var * {
+   ...     sepal_length: float64,
+   ...     sepal_width: float64,
+   ...     petal_length: float64,
+   ...     petal_width: float64,
+   ...     species: string
+   ... }"""  # matching schema to csv file
+   >>> t = symbol('t', dshape)
+   >>> expr = t.petal_length.sum()
+   >>> d = to_tree(expr, names={t: ':leaf'})
+   >>> query = {'expr': d}
+   >>> pprint(query)
+   {'expr': {'args': [{'args': [':leaf', 'petal_length'], 'op': 'Field'},
+                      [0],
+                      False],
+             'op': 'sum'}}
+
+Alternatively we build a query to grab a single column
+
+.. code-block:: python
+
+   >>> pprint(to_tree(t.species, names={t: ':leaf'}))
+   {'args': [':leaf', 'species'], 'op': 'Field'}
+
+
+Using ``curl``
+--------------
+
+In fact, any tool that is capable of sending requests to a server is able to
+send computations to a Blaze server.
+
+We can use standard command line tools such as ``curl`` to interact with the
+server::
+
+   $ curl \
+       -H "Content-Type: application/json" \
+       -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
+       localhost:6363/compute.json
+
+   {
+     "data": [
+         "Iris-setosa",
+         "Iris-setosa",
+         ...
+         ],
+     "datashape": "var * {species: string}",
+   }
+
+   $ curl \
+       -H "Content-Type: application/json" \
+       -d  '{"expr": {"op": "sum", \
+                      "args": [{"op": "Field", \
+                                "args": [":leaf", "petal_Length"]}]}}' \
+       localhost:6363/compute.json
+
+   {
+     "data": 563.8000000000004,
+     "datashape": "{petal_length_sum: float64}",
+   }
+
+These queries deconstruct the Blaze expression as nested JSON.  The ``":leaf"``
+string is a special case pointing to the base data.  Constructing these queries
+can be difficult to do by hand, fortunately Blaze can help you to build them.
 
 Advanced Use
 ------------
@@ -296,9 +328,11 @@ To a dictionary of several heterogeneous datasets
 
 .. code-block:: python
 
-   >>> server = Server({'my-dataframe': df,
-   ...                  'iris': resource('iris.csv'),
-   ...                  'baseball': resource('sqlite:///baseball-statistics.db')})  # doctest: +SKIP
+   >>> server = Server({
+   ...     'my-dataframe': df,
+   ...     'iris': resource('iris.csv'),
+   ...     'baseball': resource('sqlite:///baseball-statistics.db')
+   ... })  # doctest: +SKIP
 
 A variety of hosting options are available through the Flask_ project
 
@@ -313,7 +347,6 @@ A variety of hosting options are available through the Flask_ project
    for code changes and show a debugger in case an exception happened.
 
    ...
-
 
 Caching
 -------
@@ -338,7 +371,7 @@ Queries and results executed against a cached dataset are stored in the cache
 (here a normal Python ``dict``) for fast future access.
 
 If accumulated results are likely to fill up memory then other, on-disk
-dict-like structures can be used like Shove_ or Chest_.
+``dict``-like structures can be used like Shove_ or Chest_.
 
 .. code-block:: python
 
@@ -363,17 +396,19 @@ Flask Blueprint
 ---------------
 
 If you would like to use the blaze server endpoints from within another flask
-application, you can register the blaze api blueprint with your app. For
-example:
+application, you can register the blaze API blueprint with your application.
+For example:
 
 .. code-block:: python
 
-   >>> from blaze.server import api  # doctest: +SKIP
-   >>> my_app.register_blueprint(api, data=my_data)  # doctest: +SKIP
+   >>> from blaze.server import api, json_format
+   >>> my_app.register_blueprint(api, data=my_data, formats=(json_format,))  # doctest: +SKIP
 
 
-When registering the api, you must pass the data that the api endpoints will
+When registering the API, you must pass the data that the API endpoints will
 serve.
+You must also pass an iterable of serialization format objects that the server
+will respond to.
 
 
 
