@@ -15,16 +15,7 @@ from blaze.expr import symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat)
 from blaze.compatibility import builtins, xfail
-
-
-def assert_series_equal(left, right, check_names=True, **kwargs):
-    try:
-        return tm.assert_series_equal(left, right, check_names=check_names,
-                                      **kwargs)
-    except TypeError:
-        if check_names:
-            assert left.name == right.name
-        return tm.assert_series_equal(left, right, **kwargs)
+from blaze.compatibility import assert_series_equal
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
