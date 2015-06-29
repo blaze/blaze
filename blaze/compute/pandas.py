@@ -519,17 +519,18 @@ def compute_up(expr, df, **kwargs):
     return df[np.logical_and.reduce(arrs)]
 
 
-def get_date_attr(s, attr):
+def get_date_attr(s, attr, name):
     try:
-        # new in pandas 0.15
-        return getattr(s.dt, attr)
+        result = getattr(s.dt, attr)  # new in pandas 0.15
     except AttributeError:
-        return getattr(pd.DatetimeIndex(s), attr)
+        result = getattr(pd.DatetimeIndex(s), attr)
+    result.name = name
+    return result
 
 
 @dispatch(DateTime, Series)
 def compute_up(expr, s, **kwargs):
-    return get_date_attr(s, expr.attr)
+    return get_date_attr(s, expr.attr, expr._name)
 
 
 @dispatch(UTCFromTimestamp, Series)
@@ -538,8 +539,9 @@ def compute_up(expr, s, **kwargs):
 
 
 @dispatch(Millisecond, Series)
-def compute_up(_, s, **kwargs):
-    return get_date_attr(s, 'microsecond') // 1000
+def compute_up(expr, s, **kwargs):
+    return get_date_attr(s, 'microsecond',
+                         '%s_millisecond' % expr._child._name) // 1000
 
 
 @dispatch(Slice, (DataFrame, Series))
@@ -562,7 +564,7 @@ def compute_up(expr, df, **kwargs):
 def compute_up(expr, df, **kwargs):
     result = df.shape[0]
     if expr.keepdims:
-        result = Series([result])
+        result = Series([result], name=expr._name)
     return result
 
 
@@ -587,7 +589,8 @@ units_map = {
 
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
-    return Series(compute_up(expr, into(np.ndarray, data), **kwargs))
+    return Series(compute_up(expr, into(np.ndarray, data), **kwargs),
+                  name=expr._name)
 
 
 @dispatch(IsIn, Series)
