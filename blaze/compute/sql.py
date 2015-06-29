@@ -93,7 +93,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+    cols = list(inner_columns(s))
+    d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     result = compute(t._scalar_expr, d, post_compute=False).label(name)
@@ -105,7 +106,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+    cols = list(inner_columns(s))
+    d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     return compute(t._scalar_expr, d, post_compute=False).label(name)
