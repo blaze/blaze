@@ -758,3 +758,10 @@ def test_concat_mat():
         compute(concat(s, t), {s: s_data, t: t_data}),
         pd.DataFrame(np.arange(30).reshape(10, 3), columns=list('abc')),
     )
+
+
+def test_count_keepdims_frame():
+    df = pd.DataFrame(dict(a=[1, 2, 3, np.nan]))
+    s = symbol('s', discover(df))
+    assert_series_equal(compute(s.count(keepdims=True), df),
+                        pd.Series([df.shape[0]], name='s_count'))
