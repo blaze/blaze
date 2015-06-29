@@ -14,8 +14,7 @@ from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, Distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat)
-from blaze.compatibility import builtins, xfail
-from blaze.compatibility import assert_series_equal
+from blaze.compatibility import builtins, xfail, assert_series_equal
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
