@@ -16,6 +16,17 @@ from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat)
 from blaze.compatibility import builtins, xfail
 
+
+def assert_series_equal(left, right, check_names=True, **kwargs):
+    try:
+        return tm.assert_series_equal(left, right, check_names=check_names,
+                                      **kwargs)
+    except TypeError:
+        if check_names:
+            assert left.name == right.name
+        return tm.assert_series_equal(left, right, **kwargs)
+
+
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 
 
@@ -39,7 +50,7 @@ def test_series_columnwise():
     s = Series([1, 2, 3], name='a')
     t = symbol('t', 'var * {a: int64}')
     result = compute(t.a + 1, s)
-    tm.assert_series_equal(s + 1, result)
+    assert_series_equal(s + 1, result)
 
 
 def test_symbol():
@@ -52,7 +63,7 @@ def test_projection():
 
 
 def test_eq():
-    tm.assert_series_equal(compute(t['amount'] == 100, df),
+    assert_series_equal(compute(t['amount'] == 100, df),
                            df['amount'] == 100)
 
 
@@ -64,11 +75,11 @@ def test_selection():
 
 
 def test_arithmetic():
-    tm.assert_series_equal(compute(t['amount'] + t['id'], df),
+    assert_series_equal(compute(t['amount'] + t['id'], df),
                            df.amount + df.id)
-    tm.assert_series_equal(compute(t['amount'] * t['id'], df),
+    assert_series_equal(compute(t['amount'] * t['id'], df),
                            df.amount * df.id)
-    tm.assert_series_equal(compute(t['amount'] % t['id'], df),
+    assert_series_equal(compute(t['amount'] % t['id'], df),
                            df.amount % df.id)
 
 
@@ -128,13 +139,13 @@ def test_abs():
     assert (compute(abs(t['amount']), df) == abs(df['amount'])).all()
 
 def test_neg():
-    tm.assert_series_equal(compute(-t['amount'], df),
+    assert_series_equal(compute(-t['amount'], df),
                            -df['amount'])
 
 
 @xfail(reason='Projection does not support arithmetic')
 def test_neg_projection():
-    tm.assert_series_equal(compute(-t[['amount', 'id']], df),
+    assert_series_equal(compute(-t[['amount', 'id']], df),
                            -df[['amount', 'id']])
 
 
@@ -298,14 +309,14 @@ def test_sort_on_series_no_warning(recwarn):
 
     recwarn.clear()
 
-    tm.assert_series_equal(compute(t['amount'].sort('amount'), df),
+    assert_series_equal(compute(t['amount'].sort('amount'), df),
                            expected)
 
     # raises as assertion error if no warning occurs, same thing for below
     with pytest.raises(AssertionError):
         assert recwarn.pop(FutureWarning)
 
-    tm.assert_series_equal(compute(t['amount'].sort(), df),
+    assert_series_equal(compute(t['amount'].sort(), df),
                            expected)
     with pytest.raises(AssertionError):
         assert recwarn.pop(FutureWarning)
@@ -314,7 +325,7 @@ def test_sort_on_series_no_warning(recwarn):
 def test_field_on_series():
     expr = symbol('s', 'var * int')
     data = Series([1, 2, 3, 4], name='s')
-    tm.assert_series_equal(compute(expr.s, data), data)
+    assert_series_equal(compute(expr.s, data), data)
 
 
 def test_head():
@@ -324,7 +335,7 @@ def test_head():
 def test_label():
     expected = df['amount'] * 10
     expected.name = 'foo'
-    tm.assert_series_equal(compute((t['amount'] * 10).label('foo'), df),
+    assert_series_equal(compute((t['amount'] * 10).label('foo'), df),
                            expected)
 
 
@@ -347,14 +358,14 @@ def test_map_column():
     inc = lambda x: x + 1
     result = compute(t['amount'].map(inc, 'int'), df)
     expected = df['amount'] + 1
-    tm.assert_series_equal(result, expected)
+    assert_series_equal(result, expected)
 
 
 def test_map():
     f = lambda _, amt, id: amt + id
     result = compute(t.map(f, 'real'), df)
     expected = df['amount'] + df['id']
-    tm.assert_series_equal(result, expected)
+    assert_series_equal(result, expected)
 
 
 def test_apply_column():
@@ -398,7 +409,7 @@ def test_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
     expected = df.loc[df.amount < 100, 'name']
     result = compute(expr, df)
-    tm.assert_series_equal(result, expected)
+    assert_series_equal(result, expected)
 
 
 def test_outer_join():
@@ -497,7 +508,7 @@ def test_summary_by_reduction_arithmetic():
 
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
-    tm.assert_series_equal(compute(expr, df), Series({'count': 3, 'sum': 350}))
+    assert_series_equal(compute(expr, df), Series({'count': 3, 'sum': 350}))
 
 
 def test_summary_on_series():
@@ -556,7 +567,7 @@ def test_strlen():
     expr = t.name.strlen()
     expected = pd.Series([5, 3, 5], name='name')
     result = compute(expr, df).reset_index(drop=True)
-    tm.assert_series_equal(expected, result)
+    assert_series_equal(expected, result)
 
 
 def test_rowwise_by():
@@ -581,13 +592,14 @@ def test_datetime_access():
     t = symbol('t', discover(df))
 
     for attr in ['day', 'month', 'minute', 'second']:
-        tm.assert_series_equal(compute(getattr(t.when, attr), df),
-                               Series([1, 1, 1]))
+        expr = getattr(t.when, attr)
+        assert_series_equal(compute(expr, df),
+                            Series([1, 1, 1], name=expr._name))
 
 
 def test_frame_slice():
-    tm.assert_series_equal(compute(t[0], df), df.iloc[0])
-    tm.assert_series_equal(compute(t[2], df), df.iloc[2])
+    assert_series_equal(compute(t[0], df), df.iloc[0])
+    assert_series_equal(compute(t[2], df), df.iloc[2])
     tm.assert_frame_equal(compute(t[:2], df), df.iloc[:2])
     tm.assert_frame_equal(compute(t[1:3], df), df.iloc[1:3])
     tm.assert_frame_equal(compute(t[1::2], df), df.iloc[1::2])
@@ -597,9 +609,9 @@ def test_frame_slice():
 def test_series_slice():
     assert compute(t.amount[0], df) == df.amount.iloc[0]
     assert compute(t.amount[2], df) == df.amount.iloc[2]
-    tm.assert_series_equal(compute(t.amount[:2], df), df.amount.iloc[:2])
-    tm.assert_series_equal(compute(t.amount[1:3], df), df.amount.iloc[1:3])
-    tm.assert_series_equal(compute(t.amount[1::2], df), df.amount.iloc[1::2])
+    assert_series_equal(compute(t.amount[:2], df), df.amount.iloc[:2])
+    assert_series_equal(compute(t.amount[1:3], df), df.amount.iloc[1:3])
+    assert_series_equal(compute(t.amount[1::2], df), df.amount.iloc[1::2])
 
 
 def test_nelements():
@@ -613,8 +625,8 @@ def test_datetime_truncation_minutes():
     s = symbol('s', 'var * datetime')
     result = compute(s.truncate(20, 'minutes'), data)
     expected = Series(['2000-01-01T12:00:00Z', '2000-06-25T12:20:00Z'],
-                      dtype='M8[ns]')
-    tm.assert_series_equal(result, expected)
+                      dtype='M8[ns]', name='s')
+    assert_series_equal(result, expected)
 
 
 def test_datetime_truncation_nanoseconds():
@@ -624,9 +636,9 @@ def test_datetime_truncation_nanoseconds():
     s = symbol('s', 'var * datetime')
     expected = Series(['2000-01-01T12:10:00.000000000',
                        '2000-01-01T12:10:00.000000020'],
-                      dtype='M8[ns]')
+                      dtype='M8[ns]', name='s')
     result = compute(s.truncate(nanoseconds=20), data)
-    tm.assert_series_equal(result, expected)
+    assert_series_equal(result, expected)
 
 
 def test_datetime_truncation_weeks():
@@ -634,8 +646,8 @@ def test_datetime_truncation_weeks():
                   dtype='M8[ns]')
     s = symbol('s', 'var * datetime')
     result = compute(s.truncate(2, 'weeks'), data)
-    expected = Series(['1999-12-19', '2000-06-18'], dtype='M8[ns]')
-    tm.assert_series_equal(result, expected)
+    expected = Series(['1999-12-19', '2000-06-18'], dtype='M8[ns]', name='s')
+    assert_series_equal(result, expected)
 
 
 def test_datetime_truncation_days():
@@ -643,8 +655,8 @@ def test_datetime_truncation_days():
                   dtype='M8[ns]')
     s = symbol('s', 'var * datetime')
     result = compute(s.truncate(days=3), data)
-    expected = Series(['1999-12-31', '2000-06-25'], dtype='M8[ns]')
-    tm.assert_series_equal(result, expected)
+    expected = Series(['1999-12-31', '2000-06-25'], dtype='M8[ns]', name='s')
+    assert_series_equal(result, expected)
 
 
 def test_datetime_truncation_same_as_python():
@@ -720,7 +732,7 @@ def test_coerce_series():
     t = symbol('t', discover(s))
     result = compute(t.coerce(to='int64'), s)
     expected = pd.Series([1, 2, 3], name=s.name)
-    tm.assert_series_equal(result, expected)
+    assert_series_equal(result, expected)
 
 
 def test_concat_arr():
