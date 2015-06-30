@@ -51,10 +51,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
-    sub_uri = ''
     if isinstance(data, _strtypes):
-        if '::' in data:
-            data, sub_uri = data.split('::')
         data = resource(data, schema=schema, dshape=dshape, columns=columns,
                         **kwargs)
     if (isinstance(data, Iterator) and
@@ -93,14 +90,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-    result = InteractiveSymbol(data, ds, name)
-
-    if sub_uri:
-        for field in sub_uri.split('/'):
-            if field:
-                result = result[field]
-
-    return result
+    return InteractiveSymbol(data, ds, name)
 
 
 class InteractiveSymbol(Symbol):
