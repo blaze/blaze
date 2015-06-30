@@ -16,7 +16,7 @@ from .serialization import json
 # flask for testing.  Sadly they have different Response objects,
 # hence the dispatched functions
 
-__all__ = 'Client', 'ExprClient'
+__all__ = 'Client',
 
 
 def content(response):
@@ -88,12 +88,6 @@ class Client(object):
             raise ValueError("Bad Response: %s" % reason(response))
 
         return dshape(content(response).decode('utf-8'))
-
-
-def ExprClient(*args, **kwargs):
-    import warnings
-    warnings.warn("Deprecated use `Client` instead", DeprecationWarning)
-    return Client(*args, **kwargs)
 
 
 @dispatch(Client)
