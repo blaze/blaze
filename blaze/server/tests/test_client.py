@@ -99,6 +99,12 @@ def test_custom_expressions():
     assert list(map(tuple, compute(CustomExpr(t.accounts), ec))) == into(list, df)
 
 
-def test_client_dataset():
+@pytest.mark.xfail(raises=ValueError, reason='No longer support this syntax')
+def test_client_dataset_fails():
     d = Data('blaze://localhost::accounts')
     assert list(map(tuple, into(list, d))) == into(list, df)
+
+
+def test_client_dataset():
+    d = Data('blaze://localhost')
+    assert list(map(tuple, into(list, d.accounts))) == into(list, df)
