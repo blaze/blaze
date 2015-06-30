@@ -110,11 +110,17 @@ def compute_down(expr, ec, **kwargs):
 
 
 @resource.register('blaze://.+')
-def resource_blaze(uri, **kwargs):
+def resource_blaze(uri, leaf=None, **kwargs):
+    if leaf is not None:
+        raise ValueError('The syntax blaze://...::{leaf} is no longer '
+                         'supported as of version 0.8.1.\n'
+                         'You can access {leaf!r} using this syntax:\n'
+                         'Data({uri})[{leaf!r}]'
+                         .format(leaf=leaf, uri=uri))
     uri = uri[len('blaze://'):]
     sp = uri.split('/')
     tld, rest = sp[0], sp[1:]
     if ':' not in tld:
-        tld = tld + ':%d' % DEFAULT_PORT
+        tld += ':%d' % DEFAULT_PORT
     uri = '/'.join([tld] + list(rest))
     return Client(uri)
