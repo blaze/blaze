@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .server import Server, to_tree, from_tree, api
 from .spider import spider, from_yaml
-from .client import ExprClient, Client
+from .client import Client
 from .serialization import (
     SerializationFormat,
     all_formats,
@@ -14,7 +14,6 @@ from .serialization import (
 
 __all__ = [
     'Client',
-    'ExprClient',
     'SerializationFormat',
     'Server',
     'spider',
