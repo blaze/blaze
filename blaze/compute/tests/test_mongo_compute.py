@@ -368,3 +368,9 @@ def test_and_same_key(bank):
     result = compute(expr, bank)
     expected = [('Alice', 200), ('Bob', 200)]
     assert result == expected
+
+
+def test_interactive_dshape_works():
+    d = Data('mongodb://localhost:27017/test_db::bank',
+             dshape='var * {name: string, amount: int64}')
+    assert d.dshape == dshape('var * {name: string, amount: int64}')
