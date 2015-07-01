@@ -43,8 +43,10 @@ def big_bank(db):
             {'name': 'Bob', 'amount': 300, 'city': 'San Francisco'}]
     coll = db.bigbank
     coll = into(coll, data)
-    yield coll
-    coll.drop()
+    try:
+        yield coll
+    finally:
+        coll.drop()
 
 
 @pytest.yield_fixture
@@ -57,16 +59,20 @@ def date_data(db):
     data = [dict(zip(d.keys(), [d[k][i] for k in d.keys()]))
             for i in range(n)]
     coll = into(db.date_data, data)
-    yield coll
-    coll.drop()
+    try:
+        yield coll
+    finally:
+        coll.drop()
 
 
 @pytest.yield_fixture
 def bank(db):
     coll = db.bank
     coll = into(coll, bank_raw)
-    yield coll
-    coll.drop()
+    try:
+        yield coll
+    finally:
+        coll.drop()
 
 
 @pytest.yield_fixture
@@ -77,8 +83,10 @@ def missing_vals(db):
             {'x': 4, 'y': 40}]
     coll = db.missing_vals
     coll = into(coll, data)
-    yield coll
-    coll.drop()
+    try:
+        yield coll
+    finally:
+        coll.drop()
 
 
 @pytest.yield_fixture
@@ -89,8 +97,10 @@ def points(db):
             {'x': 4, 'y': 40, 'z': 400}]
     coll = db.points
     coll = into(coll, data)
-    yield coll
-    coll.drop()
+    try:
+        yield coll
+    finally:
+        coll.drop()
 
 
 @pytest.yield_fixture
@@ -100,8 +110,10 @@ def events(db):
             {'time': datetime(2012, 1, 3, 12, 00, 00), 'x': 3}]
     coll = db.events
     coll = into(coll, data)
-    yield coll
-    coll.drop()
+    try:
+        yield coll
+    finally:
+        coll.drop()
 
 
 t = symbol('t', 'var * {name: string, amount: int}')
@@ -374,3 +386,10 @@ def test_interactive_dshape_works():
     d = Data('mongodb://localhost:27017/test_db::bank',
              dshape='var * {name: string, amount: int64}')
     assert d.dshape == dshape('var * {name: string, amount: int64}')
+
+
+@pytest.mark.xfail(raises=TypeError, reason="IsIn not yet implemented")
+def test_isin_fails(bank):
+    expr = t[t.amount.isin([100])]
+    result = compute(expr, bank)
+    assert result == compute(t[t.amount == 100], bank)
