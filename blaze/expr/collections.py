@@ -13,8 +13,9 @@ from .expressions import dshape_method_list
 from ..compatibility import zip_longest
 
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform', 'Concat', 'concat']
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
+           'merge', 'head', 'sort', 'Join', 'join', 'transform', 'Concat',
+           'concat']
 
 
 class Sort(Expr):
@@ -60,16 +61,18 @@ class Sort(Expr):
 
 
 def sort(child, key=None, ascending=True):
-    """ Sort collection
+    """ Sort a collection
 
     Parameters
     ----------
-    key: string, list of strings, Expr
-        Defines by what you want to sort.  Either:
-            A single column string, ``t.sort('amount')``
-            A list of column strings, ``t.sort(['name', 'amount'])``
-            A Table Expression, ``t.sort(-t.amount)``
-    ascending: bool
+    key : str, list of str, or Expr
+        Defines by what you want to sort.
+
+          * A single column string: ``t.sort('amount')``
+          * A list of column strings: ``t.sort(['name', 'amount'])``
+          * An expression: ``t.sort(-t.amount)``
+
+    ascending : bool, optional
         Determines order of the sort
     """
     if not isrecord(child.dshape.measure):
@@ -81,8 +84,7 @@ def sort(child, key=None, ascending=True):
 
 class Distinct(Expr):
 
-    """
-    Removes duplicate rows from the table, so every row is distinct
+    """ Remove duplicate elements from an expression
 
     Examples
     --------
@@ -120,9 +122,12 @@ def distinct(expr):
     return Distinct(expr)
 
 
+distinct.__doc__ = Distinct.__doc__
+
+
 class Head(Expr):
 
-    """ First ``n`` elements of collection
+    """ First `n` elements of collection
 
     Examples
     --------
@@ -258,6 +263,9 @@ class Merge(ElemWise):
         return list(unique(tconcat(i._leaves() for i in self.children)))
 
 
+merge.__doc__ = Merge.__doc__
+
+
 def unpack(l):
     """ Unpack items from collections of nelements 1
 
@@ -278,11 +286,11 @@ class Join(Expr):
 
     Parameters
     ----------
-    lhs : Expr
-    rhs : Expr
+    lhs, rhs : Expr
+        Expressions to join
     on_left : string
     on_right : string
-    suffixes: pair
+    suffixes: pair of strings
 
     Examples
     --------
@@ -291,9 +299,11 @@ class Join(Expr):
     >>> amounts = symbol('amounts', 'var * {amount: int, id: int}')
 
     Join tables based on shared column name
+
     >>> joined = join(names, amounts, 'id')
 
     Join based on different column names
+
     >>> amounts = symbol('amounts', 'var * {amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
 
@@ -332,12 +342,15 @@ class Join(Expr):
         >>> s = symbol('t', 'var * {name: string, id: int}')
 
         >>> join(t, s).schema
+
         dshape("{name: string, amount: int32, id: int32}")
 
         >>> join(t, s, how='left').schema
+
         dshape("{name: string, amount: int32, id: ?int32}")
 
         Overlapping but non-joined fields append _left, _right
+
         >>> a = symbol('a', 'var * {x: int, y: int}')
         >>> b = symbol('b', 'var * {x: int, y: int}')
         >>> join(a, b, 'x').fields
@@ -536,8 +549,29 @@ concat.__doc__ = Concat.__doc__
 
 
 class IsIn(ElemWise):
-    """Return a boolean expression indicating whether another expression
+    """Check if an expression contains values from a set.
+
+    Return a boolean expression indicating whether another expression
     contains values that are members of a collection.
+
+    Parameters
+    ----------
+    expr : Expr
+        Expression whose elements to check for membership in `keys`
+    keys : Sequence
+        Elements to test against. Blaze stores this as a ``frozenset``.
+
+    Examples
+    --------
+
+    Check if a vector contains any of 1, 2 or 3:
+
+    >>> t = symbol('t', '10 * int64')
+    >>> expr = t.isin([1, 2, 3])
+    >>> expr
+    t.isin(frozenset([1, 2, 3]))
+    >>> expr.dshape
+    dshape("10 * bool")
     """
     __slots__ = '_hash', '_child', '_keys'
 
@@ -546,12 +580,12 @@ class IsIn(ElemWise):
         return datashape.bool_
 
 
-def isin(child, keys):
+def isin(expr, keys):
     if isinstance(keys, Expr):
         raise TypeError('keys argument cannot be an expression, '
                         'it must be an iterable object such as a list, '
                         'tuple or set')
-    return IsIn(child, frozenset(keys))
+    return IsIn(expr, frozenset(keys))
 
 
 isin.__doc__ = IsIn.__doc__
