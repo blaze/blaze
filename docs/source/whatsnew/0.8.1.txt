@@ -11,9 +11,9 @@ New Expressions
 
 * String arithmetic is now possible across the numpy and pandas backends via the ``+`` (concatenation) and ``*`` (repeat) operators (:issue:`1058`).
 * Datetime arithmetic is now available (:issue:`1112`).
-* Add a ``Concat`` expression that implements Union-style operations
+* Add a :class:`~blaze.expr.collections.Concat` expression that implements Union-style operations
   (:issue:`1128`).
-* Add a ``Coerce`` expression that casts expressions to a different datashape. This maps to ``astype`` in numpy and ``cast`` in SQL (:issue:`1137`).
+* Add a :class:`~blaze.expr.expressions.Coerce` expression that casts expressions to a different datashape. This maps to ``astype`` in numpy and ``cast`` in SQL (:issue:`1137`).
 
 
 Improved Expressions
