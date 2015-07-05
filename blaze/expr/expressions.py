@@ -23,8 +23,8 @@ from .utils import hashable_index, replace_slices
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label',
-           'symbol', 'Coerce']
+           'ReLabel', 'relabel', 'Apply', 'apply', 'Slice', 'shape', 'ndim',
+           'label', 'symbol', 'Coerce', 'coerce']
 
 
 _attr_cache = dict()
@@ -688,6 +688,7 @@ class Apply(Expr):
 
     See Also
     --------
+
     blaze.expr.expressions.Map
     """
     __slots__ = '_hash', '_child', 'func', '_dshape', '_splittable'
