@@ -35,6 +35,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               'sphinx.ext.graphviz',
               ]
 
+
+extlinks = dict(issue=('https://github.com/ContinuumIO/blaze/issues/%s', '#'))
+
 # -- Math ---------------------------------------------------------------------
 
 try:
