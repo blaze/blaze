@@ -446,31 +446,33 @@ class Concat(Expr):
 
     Parameters
     ----------
-    lhs : Expr
-    rhs : Expr
+    lhs, rhs : Expr
+        Collections to concatenate
     axis : int, optional
         The axis to concatenate on.
 
     Examples
     --------
     >>> from blaze import symbol
+
+    Vertically stack tables:
+
     >>> names = symbol('names', '5 * {name: string, id: int32}')
     >>> more_names = symbol('more_names', '7 * {name: string, id: int32}')
-
-    Vertically stack these tables.
     >>> stacked = concat(names, more_names)
     >>> stacked.dshape
     dshape("12 * {name: string, id: int32}")
 
+    Vertically stack matrices:
+
     >>> mat_a = symbol('a', '3 * 5 * int32')
     >>> mat_b = symbol('b', '3 * 5 * int32')
-
-    Vertically stack these matricies.
     >>> vstacked = concat(mat_a, mat_b, axis=0)
     >>> vstacked.dshape
     dshape("6 * 5 * int32")
 
-    Horizontally stack these matricies.
+    Horizontally stack matrices:
+
     >>> hstacked = concat(mat_a, mat_b, axis=1)
     >>> hstacked.dshape
     dshape("3 * 10 * int32")
