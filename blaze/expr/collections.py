@@ -342,11 +342,9 @@ class Join(Expr):
         >>> s = symbol('t', 'var * {name: string, id: int}')
 
         >>> join(t, s).schema
-
         dshape("{name: string, amount: int32, id: int32}")
 
         >>> join(t, s, how='left').schema
-
         dshape("{name: string, amount: int32, id: ?int32}")
 
         Overlapping but non-joined fields append _left, _right
@@ -566,6 +564,7 @@ class IsIn(ElemWise):
 
     Check if a vector contains any of 1, 2 or 3:
 
+    >>> from blaze import symbol
     >>> t = symbol('t', '10 * int64')
     >>> expr = t.isin([1, 2, 3])
     >>> expr
@@ -578,6 +577,10 @@ class IsIn(ElemWise):
     @property
     def schema(self):
         return datashape.bool_
+
+    def __str__(self):
+        return '%s.%s(%s)' % (self._child, type(self).__name__.lower(),
+                              self._keys)
 
 
 def isin(expr, keys):
