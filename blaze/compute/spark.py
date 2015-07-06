@@ -110,6 +110,8 @@ def compute_up(t, rdd, **kwargs):
 
 @dispatch(Distinct, RDD)
 def compute_up(t, rdd, **kwargs):
+    if t.on:
+        raise ValueError('spark backend cannot specify what to distinct on')
     return rdd.distinct()
 
 

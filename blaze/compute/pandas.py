@@ -192,9 +192,18 @@ def compute_up(t, s, **kwargs):
     return result
 
 
-@dispatch(Distinct, (DataFrame, Series))
+@dispatch(Distinct, DataFrame)
 def compute_up(t, df, **kwargs):
-    return df.drop_duplicates().reset_index(drop=True)
+    return df.drop_duplicates(
+        subset=t.on if t.on else None,
+    ).reset_index(drop=True)
+
+
+@dispatch(Distinct, Series)
+def compute_up(t, s, **kwargs):
+    if t.on:
+        raise ValueError('series distinct cannot specify what to distinct on')
+    return s.drop_duplicates().reset_index(drop=True)
 
 
 @dispatch(nunique, DataFrame)

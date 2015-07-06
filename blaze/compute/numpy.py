@@ -199,6 +199,8 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Distinct, np.ndarray)
 def compute_up(t, x, **kwargs):
+    if t.on:
+        raise ValueError('numpy backend cannot specify what to distinct on')
     return np.unique(x)
 
 

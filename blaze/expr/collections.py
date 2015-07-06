@@ -8,9 +8,9 @@ from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, label
+from .expressions import Expr, ElemWise, label, Field
 from .expressions import dshape_method_list
-from ..compatibility import zip_longest
+from ..compatibility import zip_longest, _strtypes
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
@@ -100,7 +100,7 @@ class Distinct(Expr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
     """
-    __slots__ = '_hash', '_child',
+    __slots__ = '_hash', '_child', 'on'
 
     @property
     def dshape(self):
@@ -115,11 +115,22 @@ class Distinct(Expr):
         return self._child._name
 
     def __str__(self):
-        return 'distinct(%s)' % self._child
+        return 'distinct({child}{on})'.format(
+            child=self._child,
+            on=(', ' if self.on else '') + ', '.join(map(str, self.on))
+        )
 
 
-def distinct(expr):
-    return Distinct(expr)
+def _onclause(on):
+    if isinstance(on, Field):
+        return on._name
+    elif not isinstance(on, _strtypes):
+        raise TypeError('on must be a name or field')
+    return on
+
+
+def distinct(expr, *on):
+    return Distinct(expr, tuple(map(_onclause, on)))
 
 
 distinct.__doc__ = Distinct.__doc__
