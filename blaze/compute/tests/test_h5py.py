@@ -19,12 +19,13 @@ def eq(a, b):
 
 x = np.arange(20*24, dtype='f4').reshape((20, 24))
 
+
 @pytest.yield_fixture
 def file():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
-                                   fillvalue=0.0, chunks=(4, 6))
+                             fillvalue=0.0, chunks=(4, 6))
         d[:] = x
         yield f
         f.close()
@@ -40,7 +41,7 @@ def data_1d_chunks():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
-                                   fillvalue=0.0, chunks=(1, 24))
+                             fillvalue=0.0, chunks=(1, 24))
         d[:] = x
 
         yield d
@@ -52,13 +53,14 @@ rec = np.empty(shape=(20, 24), dtype=[('x', 'i4'), ('y', 'i4')])
 rec['x'] = 1
 rec['y'] = 2
 
+
 @pytest.yield_fixture
 def recdata():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=rec.shape,
-                                   dtype=rec.dtype,
-                                   chunks=(4, 6))
+                             dtype=rec.dtype,
+                             chunks=(4, 6))
         d['x'] = rec['x']
         d['y'] = rec['y']
         yield d
