@@ -86,6 +86,11 @@ class Distinct(Expr):
 
     """ Remove duplicate elements from an expression
 
+    Paramaters
+    ----------
+    on : *field
+        The subset of fields or names of fields to be distinct on.
+
     Examples
     --------
     >>> from blaze import symbol
@@ -99,6 +104,22 @@ class Distinct(Expr):
     >>> from blaze.compute.python import compute
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
+
+    Using a subset
+
+    >>> import pandas as pd
+    >>> e = distinct(t, 'name')
+    >>> data = pd.DataFrame([['Alice', 100, 1],
+    ...                      ['Alice', 200, 2],
+    ...                      ['Bob', 100, 1],
+    ...                      ['Bob', 200, 2]],
+    ...                     columns=['name', 'amount', 'id'])
+    >>> compute(e, data)
+        name  amount  id
+    0  Alice     100   1
+    1    Bob     100   1
+
+
     """
     __slots__ = '_hash', '_child', 'on'
 
