@@ -41,7 +41,7 @@ for i in range(1, 11):
 
 
 def get_numba_type(dshape):
-    """Get the ``numba`` type corresponding to the ``datashape.Mono`` instance
+    """Get the numba type corresponding to the ``datashape.Mono`` instance.
     `dshape`
 
     Parameters
@@ -51,53 +51,12 @@ def get_numba_type(dshape):
     Returns
     -------
     restype : numba.types.Type
+        Numba type corresponding to `dshape`.
 
     Examples
     --------
-    >>> import datashape
-    >>> import numba
-
-    >>> get_numba_type(datashape.bool_)
-    bool
-
-    >>> get_numba_type(datashape.date_)
-    datetime64(D)
-
-    >>> get_numba_type(datashape.datetime_)
-    datetime64(us)
-
-    >>> get_numba_type(datashape.timedelta_)  # default unit is microseconds
-    timedelta64(us)
-
-    >>> get_numba_type(datashape.TimeDelta('D'))
-    timedelta64(D)
-
-    >>> get_numba_type(datashape.int64)
-    int64
-
-    >>> get_numba_type(datashape.String(7, "A"))
-    [char x 7]
-
-    >>> get_numba_type(datashape.String(None, "A"))
-    str
-
-    >>> get_numba_type(datashape.String(7))
-    [unichr x 7]
-
-    >>> get_numba_type(datashape.string)
-    Traceback (most recent call last):
-      ...
-    TypeError: Numba cannot handle variable length strings
-
-    >>> get_numba_type(datashape.object_)
-    Traceback (most recent call last):
-      ...
-    TypeError: Numba cannot handle object datashape
-
-    >>> get_numba_type(datashape.dshape('10 * {a: int64}'))
-    Traceback (most recent call last):
-      ...
-    TypeError: Invalid datashape to numba type: dshape("{a: int64}")
+    >>> get_numba_type(datashape.bool_) == numba.bool_
+    True
 
     See Also
     --------
@@ -140,19 +99,10 @@ def compute_signature(expr):
     >>> from blaze import symbol
     >>> s = symbol('s', 'int64')
     >>> t = symbol('t', 'float32')
-    >>> d = symbol('d', 'datetime')
-
+    >>> from numba import float64, int64, float32
     >>> expr = s + t
-    >>> compute_signature(expr)
-    float64(int64, float32)
-
-    >>> expr = d.truncate(days=1)
-    >>> compute_signature(expr)
-    datetime64(D)(datetime64(us))
-
-    >>> expr = d.day + 1
-    >>> compute_signature(expr)  # only looks at leaf nodes
-    int64(datetime64(us))
+    >>> compute_signature(expr) == float64(int64, float32)
+    True
 
     Notes
     -----
