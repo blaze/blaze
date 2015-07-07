@@ -383,8 +383,11 @@ def test_and_same_key(bank):
 
 
 def test_interactive_dshape_works():
-    d = Data('mongodb://localhost:27017/test_db::bank',
-             dshape='var * {name: string, amount: int64}')
+    try:
+        d = Data('mongodb://localhost:27017/test_db::bank',
+                 dshape='var * {name: string, amount: int64}')
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('No mongo server running')
     assert d.dshape == dshape('var * {name: string, amount: int64}')
 
 
