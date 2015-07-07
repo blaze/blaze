@@ -1,8 +1,8 @@
 Release 0.8.1
 -------------
 
-:Release: |release|
-:Date: |today|
+:Release: 0.8.1
+:Date: July 7th, 2015
 
 
 New Expressions
