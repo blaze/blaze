@@ -1,9 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
 
 import pytest
 h5py = pytest.importorskip('h5py')
+
+import sys
+from distutils.version import LooseVersion
+
+import numpy as np
 
 from datashape import discover
 
@@ -68,6 +72,14 @@ def recdata():
 
 s = symbol('s', discover(x))
 
+two_point_five_and_windows_py3 = \
+    pytest.mark.skipif(sys.platform == 'win32' and
+                       h5py.__version__ == LooseVersion('2.5.0') and
+                       sys.version_info[0] == 3,
+                       reason=('h5py 2.5.0 issue with varlen string types: '
+                               'https://github.com/h5py/h5py/issues/593'))
+
+
 
 def test_slicing(data):
     for idx in [0, 1, (0, 1), slice(1, 3), (0, slice(1, 5, 2))]:
@@ -82,6 +94,7 @@ def test_reductions(data):
     assert eq(compute(s[-1], data), x[-1])
 
 
+@two_point_five_and_windows_py3
 def test_mixed(recdata):
     s = symbol('s', discover(recdata))
     expr = (s.x + 1).sum(axis=1)
@@ -93,6 +106,7 @@ def test_uneven_chunk_size(data):
               x.sum(axis=1))
 
 
+@two_point_five_and_windows_py3
 def test_nrows_3D_records(recdata):
     s = symbol('s', discover(recdata))
     assert not hasattr(s, 'nrows')
@@ -104,6 +118,7 @@ def test_nrows_array(data):
     assert compute(s.nrows, data) == len(data)
 
 
+@two_point_five_and_windows_py3
 def test_nelements_records(recdata):
     s = symbol('s', discover(recdata))
     assert compute(s.nelements(), recdata) == np.prod(recdata.shape)
