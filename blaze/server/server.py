@@ -194,7 +194,7 @@ def to_tree(expr, names=None):
     See Also
     --------
 
-    blaze.server.server.from_tree
+    from_tree
     """
     if names and expr in names:
         return names[expr]
@@ -292,7 +292,7 @@ def from_tree(expr, namespace=None):
     See Also
     --------
 
-    blaze.server.server.to_tree
+    to_tree
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']

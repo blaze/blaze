@@ -2,6 +2,8 @@
 Release Notes
 =============
 
+.. include:: whatsnew/0.8.1.txt
+
 Release 0.7.3
 -------------
 

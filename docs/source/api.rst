@@ -16,26 +16,20 @@ Interactive Use
    Data
 
 
-Table Expressions
------------------
+Expressions
+-----------
 
 .. currentmodule:: blaze.expr.expressions
 
 .. autosummary::
 
    Projection
-   Field
    Selection
-   ElemWise
    Label
    ReLabel
    Map
-
-.. currentmodule:: blaze.expr.reductions
-
-.. autosummary::
-
-   Reduction
+   Apply
+   Coerce
 
 .. currentmodule:: blaze.expr.collections
 
@@ -47,6 +41,7 @@ Table Expressions
    Merge
    Join
    Concat
+   IsIn
 
 .. currentmodule:: blaze.expr.split_apply_combine
 
@@ -62,8 +57,6 @@ Blaze Server
 .. autosummary::
 
    Server
-   to_tree
-   from_tree
 
 .. currentmodule:: blaze.server.client
 
@@ -71,10 +64,36 @@ Blaze Server
 
    Client
 
+Additional Server Utilities
+---------------------------
+
+.. currentmodule:: blaze.server.server
+
+.. autosummary::
+
+   to_tree
+   from_tree
+
+.. currentmodule:: blaze.server.spider
+
+.. autosummary::
+
+   spider
+   from_yaml
+
 Definitions
 -----------
 
 .. automodule:: blaze.interactive
+   :members:
+
+.. automodule:: blaze.server.spider
+   :members:
+
+.. automodule:: blaze.server.server
+   :members:
+
+.. automodule:: blaze.server.client
    :members:
 
 .. automodule:: blaze.expr.collections
@@ -102,10 +121,4 @@ Definitions
    :members:
 
 .. automodule:: blaze.expr.split_apply_combine
-   :members:
-
-.. automodule:: blaze.server.server
-   :members:
-
-.. automodule:: blaze.server.client
    :members:
