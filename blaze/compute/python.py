@@ -385,7 +385,9 @@ def compute_up_1d(t, seq, **kwargs):
 @dispatch(Distinct, Sequence)
 def compute_up(t, seq, **kwargs):
     if t.on:
-        raise ValueError('python backend cannot specify what to distinct on')
+        raise NotImplementedError(
+            'python backend cannot specify what columns to distinct on'
+        )
     try:
         row = toolz.first(seq)
     except StopIteration:

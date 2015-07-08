@@ -202,7 +202,7 @@ def compute_up(t, df, **kwargs):
 @dispatch(Distinct, Series)
 def compute_up(t, s, **kwargs):
     if t.on:
-        raise ValueError('series distinct cannot specify what to distinct on')
+        raise ValueError('malformed expression: no columns to distinct on')
     return s.drop_duplicates().reset_index(drop=True)
 
 

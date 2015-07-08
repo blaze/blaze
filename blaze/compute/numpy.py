@@ -198,10 +198,23 @@ def compute_up(t, x, **kwargs):
 
 
 @dispatch(Distinct, np.ndarray)
-def compute_up(t, x, **kwargs):
+def compute_up(t, arr, **kwargs):
     if t.on:
-        raise ValueError('numpy backend cannot specify what to distinct on')
-    return np.unique(x)
+        if getattr(arr.data.dtypes, 'names', None) is not None:
+            return pd.DataFrame.from_records(arr).drop_duplicates(
+                subset=t.on if t.on else None,
+            ).reset_index(drop=True).value
+        else:
+            raise ValueError('malformed expression: no columns to distinct on')
+
+    return np.unique(arr)
+
+
+@dispatch(Distinct, np.recarray)
+def compute_up(t, rec, **kwargs):
+    return pd.DataFrame.from_records(rec).drop_duplicates(
+        subset=t.on if t.on else None,
+    ).to_records(index=False)
 
 
 @dispatch(Sort, np.ndarray)
