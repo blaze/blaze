@@ -170,6 +170,14 @@ def test_distinct(rdd):
         set(['Alice', 'Bob'])
 
 
+@pytest.mark.xfail(
+    raises=NotImplementedError,
+    reason='cannot specify columns to distinct on yet',
+)
+def test_distinct_in(rdd):
+    compute(t.distinct('name'), rdd)
+
+
 def test_join(rdd, rdd2):
 
     joined = join(t, t2, 'name')
