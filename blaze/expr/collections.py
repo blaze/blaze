@@ -567,8 +567,6 @@ class IsIn(ElemWise):
     >>> from blaze import symbol
     >>> t = symbol('t', '10 * int64')
     >>> expr = t.isin([1, 2, 3])
-    >>> expr
-    t.isin(frozenset([1, 2, 3]))
     >>> expr.dshape
     dshape("10 * bool")
     """
