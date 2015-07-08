@@ -200,10 +200,10 @@ def compute_up(t, x, **kwargs):
 @dispatch(Distinct, np.ndarray)
 def compute_up(t, arr, **kwargs):
     if t.on:
-        if getattr(arr.data.dtypes, 'names', None) is not None:
+        if getattr(arr.dtype, 'names', None) is not None:
             return pd.DataFrame.from_records(arr).drop_duplicates(
                 subset=t.on if t.on else None,
-            ).reset_index(drop=True).value
+            ).reset_index(drop=True).value.astype(arr.dtype)
         else:
             raise ValueError('malformed expression: no columns to distinct on')
 
@@ -214,7 +214,7 @@ def compute_up(t, arr, **kwargs):
 def compute_up(t, rec, **kwargs):
     return pd.DataFrame.from_records(rec).drop_duplicates(
         subset=t.on if t.on else None,
-    ).to_records(index=False)
+    ).to_records(index=False).astype(rec.dtype)
 
 
 @dispatch(Sort, np.ndarray)
