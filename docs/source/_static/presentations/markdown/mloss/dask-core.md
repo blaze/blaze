@@ -58,6 +58,34 @@ Dead simple task scheduling
 *  **Arguments** are keys in dictionary ('y') or literal values (10)
 
 
+<img src="images/dask-simple.png"
+     alt="A simple dask dictionary"
+     width="18%"
+     align="right">
+
+    # Normal Python             # Dask
+
+    def inc(i):
+       return i + 1
+
+    def add(a, b):
+       return a + b
+
+    x = 1                       d = {'x': 1,
+    y = inc(x)                       'y': (inc, 'x'),
+    z = add(y, 10)                   'z': (add, 'y', 10)}
+
+<hr>
+
+    >>> from dask.multiprocessing import get
+    >>> get(d, 'z')
+    12
+
+*  **Dask graph** is a dictionary of tasks
+*  **Task** is a tuple with a callable first element
+*  **Arguments** are keys in dictionary ('y') or literal values (10)
+
+
 ### Thoughts on Graphs
 
     d = {'x': 1,
@@ -118,3 +146,6 @@ Dead simple task scheduling
 <hr>
 
 ### Question: How should we write them down as code?
+
+
+### Up Next:  Example projects using dask to parallelize other workflows

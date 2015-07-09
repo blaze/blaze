@@ -1,17 +1,15 @@
-## Example: SVD
-
-
-## Most Parallel Computation is Simple
+## Data Ingest / JSON Blob Computations
 
     >>> import dask.bag as db
-    >>> b = db.from_s3('githubarchive-data', '2015-01-01-*.json.gz')
+    >>> b = db.from_s3('githubarchive-data', '2015-*.json.gz')
               .map(json.loads)
               .map(lambda d: d['type'] == 'PushEvent')
               .count()
 
-<img src="images/embarrassing.png" alt="embarassingly parallel dask workload">
-
 [*Problem and blogpost by Blake Griffith*](continuum.io/blog/dask-distributed-cluster)
+
+
+## Example: SVD
 
 
 ## What about more complex workflows?

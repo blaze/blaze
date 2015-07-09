@@ -36,16 +36,6 @@ Continuum Analytics
 *  Not just arrays
 
 
-## tl;dr
-
-`dask.array` is...
-
-*  an out-of-core, multi-core, n-dimensional array library
-*  that copies the `numpy` interface
-*  using blocked algorithms
-*  and task scheduling
-
-
 ### NumPy interface
 
 `dask.array` supports the following interface from numpy.
