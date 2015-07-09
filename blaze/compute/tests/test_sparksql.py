@@ -242,10 +242,13 @@ def test_column_arithmetic(ctx, db):
 
 # pyspark doesn't use __version__ so we use this kludge
 # should submit a bug report upstream to get __version__
-fail_on_spark_one_two = pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
-                                          raises=py4j.protocol.Py4JJavaError,
-                                          reason=('math functions only '
-                                                  'supported in HiveContext'))
+def fail_on_spark_one_two(x):
+    if hasattr(pyspark.sql, 'types'):
+        return x
+    else:
+        return pytest.mark.xfail(x, raises=py4j.protocol.Py4JJavaError,
+                                 reason=('math functions only supported in '
+                                         'HiveContext'))
 
 
 @pytest.mark.parametrize('func', list(map(fail_on_spark_one_two,
