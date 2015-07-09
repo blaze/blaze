@@ -10,8 +10,6 @@ import os
 import itertools
 import shutil
 
-from distutils.version import StrictVersion
-
 from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
@@ -250,8 +248,8 @@ fail_on_spark_one_two = pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
                                                   'supported in HiveContext'))
 
 
-@pytest.mark.parametrize('func', map(fail_on_spark_one_two,
-                                     [sin, cos, tan, exp]))
+@pytest.mark.parametrize('func', list(map(fail_on_spark_one_two,
+                                          [sin, cos, tan, exp])))
 def test_math(ctx, db, func):
     expr = func(db.t.amount)
     result = compute(expr, ctx)
