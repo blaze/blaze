@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import setuptools
+
 import os
 import sys
 from fnmatch import fnmatch
