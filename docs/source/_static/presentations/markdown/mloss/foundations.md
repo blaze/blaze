@@ -10,12 +10,12 @@
 <img src="images/jenga.png" width="100%">
 
 
-### Shared data structures enable interactions without coordination
+### Shared data structures enable interactions
 
 
-### Enables a vibrant ecosystem
+### Shared data structures enable a vibrant ecosystem
 
-### but exposes us to risk of obsolescence
+### but expose us to risk of obsolescence
 
 
 ### Python, NumPy and Pandas are old(ish)
@@ -32,6 +32,7 @@
 *  Poor support for variable length strings
 *  Poor support for missing data
 *  Poor support for nested/semi-structured data
+*  Code bases are now hard to change
 
 
 ### The Numeric Python ecosystem inherits these limitations
@@ -73,10 +74,12 @@
 
 ## Why do we still use Python?
 
-*  Easy to setup and use by domain scientists
+*  Ubiquitous
+*  Easy to setup and use
 *  C/Fortran heritage
-*  Hundreds of PhD theses in software stack
-*  Strong academic and industry communities
+*  Domain expertise in the software stack (scikits)
+*  Strong academic and industry relationship
+*  Other communities (web, sysops, etc..)
 
 
 ### PyData rests on single-threaded foundations

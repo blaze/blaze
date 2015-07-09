@@ -17,8 +17,8 @@ Afternoon sprint with Olivier Grisel
 
 ## Cross Validation
 
-<a href="../images/dask-cross-validation.pdf">
-<img src="../images/dask-cross-validation.png" alt="Cross validation dask"
+<a href="images/dask-cross-validation.png">
+<img src="images/dask-cross-validation.png" alt="Cross validation dask"
      width="40%">
 </a>
 
