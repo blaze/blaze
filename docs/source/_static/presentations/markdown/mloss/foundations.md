@@ -38,23 +38,6 @@
 ### The Numeric Python ecosystem inherits these limitations
 
 
-### Hardware has changed since 1991
-
-![](images/multicore-cpu.png)
-
-* Multiple cores
-   *  4 cores -- cheap laptop
-   *  32 cores -- workstation
-   * 1000 cores -- distributed memory big data warehouses
-   * 1e6 core -- HPC Supercomputer
-* Fast Disk -- SSDs extend memory
-
-
-### Hardware has changed since 1991
-
-![](images/xeon-phi.jpg)
-
-
 ### Python has limitations
 
 * Started in 1991
@@ -72,12 +55,29 @@
     * Use C/Fortran code and release the GIL
 
 
+### Hardware has changed since 1991
+
+![](images/multicore-cpu.png)
+
+* Multiple cores
+   *  4 cores -- cheap laptop
+   *  32 cores -- workstation
+   * 1000 cores -- distributed memory big data warehouses
+   * 1e6 core -- HPC Supercomputer
+* Fast Disk -- SSDs extend memory
+
+
+### Hardware has changed since 1991
+
+![](images/xeon-phi.jpg)
+
+
 ## Why do we still use Python?
 
 *  Ubiquitous
 *  Easy to setup and use
 *  C/Fortran heritage
-*  NumPy and Pandas are still awesome
+*  NumPy and Pandas are still pretty awesome
 *  Domain expertise in the software stack (scikits)
 *  Strong academic and industry relationship
 *  Other communities (web, dev-ops, etc..)

@@ -1,4 +1,4 @@
-### My Job:  Work towards parallel Numeric Python stack
+### Lets work towards parallel Numeric Python stack
 
 
 ### Python's options for Parallelism
@@ -6,8 +6,7 @@
 Explicit control -- Fast but hard
 
 *  Threads/Processes/MPI/ZeroMQ
-*  Concurrent.futures/...
-*  Joblib
+*  Concurrent.futures/Joblib/...
 *  .
 *  .
 *  .
