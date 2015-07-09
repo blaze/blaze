@@ -14,6 +14,11 @@ Afternoon sprint with Olivier Grisel
 
             ...
 
+<hr>
+
+    from dask.threaded import get
+    get(dsk, keys)
+
 
 ## Cross Validation
 
@@ -26,7 +31,15 @@ Afternoon sprint with Olivier Grisel
 ## Cross Validation
 
 This killed the small-memory-footprint heuristics in the dask scheduler.
-Fixing with small amounts of
-[static scheduling](https://github.com/ContinuumIO/dask/pull/403).
+Parallel profile/trace to get a sense of the problem.
 
-[Profile](https://rawgit.com/mrocklin/8ec0443c94da553fe00c/raw/ff7d8d0754d07f35086b08c0d21865a03b3edeac/profile.html)
+    # from dask.threaded import get
+    # get(dsk, keys)
+
+    from dask.diagnostics import thread_prof
+    thread_prof.get(dsk, keys)
+    thread_prof.visualize()
+
+Fixing with small amounts of [static scheduling (PR)](https://github.com/ContinuumIO/dask/pull/403).
+
+[Profile Link (1.7MB)](https://rawgit.com/mrocklin/8ec0443c94da553fe00c/raw/ff7d8d0754d07f35086b08c0d21865a03b3edeac/profile.html)

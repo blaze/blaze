@@ -1,8 +1,8 @@
-## Dask
+## Python and Parallelism
 
 *or*
 
-## Python and Parallelism
+## Dask
 
 *Matthew Rocklin*
 

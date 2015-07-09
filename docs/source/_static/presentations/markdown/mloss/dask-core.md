@@ -53,8 +53,19 @@ Dead simple task scheduling
     >>> get(d, 'z')
     12
 
+*  **Dask graph** is a dictionary of tasks
+*  **Task** is a tuple with a callable first element
+*  **Arguments** are keys in dictionary ('y') or literal values (10)
+
+
+### Thoughts on Graphs
+
+    d = {'x': 1,
+         'y': (inc, 'x'),
+         'z': (add, 'y', 10)}
+
 *  Simple representation
-*  Use Python to generate graphs (no DSL)
+*  Use normal Python code to generate graphs (no DSL)
 *  Not user-friendly
 
 

@@ -30,9 +30,9 @@ Continuum Analytics
 
 ### Distinguishing features of `dask.array`
 
-*  Full ndarrays, little serious linear algebra
-*  Focus on shared memory
 *  Immediately pip installable
+*  Full ndarrays, little serious linear algebra
+*  Focus on shared memory / single machine
 *  Not just arrays
 
 

@@ -2,7 +2,7 @@
 
 <hr>
 
-### C/Fortran, NumPy, Pandas
+### C/Fortran, NumPy, SciPy, Pandas
 
 
 ### NumPy and Pandas provide foundational data structures
@@ -15,7 +15,7 @@
 
 ### Shared data structures enable a vibrant ecosystem
 
-### but expose us to risk of obsolescence
+### but expose us to risk of rigidity
 
 
 ### Python, NumPy and Pandas are old(ish)
@@ -77,9 +77,10 @@
 *  Ubiquitous
 *  Easy to setup and use
 *  C/Fortran heritage
+*  NumPy and Pandas are still awesome
 *  Domain expertise in the software stack (scikits)
 *  Strong academic and industry relationship
-*  Other communities (web, sysops, etc..)
+*  Other communities (web, dev-ops, etc..)
 
 
 ### PyData rests on single-threaded foundations

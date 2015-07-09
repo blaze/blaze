@@ -11,6 +11,8 @@
 
 <img src="images/embarrassing.png" alt="embarassingly parallel dask workload">
 
+[*Problem and blogpost by Blake Griffith*](continuum.io/blog/dask-distributed-cluster)
+
 
 ## What about more complex workflows?
 

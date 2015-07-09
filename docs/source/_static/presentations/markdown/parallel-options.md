@@ -1,11 +1,11 @@
-## My Job:  Work towards parallel Numeric Python stack
+### My Job:  Work towards parallel Numeric Python stack
 
 
-## Python's options for Parallelism
+### Python's options for Parallelism
 
-Explicit control.  Fast but hard.
+Explicit control -- Fast but hard
 
-*  Threads/Processes/MPI
+*  Threads/Processes/MPI/ZeroMQ
 *  Concurrent.futures/...
 *  Joblib
 *  .
@@ -17,14 +17,14 @@ Explicit control.  Fast but hard.
 *  Hadoop (mrjob)
 *  SQL: Hive, Pig, Impala
 
-Implicit control.  Restrictive/slow but easy.
+Implicit control -- Restrictive but easy
 
 
-## Python's options for Parallelism
+### Python's options for Parallelism
 
-Explicit control.  Fast but hard.
+Explicit control -- Fast but hard
 
-*  Threads/Processes/MPI
+*  Threads/Processes/MPI/ZeroMQ
 *  Concurrent.futures/...
 *  Joblib
 *  .
@@ -36,28 +36,25 @@ Explicit control.  Fast but hard.
 *  Hadoop (mrjob)
 *  SQL: Hive, Pig, Impala
 
-Implicit control.  Restrictive but easy.
+Implicit control -- Restrictive but easy
 
 
-### My Solution: Dynamic task scheduling
-
-
-## Scale
+### Scale
 
 *  Single four-core laptop (Gigabyte scale)
 *  Single thirty-core workstation (Terabyte scale)
 *  Distributed thousand-core cluster (Petabyte Scale)
 
 
-## Scale
+### Scale
 
-*  Single four-core laptop (Gigabyte scale)
+*  **Single four-core laptop (Gigabyte scale)**
 *  **Single thirty-core workstation (Terabyte scale)**
 *  Distributed thousand-core cluster (Petabyte Scale)
 
 
-## Outline
+### Upcoming Outline
 
 *  Dask.array - parallel array library using dask
-*  Dask - internals
-*  Dask.dataframe/other - think about if this is useful to you
+*  Dask internals - dynamic task scheduling library
+*  Beyond arrays - How can we extend task parallelism
