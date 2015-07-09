@@ -1,4 +1,3 @@
-
 ## `dask.array`
 
 *Matthew Rocklin*
@@ -20,21 +19,21 @@ Continuum Analytics
 
 ### Related work
 
-*  Parallel BLAS implementations -- ScaLAPACK, Plasma, ...
-*  Distributed arrays -- PETSc/Trillinos, Elemental, HPF
-*  Parallel collections -- Hadoop/Spark (Dryad, Disco, ...)
-*  Task scheduling frameworks -- Luigi, swift-lang, ...
-*  Python big-numpy projects -- Distarray, Spartan, Biggus
-*  Custom solutions with MPI, ZMQ, ...
+*  Parallel BLAS -- ScaLAPACK, Plasma, ...
+*  Distributed HPC -- PETSc/Trillinos, Elemental, HPF
+*  Parallel Collections -- Hadoop/Spark (Dryad, Disco, ...)
+*  Task scheduling -- Luigi, swift-lang, ...
+*  Big-NumPy -- Distarray, Spartan, Biggus, Thunder
+*  Custom solutions  -- MPI, ZMQ, ...
 
 <hr>
 
 ### Distinguishing features of `dask.array`
 
-*  Full ndarray support, instead of serious linear algebra
-*  Focus on shared memory parallelism (workstation, not cluster)
-*  Immediately usable - `conda/pip` installable
-*  Dask includes other non-array collections
+*  Full ndarrays, little serious linear algebra
+*  Focus on shared memory
+*  Immediately pip installable
+*  Not just arrays
 
 
 ## tl;dr
@@ -142,8 +141,7 @@ This was parallelizable
 
 ## Blocked algorithms
 
-<img src="images/dask_001.png">
-
+<img src="images/embarrassing.png">
 
 
 ## Task scheduling

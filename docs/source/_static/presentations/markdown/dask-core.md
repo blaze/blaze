@@ -13,14 +13,14 @@ Dead simple task scheduling
 
 *  Into Graphs
 
-![](images/dask_001.png)
+![](images/embarrassing.png)
 
 
 ## We've seen `dask.array`
 
-*   .
+*  Turns Numpy-ish code
 
-        .
+        (2*x + 1) ** 3
 
 *  Then executes those graphs
 
@@ -31,7 +31,7 @@ Dead simple task scheduling
 
 * `dask.array` = `numpy` + `threading`
 * `dask.bag` = `toolz` + `multiprocessing`
-* `dask.dataframe` = `pandas` + `multiprocessing/threading?`
+* `dask.dataframe` = `pandas` + `threading`
 
 
 ## `dask.bag`
