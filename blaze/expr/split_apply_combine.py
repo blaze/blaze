@@ -1,12 +1,17 @@
 from __future__ import absolute_import, division, print_function
 
+import re
+
 from .core import common_subexpression
-from .expressions import Expr, symbol
+from .expressions import Expr
 from .reductions import Reduction, Summary, summary
 from ..dispatch import dispatch
+from .expressions import dshape_method_list
+
 from datashape import dshape, Record, Option, Unit, var
 
 __all__ = ['by', 'By', 'count_values']
+
 
 def _names_and_types(expr):
     schema = expr.dshape.measure
@@ -25,6 +30,7 @@ class By(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = by(t['name'], total=t['amount'].sum())
 
@@ -59,25 +65,24 @@ class By(Expr):
         return var * self.schema
 
     def __str__(self):
-        s = 'by('
-        s += str(self.grouper) + ', '
-        if isinstance(self.apply, Summary):
-            s += str(self.apply)[len('summary('):-len(')')]
-        else:
-            s += str(self.apply)
-        s += ')'
-        return s
+        return '%s(%s, %s)' % (type(self).__name__.lower(),
+                               self.grouper,
+                               re.sub(r'^summary\((.*)\)$', r'\1',
+                                      str(self.apply)))
+
 
 @dispatch(Expr, Reduction)
 def by(grouper, s):
     raise ValueError("This syntax has been removed.\n"
-    "Please name reductions with keyword arguments.\n"
-    "Before:   by(t.name, t.amount.sum())\n"
-    "After:    by(t.name, total=t.amount.sum())")
+                     "Please name reductions with keyword arguments.\n"
+                     "Before:   by(t.name, t.amount.sum())\n"
+                     "After:    by(t.name, total=t.amount.sum())")
+
 
 @dispatch(Expr, Summary)
 def by(grouper, s):
     return By(grouper, s)
+
 
 @dispatch(Expr)
 def by(grouper, **kwargs):
@@ -96,9 +101,6 @@ def count_values(expr, sort=True):
         result = result.sort('count', ascending=False)
     return result
 
-
-from datashape.predicates import iscollection
-from .expressions import dshape_method_list
 
 dshape_method_list.extend([
     (lambda ds: len(ds.shape) == 1, set([count_values])),

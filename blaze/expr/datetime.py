@@ -149,8 +149,8 @@ _unit_aliases = {
 def normalize_time_unit(s):
     """ Normalize time input to one of 'year', 'second', 'millisecond', etc..
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> normalize_time_unit('milliseconds')
     'millisecond'
@@ -189,8 +189,8 @@ class DateTimeTruncate(DateTime):
 def truncate(expr, *args, **kwargs):
     """ Truncate datetime expression
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> from blaze import symbol, compute
     >>> from datetime import datetime

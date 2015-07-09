@@ -71,7 +71,6 @@ HDFS storage.  Blaze drives Spark through the `PySpark
 <https://spark.apache.org/docs/0.9.0/python-programming-guide.html>`_
 interface.
 
-
 Benefits of Backend Agnostic Computation
 ========================================
 

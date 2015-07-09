@@ -225,8 +225,8 @@ truncate_functions = {'year': truncate_year,
 def truncate(dt, measure, unit):
     """ Truncate datetimes
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> dt = datetime(2003, 6, 25, 12, 30, 0)
     >>> truncate(dt, 1, 'day')

@@ -38,7 +38,7 @@ the intermediate aggregate.  It can also do this in N-Dimensions.
 """
 from __future__ import absolute_import, division, print_function
 
-from toolz import concat
+from toolz import concat as tconcat
 import datashape
 from datashape.predicates import isscalar, isrecord
 from math import floor
@@ -291,7 +291,7 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     if expr._splittable:
         return expr._subs({leaf: chunk})
     else:
-        raise NotIimplementedError()
+        raise NotImplementedError()
 
 @dispatch(Apply)
 def _split_agg(expr, leaf=None, agg=None):
@@ -364,7 +364,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)
     """
-    if datashape.var in concat(map(shape, [leaf, expr, chunk, chunk_expr])):
+    if datashape.var in tconcat(map(shape, [leaf, expr, chunk, chunk_expr])):
         return (datashape.var, ) * leaf.ndim
 
     numblocks = [int(floor(l / c)) for l, c in zip(leaf.shape, chunk.shape)]

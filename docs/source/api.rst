@@ -2,7 +2,8 @@ API
 ===
 
 This page contains a comprehensive list of functionality within ``blaze``.
-Docstrings should provide sufficient understanding for any individual function.
+Docstrings should provide sufficient understanding for any individual function
+or class.
 
 
 Interactive Use
@@ -11,63 +12,88 @@ Interactive Use
 .. currentmodule:: blaze.interactive
 
 .. autosummary::
+
    Data
 
 
-Table Expressions
------------------
+Expressions
+-----------
 
 .. currentmodule:: blaze.expr.expressions
 
 .. autosummary::
+
    Projection
-   Field
    Selection
-   ElemWise
    Label
    ReLabel
    Map
-
-.. currentmodule:: blaze.expr.reductions
-
-.. autosummary::
-   Reduction
+   Apply
+   Coerce
 
 .. currentmodule:: blaze.expr.collections
 
 .. autosummary::
+
    Sort
    Distinct
    Head
    Merge
    Join
+   Concat
+   IsIn
 
 .. currentmodule:: blaze.expr.split_apply_combine
 
 .. autosummary::
+
    By
 
-Data Server
------------
+Blaze Server
+------------
 
 .. currentmodule:: blaze.server.server
 
 .. autosummary::
+
    Server
-   to_tree
-   from_tree
 
 .. currentmodule:: blaze.server.client
 
 .. autosummary::
+
    Client
 
+Additional Server Utilities
+---------------------------
 
+.. currentmodule:: blaze.server.server
+
+.. autosummary::
+
+   to_tree
+   from_tree
+
+.. currentmodule:: blaze.server.spider
+
+.. autosummary::
+
+   spider
+   from_yaml
 
 Definitions
 -----------
 
 .. automodule:: blaze.interactive
+   :members:
+
+.. automodule:: blaze.server.spider
+   :members:
+
+.. automodule:: blaze.server.server
+   :members:
+
+.. automodule:: blaze.server.client
    :members:
 
 .. automodule:: blaze.expr.collections
@@ -95,10 +121,4 @@ Definitions
    :members:
 
 .. automodule:: blaze.expr.split_apply_combine
-   :members:
-
-.. automodule:: blaze.server.server
-   :members:
-
-.. automodule:: blaze.server.client
    :members:

@@ -18,6 +18,7 @@ import numpy as np
 
 from odo import resource, odo
 from odo.utils import ignoring
+from odo.compatibility import unicode
 
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
@@ -50,10 +51,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
-    sub_uri = ''
     if isinstance(data, _strtypes):
-        if '::' in data:
-            data, sub_uri = data.split('::')
         data = resource(data, schema=schema, dshape=dshape, columns=columns,
                         **kwargs)
     if (isinstance(data, Iterator) and
@@ -92,14 +90,7 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-    result = InteractiveSymbol(data, ds, name)
-
-    if sub_uri:
-        for field in sub_uri.split('/'):
-            if field:
-                result = result[field]
-
-    return result
+    return InteractiveSymbol(data, ds, name)
 
 
 class InteractiveSymbol(Symbol):
@@ -311,7 +302,7 @@ def to_html(o):
     return o.replace('\n', '<br>')
 
 
-@dispatch((object, type, str), Expr)
+@dispatch((object, type, str, unicode), Expr)
 def into(a, b, **kwargs):
     result = compute(b, **kwargs)
     kwargs['dshape'] = b.dshape

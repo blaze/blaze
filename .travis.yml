@@ -12,12 +12,11 @@ matrix:
     - python: 3.3
     - python: 3.4
 
-branches:
-  only:
-    - master
-
 services:
     - mongodb
+
+addons:
+  postgresql: "9.3"
 
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
@@ -31,7 +30,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas=0.16.0 h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
   - source activate test-environment
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
@@ -59,7 +58,7 @@ install:
   - conda install -c mwiebe dynd-python
 
   # Install coveralls
-  - pip install coveralls --use-mirrors
+  - pip install coveralls
 
   # Install Blaze
   - python setup.py install
@@ -67,6 +66,7 @@ install:
 before_script:
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
+  - psql -c "create database test;" -U postgres
 
 script:
   - echo '[pytest]' > pytest.ini

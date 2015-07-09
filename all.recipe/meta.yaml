@@ -17,7 +17,7 @@ requirements:
     - blaze-core
     - h5py
     - cytoolz
-    - pandas >=0.15.0,<0.16.1
+    - pandas >=0.15.0
     - pytables >=3.0.0
     - pymongo >=2.8
     - numba
@@ -30,6 +30,9 @@ test:
     - dask
     - dynd-python
     - pytables
+    - yaml
+    - pyyaml
+    - h5py
 
   commands:
     - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX

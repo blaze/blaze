@@ -1,0 +1,7 @@
+iriscsv:
+  source: ../examples/data/iris.csv
+irisdb:
+  source: sqlite:///../examples/data/iris.db
+accounts:
+  source: ../examples/data/accounts.json.gz
+  dshape: "var * {name: string, amount: float64}"

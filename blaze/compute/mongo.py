@@ -45,13 +45,14 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 from __future__ import absolute_import, division, print_function
 
 import numbers
+from operator import attrgetter
 
 from pymongo.collection import Collection
 from pymongo.database import Database
 
 import fnmatch
 from datashape.predicates import isscalar
-from toolz import pluck, first, get
+from toolz import pluck, first, get, compose
 import toolz
 import datetime
 
@@ -61,7 +62,7 @@ from ..expr import (Sort, count, nunique, nelements, Selection,
                     Eq, Ne, And, Or, Summary, Like, Broadcast, DateTime,
                     Microsecond, Date, Time, Expr, symbol, Arithmetic, floor,
                     ceil, FloorDiv)
-from ..expr.broadcast import broadcast_collect
+from ..expr.broadcast import broadcast_collect, Broadcastable
 from ..expr import math
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
@@ -209,7 +210,14 @@ def compute_up(t, q, **kwargs):
 @dispatch(Selection, MongoQuery)
 def compute_up(expr, data, **kwargs):
     predicate = optimize(expr.predicate, data)
-    assert isinstance(predicate, Broadcast)
+
+    if not isinstance(predicate, Broadcast):
+        raise TypeError("Selection predicate must be a broadcastable "
+                        "operation.\nReceived an expression of type %r.\n"
+                        "Available broadcastable operations are (%s)" %
+                        (type(predicate).__name__,
+                         ', '.join(map(compose(repr, attrgetter('__name__')),
+                                   Broadcastable))))
 
     s = predicate._scalars[0]
     d = dict((s[c], symbol(c, s[c].dshape.measure)) for c in s.fields)

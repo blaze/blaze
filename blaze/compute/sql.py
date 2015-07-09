@@ -35,21 +35,27 @@ import toolz
 from toolz import unique, concat, pipe
 from toolz.curried import map
 
+import numpy as np
+import numbers
+
+import warnings
+
 from multipledispatch import MDNotImplementedError
 
-from odo.backends.sql import metadata_of_engine
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
-from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn
-from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction, strlen, DateTime)
+from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
+from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
+                    FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce)
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements
+from ..expr import common_subexpression, Summary, Like, nelements, Concat
 
 from ..expr.broadcast import broadcast_collect
+from ..expr.math import isnan
 
 from ..compatibility import reduce
 
@@ -87,7 +93,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+    cols = list(inner_columns(s))
+    d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     result = compute(t._scalar_expr, d, post_compute=False).label(name)
@@ -99,10 +106,22 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+    cols = list(inner_columns(s))
+    d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
     name = t._scalar_expr._name
     return compute(t._scalar_expr, d, post_compute=False).label(name)
+
+
+@dispatch(Concat, (Select, Selectable), (Select, Selectable))
+def compute_up(t, lhs, rhs, **kwargs):
+    if t.axis != 0:
+        raise ValueError(
+            'Cannot concat along a non-zero axis in sql; perhaps you want'
+            " 'merge'?",
+        )
+
+    return select(lhs).union_all(select(rhs)).alias()
 
 
 @dispatch(Broadcast, sa.Column)
@@ -137,6 +156,11 @@ def compute_up(t, data, **kwargs):
 @compute_up.register(FloorDiv, ColumnElement, (ColumnElement, base))
 def binop_sql(t, lhs, rhs, **kwargs):
     return sa.func.floor(lhs / rhs)
+
+
+@dispatch(isnan, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return s == float('nan')
 
 
 @dispatch(UnaryOp, ColumnElement)
@@ -232,8 +256,9 @@ def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(rhs, ColumnElement):
         rhs = select(rhs)
     if name(lhs) == name(rhs):
-        lhs = lhs.alias('%s_left' % name(lhs))
-        rhs = rhs.alias('%s_right' % name(rhs))
+        left_suffix, right_suffix = t.suffixes
+        lhs = lhs.alias('%s%s' % (name(lhs), left_suffix))
+        rhs = rhs.alias('%s%s' % (name(rhs), right_suffix))
 
     lhs = alias_it(lhs)
     rhs = alias_it(rhs)
@@ -286,7 +311,10 @@ def compute_up(t, lhs, rhs, **kwargs):
     left_cols = cols(lhs)
     right_cols = cols(rhs)
 
-    fields = [f.replace('_left', '').replace('_right', '') for f in t.fields]
+    left_suffix, right_suffix = t.suffixes
+    fields = [
+        f.replace(left_suffix, '').replace(right_suffix, '') for f in t.fields
+    ]
     columns = [c for c in main_cols if c.name in t._on_left]
     columns += [c for c in left_cols
                 if c.name in fields and c.name not in t._on_left]
@@ -532,11 +560,19 @@ def compute_up(t, s, **kwargs):
                      order_by=get_clause(getattr(s, 'element', s), 'order_by'))
 
 
-@dispatch(Sort, ClauseElement)
+@dispatch(Sort, (Selectable, Select))
+def compute_up(t, s, **kwargs):
+    s = select(s.alias())
+    direction = sa.asc if t.ascending else sa.desc
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
+    return s.order_by(*cols)
+
+
+@dispatch(Sort, (sa.Table, ColumnElement))
 def compute_up(t, s, **kwargs):
     s = select(s)
     direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(getattr(s.c, c))) for c in listpack(t.key)]
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
 
@@ -723,6 +759,8 @@ def compute_up(expr, data, **kwargs):
 
 @toolz.memoize
 def table_of_metadata(metadata, name):
+    if metadata.schema is not None:
+        name = '.'.join((metadata.schema, name))
     if name not in metadata.tables:
         metadata.reflect(views=metadata.bind.dialect.supports_views)
     return metadata.tables[name]
@@ -740,6 +778,9 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
 def compute_up(expr, data, **kwargs):
+    if expr.attr == 'date':
+        return sa.func.date(data).label(expr._name)
+
     return sa.extract(expr.attr, data).label(expr._name)
 
 
@@ -784,3 +825,45 @@ def post_compute(_, s, **kwargs):
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
+
+
+@dispatch(Slice, (Select, Selectable, ColumnElement))
+def compute_up(expr, data, **kwargs):
+    index = expr.index[0]  # [0] replace_slices returns tuple ((start, stop), )
+    if isinstance(index, slice):
+        start = index.start or 0
+        if start < 0:
+            raise ValueError('start value of slice cannot be negative'
+                             ' with a SQL backend')
+
+        stop = index.stop
+        if stop is not None and stop < 0:
+            raise ValueError('stop value of slice cannot be negative with a '
+                             'SQL backend.')
+
+        if index.step is not None and index.step != 1:
+            raise ValueError('step parameter in slice objects not supported '
+                             'with SQL backend')
+
+    elif isinstance(index, (np.integer, numbers.Integral)):
+        if index < 0:
+            raise ValueError('integer slice cannot be negative for the'
+                             ' SQL backend')
+        start = index
+        stop = start + 1
+    else:
+        raise TypeError('type %r not supported for slicing wih SQL backend'
+                        % type(index).__name__)
+
+    warnings.warn('The order of the result set from a Slice expression '
+                  'computed against the SQL backend is not deterministic.')
+
+    if stop is None:  # Represents open-ended slice. e.g. [3:]
+        return select(data).offset(start)
+    else:
+        return select(data).offset(start).limit(stop - start)
+
+
+@dispatch(Coerce, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)

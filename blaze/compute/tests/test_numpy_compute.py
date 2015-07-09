@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary, Broadcast, join
+from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
 from blaze import sin
 from odo import into
 from datashape import discover, to_numpy, dshape
@@ -438,3 +438,62 @@ def test_nunique_recarray():
     s = symbol('s', discover(b))
     expr = s.nunique()
     assert compute(expr, b) == len(np.unique(b))
+
+
+def test_str_repeat():
+    a = np.array(('a', 'b', 'c'))
+    s = symbol('s', discover(a))
+    expr = s.repeat(3)
+    assert all(compute(expr, a) == np.char.multiply(a, 3))
+
+
+def test_str_interp():
+    a = np.array(('%s', '%s', '%s'))
+    s = symbol('s', discover(a))
+    expr = s.interp(1)
+    assert all(compute(expr, a) == np.char.mod(a, 1))
+
+
+def test_timedelta_arith():
+    dates = np.arange('2014-01-01', '2014-02-01', dtype='datetime64')
+    delta = np.timedelta64(1, 'D')
+    sym = symbol('s', discover(dates))
+    assert (compute(sym + delta, dates) == dates + delta).all()
+    assert (compute(sym - delta, dates) == dates - delta).all()
+
+
+def test_coerce():
+    x = np.arange(1, 3)
+    s = symbol('s', discover(x))
+    np.testing.assert_array_equal(compute(s.coerce('float64'), x),
+                                  np.arange(1.0, 3.0))
+
+
+def test_concat_arr():
+    s_data = np.arange(15)
+    t_data = np.arange(15, 30)
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(concat(s, t), {s: s_data, t: t_data}) ==
+        np.arange(30)
+    ).all()
+
+
+def test_concat_mat():
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(concat(s, t), {s: s_data, t: t_data}) ==
+        np.arange(30).reshape(10, 3)
+    ).all()
+    assert (
+        compute(concat(s, t, axis=1), {s: s_data, t: t_data}) ==
+        np.concatenate((s_data, t_data), axis=1)
+    ).all()

@@ -16,29 +16,40 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
+import fnmatch
+import itertools
+
+import numpy as np
+
 import pandas as pd
+
 from pandas.core.generic import NDFrame
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
-import numpy as np
+
 from toolz import merge as merge_dicts
 from toolz.curried import pipe, filter, map, concat
-import fnmatch
-from datashape.predicates import isscalar
+
 import datashape
-import itertools
+
+from datashape import to_numpy_dtype
+from datashape.predicates import isscalar
 
 from odo import into
+
 from ..dispatch import dispatch
+
+from .core import compute, compute_up, base
+
 from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique)
-from ..expr import UnaryOp, BinOp
+                    UnaryStringFunction, nunique, Coerce, Concat)
+from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
-from .core import compute, compute_up, base
+
 from ..compatibility import _inttypes
 
 __all__ = []
@@ -74,6 +85,21 @@ def compute_up(t, df, **kwargs):
 @dispatch(Broadcast, Series)
 def compute_up(t, s, **kwargs):
     return compute_up(t, s.to_frame(), **kwargs)
+
+
+@dispatch(Interp, Series)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return data % t.rhs
+    else:
+        return t.lhs % data
+
+
+@compute_up.register(Interp, Series, (Series, base))
+@compute_up.register(Interp, base, Series)
+def compute_up_pd_interp(t, lhs, rhs, **kwargs):
+    return lhs % rhs
+
 
 
 @dispatch(BinOp, Series)
@@ -119,15 +145,26 @@ def compute_up(t, lhs, rhs, **kwargs):
     dataframe, perform the join, and then reset the index back to the left
     side's original index.
     """
-    result = pd.merge(lhs, rhs,
-                      left_on=t.on_left, right_on=t.on_right,
-                      how=t.how)
+    result = pd.merge(
+        lhs,
+        rhs,
+        left_on=t.on_left,
+        right_on=t.on_right,
+        how=t.how,
+        suffixes=t.suffixes,
+    )
     return result.reset_index()[t.fields]
 
 
-@dispatch(Symbol, (DataFrameGroupBy, SeriesGroupBy))
-def compute_up(t, gb, **kwargs):
-    return gb
+pandas_structure = DataFrame, Series, DataFrameGroupBy, SeriesGroupBy
+
+
+@dispatch(Concat, pandas_structure, pandas_structure)
+def compute_up(t, lhs, rhs, _concat=pd.concat, **kwargs):
+    if not (isinstance(lhs, type(rhs)) or isinstance(rhs, type(lhs))):
+        raise TypeError('lhs and rhs must be the same type')
+
+    return _concat((lhs, rhs), axis=t.axis, ignore_index=True)
 
 
 def get_scalar(result):
@@ -482,17 +519,18 @@ def compute_up(expr, df, **kwargs):
     return df[np.logical_and.reduce(arrs)]
 
 
-def get_date_attr(s, attr):
+def get_date_attr(s, attr, name):
     try:
-        # new in pandas 0.15
-        return getattr(s.dt, attr)
+        result = getattr(s.dt, attr)  # new in pandas 0.15
     except AttributeError:
-        return getattr(pd.DatetimeIndex(s), attr)
+        result = getattr(pd.DatetimeIndex(s), attr)
+    result.name = name
+    return result
 
 
 @dispatch(DateTime, Series)
 def compute_up(expr, s, **kwargs):
-    return get_date_attr(s, expr.attr)
+    return get_date_attr(s, expr.attr, expr._name)
 
 
 @dispatch(UTCFromTimestamp, Series)
@@ -501,8 +539,9 @@ def compute_up(expr, s, **kwargs):
 
 
 @dispatch(Millisecond, Series)
-def compute_up(_, s, **kwargs):
-    return get_date_attr(s, 'microsecond') // 1000
+def compute_up(expr, s, **kwargs):
+    return get_date_attr(s, 'microsecond',
+                         '%s_millisecond' % expr._child._name) // 1000
 
 
 @dispatch(Slice, (DataFrame, Series))
@@ -525,7 +564,7 @@ def compute_up(expr, df, **kwargs):
 def compute_up(expr, df, **kwargs):
     result = df.shape[0]
     if expr.keepdims:
-        result = Series([result])
+        result = Series([result], name=expr._name)
     return result
 
 
@@ -550,9 +589,15 @@ units_map = {
 
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
-    return Series(compute_up(expr, into(np.ndarray, data), **kwargs))
+    return Series(compute_up(expr, into(np.ndarray, data), **kwargs),
+                  name=expr._name)
 
 
 @dispatch(IsIn, Series)
 def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
+
+
+@dispatch(Coerce, Series)
+def compute_up(expr, data, **kwargs):
+    return data.astype(to_numpy_dtype(expr.schema))

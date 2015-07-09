@@ -15,23 +15,27 @@ Given an expression:
 
 .. code-block:: python
 
-   x = Symbol('x', '5 * int')
-   y = Symbol('y', '5 * int')
-   expr = sum(x**2 + y)
+   >>> from blaze import symbol, sum
+   >>> x = symbol('x', '5 * int')
+   >>> y = symbol('y', '5 * int')
+   >>> expr = sum(x ** 2 + y)
+   >>> expr
+   sum((x ** 2) + y)
 
 And data arranged into a namespace
 
 .. code-block:: python
 
-   xdata = np.array([ 1,  2,  3,  4,  5])
-   ydata = np.array([10, 20, 30, 40, 50])
-
-   ns = {x: xdata, y: ydata}
+   >>> import numpy as np
+   >>> xdata = np.array([1, 2, 3, 4, 5])
+   >>> ydata = np.array([10, 20, 30, 40, 50])
+   >>> ns = {x: xdata, y: ydata}
 
 Our goal is to produce the result implied by the expression
 
 .. code-block:: python
 
+   >>> 205
    205
 
 Using many small functions defined for each backend to do small pieces of this

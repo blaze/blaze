@@ -35,6 +35,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               'sphinx.ext.graphviz',
               ]
 
+
+extlinks = dict(issue=('https://github.com/ContinuumIO/blaze/issues/%s', '#'))
+
 # -- Math ---------------------------------------------------------------------
 
 try:
@@ -45,11 +48,9 @@ except OSError:
 
 # -- Docstrings ---------------------------------------------------------------
 
-try:
-    import numpydoc
-    extensions += ['numpydoc']
-except ImportError:
-    pass
+import numpydoc
+extensions += ['numpydoc']
+numpydoc_show_class_members = False
 
 # -- Diagrams -----------------------------------------------------------------
 

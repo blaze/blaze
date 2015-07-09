@@ -6,6 +6,7 @@ import os
 import sys
 from fnmatch import fnmatch
 
+import setuptools
 from distutils.core import setup
 
 import versioneer
@@ -54,7 +55,7 @@ package_data += [x.replace('blaze' + os.sep, '')
                  for x in find_data_files(exts)]
 
 
-with open('README.md') as f:
+with open('README.rst') as f:
     longdesc = f.read()
 
 with open('requirements-strict.txt') as f:
@@ -83,6 +84,9 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    entry_points={
+        'console_scripts': ['blaze-server = blaze.server.spider:_main']
+    },
     package_data={'blaze': package_data},
     packages=packages
 )

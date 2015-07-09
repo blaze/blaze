@@ -18,7 +18,8 @@ from datashape import dshape, discover
 from .utils import ignoring
 from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var, transform)
+        mean, merge, nunique, relabel, selection, sort, summary, var,
+        transform)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
         second, time, year)
 from .expr.arrays import (tensordot, transpose)
@@ -67,6 +68,9 @@ with ignoring(ImportError):
     from .compute.pytables import *
 with ignoring(ImportError):
     from .compute.dato import *
+
+
+from .expr import concat  # Some module re-export toolz.concat and * catches it.
 
 restart_ordering()  # Restart multipledispatch ordering and do ordering
 

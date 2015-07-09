@@ -36,7 +36,7 @@ New developers likely only need to interact with one or two of these libraries s
 .. _DataShape: https://github.com/ContinuumIO/datashape
 .. _conda: http://conda.pydata.org/
 .. _Anaconda: http://continuum.io/downloads
-.. _binstar: https://binstar.org/
+.. _anaconda.org: https://anaconda.org/
 
 
 GitHub Flow
@@ -79,14 +79,14 @@ Python 2 and Python 3 before a merge.
 
 The Travis tests only run on Linux, but Blaze is supported on Linux,
 OS X, and Windows.   Further tests and bleeding-edge builds are carried out
-using Binstar-build_ which tests and builds Blaze on the following
+using `Anaconda build` which tests and builds Blaze on the following
 platforms/versions
 
 *   Python versions 2.6, 2.7, 3.3, 3.4
 *   Operating systems Windows, OS-X, Linux
 *   32-bit and 64-bit
 
-.. _Binstar-build: https://binstar.org/blaze/blaze/builds
+.. _`Anaconda build`: https://anaconda.org/blaze/blaze/builds
 
 
 **Relative Imports:**

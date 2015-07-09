@@ -6,7 +6,9 @@ from toolz import memoize
 import datashape
 import numba
 
-from .core import compute, optimize
+from datashape import isdatelike, TimeDelta
+
+from .core import optimize
 from ..expr import Expr, Arithmetic, Math, Map, UnaryOp
 from ..expr.strings import isstring
 from ..expr.broadcast import broadcast_collect, Broadcast
@@ -18,15 +20,20 @@ lock = threading.Lock()
 
 
 def optimize_ndarray(expr, *data, **kwargs):
-    dshapes = expr._leaves()
     for leaf in expr._leaves():
-        if (isstring(leaf.dshape.measure) or
+        leaf_measure = leaf.dshape.measure
+
+        # TODO: remove datelike skipping when numba/numba#1202 is fixed
+        if (isstring(leaf_measure) or
+            isdatelike(leaf_measure) or
+            isinstance(leaf_measure, TimeDelta) or
             isinstance(leaf.dshape.measure, datashape.Record) and
-            any(isstring(dt) for dt in leaf.dshape.measure.types)):
+            any(isstring(dt) or isdatelike(dt) or isinstance(dt, TimeDelta)
+                for dt in leaf.dshape.measure.types)):
             return expr
-        else:
-            return broadcast_collect(expr, Broadcastable=Broadcastable,
-                                     WantToBroadcast=Broadcastable)
+    else:
+        return broadcast_collect(expr, Broadcastable=Broadcastable,
+                                 WantToBroadcast=Broadcastable)
 
 
 for i in range(1, 11):
@@ -34,7 +41,7 @@ for i in range(1, 11):
 
 
 def get_numba_type(dshape):
-    """Get the ``numba`` type corresponding to the ``datashape.Mono`` instance
+    """Get the numba type corresponding to the ``datashape.Mono`` instance.
     `dshape`
 
     Parameters
@@ -44,53 +51,12 @@ def get_numba_type(dshape):
     Returns
     -------
     restype : numba.types.Type
+        Numba type corresponding to `dshape`.
 
     Examples
     --------
-    >>> import datashape
-    >>> import numba
-
-    >>> get_numba_type(datashape.bool_)
-    bool
-
-    >>> get_numba_type(datashape.date_)
-    datetime64(D)
-
-    >>> get_numba_type(datashape.datetime_)
-    datetime64(us)
-
-    >>> get_numba_type(datashape.timedelta_)  # default unit is microseconds
-    timedelta64(us)
-
-    >>> get_numba_type(datashape.TimeDelta('D'))
-    timedelta64(D)
-
-    >>> get_numba_type(datashape.int64)
-    int64
-
-    >>> get_numba_type(datashape.String(7, "A"))
-    [char x 7]
-
-    >>> get_numba_type(datashape.String(None, "A"))
-    str
-
-    >>> get_numba_type(datashape.String(7))
-    [unichr x 7]
-
-    >>> get_numba_type(datashape.string)
-    Traceback (most recent call last):
-      ...
-    TypeError: Numba cannot handle variable length strings
-
-    >>> get_numba_type(datashape.object_)
-    Traceback (most recent call last):
-      ...
-    TypeError: Numba cannot handle object datashape
-
-    >>> get_numba_type(datashape.dshape('10 * {a: int64}'))
-    Traceback (most recent call last):
-      ...
-    TypeError: Invalid datashape to numba type: dshape("{a: int64}")
+    >>> get_numba_type(datashape.bool_) == numba.bool_
+    True
 
     See Also
     --------
@@ -133,19 +99,10 @@ def compute_signature(expr):
     >>> from blaze import symbol
     >>> s = symbol('s', 'int64')
     >>> t = symbol('t', 'float32')
-    >>> d = symbol('d', 'datetime')
-
+    >>> from numba import float64, int64, float32
     >>> expr = s + t
-    >>> compute_signature(expr)
-    float64(int64, float32)
-
-    >>> expr = d.truncate(days=1)
-    >>> compute_signature(expr)
-    datetime64(D)(datetime64(us))
-
-    >>> expr = d.day + 1
-    >>> compute_signature(expr)  # only looks at leaf nodes
-    int64(datetime64(us))
+    >>> compute_signature(expr) == float64(int64, float32)
+    True
 
     Notes
     -----
@@ -218,9 +175,4 @@ get_numba_ufunc = memoize(_get_numba_ufunc)
 
 
 def broadcast_numba(t, *data, **kwargs):
-    try:
-        ufunc = get_numba_ufunc(t)
-    except TypeError:  # strings and objects aren't supported very well yet
-        return compute(t, dict(zip(t._leaves(), data)))
-    else:
-        return ufunc(*data)
+    return get_numba_ufunc(t)(*data)
