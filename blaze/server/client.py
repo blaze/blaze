@@ -1,11 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
+import warnings
+
+from datashape import dshape
 import flask
 from flask.testing import FlaskClient
-import requests
-
 from odo import resource
-from datashape import dshape
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from ..expr import Expr
 from ..dispatch import dispatch
@@ -32,13 +34,15 @@ def get(client, url, params=None, **kwargs):
         kwargs['verify'] = client.verify_ssl
         kwargs['params'] = params
 
-    return requests.get(
-        '{base}/{url}'.format(
-            base=client.url,
-            url=url,
-        ),
-        **kwargs
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', InsecureRequestWarning)
+        return requests.get(
+            '{base}/{url}'.format(
+                base=client.url,
+                url=url,
+            ),
+            **kwargs
+        )
 
 
 def ok(response):
@@ -89,7 +93,7 @@ class Client(object):
 
     def __init__(self, url, serial=json, verify_ssl=True, **kwargs):
         url = url.strip('/')
-        if not url[:4] == 'http':
+        if not url.startswith('http'):
             url = 'http://' + url
         self.url = url
         self.serial = serial
