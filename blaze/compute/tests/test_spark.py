@@ -174,7 +174,7 @@ def test_distinct(rdd):
     raises=NotImplementedError,
     reason='cannot specify columns to distinct on yet',
 )
-def test_distinct_in(rdd):
+def test_distinct_on(rdd):
     compute(t.distinct('name'), rdd)
 
 
