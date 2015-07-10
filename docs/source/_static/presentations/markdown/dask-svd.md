@@ -58,7 +58,7 @@ and Accurate" [arXiv](http://arxiv.org/abs/1505.04650)*
 
 ## SVD - Parallel Profile
 
-<iframe src="../svd.profile.html"
+<iframe src="svd.profile.html"
         marginwidth="0"
         marginheight="0" scrolling="no" width="800"
         height="300"></iframe>

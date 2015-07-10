@@ -16,7 +16,7 @@
     *  What is the right API for algorithm builders?
 
 
-## Questions
+## Questions?
 
 [http://dask.pydata.org](http://dask.pydata.org)
 
