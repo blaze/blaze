@@ -194,9 +194,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Distinct, DataFrame)
 def compute_up(t, df, **kwargs):
-    return df.drop_duplicates(
-        subset=t.on if t.on else None,
-    ).reset_index(drop=True)
+    return df.drop_duplicates(subset=t.on or None).reset_index(drop=True)
 
 
 @dispatch(Distinct, Series)
