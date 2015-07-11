@@ -21,14 +21,14 @@
 ### Python, NumPy and Pandas are old(ish)
 
 *  Python: 1991
-*  NumPy: 1995
+*  Numeric+NumPy: 1995
 *  Pandas: 2008
 
 
 ### Python, NumPy and Pandas are old(ish)
 
 *  Python: 1991 (Super Nintendo)
-*  NumPy: 1995 (Playstation)
+*  Numeric+NumPy: 1995 (Playstation)
 *  Pandas: 2008 (iPhone)
 
 
