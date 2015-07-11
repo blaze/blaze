@@ -142,16 +142,23 @@ class Distinct(Expr):
         )
 
 
-def _onclause(on):
-    if isinstance(on, Field):
-        return on._name
-    elif not isinstance(on, _strtypes):
-        raise TypeError('on must be a name or field')
-    return on
-
-
 def distinct(expr, *on):
-    return Distinct(expr, tuple(map(_onclause, on)))
+    fields = frozenset(expr.fields)
+    _on = []
+    append = _on.append
+    for n in on:
+        if isinstance(n, Field):
+            if n._child.isidentical(expr):
+                n = n._name
+            else:
+                raise ValueError('{0} is not a field of {1}'.format(n, expr))
+        if not isinstance(n, _strtypes):
+            raise TypeError('on must be a name or field, not: {0}'.format(n))
+        elif n not in fields:
+            raise ValueError('{0} is not a field of {1}'.format(n, expr))
+        append(n)
+
+    return Distinct(expr, tuple(_on))
 
 
 distinct.__doc__ = Distinct.__doc__
