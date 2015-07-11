@@ -119,7 +119,7 @@ def test_distinct():
               np.unique(x))
 
 
-def test_distinct_on():
+def test_distinct_on_recarray():
     rec = pd.DataFrame(
         [[0, 1],
          [0, 2],
@@ -128,7 +128,7 @@ def test_distinct_on():
         columns=('a', 'b'),
     ).to_records(index=False)
 
-    s = symbol('s', 'var * {a: float64, b: float64}')
+    s = symbol('s', discover(rec))
     assert (
         compute(s.distinct('a'), rec) ==
         pd.DataFrame(
@@ -136,6 +136,22 @@ def test_distinct_on():
              [1, 1]],
             columns=('a', 'b'),
         ).to_records(index=False)
+    ).all()
+
+
+def test_distinct_on_structured_array():
+    arr = np.array(
+        [(0., 1.),
+         (0., 2.),
+         (1., 1.),
+         (1., 2.)],
+        dtype=[('a', 'f4'), ('b', 'f4')],
+    )
+
+    s = symbol('s', discover(arr))
+    assert(
+        compute(s.distinct('a'), arr) ==
+        np.array([(0., 1.), (1., 1.)], dtype=arr.dtype)
     ).all()
 
 
@@ -148,7 +164,7 @@ def test_distinct_on_str():
         columns=('a', 'b'),
     ).to_records(index=False).astype([('a', '<U1'), ('b', '<U1')])
 
-    s = symbol('s', 'var * {a: float64, b: float64}')
+    s = symbol('s', discover(rec))
     assert (
         compute(s.distinct('a'), rec) ==
         pd.DataFrame(
