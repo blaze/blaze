@@ -29,20 +29,28 @@ def content(response):
         return response.content
 
 
-def get(client, url, params=None, **kwargs):
+def _request(method, client, url, params=None, **kwargs):
     if not isinstance(requests, FlaskClient):
         kwargs['verify'] = client.verify_ssl
         kwargs['params'] = params
 
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', InsecureRequestWarning)
-        return requests.get(
+        return method(
             '{base}/{url}'.format(
                 base=client.url,
                 url=url,
             ),
             **kwargs
         )
+
+
+def get(*args, **kwargs):
+    return _request(requests.get, *args, **kwargs)
+
+
+def post(*args, **kwargs):
+    return _request(requests.post, *args, **kwargs)
 
 
 def ok(response):
@@ -120,7 +128,7 @@ def compute_down(expr, ec, **kwargs):
     tree = to_tree(expr)
 
     serial = ec.serial
-    r = get(
+    r = post(
         ec,
         'compute.{serial}'.format(serial=serial.name),
         data=serial.dumps({'expr': tree}),
