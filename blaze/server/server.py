@@ -327,7 +327,7 @@ def compserver():
     content_type = request.headers['content-type']
 
     try:
-        serial = _get_format(*mimetype_regex.match(content_type).groups())
+        serial = _get_format(mimetype_regex.match(content_type).groups()[0])
     except KeyError:
         return 'Unsupported serialization format', 415
 
