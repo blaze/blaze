@@ -37,7 +37,7 @@ def _request(method, client, url, params=None, **kwargs):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', InsecureRequestWarning)
         return method(
-            '{base}/{url}'.format(
+            '{base}{url}'.format(
                 base=client.url,
                 url=url,
             ),
@@ -110,7 +110,7 @@ class Client(object):
     @property
     def dshape(self):
         """The datashape of the client"""
-        response = get(self, 'datashape')
+        response = get(self, '/datashape')
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
