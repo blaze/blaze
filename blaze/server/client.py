@@ -1,10 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
-import flask
-import requests
+import warnings
 
-from odo import resource
 from datashape import dshape
+import flask
+from flask.testing import FlaskClient
+from odo import resource
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from ..expr import Expr
 from ..dispatch import dispatch
@@ -24,6 +27,30 @@ def content(response):
         return response.data
     if isinstance(response, requests.Response):
         return response.content
+
+
+def _request(method, client, url, params=None, **kwargs):
+    if not isinstance(requests, FlaskClient):
+        kwargs['verify'] = client.verify_ssl
+        kwargs['params'] = params
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', InsecureRequestWarning)
+        return method(
+            '{base}/{url}'.format(
+                base=client.url,
+                url=url,
+            ),
+            **kwargs
+        )
+
+
+def get(*args, **kwargs):
+    return _request(requests.get, *args, **kwargs)
+
+
+def post(*args, **kwargs):
+    return _request(requests.post, *args, **kwargs)
 
 
 def ok(response):
@@ -70,20 +97,20 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'serial'
+    __slots__ = 'url', 'serial', 'verify_ssl'
 
-    def __init__(self, url, serial=json, **kwargs):
+    def __init__(self, url, serial=json, verify_ssl=True, **kwargs):
         url = url.strip('/')
-        if not url[:4] == 'http':
+        if not url.startswith('http'):
             url = 'http://' + url
         self.url = url
         self.serial = serial
+        self.verify_ssl = verify_ssl
 
     @property
     def dshape(self):
         """The datashape of the client"""
-        response = requests.get('%s/datashape' % self.url)
-
+        response = get(self, 'datashape')
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
@@ -101,8 +128,11 @@ def compute_down(expr, ec, **kwargs):
     tree = to_tree(expr)
 
     serial = ec.serial
-    r = requests.post('%s/compute.%s' % (ec.url, serial.name),
-                      data=serial.dumps({'expr': tree}))
+    r = post(
+        ec,
+        'compute.{serial}'.format(serial=serial.name),
+        data=serial.dumps({'expr': tree}),
+    )
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
