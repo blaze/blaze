@@ -110,6 +110,10 @@ def compute_up(t, rdd, **kwargs):
 
 @dispatch(Distinct, RDD)
 def compute_up(t, rdd, **kwargs):
+    if t.on:
+        raise NotImplementedError(
+            'spark backend cannot specify what columns to distinct on'
+        )
     return rdd.distinct()
 
 

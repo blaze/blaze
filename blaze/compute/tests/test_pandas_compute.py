@@ -11,7 +11,7 @@ from string import ascii_lowercase
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
-from blaze.expr import symbol, join, by, summary, Distinct, shape
+from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat)
 from blaze.compatibility import builtins, xfail, assert_series_equal
@@ -185,11 +185,31 @@ def test_distinct():
                           ['Drew', 'M', 200, 5],
                           ['Drew', 'M', 200, 5]],
                          columns=['name', 'sex', 'amount', 'id'])
-    d_t = Distinct(tbig)
+    d_t = distinct(tbig)
     d_df = compute(d_t, dftoobig)
     tm.assert_frame_equal(d_df, dfbig)
     # Test idempotence
     tm.assert_frame_equal(compute(d_t, d_df), d_df)
+
+
+def test_distinct_on():
+    cols = ['name', 'sex', 'amount', 'id']
+    df = DataFrame([['Alice', 'F', 100, 1],
+                    ['Alice', 'F', 100, 3],
+                    ['Drew', 'F', 100, 4],
+                    ['Drew', 'M', 100, 5],
+                    ['Drew', 'F', 100, 4],
+                    ['Drew', 'M', 100, 5],
+                    ['Drew', 'M', 200, 5]],
+                   columns=cols)
+    s = symbol('s', discover(df))
+    computed = compute(s.distinct('sex'), df)
+    tm.assert_frame_equal(
+        computed,
+        pd.DataFrame([['Alice', 'F', 100, 1],
+                      ['Drew', 'M', 100, 5]],
+                     columns=cols),
+    )
 
 
 def test_by_one():

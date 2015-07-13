@@ -13,7 +13,7 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (symbol, by, merge, join, count, Distinct,
+from blaze.expr import (symbol, by, merge, join, count, distinct,
                         Apply, sum, min, max, any, summary,
                         count, std, head, transform)
 import numpy as np
@@ -283,14 +283,14 @@ def test_column_of_column():
             list(compute(t['name'], data))
 
 
-def test_Distinct():
-    assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
-    assert set(compute(Distinct(t), data)) == set(map(tuple, data))
-    e = Distinct(t)
+def test_distinct():
+    assert set(compute(distinct(t['name']), data)) == set(['Alice', 'Bob'])
+    assert set(compute(distinct(t), data)) == set(map(tuple, data))
+    e = distinct(t)
     assert list(compute(e, [])) == []
 
 
-def test_Distinct_count():
+def test_distinct_count():
     t2 = t['name'].distinct()
     gby = by(t2, total=t2.count())
     result = set(compute(gby, data))
