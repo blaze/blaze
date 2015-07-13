@@ -331,7 +331,7 @@ def compserver():
         return 'Unsupported serialization format %s' % content_type, 415
 
     try:
-        serial = _get_format(matched)
+        serial = _get_format(matched.groups()[0])
     except KeyError:
         return 'Unsupported serialization format %s' % matched, 415
 
