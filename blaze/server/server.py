@@ -29,7 +29,7 @@ from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
-from .serialization import json
+from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..expr import Expr, symbol
 
@@ -317,14 +317,17 @@ def from_tree(expr, namespace=None):
         return expr
 
 
+mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
+                            '|'.join(x.name for x in all_formats))
+
+
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
 def compserver():
     content_type = request.headers['content-type']
 
     try:
-        serial = _get_format(*re.match(r'^application/vnd\.blaze\+(.+)$',
-                                       content_type).groups())
+        serial = _get_format(*mimetype_regex.match(content_type).groups())
     except KeyError:
         return 'Unsupported serialization format', 404
 
