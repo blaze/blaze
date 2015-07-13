@@ -86,7 +86,7 @@ class Distinct(Expr):
 
     """ Remove duplicate elements from an expression
 
-    Paramaters
+    Parameters
     ----------
     on : *field
         The subset of fields or names of fields to be distinct on.
