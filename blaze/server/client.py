@@ -29,10 +29,25 @@ def content(response):
         return response.content
 
 
-def _request(method, client, url, params=None, **kwargs):
+def ok(response):
+    if isinstance(response, flask.Response):
+        return 'OK' in response.status
+    if isinstance(response, requests.Response):
+        return response.ok
+
+
+def reason(response):
+    if isinstance(response, flask.Response):
+        return response.status
+    if isinstance(response, requests.Response):
+        return response.text
+
+
+def _request(method, client, url, params=None, auth=None, **kwargs):
     if not isinstance(requests, FlaskClient):
         kwargs['verify'] = client.verify_ssl
         kwargs['params'] = params
+        kwargs['auth'] = auth
 
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', InsecureRequestWarning)
@@ -53,20 +68,6 @@ def post(*args, **kwargs):
     return _request(requests.post, *args, **kwargs)
 
 
-def ok(response):
-    if isinstance(response, flask.Response):
-        return 'OK' in response.status
-    if isinstance(response, requests.Response):
-        return response.ok
-
-
-def reason(response):
-    if isinstance(response, flask.Response):
-        return response.status
-    if isinstance(response, requests.Response):
-        return response.text
-
-
 class Client(object):
 
     """ Client for Blaze Server
@@ -78,11 +79,13 @@ class Client(object):
 
     url : str
         URL of a Blaze server
-
     serial : SerializationFormat, optional
         The serialization format object to use. Defaults to JSON.
         A serialization format is an object that supports:
         name, loads, and dumps.
+    auth : tuple, optional
+        The username and password to use when connecting to the server.
+        If not provided, no auth header will be sent.
 
     Examples
     --------
@@ -97,20 +100,21 @@ class Client(object):
 
     blaze.server.server.Server
     """
-    __slots__ = 'url', 'serial', 'verify_ssl'
+    __slots__ = 'url', 'serial', 'verify_ssl', 'auth'
 
-    def __init__(self, url, serial=json, verify_ssl=True, **kwargs):
+    def __init__(self, url, serial=json, verify_ssl=True, auth=None, **kwargs):
         url = url.strip('/')
         if not url.startswith('http'):
             url = 'http://' + url
         self.url = url
         self.serial = serial
         self.verify_ssl = verify_ssl
+        self.auth = auth
 
     @property
     def dshape(self):
         """The datashape of the client"""
-        response = get(self, '/datashape')
+        response = get(self, '/datashape', auth=self.auth)
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
@@ -145,7 +149,8 @@ def compute_down(expr, ec, **kwargs):
         ec,
         '/compute',
         data=serial.dumps({'expr': tree}),
-        headers=mimetype(serial)
+        auth=ec.auth,
+        headers=mimetype(serial),
     )
 
     if not ok(r):
