@@ -83,6 +83,9 @@ class Client(object):
         The serialization format object to use. Defaults to JSON.
         A serialization format is an object that supports:
         name, loads, and dumps.
+    verify_ssl : bool, optional
+        Verify the ssl certificate from the server.
+        This is enabled by default.
     auth : tuple, optional
         The username and password to use when connecting to the server.
         If not provided, no auth header will be sent.
