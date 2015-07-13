@@ -15,11 +15,23 @@ source:
 requirements:
   build:
     - python
+    - setuptools
+    - datashape >=0.4.6
+    - odo >=0.3.3
+    - flask
+    - multipledispatch >=0.4.7
+    - numpy >=1.7
+    - pandas >=0.15.0
+    - psutil
+    - requests
+    - sqlalchemy >=0.8.0
+    - toolz
+    - cytoolz
 
   run:
     - python
-    - datashape >=0.4.4
-    - odo >=0.3.1
+    - datashape >=0.4.6
+    - odo >=0.3.3
     - flask
     - multipledispatch >=0.4.7
     - numpy >=1.7

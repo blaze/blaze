@@ -21,8 +21,15 @@
 ### Python, NumPy and Pandas are old(ish)
 
 *  Python: 1991
-*  NumPy: 1995
+*  Numeric+NumPy: 1995
 *  Pandas: 2008
+
+
+### Python, NumPy and Pandas are old(ish)
+
+*  Python: 1991 (Super Nintendo)
+*  Numeric+NumPy: 1995 (Playstation)
+*  Pandas: 2008 (iPhone)
 
 
 ### NumPy and Pandas have limitations
@@ -53,6 +60,8 @@
 *  Solutions:
     * Use separate processes (hard to share data)
     * Use C/Fortran code and release the GIL
+        * Pandas releases the GIL on groupby operations
+        * Scikit-image [released the GIL](https://github.com/scikit-image/scikit-image/pull/1519) in a weekend sprint
 
 
 ### Hardware has changed since 1991
