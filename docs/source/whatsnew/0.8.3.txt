@@ -22,6 +22,10 @@ Improved Backends
 API Changes
 ~~~~~~~~~~~
 
+* Allow :class:`~blaze.server.client.Client` objects to explicitly disable
+  verification of ssl certificates by passing ``verify_ssl=False``.
+  (:issue:`1170`)
+
 Bug Fixes
 ~~~~~~~~~
 
