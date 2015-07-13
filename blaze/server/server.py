@@ -317,8 +317,8 @@ def from_tree(expr, namespace=None):
 
 
 @api.route('/compute.<serial_format>',
-           methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
-@crossdomain(origin='*', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
+           methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
 def compserver(serial_format):
     try:
         serial = _get_format(serial_format)
