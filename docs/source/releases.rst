@@ -2,6 +2,8 @@
 Release Notes
 =============
 
+.. include:: whatsnew/0.8.3.txt
+
 .. include:: whatsnew/0.8.2.txt
 
 .. include:: whatsnew/0.8.1.txt

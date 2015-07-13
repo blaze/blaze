@@ -1,0 +1,29 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+* :class:`~blaze.expr.expresssions.Distinct` expressions now support an `on`
+  parameter to allow distinct on a subset of columns (:issue:`1159`)
+
+New Backends
+~~~~~~~~~~~~
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+API Changes
+~~~~~~~~~~~
+
+Bug Fixes
+~~~~~~~~~
+
+* Upgrade versioneer so that our version string is now :pep:`440` compliant
+  (:issue:`1171`)

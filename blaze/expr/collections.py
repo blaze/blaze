@@ -86,9 +86,9 @@ class Distinct(Expr):
 
     """ Remove duplicate elements from an expression
 
-    Paramaters
+    Parameters
     ----------
-    on : *field
+    on : tuple of :class:`~blaze.expr.expressions.Field`
         The subset of fields or names of fields to be distinct on.
 
     Examples
@@ -105,7 +105,7 @@ class Distinct(Expr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
 
-    Using a subset
+    Use a subset by passing `on`:
 
     >>> import pandas as pd
     >>> e = distinct(t, 'name')
