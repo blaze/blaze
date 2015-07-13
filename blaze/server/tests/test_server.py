@@ -361,7 +361,10 @@ def test_cors_compute(test, serial, has_bokeh):
     assert res.headers['Access-Control-Allow-Origin'] == '*'
     assert 'HEAD' in res.headers['Access-Control-Allow-Methods']
     assert 'OPTIONS' in res.headers['Access-Control-Allow-Methods']
-    assert 'GET' in res.headers['Access-Control-Allow-Methods']
+    assert 'POST' in res.headers['Access-Control-Allow-Methods']
+
+    # we don't allow gets because we're always sending data
+    assert 'GET' not in res.headers['Access-Control-Allow-Methods']
 
 
 @pytest.mark.parametrize('method',
@@ -375,4 +378,7 @@ def test_cors_datashape(test, method, has_bokeh):
     assert res.headers['Access-Control-Allow-Origin'] == '*'
     assert 'HEAD' not in res.headers['Access-Control-Allow-Methods']
     assert 'OPTIONS' not in res.headers['Access-Control-Allow-Methods']
+    assert 'POST' not in res.headers['Access-Control-Allow-Methods']
+
+    # we only allow GET requests
     assert 'GET' in res.headers['Access-Control-Allow-Methods']

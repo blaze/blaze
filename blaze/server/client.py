@@ -101,8 +101,8 @@ def compute_down(expr, ec, **kwargs):
     tree = to_tree(expr)
 
     serial = ec.serial
-    r = requests.get('%s/compute.%s' % (ec.url, serial.name),
-                     data=serial.dumps({'expr': tree}))
+    r = requests.post('%s/compute.%s' % (ec.url, serial.name),
+                      data=serial.dumps({'expr': tree}))
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
