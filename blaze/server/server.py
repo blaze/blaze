@@ -325,11 +325,15 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
 def compserver():
     content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
+
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
 
     try:
-        serial = _get_format(mimetype_regex.match(content_type).groups()[0])
+        serial = _get_format(matched)
     except KeyError:
-        return 'Unsupported serialization format', 415
+        return 'Unsupported serialization format %s' % matched, 415
 
     try:
         payload = serial.loads(request.data)
