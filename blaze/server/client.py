@@ -95,14 +95,28 @@ def discover(c):
     return c.dshape
 
 
+def mimetype(serial):
+    """Function to generate a blaze serialization format mimetype put into a
+    dictionary of headers for consumption by requests.
+
+    Examples
+    --------
+    >>> from blaze.server.serialization import msgpack
+    >>> mimetype(msgpack)
+    {'Content-Type': 'application/vnd.blaze+msgpack'}
+    """
+    return {'Content-Type': 'application/vnd.blaze+%s' % serial.name}
+
+
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     tree = to_tree(expr)
 
     serial = ec.serial
-    r = requests.post('%s/compute.%s' % (ec.url, serial.name),
-                      data=serial.dumps({'expr': tree}))
+    r = requests.post('%s/compute' % ec.url,
+                      data=serial.dumps({'expr': tree}),
+                      headers=mimetype(serial))
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))

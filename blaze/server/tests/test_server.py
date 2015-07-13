@@ -12,6 +12,7 @@ from toolz import pipe
 from odo import odo
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, resource
+from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.serialization import all_formats
 
@@ -132,8 +133,9 @@ def test_compute(test, serial):
     expected = 300
 
     response = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
 
     assert 'OK' in response.status
@@ -148,8 +150,9 @@ def test_get_datetimes(test, serial):
     query = {'expr': to_tree(expr)}
 
     response = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
 
     assert 'OK' in response.status
@@ -167,8 +170,9 @@ def dont_test_compute_with_namespace(test, serial):
     expected = ['Alice', 'Bob']
 
     response = test.post(
-        '/compute/accounts.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
 
     assert 'OK' in response.status
@@ -199,8 +203,9 @@ def test_compute_with_variable_in_namespace(iris_server, serial):
 
     blob = serial.dumps({'expr': tree, 'namespace': {'pl': 5}})
     resp = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=blob,
+        headers=mimetype(serial)
     )
 
     assert 'OK' in resp.status
@@ -223,8 +228,9 @@ def test_compute_by_with_summary(iris_server, serial):
     tree = to_tree(expr)
     blob = serial.dumps({'expr': tree})
     resp = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=blob,
+        headers=mimetype(serial)
     )
     assert 'OK' in resp.status
     data = serial.loads(resp.data)
@@ -245,8 +251,9 @@ def test_compute_column_wise(iris_server, serial):
     tree = to_tree(expr)
     blob = serial.dumps({'expr': tree})
     resp = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=blob,
+        headers=mimetype(serial)
     )
 
     assert 'OK' in resp.status
@@ -264,8 +271,9 @@ def test_multi_expression_compute(test, serial):
     expr = join(s.accounts, s.cities)
 
     resp = test.post(
-        '/compute.{name}'.format(name=serial.name),
-        data=serial.dumps({'expr': to_tree(expr)}),
+        '/compute',
+        data=serial.dumps(dict(expr=to_tree(expr))),
+        headers=mimetype(serial)
     )
 
     assert 'OK' in resp.status
@@ -281,8 +289,9 @@ def test_multi_expression_compute(test, serial):
 def test_leaf_symbol(test, serial):
     query = {'expr': {'op': 'Field', 'args': [':leaf', 'cities']}}
     resp = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
 
     data = serial.loads(resp.data)
@@ -299,8 +308,9 @@ def test_sqlalchemy_result(test, serial):
     query = {'expr': to_tree(expr)}
 
     response = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
 
     assert 'OK' in response.status
@@ -319,9 +329,11 @@ def test_server_can_compute_sqlalchemy_reductions(test, serial):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
+
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = respdata['data']
@@ -334,9 +346,11 @@ def test_serialization_endpoints(test, serial):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post(
-        '/compute.{name}'.format(name=serial.name),
+        '/compute',
         data=serial.dumps(query),
+        headers=mimetype(serial)
     )
+
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = respdata['data']
@@ -355,8 +369,12 @@ def has_bokeh():
 @pytest.mark.parametrize('serial', all_formats)
 def test_cors_compute(test, serial, has_bokeh):
     expr = t.db.iris.petal_length.sum()
-    res = test.post('/compute.{name}'.format(name=serial.name),
-                    data=serial.dumps(dict(expr=to_tree(expr))))
+    res = test.post(
+        '/compute',
+        data=serial.dumps(dict(expr=to_tree(expr))),
+        headers=mimetype(serial)
+    )
+
     assert res.status_code == 200
     assert res.headers['Access-Control-Allow-Origin'] == '*'
     assert 'HEAD' in res.headers['Access-Control-Allow-Methods']
