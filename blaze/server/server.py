@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import Iterable
 import socket
 import functools
 import re
@@ -31,7 +32,6 @@ from blaze.compute import compute_up
 
 from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol, coerce_scalar
-from ..compatibility import collections_abc
 from ..expr import Expr, symbol
 
 
@@ -428,7 +428,7 @@ def compserver():
         return e.astuple
 
     if streaming:
-        if isinstance(result, collections_abc.Iterable):
+        if isinstance(result, Iterable):
             def gen(_dumps=serial.dumps):
                 for block in result:
                     yield _dumps(block)

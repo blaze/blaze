@@ -89,10 +89,9 @@ class Client(object):
     auth : tuple, optional
         The username and password to use when connecting to the server.
         If not provided, no auth header will be sent.
-
     chunksize : int, optional
         The size of the chunks to use on the server when making queries.
-        If this value is <= 0 then no chunking will be used.
+        If this is None, then no chunking will be used.
 
     Examples
     --------
