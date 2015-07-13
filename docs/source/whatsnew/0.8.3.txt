@@ -22,6 +22,11 @@ Improved Backends
 API Changes
 ~~~~~~~~~~~
 
+* Serialization format in blaze server is now passed in as a mimetype
+  (:issue:`1176`)
+* We only allow and use HTTP ``POST`` requests when sending a computation to
+  Blaze server for consistency with the HTTP spec (:issue:`1172`)
+
 Bug Fixes
 ~~~~~~~~~
 
