@@ -8,9 +8,9 @@ from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
 from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, label
+from .expressions import Expr, ElemWise, label, Field
 from .expressions import dshape_method_list
-from ..compatibility import zip_longest
+from ..compatibility import zip_longest, _strtypes
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
@@ -86,6 +86,11 @@ class Distinct(Expr):
 
     """ Remove duplicate elements from an expression
 
+    Paramaters
+    ----------
+    on : *field
+        The subset of fields or names of fields to be distinct on.
+
     Examples
     --------
     >>> from blaze import symbol
@@ -99,8 +104,24 @@ class Distinct(Expr):
     >>> from blaze.compute.python import compute
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
+
+    Using a subset
+
+    >>> import pandas as pd
+    >>> e = distinct(t, 'name')
+    >>> data = pd.DataFrame([['Alice', 100, 1],
+    ...                      ['Alice', 200, 2],
+    ...                      ['Bob', 100, 1],
+    ...                      ['Bob', 200, 2]],
+    ...                     columns=['name', 'amount', 'id'])
+    >>> compute(e, data)
+        name  amount  id
+    0  Alice     100   1
+    1    Bob     100   1
+
+
     """
-    __slots__ = '_hash', '_child',
+    __slots__ = '_hash', '_child', 'on'
 
     @property
     def dshape(self):
@@ -115,11 +136,29 @@ class Distinct(Expr):
         return self._child._name
 
     def __str__(self):
-        return 'distinct(%s)' % self._child
+        return 'distinct({child}{on})'.format(
+            child=self._child,
+            on=(', ' if self.on else '') + ', '.join(map(str, self.on))
+        )
 
 
-def distinct(expr):
-    return Distinct(expr)
+def distinct(expr, *on):
+    fields = frozenset(expr.fields)
+    _on = []
+    append = _on.append
+    for n in on:
+        if isinstance(n, Field):
+            if n._child.isidentical(expr):
+                n = n._name
+            else:
+                raise ValueError('{0} is not a field of {1}'.format(n, expr))
+        if not isinstance(n, _strtypes):
+            raise TypeError('on must be a name or field, not: {0}'.format(n))
+        elif n not in fields:
+            raise ValueError('{0} is not a field of {1}'.format(n, expr))
+        append(n)
+
+    return Distinct(expr, tuple(_on))
 
 
 distinct.__doc__ = Distinct.__doc__

@@ -197,9 +197,21 @@ def compute_up(t, x, **kwargs):
             keepdims=t.keepdims)
 
 
+@compute_up.register(Distinct, np.recarray)
+def recarray_distinct(t, rec, **kwargs):
+    return pd.DataFrame.from_records(rec).drop_duplicates(
+        subset=t.on or None).to_records(index=False).astype(rec.dtype)
+
+
 @dispatch(Distinct, np.ndarray)
-def compute_up(t, x, **kwargs):
-    return np.unique(x)
+def compute_up(t, arr, _recarray_distinct=recarray_distinct, **kwargs):
+    if t.on:
+        if getattr(arr.dtype, 'names', None) is not None:
+            return _recarray_distinct(t, arr, **kwargs).view(np.ndarray)
+        else:
+            raise ValueError('malformed expression: no columns to distinct on')
+
+    return np.unique(arr)
 
 
 @dispatch(Sort, np.ndarray)

@@ -104,7 +104,7 @@ def test_count_nan():
     assert compute(t.count(), x) == 2
 
 
-def test_Distinct():
+def test_distinct():
     x = np.array([('Alice', 100),
                   ('Alice', -200),
                   ('Bob', 100),
@@ -117,6 +117,62 @@ def test_Distinct():
               np.unique(x['name']))
     assert eq(compute(t.distinct(), x),
               np.unique(x))
+
+
+def test_distinct_on_recarray():
+    rec = pd.DataFrame(
+        [[0, 1],
+         [0, 2],
+         [1, 1],
+         [1, 2]],
+        columns=('a', 'b'),
+    ).to_records(index=False)
+
+    s = symbol('s', discover(rec))
+    assert (
+        compute(s.distinct('a'), rec) ==
+        pd.DataFrame(
+            [[0, 1],
+             [1, 1]],
+            columns=('a', 'b'),
+        ).to_records(index=False)
+    ).all()
+
+
+def test_distinct_on_structured_array():
+    arr = np.array(
+        [(0., 1.),
+         (0., 2.),
+         (1., 1.),
+         (1., 2.)],
+        dtype=[('a', 'f4'), ('b', 'f4')],
+    )
+
+    s = symbol('s', discover(arr))
+    assert(
+        compute(s.distinct('a'), arr) ==
+        np.array([(0., 1.), (1., 1.)], dtype=arr.dtype)
+    ).all()
+
+
+def test_distinct_on_str():
+    rec = pd.DataFrame(
+        [['a', 'a'],
+         ['a', 'b'],
+         ['b', 'a'],
+         ['b', 'b']],
+        columns=('a', 'b'),
+    ).to_records(index=False).astype([('a', '<U1'), ('b', '<U1')])
+
+    s = symbol('s', discover(rec))
+    assert (
+        compute(s.distinct('a'), rec) ==
+        pd.DataFrame(
+            [['a', 'a'],
+             ['b', 'a']],
+            columns=('a', 'b'),
+        ).to_records(index=False).astype([('a', '<U1'), ('b', '<U1')])
+    ).all()
 
 
 def test_sort():

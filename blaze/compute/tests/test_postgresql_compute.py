@@ -1,5 +1,6 @@
-import itertools
 from datetime import timedelta
+import itertools
+import re
 
 import pytest
 
@@ -14,7 +15,14 @@ import pandas.util.testing as tm
 from odo import odo, resource, drop, discover
 from blaze import symbol, compute, concat
 
+
 names = ('tbl%d' % i for i in itertools.count())
+
+
+def normalize(s):
+    s = ' '.join(s.strip().split()).lower()
+    s = re.sub(r'(alias)_?\d*', r'\1', s)
+    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
 @pytest.fixture
@@ -157,3 +165,14 @@ def test_coerce_bool_and_sum(sql):
     result = compute(expr, sql).scalar()
     expected = odo(compute(t.B, sql), pd.Series).gt(1).sum()
     assert result == expected
+
+
+def test_distinct_on(sql):
+    t = symbol('t', discover(sql))
+    computation = compute(t[['A', 'B']].sort('A').distinct('A'), sql)
+    assert normalize(str(computation)) == normalize("""
+    SELECT DISTINCT ON (anon_1."A") anon_1."A", anon_1."B"
+    FROM (SELECT {tbl}."A" AS "A", {tbl}."B" AS "B"
+    FROM {tbl}) AS anon_1 ORDER BY anon_1."A" ASC
+    """.format(tbl=sql.name))
+    assert odo(computation, tuple) == (('a', 1), ('b', 2))

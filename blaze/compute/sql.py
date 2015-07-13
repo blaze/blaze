@@ -345,13 +345,16 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Distinct, sa.Column)
 def compute_up(t, s, **kwargs):
-    return s.distinct().label(t._name)
+    return s.distinct(*t.on).label(t._name)
 
 
 @dispatch(Distinct, Select)
 def compute_up(t, s, **kwargs):
-    return s.distinct()
+    return s.distinct(*t.on)
 
+@dispatch(Distinct, Selectable)
+def compute_up(t, s, **kwargs):
+    return select(s).distinct(*t.on)
 
 @dispatch(Reduction, sql.elements.ClauseElement)
 def compute_up(t, s, **kwargs):
@@ -428,11 +431,6 @@ def compute_up(t, s, **kwargs):
 @dispatch(nunique, Selectable)
 def compute_up(expr, data, **kwargs):
     return select(data).distinct().alias(next(aliases)).count()
-
-
-@dispatch(Distinct, Selectable)
-def compute_up(t, s, **kwargs):
-    return select(s).distinct()
 
 
 @dispatch(By, sa.Column)
