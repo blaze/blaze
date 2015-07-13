@@ -329,7 +329,7 @@ def compserver():
     try:
         serial = _get_format(*mimetype_regex.match(content_type).groups())
     except KeyError:
-        return 'Unsupported serialization format', 404
+        return 'Unsupported serialization format', 415
 
     try:
         payload = serial.loads(request.data)
