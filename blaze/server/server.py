@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import socket
 import functools
+import re
 
 import flask
 from flask import Blueprint, Flask, request
@@ -28,7 +29,7 @@ from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
-from .serialization import json
+from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol, coerce_scalar
 from ..expr import Expr, symbol
 
@@ -316,14 +317,23 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@api.route('/compute.<serial_format>',
-           methods=['POST', 'HEAD', 'OPTIONS'])
+mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
+                            '|'.join(x.name for x in all_formats))
+
+
+@api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
-def compserver(serial_format):
+def compserver():
+    content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
+
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
+
     try:
-        serial = _get_format(serial_format)
+        serial = _get_format(matched.groups()[0])
     except KeyError:
-        return 'Unsupported serialization format', 404
+        return 'Unsupported serialization format %s' % matched, 415
 
     try:
         payload = serial.loads(request.data)

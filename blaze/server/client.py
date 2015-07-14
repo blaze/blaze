@@ -37,7 +37,7 @@ def _request(method, client, url, params=None, **kwargs):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', InsecureRequestWarning)
         return method(
-            '{base}/{url}'.format(
+            '{base}{url}'.format(
                 base=client.url,
                 url=url,
             ),
@@ -110,7 +110,7 @@ class Client(object):
     @property
     def dshape(self):
         """The datashape of the client"""
-        response = get(self, 'datashape')
+        response = get(self, '/datashape')
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 
@@ -122,6 +122,19 @@ def discover(c):
     return c.dshape
 
 
+def mimetype(serial):
+    """Function to generate a blaze serialization format mimetype put into a
+    dictionary of headers for consumption by requests.
+
+    Examples
+    --------
+    >>> from blaze.server.serialization import msgpack
+    >>> mimetype(msgpack)
+    {'Content-Type': 'application/vnd.blaze+msgpack'}
+    """
+    return {'Content-Type': 'application/vnd.blaze+%s' % serial.name}
+
+
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
@@ -130,8 +143,9 @@ def compute_down(expr, ec, **kwargs):
     serial = ec.serial
     r = post(
         ec,
-        'compute.{serial}'.format(serial=serial.name),
+        '/compute',
         data=serial.dumps({'expr': tree}),
+        headers=mimetype(serial)
     )
 
     if not ok(r):
