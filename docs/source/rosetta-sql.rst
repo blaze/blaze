@@ -27,7 +27,7 @@ been executed:
 
 .. code-block:: python
 
-   >>> from blaze import symbol
+   >>> from blaze import symbol, by, join, concat
    >>> df = symbol('df', 'var * {id: int64, amount: float64, name: string}')
 
 .. note::
@@ -88,6 +88,12 @@ been executed:
 |                 | .. code-block:: sql                             | .. code-block:: python                  |
 |                 |                                                 |                                         |
 |                 |    select distinct(name) from df                |    df.name.distinct()                   |
+|                 +-------------------------------------------------+-----------------------------------------+
+|                 | .. code-block:: sql                             | .. code-block::python                   |
+|                 |                                                 |                                         |
+|                 |    /* postgresql only */                        |    # postgresql only                    |
+|                 |    select distinct on (name) * from             |    df.sort(df.name).distinct(df.name)   |
+|                 |    df order by name                             |    df.sort('name').distinct('name')     |
 +-----------------+-------------------------------------------------+-----------------------------------------+
 |                 | .. code-block:: sql                             | .. code-block:: python                  |
 |                 |                                                 |                                         |
@@ -97,6 +103,12 @@ been executed:
 |                 |                                                 |                                         |
 |                 |    select amount, count(amount)                 |    df.amount.count_values()             |
 |                 |    from df group by amount                      |                                         |
++-----------------+-------------------------------------------------+-----------------------------------------+
+|                 | .. code-block:: sql                             | .. code-block:: python                  |
+|                 |                                                 |                                         |
+| Concatenate     |    select * from df                             |    concat(df, df)                       |
+|                 |    union all                                    |                                         |
+|                 |    select * from df                             |                                         |
 +-----------------+-------------------------------------------------+-----------------------------------------+
 |                 | .. code-block:: sql                             | .. code-block:: python                  |
 |                 |                                                 |                                         |
