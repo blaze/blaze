@@ -152,30 +152,62 @@ def mimetype(serial):
     return {'Content-Type': 'application/vnd.blaze+%s' % serial.name}
 
 
+def read_data(raw_data, serial, chunking, extract=False):
+    """Read raw data using the serialization format and chunking scheme.
+
+    Parameters
+    ----------
+    raw_data : bytes
+        The raw data to read.
+    serial : SerializationFormat
+        The format to use to decode the data.
+    chunking : bool
+        Decode the data as chunks.
+    extract : bool, optional
+        Extract the data field out of non-chunking results.
+    """
+    if chunking:
+        unpacker = serial.stream_unpacker()
+        unpacker.feed(raw_data)
+        obj = unpacker.unpack()
+        if isinstance(obj, list):
+            obj = obj + sum(unpacker, [])
+        else:
+            obj = obj['d']
+        return obj
+
+    obj = serial.loads(raw_data)
+    if extract:
+        obj = obj['data']
+    return obj
+
+
 @dispatch(Expr, Client)
 def compute_down(expr, ec, **kwargs):
     from .server import to_tree
     tree = to_tree(expr)
 
     serial = ec.serial
+    chunksize = ec.chunksize
+    if chunksize is not None:
+        params = {'chunksize': ec.chunksize}
+        endpoint = '/compute/stream'
+    else:
+        params = {}
+        endpoint = '/compute'
+
     r = post(
         ec,
-        '/compute',
+        endpoint,
         data=serial.dumps({'expr': tree}),
         auth=ec.auth,
         headers=mimetype(serial),
+        params=params
     )
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
-
-    raw_data = content(r)
-    if ec.chunksize:
-        unpacker = serial.stream_unpacker()
-        unpacker.feed(raw_data)
-        return sum(unpacker, [])
-    else:
-        return serial.loads(raw_data)['data']
+    return read_data(content(r), serial, chunksize, extract=True)
 
 
 @resource.register('blaze://.+')

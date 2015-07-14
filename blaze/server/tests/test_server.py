@@ -4,6 +4,7 @@ import pytest
 pytest.importorskip('flask')
 
 from base64 import b64encode
+from itertools import chain
 
 import datashape
 import numpy as np
@@ -14,7 +15,7 @@ from toolz import pipe
 from odo import odo
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, resource
-from blaze.server.client import mimetype
+from blaze.server.client import mimetype, read_data
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.serialization import all_formats
 
@@ -37,6 +38,24 @@ data = {'accounts': accounts,
               'db': db}
 
 
+def create_arg(serial):
+    yield serial, None
+    if serial.stream_unpacker is not None:
+        yield serial, 2  # chunksize=2
+
+
+chunksize_params = list(chain.from_iterable(map(create_arg, all_formats)))
+
+
+def post(client, url, data, headers=None, params=None):
+    return client.post(
+        url,
+        data=data,
+        headers=headers or {},
+        query_string=params or {},
+    )
+
+
 @pytest.fixture(scope='module')
 def server():
     s = Server(data, all_formats)
@@ -55,18 +74,25 @@ def test_datasets(test):
     assert response.data.decode('utf-8') == str(discover(data))
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_bad_responses(test, serial):
-    assert 'OK' not in test.post(
-        '/compute/accounts.{name}'.format(name=serial.name),
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_bad_responses(test, serial, chunksize):
+    assert 'OK' not in post(
+        test,
+        '/compute/accounts',
         data=serial.dumps(500),
+        headers=mimetype(serial)
     ).status
-    assert 'OK' not in test.post(
-        '/compute/non-existent-table.{name}'.format(name=serial.name),
+    assert 'OK' not in post(
+        test,
+        '/compute/non-existent-table',
         data=serial.dumps(0),
+        headers=mimetype(serial),
     ).status
-    assert 'OK' not in test.post(
-        '/compute/accounts.{name}'.format(name=serial.name),
+    assert 'OK' not in post(
+        test,
+        '/compute/accounts',
+        data=None,
+        headers=mimetype(serial),
     ).status
 
 
@@ -128,59 +154,74 @@ def test_from_tree_is_robust_to_unnecessary_namespace():
 t = symbol('t', discover(data))
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_compute(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_compute(test, serial, chunksize):
     expr = t.accounts.amount.sum()
     query = {'expr': to_tree(expr)}
     expected = 300
 
-    response = test.post(
-        '/compute',
+    response = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    assert data['data'] == expected
-    assert data['names'] == ['amount_sum']
+    data = read_data(response.data, serial, chunksize)
+    if chunksize:
+        assert data == expected
+    else:
+        assert data['data'] == expected
+        assert data['names'] == ['amount_sum']
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_get_datetimes(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_get_datetimes(test, serial, chunksize):
     expr = t.events
     query = {'expr': to_tree(expr)}
 
-    response = test.post(
-        '/compute',
+    response = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
+    data = read_data(response.data, serial, chunksize)
+    if chunksize:
+        data = {'data': data, 'datashape': discover(data)}
+    else:
+        assert data['names'] == events.columns.tolist()
     ds = datashape.dshape(data['datashape'])
     result = into(np.ndarray, data['data'], dshape=ds)
     assert into(list, result) == into(list, events)
-    assert data['names'] == events.columns.tolist()
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def dont_test_compute_with_namespace(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def dont_test_compute_with_namespace(test, serial, chunksize):
     query = {'expr': {'op': 'Field',
                       'args': ['accounts', 'name']}}
     expected = ['Alice', 'Bob']
 
-    response = test.post(
-        '/compute',
+    response = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    assert data['data'] == expected
-    assert data['names'] == ['name']
+    data = read_data(response.data, serial, chunksize)
+    if chunksize:
+        assert data == expected
+    else:
+        assert data['data'] == expected
+        assert data['names'] == ['name']
 
 
 @pytest.yield_fixture
@@ -195,8 +236,8 @@ def iris_server():
 iris = CSV(example('iris.csv'))
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_compute_with_variable_in_namespace(iris_server, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_compute_with_variable_in_namespace(iris_server, serial, chunksize):
     test = iris_server
     t = symbol('t', discover(iris))
     pl = symbol('pl', 'float32')
@@ -204,22 +245,27 @@ def test_compute_with_variable_in_namespace(iris_server, serial):
     tree = to_tree(expr, {pl: 'pl'})
 
     blob = serial.dumps({'expr': tree, 'namespace': {'pl': 5}})
-    resp = test.post(
-        '/compute',
+    resp = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=blob,
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in resp.status
-    data = serial.loads(resp.data)
-    result = data['data']
+    data = read_data(resp.data, serial, chunksize)
+    if chunksize:
+        result = data
+    else:
+        result = data['data']
+        assert data['names'] == ['species']
     expected = list(compute(expr._subs({pl: 5}), {t: iris}))
     assert result == expected
-    assert data['names'] == ['species']
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_compute_by_with_summary(iris_server, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_compute_by_with_summary(iris_server, serial, chunksize):
     test = iris_server
     t = symbol('t', discover(iris))
     expr = by(
@@ -229,22 +275,27 @@ def test_compute_by_with_summary(iris_server, serial):
     )
     tree = to_tree(expr)
     blob = serial.dumps({'expr': tree})
-    resp = test.post(
-        '/compute',
+    resp = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=blob,
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
     assert 'OK' in resp.status
-    data = serial.loads(resp.data)
+    data = read_data(resp.data, serial, chunksize)
+    if chunksize:
+        data = {'data': data}
+    else:
+        assert data['names'] == ['species', 'max', 'sum']
     result = DataFrame(data['data']).values
     expected = compute(expr, iris).values
     np.testing.assert_array_equal(result[:, 0], expected[:, 0])
     np.testing.assert_array_almost_equal(result[:, 1:], expected[:, 1:])
-    assert data['names'] == ['species', 'max', 'sum']
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_compute_column_wise(iris_server, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_compute_column_wise(iris_server, serial, chunksize):
     test = iris_server
     t = symbol('t', discover(iris))
     subexpr = ((t.petal_width / 2 > 0.5) &
@@ -252,112 +303,140 @@ def test_compute_column_wise(iris_server, serial):
     expr = t[subexpr]
     tree = to_tree(expr)
     blob = serial.dumps({'expr': tree})
-    resp = test.post(
-        '/compute',
+    resp = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=blob,
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in resp.status
-    data = serial.loads(resp.data)
-    result = data['data']
+    data = read_data(resp.data, serial, chunksize)
+    if chunksize:
+        result = data
+    else:
+        result = data['data']
+        assert data['names'] == t.fields
     expected = compute(expr, iris)
     assert list(map(tuple, result)) == into(list, expected)
-    assert data['names'] == t.fields
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_multi_expression_compute(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_multi_expression_compute(test, serial, chunksize):
     s = symbol('s', discover(data))
 
     expr = join(s.accounts, s.cities)
 
-    resp = test.post(
-        '/compute',
+    resp = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(dict(expr=to_tree(expr))),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in resp.status
-    respdata = serial.loads(resp.data)
-    result = respdata['data']
+    respdata = read_data(resp.data, serial, chunksize)
+    if chunksize:
+        result = respdata
+    else:
+        result = respdata['data']
+        assert respdata['names'] == expr.fields
     expected = compute(expr, {s: data})
-
     assert list(map(tuple, result)) == into(list, expected)
-    assert respdata['names'] == expr.fields
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_leaf_symbol(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_leaf_symbol(test, serial, chunksize):
     query = {'expr': {'op': 'Field', 'args': [':leaf', 'cities']}}
-    resp = test.post(
-        '/compute',
+    resp = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
-    data = serial.loads(resp.data)
-    a = data['data']
+    data = read_data(resp.data, serial, chunksize)
+    if chunksize:
+        a = data
+    else:
+        assert data['names'] == cities.columns.tolist()
+        a = data['data']
     b = into(list, cities)
-
     assert list(map(tuple, a)) == b
-    assert data['names'] == cities.columns.tolist()
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_sqlalchemy_result(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_sqlalchemy_result(test, serial, chunksize):
     expr = t.db.iris.head(5)
     query = {'expr': to_tree(expr)}
 
-    response = test.post(
-        '/compute',
+    response = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    result = data['data']
+    data = read_data(response.data, serial, chunksize)
+    if chunksize:
+        result = data
+    else:
+        result = data['data']
+        assert data['names'] == t.db.iris.fields
     assert all(isinstance(item, (tuple, list)) for item in result)
-    assert data['names'] == t.db.iris.fields
 
 
 def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_server_can_compute_sqlalchemy_reductions(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_server_can_compute_sqlalchemy_reductions(test, serial, chunksize):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
-    response = test.post(
-        '/compute',
+    response = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in response.status
-    respdata = serial.loads(response.data)
-    result = respdata['data']
+    respdata = read_data(response.data, serial, chunksize)
+    if chunksize:
+        result = respdata
+    else:
+        result = respdata['data']
+        assert respdata['names'] == ['petal_length_sum']
     assert result == odo(compute(expr, {t: data}), int)
-    assert respdata['names'] == ['petal_length_sum']
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_serialization_endpoints(test, serial):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_serialization_endpoints(test, serial, chunksize):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
-    response = test.post(
-        '/compute',
+    response = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(query),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert 'OK' in response.status
-    respdata = serial.loads(response.data)
-    result = respdata['data']
+    respdata = read_data(response.data, serial, chunksize)
+    if chunksize:
+        result = respdata
+    else:
+        result = respdata['data']
+        assert respdata['names'] == ['petal_length_sum']
     assert result == odo(compute(expr, {t: data}), int)
-    assert respdata['names'] == ['petal_length_sum']
 
 
 @pytest.fixture
@@ -368,13 +447,15 @@ def has_bokeh():
         pytest.skip(str(e))
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_cors_compute(test, serial, has_bokeh):
+@pytest.mark.parametrize('serial,chunksize', chunksize_params)
+def test_cors_compute(test, serial, chunksize, has_bokeh):
     expr = t.db.iris.petal_length.sum()
-    res = test.post(
-        '/compute',
+    res = post(
+        test,
+        '/compute' + ('/stream' if chunksize else ''),
         data=serial.dumps(dict(expr=to_tree(expr))),
-        headers=mimetype(serial)
+        headers=mimetype(serial),
+        params={'chunksize': chunksize} if chunksize else {},
     )
 
     assert res.status_code == 200

@@ -22,6 +22,10 @@ def _coerce_str(bytes_or_str):
     return bytes_or_str.decode('utf-8')
 
 
+class OutOfData(Exception):
+    pass
+
+
 class JsonUnpacker(object):
     def __init__(self):
         self._buffer = bytearray()
@@ -29,7 +33,7 @@ class JsonUnpacker(object):
     def feed(self, next_bytes):
         self._buffer.extend(next_bytes)
 
-    def __iter__(self):
+    def unpack(self):
         buffer_ = self._buffer
         loads = json_module.loads
         for n in range(len(buffer_) + 1):
@@ -39,7 +43,17 @@ class JsonUnpacker(object):
                 continue
 
             self._buffer = buffer_ = buffer_[n:]
-            yield obj
+            return obj
+        else:
+            raise OutOfData()
+
+    def __iter__(self):
+        unpack = self.unpack
+        while True:
+            try:
+                yield unpack()
+            except OutOfData:
+                return
 
 
 json = SerializationFormat(
@@ -57,7 +71,7 @@ msgpack = SerializationFormat(
     'msgpack',
     partial(msgpack_module.unpackb, encoding='utf-8'),
     partial(msgpack_module.packb, default=json_dumps),
-    msgpack_module.Unpacker,
+    partial(msgpack_module.Unpacker, encoding='utf-8'),
 )
 
 

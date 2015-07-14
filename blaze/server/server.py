@@ -32,6 +32,7 @@ from blaze.compute import compute_up
 
 from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol, coerce_scalar
+from ..compatibility import map
 from ..expr import Expr, symbol
 
 
@@ -363,13 +364,12 @@ class _ComputationFailed(Exception):
         return self._msg, self._status
 
 
-def _process_request(serial):
+def _process_request(serial, chunksize=None):
     try:
         payload = serial.loads(request.data)
     except ValueError:
         return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
 
-    chunksize = payload.get('chunksize', 0)
     ns = payload.get('namespace', dict())
     dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
@@ -384,7 +384,7 @@ def _process_request(serial):
         if iscollection(expr.dshape):
             result = odo(
                 result,
-                chunks(list) if chunksize > 0 else list,
+                chunks(list) if chunksize else list,
                 chunksize=chunksize,
             )
         elif isscalar(expr.dshape):
@@ -400,7 +400,7 @@ def _process_request(serial):
             "Computation failed with message:\n%s" % e, 500
         )
 
-    return expr, result, chunksize > 0
+    return expr, result
 
 
 mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
@@ -423,25 +423,43 @@ def compserver():
         return 'Unsupported serialization format %s' % matched, 415
 
     try:
-        expr, result, streaming = _process_request(serial)
+        expr, result = _process_request(serial)
     except _ComputationFailed as e:
         return e.astuple
 
-    if streaming:
-        if isinstance(result, Iterable):
-            def gen(_dumps=serial.dumps):
-                for block in result:
-                    yield _dumps(block)
+    return serial.dumps({
+        'datashape': str(expr.dshape),
+        'data': result,
+        'names': expr.fields
+    })
 
-        else:
-            def gen():
-                yield serial.dumps(result)
 
-        return Response(gen())
+@api.route('/compute/stream', methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+def streamserver():
+    content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
 
-    else:
-        return serial.dumps({
-            'datashape': str(expr.dshape),
-            'data': result,
-            'names': expr.fields
-        })
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
+
+    try:
+        serial = _get_format(matched.groups()[0])
+    except KeyError:
+        return 'Unsupported serialization format %s' % matched, 415
+
+    try:
+        chunksize = int(request.args.get('chunksize', 1000))
+    except ValueError:
+        return 'chunksize must be an integer', 422
+
+    try:
+        expr, result = _process_request(serial, chunksize)
+    except _ComputationFailed as e:
+        return e.astuple
+
+    return Response(
+        map(serial.dumps, result)
+        if isinstance(result, Iterable) else
+        (serial.dumps({'d': result}) for _ in (None,)),
+    )
