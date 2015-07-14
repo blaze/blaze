@@ -34,8 +34,10 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Expr, CachedDataset)
 def compute_down(expr, data, **kwargs):
-    if expr in data.cache:
+    try:
         return data.cache[expr]
+    except KeyError:
+        pass
 
     leaf, = expr._leaves()
 
