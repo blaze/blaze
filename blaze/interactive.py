@@ -51,6 +51,9 @@ def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
+    if isinstance(data, InteractiveSymbol):
+        return Data(data.data, dshape, name, fields, columns, schema, **kwargs)
+
     if isinstance(data, _strtypes):
         data = resource(data, schema=schema, dshape=dshape, columns=columns,
                         **kwargs)
