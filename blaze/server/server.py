@@ -5,7 +5,7 @@ import functools
 import re
 
 import flask
-from flask import Blueprint, Flask, request
+from flask import Blueprint, Flask, request, Response
 
 try:
     from bokeh.server.crossdomain import crossdomain
@@ -45,10 +45,16 @@ api = Blueprint('api', __name__)
 pickle_extension_api = Blueprint('pickle_extension_api', __name__)
 
 
-def _get_option(option, options):
+_no_default = object()  # sentinel
+
+
+def _get_option(option, options, default=_no_default):
     try:
         return options[option]
     except KeyError:
+        if default is not _no_default:
+            return default
+
         # Provides a more informative error message.
         raise TypeError(
             'The blaze api must be registered with {option}'.format(
@@ -64,6 +70,9 @@ def _register_api(app, options, first_registration=False):
     _get_data.cache[app] = _get_option('data', options)
     _get_format.cache[app] = dict(
         (f.name, f) for f in _get_option('formats', options)
+    )
+    _get_auth.cache[app] = (
+        _get_option('authorization', options, None) or (lambda a: True)
     )
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
@@ -85,6 +94,25 @@ def _get_format(name):
 _get_format.cache = {}
 
 
+def _get_auth():
+    return _get_auth.cache[flask.current_app]
+_get_auth.cache = {}
+
+
+def authorization(f):
+    @functools.wraps(f)
+    def authorized(*args, **kwargs):
+        if not _get_auth()(request.authorization):
+            return Response(
+                'bad auth token',
+                401,
+                {'WWW-Authenticate': 'Basic realm="Login Required"'},
+            )
+
+        return f(*args, **kwargs)
+    return authorized
+
+
 class Server(object):
 
     """ Blaze Data Server
@@ -93,15 +121,20 @@ class Server(object):
 
     Parameters
     ----------
-    data : ``dict`` or ``None``, optional
+    data : dict, optional
         A dictionary mapping dataset name to any data format that blaze
         understands.
-
-    formats : ``iterable[SerializationFormat]``, optional
+    formats : iterable, optional
         An iterable of supported serialization formats. By default, the
         server will support JSON.
         A serialization format is an object that supports:
         name, loads, and dumps.
+    authorization : callable, optional
+        A callable to be used to check the auth header from the client.
+        This callable should accept a single argument that will either be
+        None indicating that no header was passed, or an object
+        containing a username and password attribute. By default, all requests
+        are allowed.
 
     Examples
     --------
@@ -118,7 +151,7 @@ class Server(object):
     """
     __slots__ = 'app', 'data', 'port'
 
-    def __init__(self, data=None, formats=None):
+    def __init__(self, data=None, formats=None, authorization=None):
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
@@ -126,6 +159,7 @@ class Server(object):
             api,
             data=data,
             formats=formats if formats is not None else (json,),
+            authorization=authorization,
         )
         self.data = data
 
@@ -144,6 +178,7 @@ class Server(object):
 
 @api.route('/datashape', methods=['GET'])
 @crossdomain(origin='*', methods=['GET'])
+@authorization
 def shape():
     return str(discover(_get_data()))
 
@@ -323,6 +358,7 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@authorization
 def compserver():
     content_type = request.headers['content-type']
     matched = mimetype_regex.match(content_type)
