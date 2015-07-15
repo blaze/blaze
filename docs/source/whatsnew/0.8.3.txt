@@ -29,6 +29,13 @@ API Changes
 * Allow :class:`~blaze.server.client.Client` objects to explicitly disable
   verification of ssl certificates by passing ``verify_ssl=False``.
   (:issue:`1170`)
+* Enable basic auth for the blaze server. The server now accepts an
+  ``authorization`` keyword which must be a callable that accepts an
+  object holding the username and password, or None if no auth was given and
+  returns a bool indicating if the request should be allowed.
+  :class:`~blaze.server.client.Client` objects can pass an optional
+  ``auth`` keyword which should be a tuple of (username, password) to
+  send to the server. (:issue:`1175`)
 
 Bug Fixes
 ~~~~~~~~~
