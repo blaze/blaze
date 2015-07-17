@@ -44,7 +44,7 @@
 (1000000, 1000000)
 
 >>> import dask.array as da
->>> x = da.from_array(d, blockshape=(1000, 1000))   # cut up array into blocks
+>>> x = da.from_array(d, chunks=(1000, 1000))   # cut up array into blocks
 
 >>> y = x.T.dot(x).mean(axis=0)                     # do numpy math
 >>> plot(y[::100])                                  # use result as normal
@@ -140,7 +140,7 @@ d = {'x': 1,
 
 ```python
 >>> import dask.array as da
->>> arrays = [da.from_array(t, blockshape=(4, 200, 200)) for t in temps]
+>>> arrays = [da.from_array(t, chunks=(4, 200, 200)) for t in temps]
 >>> x = da.concatenate(arrays, axis=0)
 
 >>> x.shape
