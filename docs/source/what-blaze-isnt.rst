@@ -68,4 +68,4 @@ our own computational system.  In these cases we naturally hook up Blaze to
 serve as a front-end query system.  We often write about these experiments.
 
 As a result you may see us doing some of the things we just said "Blaze doesn't
-do".  These things aren't Blaze (but you *can* use Blaze use them easily.)
+do".  These things aren't Blaze (but you *can* use Blaze to do them easily.)
