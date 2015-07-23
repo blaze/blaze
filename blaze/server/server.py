@@ -369,7 +369,10 @@ def compserver():
     try:
         serial = _get_format(matched.groups()[0])
     except KeyError:
-        return 'Unsupported serialization format %s' % matched, 415
+        return (
+            "Unsupported serialization format '%s'" % matched.groups()[0],
+            415,
+        )
 
     try:
         payload = serial.loads(request.data)
