@@ -194,6 +194,11 @@ def test_head():
               x[:2])
 
 
+def test_tail():
+    assert eq(compute(t.tail(2), x),
+              x[-2:])
+
+
 def test_label():
     expected = x['amount'] * 10
     expected = np.array(expected, dtype=[('foo', 'i8')])
