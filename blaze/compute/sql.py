@@ -48,11 +48,14 @@ from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
-from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn, Slice
-from ..expr import (BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
-                    FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce)
-from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements, Concat
+
+from ..expr import (
+    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice,
+    BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
+    FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce,
+    nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge,
+    common_subexpression, Summary, Like, nelements, Concat,
+)
 
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan

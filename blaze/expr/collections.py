@@ -15,7 +15,7 @@ from ..compatibility import zip_longest, _strtypes
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
            'merge', 'head', 'sort', 'Join', 'join', 'transform', 'Concat',
-           'concat']
+           'concat', 'Tail', 'tail']
 
 
 class Sort(Expr):
@@ -164,17 +164,7 @@ def distinct(expr, *on):
 distinct.__doc__ = Distinct.__doc__
 
 
-class Head(Expr):
-
-    """ First `n` elements of collection
-
-    Examples
-    --------
-    >>> from blaze import symbol
-    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
-    >>> accounts.head(5).dshape
-    dshape("5 * {name: string, amount: int32}")
-    """
+class _HeadOrTail(Expr):
     __slots__ = '_hash', '_child', 'n'
 
     @property
@@ -189,13 +179,56 @@ class Head(Expr):
         return self._child._name
 
     def __str__(self):
-        return '%s.head(%d)' % (self._child, self.n)
+        return '%s.%s(%d)' % (self._child, type(self).__name__.lower(), self.n)
+
+
+class Head(_HeadOrTail):
+
+    """ First `n` elements of collection
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts.head(5).dshape
+    dshape("5 * {name: string, amount: int32}")
+
+    See Also
+    --------
+
+    blaze.expr.collections.Tail
+    """
+    pass
 
 
 def head(child, n=10):
     return Head(child, n)
 
 head.__doc__ = Head.__doc__
+
+
+class Tail(_HeadOrTail):
+    """ Last `n` elements of collection
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts.tail(5).dshape
+    dshape("5 * {name: string, amount: int32}")
+
+    See Also
+    --------
+
+    blaze.expr.collections.Head
+    """
+    pass
+
+
+def tail(child, n=10):
+    return Tail(child, n)
+
+tail.__doc__ = Tail.__doc__
 
 
 def merge(*exprs, **kwargs):
@@ -632,7 +665,7 @@ isin.__doc__ = IsIn.__doc__
 
 
 dshape_method_list.extend([
-    (iscollection, set([sort, head])),
+    (iscollection, set([sort, head, tail])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
     (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin])),
 ])

@@ -7,6 +7,10 @@ Release |version|
 New Expressions
 ~~~~~~~~~~~~~~~
 
+* Adds :class:`~blaze.expr.collections.Tail` which acts as an opposite to
+  head. This is exposed throught the `~blaze.expr.collections.tail` function.
+  This returns the last ``n`` elements from a collection. (:issue:`1187`)
+
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 

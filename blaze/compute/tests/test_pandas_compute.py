@@ -342,6 +342,10 @@ def test_head():
     tm.assert_frame_equal(compute(t.head(1), df), df.head(1))
 
 
+def test_tail():
+    tm.assert_frame_equal(compute(t.tail(1), df), df.tail(1))
+
+
 def test_label():
     expected = df['amount'] * 10
     expected.name = 'foo'

@@ -7,12 +7,14 @@ from pandas import DataFrame, Series
 from datashape import to_numpy, to_numpy_dtype
 from numbers import Number
 
-from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
-from ..expr import std, var, count, nunique, Summary, IsIn
-from ..expr import BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp
-from ..expr import UTCFromTimestamp, DateTimeTruncate
-from ..expr import Transpose, TensorDot, Coerce
+from ..expr import (
+    Reduction, Field, Projection, Broadcast, Selection, ndim,
+    Distinct, Sort, Tail, Head, Label, ReLabel, Expr, Slice, Join,
+    std, var, count, nunique, Summary, IsIn,
+    BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
+    UTCFromTimestamp, DateTimeTruncate,
+    Transpose, TensorDot, Coerce,
+)
 from ..utils import keywords
 
 from .core import base, compute
@@ -233,6 +235,11 @@ def compute_up(t, x, **kwargs):
 @dispatch(Head, np.ndarray)
 def compute_up(t, x, **kwargs):
     return x[:t.n]
+
+
+@dispatch(Tail, np.ndarray)
+def compute_up(t, x, **kwargs):
+    return x[-t.n:]
 
 
 @dispatch(Label, np.ndarray)

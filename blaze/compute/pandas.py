@@ -41,7 +41,7 @@ from ..dispatch import dispatch
 
 from .core import compute, compute_up, base
 
-from ..expr import (Projection, Field, Sort, Head, Broadcast, Selection,
+from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
@@ -446,6 +446,11 @@ def compute_up(t, s, **kwargs):
 @dispatch(Head, (Series, DataFrame))
 def compute_up(t, df, **kwargs):
     return df.head(t.n)
+
+
+@dispatch(Tail, (Series, DataFrame))
+def compute_up(t, df, **kwargs):
+    return df.tail(t.n)
 
 
 @dispatch(Label, DataFrame)
