@@ -668,6 +668,9 @@ class Map(ElemWise):
             return self._child._name
 
 
+Expr.map.__doc__ = Map.__doc__
+
+
 class Apply(Expr):
     """ Apply an arbitrary Python function onto an expression
 
