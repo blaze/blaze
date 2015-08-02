@@ -9,7 +9,7 @@ import warnings
 from collections import Iterator
 from functools import reduce
 
-from datashape import discover, Tuple, Record, DataShape, var
+from datashape import discover, Tuple, Record, DataShape, var, ForeignKey
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
 
 from pandas import DataFrame, Series
@@ -262,7 +262,8 @@ def expr_repr(expr, n=10):
 
     # Tables
     if (ndim(expr) == 1 and (istabular(expr.dshape) or
-                             isscalar(expr.dshape.measure))):
+                             isscalar(expr.dshape.measure) or
+                             isinstance(expr.dshape.measure, ForeignKey))):
         return repr_tables(expr, 10)
 
     # Smallish arrays

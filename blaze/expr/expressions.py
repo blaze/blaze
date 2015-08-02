@@ -11,7 +11,7 @@ import numpy as np
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed, ForeignKey
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins, boundmethod
@@ -84,7 +84,7 @@ class Expr(Node):
     holds all tree traversal logic
     """
     def _get_field(self, fieldname):
-        if not isinstance(self.dshape.measure, Record):
+        if not isinstance(self.dshape.measure, (Record, ForeignKey)):
             if fieldname == self._name:
                 return self
             raise ValueError(
@@ -97,8 +97,8 @@ class Expr(Node):
             return self._get_field(key)
         elif isinstance(key, Expr) and iscollection(key.dshape):
             return selection(self, key)
-        elif (isinstance(key, list)
-                and builtins.all(isinstance(k, _strtypes) for k in key)):
+        elif (isinstance(key, list) and
+              builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
                 return self._project(key)
             else:
@@ -126,6 +126,11 @@ class Expr(Node):
     def fields(self):
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
+        elif isinstance(self.dshape.measure, ForeignKey):
+            if not isrecord(self.dshape.measure.restype):
+                raise TypeError('Foreign key must reference a '
+                                'Record datashape')
+            return self.dshape.measure.restype.names
         name = getattr(self, '_name', None)
         if name is not None:
             return [self._name]
@@ -150,12 +155,13 @@ class Expr(Node):
 
     def __dir__(self):
         result = dir(type(self))
-        if isrecord(self.dshape.measure) and self.fields:
-            result.extend(list(map(valid_identifier, self.fields)))
+        if (isrecord(self.dshape.measure) or
+            isinstance(self.dshape.measure, ForeignKey) and
+                self.fields):
+            result.extend(map(valid_identifier, self.fields))
 
-        d = toolz.merge(schema_methods(self.dshape.measure),
-                        dshape_methods(self.dshape))
-        result.extend(list(d))
+        result.extend(toolz.merge(schema_methods(self.dshape.measure),
+                                  dshape_methods(self.dshape)))
 
         return sorted(set(filter(isvalid_identifier, result)))
 
