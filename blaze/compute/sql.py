@@ -94,6 +94,14 @@ def compute_up(t, s, **kwargs):
     return s.c.get(t._name)
 
 
+@dispatch(Field, sa.Column)
+def compute_up(t, s, **kwargs):
+    assert 0 <= len(s.foreign_keys) <= 1, 'only one foreign key allowed'
+    key_col = next(iter(s.foreign_keys)).column
+    join = s.table.join(key_col.table, onclause=s == key_col)
+    return sa.select([key_col.table.c[t._name]]).select_from(join)
+
+
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
     cols = list(inner_columns(s))
@@ -355,9 +363,11 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return s.distinct(*t.on)
 
+
 @dispatch(Distinct, Selectable)
 def compute_up(t, s, **kwargs):
     return select(s).distinct(*t.on)
+
 
 @dispatch(Reduction, sql.elements.ClauseElement)
 def compute_up(t, s, **kwargs):
@@ -424,7 +434,7 @@ def compute_up(t, s, **kwargs):
     return select([list(inner_columns(result))[0].label(t._name)])
 
 
-@dispatch(nunique, sa.Column)
+@dispatch(nunique, (sa.sql.elements.Label, sa.Column))
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -437,9 +447,17 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(By, sa.Column)
-def compute_up(t, s, **kwargs):
-    grouper = lower_column(s)
-    scope = {t._child: s}
+def compute_up(t, s, scope=None, **kwargs):
+    assert scope is not None
+    s = lower_column(s)
+
+    try:
+        # if we have a fkey relationship on the grouper we need to compute it
+        grouper = compute_up(t.grouper, s, **kwargs)
+    except NotImplementedError:  # TODO: this seems like a suboptimal way to do this
+        # otherwise we use the input scope
+        grouper = s
+
     app = t.apply
     if isinstance(app, Reduction):
         reductions = [compute(app, scope, post_compute=False)]
