@@ -23,6 +23,7 @@ requirements:
     - numba
     - bcolz
     - unittest2 [py26]
+    - pyyaml
 
 test:
   requires:
@@ -30,7 +31,6 @@ test:
     - dask
     - dynd-python
     - pytables
-    - yaml
     - pyyaml
     - h5py
 
