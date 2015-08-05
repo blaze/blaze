@@ -23,6 +23,8 @@ requirements:
     - numba
     - bcolz
     - unittest2 [py26]
+    - yaml
+    - pyyaml
 
 test:
   requires:
