@@ -1286,8 +1286,6 @@ def test_transform_filter_by_different_order():
     assert normalize(str(result)) == expected
 
 
-@pytest.mark.xfail(raises=ValueError,
-                   reason='Need to allow Merge expressions to be groupers')
 def test_transform_filter_by_projection():
     t2 = transform(t, abs_amt=abs(t.amount), sine=sin(t.id))
     tr = t2[t2.amount < 0]

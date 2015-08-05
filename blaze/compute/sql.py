@@ -439,14 +439,13 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(By, sa.Column)
-def compute_up(t, s, **kwargs):
-    grouper = lower_column(s)
-    scope = {t._child: s}
-    app = t.apply
+def compute_up(expr, data, **kwargs):
+    grouper = lower_column(data)
+    app = expr.apply
     if isinstance(app, Reduction):
-        reductions = [compute(app, scope, post_compute=False)]
+        reductions = [compute(app, data, post_compute=False)]
     elif isinstance(app, Summary):
-        reductions = [compute(val, scope, post_compute=None).label(name)
+        reductions = [compute(val, data, post_compute=None).label(name)
                       for val, name in zip(app.values, app.fields)]
 
     return sa.select([grouper] + reductions).group_by(grouper)
@@ -460,23 +459,13 @@ def compute_up(expr, data, **kwargs):
                         "got %s of type %r with dshape %s" %
                         (expr.grouper, type(expr.grouper).__name__,
                          expr.dshape))
-
-    # TODO: generalize this conditional chain
-    if (isinstance(expr.grouper, (Field, Projection)) or
-            expr.grouper is expr._child):
-        grouper = [lower_column(data.c.get(col))
-                   for col in expr.grouper.fields]
-    elif isinstance(expr.grouper, DateTime):
-        grouper = [compute(expr.grouper, data, post_compute=False)]
-    elif isinstance(expr.grouper, Merge):
-        grouper = [compute(child, data, post_compute=False)
-                   for child in expr.grouper.children]
+    grouper = get_inner_columns(compute(expr.grouper, data,
+                                        post_compute=False))
     app = expr.apply
-    scope = {expr._child: data}
     if isinstance(expr.apply, Reduction):
-        reductions = [compute(app, scope, post_compute=False)]
+        reductions = [compute(app, data, post_compute=False)]
     elif isinstance(expr.apply, Summary):
-        reductions = [compute(val, scope, post_compute=False).label(name)
+        reductions = [compute(val, data, post_compute=False).label(name)
                       for val, name in zip(app.values, app.fields)]
 
     return sa.select(grouper + reductions).group_by(*grouper)
@@ -575,12 +564,13 @@ def compute_up(t, s, **kwargs):
 
     # TODO: Do we need to be this restrictive here?
     if valid_reducer(t.apply):
-        reduction = compute(t.apply, {t._child: s}, post_compute=False)
+        reduction = compute(t.apply, s, post_compute=False)
     else:
         raise TypeError('apply must be a Summary or Reduction expression')
 
-    grouper = get_inner_columns(compute(t.grouper, {t._child: s}))
-    reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
+    grouper = get_inner_columns(compute(t.grouper, s, post_compute=False))
+    reduction_columns = pipe(reduction.inner_columns,
+                             map(get_inner_columns),
                              concat)
     columns = list(unique(chain(grouper, reduction_columns)))
     if (not isinstance(s, sa.sql.selectable.Alias) or
