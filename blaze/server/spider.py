@@ -120,7 +120,7 @@ def _parse_args():
                    help='Host name. Use 0.0.0.0 to listen on all public IPs')
     p.add_argument('-l', '--follow-links', action='store_true',
                    help='Follow links when listing files')
-    p.add_argument('-e', '--ignored-exception', nargs='*',
+    p.add_argument('-e', '--ignored-exception', nargs='+',
                    default=['Exception'],
                    help='Exceptions to ignore when calling resource on a file')
     p.add_argument('-d', '--hidden', action='store_true',
