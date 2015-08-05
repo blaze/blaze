@@ -32,7 +32,7 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe
+from toolz import unique, concat, pipe, first
 from toolz.curried import map
 
 import numpy as np
@@ -97,9 +97,9 @@ def compute_up(t, s, **kwargs):
 @dispatch(Field, sa.Column)
 def compute_up(t, s, **kwargs):
     assert 0 <= len(s.foreign_keys) <= 1, 'only one foreign key allowed'
-    key_col = next(iter(s.foreign_keys)).column
+    key_col = first(s.foreign_keys).column
     join = s.table.join(key_col.table, onclause=s == key_col)
-    return sa.select([key_col.table.c[t._name]]).select_from(join)
+    return sa.select([key_col.table.c[t._name]]).select_from(join).c[t._name]
 
 
 @dispatch(Broadcast, Select)
@@ -453,8 +453,8 @@ def compute_up(t, s, scope=None, **kwargs):
 
     try:
         # if we have a fkey relationship on the grouper we need to compute it
-        grouper = compute_up(t.grouper, s, **kwargs)
-    except NotImplementedError:  # TODO: this seems like a suboptimal way to do this
+        grouper = compute(t.grouper, s, post_compute=False, **kwargs)
+    except NotImplementedError:
         # otherwise we use the input scope
         grouper = s
 
@@ -839,6 +839,11 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Expr, sa.sql.elements.ClauseElement)
 def post_compute(_, s, **kwargs):
     return select(s)
+
+
+@dispatch(Expr, sa.Table)
+def post_compute(_, s, **kwargs):
+    return s
 
 
 @dispatch(IsIn, ColumnElement)
