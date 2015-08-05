@@ -458,9 +458,12 @@ def compute_up(expr, data, **kwargs):
                    for col in expr.grouper.fields]
     elif isinstance(expr.grouper, DateTime):
         grouper = [compute(expr.grouper, data, post_compute=False)]
+    elif isinstance(expr.grouper, Merge):
+        grouper = [compute(child, data, post_compute=False)
+                   for child in expr.grouper.children]
     else:
-        raise ValueError("Grouper must be a projection, field or "
-                         "DateTime expression, got %s" % expr.grouper)
+        raise TypeError("Grouper must be a Projection, Field, Merge, or "
+                        "DateTime expression, got %s" % expr.grouper)
     app = expr.apply
     scope = {expr._child: data}
     if isinstance(expr.apply, Reduction):
@@ -524,11 +527,11 @@ def alias_it(s):
 def compute_up(t, s, **kwargs):
 
     # TODO: this should restrict according to dshape, not expression type
-    if not (isinstance(t.grouper, (Field, Projection, DateTime)) or
+    if not (isinstance(t.grouper, (Field, Projection, DateTime, Merge)) or
             t.grouper is t._child):
-        raise ValueError("Grouper must be a Field, Projection or DateTime, "
-                         "got %s of type %r" % (t.grouper,
-                                                type(t.grouper).__name__))
+        raise TypeError("Grouper must be a Field, Projection or DateTime, "
+                        "got %s of type %r" % (t.grouper,
+                                               type(t.grouper).__name__))
 
     s = alias_it(s)
 

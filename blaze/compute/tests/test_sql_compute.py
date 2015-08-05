@@ -1611,3 +1611,19 @@ def test_coerce():
     FROM accounts"""
     result = compute(expr, s)
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_multi_column_by_after_transform():
+    tbl = transform(t, new_amount=t.amount + 1, one_two=t.amount * 2)
+    expr = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.name,
+        accounts.amount * :amount_1 as one_two,
+        avg(accounts.amount + :amount_2) as avg_amt
+    FROM
+        accounts
+    GROUP BY
+        accounts.name, accounts.amount * :amount_1
+    """
+    assert normalize(str(result)) == normalize(expected)
