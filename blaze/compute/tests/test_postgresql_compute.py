@@ -1,4 +1,5 @@
 from datetime import timedelta
+from operator import methodcaller
 import itertools
 import re
 
@@ -26,8 +27,18 @@ def normalize(s):
 
 
 @pytest.fixture
-def url():
-    return 'postgresql://postgres@localhost/test::%s' % next(names)
+def name():
+    return next(names)
+
+
+@pytest.fixture(scope='session')
+def base_url():
+    return 'postgresql://postgres@localhost/test::%s'
+
+
+@pytest.fixture
+def url(base_url, name):
+    return base_url % name
 
 
 @pytest.yield_fixture
@@ -59,11 +70,11 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
-def sql_two_tables():
+def sql_two_tables(base_url):
     dshape = 'var * {a: int32}'
     try:
-        t = resource(url(), dshape=dshape)
-        u = resource(url(), dshape=dshape)
+        t = resource(url(base_url, next(names)), dshape=dshape)
+        u = resource(url(base_url, next(names)), dshape=dshape)
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -72,6 +83,43 @@ def sql_two_tables():
         finally:
             drop(t)
             drop(u)
+
+
+@pytest.yield_fixture
+def products(base_url):
+    try:
+        products = resource(base_url % 'products',
+                            dshape="""var * {
+                                product_id: !int64,
+                                color: ?string,
+                                price: float64
+                            }""")
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield products
+        finally:
+            drop(products)
+
+
+@pytest.yield_fixture
+def orders(base_url, products):
+    try:
+        orders = resource(base_url % 'orders',
+                          dshape="""var * {
+                            order_id: !int64,
+                            product_id: (int64) >> T,
+                            quantity: int64
+                          }
+                          """, foreign_keys=dict(product_id=products.c.product_id))
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield orders
+        finally:
+            drop(orders)
 
 
 @pytest.yield_fixture
@@ -176,3 +224,28 @@ def test_distinct_on(sql):
     FROM {tbl}) AS anon_1 ORDER BY anon_1."A" ASC
     """.format(tbl=sql.name))
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
+
+
+def test_auto_join(orders):
+    t = symbol('t', discover(orders))
+    expr = t.product_id.color
+    result = compute(expr, orders)
+    expected = """SELECT products.color FROM orders JOIN products ON
+        orders.product_id = products.product_id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.mark.parametrize('func', ['max', 'min', 'sum'])
+def test_foreign_key_reduction(orders, products, func):
+    t = symbol('t', discover(orders))
+    expr = methodcaller(func)(t.quantity * t.product_id.price)
+    result = compute(expr, orders)
+    expected = """SELECT
+        %s(orders.quantity * product.price) as max
+    from
+        orders join products
+    on
+        orders.product_id = products.product_id
+    """ % func
+    assert normalize(str(result)) == normalize(expected)
