@@ -13,6 +13,11 @@ from odo.utils import ignoring
 
 from .server import Server, DEFAULT_PORT
 
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
+
 
 __all__ = 'spider', 'from_yaml'
 
@@ -127,7 +132,7 @@ def _parse_args():
 
 def _main():
     args = _parse_args()
-    ignore = tuple(getattr(__builtins__, e) for e in args.ignored_exception)
+    ignore = tuple(getattr(builtins, e) for e in args.ignored_exception)
     resources = from_yaml(args.path,
                           ignore=ignore,
                           followlinks=args.follow_links,
