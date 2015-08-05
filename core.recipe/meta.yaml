@@ -48,7 +48,6 @@ test:
     - dask
     - dynd-python
     - pytables
-    - yaml
     - pyyaml
     - h5py
 

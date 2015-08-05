@@ -55,6 +55,15 @@ Serving Data from the Command Line
 
 Blaze ships with a command line tool called ``blaze-server`` to serve up data specified in a YAML file.
 
+.. note::
+
+   To use the YAML specification feature of Blaze server please install
+   the ``pyyaml`` library. This can be done easily with ``conda``:
+
+   .. code-block:: sh
+
+      conda install pyyaml
+
 YAML Specification
 ------------------
 

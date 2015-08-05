@@ -1275,8 +1275,6 @@ def test_transform_filter_by_different_order():
     assert normalize(str(result)) == expected
 
 
-@pytest.mark.xfail(raises=ValueError,
-                   reason='Need to allow Merge expressions to be groupers')
 def test_transform_filter_by_projection():
     t2 = transform(t, abs_amt=abs(t.amount), sine=sin(t.id))
     tr = t2[t2.amount < 0]
@@ -1599,4 +1597,39 @@ def test_coerce():
         cast(accounts.amount AS BIGINT) AS amount
     FROM accounts"""
     result = compute(expr, s)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_multi_column_by_after_transform():
+    tbl = transform(t, new_amount=t.amount + 1, one_two=t.amount * 2)
+    expr = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.name,
+        accounts.amount * :amount_1 as one_two,
+        avg(accounts.amount + :amount_2) as avg_amt
+    FROM
+        accounts
+    GROUP BY
+        accounts.name, accounts.amount * :amount_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_multi_column_by_after_transform_and_filter():
+    tbl = t[t.name == 'Alice']
+    tbl = transform(tbl, new_amount=tbl.amount + 1, one_two=tbl.amount * 2)
+    expr = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.name,
+        accounts.amount * :amount_1 as one_two,
+        avg(accounts.amount + :amount_2) as avg_amt
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    GROUP BY
+        accounts.name, accounts.amount * :amount_1
+    """
     assert normalize(str(result)) == normalize(expected)
