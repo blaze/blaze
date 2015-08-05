@@ -44,6 +44,8 @@ from multipledispatch import MDNotImplementedError
 
 from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
+from datashape.predicates import iscollection, isscalar, isrecord
+
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
@@ -452,6 +454,14 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(By, ClauseElement)
 def compute_up(expr, data, **kwargs):
+    if not valid_grouper(expr):
+        raise TypeError("Grouper must have a non-nested record or one "
+                        "dimensional collection datashape, "
+                        "got %s of type %r with dshape %s" %
+                        (expr.grouper, type(expr.grouper).__name__,
+                         expr.dshape))
+
+    # TODO: generalize this conditional chain
     if (isinstance(expr.grouper, (Field, Projection)) or
             expr.grouper is expr._child):
         grouper = [lower_column(data.c.get(col))
@@ -461,9 +471,6 @@ def compute_up(expr, data, **kwargs):
     elif isinstance(expr.grouper, Merge):
         grouper = [compute(child, data, post_compute=False)
                    for child in expr.grouper.children]
-    else:
-        raise TypeError("Grouper must be a Projection, Field, Merge, or "
-                        "DateTime expression, got %s" % expr.grouper)
     app = expr.apply
     scope = {expr._child: data}
     if isinstance(expr.apply, Reduction):
@@ -523,20 +530,51 @@ def alias_it(s):
         return s
 
 
+def is_nested_record(measure):
+    """Predicate for checking whether `measure` is a nested ``Record`` dshape
+
+    Examples
+    --------
+    >>> from datashape import dshape
+    >>> is_nested_record(dshape('{a: int32, b: int32}').measure)
+    False
+    >>> is_nested_record(dshape('{a: var * ?float64, b: ?string}').measure)
+    True
+    """
+    if not isrecord(measure):
+        raise TypeError('Input must be a Record type got %s of type %r' %
+                        (measure, type(measure).__name__))
+    return not all(isscalar(t) for t in measure.types)
+
+
+def valid_grouper(expr):
+    ds = expr.dshape
+    measure = ds.measure
+    return (iscollection(ds) and
+            (isscalar(measure) or
+             (isrecord(measure) and not is_nested_record(measure))))
+
+
+def valid_reducer(expr):
+    ds = expr.dshape
+    measure = ds.measure
+    return ((not iscollection(ds)) and
+            (isscalar(measure) or
+             (isrecord(measure) and not is_nested_record(measure))))
+
+
 @dispatch(By, Select)
 def compute_up(t, s, **kwargs):
-
-    # TODO: this should restrict according to dshape, not expression type
-    if not (isinstance(t.grouper, (Field, Projection, DateTime, Merge)) or
-            t.grouper is t._child):
-        raise TypeError("Grouper must be a Field, Projection or DateTime, "
-                        "got %s of type %r" % (t.grouper,
-                                               type(t.grouper).__name__))
+    if not valid_grouper(t):
+        raise TypeError("Grouper must have a non-nested record or one "
+                        "dimensional collection datashape, "
+                        "got %s of type %r with dshape %s" %
+                        (t.grouper, type(t.grouper).__name__, t.dshape))
 
     s = alias_it(s)
 
     # TODO: Do we need to be this restrictive here?
-    if isinstance(t.apply, (Summary, Reduction)):
+    if valid_reducer(t.apply):
         reduction = compute(t.apply, {t._child: s}, post_compute=False)
     else:
         raise TypeError('apply must be a Summary or Reduction expression')
