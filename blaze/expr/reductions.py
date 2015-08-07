@@ -84,7 +84,7 @@ class Reduction(Expr):
         if child_name is None or child_name == '_':
             return type(self).__name__
         else:
-            return '%s_%s' % (type(self).__name__, child_name)
+            return '%s_%s' % (child_name, type(self).__name__)
 
     def __str__(self):
         kwargs = list()
