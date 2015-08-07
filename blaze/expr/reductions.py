@@ -80,10 +80,11 @@ class Reduction(Expr):
 
     @property
     def _name(self):
-        try:
-            return self._child._name + '_' + type(self).__name__
-        except (AttributeError, ValueError, TypeError):
+        child_name = self._child._name
+        if child_name is None or child_name == '_':
             return type(self).__name__
+        else:
+            return '%s_%s' % (type(self).__name__, child_name)
 
     def __str__(self):
         kwargs = list()

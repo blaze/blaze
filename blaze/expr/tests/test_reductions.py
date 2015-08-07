@@ -95,8 +95,5 @@ def test_max_min_on_datetime_and_timedelta(reduc, measure):
     assert hasattr(symbol('t', 'var * %s' % measure), reduc)
 
 
-def test_reduction_naming_on_broadcast_with_generated_leaves():
-    from blaze.expr.broadcast import broadcast_collect as broadcast
-    t = symbol('t', 'var * {a: float64, b: int32}')
-    expr = broadcast((t.a * t.b).sum())  # t.a * t.b generates a leaf named '_' in compute
-    assert expr._name == 'sum'
+def test_reduction_naming_with_generated_leaves():
+    assert symbol('_', 'var * float64').sum()._name == 'sum'
