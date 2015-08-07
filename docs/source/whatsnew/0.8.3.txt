@@ -14,8 +14,10 @@ New Expressions
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
-* :class:`~blaze.expr.expresssions.Distinct` expressions now support an `on`
+* :class:`~blaze.expr.collections.Distinct` expressions now support an `on`
   parameter to allow distinct on a subset of columns (:issue:`1159`)
+* :class:`~blaze.expr.reductions.Reduction` instances are now named as their
+  class name if their ``_child`` attribute is named ``'_'`` (:issue:`1198`)
 
 New Backends
 ~~~~~~~~~~~~
