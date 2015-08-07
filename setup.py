@@ -1,8 +1,11 @@
 #!/usr/bin/env python
-
 from __future__ import absolute_import, division, print_function
 
 import os
+from os.path import join, exists, isdir, abspath, dirname
+
+import site
+import shutil
 import sys
 from fnmatch import fnmatch
 
@@ -30,9 +33,23 @@ def find_packages(where='blaze', exclude=('ez_setup', 'distribute_setup'),
     return list(filter(func, [x[0] for x in os.walk(where)]))
 
 
-packages = find_packages()
-testdirs = find_packages(predicate=(lambda x: istestdir(x) and
-                                    os.path.basename(x) == 'tests'))
+def check_remove_blaze_install(site_packages):
+    blaze_path = join(site_packages, "blaze")
+    if not (exists(blaze_path) and isdir(blaze_path)):
+        return
+    prompt = "Found existing blaze install: %s\nRemove it? [y|N] " % blaze_path
+    val = input(prompt)
+    if val == "y":
+        print("Removing old blaze install...", end=" ")
+        try:
+            shutil.rmtree(blaze_path)
+            print("Done")
+        except (IOError, OSError):
+            print("Unable to remove old blaze at %s, exiting" % blaze_path)
+            sys.exit(-1)
+    else:
+        print("Not removing old blaze install")
+        sys.exit(1)
 
 
 def find_data_files(exts, where='blaze'):
@@ -41,6 +58,113 @@ def find_data_files(exts, where='blaze'):
         for f in files:
             if any(fnmatch(f, pat) for pat in exts):
                 yield os.path.join(root, f)
+
+
+def getsitepackages():
+    _is_64bit = (getattr(sys, 'maxsize', None) or
+                 getattr(sys, 'maxint')) > 2**32
+    _is_pypy = hasattr(sys, 'pypy_version_info')
+    _is_jython = sys.platform[:4] == 'java'
+
+    prefixes = [sys.prefix, sys.exec_prefix]
+
+    sitepackages = []
+    seen = set()
+    for prefix in prefixes:
+        if not prefix or prefix in seen:
+            continue
+        seen.add(prefix)
+
+        if sys.platform in ('os2emx', 'riscos') or _is_jython:
+            sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
+        elif _is_pypy:
+            sitedirs = [os.path.join(prefix, 'site-packages')]
+        elif sys.platform == 'darwin' and prefix == sys.prefix:
+            # Apple's Python
+            if prefix.startswith("/System/Library/Frameworks/"):
+                sitedirs = [os.path.join("/Library/Python", sys.version[:3],
+                                         "site-packages"),
+                            os.path.join(prefix, "Extras", "lib", "python")]
+
+            else:  # any other Python distros on OSX work this way
+                sitedirs = [os.path.join(prefix, "lib",
+                            "python" + sys.version[:3], "site-packages")]
+
+        elif os.sep == '/':
+            sitedirs = [os.path.join(prefix,
+                                     "lib",
+                                     "python" + sys.version[:3],
+                                     "site-packages"),
+                        os.path.join(prefix, "lib", "site-python"),
+                        ]
+            lib64_dir = os.path.join(prefix, "lib64",
+                                     "python" + sys.version[:3],
+                                     "site-packages")
+            if (os.path.exists(lib64_dir) and
+                    os.path.realpath(lib64_dir) not in
+                    [os.path.realpath(p) for p in sitedirs]):
+                if _is_64bit:
+                    sitedirs.insert(0, lib64_dir)
+                else:
+                    sitedirs.append(lib64_dir)
+            try:
+                # sys.getobjects only available in --with-pydebug build
+                sys.getobjects
+                sitedirs.insert(0, os.path.join(sitedirs[0], 'debug'))
+            except AttributeError:
+                pass
+            # Debian-specific dist-packages directories:
+            sitedirs.append(os.path.join(prefix, "local/lib",
+                                         "python" + sys.version[:3],
+                                         "dist-packages"))
+            sitedirs.append(os.path.join(prefix, "lib",
+                                         "python" + sys.version[:3],
+                                         "dist-packages"))
+            if sys.version_info[0] >= 3:
+                sitedirs.append(os.path.join(prefix, "lib",
+                                             "python" + sys.version[0],
+                                             "dist-packages"))
+            sitedirs.append(os.path.join(prefix, "lib", "dist-python"))
+        else:
+            sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
+        if sys.platform == 'darwin':
+            # for framework builds *only* we add the standard Apple
+            # locations. Currently only per-user, but /Library and
+            # /Network/Library could be added too
+            if 'Python.framework' in prefix:
+                home = os.environ.get('HOME')
+                if home:
+                    sitedirs.append(
+                        os.path.join(home,
+                                     'Library',
+                                     'Python',
+                                     sys.version[:3],
+                                     'site-packages'))
+        for sitedir in sitedirs:
+            sitepackages.append(os.path.abspath(sitedir))
+
+    sitepackages = [p for p in sitepackages if os.path.isdir(p)]
+    return sitepackages
+
+
+# Parse command line args
+if 'develop' in sys.argv:
+    if '--user' in sys.argv:
+        site_packages = site.USER_SITE
+    else:
+        site_packages = getsitepackages()[0]
+
+    check_remove_blaze_install(site_packages)
+    path_file = join(site_packages, 'blaze.pth')
+    path = abspath(dirname(__file__))
+    with open((path_file), 'w+') as f:
+        f.write(path)
+    print("Install blaze for development:")
+    print(" - writing path '%s' to %s" % (path, path_file))
+
+packages = find_packages()
+testdirs = find_packages(predicate=(lambda x: istestdir(x) and
+                                    os.path.basename(x) == 'tests'))
 
 
 exts = '*.h5', '*.csv', '*.xls', '*.xlsx', '*.db', '*.json', '*.gz', '*.hdf5'
