@@ -872,11 +872,6 @@ def post_compute(_, s, **kwargs):
     return select(s)
 
 
-@dispatch(Expr, sa.Table)
-def post_compute(_, s, **kwargs):
-    return s
-
-
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
