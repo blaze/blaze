@@ -93,3 +93,7 @@ def test_boolean_has_reductions(reduc):
                                  ['date', 'datetime', 'timedelta']))
 def test_max_min_on_datetime_and_timedelta(reduc, measure):
     assert hasattr(symbol('t', 'var * %s' % measure), reduc)
+
+
+def test_reduction_naming_with_generated_leaves():
+    assert symbol('_', 'var * float64').sum()._name == 'sum'
