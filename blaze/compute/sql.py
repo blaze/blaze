@@ -79,7 +79,7 @@ def inner_columns(s):
 
 
 @dispatch(Projection, Selectable)
-def compute_up(t, s, scope=None, **kwargs):
+def compute_up(t, s, **kwargs):
     d = dict((c.name, c) for c in inner_columns(s))
     return select(s).with_only_columns([d[field] for field in t.fields])
 
@@ -449,12 +449,12 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(By, sa.Column)
-def compute_up(expr, data, **kwargs):
+def compute_up(expr, data, scope=None, **kwargs):
     data = lower_column(data)
 
     try:
         # if we have a fkey relationship on the grouper we need to compute it
-        grouper = compute(expr.grouper, data, post_compute=False, **kwargs)
+        grouper = compute(expr.grouper, scope, post_compute=False, **kwargs)
     except NotImplementedError:
         # otherwise we use the input scope
         grouper = data
