@@ -360,9 +360,17 @@ class Join(Expr):
     ----------
     lhs, rhs : Expr
         Expressions to join
-    on_left : string
-    on_right : string
-    suffixes: pair of strings
+    on_left : str, optional
+        The fields from the left side to join on.
+        If no ``on_right`` is passed, then these are the fields for both
+        sides.
+    on_right : str, optional
+        The fields from the right side to join on.
+    how : {'inner', 'outer', 'left', 'right'}
+        What type of join to perform.
+    suffixes: pair of str
+        The suffixes to be applied to the left and right sides
+        in order to resolve duplicate field names.
 
     Examples
     --------
