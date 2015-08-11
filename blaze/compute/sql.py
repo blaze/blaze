@@ -28,6 +28,7 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
+from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
 from sqlalchemy.engine import Engine
 
@@ -136,7 +137,7 @@ def compute_up(t, s, **kwargs):
     return compute(expr, s, post_compute=False).label(expr._name)
 
 
-@dispatch(BinOp, ColumnElement)
+@dispatch(BinOp, (FunctionElement, ColumnElement))
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
