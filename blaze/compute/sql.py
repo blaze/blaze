@@ -622,7 +622,7 @@ def compute_up(t, s, **kwargs):
     return select(s).limit(t.n)
 
 
-@dispatch(Label, ClauseElement)
+@dispatch(Label, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
