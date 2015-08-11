@@ -27,7 +27,7 @@ import sqlalchemy as sa
 from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.elements import ClauseElement, ColumnElement
+from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
 from sqlalchemy.engine import Engine
 
 import toolz
@@ -653,7 +653,7 @@ def get_inner_columns(c):
 def get_inner_columns(sel):
     inner_columns = list(sel.inner_columns)
     assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
-    return list(map(lower_column, sel.inner_columns))
+    return list(map(lower_column, inner_columns))
 
 
 @dispatch(sa.sql.functions.Function)
@@ -688,7 +688,7 @@ def get_all_froms(t):
     return [t]
 
 
-@dispatch(sa.sql.elements.ColumnClause)
+@dispatch(ColumnClause)
 def get_all_froms(c):
     return [c.table]
 
