@@ -28,6 +28,7 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
+from sqlalchemy.sql.selectable import FromClause
 from sqlalchemy.engine import Engine
 
 import toolz
@@ -362,7 +363,7 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return select(s).distinct(*t.on)
 
-@dispatch(Reduction, sql.elements.ClauseElement)
+@dispatch(Reduction, ClauseElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -641,7 +642,7 @@ def compute_up(t, s, **kwargs):
     return select(columns)
 
 
-@dispatch(sa.sql.FromClause)
+@dispatch(FromClause)
 def get_inner_columns(sel):
     try:
         return list(sel.inner_columns)
@@ -845,7 +846,7 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-@dispatch(Expr, sa.sql.elements.ClauseElement)
+@dispatch(Expr, ClauseElement)
 def optimize(expr, _):
     return broadcast_collect(expr)
 
@@ -855,7 +856,7 @@ def compute_up(expr, data, **kwargs):
     return table_of_metadata(data, expr._name)
 
 
-@dispatch(Expr, sa.sql.elements.ClauseElement)
+@dispatch(Expr, ClauseElement)
 def post_compute(_, s, **kwargs):
     return select(s)
 
