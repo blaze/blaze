@@ -191,6 +191,7 @@ def compute_up(t, s, scope=None, **kwargs):
                         optimize=False, post_compute=False)
     if isinstance(predicate, Select):
         predicate = list(list(predicate.columns)[0].base_columns)[0]
+
     try:
         return s.where(predicate)
     except AttributeError:
