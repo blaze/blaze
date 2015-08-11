@@ -554,22 +554,22 @@ def valid_reducer(expr):
 
 
 @dispatch(By, Select)
-def compute_up(t, s, **kwargs):
-    if not valid_grouper(t):
+def compute_up(expr, data, **kwargs):
+    if not valid_grouper(expr):
         raise TypeError("Grouper must have a non-nested record or one "
                         "dimensional collection datashape, "
                         "got %s of type %r with dshape %s" %
-                        (t.grouper, type(t.grouper).__name__, t.dshape))
+                        (expr.grouper, type(expr.grouper).__name__, expr.dshape))
 
-    s = alias_it(s)
+    s = alias_it(data)
 
     # TODO: Do we need to be this restrictive here?
-    if valid_reducer(t.apply):
-        reduction = compute(t.apply, s, post_compute=False)
+    if valid_reducer(expr.apply):
+        reduction = compute(expr.apply, s, post_compute=False)
     else:
         raise TypeError('apply must be a Summary or Reduction expression')
 
-    grouper = get_inner_columns(compute(t.grouper, s, post_compute=False))
+    grouper = get_inner_columns(compute(expr.grouper, s, post_compute=False))
     reduction_columns = pipe(reduction.inner_columns,
                              map(get_inner_columns),
                              concat)
@@ -621,9 +621,21 @@ def compute_up(t, s, **kwargs):
     return select(s).limit(t.n)
 
 
-@dispatch(Label, ClauseElement)
+@dispatch(Label, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.label(t.label)
+
+
+@dispatch(Label, ClauseElement)
+def compute_up(t, s, **kwargs):
+    assert len(s.c) == 1, 'more than one column in %s' % s
+    inner_column, = s.inner_columns
+    received_name = inner_column.name
+    child_name = t._child._name
+    assert received_name == child_name, \
+        ('inner_column.name == %s, but expected %s' %
+         (received_name, child_name))
+    return inner_column.label(t.label)
 
 
 @dispatch(ReLabel, Selectable)
@@ -644,16 +656,9 @@ def get_inner_columns(sel):
         return list(map(lower_column, sel.c.values()))
 
 
-@dispatch(sa.sql.elements.ColumnElement)
+@dispatch(ColumnElement)
 def get_inner_columns(c):
     return [c]
-
-
-@dispatch(sa.sql.selectable.ScalarSelect)
-def get_inner_columns(sel):
-    inner_columns = list(sel.inner_columns)
-    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
-    return list(map(lower_column, inner_columns))
 
 
 @dispatch(sa.sql.functions.Function)
