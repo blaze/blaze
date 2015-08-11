@@ -626,6 +626,11 @@ def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
+@dispatch(Expr, sa.sql.selectable.ScalarSelect)
+def post_compute(t, s, **kwargs):
+    return s.element
+
+
 @dispatch(ReLabel, Selectable)
 def compute_up(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
