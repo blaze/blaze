@@ -1644,3 +1644,17 @@ def test_multi_column_by_after_transform_and_filter():
         accounts.name, accounts.amount * :amount_1
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_attribute_access_on_transform_filter():
+    tbl = transform(t, new_amount=t.amount + 1)
+    expr = tbl[tbl.name == 'Alice'].new_amount
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount + :amount_1 as new_amount
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    """
+    assert normalize(str(result)) == normalize(expected)
