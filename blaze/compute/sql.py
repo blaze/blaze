@@ -146,6 +146,7 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(BinOp, Selectable)
 def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1
     if isinstance(t.lhs, Expr):
         return t.op(first(data.inner_columns), t.rhs)
     else:
