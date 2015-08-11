@@ -339,6 +339,31 @@ names = {
 }
 
 
+def reconstruct_select(columns, original, **kwargs):
+    return sa.select(columns,
+                     from_obj=kwargs.pop('from_obj', None),
+                     whereclause=kwargs.pop('whereclause',
+                                            getattr(original,
+                                                    '_whereclause', None)),
+                     bind=kwargs.pop('bind', original.bind),
+                     distinct=kwargs.pop('distinct',
+                                         getattr(original,
+                                                 '_distinct', False)),
+                     group_by=kwargs.pop('group_by',
+                                         getattr(original,
+                                                 '_group_by_clause', None)),
+                     having=kwargs.pop('having',
+                                       getattr(original, '_having', None)),
+                     limit=kwargs.pop('limit',
+                                      getattr(original, '_limit', None)),
+                     offset=kwargs.pop('offset',
+                                       getattr(original, '_offset', None)),
+                     order_by=kwargs.pop('order_by',
+                                         getattr(original,
+                                                 '_order_by_clause', None)),
+                     **kwargs)
+
+
 @dispatch((nunique, Reduction), Select)
 def compute_up(expr, data, **kwargs):
     if expr.axis != (0,):
@@ -359,9 +384,11 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     return s.distinct(*t.on)
 
+
 @dispatch(Distinct, Selectable)
 def compute_up(t, s, **kwargs):
     return select(s).distinct(*t.on)
+
 
 @dispatch(Reduction, ClauseElement)
 def compute_up(t, s, **kwargs):
@@ -583,15 +610,10 @@ def compute_up(expr, data, **kwargs):
     else:
         from_obj = None
 
-    return sa.select(columns=columns,
-                     whereclause=getattr(s, 'element', s)._whereclause,
-                     from_obj=from_obj,
-                     distinct=getattr(s, 'element', s)._distinct,
-                     group_by=grouper,
-                     having=None,  # TODO: we don't have an expression for this
-                     limit=getattr(s, 'element', s)._limit,
-                     offset=getattr(s, 'element', s)._offset,
-                     order_by=get_clause(getattr(s, 'element', s), 'order_by'))
+    return reconstruct_select(columns,
+                              getattr(s, 'element', s),
+                              from_obj=from_obj,
+                              group_by=grouper)
 
 
 @dispatch(Sort, (Selectable, Select))
@@ -632,16 +654,7 @@ def compute_up(t, s, **kwargs):
     assert len(s.c) == 1, \
         'expected %s to have a single column but has %d' % (s, len(s.c))
     inner_column, = s.inner_columns
-    result = sa.select([inner_column.label(t.label)],
-                       whereclause=s._whereclause,
-                       bind=s.bind,
-                       distinct=s._distinct,
-                       group_by=s._group_by_clause,
-                       having=s._having,
-                       limit=s._limit,
-                       offset=s._offset,
-                       order_by=s._order_by_clause).as_scalar()
-    return result
+    return reconstruct_select([inner_column.label(t.label)], s).as_scalar()
 
 
 @dispatch(Expr, ScalarSelect)
@@ -740,15 +753,7 @@ def compute_up(expr, data, **kwargs):
     # we need these getattrs if data is a ColumnClause or Table
     from_obj = get_all_froms(data)
     assert len(from_obj) == 1, 'only a single FROM clause supported'
-    return sa.select(columns,
-                     from_obj=from_obj,
-                     whereclause=getattr(data, '_whereclause', None),
-                     distinct=getattr(data, '_distinct', False),
-                     having=getattr(data, '_having', None),
-                     group_by=get_clause(data, 'group_by'),
-                     limit=getattr(data, '_limit', None),
-                     offset=getattr(data, '_offset', None),
-                     order_by=get_clause(data, 'order_by'))
+    return reconstruct_select(columns, data, from_obj=from_obj)
 
 
 @dispatch(Summary, Select)
