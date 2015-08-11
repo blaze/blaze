@@ -1676,3 +1676,17 @@ def test_attribute_on_filter_transform_groupby():
         accounts.name, accounts.amount * :amount_2
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_label_projection():
+    tbl = t[(t.name == 'Alice')]
+    tbl = transform(tbl, new_amount=tbl.amount + 1, one_two=tbl.amount * 2)
+    expr = tbl[['new_amount', 'one_two']]
+    expr = expr[expr.new_amount > 1].one_two
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount * :amount_1 as one_two
+    FROM accounts
+    WHERE accounts.name = :name_1 and accounts.amount + :amount_2 > :param_1
+    """
+    assert normalize(str(result)) == normalize(expected)
