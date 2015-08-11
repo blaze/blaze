@@ -51,5 +51,6 @@ Bug Fixes
 
 * Upgrade versioneer so that our version string is now :pep:`440` compliant
   (:issue:`1171`)
-* Computed columns (e.g., the result of a call to :func:``) can now be
-  accessed via standard attribute access (:issue:`1201`)
+* Computed columns (e.g., the result of a call to
+  :func:`~blaze.expr.collections.transform`) can now be accessed via standard
+  attribute access when using the SQL backend (:issue:`1201`)
