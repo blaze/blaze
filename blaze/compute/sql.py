@@ -621,21 +621,9 @@ def compute_up(t, s, **kwargs):
     return select(s).limit(t.n)
 
 
-@dispatch(Label, ColumnElement)
-def compute_up(t, s, **kwargs):
-    return s.label(t.label)
-
-
 @dispatch(Label, ClauseElement)
 def compute_up(t, s, **kwargs):
-    assert len(s.c) == 1, 'more than one column in %s' % s
-    inner_column, = s.inner_columns
-    received_name = inner_column.name
-    child_name = t._child._name
-    assert received_name == child_name, \
-        ('inner_column.name == %s, but expected %s' %
-         (received_name, child_name))
-    return inner_column.label(t.label)
+    return s.label(t.label)
 
 
 @dispatch(ReLabel, Selectable)
@@ -659,6 +647,13 @@ def get_inner_columns(sel):
 @dispatch(ColumnElement)
 def get_inner_columns(c):
     return [c]
+
+
+@dispatch(sa.sql.selectable.ScalarSelect)
+def get_inner_columns(sel):
+    inner_columns = list(sel.inner_columns)
+    assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
+    return list(map(lower_column, inner_columns))
 
 
 @dispatch(sa.sql.functions.Function)
