@@ -25,6 +25,9 @@ New Backends
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
+* Blaze now tries a bit harder to avoid generating ``ScalarSelects`` when using
+  the SQL backend (:issue:`1201`)
+
 API Changes
 ~~~~~~~~~~~
 
@@ -48,3 +51,5 @@ Bug Fixes
 
 * Upgrade versioneer so that our version string is now :pep:`440` compliant
   (:issue:`1171`)
+* Computed columns (e.g., the result of a call to :func:``) can now be
+  accessed via standard attribute access (:issue:`1201`)
