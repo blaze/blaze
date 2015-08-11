@@ -627,6 +627,23 @@ def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
+@dispatch(Label, FromClause)
+def compute_up(t, s, **kwargs):
+    assert len(s.c) == 1, \
+        'expected %s to have a single column but has %d' % (s, len(s.c))
+    inner_column, = s.inner_columns
+    result = sa.select([inner_column.label(t.label)],
+                       whereclause=s._whereclause,
+                       bind=s.bind,
+                       distinct=s._distinct,
+                       group_by=s._group_by_clause,
+                       having=s._having,
+                       limit=s._limit,
+                       offset=s._offset,
+                       order_by=s._order_by_clause).as_scalar()
+    return result
+
+
 @dispatch(Expr, sa.sql.selectable.ScalarSelect)
 def post_compute(t, s, **kwargs):
     return s.element
