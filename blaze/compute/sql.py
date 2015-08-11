@@ -33,7 +33,7 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe
+from toolz import unique, concat, pipe, first
 from toolz.curried import map
 
 import numpy as np
@@ -142,6 +142,14 @@ def compute_up(t, data, **kwargs):
         return t.op(data, t.rhs)
     else:
         return t.op(t.lhs, data)
+
+
+@dispatch(BinOp, Selectable)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return t.op(first(data.inner_columns), t.rhs)
+    else:
+        return t.op(t.lhs, first(data.inner_columns))
 
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
