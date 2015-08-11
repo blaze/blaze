@@ -1644,3 +1644,35 @@ def test_multi_column_by_after_transform_and_filter():
         accounts.name, accounts.amount * :amount_1
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_attribute_access_on_transform_filter():
+    tbl = transform(t, new_amount=t.amount + 1)
+    expr = tbl[tbl.name == 'Alice'].new_amount
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount + :amount_1 as new_amount
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_attribute_on_filter_transform_groupby():
+    tbl = t[t.name == 'Alice']
+    tbl = transform(tbl, new_amount=tbl.amount + 1, one_two=tbl.amount * 2)
+    gb = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
+    expr = gb.avg_amt
+    result = compute(expr, s)
+    expected = """SELECT
+        avg(accounts.amount + :amount_1) as avg_amt
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    GROUP BY
+        accounts.name, accounts.amount * :amount_2
+    """
+    assert normalize(str(result)) == normalize(expected)
