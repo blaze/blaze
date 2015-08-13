@@ -10,7 +10,7 @@ from distutils.version import LooseVersion
 
 
 import datashape
-from odo import into, resource
+from odo import into, resource, discover
 from pandas import DataFrame
 from toolz import unique
 
@@ -1676,3 +1676,23 @@ def test_attribute_on_filter_transform_groupby():
         accounts.name, accounts.amount * :amount_2
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_baseball_nested_by():
+    data = resource('sqlite:////Users/pcloud/Downloads/lahman2013.sqlite')
+    dshape = discover(data)
+    d = symbol('d', dshape)
+    expr = by(d.Teams.name,
+              start_year=d.Teams.yearID.min()).start_year.count_values()
+    result = compute(expr, data, post_compute=False)
+    expected = """SELECT
+        alias.start_year,
+        count(alias.start_year) as count
+    FROM
+        (SELECT min(teams.yearid) AS start_year
+         FROM teams
+         GROUP BY teams.name) AS alias
+    GROUP BY alias.start_year
+    ORDER BY counted DESC
+    """
+    assert normalize(str(result).replace('"', '')) == normalize(expected)
