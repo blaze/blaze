@@ -651,9 +651,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Head, ScalarSelect)
 def compute_up(t, s, **kwargs):
-    if s._limit is not None and s._limit <= t.n:
-        return s
-    return s.element.limit(t.n)
+    return compute(t, s.element, post_compute=False)
 
 
 @dispatch(Label, ColumnElement)
