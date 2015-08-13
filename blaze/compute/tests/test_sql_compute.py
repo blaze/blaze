@@ -21,7 +21,7 @@ from blaze.expr import (
     floor, cos, merge, nunique, mean, sum, count, exp, concat,
 )
 from blaze.compatibility import xfail
-from blaze.utils import tmpfile
+from blaze.utils import tmpfile, example
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -1679,11 +1679,11 @@ def test_attribute_on_filter_transform_groupby():
 
 
 def test_baseball_nested_by():
-    data = resource('sqlite:////Users/pcloud/Downloads/lahman2013.sqlite')
+    data = resource('sqlite:///%s' % example('teams.db'))
     dshape = discover(data)
     d = symbol('d', dshape)
-    expr = by(d.Teams.name,
-              start_year=d.Teams.yearID.min()).start_year.count_values()
+    expr = by(d.teams.name,
+              start_year=d.teams.yearID.min()).start_year.count_values()
     result = compute(expr, data, post_compute=False)
     expected = """SELECT
         anon_1.start_year,
