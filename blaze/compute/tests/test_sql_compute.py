@@ -1682,7 +1682,7 @@ def test_label_on_filter():
     expr = t[t.name == 'Alice'].amount.label('foo').head(2)
     result = compute(expr, s)
     expected = """SELECT
-        accounts.name AS foo
+        accounts.amount AS foo
     FROM
         accounts
     WHERE
