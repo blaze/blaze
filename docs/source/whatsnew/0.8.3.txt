@@ -26,7 +26,7 @@ Improved Backends
 ~~~~~~~~~~~~~~~~~
 
 * Blaze now tries a bit harder to avoid generating ``ScalarSelects`` when using
-  the SQL backend (:issue:`1201`)
+  the SQL backend (:issue:`1201`, :issue:`1205`)
 
 API Changes
 ~~~~~~~~~~~
