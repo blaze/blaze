@@ -420,7 +420,6 @@ def compute_up(t, s, **kwargs):
 @dispatch(count, Selectable)
 def compute_up(t, s, **kwargs):
     return s.count()
-    # return compute_up(t, select(s), **kwargs)
 
 
 @dispatch(count, sa.Table)
@@ -590,15 +589,15 @@ def compute_up(expr, data, **kwargs):
 
     s = alias_it(data)
 
-    app = expr.apply
     if valid_reducer(expr.apply):
-        reduction = [compute(v, s, post_compute=False) for v in app.values]
-        # reduction = compute(expr.apply, s, post_compute=False)
+        reduction = compute(expr.apply, s, post_compute=False)
     else:
         raise TypeError('apply must be a Summary expression')
 
     grouper = get_inner_columns(compute(expr.grouper, s, post_compute=False))
-    reduction_columns = pipe(reduction, map(get_inner_columns), concat)
+    reduction_columns = pipe(reduction.inner_columns,
+                             map(get_inner_columns),
+                             concat)
     columns = list(unique(chain(grouper, reduction_columns)))
     if (not isinstance(s, sa.sql.selectable.Alias) or
             (hasattr(s, 'froms') and isinstance(s.froms[0],
