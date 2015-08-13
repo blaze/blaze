@@ -1686,14 +1686,18 @@ def test_baseball_nested_by():
               start_year=d.Teams.yearID.min()).start_year.count_values()
     result = compute(expr, data, post_compute=False)
     expected = """SELECT
-        alias.start_year,
-        count(alias.start_year) as count
+        anon_1.start_year,
+        anon_1.count
     FROM
-        (SELECT min(teams.yearid) AS start_year
-         FROM teams
-         GROUP BY teams.name) AS alias
-    GROUP BY alias.start_year
-    ORDER BY counted DESC
+        (SELECT
+            alias.start_year as start_year,
+            count(alias.start_year) as count
+         FROM
+            (SELECT
+                min(teams.yearid) as start_year
+             FROM teams
+             GROUP BY teams.name) as alias
+         GROUP BY alias.start_year) as anon_1 ORDER BY anon_1.count DESC
     """
     assert normalize(str(result).replace('"', '')) == normalize(expected)
 
