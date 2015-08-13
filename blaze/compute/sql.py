@@ -34,6 +34,7 @@ from sqlalchemy.engine import Engine
 import toolz
 
 from toolz import unique, concat, pipe
+from toolz.compatibility import zip
 from toolz.curried import map
 
 import numpy as np
@@ -418,7 +419,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Selectable)
 def compute_up(t, s, **kwargs):
-    return compute_up(t, select(s), **kwargs)
+    return s.count()
 
 
 @dispatch(count, sa.Table)
@@ -491,11 +492,8 @@ def compute_up(expr, data, **kwargs):
     grouper = get_inner_columns(compute(expr.grouper, data,
                                         post_compute=False))
     app = expr.apply
-    if isinstance(expr.apply, Reduction):
-        reductions = [compute(app, data, post_compute=False)]
-    elif isinstance(expr.apply, Summary):
-        reductions = [compute(val, data, post_compute=False).label(name)
-                      for val, name in zip(app.values, app.fields)]
+    reductions = [compute(val, data, post_compute=False).label(name)
+                  for val, name in zip(app.values, app.fields)]
 
     return sa.select(grouper + reductions).group_by(*grouper)
 
@@ -591,11 +589,10 @@ def compute_up(expr, data, **kwargs):
 
     s = alias_it(data)
 
-    # TODO: Do we need to be this restrictive here?
     if valid_reducer(expr.apply):
         reduction = compute(expr.apply, s, post_compute=False)
     else:
-        raise TypeError('apply must be a Summary or Reduction expression')
+        raise TypeError('apply must be a Summary expression')
 
     grouper = get_inner_columns(compute(expr.grouper, s, post_compute=False))
     reduction_columns = pipe(reduction.inner_columns,
@@ -606,7 +603,7 @@ def compute_up(expr, data, **kwargs):
             (hasattr(s, 'froms') and isinstance(s.froms[0],
                                                 sa.sql.selectable.Join))):
         assert len(s.froms) == 1, 'only a single FROM clause supported for now'
-        from_obj = s.froms[0]
+        from_obj, = s.froms
     else:
         from_obj = None
 
@@ -783,8 +780,11 @@ def compute_up(t, s, scope=None, **kwargs):
 
 @dispatch(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
-    return select([compute(value, {t._child: s}, post_compute=None).label(name)
-                   for value, name in zip(t.values, t.fields)])
+    scope = {t._child: s}
+    return sa.select(
+        compute(value, scope, post_compute=None).label(name)
+        for value, name in zip(t.values, t.fields)
+    )
 
 
 @dispatch(Like, Selectable)
