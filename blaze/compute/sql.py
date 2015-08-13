@@ -644,6 +644,11 @@ def compute_up(t, s, **kwargs):
     return s.select().limit(t.n)
 
 
+@dispatch(Head, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return sa.select([s]).limit(t.n)
+
+
 @dispatch(Head, ScalarSelect)
 def compute_up(t, s, **kwargs):
     if s._limit is not None and s._limit <= t.n:
