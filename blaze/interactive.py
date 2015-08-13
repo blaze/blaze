@@ -1,24 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-import datashape
+from collections import Iterator
 import datetime
-import operator
+from functools import reduce
 import itertools
+import operator
 import warnings
 
-from collections import Iterator
-from functools import reduce
-
+import datashape
 from datashape import discover, Tuple, Record, DataShape, var
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
-
+import numpy as np
+from odo import resource, odo
+from odo.utils import ignoring, copydoc
+from odo.compatibility import unicode
 from pandas import DataFrame, Series
 
-import numpy as np
-
-from odo import resource, odo
-from odo.utils import ignoring
-from odo.compatibility import unicode
 
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
@@ -41,59 +38,6 @@ with ignoring(ImportError):
     import pymongo
     not_an_iterator.append(pymongo.collection.Collection)
     not_an_iterator.append(pymongo.database.Database)
-
-
-def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
-         **kwargs):
-    if columns:
-        raise ValueError("columns argument deprecated, use fields instead")
-    if schema and dshape:
-        raise ValueError("Please specify one of schema= or dshape= keyword"
-                         " arguments")
-
-    if isinstance(data, InteractiveSymbol):
-        return Data(data.data, dshape, name, fields, columns, schema, **kwargs)
-
-    if isinstance(data, _strtypes):
-        data = resource(data, schema=schema, dshape=dshape, columns=columns,
-                        **kwargs)
-    if (isinstance(data, Iterator) and
-            not isinstance(data, tuple(not_an_iterator))):
-        data = tuple(data)
-    if schema and not dshape:
-        dshape = var * schema
-    if dshape and isinstance(dshape, _strtypes):
-        dshape = datashape.dshape(dshape)
-    if not dshape:
-        dshape = discover(data)
-        types = None
-        if isinstance(dshape.measure, Tuple) and fields:
-            types = dshape[1].dshapes
-            schema = Record(list(zip(fields, types)))
-            dshape = DataShape(*(dshape.shape + (schema,)))
-        elif isscalar(dshape.measure) and fields:
-            types = (dshape.measure,) * int(dshape[-2])
-            schema = Record(list(zip(fields, types)))
-            dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
-        elif isrecord(dshape.measure) and fields:
-            ds = discover(data)
-            assert isrecord(ds.measure)
-            names = ds.measure.names
-            if names != fields:
-                raise ValueError('data column names %s\n'
-                                 '\tnot equal to fields parameter %s,\n'
-                                 '\tuse Data(data).relabel(%s) to rename '
-                                 'fields' % (names,
-                                             fields,
-                                             ', '.join('%s=%r' % (k, v)
-                                                       for k, v in
-                                                       zip(names, fields))))
-            types = dshape.measure.types
-            schema = Record(list(zip(fields, types)))
-            dshape = DataShape(*(dshape.shape + (schema,)))
-
-    ds = datashape.dshape(dshape)
-    return InteractiveSymbol(data, ds, name)
 
 
 class InteractiveSymbol(Symbol):
@@ -148,7 +92,58 @@ class InteractiveSymbol(Symbol):
             setattr(self, slot, arg)
 
 
-Data.__doc__ = InteractiveSymbol.__doc__
+@copydoc(InteractiveSymbol)
+def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
+         **kwargs):
+    if columns:
+        raise ValueError("columns argument deprecated, use fields instead")
+    if schema and dshape:
+        raise ValueError("Please specify one of schema= or dshape= keyword"
+                         " arguments")
+
+    if isinstance(data, InteractiveSymbol):
+        return Data(data.data, dshape, name, fields, columns, schema, **kwargs)
+
+    if isinstance(data, _strtypes):
+        data = resource(data, schema=schema, dshape=dshape, columns=columns,
+                        **kwargs)
+    if (isinstance(data, Iterator) and
+            not isinstance(data, tuple(not_an_iterator))):
+        data = tuple(data)
+    if schema and not dshape:
+        dshape = var * schema
+    if dshape and isinstance(dshape, _strtypes):
+        dshape = datashape.dshape(dshape)
+    if not dshape:
+        dshape = discover(data)
+        types = None
+        if isinstance(dshape.measure, Tuple) and fields:
+            types = dshape[1].dshapes
+            schema = Record(list(zip(fields, types)))
+            dshape = DataShape(*(dshape.shape + (schema,)))
+        elif isscalar(dshape.measure) and fields:
+            types = (dshape.measure,) * int(dshape[-2])
+            schema = Record(list(zip(fields, types)))
+            dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
+        elif isrecord(dshape.measure) and fields:
+            ds = discover(data)
+            assert isrecord(ds.measure)
+            names = ds.measure.names
+            if names != fields:
+                raise ValueError('data column names %s\n'
+                                 '\tnot equal to fields parameter %s,\n'
+                                 '\tuse Data(data).relabel(%s) to rename '
+                                 'fields' % (names,
+                                             fields,
+                                             ', '.join('%s=%r' % (k, v)
+                                                       for k, v in
+                                                       zip(names, fields))))
+            types = dshape.measure.types
+            schema = Record(list(zip(fields, types)))
+            dshape = DataShape(*(dshape.shape + (schema,)))
+
+    ds = datashape.dshape(dshape)
+    return InteractiveSymbol(data, ds, name)
 
 
 def Table(*args, **kwargs):

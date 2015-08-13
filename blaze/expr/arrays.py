@@ -1,8 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-from .expressions import Expr, ndim, symbol
-from datashape import DataShape
 from collections import Iterable
+
+from datashape import DataShape
+from odo.utils import copydoc
+
+from .expressions import Expr, ndim, symbol
 
 __all__ = 'Transpose', 'TensorDot', 'dot', 'transpose', 'tensordot'
 
@@ -42,6 +45,7 @@ class Transpose(Expr):
                     list(self.axes))
 
 
+@copydoc(Transpose)
 def transpose(expr, axes=None):
     if axes is None:
         axes = tuple(range(ndim(expr)))[::-1]
@@ -49,9 +53,8 @@ def transpose(expr, axes=None):
         axes = tuple(axes)
     return Transpose(expr, axes)
 
-transpose.__doc__ = Transpose.__doc__
 
-
+@copydoc(Transpose)
 def T(expr):
     return transpose(expr)
 
@@ -100,6 +103,7 @@ class TensorDot(Expr):
                     self.lhs, self.rhs, str(la), str(ra))
 
 
+@copydoc(TensorDot)
 def tensordot(lhs, rhs, axes=None):
     if axes is None:
         left = ndim(lhs) - 1
@@ -120,8 +124,8 @@ def tensordot(lhs, rhs, axes=None):
 
     return TensorDot(lhs, rhs, left, right)
 
-tensordot.__doc__ = TensorDot.__doc__
 
+@copydoc(TensorDot)
 def dot(lhs, rhs):
     return tensordot(lhs, rhs)
 
