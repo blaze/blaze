@@ -1,20 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-import toolz
-import datashape
+from keyword import iskeyword
 import re
 
-from keyword import iskeyword
-
+import datashape
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed
+from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 import numpy as np
-
+from odo.utils import copydoc
+import toolz
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed
-from datashape.predicates import isscalar, iscollection, isboolean, isrecord
-
-from ..compatibility import _strtypes, builtins, boundmethod
+from ..compatibility import _strtypes, builtins, boundmethod, PY2
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
@@ -370,6 +368,7 @@ class Projection(ElemWise):
                                                                self.fields))
 
 
+@copydoc(Projection)
 def projection(expr, names):
     if not names:
         raise ValueError("Projection with no names")
@@ -380,7 +379,6 @@ def projection(expr, names):
                          "where expression has names %s" %
                          (names, expr.fields))
     return Projection(expr, tuple(names))
-projection.__doc__ = Projection.__doc__
 
 
 def sanitize_index_lists(ind):
@@ -465,6 +463,7 @@ class Selection(Expr):
         return DataShape(*(shape + [self._child.dshape.measure]))
 
 
+@copydoc(Selection)
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
@@ -483,8 +482,6 @@ def selection(table, predicate):
                         "%s[%s]" % (table, predicate))
 
     return table._subs({subexpr: Selection(subexpr, predicate)})
-
-selection.__doc__ = Selection.__doc__
 
 
 class Label(ElemWise):
@@ -522,13 +519,11 @@ class Label(ElemWise):
         return 'label(%s, %r)' % (self._child, self.label)
 
 
+@copydoc(Label)
 def label(expr, lab):
     if expr._name == lab:
         return expr
     return Label(expr, lab)
-
-
-label.__doc__ = Label.__doc__
 
 
 class ReLabel(ElemWise):
@@ -590,6 +585,7 @@ class ReLabel(ElemWise):
         return '%s.relabel(%s)' % (self._child, rest)
 
 
+@copydoc(ReLabel)
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
@@ -610,8 +606,6 @@ def relabel(child, labels=None, **kwargs):
         else:
             return child
     return ReLabel(child, labels)
-
-relabel.__doc__ = ReLabel.__doc__
 
 
 class Map(ElemWise):
@@ -668,6 +662,12 @@ class Map(ElemWise):
             return self._child._name
 
 
+if PY2:
+    copydoc(Map, Expr.map.im_func)
+else:
+    copydoc(Map, Expr.map)
+
+
 class Apply(Expr):
     """ Apply an arbitrary Python function onto an expression
 
@@ -705,6 +705,11 @@ class Apply(Expr):
         return dshape(self._dshape)
 
 
+@copydoc(Apply)
+def apply(expr, func, dshape, splittable=False):
+    return Apply(expr, func, datashape.dshape(dshape), splittable)
+
+
 class Coerce(Expr):
     """Coerce an expression to a different type.
 
@@ -732,10 +737,9 @@ class Coerce(Expr):
         return '%s.coerce(to=%r)' % (self._child, str(self.schema))
 
 
-def apply(expr, func, dshape, splittable=False):
-    return Apply(expr, func, datashape.dshape(dshape), splittable)
-
-apply.__doc__ = Apply.__doc__
+@copydoc(Coerce)
+def coerce(expr, to):
+    return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
 
 
 dshape_method_list = list()
@@ -782,13 +786,6 @@ def ndim(expr):
     2
     """
     return len(shape(expr))
-
-
-def coerce(expr, to):
-    return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
-
-
-coerce.__doc__ = Coerce.__doc__
 
 
 dshape_method_list.extend([
