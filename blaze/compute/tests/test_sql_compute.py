@@ -1696,3 +1696,17 @@ def test_baseball_nested_by():
     ORDER BY counted DESC
     """
     assert normalize(str(result).replace('"', '')) == normalize(expected)
+
+
+def test_label_on_filter():
+    expr = t[t.name == 'Alice'].amount.label('foo').head(2)
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount AS foo
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    LIMIT :param_1
+    """
+    assert normalize(str(result)) == normalize(expected)

@@ -575,7 +575,7 @@ def valid_grouper(expr):
 def valid_reducer(expr):
     ds = expr.dshape
     measure = ds.measure
-    return ((not iscollection(ds)) and
+    return (not iscollection(ds) and
             (isscalar(measure) or
              (isrecord(measure) and not is_nested_record(measure))))
 
@@ -630,16 +630,26 @@ def compute_up(t, s, **kwargs):
     return s.order_by(*cols)
 
 
-@dispatch(Head, Select)
+@dispatch(Head, FromClause)
 def compute_up(t, s, **kwargs):
     if s._limit is not None and s._limit <= t.n:
         return s
     return s.limit(t.n)
 
 
-@dispatch(Head, ClauseElement)
+@dispatch(Head, sa.Table)
 def compute_up(t, s, **kwargs):
-    return select(s).limit(t.n)
+    return s.select().limit(t.n)
+
+
+@dispatch(Head, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return sa.select([s]).limit(t.n)
+
+
+@dispatch(Head, ScalarSelect)
+def compute_up(t, s, **kwargs):
+    return compute(t, s.element, post_compute=False)
 
 
 @dispatch(Label, ColumnElement)

@@ -26,7 +26,7 @@ Improved Backends
 ~~~~~~~~~~~~~~~~~
 
 * Blaze now tries a bit harder to avoid generating ``ScalarSelects`` when using
-  the SQL backend (:issue:`1201`)
+  the SQL backend (:issue:`1201`, :issue:`1205`)
 
 API Changes
 ~~~~~~~~~~~
@@ -54,3 +54,5 @@ Bug Fixes
 * Computed columns (e.g., the result of a call to
   :func:`~blaze.expr.collections.transform`) can now be accessed via standard
   attribute access when using the SQL backend (:issue:`1201`)
+* Fixed a bug where blaze server was depending on an implementation detail of
+  CPython regarding ``builtins`` (:issue:`1196`)
