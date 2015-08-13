@@ -576,7 +576,7 @@ def valid_grouper(expr):
 def valid_reducer(expr):
     ds = expr.dshape
     measure = ds.measure
-    return ((not iscollection(ds)) and
+    return (not iscollection(ds) and
             (isscalar(measure) or
              (isrecord(measure) and not is_nested_record(measure))))
 
