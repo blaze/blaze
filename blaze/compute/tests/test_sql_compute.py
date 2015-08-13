@@ -1676,3 +1676,17 @@ def test_attribute_on_filter_transform_groupby():
         accounts.name, accounts.amount * :amount_2
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_label_on_filter():
+    expr = t[t.name == 'Alice'].amount.label('foo').head(2)
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount AS foo
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    LIMIT :param_1
+    """
+    assert normalize(str(result)) == normalize(expected)
