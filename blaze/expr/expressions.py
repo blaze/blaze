@@ -294,8 +294,8 @@ class ElemWise(Expr):
     """
     @property
     def dshape(self):
-        return datashape.DataShape(*(self._child.dshape.shape
-                                     + tuple(self.schema)))
+        schema = self.schema
+        return datashape.DataShape(*(self._child.dshape.shape + tuple(schema)))
 
 
 class Field(ElemWise):
@@ -364,7 +364,8 @@ class Projection(ElemWise):
 
     @property
     def schema(self):
-        d = self._child.schema[0].dict
+        measure = self._child.schema.measure
+        d = getattr(measure, 'value', measure).dict
         return DataShape(Record([(name, d[name]) for name in self.fields]))
 
     def __str__(self):
