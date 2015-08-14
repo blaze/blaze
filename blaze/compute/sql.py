@@ -138,7 +138,7 @@ def compute_up(t, s, **kwargs):
     return compute(expr, s, post_compute=False).label(expr._name)
 
 
-@dispatch(BinOp, (FunctionElement, ColumnElement))
+@dispatch(BinOp, ColumnElement)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
