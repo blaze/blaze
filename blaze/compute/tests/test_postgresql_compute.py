@@ -239,16 +239,14 @@ def test_auto_join(orders):
     assert normalize(str(result)) == normalize(expected)
 
 
+@pytest.mark.xfail(raises=AssertionError)
 @pytest.mark.parametrize('func', ['max', 'min', 'sum'])
 def test_foreign_key_reduction(orders, products, func):
     t = symbol('t', discover(orders))
     expr = methodcaller(func)(t.quantity * t.product_id.price)
     result = compute(expr, orders)
     expected = """SELECT
-        {0}(orders.quantity * products.price) as {0}
-    from
-        orders join products
-    on
-        orders.product_id = products.product_id
+        max(orders.quantity * products.price) AS max
+    FROM orders join products ON orders.product_id = products.product_id
     """.format(func)
     assert normalize(str(result)) == normalize(expected)
