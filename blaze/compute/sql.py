@@ -104,7 +104,7 @@ def compute_up(t, s, **kwargs):
     assert 0 <= len(s.foreign_keys) <= 1, 'only one foreign key allowed'
     key_col = first(s.foreign_keys).column
     join = s.table.join(key_col.table, onclause=s == key_col)
-    return sa.select([key_col.table.c[t._name]]).select_from(join).c[t._name]
+    return sa.select([key_col.table.c[t._name]]).select_from(join)
 
 
 @dispatch(Broadcast, Select)
