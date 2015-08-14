@@ -109,7 +109,7 @@ def orders(base_url, products):
         orders = resource(base_url % 'orders',
                           dshape="""var * {
                             order_id: !int64,
-                            product_id: (int64) => T,
+                            product_id: map[int64, T],
                             quantity: int64
                           }
                           """, foreign_keys=dict(product_id=products.c.product_id))
