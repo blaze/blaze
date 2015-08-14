@@ -10,7 +10,7 @@ from distutils.version import LooseVersion
 
 
 import datashape
-from odo import into, resource
+from odo import into, resource, discover
 from pandas import DataFrame
 from toolz import unique
 
@@ -21,7 +21,7 @@ from blaze.expr import (
     floor, cos, merge, nunique, mean, sum, count, exp, concat,
 )
 from blaze.compatibility import xfail
-from blaze.utils import tmpfile
+from blaze.utils import tmpfile, example
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -1688,5 +1688,43 @@ def test_label_projection():
         accounts.amount * :amount_1 as one_two
     FROM accounts
     WHERE accounts.name = :name_1 and accounts.amount + :amount_2 > :param_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_baseball_nested_by():
+    data = resource('sqlite:///%s' % example('teams.db'))
+    dshape = discover(data)
+    d = symbol('d', dshape)
+    expr = by(d.teams.name,
+              start_year=d.teams.yearID.min()).start_year.count_values()
+    result = compute(expr, data, post_compute=False)
+    expected = """SELECT
+        anon_1.start_year,
+        anon_1.count
+    FROM
+        (SELECT
+            alias.start_year as start_year,
+            count(alias.start_year) as count
+         FROM
+            (SELECT
+                min(teams.yearid) as start_year
+             FROM teams
+             GROUP BY teams.name) as alias
+         GROUP BY alias.start_year) as anon_1 ORDER BY anon_1.count DESC
+    """
+    assert normalize(str(result).replace('"', '')) == normalize(expected)
+
+
+def test_label_on_filter():
+    expr = t[t.name == 'Alice'].amount.label('foo').head(2)
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount AS foo
+    FROM
+        accounts
+    WHERE
+        accounts.name = :name_1
+    LIMIT :param_1
     """
     assert normalize(str(result)) == normalize(expected)

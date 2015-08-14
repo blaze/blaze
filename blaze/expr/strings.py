@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from datashape import String
 from datashape.predicates import isrecord
+from odo.utils import copydoc
+
 from .expressions import Expr, schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
 
@@ -34,9 +36,9 @@ class Like(Expr):
         return datashape.var * self._child.dshape.subshape[0]
 
 
+@copydoc(Like)
 def like(child, **kwargs):
     return Like(child, tuple(kwargs.items()))
-like.__doc__ = Like.__doc__
 
 
 class UnaryStringFunction(ElemWise):
