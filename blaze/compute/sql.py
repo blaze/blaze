@@ -146,13 +146,15 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-@dispatch(BinOp, Selectable)
+@dispatch(BinOp, Select)
 def compute_up(t, data, **kwargs):
-    assert len(data.c) == 1
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
     if isinstance(t.lhs, Expr):
-        return t.op(first(data.inner_columns), t.rhs)
+        return t.op(column, t.rhs)
     else:
-        return t.op(t.lhs, first(data.inner_columns))
+        return t.op(t.lhs, column)
 
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
