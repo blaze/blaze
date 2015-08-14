@@ -230,8 +230,13 @@ def test_auto_join(orders):
     t = symbol('t', discover(orders))
     expr = t.product_id.color
     result = compute(expr, orders)
-    expected = """SELECT products.color FROM orders JOIN products ON
-        orders.product_id = products.product_id
+    expected = """SELECT color
+    FROM
+        (SELECT
+            products.color as color
+         FROM orders
+         JOIN products
+         ON orders.product_id = products.product_id)
     """
     assert normalize(str(result)) == normalize(expected)
 
@@ -242,10 +247,10 @@ def test_foreign_key_reduction(orders, products, func):
     expr = methodcaller(func)(t.quantity * t.product_id.price)
     result = compute(expr, orders)
     expected = """SELECT
-        %s(orders.quantity * product.price) as max
+        {0}(orders.quantity * product.price) as {0}
     from
         orders join products
     on
         orders.product_id = products.product_id
-    """ % func
+    """.format(func)
     assert normalize(str(result)) == normalize(expected)
