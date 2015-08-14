@@ -12,7 +12,7 @@ import toolz
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed, ForeignKey
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 
 from ..compatibility import _strtypes, builtins, boundmethod
@@ -86,7 +86,7 @@ class Expr(Node):
     holds all tree traversal logic
     """
     def _get_field(self, fieldname):
-        if not isinstance(self.dshape.measure, (Record, ForeignKey)):
+        if not isinstance(self.dshape.measure, (Record, datashape.Map)):
             if fieldname == self._name:
                 return self
             raise ValueError(
@@ -128,11 +128,11 @@ class Expr(Node):
     def fields(self):
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
-        elif isinstance(self.dshape.measure, ForeignKey):
-            if not isrecord(self.dshape.measure.restype):
+        elif isinstance(self.dshape.measure, datashape.Map):
+            if not isrecord(self.dshape.measure.value):
                 raise TypeError('Foreign key must reference a '
                                 'Record datashape')
-            return self.dshape.measure.restype.names
+            return self.dshape.measure.value.names
         name = getattr(self, '_name', None)
         if name is not None:
             return [self._name]
@@ -158,7 +158,7 @@ class Expr(Node):
     def __dir__(self):
         result = dir(type(self))
         if (isrecord(self.dshape.measure) or
-            isinstance(self.dshape.measure, ForeignKey) and
+            isinstance(self.dshape.measure, datashape.Map) and
                 self.fields):
             result.extend(map(valid_identifier, self.fields))
 
@@ -172,14 +172,15 @@ class Expr(Node):
             raise AttributeError()
         try:
             return _attr_cache[(self, key)]
-        except:
+        except KeyError:
             pass
         try:
             result = object.__getattribute__(self, key)
         except AttributeError:
-            fields = dict(zip(map(valid_identifier, self.fields),
-                              self.fields))
-            if self.fields and key in fields:
+            base_fields = self.fields
+            fields = dict(zip(map(valid_identifier, base_fields),
+                              base_fields))
+            if base_fields and key in fields:
                 if isscalar(self.dshape.measure):  # t.foo.foo is t.foo
                     result = self
                 else:
@@ -329,7 +330,10 @@ class Field(ElemWise):
     @property
     def dshape(self):
         shape = self._child.dshape.shape
-        schema = self._child.dshape.measure.dict[self._name]
+        measure = self._child.dshape.measure
+
+        # TODO: is this too special-case-y?
+        schema = getattr(measure, 'value', measure).dict[self._name]
 
         shape = shape + schema.shape
         schema = (schema.measure,)

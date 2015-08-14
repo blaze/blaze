@@ -11,7 +11,7 @@ from collections import Iterator
 from functools import reduce
 
 import datashape
-from datashape import discover, Tuple, Record, DataShape, var, ForeignKey
+from datashape import discover, Tuple, Record, DataShape, var, Map
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
 import numpy as np
 from odo import resource, odo
@@ -261,7 +261,7 @@ def expr_repr(expr, n=10):
     # Tables
     if (ndim(expr) == 1 and (istabular(expr.dshape) or
                              isscalar(expr.dshape.measure) or
-                             isinstance(expr.dshape.measure, ForeignKey))):
+                             isinstance(expr.dshape.measure, Map))):
         return repr_tables(expr, 10)
 
     # Smallish arrays
