@@ -28,6 +28,7 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
+from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
 from sqlalchemy.engine import Engine
 
@@ -151,6 +152,17 @@ def compute_up(t, data, **kwargs):
         return t.op(data, t.rhs)
     else:
         return t.op(t.lhs, data)
+
+
+@dispatch(BinOp, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    if isinstance(t.lhs, Expr):
+        return t.op(column, t.rhs)
+    else:
+        return t.op(t.lhs, column)
 
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
