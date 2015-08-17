@@ -58,31 +58,9 @@ class Op(ElemWise):
         self._operands=operands
 
     @property
-    def _name(self):
-        if len(self._ops) == 2:
-           return self._name2()
-
-        if len(self._ops) == 1:
-           return self._ops[0]._name
-
-        raise 'Invalid number of ops: %s' % len(self._ops)
-
-
-    def _name2(self):
-        if not isscalar(self.dshape.measure):
-            return None
-        l, r = name(self._ops[0]), name(self._ops[1])
-        if l and not r:
-            return l
-        if r and not l:
-            return r
-        if l == r:
-            return l
-
-    @property
     def _inputs(self):
         result = []
-        for _op in self._ops:
+        for _op in self._operands:
             if isinstance(_op, Expr):
                result.append(_op)
         return tuple(result)
