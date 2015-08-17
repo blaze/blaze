@@ -201,10 +201,12 @@ class Expr(Node):
 
     @property
     def _name(self):
-        if (isscalar(self.dshape.measure) and
-                len(self._inputs) == 1 and
-                isscalar(self._child.dshape.measure)):
-            return self._child._name
+        measure = self.dshape.measure
+        if len(self._inputs) == 1 and isscalar(getattr(measure, 'key',
+                                                       measure)):
+            child_measure = self._child.dshape.measure
+            if isscalar(getattr(child_measure, 'key', child_measure)):
+                return self._child._name
 
     def __enter__(self):
         """ Enter context """
