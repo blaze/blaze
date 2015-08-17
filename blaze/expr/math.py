@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import real, int_, bool_
-from .arithmetic import UnaryOp
+#from .arithmetic import UnaryOp
+from .arithmetic import Op
 
 # Here follows a large number of unary operators.  These were selected by
 # taking the intersection of the functions in ``math`` and ``numpy``
@@ -12,8 +13,11 @@ __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'isnan', 'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
 
 
-class Math(UnaryOp):
+class Math(Op):
     pass
+
+#class Math(UnaryOp):
+#    pass
 
 
 class RealMath(Math):
