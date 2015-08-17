@@ -16,9 +16,6 @@ __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
 class Math(Op):
     pass
 
-#class Math(UnaryOp):
-#    pass
-
 
 class RealMath(Math):
     """Mathematical unary operator with real valued dshape like sin, or exp
