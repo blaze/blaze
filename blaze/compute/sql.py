@@ -28,7 +28,6 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
-from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
 from sqlalchemy.engine import Engine
 
