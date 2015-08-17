@@ -497,17 +497,6 @@ def types_of_fields(fields, expr):
         assert fields == expr._name
         return expr.dshape.measure
 
-def join_compatible_types(left_types, right_types):
-    for _i in range(len(left_types)):
-        _left=str(left_types[_i].ty)
-        _right=str(right_types[_i].ty)
-
-        for _type in ('int', 'float', 'string'):
-            if _left.startswith(_type) and not _right.startswith(_type):
-               return False
-
-    return True
-
 def join(lhs, rhs, on_left=None, on_right=None,
          how='inner', suffixes=('_left', '_right')):
     if not on_left and not on_right:
@@ -523,9 +512,7 @@ def join(lhs, rhs, on_left=None, on_right=None,
     if not on_left or not on_right:
         raise ValueError("Can not Join.  No shared columns between %s and %s" %
                          (lhs, rhs))
-    #if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
-    if not join_compatible_types(types_of_fields(on_left, lhs),
-                             types_of_fields(on_right, rhs)):
+    if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
