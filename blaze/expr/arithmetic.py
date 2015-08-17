@@ -50,6 +50,55 @@ def name(o):
         return None
 
 
+class Op(ElemWise):
+    def __init__(self, ops):
+        if not isinstance(ops, (list, tuple,)):
+           self._ops=[ops]
+        else:
+           self._ops=ops
+
+    def __str__(self):
+        if len(self._ops) == 2:
+           lhs = parenthesize(eval_str(self._ops[0]))
+           rhs = parenthesize(eval_str(self._ops[1]))
+           return '%s %s %s' % (lhs, self.symbol, rhs)
+
+        if len(self._ops) == 1:
+           return '%s(%s)' % (self.symbol, eval_str(self._ops[0]))
+
+        raise BaseException('Invalid number of ops: %s' % len(self._ops))
+
+    @property
+    def _name(self):
+        if len(self._ops) == 2:
+           return self._name2()
+
+        if len(self._ops) == 1:
+           return self._ops[0]._name
+
+        raise 'Invalid number of ops: %s' % len(self._ops)
+
+
+    def _name2(self):
+        if not isscalar(self.dshape.measure):
+            return None
+        l, r = name(self._ops[0]), name(self._ops[1])
+        if l and not r:
+            return l
+        if r and not l:
+            return r
+        if l == r:
+            return l
+
+    @property
+    def _inputs(self):
+        result = []
+        for _op in self._ops:
+            if isinstance(_op, Expr):
+               result.append(_op)
+        return tuple(result)
+
+
 class BinOp(ElemWise):
     __slots__ = '_hash', 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'

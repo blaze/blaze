@@ -1,13 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-
-import datashape
-from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
-from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first,
 )
-from odo.utils import copydoc
+import datashape
+from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
+from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Field
@@ -144,7 +142,6 @@ class Distinct(Expr):
         )
 
 
-@copydoc(Distinct)
 def distinct(expr, *on):
     fields = frozenset(expr.fields)
     _on = []
@@ -162,6 +159,9 @@ def distinct(expr, *on):
         append(n)
 
     return Distinct(expr, tuple(_on))
+
+
+distinct.__doc__ = Distinct.__doc__
 
 
 class _HeadOrTail(Expr):
@@ -201,9 +201,10 @@ class Head(_HeadOrTail):
     pass
 
 
-@copydoc(Head)
 def head(child, n=10):
     return Head(child, n)
+
+head.__doc__ = Head.__doc__
 
 
 class Tail(_HeadOrTail):
@@ -224,9 +225,33 @@ class Tail(_HeadOrTail):
     pass
 
 
-@copydoc(Tail)
 def tail(child, n=10):
     return Tail(child, n)
+
+tail.__doc__ = Tail.__doc__
+
+
+def merge(*exprs, **kwargs):
+    if len(exprs) + len(kwargs) == 1:
+        if exprs:
+            return exprs[0]
+        if kwargs:
+            [(k, v)] = kwargs.items()
+            return v.label(k)
+    # Get common sub expression
+    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
+    try:
+        child = common_subexpression(*exprs)
+    except Exception:
+        raise ValueError("No common subexpression found for input expressions")
+
+    result = Merge(child, exprs)
+
+    if not isdistinct(result.fields):
+        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
+                                                                frequencies(result.fields).items() if v > 1))
+
+    return result
 
 
 def transform(t, replace=True, **kwargs):
@@ -310,31 +335,7 @@ class Merge(ElemWise):
         return list(unique(tconcat(i._leaves() for i in self.children)))
 
 
-@copydoc(Merge)
-def merge(*exprs, **kwargs):
-    if len(exprs) + len(kwargs) == 1:
-        if exprs:
-            return exprs[0]
-        if kwargs:
-            [(k, v)] = kwargs.items()
-            return v.label(k)
-    # Get common sub expression
-    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
-    try:
-        child = common_subexpression(*exprs)
-    except Exception:
-        raise ValueError("No common subexpression found for input expressions")
-
-    result = Merge(child, exprs)
-
-    if not isdistinct(result.fields):
-        raise ValueError(
-            "Repeated columns found: " + ', '.join(
-                k for k, v in frequencies(result.fields).items() if v > 1
-            ),
-        )
-
-    return result
+merge.__doc__ = Merge.__doc__
 
 
 def unpack(l):
@@ -496,8 +497,17 @@ def types_of_fields(fields, expr):
         assert fields == expr._name
         return expr.dshape.measure
 
+def join_compatible_types(left_types, right_types):
+    for _i in range(len(left_types)):
+        _left=str(left_types[_i].ty)
+        _right=str(right_types[_i].ty)
 
-@copydoc(Join)
+        for _type in ('int', 'float', 'string'):
+            if _left.startswith(_type) and not _right.startswith(_type):
+               return False
+
+    return True
+
 def join(lhs, rhs, on_left=None, on_right=None,
          how='inner', suffixes=('_left', '_right')):
     if not on_left and not on_right:
@@ -513,7 +523,9 @@ def join(lhs, rhs, on_left=None, on_right=None,
     if not on_left or not on_right:
         raise ValueError("Can not Join.  No shared columns between %s and %s" %
                          (lhs, rhs))
-    if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
+    #if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
+    if not join_compatible_types(types_of_fields(on_left, lhs),
+                             types_of_fields(on_right, rhs)):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
@@ -526,6 +538,9 @@ def join(lhs, rhs, on_left=None, on_right=None,
                          "\nGot: %s" % how)
 
     return Join(lhs, rhs, _on_left, _on_right, how, suffixes)
+
+
+join.__doc__ = Join.__doc__
 
 
 class Concat(Expr):
@@ -591,7 +606,6 @@ def _shape_add(a, b):
     return Fixed(a.val + b.val)
 
 
-@copydoc(Concat)
 def concat(lhs, rhs, axis=0):
     ldshape = lhs.dshape
     rdshape = rhs.dshape
@@ -619,6 +633,9 @@ def concat(lhs, rhs, axis=0):
         )
 
     return Concat(lhs, rhs, axis)
+
+
+concat.__doc__ = Concat.__doc__
 
 
 class IsIn(ElemWise):
@@ -656,13 +673,15 @@ class IsIn(ElemWise):
                               self._keys)
 
 
-@copydoc(IsIn)
 def isin(expr, keys):
     if isinstance(keys, Expr):
         raise TypeError('keys argument cannot be an expression, '
                         'it must be an iterable object such as a list, '
                         'tuple or set')
     return IsIn(expr, frozenset(keys))
+
+
+isin.__doc__ = IsIn.__doc__
 
 
 dshape_method_list.extend([
