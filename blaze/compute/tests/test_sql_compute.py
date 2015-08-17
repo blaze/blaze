@@ -891,9 +891,16 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    SELECT tab_left.a, tab_left.b, tab_right.b
-    FROM tab AS tab_left JOIN tab AS tab_right
-    ON tab_left.a = tab_right.a
+    SELECT
+        tab_left.a,
+        tab_left.b as b_left,
+        tab_right.b as b_right
+    FROM
+        tab AS tab_left
+    JOIN
+        tab AS tab_right
+    ON
+        tab_left.a = tab_right.a
     """)
 
     expr = join(t, t, 'a').b_left.sum()
@@ -901,12 +908,16 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-   with alias as
-    (select tab_left.b as b
-     from tab as tab_left
-        join tab as tab_right
-        on tab_left.a = tab_right.a)
-    select sum(alias.b) as b_left_sum from alias""")
+    with alias as
+    (select
+         tab_left.b as b_left
+     from
+         tab as tab_left
+     join
+         tab as tab_right
+     on
+         tab_left.a = tab_right.a)
+    select sum(alias.b_left) as b_left_sum from alias""")
 
     expr = join(t, t, 'a')
     expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
@@ -914,9 +925,15 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    SELECT min(tab_right.b) as smallest, sum(tab_left.a) as total
-    FROM tab AS tab_left JOIN tab AS tab_right
-    ON tab_left.a = tab_right.a
+    SELECT
+        min(tab_right.b) as smallest,
+        sum(tab_left.a) as total
+    FROM
+        tab AS tab_left
+    JOIN
+        tab AS tab_right
+    ON
+        tab_left.a = tab_right.a
     """)
 
 
@@ -934,9 +951,16 @@ def test_join_suffixes():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    SELECT tab{l}.a, tab{l}.b, tab{r}.b
-    FROM tab AS tab{l} JOIN tab AS tab{r}
-    ON tab{l}.a = tab{r}.a
+    SELECT
+        tab{l}.a,
+        tab{l}.b as b{l},
+        tab{r}.b as b{r}
+    FROM
+        tab AS tab{l}
+    JOIN
+        tab AS tab{r}
+    ON
+        tab{l}.a = tab{r}.a
     """.format(l=suffixes[0], r=suffixes[1]))
 
 
@@ -1357,25 +1381,39 @@ def test_no_extraneous_join():
     result = compute(expr, db)
 
     assert normalize(str(result)) == normalize("""
-    SELECT alias.operation, alias.name, alias.datetime_nearest_receiver,
-           alias.aircraft, alias.temperature_2m, alias.temperature_5cm,
-           alias.humidity, alias.windspeed, alias.pressure,
-           alias.include, alias.datetime_nearest_close
-          FROM (SELECT event.name AS name,
-                       event.operation AS operation,
-                       event.datetime_nearest_receiver AS datetime_nearest_receiver,
-                       event.aircraft AS aircraft,
-                       event.temperature_2m AS temperature_2m,
-                       event.temperature_5cm AS temperature_5cm,
-                       event.humidity AS humidity,
-                       event.windspeed AS windspeed,
-                       event.pressure AS pressure,
-                       event.include AS include
-                FROM event WHERE event.include = 1) AS alias1
-                JOIN (SELECT  operation.name AS name,
-                              operation.datetime_nearest_close as datetime_nearest_close
-                      FROM operation) AS alias2
-                ON alias1.operation = alias2.name
+    SELECT
+        alias.operation,
+        alias.name as name_left,
+        alias.datetime_nearest_receiver,
+        alias.aircraft,
+        alias.temperature_2m,
+        alias.temperature_5cm,
+        alias.humidity,
+        alias.windspeed,
+        alias.pressure,
+        alias.include,
+        alias.datetime_nearest_close
+    FROM
+        (SELECT
+             event.name AS name,
+             event.operation AS operation,
+             event.datetime_nearest_receiver AS datetime_nearest_receiver,
+             event.aircraft AS aircraft,
+             event.temperature_2m AS temperature_2m,
+             event.temperature_5cm AS temperature_5cm,
+             event.humidity AS humidity,
+             event.windspeed AS windspeed,
+             event.pressure AS pressure,
+             event.include AS include
+         FROM
+             event WHERE event.include = 1) AS alias1
+    JOIN
+        (SELECT
+             operation.name AS name,
+             operation.datetime_nearest_close as datetime_nearest_close
+         FROM operation) AS alias2
+    ON
+        alias1.operation = alias2.name
     """)
 
 
