@@ -11,8 +11,7 @@ from blaze.expr import (ElemWise, symbol, Reduction, Transpose, TensorDot,
                         Expr, Slice, Broadcast)
 from blaze.expr.split import split
 
-from dask.array.core import (_concatenate2, Array, atop, names, transpose,
-                             tensordot)
+from dask.array.core import _concatenate2, Array, atop, transpose, tensordot
 
 
 def compute_it(expr, leaves, *data, **kwargs):
