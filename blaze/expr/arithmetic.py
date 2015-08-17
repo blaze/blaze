@@ -51,22 +51,11 @@ def name(o):
 
 
 class Op(ElemWise):
-    def __init__(self, ops):
-        if not isinstance(ops, (list, tuple,)):
-           self._ops=[ops]
-        else:
-           self._ops=ops
+    __slots__ = '_hash', 'operands'
+    __inputs__ = 'operands',
 
-    def __str__(self):
-        if len(self._ops) == 2:
-           lhs = parenthesize(eval_str(self._ops[0]))
-           rhs = parenthesize(eval_str(self._ops[1]))
-           return '%s %s %s' % (lhs, self.symbol, rhs)
-
-        if len(self._ops) == 1:
-           return '%s(%s)' % (self.symbol, eval_str(self._ops[0]))
-
-        raise BaseException('Invalid number of ops: %s' % len(self._ops))
+    def __init__(self, operands):
+        self._operands=operands
 
     @property
     def _name(self):
@@ -99,39 +88,29 @@ class Op(ElemWise):
         return tuple(result)
 
 
-class BinOp(ElemWise):
+class BinOp(Op):
     __slots__ = '_hash', 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
+        Op.__init__(self, [lhs, rhs])
 
     def __str__(self):
-        lhs = parenthesize(eval_str(self.lhs))
-        rhs = parenthesize(eval_str(self.rhs))
+        lhs = parenthesize(eval_str(self._operands[0]))
+        rhs = parenthesize(eval_str(self._operands[1]))
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
     @property
     def _name(self):
         if not isscalar(self.dshape.measure):
             return None
-        l, r = name(self.lhs), name(self.rhs)
+        l, r = name(self._operands[0]), name(self._operands[1])
         if l and not r:
             return l
         if r and not l:
             return r
         if l == r:
             return l
-
-    @property
-    def _inputs(self):
-        result = []
-        if isinstance(self.lhs, Expr):
-            result.append(self.lhs)
-        if isinstance(self.rhs, Expr):
-            result.append(self.rhs)
-        return tuple(result)
 
 
 def maxvar(L):
@@ -169,14 +148,14 @@ def maxshape(shapes):
     return tuple(map(maxvar, zip(*shapes)))
 
 
-class UnaryOp(ElemWise):
+class UnaryOp(Op):
     __slots__ = '_hash', '_child',
 
     def __init__(self, child):
-        self._child = child
+        Op.__init__(self, [child])
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, eval_str(self._child))
+        return '%s(%s)' % (self.symbol, eval_str(self._operands[0]))
 
     @property
     def symbol(self):
@@ -184,11 +163,11 @@ class UnaryOp(ElemWise):
 
     @property
     def dshape(self):
-        return DataShape(*(shape(self._child) + (self._dtype,)))
+        return DataShape(*(shape(self._operands[0]) + (self._dtype,)))
 
     @property
     def _name(self):
-        return self._child._name
+        return self._operands[0]._name
 
 
 class Arithmetic(BinOp):
