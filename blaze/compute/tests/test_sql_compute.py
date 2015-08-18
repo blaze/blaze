@@ -14,14 +14,17 @@ from odo import into, resource, discover
 from pandas import DataFrame
 from toolz import unique
 
-from blaze.compute.sql import (compute, computefull, select, lower_column,
-                               compute_up)
+from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     symbol, discover, transform, summary, by, sin, join,
     floor, cos, merge, nunique, mean, sum, count, exp, concat,
 )
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile, example
+
+
+def computefull(t, s):
+    return select(compute(t, s))
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -1712,5 +1715,27 @@ def test_label_on_filter():
     WHERE
         accounts.name = :name_1
     LIMIT :param_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_single_field_filter():
+    expr = t.amount[t.amount > 0]
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount
+    FROM accounts
+    WHERE accounts.amount > :amount_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_multiple_field_filter():
+    expr = t.name[t.amount > 0]
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.name
+    FROM accounts
+    WHERE accounts.amount > :amount_1
     """
     assert normalize(str(result)) == normalize(expected)
