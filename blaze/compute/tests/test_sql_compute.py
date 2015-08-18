@@ -1714,3 +1714,25 @@ def test_label_on_filter():
     LIMIT :param_1
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_single_field_filter():
+    expr = t.amount[t.amount > 0]
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.amount
+    FROM accounts
+    WHERE accounts.amount > :amount_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_multiple_field_filter():
+    expr = t.name[t.amount > 0]
+    result = compute(expr, s)
+    expected = """SELECT
+        accounts.name
+    FROM accounts
+    WHERE accounts.amount > :amount_1
+    """
+    assert normalize(str(result)) == normalize(expected)
