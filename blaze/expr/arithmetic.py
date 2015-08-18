@@ -74,7 +74,6 @@ class BinOp(Op):
     def __init__(self, lhs, rhs):
         Op.__init__(self, [lhs, rhs])
 
-
     def __str__(self):
         lhs = parenthesize(eval_str(self._operands[0]))
         rhs = parenthesize(eval_str(self._operands[1]))
