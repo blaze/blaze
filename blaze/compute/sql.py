@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from itertools import chain
 
-from operator import and_, eq
+from operator import and_, eq, attrgetter
 from copy import copy
 
 import sqlalchemy as sa
@@ -260,6 +260,16 @@ def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
 
+_getname = attrgetter('name')
+
+
+def _clean_join_name(opposite_side_colnames, suffix, c):
+    if c.name not in opposite_side_colnames:
+        return c
+    else:
+        return c.label(c.name + suffix)
+
+
 @dispatch(Join, ClauseElement, ClauseElement)
 def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(lhs, ColumnElement):
@@ -318,18 +328,21 @@ def compute_up(t, lhs, rhs, **kwargs):
         cols = lambda x: list(x.columns)
 
     main_cols = cols(main)
-    other_cols = cols(other)
     left_cols = cols(lhs)
+    left_names = set(map(_getname, left_cols))
     right_cols = cols(rhs)
+    right_names = set(map(_getname, right_cols))
 
     left_suffix, right_suffix = t.suffixes
     fields = [
         f.replace(left_suffix, '').replace(right_suffix, '') for f in t.fields
     ]
     columns = [c for c in main_cols if c.name in t._on_left]
-    columns += [c for c in left_cols
+    columns += [_clean_join_name(right_names, left_suffix, c)
+                for c in left_cols
                 if c.name in fields and c.name not in t._on_left]
-    columns += [c for c in right_cols
+    columns += [_clean_join_name(left_names, right_suffix, c)
+                for c in right_cols
                 if c.name in fields and c.name not in t._on_right]
 
     if isinstance(join, Select):
