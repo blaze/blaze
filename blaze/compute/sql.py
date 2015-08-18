@@ -33,7 +33,7 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe
+from toolz import unique, concat, pipe, first
 from toolz.compatibility import zip
 from toolz.curried import map
 
@@ -174,6 +174,12 @@ def compute_up(t, s, **kwargs):
 def compute_up(t, s, **kwargs):
     sym = t.symbol
     return getattr(t, 'op', getattr(safuncs, sym, getattr(sa.func, sym)))(s)
+
+
+@dispatch(Selection, sa.sql.ColumnElement)
+def compute_up(expr, data, scope=None, **kwargs):
+    predicate = compute(expr.predicate, data, post_compute=False)
+    return sa.select([data]).where(predicate)
 
 
 @dispatch(Selection, Select)
