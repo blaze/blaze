@@ -193,24 +193,12 @@ def compute_up(expr, data, scope=None, **kwargs):
     return sa.select([data]).where(predicate)
 
 
-@dispatch(Selection, Select)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = first(first(predicate.columns).base_columns)
-    return s.where(predicate)
-
-
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
+    ns = dict((t._child[col.name], col)
+              for col in getattr(s, 'inner_columns', s.columns))
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = first(first(predicate.columns).base_columns)
-
     try:
         return s.where(predicate)
     except AttributeError:
