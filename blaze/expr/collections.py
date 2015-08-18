@@ -617,7 +617,6 @@ def concat(lhs, rhs, axis=0):
     return Concat(lhs, rhs, axis)
 
 
-
 class IsIn(ElemWise):
     """Check if an expression contains values from a set.
 
@@ -660,7 +659,6 @@ def isin(expr, keys):
                         'it must be an iterable object such as a list, '
                         'tuple or set')
     return IsIn(expr, frozenset(keys))
-
 
 
 dshape_method_list.extend([
