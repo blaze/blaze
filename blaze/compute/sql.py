@@ -391,7 +391,7 @@ def compute_up(expr, data, **kwargs):
     return select([compute(expr, d, post_compute=False)])
 
 
-@dispatch(Distinct, sa.Column)
+@dispatch(Distinct, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.distinct(*t.on).label(t._name)
 

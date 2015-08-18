@@ -45,6 +45,8 @@ API Changes
   :class:`~blaze.server.client.Client` objects can pass an optional
   ``auth`` keyword which should be a tuple of (username, password) to
   send to the server. (:issue:`1175`)
+* We now allow :class:`~blaze.expr.collections.Distinct` expressions on ``ColumnElement`` to be more general
+  and let things like ``sa.sql.elements.Label`` objects through (:issue:`1212`)
 
 Bug Fixes
 ~~~~~~~~~
