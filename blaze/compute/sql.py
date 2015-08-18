@@ -28,7 +28,6 @@ from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
-from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
 from sqlalchemy.engine import Engine
 
@@ -200,7 +199,7 @@ def compute_up(t, s, scope=None, **kwargs):
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
     if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
+        predicate = first(first(predicate.columns).base_columns)
     return s.where(predicate)
 
 
@@ -210,7 +209,7 @@ def compute_up(t, s, scope=None, **kwargs):
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
     if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
+        predicate = first(first(predicate.columns).base_columns)
 
     try:
         return s.where(predicate)
