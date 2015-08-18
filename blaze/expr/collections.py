@@ -331,7 +331,7 @@ def merge(*exprs, **kwargs):
         raise ValueError(
             "Repeated columns found: " + ', '.join(
                 k for k, v in frequencies(result.fields).items() if v > 1
-            )
+            ),
         )
 
     return result
