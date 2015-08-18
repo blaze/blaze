@@ -67,16 +67,26 @@ class Op(ElemWise):
 
 
 class BinOp(Op):
-    __slots__ = '_hash', 'lhs', 'rhs'
+    #__slots__ = '_hash', 'lhs', 'rhs'
+    __slots__ = '_hash'
     __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
         Op.__init__(self, [lhs, rhs])
 
+
     def __str__(self):
         lhs = parenthesize(eval_str(self._operands[0]))
         rhs = parenthesize(eval_str(self._operands[1]))
         return '%s %s %s' % (lhs, self.symbol, rhs)
+
+    @property
+    def lhs(self):
+        return self._operands[0]
+
+    @property
+    def rhs(self):
+        return self._operands[1]
 
     @property
     def _name(self):
@@ -127,13 +137,18 @@ def maxshape(shapes):
 
 
 class UnaryOp(Op):
-    __slots__ = '_hash', '_child',
+    #__slots__ = '_hash', '_child',
+    __slots__ = '_hash',
 
     def __init__(self, child):
         Op.__init__(self, [child])
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self._operands[0]))
+
+    @property
+    def _child(self):
+        return self._operands[0]
 
     @property
     def symbol(self):
@@ -192,7 +207,8 @@ class Div(Arithmetic):
 
     @property
     def _dtype(self):
-        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        lhs = discover(self._operands[0]).measure, 
+        rhs = discover(self._operands[1]).measure
         return optionify(lhs, rhs, ct.float64)
 
 
@@ -202,7 +218,8 @@ class FloorDiv(Arithmetic):
 
     @property
     def _dtype(self):
-        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        lhs = discover(self._operands[0]).measure, 
+        rhs = discover(self._operands[1]).measure
         is_unsigned = lhs in unsigned and rhs in unsigned
         max_width = max(lhs.itemsize, rhs.itemsize)
         prefix = 'u' if is_unsigned else ''
@@ -231,12 +248,12 @@ class USub(UnaryOp):
     symbol = '-'
 
     def __str__(self):
-        return '-%s' % parenthesize(eval_str(self._child))
+        return '-%s' % parenthesize(eval_str(self._operands[0]))
 
     @property
     def _dtype(self):
         # TODO: better inference.  -uint -> int
-        return self._child.schema
+        return self._operands[0].schema
 
 
 @dispatch(ct.Option, object)
@@ -384,7 +401,7 @@ class Not(UnaryOp):
     _dtype = ct.bool_
 
     def __str__(self):
-        return '~%s' % parenthesize(eval_str(self._child))
+        return '~%s' % parenthesize(eval_str(self._operands[0]))
 
 
 _and, _rand = _mkbin('and', And)

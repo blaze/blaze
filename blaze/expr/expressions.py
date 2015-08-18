@@ -158,6 +158,7 @@ class Expr(Node):
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
+        print(key)
         if key == '_hash':
             raise AttributeError()
         try:
