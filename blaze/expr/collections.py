@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first,
 )
+from odo.utils import copydoc
 import datashape
 from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
 from datashape.predicates import isscalar, iscollection, isrecord
@@ -141,7 +142,7 @@ class Distinct(Expr):
             on=(', ' if self.on else '') + ', '.join(map(str, self.on))
         )
 
-
+@copydoc(Distinct)
 def distinct(expr, *on):
     fields = frozenset(expr.fields)
     _on = []
@@ -159,9 +160,6 @@ def distinct(expr, *on):
         append(n)
 
     return Distinct(expr, tuple(_on))
-
-
-distinct.__doc__ = Distinct.__doc__
 
 
 class _HeadOrTail(Expr):
@@ -201,10 +199,9 @@ class Head(_HeadOrTail):
     pass
 
 
+@copydoc(Head)
 def head(child, n=10):
     return Head(child, n)
-
-head.__doc__ = Head.__doc__
 
 
 class Tail(_HeadOrTail):
@@ -225,12 +222,12 @@ class Tail(_HeadOrTail):
     pass
 
 
+@copydoc(tail)
 def tail(child, n=10):
     return Tail(child, n)
 
-tail.__doc__ = Tail.__doc__
 
-
+@copydoc(Merge)
 def merge(*exprs, **kwargs):
     if len(exprs) + len(kwargs) == 1:
         if exprs:
@@ -497,6 +494,8 @@ def types_of_fields(fields, expr):
         assert fields == expr._name
         return expr.dshape.measure
 
+
+@copydoc(Join)
 def join(lhs, rhs, on_left=None, on_right=None,
          how='inner', suffixes=('_left', '_right')):
     if not on_left and not on_right:
@@ -525,9 +524,6 @@ def join(lhs, rhs, on_left=None, on_right=None,
                          "\nGot: %s" % how)
 
     return Join(lhs, rhs, _on_left, _on_right, how, suffixes)
-
-
-join.__doc__ = Join.__doc__
 
 
 class Concat(Expr):
@@ -593,6 +589,7 @@ def _shape_add(a, b):
     return Fixed(a.val + b.val)
 
 
+@copydoc(Concat)
 def concat(lhs, rhs, axis=0):
     ldshape = lhs.dshape
     rdshape = rhs.dshape
@@ -660,6 +657,7 @@ class IsIn(ElemWise):
                               self._keys)
 
 
+@copydoc(IsIn)
 def isin(expr, keys):
     if isinstance(keys, Expr):
         raise TypeError('keys argument cannot be an expression, '
@@ -667,8 +665,6 @@ def isin(expr, keys):
                         'tuple or set')
     return IsIn(expr, frozenset(keys))
 
-
-isin.__doc__ = IsIn.__doc__
 
 
 dshape_method_list.extend([
