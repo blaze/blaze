@@ -33,7 +33,7 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe, first
+from toolz import unique, concat, pipe
 from toolz.compatibility import zip
 from toolz.curried import map
 
