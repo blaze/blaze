@@ -176,6 +176,12 @@ def compute_up(t, s, **kwargs):
     return getattr(t, 'op', getattr(safuncs, sym, getattr(sa.func, sym)))(s)
 
 
+@dispatch(Selection, sa.sql.ColumnElement)
+def compute_up(expr, data, scope=None, **kwargs):
+    predicate = compute(expr.predicate, data, post_compute=False)
+    return sa.select([data]).where(predicate)
+
+
 @dispatch(Selection, Select)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], col) for col in s.inner_columns)
@@ -213,9 +219,6 @@ def select(s):
         s = sa.select(s)
     return s
 
-
-def computefull(t, s):
-    return select(compute(t, s))
 
 table_names = ('table_%d' % i for i in itertools.count(1))
 
