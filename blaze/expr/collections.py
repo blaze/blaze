@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+
 import datashape
 from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
 from datashape.predicates import isscalar, iscollection, isrecord
@@ -327,8 +328,11 @@ def merge(*exprs, **kwargs):
     result = Merge(child, exprs)
 
     if not isdistinct(result.fields):
-        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-                                                                frequencies(result.fields).items() if v > 1))
+        raise ValueError(
+            "Repeated columns found: " + ', '.join(
+                             k for k, v in frequencies(result.fields).items() if v > 1
+                         )
+        )
 
     return result
 
