@@ -222,7 +222,7 @@ class Tail(_HeadOrTail):
     pass
 
 
-@copydoc(tail)
+@copydoc(Tail)
 def tail(child, n=10):
     return Tail(child, n)
 
@@ -331,8 +331,6 @@ class Merge(ElemWise):
     def _leaves(self):
         return list(unique(tconcat(i._leaves() for i in self.children)))
 
-
-merge.__doc__ = Merge.__doc__
 
 
 def unpack(l):
@@ -618,8 +616,6 @@ def concat(lhs, rhs, axis=0):
 
     return Concat(lhs, rhs, axis)
 
-
-concat.__doc__ = Concat.__doc__
 
 
 class IsIn(ElemWise):
