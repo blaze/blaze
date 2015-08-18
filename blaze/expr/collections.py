@@ -330,8 +330,8 @@ def merge(*exprs, **kwargs):
     if not isdistinct(result.fields):
         raise ValueError(
             "Repeated columns found: " + ', '.join(
-                             k for k, v in frequencies(result.fields).items() if v > 1
-                         )
+                k for k, v in frequencies(result.fields).items() if v > 1
+            )
         )
 
     return result
