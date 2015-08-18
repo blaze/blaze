@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import real, int_, bool_
-#from .arithmetic import UnaryOp
 from .arithmetic import Op
 
 # Here follows a large number of unary operators.  These were selected by
