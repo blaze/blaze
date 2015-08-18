@@ -1,12 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+import datashape
+from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
+from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first,
 )
 from odo.utils import copydoc
-import datashape
-from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
-from datashape.predicates import isscalar, iscollection, isrecord
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Field
@@ -141,6 +141,7 @@ class Distinct(Expr):
             child=self._child,
             on=(', ' if self.on else '') + ', '.join(map(str, self.on))
         )
+
 
 @copydoc(Distinct)
 def distinct(expr, *on):
