@@ -14,8 +14,7 @@ from odo import into, resource, discover
 from pandas import DataFrame
 from toolz import unique
 
-from blaze.compute.sql import (compute, computefull, select, lower_column,
-                               compute_up)
+from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     symbol, discover, transform, summary, by, sin, join,
     floor, cos, merge, nunique, mean, sum, count, exp, concat,
