@@ -220,9 +220,6 @@ def select(s):
     return s
 
 
-def computefull(t, s):
-    return select(compute(t, s))
-
 table_names = ('table_%d' % i for i in itertools.count(1))
 
 

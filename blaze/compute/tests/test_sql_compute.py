@@ -24,6 +24,10 @@ from blaze.compatibility import xfail
 from blaze.utils import tmpfile, example
 
 
+def computefull(t, s):
+    return select(compute(t, s))
+
+
 names = ('tbl%d' % i for i in itertools.count())
 
 
