@@ -33,7 +33,7 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe
+from toolz import unique, concat, pipe, first
 from toolz.compatibility import zip
 from toolz.curried import map
 
@@ -145,6 +145,17 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
+@dispatch(BinOp, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    if isinstance(t.lhs, Expr):
+        return t.op(column, t.rhs)
+    else:
+        return t.op(t.lhs, column)
+
+
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
 @compute_up.register(BinOp, ColumnElement, (ColumnElement, base))
 def binop_sql(t, lhs, rhs, **kwargs):
@@ -182,24 +193,12 @@ def compute_up(expr, data, scope=None, **kwargs):
     return sa.select([data]).where(predicate)
 
 
-@dispatch(Selection, Select)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-    return s.where(predicate)
-
-
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
+    ns = dict((t._child[col.name], col)
+              for col in getattr(s, 'inner_columns', s.columns))
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-
     try:
         return s.where(predicate)
     except AttributeError:

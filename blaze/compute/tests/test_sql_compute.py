@@ -1719,6 +1719,24 @@ def test_attribute_on_filter_transform_groupby():
     assert normalize(str(result)) == normalize(expected)
 
 
+def test_label_projection():
+    tbl = t[(t.name == 'Alice')]
+    tbl = transform(tbl, new_amount=tbl.amount + 1, one_two=tbl.amount * 2)
+    expr = tbl[['new_amount', 'one_two']]
+
+    # column selection shouldn't affect the resulting SQL
+    result = compute(expr[expr.new_amount > 1].one_two, s)
+    result2 = compute(expr.one_two[expr.new_amount > 1], s)
+
+    expected = """SELECT
+        accounts.amount * :amount_1 as one_two
+    FROM accounts
+    WHERE accounts.name = :name_1 and accounts.amount + :amount_2 > :param_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+    assert normalize(str(result2)) == normalize(expected)
+
+
 def test_baseball_nested_by():
     data = resource('sqlite:///%s' % example('teams.db'))
     dshape = discover(data)
