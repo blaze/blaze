@@ -1784,3 +1784,13 @@ def test_multiple_field_filter():
     WHERE accounts.amount > :amount_1
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_distinct_on_label():
+    expr = t.name.label('foo').distinct()
+    result = compute(expr, s)
+    expected = """SELECT
+        DISTINCT accounts.name AS foo
+    FROM accounts
+    """
+    assert normalize(str(result)) == normalize(expected)
