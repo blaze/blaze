@@ -228,30 +228,6 @@ def tail(child, n=10):
     return Tail(child, n)
 
 
-@copydoc(Merge)
-def merge(*exprs, **kwargs):
-    if len(exprs) + len(kwargs) == 1:
-        if exprs:
-            return exprs[0]
-        if kwargs:
-            [(k, v)] = kwargs.items()
-            return v.label(k)
-    # Get common sub expression
-    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
-    try:
-        child = common_subexpression(*exprs)
-    except Exception:
-        raise ValueError("No common subexpression found for input expressions")
-
-    result = Merge(child, exprs)
-
-    if not isdistinct(result.fields):
-        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-                                                                frequencies(result.fields).items() if v > 1))
-
-    return result
-
-
 def transform(t, replace=True, **kwargs):
     """ Add named columns to table
 
@@ -332,6 +308,29 @@ class Merge(ElemWise):
     def _leaves(self):
         return list(unique(tconcat(i._leaves() for i in self.children)))
 
+
+@copydoc(Merge)
+def merge(*exprs, **kwargs):
+    if len(exprs) + len(kwargs) == 1:
+        if exprs:
+            return exprs[0]
+        if kwargs:
+            [(k, v)] = kwargs.items()
+            return v.label(k)
+    # Get common sub expression
+    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
+    try:
+        child = common_subexpression(*exprs)
+    except Exception:
+        raise ValueError("No common subexpression found for input expressions")
+
+    result = Merge(child, exprs)
+
+    if not isdistinct(result.fields):
+        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
+                                                                frequencies(result.fields).items() if v > 1))
+
+    return result
 
 
 def unpack(l):
