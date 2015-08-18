@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from itertools import chain
 
-from operator import and_, eq
+from operator import and_, eq, attrgetter
 from copy import copy
 
 import sqlalchemy as sa
@@ -195,24 +195,18 @@ def compute_up(t, s, **kwargs):
     return getattr(t, 'op', getattr(safuncs, sym, getattr(sa.func, sym)))(s)
 
 
-@dispatch(Selection, Select)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-    return s.where(predicate)
+@dispatch(Selection, sa.sql.ColumnElement)
+def compute_up(expr, data, scope=None, **kwargs):
+    predicate = compute(expr.predicate, data, post_compute=False)
+    return sa.select([data]).where(predicate)
 
 
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
+    ns = dict((t._child[col.name], col)
+              for col in getattr(s, 'inner_columns', s.columns))
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-
     try:
         return s.where(predicate)
     except AttributeError:
@@ -232,9 +226,6 @@ def select(s):
         s = sa.select(s)
     return s
 
-
-def computefull(t, s):
-    return select(compute(t, s))
 
 table_names = ('table_%d' % i for i in itertools.count(1))
 
@@ -274,6 +265,16 @@ def _join_selectables(a, b, condition=None, **kwargs):
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
+
+
+_getname = attrgetter('name')
+
+
+def _clean_join_name(opposite_side_colnames, suffix, c):
+    if c.name not in opposite_side_colnames:
+        return c
+    else:
+        return c.label(c.name + suffix)
 
 
 @dispatch(Join, ClauseElement, ClauseElement)
@@ -334,18 +335,21 @@ def compute_up(t, lhs, rhs, **kwargs):
         cols = lambda x: list(x.columns)
 
     main_cols = cols(main)
-    other_cols = cols(other)
     left_cols = cols(lhs)
+    left_names = set(map(_getname, left_cols))
     right_cols = cols(rhs)
+    right_names = set(map(_getname, right_cols))
 
     left_suffix, right_suffix = t.suffixes
     fields = [
         f.replace(left_suffix, '').replace(right_suffix, '') for f in t.fields
     ]
     columns = [c for c in main_cols if c.name in t._on_left]
-    columns += [c for c in left_cols
+    columns += [_clean_join_name(right_names, left_suffix, c)
+                for c in left_cols
                 if c.name in fields and c.name not in t._on_left]
-    columns += [c for c in right_cols
+    columns += [_clean_join_name(left_names, right_suffix, c)
+                for c in right_cols
                 if c.name in fields and c.name not in t._on_right]
 
     if isinstance(join, Select):
