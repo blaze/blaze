@@ -66,7 +66,7 @@ class Node(object):
 
     blaze.expr.expressions.Expr
     """
-    __inputs__ = '_child',
+    __inputs__ = ''
 
     def __init__(self, *args, **kwargs):
         assert frozenset(kwargs).issubset(self.__slots__)

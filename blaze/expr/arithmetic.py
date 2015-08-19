@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import operator
-from toolz import first
+from toolz import first, compose
 import numpy as np
 import pandas as pd
 from datashape import dshape, var, DataShape
@@ -52,7 +52,7 @@ def name(o):
 
 class Op(ElemWise):
     __slots__ = '_hash', 'operands'
-    __inputs__ = 'operands',
+    __inputs__ = 'operands'
 
     def __init__(self, operands):
         self._operands=operands
@@ -65,19 +65,15 @@ class Op(ElemWise):
                result.append(_op)
         return tuple(result)
 
-
 class BinOp(Op):
-    #__slots__ = '_hash', 'lhs', 'rhs'
     __slots__ = '_hash'
     __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
-        Op.__init__(self, [lhs, rhs])
+        super(BinOp, self).__init__(self, [lhs, rhs])
 
     def __str__(self):
-        lhs = parenthesize(eval_str(self._operands[0]))
-        rhs = parenthesize(eval_str(self._operands[1]))
-        return '%s %s %s' % (lhs, self.symbol, rhs)
+        return (' %s ' % self.symbol).join(map(compose(parenthesize, eval_str), self._operands))
 
     @property
     def lhs(self):
@@ -91,7 +87,7 @@ class BinOp(Op):
     def _name(self):
         if not isscalar(self.dshape.measure):
             return None
-        l, r = name(self._operands[0]), name(self._operands[1])
+        l, r = name(self.lhs), name(self.rhs)
         if l and not r:
             return l
         if r and not l:
@@ -136,14 +132,13 @@ def maxshape(shapes):
 
 
 class UnaryOp(Op):
-    #__slots__ = '_hash', '_child',
-    __slots__ = '_hash',
+    __slots__ = '_hash'
 
     def __init__(self, child):
         Op.__init__(self, [child])
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, eval_str(self._operands[0]))
+        return '%s(%s)' % (self.symbol, eval_str(self._child))
 
     @property
     def _child(self):
@@ -155,11 +150,11 @@ class UnaryOp(Op):
 
     @property
     def dshape(self):
-        return DataShape(*(shape(self._operands[0]) + (self._dtype,)))
+        return DataShape(*(shape(self._child) + (self._dtype,)))
 
     @property
     def _name(self):
-        return self._operands[0]._name
+        return self._child._name
 
 
 class Arithmetic(BinOp):

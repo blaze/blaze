@@ -122,6 +122,8 @@ class Expr(Node):
 
     @property
     def fields(self):
+        print('def fields')
+        print(self.__class__)
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
         name = getattr(self, '_name', None)
@@ -167,8 +169,11 @@ class Expr(Node):
         try:
             result = object.__getattribute__(self, key)
         except AttributeError:
+            print("__getattr__", key)
+            print("fields12", self.fields)
             fields = dict(zip(map(valid_identifier, self.fields),
                               self.fields))
+            print('fields23', fields)
             if self.fields and key in fields:
                 if isscalar(self.dshape.measure):  # t.foo.foo is t.foo
                     result = self
@@ -306,7 +311,7 @@ class Field(ElemWise):
     >>> points['space station'].dshape
     dshape("5 * 3 * float64")
     """
-    __slots__ = '_hash', '_child', '_name'
+    #__slots__ = '_hash', '_child', '_name'
 
     def __str__(self):
         fmt = '%s.%s' if isvalid_identifier(self._name) else '%s[%r]'
@@ -318,6 +323,9 @@ class Field(ElemWise):
 
     @property
     def dshape(self):
+        print('dshape')
+        print('the stack overflow is caused here by "self" variable of class Field: expressions.py, line 327')
+        print(self.__name__)
         shape = self._child.dshape.shape
         schema = self._child.dshape.measure.dict[self._name]
 
