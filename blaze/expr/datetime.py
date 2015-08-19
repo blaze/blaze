@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from .expressions import Expr, ElemWise, schema_method_list, method_properties
+from .expressions import ElemWise, schema_method_list, method_properties
 
 import datashape
 from datashape import dshape, isdatelike, isnumeric
