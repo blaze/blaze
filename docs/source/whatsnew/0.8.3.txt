@@ -65,3 +65,5 @@ Bug Fixes
 * Fixed an issue where arithmetic in a Merge expression wouldn't work
   because arithmetic wasn't defined on ``sa.sql.Select`` objects
   (:issue:`1207`)
+* Fixed a bug where the wrong value was being passed into
+  :func:`~blaze.expr.datetime.time` (:issue:`1213`)
