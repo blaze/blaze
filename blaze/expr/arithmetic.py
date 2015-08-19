@@ -52,7 +52,7 @@ def name(o):
 
 class Op(ElemWise):
     __slots__ = '_hash', 'operands'
-    __inputs__ = 'operands'
+    __inputs__ = 'operands',
 
     def __init__(self, operands):
         self._operands=operands
@@ -70,7 +70,7 @@ class BinOp(Op):
     __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
-        super(BinOp, self).__init__(self, [lhs, rhs])
+        super(BinOp, self).__init__([lhs, rhs])
 
     def __str__(self):
         return (' %s ' % self.symbol).join(map(compose(parenthesize, eval_str), self._operands))
@@ -135,7 +135,7 @@ class UnaryOp(Op):
     __slots__ = '_hash'
 
     def __init__(self, child):
-        Op.__init__(self, [child])
+        super(Op, self).__init__([child])
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self._child))
@@ -201,8 +201,7 @@ class Div(Arithmetic):
 
     @property
     def _dtype(self):
-        lhs = discover(self._operands[0]).measure, 
-        rhs = discover(self._operands[1]).measure
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
         return optionify(lhs, rhs, ct.float64)
 
 
@@ -212,8 +211,7 @@ class FloorDiv(Arithmetic):
 
     @property
     def _dtype(self):
-        lhs = discover(self._operands[0]).measure, 
-        rhs = discover(self._operands[1]).measure
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
         is_unsigned = lhs in unsigned and rhs in unsigned
         max_width = max(lhs.itemsize, rhs.itemsize)
         prefix = 'u' if is_unsigned else ''
@@ -242,12 +240,12 @@ class USub(UnaryOp):
     symbol = '-'
 
     def __str__(self):
-        return '-%s' % parenthesize(eval_str(self._operands[0]))
+        return '-%s' % parenthesize(eval_str(self._child))
 
     @property
     def _dtype(self):
         # TODO: better inference.  -uint -> int
-        return self._operands[0].schema
+        return self._child.schema
 
 
 @dispatch(ct.Option, object)
@@ -395,7 +393,7 @@ class Not(UnaryOp):
     _dtype = ct.bool_
 
     def __str__(self):
-        return '~%s' % parenthesize(eval_str(self._operands[0]))
+        return '~%s' % parenthesize(eval_str(self._child))
 
 
 _and, _rand = _mkbin('and', And)
