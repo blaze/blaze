@@ -16,6 +16,7 @@ from ..compatibility import _strtypes
 
 
 __all__ = '''
+Op
 BinOp
 UnaryOp
 Arithmetic
@@ -59,11 +60,7 @@ class Op(ElemWise):
 
     @property
     def _inputs(self):
-        result = []
-        for _op in self._operands:
-            if isinstance(_op, Expr):
-               result.append(_op)
-        return tuple(result)
+        return tuple(op for op in self._operands if isinstance(op, Expr))
 
 class BinOp(Op):
     __slots__ = '_hash'
