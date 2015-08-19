@@ -585,20 +585,6 @@ def compute_up(expr, df, **kwargs):
     return df.shape[0]
 
 
-units_map = {
-    'year': 'Y',
-    'month': 'M',
-    'week': 'W',
-    'day': 'D',
-    'hour': 'h',
-    'minute': 'm',
-    'second': 's',
-    'millisecond': 'ms',
-    'microsecond': 'us',
-    'nanosecond': 'ns'
-}
-
-
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
     return Series(compute_up(expr, into(np.ndarray, data), **kwargs),
