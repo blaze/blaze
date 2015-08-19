@@ -66,3 +66,12 @@ def test_truncate_raises_with_no_arguments():
     t = symbol('t', '5 * {name: string, when: datetime}')
     with pytest.raises(TypeError):
         t.when.truncate()
+
+
+@pytest.mark.parametrize('attr',
+                         ['date', 'year', 'month', 'day', 'time', 'hour',
+                          'second', 'millisecond', 'microsecond'])
+def test_attributes(attr):
+    t = symbol('t', 'var * datetime')
+    assert getattr(t, attr).dshape is not None
+    assert getattr(t, attr)._child is t

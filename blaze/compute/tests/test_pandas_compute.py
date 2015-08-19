@@ -2,12 +2,17 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+
+import numpy as np
+
 import pandas as pd
 import pandas.util.testing as tm
-import numpy as np
 from pandas import DataFrame, Series
+
 from string import ascii_lowercase
+
+import datashape
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
@@ -779,3 +784,12 @@ def test_count_keepdims_frame():
     s = symbol('s', discover(df))
     assert_series_equal(compute(s.count(keepdims=True), df),
                         pd.Series([df.shape[0]], name='s_count'))
+
+
+def test_time_field():
+    data = pd.Series(pd.date_range(start='20120101', end='20120102', freq='H'))
+    s = symbol('s', discover(data))
+    result = compute(s.time, data)
+    expected = data.dt.time
+    expected.name = 's_time'
+    assert_series_equal(result, expected)

@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from .expressions import Expr, ElemWise
-from datashape import dshape
+from .expressions import ElemWise, schema_method_list, method_properties
+
 import datashape
+from datashape import dshape, isdatelike, isnumeric
 
 
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
@@ -68,7 +69,7 @@ class Time(DateTime):
 
 
 def time(expr):
-    return Time(Expr)
+    return Time(expr)
 
 
 class Hour(DateTime):
@@ -223,14 +224,11 @@ def truncate(expr, *args, **kwargs):
     return DateTimeTruncate(expr, measure, normalize_time_unit(unit))
 
 
-from .expressions import schema_method_list, method_properties
-from datashape.predicates import isdatelike, isnumeric
-
 schema_method_list.extend([
     (isdatelike, set([year, month, day, hour, minute, date, time, second,
                       millisecond, microsecond, truncate])),
     (isnumeric, set([utcfromtimestamp]))
-    ])
+])
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,
                           microsecond, date, time, utcfromtimestamp])
