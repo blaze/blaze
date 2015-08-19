@@ -239,7 +239,8 @@ def test_auto_join(orders):
     assert normalize(str(result)) == normalize(expected)
 
 
-@pytest.mark.xfail(raises=AssertionError)
+@pytest.mark.xfail(raises=NotImplementedError,
+                   reason='Not yet implemented')
 @pytest.mark.parametrize('func', ['max', 'min', 'sum'])
 def test_foreign_key_reduction(orders, products, func):
     t = symbol('t', discover(orders))
