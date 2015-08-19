@@ -69,7 +69,7 @@ class Time(DateTime):
 
 
 def time(expr):
-    return Time(Expr)
+    return Time(expr)
 
 
 class Hour(DateTime):
