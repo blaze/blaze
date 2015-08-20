@@ -10,4 +10,4 @@ Learn: [http://blaze.pydata.org/](http://blaze.pydata.org/)
 Try: `conda install blaze`
 
 Contribute:
-[http://github.com/ContinuumIO/blaze/](http://github.com/ContinuumIO/blaze)
+[http://github.com/blaze/blaze/](http://github.com/blaze/blaze)

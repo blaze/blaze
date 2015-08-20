@@ -72,7 +72,7 @@ In all cases when a location or table name is required in addition to the tradit
 
 How it works
 ------------
-Blaze depends on the `Odo <https://github.com/ContinuumIO/odo>`_ library to handle URIs.
+Blaze depends on the `Odo <https://github.com/blaze/odo>`_ library to handle URIs.
 URIs are managed through the ``resource`` function which is dispatched based on regular expressions.  For example a simple resource function to handle ``.json`` files might look like the following (although Blaze's actual solution is a bit more comprehensive):
 
 .. code-block:: python

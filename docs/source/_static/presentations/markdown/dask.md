@@ -170,7 +170,7 @@ d = {'x': 1,
 
 ### Questions?
 
-*  Source:  [http://github.com/ContinuumIO/dask/](http://github.com/ContinuumIO/dask/)
+*  Source:  [http://github.com/blaze/dask/](http://github.com/blaze/dask/)
 *  Docs:  [http://dask.readthedocs.org](http://dask.readthedocs.org)
 
 ![](images/fail-case.gif)

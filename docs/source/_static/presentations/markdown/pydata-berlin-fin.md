@@ -14,7 +14,7 @@
     *  People try it out; it's not much faster
     *  [Johannes Schönberger](http://www.cs.unc.edu/~jsch/) [releases the GIL](https://github.com/scikit-image/scikit-image/pull/1519/files) (few days)
     *  Scikit image + dask.array sees
-        [2x-3x speedups](https://github.com/ContinuumIO/dask/blob/master/notebooks/parallelize_image_filtering_workload.ipynb)
+        [2x-3x speedups](https://github.com/blaze/dask/blob/master/notebooks/parallelize_image_filtering_workload.ipynb)
         over Scikit image alone  (experiments by [@arve0](http://arve0.github.io/))
 
 
