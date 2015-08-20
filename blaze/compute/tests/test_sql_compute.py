@@ -1372,8 +1372,15 @@ def test_merge_compute():
 
 
 def test_isnull():
-    result = compute(nt.name.isnull(), ns)
-    assert str(result) == 'nullaccounts.name IS NULL'
+    result = compute(nt[~nt.name.isnull()], ns)
+    expected = """SELECT
+        nullaccounts.name,
+        nullaccounts.amount,
+        nullaccounts.id
+    FROM nullaccounts
+    WHERE nullaccounts.name is not null
+    """
+    assert normalize(str(result)) == normalize(expected)
 
 
 def test_head_limit():

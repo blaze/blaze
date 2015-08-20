@@ -57,7 +57,7 @@ from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, IsNull
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, isnull
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -842,9 +842,9 @@ def compute_up(expr, data, **kwargs):
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 
-@dispatch(IsNull, ClauseElement)
-def compute_up(t, s, **kwargs):
-    return s == None
+@dispatch(isnull, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return data == None
 
 
 @toolz.memoize
