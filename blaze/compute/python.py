@@ -1,7 +1,6 @@
 """ Python compute layer
 
->>> from blaze import *
->>> from blaze.compute.core import compute
+>>> from blaze import symbol, compute
 
 >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
@@ -16,32 +15,35 @@ import itertools
 import numbers
 import fnmatch
 import operator
+import datetime
+import math
 import re
-from collections import Iterator, Iterable
+
+from collections import Iterator
 from functools import partial
+
 import toolz
 from toolz import map, filter, compose, juxt, identity, tail
+
 try:
     from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
 except ImportError:
     from toolz import groupby, reduceby, unique, take, concat, nth, pluck
-import datetime
-import toolz
-import math
+
 from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Summary, Like, IsIn,
-                    DateTime, Date, Time, Millisecond, ElemWise, symbol,
+                    DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp, isnull)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
                     Not, nelements)
-from ..compatibility import builtins, apply, unicode, _inttypes, _strtypes
+from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize, base
 
 from ..utils import listpack
@@ -50,7 +52,6 @@ from .pyfunc import lambdify
 from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
-import math
 from math import *
 
 
@@ -93,6 +94,7 @@ def child(x):
 def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
+    >>> from blaze import symbol
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> expr = accounts['amount'].map(lambda x: x + 1)
     >>> f = recursive_rowfunc(expr, accounts)
@@ -121,6 +123,7 @@ def rowfunc(t):
 def rowfunc(t):
     """ Rowfunc provides a function that can be mapped onto a sequence.
 
+    >>> from blaze import symbol
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> f = rowfunc(accounts['amount'])
 
@@ -224,13 +227,9 @@ def compute_up(expr, data, **kwargs):
     return rowfunc(expr)(data)
 
 
-@dispatch(IsNull)
+@dispatch(isnull)
 def rowfunc(_):
-    def f(row):
-        if isinstance(row, Iterable) and not isinstance(row, _strtypes):
-            return (x is None for x in row)
-        return row is None
-    return f
+    return lambda x: x is None
 
 
 def concat_maybe_tuples(vals):
