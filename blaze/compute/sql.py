@@ -261,7 +261,6 @@ def _join_selectables(a, b, condition=None, **kwargs):
                                 a.join(b.froms[0], condition, **kwargs))
 
 
-
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
