@@ -1,4 +1,3 @@
-
 =======================
 Interactive Expressions
 =======================
@@ -109,7 +108,7 @@ As an example, this ``__repr__`` function looks something like the following:
    def __repr__(expr):
        expr = expr.head(10)         # Only need enough to print to the screen
        result = compute(expr)       # Do the work necessary to get a result
-       df = into(DataFrame, result) # Shove into a DataFrame
+       df = odo(result, DataFrame) # Shove into a DataFrame
        return repr(df)              # Use pandas' nice printing
 
    Expr.__repr__ = __repr__   # Override normal __repr__ method

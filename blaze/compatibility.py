@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+from types import MethodType
+
+import pandas.util.testing as tm
 
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
@@ -13,6 +16,12 @@ if PY3:
 else:
     import __builtin__ as builtins
     apply = builtins.apply
+
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 
 # Portions of this taken from the six library, licensed as follows.
@@ -46,11 +55,19 @@ if PY2:
     unicode = builtins.unicode
     basestring = builtins.basestring
     _strtypes = (str, unicode)
+
+    def boundmethod(func, instance):
+        return MethodType(func, instance, type(instance))
+
+    from itertools import izip_longest as zip_longest
 else:
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
     basestring = str
+    boundmethod = MethodType
+
+    from itertools import zip_longest
 
 
 import io
@@ -88,3 +105,31 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+
+
+def assert_series_equal(left, right, check_names=True, **kwargs):
+    """Backwards compatibility wrapper for
+    ``pandas.util.testing.assert_series_equal``
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> s = pd.Series(list('abc'), name='a')
+    >>> s2 = pd.Series(list('abc'), name='b')
+    >>> assert_series_equal(s, s2)  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    AssertionError: ...
+    >>> assert_series_equal(s, s2, check_names=False)
+
+    See Also
+    --------
+    pandas.util.testing.assert_series_equal
+    """
+    try:
+        return tm.assert_series_equal(left, right, check_names=check_names,
+                                      **kwargs)
+    except TypeError:
+        if check_names:
+            assert left.name == right.name
+        return tm.assert_series_equal(left, right, **kwargs)

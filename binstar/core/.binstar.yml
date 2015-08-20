@@ -1,0 +1,42 @@
+package: blaze-core
+user: blaze
+
+platform:
+  - linux-64
+  - linux-32
+  - osx-64
+  - win-32
+  - win-64
+engine:
+  - python=2.6
+  - python=2.7
+  - python=3.3
+  - python=3.4
+
+install:
+  - conda config --add channels blaze
+  - conda config --add channels numba
+  - conda config --set always_yes true
+
+before_script:
+  - python -V
+
+script:
+  - conda build ../../core.recipe
+
+iotimeout: 600
+
+build_targets: conda
+
+notifications:
+  email:
+    recipients: ['ben.zaitlen@continuum.io', 'mrocklin@continuum.io', 'phillip.cloud@continuum.io']
+
+---
+platform: win-32
+engine: python=2.6
+exclude: true
+---
+platform: win-64
+engine: python=2.6
+exclude: true

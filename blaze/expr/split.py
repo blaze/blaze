@@ -38,7 +38,7 @@ the intermediate aggregate.  It can also do this in N-Dimensions.
 """
 from __future__ import absolute_import, division, print_function
 
-from toolz import concat
+from toolz import concat as tconcat
 import datashape
 from datashape.predicates import isscalar, isrecord
 from math import floor
@@ -78,8 +78,6 @@ def path_split(leaf, expr):
         elif not isinstance(node, can_split):
             return last
         last = node
-    if not node:
-        raise ValueError()
     return node
 
 
@@ -110,7 +108,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
     """
     center = path_split(leaf, expr)
-    if not chunk:
+    if chunk is None:
         if leaf.ndim > 1:
             raise ValueError("Please provide a chunk symbol")
         else:
@@ -120,7 +118,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     chunk_expr_with_keepdims = _split_chunk(center, leaf=leaf, chunk=chunk,
                                             keepdims=True)
 
-    if not agg:
+    if agg is None:
         agg_shape = aggregate_shape(leaf, expr, chunk, chunk_expr_with_keepdims)
         agg_dshape = DataShape(*(agg_shape + (chunk_expr.dshape.measure,)))
         agg = symbol('aggregate', agg_dshape)
@@ -293,7 +291,7 @@ def _split_chunk(expr, leaf=None, chunk=None, **kwargs):
     if expr._splittable:
         return expr._subs({leaf: chunk})
     else:
-        raise NotIimplementedError()
+        raise NotImplementedError()
 
 @dispatch(Apply)
 def _split_agg(expr, leaf=None, agg=None):
@@ -366,7 +364,7 @@ def aggregate_shape(leaf, expr, chunk, chunk_expr):
     >>> aggregate_shape(leaf, expr, chunk, chunk_expr)
     (4, 10)
     """
-    if datashape.var in concat(map(shape, [leaf, expr, chunk, chunk_expr])):
+    if datashape.var in tconcat(map(shape, [leaf, expr, chunk, chunk_expr])):
         return (datashape.var, ) * leaf.ndim
 
     numblocks = [int(floor(l / c)) for l, c in zip(leaf.shape, chunk.shape)]

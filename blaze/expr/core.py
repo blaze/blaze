@@ -16,6 +16,43 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 base = (numbers.Number,) + _strtypes
 
+
+def isidentical(a, b):
+    """ Strict equality testing
+
+    Different from x == y -> Eq(x, y)
+
+    >>> isidentical(1, 1)
+    True
+
+    >>> from blaze.expr import symbol
+    >>> x = symbol('x', 'int')
+    >>> isidentical(x, 1)
+    False
+
+    >>> isidentical(x + 1, x + 1)
+    True
+
+    >>> isidentical(x + 1, x + 2)
+    False
+
+    >>> isidentical((x, x + 1), (x, x + 1))
+    True
+
+    >>> isidentical((x, x + 1), (x, x + 2))
+    False
+    """
+    if isinstance(a, base) and isinstance(b, base):
+        return a == b
+    if type(a) != type(b):
+        return False
+    if isinstance(a, Node):
+        return all(map(isidentical, a._args, b._args))
+    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+        return len(a) == len(b) and all(map(isidentical, a, b))
+    return a == b
+
+
 class Node(object):
     """ Node in a tree
 
@@ -48,14 +85,8 @@ class Node(object):
     def _inputs(self):
         return tuple([getattr(self, i) for i in self.__inputs__])
 
-    def __nonzero__(self): # pragma: no cover
-        return True
-
-    def __bool__(self):
-        return True
-
     def _leaves(self):
-        """ Leaves of an expresion tree
+        """ Leaves of an expression tree
 
         All nodes without inputs.  Leaves are returned in order, left to right.
 
@@ -78,8 +109,7 @@ class Node(object):
             return list(unique(concat(i._leaves() for i in self._inputs if
                                       isinstance(i, Node))))
 
-    def isidentical(self, other):
-        return isidentical(self, other)
+    isidentical = isidentical
 
     def __hash__(self):
         try:
@@ -136,9 +166,11 @@ class Node(object):
         ident = self.isidentical(other)
         if ident is True:
             return ident
+
         try:
             return self._eq(other)
-        except:
+        except AttributeError:
+            # e.g., we can't compare whole tables to other things (yet?)
             pass
         return False
 
@@ -220,41 +252,9 @@ class Node(object):
     def __invert__(self):
         return self._invert()
 
-
-def isidentical(a, b):
-    """ Strict equality testing
-
-    Different from x == y -> Eq(x, y)
-
-    >>> isidentical(1, 1)
-    True
-
-    >>> from blaze.expr import symbol
-    >>> x = symbol('x', 'int')
-    >>> isidentical(x, 1)
-    False
-
-    >>> isidentical(x + 1, x + 1)
-    True
-
-    >>> isidentical(x + 1, x + 2)
-    False
-
-    >>> isidentical((x, x + 1), (x, x + 1))
-    True
-
-    >>> isidentical((x, x + 1), (x, x + 2))
-    False
-    """
-    if isinstance(a, base) and isinstance(b, base):
-        return a == b
-    if type(a) != type(b):
-        return False
-    if isinstance(a, Node):
-        return all(map(isidentical, a._args, b._args))
-    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
-        return len(a) == len(b) and all(map(isidentical, a, b))
-    return a == b
+    def __abs__(self):
+        from .math import abs
+        return abs(self)
 
 
 def get_callable_name(o):
@@ -369,7 +369,7 @@ def path(a, b):
         if not a._inputs:
             break
         for child in a._inputs:
-            if b in child._traverse():
+            if any(b.isidentical(node) for node in child._traverse()):
                 a = child
                 break
     yield a

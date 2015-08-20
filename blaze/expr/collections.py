@@ -1,17 +1,27 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import isdistinct, frequencies, concat, unique, get
+
 import datashape
-from datashape import Option, Record, Unit, dshape, var
+from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
 from datashape.predicates import isscalar, iscollection, isrecord
+from toolz import (
+    isdistinct, frequencies, concat as tconcat, unique, get, first,
+)
+from odo.utils import copydoc
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, label
+from .expressions import Expr, ElemWise, label, Field
+from .expressions import dshape_method_list
+from ..compatibility import zip_longest, _strtypes
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'distinct', 'merge',
-           'head', 'sort', 'Join', 'join', 'transform']
+
+__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
+           'merge', 'head', 'sort', 'Join', 'join', 'transform', 'Concat',
+           'concat', 'Tail', 'tail']
+
 
 class Sort(Expr):
+
     """ Table in sorted order
 
     Examples
@@ -33,7 +43,7 @@ class Sort(Expr):
 
     @property
     def key(self):
-        if not self._key:
+        if self._key is () or self._key is None:
             return self._child.fields[0]
         if isinstance(self._key, tuple):
             return list(self._key)
@@ -49,20 +59,22 @@ class Sort(Expr):
 
     def __str__(self):
         return "%s.sort(%s, ascending=%s)" % (self._child, repr(self._key),
-                self.ascending)
+                                              self.ascending)
 
 
 def sort(child, key=None, ascending=True):
-    """ Sort collection
+    """ Sort a collection
 
     Parameters
     ----------
-    key: string, list of strings, Expr
-        Defines by what you want to sort.  Either:
-            A single column string, ``t.sort('amount')``
-            A list of column strings, ``t.sort(['name', 'amount'])``
-            A Table Expression, ``t.sort(-t.amount)``
-    ascending: bool
+    key : str, list of str, or Expr
+        Defines by what you want to sort.
+
+          * A single column string: ``t.sort('amount')``
+          * A list of column strings: ``t.sort(['name', 'amount'])``
+          * An expression: ``t.sort(-t.amount)``
+
+    ascending : bool, optional
         Determines order of the sort
     """
     if not isrecord(child.dshape.measure):
@@ -73,8 +85,13 @@ def sort(child, key=None, ascending=True):
 
 
 class Distinct(Expr):
-    """
-    Removes duplicate rows from the table, so every row is distinct
+
+    """ Remove duplicate elements from an expression
+
+    Parameters
+    ----------
+    on : tuple of :class:`~blaze.expr.expressions.Field`
+        The subset of fields or names of fields to be distinct on.
 
     Examples
     --------
@@ -89,8 +106,24 @@ class Distinct(Expr):
     >>> from blaze.compute.python import compute
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
+
+    Use a subset by passing `on`:
+
+    >>> import pandas as pd
+    >>> e = distinct(t, 'name')
+    >>> data = pd.DataFrame([['Alice', 100, 1],
+    ...                      ['Alice', 200, 2],
+    ...                      ['Bob', 100, 1],
+    ...                      ['Bob', 200, 2]],
+    ...                     columns=['name', 'amount', 'id'])
+    >>> compute(e, data)
+        name  amount  id
+    0  Alice     100   1
+    1    Bob     100   1
+
+
     """
-    __slots__ = '_hash', '_child',
+    __slots__ = '_hash', '_child', 'on'
 
     @property
     def dshape(self):
@@ -105,23 +138,33 @@ class Distinct(Expr):
         return self._child._name
 
     def __str__(self):
-        return 'distinct(%s)' % self._child
+        return 'distinct({child}{on})'.format(
+            child=self._child,
+            on=(', ' if self.on else '') + ', '.join(map(str, self.on))
+        )
 
 
-def distinct(expr):
-    return Distinct(expr)
+@copydoc(Distinct)
+def distinct(expr, *on):
+    fields = frozenset(expr.fields)
+    _on = []
+    append = _on.append
+    for n in on:
+        if isinstance(n, Field):
+            if n._child.isidentical(expr):
+                n = n._name
+            else:
+                raise ValueError('{0} is not a field of {1}'.format(n, expr))
+        if not isinstance(n, _strtypes):
+            raise TypeError('on must be a name or field, not: {0}'.format(n))
+        elif n not in fields:
+            raise ValueError('{0} is not a field of {1}'.format(n, expr))
+        append(n)
+
+    return Distinct(expr, tuple(_on))
 
 
-class Head(Expr):
-    """ First ``n`` elements of collection
-
-    Examples
-    --------
-    >>> from blaze import symbol
-    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
-    >>> accounts.head(5).dshape
-    dshape("5 * {name: string, amount: int32}")
-    """
+class _HeadOrTail(Expr):
     __slots__ = '_hash', '_child', 'n'
 
     @property
@@ -136,36 +179,54 @@ class Head(Expr):
         return self._child._name
 
     def __str__(self):
-        return '%s.head(%d)' % (self._child, self.n)
+        return '%s.%s(%d)' % (self._child, type(self).__name__.lower(), self.n)
 
 
+class Head(_HeadOrTail):
+
+    """ First `n` elements of collection
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts.head(5).dshape
+    dshape("5 * {name: string, amount: int32}")
+
+    See Also
+    --------
+
+    blaze.expr.collections.Tail
+    """
+    pass
+
+
+@copydoc(Head)
 def head(child, n=10):
     return Head(child, n)
 
-head.__doc__ = Head.__doc__
+
+class Tail(_HeadOrTail):
+    """ Last `n` elements of collection
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts.tail(5).dshape
+    dshape("5 * {name: string, amount: int32}")
+
+    See Also
+    --------
+
+    blaze.expr.collections.Head
+    """
+    pass
 
 
-def merge(*exprs, **kwargs):
-    if len(exprs) + len(kwargs) == 1:
-        if exprs:
-            return exprs[0]
-        if kwargs:
-            [(k, v)] = kwargs.items()
-            return v.label(k)
-    # Get common sub expression
-    exprs = exprs + tuple(label(v, k) for k, v in kwargs.items())
-    try:
-        child = common_subexpression(*exprs)
-    except:
-        raise ValueError("No common sub expression found for input expressions")
-
-    result = Merge(child, exprs)
-
-    if not isdistinct(result.fields):
-        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-            frequencies(result.fields).items() if v > 1))
-
-    return result
+@copydoc(Tail)
+def tail(child, n=10):
+    return Tail(child, n)
 
 
 def transform(t, replace=True, **kwargs):
@@ -179,7 +240,7 @@ def transform(t, replace=True, **kwargs):
     if replace and set(t.fields).intersection(set(kwargs)):
         t = t[[c for c in t.fields if c not in kwargs]]
 
-    args = [t] + [v.label(k) for k, v in kwargs.items()]
+    args = [t] + [v.label(k) for k, v in sorted(kwargs.items(), key=first)]
     return merge(*args)
 
 
@@ -206,6 +267,7 @@ def schema_concat(exprs):
 
 
 class Merge(ElemWise):
+
     """ Merge many fields together
 
     Examples
@@ -223,7 +285,7 @@ class Merge(ElemWise):
 
     @property
     def fields(self):
-        return list(concat(child.fields for child in self.children))
+        return list(tconcat(child.fields for child in self.children))
 
     def _subterms(self):
         yield self
@@ -245,7 +307,34 @@ class Merge(ElemWise):
         return merge(*[self[c] for c in key])
 
     def _leaves(self):
-        return list(unique(concat(i._leaves() for i in self.children)))
+        return list(unique(tconcat(i._leaves() for i in self.children)))
+
+
+@copydoc(Merge)
+def merge(*exprs, **kwargs):
+    if len(exprs) + len(kwargs) == 1:
+        if exprs:
+            return exprs[0]
+        if kwargs:
+            [(k, v)] = kwargs.items()
+            return v.label(k)
+    # Get common sub expression
+    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
+    try:
+        child = common_subexpression(*exprs)
+    except Exception:
+        raise ValueError("No common subexpression found for input expressions")
+
+    result = Merge(child, exprs)
+
+    if not isdistinct(result.fields):
+        raise ValueError(
+            "Repeated columns found: " + ', '.join(
+                k for k, v in frequencies(result.fields).items() if v > 1
+            ),
+        )
+
+    return result
 
 
 def unpack(l):
@@ -263,14 +352,24 @@ def unpack(l):
 
 
 class Join(Expr):
+
     """ Join two tables on common columns
 
     Parameters
     ----------
-    lhs : Expr
-    rhs : Expr
-    on_left : string
-    on_right : string
+    lhs, rhs : Expr
+        Expressions to join
+    on_left : str, optional
+        The fields from the left side to join on.
+        If no ``on_right`` is passed, then these are the fields for both
+        sides.
+    on_right : str, optional
+        The fields from the right side to join on.
+    how : {'inner', 'outer', 'left', 'right'}
+        What type of join to perform.
+    suffixes: pair of str
+        The suffixes to be applied to the left and right sides
+        in order to resolve duplicate field names.
 
     Examples
     --------
@@ -279,9 +378,11 @@ class Join(Expr):
     >>> amounts = symbol('amounts', 'var * {amount: int, id: int}')
 
     Join tables based on shared column name
+
     >>> joined = join(names, amounts, 'id')
 
     Join based on different column names
+
     >>> amounts = symbol('amounts', 'var * {amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
 
@@ -290,7 +391,9 @@ class Join(Expr):
 
     blaze.expr.collections.Merge
     """
-    __slots__ = '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how'
+    __slots__ = (
+        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes',
+    )
     __inputs__ = 'lhs', 'rhs'
 
     @property
@@ -324,6 +427,7 @@ class Join(Expr):
         dshape("{name: string, amount: int32, id: ?int32}")
 
         Overlapping but non-joined fields append _left, _right
+
         >>> a = symbol('a', 'var * {x: int, y: int}')
         >>> b = symbol('b', 'var * {x: int, y: int}')
         >>> join(a, b, 'x').fields
@@ -332,25 +436,27 @@ class Join(Expr):
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
         joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
-                        if name in self.on_left]
+                  if name in self.on_left]
 
         left = [[name, dt] for name, dt in
-                zip(self.lhs.fields, types_of_fields(self.lhs.fields, self.lhs))
-                           if name not in self.on_left]
+                zip(self.lhs.fields, types_of_fields(
+                    self.lhs.fields, self.lhs))
+                if name not in self.on_left]
 
         right = [[name, dt] for name, dt in
-                zip(self.rhs.fields, types_of_fields(self.rhs.fields, self.rhs))
-                           if name not in self.on_right]
-
+                 zip(self.rhs.fields, types_of_fields(
+                     self.rhs.fields, self.rhs))
+                 if name not in self.on_right]
 
         # Handle overlapping but non-joined case, e.g.
-        left_other  = [name for name, dt in left  if name not in self.on_left]
+        left_other = [name for name, dt in left if name not in self.on_left]
         right_other = [name for name, dt in right if name not in self.on_right]
         overlap = set.intersection(set(left_other), set(right_other))
-        left = [[name+'_left' if name in overlap else name, dt]
+        left_suffix, right_suffix = self.suffixes
+        left = [[name + left_suffix if name in overlap else name, dt]
                 for name, dt in left]
-        right = [[name+'_right' if name in overlap else name, dt]
-                for name, dt in right]
+        right = [[name + right_suffix if name in overlap else name, dt]
+                 for name, dt in right]
 
         if self.how in ('right', 'outer'):
             left = [[name, option(dt)] for name, dt in left]
@@ -358,7 +464,6 @@ class Join(Expr):
             right = [[name, option(dt)] for name, dt in right]
 
         return dshape(Record(joined + left + right))
-
 
     @property
     def dshape(self):
@@ -392,7 +497,9 @@ def types_of_fields(fields, expr):
         return expr.dshape.measure
 
 
-def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
+@copydoc(Join)
+def join(lhs, rhs, on_left=None, on_right=None,
+         how='inner', suffixes=('_left', '_right')):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
             set(lhs.fields) & set(rhs.fields),
@@ -404,14 +511,13 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if isinstance(on_right, tuple):
         on_right = list(on_right)
     if not on_left or not on_right:
-        raise ValueError("Can not Join.  No shared columns between %s and %s"%
-                (lhs, rhs))
+        raise ValueError("Can not Join.  No shared columns between %s and %s" %
+                         (lhs, rhs))
     if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
-                        else on_right)
-
+                 else on_right)
 
     how = how.lower()
     if how not in ('inner', 'outer', 'left', 'right'):
@@ -419,16 +525,148 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
                          "\n\tinner, outer, left, right."
                          "\nGot: %s" % how)
 
-    return Join(lhs, rhs, _on_left, _on_right, how)
+    return Join(lhs, rhs, _on_left, _on_right, how, suffixes)
 
 
+class Concat(Expr):
 
-join.__doc__ = Join.__doc__
+    """ Stack tables on common columns
+
+    Parameters
+    ----------
+    lhs, rhs : Expr
+        Collections to concatenate
+    axis : int, optional
+        The axis to concatenate on.
+
+    Examples
+    --------
+    >>> from blaze import symbol
+
+    Vertically stack tables:
+
+    >>> names = symbol('names', '5 * {name: string, id: int32}')
+    >>> more_names = symbol('more_names', '7 * {name: string, id: int32}')
+    >>> stacked = concat(names, more_names)
+    >>> stacked.dshape
+    dshape("12 * {name: string, id: int32}")
+
+    Vertically stack matrices:
+
+    >>> mat_a = symbol('a', '3 * 5 * int32')
+    >>> mat_b = symbol('b', '3 * 5 * int32')
+    >>> vstacked = concat(mat_a, mat_b, axis=0)
+    >>> vstacked.dshape
+    dshape("6 * 5 * int32")
+
+    Horizontally stack matrices:
+
+    >>> hstacked = concat(mat_a, mat_b, axis=1)
+    >>> hstacked.dshape
+    dshape("3 * 10 * int32")
+
+    See Also
+    --------
+
+    blaze.expr.collections.Merge
+    """
+    __slots__ = '_hash', 'lhs', 'rhs', 'axis'
+    __inputs__ = 'lhs', 'rhs'
+
+    @property
+    def dshape(self):
+        axis = self.axis
+        ldshape = self.lhs.dshape
+        lshape = ldshape.shape
+        return DataShape(
+            *(lshape[:axis] + (
+                _shape_add(lshape[axis], self.rhs.dshape.shape[axis]),
+            ) + lshape[axis + 1:] + (ldshape.measure,))
+        )
 
 
-from .expressions import dshape_method_list
+def _shape_add(a, b):
+    if isinstance(a, Var) or isinstance(b, Var):
+        return var
+    return Fixed(a.val + b.val)
+
+
+@copydoc(Concat)
+def concat(lhs, rhs, axis=0):
+    ldshape = lhs.dshape
+    rdshape = rhs.dshape
+    if ldshape.measure != rdshape.measure:
+        raise TypeError(
+            'Mismatched measures: {l} != {r}'.format(
+                l=ldshape.measure, r=rdshape.measure
+            ),
+        )
+
+    lshape = ldshape.shape
+    rshape = rdshape.shape
+    for n, (a, b) in enumerate(zip_longest(lshape, rshape, fillvalue=None)):
+        if n != axis and a != b:
+            raise TypeError(
+                'Shapes are not equal along axis {n}: {a} != {b}'.format(
+                    n=n, a=a, b=b,
+                ),
+            )
+    if axis < 0 or 0 < len(lshape) <= axis:
+        raise ValueError(
+            "Invalid axis '{a}', must be in range: [0, {n})".format(
+                a=axis, n=len(lshape)
+            ),
+        )
+
+    return Concat(lhs, rhs, axis)
+
+
+class IsIn(ElemWise):
+    """Check if an expression contains values from a set.
+
+    Return a boolean expression indicating whether another expression
+    contains values that are members of a collection.
+
+    Parameters
+    ----------
+    expr : Expr
+        Expression whose elements to check for membership in `keys`
+    keys : Sequence
+        Elements to test against. Blaze stores this as a ``frozenset``.
+
+    Examples
+    --------
+
+    Check if a vector contains any of 1, 2 or 3:
+
+    >>> from blaze import symbol
+    >>> t = symbol('t', '10 * int64')
+    >>> expr = t.isin([1, 2, 3])
+    >>> expr.dshape
+    dshape("10 * bool")
+    """
+    __slots__ = '_hash', '_child', '_keys'
+
+    @property
+    def schema(self):
+        return datashape.bool_
+
+    def __str__(self):
+        return '%s.%s(%s)' % (self._child, type(self).__name__.lower(),
+                              self._keys)
+
+
+@copydoc(IsIn)
+def isin(expr, keys):
+    if isinstance(keys, Expr):
+        raise TypeError('keys argument cannot be an expression, '
+                        'it must be an iterable object such as a list, '
+                        'tuple or set')
+    return IsIn(expr, frozenset(keys))
+
 
 dshape_method_list.extend([
-    (iscollection, set([sort, head])),
+    (iscollection, set([sort, head, tail])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
-    ])
+    (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin])),
+])

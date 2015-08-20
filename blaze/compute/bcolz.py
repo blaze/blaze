@@ -5,7 +5,7 @@ from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
                     Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
-                    Reduction, symbol)
+                    Reduction, symbol, IsIn)
 from ..expr import Label, Distinct, By, Slice
 from ..expr import Expr, DropNA, IsNull
 from ..expr import path
@@ -13,6 +13,7 @@ from ..expr.optimize import lean_projection
 from ..expr.split import split
 from ..partition import partitions
 from .core import compute
+from .pmap import get_default_pmap
 
 from collections import Iterator, Iterable
 import datashape
@@ -22,7 +23,7 @@ import pandas as pd
 
 
 from ..dispatch import dispatch
-from into import into
+from odo import into
 
 __all__ = ['bcolz']
 
@@ -73,7 +74,7 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
-           Selection, ElemWise, Apply, Reduction, Distinct, By),
+           Selection, ElemWise, Apply, Reduction, Distinct, By, IsIn),
           (bcolz.ctable, bcolz.carray))
 def compute_up(expr, data, **kwargs):
     """ This is only necessary because issubclass(bcolz.carray, Iterator)
@@ -113,11 +114,14 @@ def get_chunksize(data):
 
 
 @dispatch(Expr, (bcolz.carray, bcolz.ctable))
-def compute_down(expr, data, chunksize=None, map=map, **kwargs):
+def compute_down(expr, data, chunksize=None, map=None, **kwargs):
+    if map is None:
+        map = get_default_pmap()
+
     leaf = expr._leaves()[0]
 
     if chunksize is None:
-        chunksize = get_chunksize(data)
+        chunksize = max(2**16, get_chunksize(data))
 
     # If the bottom expression is a projection or field then want to do
     # compute_up first

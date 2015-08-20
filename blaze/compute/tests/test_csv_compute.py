@@ -1,13 +1,17 @@
 from blaze.compute.csv import pre_compute, CSV
-from blaze import compute, discover, dshape, into, resource
+from blaze import compute, discover, dshape, into, resource, join, concat
 from blaze.utils import example, filetext, filetexts
-from blaze.expr import Expr, symbol
+from blaze.expr import symbol
 from pandas import DataFrame, Series
+import pandas.util.testing as tm
 from datashape.predicates import iscollection
+import numpy as np
 import pandas as pd
 from toolz import first
 from collections import Iterator
-from into.chunks import chunks
+from odo import odo
+from odo.chunks import chunks
+
 
 def test_pre_compute_on_small_csv_gives_dataframe():
     csv = CSV(example('iris.csv'))
@@ -53,6 +57,7 @@ def test_pre_compute_calls_lean_projection():
     assert set(first(result).columns) == \
             set(['sepal_length', 'species'])
 
+
 def test_unused_datetime_columns():
     ds = dshape('2 * {val: string, when: datetime}')
     with filetext("val,when\na,2000-01-01\nb,2000-02-02") as fn:
@@ -60,6 +65,7 @@ def test_unused_datetime_columns():
 
         s = symbol('s', discover(csv))
         assert into(list, compute(s.val, csv)) == ['a', 'b']
+
 
 def test_multiple_csv_files():
     d = {'mult1.csv': 'name,val\nAlice,1\nBob,2',
@@ -77,3 +83,47 @@ def test_multiple_csv_files():
             if iscollection(e.dshape):
                 a, b = into(set, a), into(set, b)
             assert a == b
+
+
+def test_csv_join():
+    d = {'a.csv': 'a,b,c\n0,1,2\n3,4,5',
+         'b.csv': 'c,d,e\n2,3,4\n5,6,7'}
+
+    with filetexts(d):
+        resource_a = resource('a.csv')
+        resource_b = resource('b.csv')
+        a = symbol('a', discover(resource_a))
+        b = symbol('b', discover(resource_b))
+        tm.assert_frame_equal(
+            odo(
+                compute(join(a, b, 'c'), {a: resource_a, b: resource_b}),
+                pd.DataFrame,
+            ),
+
+            # windows needs explicit int64 construction b/c default is int32
+            pd.DataFrame(np.array([[2, 0, 1, 3, 4],
+                                   [5, 3, 4, 6, 7]], dtype='int64'),
+                         columns=list('cabde'))
+        )
+
+
+def test_concat():
+    d = {'a.csv': 'a,b\n1,2\n3,4',
+         'b.csv': 'a,b\n5,6\n7,8'}
+
+    with filetexts(d):
+        a_rsc = resource('a.csv')
+        b_rsc = resource('b.csv')
+
+        a = symbol('a', discover(a_rsc))
+        b = symbol('b', discover(b_rsc))
+
+        tm.assert_frame_equal(
+            odo(
+                compute(concat(a, b), {a: a_rsc, b: b_rsc}), pd.DataFrame,
+            ),
+
+            # windows needs explicit int64 construction b/c default is int32
+            pd.DataFrame(np.arange(1, 9, dtype='int64').reshape(4, 2),
+                         columns=list('ab')),
+        )

@@ -1,31 +1,38 @@
 from __future__ import absolute_import, division, print_function
 
+import socket
+import functools
+import re
+
+import flask
+from flask import Blueprint, Flask, request, Response
+
 try:
-    import flask
-    from flask import Flask, request
+    from bokeh.server.crossdomain import crossdomain
 except ImportError:
-    pass
+    def crossdomain(*args, **kwargs):
+        def wrapper(f):
+            @functools.wraps(f)
+            def wrapped(*a, **k):
+                return f(*a, **k)
+            return wrapped
+        return wrapper
+
+from toolz import assoc
+
+from datashape import Mono, discover
+from datashape.predicates import iscollection, isscalar
+from odo import odo
 
 import blaze
-from collections import Iterator
-import socket
-import json
-from cytoolz import first, merge, valmap, assoc
-from functools import partial, wraps
-from blaze import into, compute
+from blaze import compute
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
-from datashape.predicates import iscollection
-from ..interactive import InteractiveSymbol
-from ..utils import json_dumps
-from ..expr import Expr, Symbol, Selection, Broadcast, symbol
-from ..expr.parser import exprify
-from .. import expr
 
-from ..compatibility import map
-from datashape import Mono, discover
+from .serialization import json, all_formats
+from ..interactive import InteractiveSymbol, coerce_scalar
+from ..expr import Expr, symbol
 
-from .index import parse_index
 
 __all__ = 'Server', 'to_tree', 'from_tree'
 
@@ -33,11 +40,104 @@ __all__ = 'Server', 'to_tree', 'from_tree'
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
 DEFAULT_PORT = 6363
 
+
+api = Blueprint('api', __name__)
+pickle_extension_api = Blueprint('pickle_extension_api', __name__)
+
+
+_no_default = object()  # sentinel
+
+
+def _get_option(option, options, default=_no_default):
+    try:
+        return options[option]
+    except KeyError:
+        if default is not _no_default:
+            return default
+
+        # Provides a more informative error message.
+        raise TypeError(
+            'The blaze api must be registered with {option}'.format(
+                option=option,
+            ),
+        )
+
+
+def _register_api(app, options, first_registration=False):
+    """
+    Register the data with the blueprint.
+    """
+    _get_data.cache[app] = _get_option('data', options)
+    _get_format.cache[app] = dict(
+        (f.name, f) for f in _get_option('formats', options)
+    )
+    _get_auth.cache[app] = (
+        _get_option('authorization', options, None) or (lambda a: True)
+    )
+    # Call the original register function.
+    Blueprint.register(api, app, options, first_registration)
+
+api.register = _register_api
+
+
+def _get_data():
+    """
+    Retrieve the current application's data for use in the blaze server
+    endpoints.
+    """
+    return _get_data.cache[flask.current_app]
+_get_data.cache = {}
+
+
+def _get_format(name):
+    return _get_format.cache[flask.current_app][name]
+_get_format.cache = {}
+
+
+def _get_auth():
+    return _get_auth.cache[flask.current_app]
+_get_auth.cache = {}
+
+
+def authorization(f):
+    @functools.wraps(f)
+    def authorized(*args, **kwargs):
+        if not _get_auth()(request.authorization):
+            return Response(
+                'bad auth token',
+                401,
+                {'WWW-Authenticate': 'Basic realm="Login Required"'},
+            )
+
+        return f(*args, **kwargs)
+    return authorized
+
+
 class Server(object):
+
     """ Blaze Data Server
 
     Host local data through a web API
 
+    Parameters
+    ----------
+    data : dict, optional
+        A dictionary mapping dataset name to any data format that blaze
+        understands.
+    formats : iterable, optional
+        An iterable of supported serialization formats. By default, the
+        server will support JSON.
+        A serialization format is an object that supports:
+        name, loads, and dumps.
+    authorization : callable, optional
+        A callable to be used to check the auth header from the client.
+        This callable should accept a single argument that will either be
+        None indicating that no header was passed, or an object
+        containing a username and password attribute. By default, all requests
+        are allowed.
+
+    Examples
+    --------
     >>> from pandas import DataFrame
     >>> df = DataFrame([[1, 'Alice',   100],
     ...                 [2, 'Bob',    -200],
@@ -51,38 +151,36 @@ class Server(object):
     """
     __slots__ = 'app', 'data', 'port'
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, formats=None, authorization=None):
         app = self.app = Flask('blaze.server.server')
-        self.data = data or dict()
-
-        for args, kwargs, func in routes:
-            func2 = wraps(func)(partial(func, self.data))
-            app.route(*args, **kwargs)(func2)
+        if data is None:
+            data = dict()
+        app.register_blueprint(
+            api,
+            data=data,
+            formats=formats if formats is not None else (json,),
+            authorization=authorization,
+        )
+        self.data = data
 
     def run(self, *args, **kwargs):
+        """Run the server"""
         port = kwargs.pop('port', DEFAULT_PORT)
         self.port = port
         try:
             self.app.run(*args, port=port, **kwargs)
         except socket.error:
             print("\tOops, couldn't connect on port %d.  Is it busy?" % port)
-            self.run(*args, **assoc(kwargs, 'port', port + 1))
+            if kwargs.get('retry', True):
+                # Attempt to start the server on a new port.
+                self.run(*args, **assoc(kwargs, 'port', port + 1))
 
 
-routes = list()
-
-def route(*args, **kwargs):
-    def f(func):
-        routes.append((args, kwargs, func))
-        return func
-    return f
-
-
-@route('/datashape')
-def dataset(data):
-    return str(discover(data))
-    return json.dumps(dict((k, str(discover(v))) for k, v in datasets.items()),
-                      default=json_dumps)
+@api.route('/datashape', methods=['GET'])
+@crossdomain(origin='*', methods=['GET'])
+@authorization
+def shape():
+    return str(discover(_get_data()))
 
 
 def to_tree(expr, names=None):
@@ -94,8 +192,8 @@ def to_tree(expr, names=None):
 
     Parameters
     ----------
-
-    expr: Blaze Expression
+    expr : Expr
+        A Blaze expression
 
     Examples
     --------
@@ -132,7 +230,7 @@ def to_tree(expr, names=None):
     See Also
     --------
 
-    blaze.server.server.from_tree
+    from_tree
     """
     if names and expr in names:
         return names[expr]
@@ -142,7 +240,8 @@ def to_tree(expr, names=None):
         return to_tree(expr.as_slice(), names=names)
     if isinstance(expr, slice):
         return {'op': 'slice',
-                'args': [to_tree(arg, names=names) for arg in [expr.start, expr.stop, expr.step]]}
+                'args': [to_tree(arg, names=names) for arg in
+                         [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, Mono):
         return str(expr)
     elif isinstance(expr, InteractiveSymbol):
@@ -185,8 +284,7 @@ def from_tree(expr, namespace=None):
 
     Parameters
     ----------
-
-    expr: dict
+    expr : dict
 
     Examples
     --------
@@ -230,12 +328,13 @@ def from_tree(expr, namespace=None):
     See Also
     --------
 
-    blaze.server.server.to_tree
+    to_tree
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
         if 'slice' == op:
-            return slice(*[from_tree(arg, namespace) for arg in args])
+            return expr_utils._slice(*[from_tree(arg, namespace)
+                                       for arg in args])
         if hasattr(blaze.expr, op):
             cls = getattr(blaze.expr, op)
         else:
@@ -253,16 +352,35 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-@route('/compute.json', methods=['POST', 'PUT', 'GET'])
-def compserver(dataset):
-    if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
+mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
+                            '|'.join(x.name for x in all_formats))
+
+
+@api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@authorization
+def compserver():
+    content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
+
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
+
     try:
-        payload = json.loads(request.data.decode('utf-8'))
+        serial = _get_format(matched.groups()[0])
+    except KeyError:
+        return (
+            "Unsupported serialization format '%s'" % matched.groups()[0],
+            415,
+        )
+
+    try:
+        payload = serial.loads(request.data)
     except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
+        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
 
     ns = payload.get('namespace', dict())
+    dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
 
     expr = from_tree(payload['expr'], namespace=ns)
@@ -271,11 +389,20 @@ def compserver(dataset):
 
     try:
         result = compute(expr, {leaf: dataset})
+
+        if iscollection(expr.dshape):
+            result = odo(result, list)
+        elif isscalar(expr.dshape):
+            result = coerce_scalar(result, str(expr.dshape))
+    except NotImplementedError as e:
+        # 501: Not Implemented
+        return ("Computation not supported:\n%s" % e, 501)
     except Exception as e:
+        # 500: Internal Server Error
         return ("Computation failed with message:\n%s" % e, 500)
 
-    if iscollection(expr.dshape):
-        result = into(list, result)
-
-    return json.dumps({'datashape': str(expr.dshape),
-                       'data': result}, default=json_dumps)
+    return serial.dumps({
+        'datashape': str(expr.dshape),
+        'data': result,
+        'names': expr.fields
+    })

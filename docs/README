@@ -26,7 +26,7 @@ check the documentation:
     $ make html
     $ open build/html/index.html
 
-This documentation can be uploaded to http://blaze.pydata.org/dev/index.html
+This documentation can be uploaded to http://blaze.pydata.org/en/latest/index.html
 using the gh-pages.py script under docs/:
 
     $ python gh-pages.py

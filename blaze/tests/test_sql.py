@@ -1,21 +1,14 @@
 import pytest
 
 pytest.importorskip('sqlalchemy')
-import gzip
-from cytoolz import first
-import sqlalchemy
-import sqlalchemy as sa
+
+from toolz import first
 from sqlalchemy.exc import OperationalError
-from datashape import dshape
-import datashape
-import sys
-from into import into, drop
+from odo import into, drop
 
 from blaze import create_index, resource
 from blaze.sql import create_index
-from blaze import compute, Data, symbol, discover
-from blaze.utils import raises, filetext, tmpfile
-from blaze.compatibility import PY2
+from blaze import Data
 
 
 @pytest.fixture
@@ -29,11 +22,11 @@ def sql():
 def test_column(sql):
     t = Data(sql)
 
-    r = compute(t['x'])
+    r = list(t['x'])
     assert r == [1, 10, 100]
-    assert compute(t[['x']]) == [(1,), (10,), (100,)]
+    assert list(t[['x']]) == [(1,), (10,), (100,)]
 
-    assert compute(t.count()) == 3
+    assert int(t.count()) == 3
 
 
 def test_drop(sql):
@@ -50,7 +43,7 @@ class TestCreateIndex(object):
             create_index(sql, 'x', name='idx')
 
     def test_create_index_fails(self, sql):
-        with pytest.raises(AttributeError):
+        with pytest.raises(KeyError):
             create_index(sql, 'z', name='zidx')
         with pytest.raises(ValueError):
             create_index(sql, 'x')
@@ -70,9 +63,9 @@ class TestCreateIndex(object):
             create_index(sql, ['x', 'y'], name='idx_xy')
 
     def test_composite_index_fails(self, sql):
-        with pytest.raises(AttributeError):
+        with pytest.raises(KeyError):
             create_index(sql, ['z', 'bizz'], name='idx_name')
 
     def test_composite_index_fails_with_existing_columns(self, sql):
-        with pytest.raises(AttributeError):
+        with pytest.raises(KeyError):
             create_index(sql, ['x', 'z', 'bizz'], name='idx_name')

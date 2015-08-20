@@ -1,0 +1,10 @@
+numpy >= 1.7
+pandas >= 0.15.0
+git+git://github.com/ContinuumIO/datashape.git
+git+git://github.com/ContinuumIO/odo.git
+cytoolz
+toolz
+multipledispatch >= 0.4.7
+sqlalchemy >= 0.8.0
+psutil
+numpydoc

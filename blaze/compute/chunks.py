@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 from multipledispatch import MDNotImplementedError
-from into import Chunks, chunks, convert, discover, into
+from odo import Chunks, convert, into
 from collections import Iterator, Iterable
-from toolz import curry, concat, map
+from toolz import curry, concat
 from datashape.dispatch import dispatch
 
 import pandas as pd
@@ -12,8 +12,14 @@ import numpy as np
 from ..expr import Head, ElemWise, Distinct, Symbol, Expr, path
 from ..expr.split import split
 from .core import compute
+from .pmap import get_default_pmap
+
+
+__all__ = ['Cheap', 'compute_chunk', 'compute_down']
+
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
+
 
 @dispatch(Head, Chunks)
 def pre_compute(expr, data, **kwargs):
@@ -29,7 +35,10 @@ def compute_chunk(chunk, chunk_expr, part):
 
 
 @dispatch(Expr, Chunks)
-def compute_down(expr, data, map=map, **kwargs):
+def compute_down(expr, data, map=None, **kwargs):
+    if map is None:
+        map = get_default_pmap()
+
     leaf = expr._leaves()[0]
 
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr)

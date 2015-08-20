@@ -1,0 +1,7 @@
+digraph{
+    pow -> log;
+    pow -> y;
+    log -> sub;
+    sub -> x;
+    sub -> 1;
+}

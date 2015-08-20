@@ -3,9 +3,10 @@ from __future__ import absolute_import, division, print_function
 import operator
 from toolz import first
 import numpy as np
+import pandas as pd
 from datashape import dshape, var, DataShape
 from dateutil.parser import parse as dt_parse
-from datashape.predicates import isscalar, isboolean, isnumeric
+from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from datashape import coretypes as ct, discover, unsigned, promote, optionify
 
 from .core import parenthesize, eval_str
@@ -14,8 +15,32 @@ from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
 
-__all__ = '''BinOp UnaryOp Arithmetic Add Mult Sub Div FloorDiv Pow Mod USub
-Relational Eq Ne Ge Lt Le Gt Gt And Or Not'''.split()
+__all__ = '''
+BinOp
+UnaryOp
+Arithmetic
+Add
+Mult
+Repeat
+Sub
+Div
+FloorDiv
+Pow
+Mod
+Interp
+USub
+Relational
+Eq
+Ne
+Ge
+Lt
+Le
+Gt
+Gt
+And
+Or
+Not
+'''.split()
 
 
 def name(o):
@@ -144,6 +169,12 @@ class Mult(Arithmetic):
     op = operator.mul
 
 
+class Repeat(Arithmetic):
+    # Sequence repeat
+    symbol = '*'
+    op = operator.mul
+
+
 class Sub(Arithmetic):
     symbol = '-'
     op = operator.sub
@@ -183,6 +214,12 @@ class Mod(Arithmetic):
     op = operator.mod
 
 
+class Interp(Arithmetic):
+    # String interpolation
+    symbol = '%'
+    op = operator.mod
+
+
 class USub(UnaryOp):
     op = operator.neg
     symbol = '-'
@@ -204,6 +241,11 @@ def scalar_coerce(ds, val):
         return None
 
 
+@dispatch((ct.Record, ct.Mono, ct.Option, DataShape), Expr)
+def scalar_coerce(ds, val):
+    return val
+
+
 @dispatch(ct.Date, _strtypes)
 def scalar_coerce(_, val):
     dt = dt_parse(val)
@@ -215,7 +257,7 @@ def scalar_coerce(_, val):
 
 @dispatch(ct.DateTime, _strtypes)
 def scalar_coerce(_, val):
-    return dt_parse(val)
+    return pd.Timestamp(val)
 
 
 @dispatch(ct.CType, _strtypes)
@@ -251,75 +293,37 @@ def scalar_coerce(ds, val):
 def _neg(self):
     return USub(self)
 
-def _add(self, other):
-    result = Add(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
 
-def _radd(self, other):
-    result = Add(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
+def _mkbin(name, cons, private=True, reflected=True):
+    prefix = '_' if private else ''
 
-def _mul(self, other):
-    result = Mult(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
+    def _bin(self, other):
+        result = cons(self, scalar_coerce(self.dshape, other))
+        result.dshape  # Check that shapes and dtypes match up
+        return result
+    _bin.__name__ = prefix + name
 
-def _rmul(self, other):
-    result = Mult(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
+    if reflected:
+        def _rbin(self, other):
+            result = cons(scalar_coerce(self.dshape, other), self)
+            result.dshape  # Check that shapes and dtypes match up
+            return result
+        _rbin.__name__ = prefix + 'r' + name
 
-def _div(self, other):
-    result = Div(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
+        return _bin, _rbin
 
-def _rdiv(self, other):
-    result = Div(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
+    return _bin
 
-def _floordiv(self, other):
-    result = FloorDiv(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
 
-def _rfloordiv(self, other):
-    result = FloorDiv(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _sub(self, other):
-    result = Sub(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _rsub(self, other):
-    result = Sub(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _pow(self, other):
-    result = Pow(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _rpow(self, other):
-    result = Pow(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _mod(self, other):
-    result = Mod(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _rmod(self, other):
-    result = Mod(scalar_coerce(self.dshape, other), self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
+_add, _radd = _mkbin('add', Add)
+_div, _rdiv = _mkbin('div', Div)
+_floordiv, _rfloordiv = _mkbin('floordiv', FloorDiv)
+_mod, _rmod = _mkbin('mod', Mod)
+_mul, _rmul = _mkbin('mul', Mult)
+_pow, _rpow = _mkbin('pow', Pow)
+repeat = _mkbin('repeat', Repeat, reflected=False, private=False)
+_sub, _rsub = _mkbin('sub', Sub)
+interp = _mkbin('interp', Interp, reflected=False, private=False)
 
 
 class Relational(Arithmetic):
@@ -372,69 +376,26 @@ class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
     _dtype = ct.bool_
+
     def __str__(self):
         return '~%s' % parenthesize(eval_str(self._child))
 
 
-def _eq(self, other):
-    result = Eq(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
+_and, _rand = _mkbin('and', And)
+_eq = _mkbin('eq', Eq, reflected=False)
+_ge = _mkbin('ge', Ge, reflected=False)
+_gt = _mkbin('gt', Gt, reflected=False)
+_le = _mkbin('le', Le, reflected=False)
+_lt = _mkbin('lt', Lt, reflected=False)
+_ne = _mkbin('ne', Ne, reflected=False)
+_or, _ror = _mkbin('or', Or)
 
-def _ne(self, other):
-    result = Ne(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _lt(self, other):
-    result = Lt(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _le(self, other):
-    result = Le(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _gt(self, other):
-    result = Gt(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _ge(self, other):
-    result = Ge(self, scalar_coerce(self.dshape, other))
-    result.dshape # Check that shapes and dtypes match up
-    return result
 
 def _invert(self):
     result = Invert(self)
-    result.dshape # Check that shapes and dtypes match up
+    result.dshape  # Check that shapes and dtypes match up
     return result
 
-def _and(self, other):
-    result = And(self, other)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _rand(self, other):
-    result = And(other, self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _or(self, other):
-    result = Or(self, other)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _ror(self, other):
-    result = Or(other, self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
-
-def _invert(self):
-    result = Not(self)
-    result.dshape # Check that shapes and dtypes match up
-    return result
 
 Invert = Not
 BitAnd = And
@@ -443,11 +404,12 @@ BitOr = Or
 
 from .expressions import schema_method_list
 
+
 schema_method_list.extend([
     (isnumeric,
-            set([_add, _radd, _mul,
-            _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub, _rsub, _pow,
-            _rpow, _mod, _rmod,  _neg])),
+     set([_add, _radd, _mul, _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub,
+          _rsub, _pow, _rpow, _mod, _rmod,  _neg])),
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
     (isboolean, set([_or, _ror, _and, _rand, _invert])),
+    (isdatelike, set([_add, _radd, _sub, _rsub])),
     ])

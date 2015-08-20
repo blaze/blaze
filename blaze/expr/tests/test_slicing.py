@@ -1,4 +1,5 @@
 from blaze.expr import symbol
+import numpy as np
 from datashape import dshape, isscalar
 
 
@@ -6,7 +7,6 @@ def test_array_dshape():
     x = symbol('x', '5 * 3 * float32')
     assert x.shape == (5, 3)
     assert x.schema == dshape('float32')
-    assert x
     assert len(x) == 5
     assert x.ndim == 2
 
@@ -46,3 +46,24 @@ def test_negative_slice():
 def test_None_slice():
     x = symbol('x', '10 * 10 * int32')
     assert x[:5, None, -3:].shape == (5, 1, 3)
+
+
+def test_list_slice():
+    x = symbol('x', '10 * 10 * int32')
+    assert x[[1, 2, 3], [4, 5]].shape == (3, 2)
+
+
+def test_list_slice_string():
+    x = symbol('x', '10 * 10 * int32')
+    assert str(x[[1, 2, 3]]) == "x[[1, 2, 3]]"
+
+
+def test_slice_with_boolean_list():
+    x = symbol('x', '5 * int32')
+    expr = x[[True, False, False, True, False]]
+    assert expr.index == ([0, 3],)
+
+
+def test_slice_with_numpy_array():
+    x = symbol('x', '2 * int32')
+    assert x[np.array([True, False])].isidentical(x[[True, False]])

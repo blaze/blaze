@@ -1,17 +1,22 @@
+sudo: false
+
 language: python
 
-python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
-
-branches:
-  only:
-    - master
+matrix:
+  include:
+    - python: 2.6
+    - python: 2.7
+      env: SPARK_VERSION=1.2
+    - python: 2.7
+      env: SPARK_VERSION=1.3
+    - python: 3.3
+    - python: 3.4
 
 services:
     - mongodb
+
+addons:
+  postgresql: "9.3"
 
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
@@ -25,65 +30,35 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
   - source activate test-environment
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive spark=$SPARK_VERSION -c blaze -c https://conda.binstar.org/blaze/channel/dev; fi
 
   - pip install psycopg2
 
-  # Install DataShape
-  - pip install git+http://github.com/ContinuumIO/datashape
+  # blaze required deps
+  - pip install git+https://github.com/ContinuumIO/datashape
+  - pip install git+https://github.com/ContinuumIO/odo
 
-  # Install into
-  - pip install git+http://github.com/ContinuumIO/into
-
-  # Install BLZ
-  # - pip install git+http://github.com/ContinuumIO/blz
-
-  # Install PyMongo
-  - pip install pymongo
-
-  # Install Spark
-  # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
-  # - tar xvfz spark-0.9.1.tgz
-  # - mv spark-0.9.1 spark
-  # - export SPARK_HOME=$PWD/spark
-  # - export PYTHONPATH=$PYTHONPATH:$SPARK_HOME/python
-  # - cd spark
-  # - ./sbt/sbt assembly
-  # - cd ..
-
-  # Install dynd
-  - conda install -c mwiebe dynd-python
-  - conda install -c numba numba
-  # - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
-  # - mkdir libdynd/build
-  # - pushd libdynd/build
-  # - cmake -DDYND_BUILD_TESTS=False ..
-  # - make
-  # - mkdir ../lib
-  # - cp libdynd* ../lib
-  # - chmod +x libdynd-config
-  # - export PATH=$PATH:$PWD
-  # - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
-  # - popd
-  # - git clone --depth=1 https://github.com/ContinuumIO/dynd-python.git
-  # - mkdir dynd-python/build
-  # - pushd dynd-python/build
-  # - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} ..
-  # - make
-  # - make install
-  # - export PYTHONPATH=$PYTHONPATH:$PWD
-  # - popd
-  #
+  # functional libs
   - pip install git+https://github.com/mrocklin/multipledispatch
   - pip install git+https://github.com/pytoolz/toolz
   - pip install git+https://github.com/pytoolz/cytoolz
 
+  # Install dask
+  - pip install git+https://github.com/ContinuumIO/dask
+
+  # Install PyMongo
+  - pip install pymongo
+
+  # Install dynd
+  - conda install -c mwiebe dynd-python
+
   # Install coveralls
-  - pip install coveralls --use-mirrors
+  - pip install coveralls
 
   # Install Blaze
   - python setup.py install
@@ -91,12 +66,13 @@ install:
 before_script:
   - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
+  - psql -c "create database test;" -U postgres
 
 script:
   - echo '[pytest]' > pytest.ini
-  - echo 'addopts = -v -r sxX --doctest-modules --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
+  - echo 'addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
-  - coverage run $(which py.test)
+  - coverage run --include='blaze/*' $(which py.test)
   - coverage report --show-missing
 
 after_success:

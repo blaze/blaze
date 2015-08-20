@@ -63,7 +63,7 @@ def sqrt(o):
     return math.sqrt(o)
 """
 
-math_names = '''sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
+math_names = '''abs sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan'''.split()
 
 reduction_names = '''any all sum min max mean var std'''.split()

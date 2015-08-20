@@ -1,0 +1,98 @@
+Release 0.8.1
+-------------
+
+:Release: 0.8.1
+:Date: July 7th, 2015
+
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+* String arithmetic is now possible across the numpy and pandas backends via the ``+`` (concatenation) and ``*`` (repeat) operators (:issue:`1058`).
+* Datetime arithmetic is now available (:issue:`1112`).
+* Add a :class:`~blaze.expr.collections.Concat` expression that implements Union-style operations
+  (:issue:`1128`).
+* Add a :class:`~blaze.expr.expressions.Coerce` expression that casts expressions to a different datashape. This maps to ``astype`` in numpy and ``cast`` in SQL (:issue:`1137`).
+
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+* :class:`~blaze.expr.expressions.ReLabel` expressions ``repr`` differently
+  depending on whether the existing column names are valid Python variable names (:issue:`1070`).
+
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+CSV
+^^^
+
+* *In-memory* merges of CSV files are now possible (:issue:`1121`).
+
+Blaze Server
+^^^^^^^^^^^^
+
+* Tie blueprint registration to data registration (:issue:`1061`).
+* Don't catch import error when flask doesn't exist, since blaze does this
+  in its ``__init__.py`` (:issue:`1087`).
+* Multiple serialization formats including JSON, pickle, and msgpack are now
+  available. Additionally, one can add custom serialization formats with this
+  implementation (:issue:`1102`, :issue:`1122`).
+* Add a ``'names'`` field to the response of the ``compute.<format>`` route for
+  Bokeh compatibility (:issue:`1129`).
+* Add cross origin resource sharing for Bokeh compatibility (:issue:`1134`).
+* Add a command line interface (:issue:`1115`).
+* Add a way to tell the blaze server command line interface what to server via
+  a YAML file (:issue:`1115`).
+
+SQL
+^^^
+
+* Use aliases to allow expressions on the SQL backend that involve a multiple step reduction operation (:issue:`1066`, :issue:`1126`).
+* Fix unary not operator ``~`` (:issue:`1091`).
+* Postgres uses ``==`` to compare ``NaN`` so we do it that way as well for the
+  postgresql backend (:issue:`1123`).
+* Find table inside non-default schema when serving off a SQLAlchemy ``MetaData`` object (:issue:`1145`).
+
+
+API Changes
+~~~~~~~~~~~
+
+* Remove old :func:`~blaze.server.client.ExprClient`. Use :class:`~blaze.server.client.Client` instead (:issue:`1154`).
+* Make sort + slice and sort + slice semantics of the SQL backend reflect those
+  of numpy (:issue:`1125`).
+* The following syntax is no longer allowed for Blaze server (:issue:`1154`):
+
+  .. code-block:: python
+
+     >>> Data('blaze://localhost::accounts')  # raises an error # doctest: +SKIP
+
+  Use this syntax instead:
+
+  .. code-block:: python
+
+     >>> Data('blaze://localhost').accounts  # valid # doctest: +SKIP
+
+
+Bug Fixes
+~~~~~~~~~
+
+* Handle SQLAlchemy API churn around reference of ``ColumnElement`` objects in the 1.0.x series (:issue:`1071`, :issue:`1076`).
+* Obscure hashing bug when passing in both a pandas Timestamp and a ``datetime.datetime`` object. Both objects hash to the same value but don't necessarily compare equal; this makes Python call ``__eq__`` which caused an ``Eq`` expression to be constructed (:issue:`1097`).
+* Properly handle ``And`` expressions that involve the same field in MongoDB (:issue:`1099`).
+* Handle Dask API changes (:issue:`1114`).
+* Use the ``date`` function in SQLAlchemy when getting the ``date`` attribute
+  of a ``datetime`` dshaped expression. Previously this was calling extract,
+  which is incorrect for the postgres backend (:issue:`1120`).
+* Fix API compatibility with different versions of psutil (:issue:`1136`).
+* Use explicit ``int64`` comparisons on Windows, since the default values may
+  be different (:issue:`1148`).
+* Fix name attribute propagation in pandas ``Series`` objects (:issue:`1152`).
+* Raise a more informative error when trying to subset with an unsupported expression in the MongoDB backend (:issue:`1155`).

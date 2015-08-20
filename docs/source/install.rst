@@ -11,8 +11,8 @@ Blaze can be most easily installed from conda_
 
    $ conda install blaze
 
-More up-to-date builds are available on the ``blaze`` binstar channel:
-http://binstar.org/blaze
+More up-to-date builds are available on the ``blaze`` anaconda channel:
+http://anaconda.org/blaze
 
 ::
 
@@ -22,7 +22,9 @@ Blaze may also be installed using ``pip``:
 
 ::
 
-    pip install blaze
+    pip install blaze --upgrade
+    or
+    pip install git+https://github.com/ContinuumIO/blaze  --upgrade
 
 If you are interested in the development version of Blaze you can
 obtain the source from Github.
@@ -37,7 +39,7 @@ http://continuum.io/anaconda.html .
 Introduction
 ~~~~~~~~~~~~
 
-To build project inside of Anaconda:
+To build project from source:
 
 ::
 
@@ -63,8 +65,8 @@ Blaze depends on NumPy, Pandas, and a few pure-python libraries.  It should be
 easy to install on any Numeric Python setup.
 
 * numpy_ >= 1.7
-* datashape_ >= 0.4.0
-* into_ >= 0.1.3
+* datashape_ >= 0.4.4
+* odo_ >= 0.3.1
 * toolz_ >= 0.7.0
 * cytoolz_
 * multipledispatch_ >= 0.4.7
@@ -81,7 +83,6 @@ non-trivial to install.  We recommend installation throgh ``conda``.
 * sqlalchemy_
 * h5py_
 * spark_ >= 1.1.0
-* dynd-python_ >= 0.6.5
 * pymongo_
 * pytables_
 * bcolz_
@@ -90,7 +91,7 @@ non-trivial to install.  We recommend installation throgh ``conda``.
 
 
 .. _numpy: http://www.numpy.org/
-.. _into: https://github.com/ContinuumIO/into
+.. _odo: https://github.com/ContinuumIO/odo
 .. _h5py: http://docs.h5py.org/en/latest/
 .. _pytest: http://pytest.org/latest/
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python

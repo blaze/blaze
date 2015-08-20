@@ -19,9 +19,12 @@ import operator
 import re
 from collections import Iterator, Iterable
 from functools import partial
+import toolz
 from toolz import map, filter, compose, juxt, identity, tail
-from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
-import cytoolz
+try:
+    from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
+except ImportError:
+    from toolz import groupby, reduceby, unique, take, concat, nth, pluck
 import datetime
 import toolz
 import math
@@ -30,7 +33,7 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Summary, Like,
+                    By, Sort, Head, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise, symbol,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp, IsNull, DropNA)
@@ -128,15 +131,20 @@ def rowfunc(t):
     See Also:
         compute<Rowwise, Sequence>
     """
-    from cytoolz.curried import get
+    from toolz.itertoolz import getter
     indices = [t._child.fields.index(col) for col in t.fields]
-    return get(indices)
+    return getter(indices)
 
 
 @dispatch(Field)
 def rowfunc(t):
     index = t._child.fields.index(t._name)
-    return lambda x: x[index]
+    return lambda x, index=index: x[index]
+
+
+@dispatch(IsIn)
+def rowfunc(t):
+    return t._keys.__contains__
 
 
 @dispatch(Broadcast)
@@ -345,7 +353,7 @@ def compute_up_1d(expr, seq, **kwargs):
     try:
         return len(seq)
     except TypeError:
-        return cytoolz.count(seq)
+        return toolz.count(seq)
 
 
 @dispatch(ElemWise, base)
@@ -395,11 +403,15 @@ def _std(seq, unbiased):
 
 @dispatch(count, Sequence)
 def compute_up_1d(t, seq, **kwargs):
-    return cytoolz.count(filter(None, seq))
+    return toolz.count(filter(None, seq))
 
 
 @dispatch(Distinct, Sequence)
 def compute_up(t, seq, **kwargs):
+    if t.on:
+        raise NotImplementedError(
+            'python backend cannot specify what columns to distinct on'
+        )
     try:
         row = toolz.first(seq)
     except StopIteration:
@@ -544,7 +556,10 @@ def pair_assemble(t):
 
     This is mindful to shared columns as well as missing records
     """
-    from cytoolz import get  # not curried version
+    try:
+        from cytoolz import get  # not curried version
+    except:
+        from toolz import get
     on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
     on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 

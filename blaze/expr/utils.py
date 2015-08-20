@@ -35,6 +35,10 @@ class _slice(object):
     __repr__ = __str__
 
 
+class hashable_list(tuple):
+    def __str__(self):
+        return str(list(self))
+
 
 def hashable_index(index):
     """ Convert slice-thing into something hashable
@@ -45,18 +49,34 @@ def hashable_index(index):
     >>> isinstance(hash(hashable_index((1, slice(10)))), int)
     True
     """
-    if isinstance(index, tuple):
+    if type(index) is tuple:  # can't do isinstance due to hashable_list
         return tuple(map(hashable_index, index))
+    elif isinstance(index, list):
+        return hashable_list(index)
     elif isinstance(index, slice):
         return _slice(index.start, index.stop, index.step)
     return index
 
 
 def replace_slices(index):
-    if isinstance(index, tuple):
-        return tuple(map(replace_slices, index))
+    """
+    Takes input from Slice expression and returns either a list,
+    slice object, or tuple.
+
+    Examples
+    -------
+    >>> replace_slices([1, 2, 345, 12])
+    [1, 2, 345, 12]
+    >>> type(replace_slices(_slice(1, 5, None))) is slice
+    True
+    >>> type(replace_slices((2, 5))) is tuple
+    True
+
+    """
+    if isinstance(index, hashable_list):
+        return list(index)
     elif isinstance(index, _slice):
         return index.as_slice()
+    elif isinstance(index, tuple):
+        return tuple(map(replace_slices, index))
     return index
-
-

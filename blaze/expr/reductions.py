@@ -1,15 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-import toolz
-from datashape import Record, DataShape, dshape
-from datashape import coretypes as ct
 import datashape
+from datashape import Record, DataShape, dshape, TimeDelta
+from datashape import coretypes as ct
+from datashape.predicates import iscollection, isboolean, isnumeric, isdatelike
+from numpy import inf
+from odo.utils import copydoc
+import toolz
 
 from .core import common_subexpression
-from .expressions import Expr, symbol, ndim, Slice
+from .expressions import Expr, ndim
+from .strings import isstring
+from .expressions import dshape_method_list, method_properties
 
 
 class Reduction(Expr):
+
     """ A column-wise reduction
 
     Blaze supports the same class of reductions as NumPy and Pandas.
@@ -19,6 +25,7 @@ class Reduction(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
@@ -71,10 +78,11 @@ class Reduction(Expr):
 
     @property
     def _name(self):
-        try:
-            return self._child._name + '_' + type(self).__name__
-        except (AttributeError, ValueError, TypeError):
+        child_name = self._child._name
+        if child_name is None or child_name == '_':
             return type(self).__name__
+        else:
+            return '%s_%s' % (child_name, type(self).__name__)
 
     def __str__(self):
         kwargs = list()
@@ -82,7 +90,8 @@ class Reduction(Expr):
             kwargs.append('keepdims=True')
         if self.axis != tuple(range(self._child.ndim)):
             kwargs.append('axis=' + str(self.axis))
-        other = sorted(set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
+        other = sorted(
+            set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
         for slot in other:
             kwargs.append('%s=%s' % (slot, getattr(self, slot)))
         name = type(self).__name__
@@ -101,6 +110,7 @@ class all(Reduction):
 
 
 class sum(Reduction):
+
     @property
     def schema(self):
         return DataShape(datashape.maxtype(super(sum, self).schema))
@@ -119,6 +129,7 @@ class mean(Reduction):
 
 
 class var(Reduction):
+
     """Variance
 
     Parameters
@@ -140,6 +151,7 @@ class var(Reduction):
 
 
 class std(Reduction):
+
     """Standard Deviation
 
     Parameters
@@ -169,6 +181,7 @@ class std(Reduction):
 
 
 class count(Reduction):
+
     """ The number of non-null elements """
     schema = dshape(ct.int32)
 
@@ -178,6 +191,7 @@ class nunique(Reduction):
 
 
 class nelements(Reduction):
+
     """Compute the number of elements in a collection, including missing values.
 
     See Also
@@ -186,7 +200,7 @@ class nelements(Reduction):
 
     Examples
     --------
-    >>> from blaze import Symbol
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: float64}')
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
@@ -199,11 +213,13 @@ def nrows(expr):
 
 
 class Summary(Expr):
+
     """ A collection of named reductions
 
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
 
@@ -211,7 +227,7 @@ class Summary(Expr):
     ...         ['Bob', 200, 2],
     ...         ['Alice', 50, 1]]
 
-    >>> from blaze.compute.python import compute
+    >>> from blaze import compute
     >>> compute(expr, data)
     (2, 350)
     """
@@ -241,13 +257,14 @@ class Summary(Expr):
     def __str__(self):
         s = 'summary('
         s += ', '.join('%s=%s' % (name, str(val))
-                         for name, val in zip(self.fields, self.values))
+                       for name, val in zip(self.fields, self.values))
         if self.keepdims:
             s += ', keepdims=True'
         s += ')'
         return s
 
 
+@copydoc(Summary)
 def summary(keepdims=False, axis=None, **kwargs):
     items = sorted(kwargs.items(), key=toolz.first)
     names = tuple(map(toolz.first, items))
@@ -271,20 +288,36 @@ def summary(keepdims=False, axis=None, **kwargs):
     return Summary(child, names, values, keepdims=keepdims, axis=axis)
 
 
-summary.__doc__ = Summary.__doc__
+def vnorm(expr, ord=None, axis=None, keepdims=False):
+    """ Vector norm
 
+    See np.linalg.norm
+    """
+    if ord is None or ord == 'fro':
+        ord = 2
+    if ord == inf:
+        return max(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord == -inf:
+        return min(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord == 1:
+        return sum(abs(expr), axis=axis, keepdims=keepdims)
+    elif ord % 2 == 0:
+        return sum(expr ** ord, axis=axis, keepdims=keepdims) ** (1.0 / ord)
+    return sum(abs(expr) ** ord, axis=axis, keepdims=keepdims) ** (1.0 / ord)
 
-from datashape.predicates import iscollection, isboolean, isnumeric
-from .expressions import dshape_method_list, method_properties
 
 dshape_method_list.extend([
-    (iscollection, set([count, min, max, nelements])),
+    (iscollection, set([count, nelements])),
+    (lambda ds: (iscollection(ds) and
+                 (isstring(ds) or isnumeric(ds) or isboolean(ds) or
+                  isdatelike(ds) or isinstance(ds, TimeDelta))),
+     set([min, max])),
     (lambda ds: len(ds.shape) == 1,
-        set([nrows, nunique])),
+     set([nrows, nunique])),
     (lambda ds: iscollection(ds) and isboolean(ds),
-        set([any, all, sum])),
-    (lambda ds: iscollection(ds) and isnumeric(ds),
-        set([mean, sum, mean, min, max, std, var])),
-    ])
+     set([any, all])),
+    (lambda ds: iscollection(ds) and (isnumeric(ds) or isboolean(ds)),
+     set([mean, sum, std, var, vnorm])),
+])
 
 method_properties.update([nrows])

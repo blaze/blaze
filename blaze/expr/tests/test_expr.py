@@ -1,10 +1,13 @@
 from __future__ import absolute_import, division, print_function
-import pytest
-from datashape import dshape
 
-from blaze.expr import *
-from blaze.expr.core import subs
-from blaze.utils import raises
+import pandas as pd
+
+import pytest
+
+import datashape
+from datashape import dshape, var, datetime_, float32, int64
+
+from blaze.expr import symbol, label, Field
 
 
 def test_Symbol():
@@ -19,8 +22,8 @@ def test_symbol_caches():
 
 
 def test_Symbol_tokens():
-    assert symbol('x', 'int').isidentical(Symbol('x', 'int'))
-    assert not symbol('x', 'int').isidentical(Symbol('x', 'int', 1))
+    assert symbol('x', 'int').isidentical(symbol('x', 'int'))
+    assert not symbol('x', 'int').isidentical(symbol('x', 'int', 1))
 
 
 def test_Field():
@@ -32,8 +35,10 @@ def test_Field():
 
 
 def test_nested_fields():
-    e = symbol('e', '3 * {name: string, payments: var * {amount: int, when: datetime}}')
-    assert e.payments.dshape == dshape('3 * var * {amount: int, when: datetime}')
+    e = symbol(
+        'e', '3 * {name: string, payments: var * {amount: int, when: datetime}}')
+    assert e.payments.dshape == dshape(
+        '3 * var * {amount: int, when: datetime}')
     assert e.payments.schema == dshape('{amount: int, when: datetime}')
     assert 'amount' in dir(e.payments)
     assert e.payments.amount.dshape == dshape('3 * var * int')
@@ -52,6 +57,11 @@ def test_relabel():
 def test_meaningless_relabel_doesnt_change_input():
     e = symbol('e', '{name: string, amount: int}')
     assert e.relabel(amount='amount').isidentical(e)
+
+
+def test_relabel_with_invalid_identifiers_reprs_as_dict():
+    s = symbol('s', '{"0": int64}')
+    assert repr(s.relabel({'0': 'foo'})) == "s.relabel({'0': 'foo'})"
 
 
 def test_dir():
@@ -88,11 +98,6 @@ def test_fields_with_spaces():
     assert e.a_b.isidentical(e['a.b'])
 
 
-def test_iter_raises_not_implemented_Error():
-    e = symbol('e', '5 * {x: int, "a b": int}')
-    assert raises(NotImplementedError, lambda: iter(e))
-
-
 def test_selection_name_matches_child():
     t = symbol('t', 'var * {x: int, "a.b": int}')
     assert t.x[t.x > 0]._name == t.x._name
@@ -110,25 +115,56 @@ def test_symbol_subs():
 
 def test_multiple_renames_on_series_fails():
     t = symbol('s', 'var * {timestamp: datetime}')
-    ts = t.timestamp
-    assert raises(ValueError, lambda: ts.relabel({'timestamp': 'date',
-                                                  'hello': 'world'}))
+    with pytest.raises(ValueError):
+        t.timestamp.relabel(timestamp='date', hello='world')
 
 
 def test_map_with_rename():
     t = symbol('s', 'var * {timestamp: datetime}')
     result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
-    assert raises(ValueError, lambda: result.relabel({'timestamp': 'date'}))
+    with pytest.raises(ValueError):
+        result.relabel(timestamp='date')
     assert result.fields == ['date']
 
 
-def test_null_dshape():
-    s = Symbol('s', '5 * int32')
-    with pytest.raises(AttributeError):
-        s.dropna
-    with pytest.raises(AttributeError):
-        s.isnull
+def test_non_option_does_not_have_isnull():
+    s = symbol('s', '5 * int32')
+    assert not hasattr(s, 'dropna')
+    assert not hasattr(s, 'isnull')
 
-    s = Symbol('s', '5 * ?int32')
+
+def test_null_dshape():
+    s = symbol('s', '5 * ?int32')
     assert str(s.dropna().dshape) == 'var * int32'
     assert str(s.isnull().dshape) == 'var * bool'
+
+
+def test_hash_to_different_values():
+    s = symbol('s', var * datetime_)
+    expr = s >= pd.Timestamp('20121001')
+    expr2 = s >= '20121001'
+    assert expr2 & expr is not None
+    assert hash(expr) == hash(expr2)
+
+    from blaze.expr.expressions import _attr_cache
+    assert (expr, '_and') in _attr_cache
+    assert (expr2, '_and') in _attr_cache
+
+
+@pytest.mark.parametrize('dshape', [var * float32,
+                                    dshape('var * float32'),
+                                    'var * float32'])
+def test_coerce(dshape):
+    s = symbol('s', dshape)
+    expr = s.coerce('int64')
+    assert str(expr) == "s.coerce(to='int64')"
+    assert expr.dshape == var * int64
+    assert expr.schema == datashape.dshape('int64')
+    assert expr.schema == expr.to
+
+
+@pytest.mark.xfail(raises=AttributeError, reason='Should this be valid?')
+def test_coerce_record():
+    s = symbol('s', 'var * {a: int64, b: float64}')
+    expr = s.coerce('{a: float64, b: float32}')
+    assert str(expr) == "s.coerce(to='{a: float64, b: float32}')"

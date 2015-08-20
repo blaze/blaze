@@ -1,4 +1,4 @@
-from blaze.compute.chunks import chunks, Chunks
+from odo import chunks
 from blaze import discover, into, compute, symbol
 from datashape.predicates import iscollection
 
@@ -21,3 +21,18 @@ def test_chunks_compute():
 
 def test_chunks_head():
     assert compute(s.head(2), cL) == (1., 2.)
+
+
+def test_pmap_default():
+    flag = [0]
+
+    def mymap(func, seq):
+        flag[0] = True
+        return map(func, seq)
+
+    from blaze import set_default_pmap
+    set_default_pmap(mymap)
+
+    compute(s + 1, cL)
+
+    assert flag[0] is True

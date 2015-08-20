@@ -7,7 +7,7 @@ from datashape import discover, dshape
 
 import numpy as np
 
-from into import into
+from odo import into
 from blaze.expr import symbol
 from blaze.compute.core import compute, pre_compute
 from blaze.compute.bcolz import get_chunksize

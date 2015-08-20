@@ -45,36 +45,42 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 from __future__ import absolute_import, division, print_function
 
 import numbers
+from operator import attrgetter
 
-try:
-    from pymongo.collection import Collection
-except ImportError:
-    Collection = type(None)
+from pymongo.collection import Collection
+from pymongo.database import Database
 
 import fnmatch
 from datashape.predicates import isscalar
-from toolz import pluck, first, get
+from toolz import pluck, first, get, compose
 import toolz
 import datetime
 
-from ..expr import (var, Label, std, Sort, count, nunique, nelements, Selection,
+from ..expr import (Sort, count, nunique, nelements, Selection,
                     mean, Reduction, Head, ReLabel, Distinct, ElemWise, By,
                     Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
                     Eq, Ne, And, Or, Summary, Like, Broadcast, DateTime,
                     Microsecond, Date, Time, Expr, symbol, Arithmetic, floor,
                     ceil, FloorDiv)
+from ..expr.broadcast import broadcast_collect, Broadcastable
+from ..expr import math
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
 from ..compatibility import _strtypes
-from .core import compute
 
 from ..dispatch import dispatch
 
 
 __all__ = ['MongoQuery']
 
+
 @dispatch(Expr, Collection)
 def pre_compute(expr, data, scope=None, **kwargs):
     return MongoQuery(data, [])
+
+
+@dispatch(Expr, Database)
+def pre_compute(expr, data, **kwargs):
+    return data
 
 
 class MongoQuery(object):
@@ -113,11 +119,9 @@ class MongoQuery(object):
         return hash((type(self), self.info()))
 
 
-from ..expr.broadcast import broadcast_collect
-
 @dispatch(Expr, (MongoQuery, Collection))
 def optimize(expr, seq):
-    return broadcast_collect( expr)
+    return broadcast_collect(expr)
 
 
 @dispatch(Head, MongoQuery)
@@ -181,12 +185,14 @@ def compute_sub(t):
     elif isinstance(t, floor):
         x = compute_sub(t._child)
         return {'$subtract': [x, {'$mod': [x, 1]}]}
+    elif isinstance(t, math.abs):
+        x = compute_sub(t._child)
+        return {'$cond': [{'$lt': [x, 0]},
+                          {'$subtract': [0, x]},
+                          x]}
     elif isinstance(t, ceil):
         x = compute_sub(t._child)
-        return {'$add': [x,
-                         {'$subtract': [1,
-                                        {'$mod': [x, 1]}]}
-                          ]}
+        return {'$add': [x, {'$subtract': [1, {'$mod': [x, 1]}]}]}
     elif isinstance(t, tuple(datetime_terms)):
         op = datetime_terms[type(t)]
         return {'$%s' % op: compute_sub(t._child)}
@@ -204,7 +210,14 @@ def compute_up(t, q, **kwargs):
 @dispatch(Selection, MongoQuery)
 def compute_up(expr, data, **kwargs):
     predicate = optimize(expr.predicate, data)
-    assert isinstance(predicate, Broadcast)
+
+    if not isinstance(predicate, Broadcast):
+        raise TypeError("Selection predicate must be a broadcastable "
+                        "operation.\nReceived an expression of type %r.\n"
+                        "Available broadcastable operations are (%s)" %
+                        (type(predicate).__name__,
+                         ', '.join(map(compose(repr, attrgetter('__name__')),
+                                   Broadcastable))))
 
     s = predicate._scalars[0]
     d = dict((s[c], symbol(c, s[c].dshape.measure)) for c in s.fields)
@@ -341,12 +354,24 @@ datetime_terms = {Day: 'dayOfMonth',
                   Second: 'second'}
 
 
+@dispatch(Field, Database)
+def compute_up(expr, data, **kwargs):
+    return getattr(data, expr._name)
+
+
 @dispatch(Expr, Collection)
 def post_compute(e, c, scope=None):
     """
     Calling compute on a raw collection?  Compute on an empty MongoQuery.
     """
     return post_compute(e, MongoQuery(c, ()), scope=scope)
+
+
+def get_result(result):
+    try:
+        return result['result']
+    except TypeError:
+        return list(result)
 
 
 @dispatch(Expr, MongoQuery)
@@ -365,13 +390,13 @@ def post_compute(e, q, scope=None):
     q = q.append(scope)
 
     if not e.dshape.shape:  # not a collection
-        result = q.coll.aggregate(list(q.query))['result'][0]
+        result = get_result(q.coll.aggregate(list(q.query)))[0]
         if isscalar(e.dshape.measure):
             return result[e._name]
         else:
             return get(e.fields, result)
 
-    dicts = q.coll.aggregate(list(q.query))['result']
+    dicts = get_result(q.coll.aggregate(list(q.query)))
 
     if isscalar(e.dshape.measure):
         return list(pluck(e.fields[0], dicts, default=None))  # dicts -> values
@@ -388,7 +413,7 @@ def post_compute(e, q, scope=None):
     scope = {'$project': toolz.merge({'_id': 0},  # remove mongo identifier
                                  dict((col, 1) for col in columns))}
     q = q.append(scope)
-    dicts = q.coll.aggregate(list(q.query))['result']
+    dicts = get_result(q.coll.aggregate(list(q.query)))
 
     assert len(columns) == 1
     return list(pluck(first(columns.keys()), dicts))
@@ -445,10 +470,10 @@ def match(expr):
     if isinstance(expr, Ge):
         return {name(expr.lhs): {'$gte': expr.rhs}}
     if isinstance(expr, And):
-        return toolz.merge(match(expr.lhs), match(expr.rhs))
+        return {'$and': [match(expr.lhs), match(expr.rhs)]}
     if isinstance(expr, Or):
         return {'$or': [match(expr.lhs), match(expr.rhs)]}
     if isinstance(expr, Ne):
         return {name(expr.lhs): {'$ne': expr.rhs}}
-    raise NotImplementedError("Matching not supported on expressions of type %s"
-            % type(expr).__name__)
+    raise NotImplementedError("Matching not supported on expressions of type "
+                              "%r" % type(expr).__name__)

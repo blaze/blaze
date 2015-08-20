@@ -1,0 +1,59 @@
+package:
+  name: blaze-core
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '')}}
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  {% if environ.get('GIT_DESCRIBE_NUMBER', '0') == '0' %}string: py{{ environ.get('PY_VER').replace('.', '') }}_0
+  {% else %}string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}{% endif %}
+  entry_points:
+    - blaze-server = blaze.server.spider:_main
+
+source:
+  git_url: ../
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - datashape >=0.4.6
+    - odo >=0.3.3
+    - flask
+    - multipledispatch >=0.4.7
+    - numpy >=1.7
+    - pandas >=0.15.0
+    - psutil
+    - requests
+    - sqlalchemy >=0.8.0
+    - toolz
+    - cytoolz
+
+  run:
+    - python
+    - datashape >=0.4.6
+    - odo >=0.3.3
+    - flask
+    - multipledispatch >=0.4.7
+    - numpy >=1.7
+    - pandas >=0.15.0
+    - psutil
+    - requests
+    - sqlalchemy >=0.8.0
+    - toolz
+    - cytoolz
+
+test:
+  requires:
+    - pytest >=2.7.0
+    - dask
+    - dynd-python
+    - pytables
+    - pyyaml
+    - h5py
+
+  commands:
+    - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX
+
+about:
+  home: http://blaze.pydata.org
+  license: BSD

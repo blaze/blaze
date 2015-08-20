@@ -1,17 +1,20 @@
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
 
 import pytest
 h5py = pytest.importorskip('h5py')
 
+import sys
+from distutils.version import LooseVersion
+
+import numpy as np
+
+from datashape import discover
+
 from blaze import compute
 from blaze.expr import symbol
-from datashape import discover
 from blaze.utils import tmpfile
-
-from blaze.compute.h5py import *
-from blaze.compute.h5py import pre_compute, post_compute, optimize
+from blaze.compute.h5py import pre_compute, optimize
 
 
 def eq(a, b):
@@ -20,12 +23,13 @@ def eq(a, b):
 
 x = np.arange(20*24, dtype='f4').reshape((20, 24))
 
+
 @pytest.yield_fixture
 def file():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
-                                   fillvalue=0.0, chunks=(4, 6))
+                             fillvalue=0.0, chunks=(4, 6))
         d[:] = x
         yield f
         f.close()
@@ -41,7 +45,7 @@ def data_1d_chunks():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=x.shape, dtype=x.dtype,
-                                   fillvalue=0.0, chunks=(1, 24))
+                             fillvalue=0.0, chunks=(1, 24))
         d[:] = x
 
         yield d
@@ -53,19 +57,28 @@ rec = np.empty(shape=(20, 24), dtype=[('x', 'i4'), ('y', 'i4')])
 rec['x'] = 1
 rec['y'] = 2
 
+
 @pytest.yield_fixture
 def recdata():
     with tmpfile('.h5') as filename:
         f = h5py.File(filename)
         d = f.create_dataset('/x', shape=rec.shape,
-                                   dtype=rec.dtype,
-                                   chunks=(4, 6))
+                             dtype=rec.dtype,
+                             chunks=(4, 6))
         d['x'] = rec['x']
         d['y'] = rec['y']
         yield d
         f.close()
 
 s = symbol('s', discover(x))
+
+two_point_five_and_windows_py3 = \
+    pytest.mark.skipif(sys.platform == 'win32' and
+                       h5py.__version__ == LooseVersion('2.5.0') and
+                       sys.version_info[0] == 3,
+                       reason=('h5py 2.5.0 issue with varlen string types: '
+                               'https://github.com/h5py/h5py/issues/593'))
+
 
 
 def test_slicing(data):
@@ -81,6 +94,7 @@ def test_reductions(data):
     assert eq(compute(s[-1], data), x[-1])
 
 
+@two_point_five_and_windows_py3
 def test_mixed(recdata):
     s = symbol('s', discover(recdata))
     expr = (s.x + 1).sum(axis=1)
@@ -92,6 +106,7 @@ def test_uneven_chunk_size(data):
               x.sum(axis=1))
 
 
+@two_point_five_and_windows_py3
 def test_nrows_3D_records(recdata):
     s = symbol('s', discover(recdata))
     assert not hasattr(s, 'nrows')
@@ -103,6 +118,7 @@ def test_nrows_array(data):
     assert compute(s.nrows, data) == len(data)
 
 
+@two_point_five_and_windows_py3
 def test_nelements_records(recdata):
     s = symbol('s', discover(recdata))
     assert compute(s.nelements(), recdata) == np.prod(recdata.shape)

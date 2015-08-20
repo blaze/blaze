@@ -1,25 +1,30 @@
 from __future__ import absolute_import, division, print_function
 
-import tempfile
 import os
-import inspect
 import datetime
 
+try:
+    from cytoolz import nth
+except ImportError:
+    from toolz import nth
+
 from itertools import islice
-from contextlib import contextmanager
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
+
+# these are used throughout blaze, don't remove them
+from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 
 import psutil
 import numpy as np
 
 # Imports that replace older utils.
-from cytoolz import count, unique, partition_all, nth, groupby, reduceby
 from .compatibility import map, zip
 
 from .dispatch import dispatch
 
-thread_pool = ThreadPool(psutil.NUM_CPUS)
+thread_pool = ThreadPool(psutil.cpu_count())
+
 
 def nth_list(n, seq):
     """
@@ -32,7 +37,6 @@ def nth_list(n, seq):
     ('H', 'H', 'H')
     """
     seq = iter(seq)
-    sn = sorted(n)
 
     result = []
     old = 0
@@ -59,8 +63,8 @@ def get(ind, coll, lazy=False):
     >>> get(slice(1, 4), 'Hello')
     ('e', 'l', 'l')
 
-    >>> get(slice(1, 4), 'Hello', lazy=True)  # doctest: +SKIP
-    <itertools.islice object at 0x25ac470>
+    >>> get(slice(1, 4), 'Hello', lazy=True)
+    <itertools.islice object at ...>
     """
     if isinstance(ind, list):
         result = nth_list(ind, coll)
@@ -71,7 +75,7 @@ def get(ind, coll, lazy=False):
             result = nth(ind, coll)
         else:
             result = coll[ind]
-    if lazy==False and isinstance(result, Iterator):
+    if not lazy and isinstance(result, Iterator):
         result = tuple(result)
     return result
 
@@ -104,92 +108,12 @@ def ndget(ind, data):
         return ndget(ind[1:], result)
 
 
-@contextmanager
-def filetext(text, extension='', open=open, mode='wt'):
-    with tmpfile(extension=extension) as filename:
-        f = open(filename, mode=mode)
-        try:
-            f.write(text)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
-
-        yield filename
-
-
-@contextmanager
-def filetexts(d, open=open):
-    """ Dumps a number of textfiles to disk
-
-    d - dict
-        a mapping from filename to text like {'a.csv': '1,1\n2,2'}
-    """
-    for filename, text in d.items():
-        f = open(filename, 'wt')
-        try:
-            f.write(text)
-        finally:
-            try:
-                f.close()
-            except AttributeError:
-                pass
-
-    yield list(d)
-
-    for filename in d:
-        if os.path.exists(filename):
-            os.remove(filename)
-
-
-@contextmanager
-def tmpfile(extension=''):
-    extension = '.' + extension.lstrip('.')
-    handle, filename = tempfile.mkstemp(extension)
-    os.remove(filename)
-
-    yield filename
-
-    try:
-        if os.path.exists(filename):
-            os.remove(filename)
-    except OSError:  # Sometimes Windows can't close files
-        if os.name == 'nt':
-            os.close(handle)
-            try:
-                os.remove(filename)
-            except OSError:  # finally give up
-                pass
-
-
-def raises(err, lamda):
-    try:
-        lamda()
-        return False
-    except err:
-        return True
-
-
-def keywords(func):
-    """ Get the argument names of a function
-
-    >>> def f(x, y=2):
-    ...     pass
-
-    >>> keywords(f)
-    ['x', 'y']
-    """
-    if isinstance(func, type):
-        return keywords(func.__init__)
-    return inspect.getargspec(func).args
-
-
 def normalize_to_date(dt):
     if isinstance(dt, datetime.datetime) and not dt.time():
         return dt.date()
     else:
         return dt
+
 
 def assert_allclose(lhs, rhs):
     for tb in map(zip, lhs, rhs):
@@ -213,6 +137,7 @@ def example(filename, datapath=os.path.join('examples', 'data')):
 def available_memory():
     return psutil.virtual_memory().available
 
+
 def listpack(x):
     """
     >>> listpack(1)
@@ -234,5 +159,5 @@ def listpack(x):
 def json_dumps(dt):
     s = dt.isoformat()
     if not dt.tzname():
-        s = s + 'Z'
+        s += 'Z'
     return s

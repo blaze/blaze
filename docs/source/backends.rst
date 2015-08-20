@@ -9,7 +9,7 @@ changing performance needs.
 
 .. raw:: html
 
-   <iframe style='width:105%; height:625px; border:0;' src='capabilities.html'></iframe>
+   <iframe style='width:105%; height:625px; border:0;' src='_static/html/capabilities.html'/>
 
 Existing Backends
 =================
@@ -17,7 +17,7 @@ Existing Backends
 Streaming Python
 ----------------
 
- *via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_*
+via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_
 
 Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit
@@ -70,7 +70,6 @@ Spark provides resilient distributed in-memory computing and easy access to
 HDFS storage.  Blaze drives Spark through the `PySpark
 <https://spark.apache.org/docs/0.9.0/python-programming-guide.html>`_
 interface.
-
 
 Benefits of Backend Agnostic Computation
 ========================================

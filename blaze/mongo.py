@@ -1,14 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-import re
-from toolz import take
-from datashape import discover, isdimension
-
-from .compatibility import basestring, map
+from .compatibility import basestring
 from .compute.mongo import dispatch
 
 try:
-    import pymongo
     from pymongo.collection import Collection
     from pymongo import ASCENDING
 except ImportError:

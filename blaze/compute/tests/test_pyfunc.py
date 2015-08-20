@@ -1,9 +1,12 @@
-from blaze.compute.pyfunc import *
-from blaze.compute.pyfunc import _print_python
-from blaze.expr.broadcast import broadcast_collect
 import datetime
 
+from blaze.compute.pyfunc import symbol, lambdify, cos, math, broadcast
+from blaze.compute.pyfunc import _print_python
+from blaze.expr.broadcast import broadcast_collect
+
+
 t = symbol('t', '{x: int, y: int, z: int, when: datetime}')
+
 
 def test_simple():
     f = lambdify([t], t.x + t.y)
@@ -29,8 +32,8 @@ def test_map():
 
 
 def test_math():
-    f = lambdify([t], t.x + cos(t.y))
-    assert f((1, 0, 3, 4)) == 1 + math.cos(0.0)
+    f = lambdify([t], abs(t.x) + cos(t.y))
+    assert f((-1, 0, 3, 4)) == 1 + math.cos(0.0)
 
 
 def test_datetime_literals_and__print_python():
@@ -40,8 +43,8 @@ def test_datetime_literals_and__print_python():
 
 def test_datetime_literals():
     f = lambdify([t], t.when > '2000-01-01')
-    assert f((1, 0, 3, datetime.datetime(2000, 1, 2))) == True
-    assert f((1, 0, 3, datetime.datetime(1999, 1, 2))) == False
+    assert f((1, 0, 3, datetime.datetime(2000, 1, 2)))
+    assert not f((1, 0, 3, datetime.datetime(1999, 1, 2)))
 
 
 def test_broadcast_collect():
@@ -61,11 +64,11 @@ def test_broadcast_collect():
 
 
 def test_pyfunc_works_with_invalid_python_names():
-    x = Symbol('x-y.z', 'int')
+    x = symbol('x-y.z', 'int')
     f = lambdify([x], x + 1)
     assert f(1) == 2
 
-    t = Symbol('t', '{"x.y": int, "y z": int}')
+    t = symbol('t', '{"x.y": int, "y z": int}')
     f = lambdify([t], t.x_y + t.y_z)
     assert f((1, 2)) == 3
 

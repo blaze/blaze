@@ -1,0 +1,21 @@
+strict digraph G {
+"('wrapped_1', 1)" [shape=box, label="('wrapped_1', 1)"];
+"('wrapped_1', 0)" [shape=box, label="('wrapped_1', 0)"];
+"((<function f at 0x7ff93b591758>, ('wrapped_1', 0)), 'function')" [shape=circle, label=f];
+"((<function f at 0x7ff93b591758>, ('wrapped_1', 1)), 'function')" [shape=circle, label=f];
+"('x_2', 2)" [shape=box];
+"('wrapped_1', 2)" [shape=box, label="('wrapped_1', 2)"];
+"('x_2', 1)" [shape=box];
+"('x_2', 0)" [shape=box];
+"((<function f at 0x7ff93b591758>, ('wrapped_1', 2)), 'function')" [shape=circle, label=f];
+"((<function ones at 0x7ff948cc7e60>, (5,)), 'function')" [shape=circle, label=ones];
+"('wrapped_1', 1)" -> "((<function ones at 0x7ff948cc7e60>, (5,)), 'function')";
+"('wrapped_1', 0)" -> "((<function ones at 0x7ff948cc7e60>, (5,)), 'function')";
+"((<function f at 0x7ff93b591758>, ('wrapped_1', 0)), 'function')" -> "('wrapped_1', 0)";
+"((<function f at 0x7ff93b591758>, ('wrapped_1', 1)), 'function')" -> "('wrapped_1', 1)";
+"('x_2', 2)" -> "((<function f at 0x7ff93b591758>, ('wrapped_1', 2)), 'function')";
+"('wrapped_1', 2)" -> "((<function ones at 0x7ff948cc7e60>, (5,)), 'function')";
+"('x_2', 1)" -> "((<function f at 0x7ff93b591758>, ('wrapped_1', 1)), 'function')";
+"('x_2', 0)" -> "((<function f at 0x7ff93b591758>, ('wrapped_1', 0)), 'function')";
+"((<function f at 0x7ff93b591758>, ('wrapped_1', 2)), 'function')" -> "('wrapped_1', 2)";
+}
