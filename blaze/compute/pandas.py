@@ -46,7 +46,7 @@ from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
                     Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Coerce, Concat, IsNull,
+                    UnaryStringFunction, nunique, Coerce, Concat, isnull,
                     isnan)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
@@ -157,9 +157,9 @@ def compute_up(t, lhs, rhs, **kwargs):
     return result.reset_index()[t.fields]
 
 
-@dispatch((isnan, IsNull), NDFrame)
-def compute_up(t, df, **kwargs):
-    return df.isnull()
+@dispatch((isnan, isnull), pd.Series)
+def compute_up(expr, data, **kwargs):
+    return data.isnull()
 
 
 pandas_structure = DataFrame, Series, DataFrameGroupBy, SeriesGroupBy
