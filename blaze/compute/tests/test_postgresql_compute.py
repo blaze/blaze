@@ -13,6 +13,7 @@ import pandas as pd
 
 import pandas.util.testing as tm
 
+from datashape import dshape
 from odo import odo, resource, drop, discover
 from blaze import symbol, compute, concat
 
@@ -123,6 +124,63 @@ def orders(base_url, products):
 
 
 @pytest.yield_fixture
+def main(base_url):
+    try:
+        main = odo([(i, np.random.randint(10)) for i in range(13)],
+                   base_url % 'main',
+                   dshape=dshape('var * {id: !int64, data: int64}'))
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield main
+        finally:
+            drop(main)
+
+
+@pytest.yield_fixture
+def pkey(base_url, main):
+    choices = [u'AAPL', u'HPQ', u'ORCL', u'IBM', u'DOW', u'SBUX', u'AMD',
+               u'INTC', u'GOOG', u'PRU', u'MSFT', u'AIG', u'TXN', u'DELL',
+               u'PEP']
+    n = 100
+    data = list(zip(np.arange(n),
+                    np.random.choice(choices, size=n),
+                    np.random.uniform(10000, 20000, size=n),
+                    np.random.randint(main.count().scalar(), size=n)))
+    try:
+        main = odo(data, base_url % 'pkey',
+                   dshape=dshape('var * {id: !int64, sym: string, price: float64, main: map[int64, T]}'),
+                   foreign_keys=dict(main=main.c.id))
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield main
+        finally:
+            drop(main)
+
+
+@pytest.yield_fixture
+def fkey(base_url, pkey):
+    try:
+        main = odo([(i,
+                     np.random.randint(pkey.count().scalar()),
+                     np.random.randint(10000))
+                    for i in range(10)],
+                   base_url % 'fkey',
+                   dshape=dshape('var * {id: !int64, sym_id: map[int64, T], size: int64}'),
+                   foreign_keys=dict(sym_id=pkey.c.id))
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield main
+        finally:
+            drop(main)
+
+
+@pytest.yield_fixture
 def sql_with_float(url):
     try:
         t = resource(url, dshape='var * {c: float64}')
@@ -226,15 +284,27 @@ def test_distinct_on(sql):
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
 
 
-def test_auto_join(orders):
+def test_auto_join_field(orders):
     t = symbol('t', discover(orders))
     expr = t.product_id.color
     result = compute(expr, orders)
     expected = """SELECT
         products.color
-    FROM orders
-    JOIN products
-        ON orders.product_id = products.product_id
+    FROM products, orders
+    WHERE orders.product_id = products.product_id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_auto_join_projection(orders):
+    t = symbol('t', discover(orders))
+    expr = t.product_id[['color', 'price']]
+    result = compute(expr, orders)
+    expected = """SELECT
+        products.color,
+        products.price
+    FROM products, orders
+    WHERE orders.product_id = products.product_id
     """
     assert normalize(str(result)) == normalize(expected)
 
@@ -248,6 +318,18 @@ def test_foreign_key_reduction(orders, products, func):
     result = compute(expr, orders)
     expected = """SELECT
         max(orders.quantity * products.price) AS max
-    FROM orders join products ON orders.product_id = products.product_id
+    FROM orders, products WHERE orders.product_id = products.product_id
     """.format(func)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_foreign_key_chain(fkey):
+    t = symbol('t', discover(fkey))
+    expr = t.sym_id.main.data
+    result = compute(expr, fkey)
+    expected = """SELECT
+        main.data
+    FROM main, fkey, pkey
+    WHERE fkey.sym_id = pkey.id and pkey.main = main.id
+    """
     assert normalize(str(result)) == normalize(expected)
