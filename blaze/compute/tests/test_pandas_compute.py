@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 
 import numpy as np
 
@@ -11,8 +11,6 @@ import pandas.util.testing as tm
 from pandas import DataFrame, Series
 
 from string import ascii_lowercase
-
-import datashape
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
@@ -23,11 +21,16 @@ from blaze.compatibility import builtins, xfail, assert_series_equal
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],
                 ['Bob', 200, 2],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
+
+ndf = DataFrame([['Alice', 100.0, 1],
+                 ['Bob', np.nan, 2],
+                 [np.nan, 50.0, 3]], columns=['name', 'amount', 'id'])
 
 
 tbig = symbol('tbig',
@@ -507,7 +510,6 @@ def test_summary_by():
                           ['Bob', 1, 201]], columns=['name', 'count', 'sum'])
     tm.assert_frame_equal(result, expected)
 
-
 @pytest.mark.xfail(raises=TypeError,
                    reason=('pandas backend cannot support non Reduction '
                            'subclasses'))
@@ -701,6 +703,14 @@ def test_by_with_complex_summary():
     result = compute(expr, df)
     assert list(result.columns) == expr.fields
     assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
+
+
+def test_notnull():
+    assert (compute(nt.name.notnull(), ndf) == ndf.name.notnull()).all()
+
+
+def test_isnan():
+    assert (compute(nt.amount.isnan(), ndf) == ndf.amount.isnull()).all()
 
 
 @pytest.mark.parametrize('keys', [[1], [2, 3]])

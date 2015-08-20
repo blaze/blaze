@@ -4,7 +4,7 @@ import pandas as pd
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
-                    USub, Not)
+                    USub, Not, notnull)
 from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
@@ -58,17 +58,21 @@ def print_python(leaves, expr):
         return valid_identifier(expr._name), {}
     return _print_python(expr, leaves=leaves)
 
+
 @dispatch(object)
 def _print_python(expr, leaves=None):
     return repr(expr), {}
+
 
 @dispatch((datetime.datetime, datetime.date))
 def _print_python(expr, leaves=None):
     return repr(expr), {'datetime': datetime, 'Timestamp': pd.Timestamp}
 
+
 @dispatch(Symbol)
 def _print_python(expr, leaves=None):
     return valid_identifier(expr._name), {}
+
 
 @dispatch(Field)
 def _print_python(expr, leaves=None):
@@ -76,13 +80,14 @@ def _print_python(expr, leaves=None):
     index = expr._child.fields.index(expr._name)
     return '%s[%d]' % (parenthesize(child), index), scope
 
+
 @dispatch(Arithmetic)
 def _print_python(expr, leaves=None):
     lhs, left_scope = print_python(leaves, expr.lhs)
     rhs, right_scope = print_python(leaves, expr.rhs)
     return ('%s %s %s' % (parenthesize(lhs),
-                         expr.symbol,
-                         parenthesize(rhs)),
+                          expr.symbol,
+                          parenthesize(rhs)),
             toolz.merge(left_scope, right_scope))
 
 
@@ -104,25 +109,30 @@ def _print_python(expr, leaves=None):
     return ('math.%s(%s)' % (type(expr).__name__, child),
             toolz.merge(scope, {'math': math}))
 
+
 @dispatch(expr_math.abs)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('abs(%s)' % child, scope)
+
 
 @dispatch(Date)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('%s.date()' % parenthesize(child), scope)
 
+
 @dispatch(Time)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('%s.time()' % parenthesize(child), scope)
 
+
 @dispatch(Millisecond)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('%s.microsecond // 1000' % parenthesize(child), scope)
+
 
 @dispatch(UTCFromTimestamp)
 def _print_python(expr, leaves=None):
@@ -130,11 +140,13 @@ def _print_python(expr, leaves=None):
     return ('datetime.datetime.utcfromtimestamp(%s)' % parenthesize(child),
             toolz.merge({'datetime': datetime}, scope))
 
+
 @dispatch(DateTime)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     attr = type(expr).__name__.lower()
     return ('%s.%s' % (parenthesize(child), attr), scope)
+
 
 @dispatch(DateTimeTruncate)
 def _print_python(expr, leaves=None):
@@ -143,6 +155,7 @@ def _print_python(expr, leaves=None):
     return ('truncate(%s, %s, "%s")' % (child, expr.measure, expr.unit),
             scope)
 
+
 @dispatch(Map)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
@@ -150,10 +163,19 @@ def _print_python(expr, leaves=None):
     return ('%s(%s)' % (funcname, child),
             toolz.assoc(scope, funcname, expr.func))
 
+
+@dispatch(notnull)
+def _print_python(expr, leaves=None):
+    child, scope = print_python(leaves, expr._child)
+    return ('notnull(%s)' % child,
+            toolz.merge(scope, dict(notnull=lambda x: x is not None)))
+
+
 @dispatch(Expr)
 def _print_python(expr, leaves=None):
     raise NotImplementedError("Do not know how to write expressions of type %s"
-            " to Python code" % type(expr).__name__)
+                              " to Python code" % type(expr).__name__)
+
 
 def funcstr(leaves, expr):
     """ Lambda string for an expresion

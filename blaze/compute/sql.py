@@ -54,11 +54,10 @@ from .core import compute_up, compute, base
 
 
 from ..expr import (
-    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice,
-    BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
-    FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce,
-    nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge,
-    common_subexpression, Summary, Like, nelements, Concat,
+    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
+    Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -254,6 +253,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
                                 a.join(b.froms[0], condition, **kwargs))
 
 
+
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
@@ -302,13 +302,13 @@ def compute_up(t, lhs, rhs, **kwargs):
     # Perform join
     if t.how == 'inner':
         join = _join_selectables(lhs, rhs, condition=condition)
-        main, other = lhs, rhs
+        main = lhs
     elif t.how == 'left':
         main, other = lhs, rhs
         join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
     elif t.how == 'right':
         join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
-        main, other = rhs, lhs
+        main = rhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise ValueError("SQLAlchemy doesn't support full outer Join")
@@ -841,6 +841,11 @@ def compute_up(expr, data, **kwargs):
     func_name = type(expr).__name__
     func_name = string_func_names.get(func_name, func_name)
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
+
+
+@dispatch(notnull, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return data != None
 
 
 @toolz.memoize

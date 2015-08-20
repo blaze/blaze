@@ -1,7 +1,6 @@
 """ Python compute layer
 
->>> from blaze import *
->>> from blaze.compute.core import compute
+>>> from blaze import symbol, compute
 
 >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
@@ -16,27 +15,30 @@ import itertools
 import numbers
 import fnmatch
 import operator
+import datetime
+import math
 import re
+
 from collections import Iterator
 from functools import partial
+
 import toolz
 from toolz import map, filter, compose, juxt, identity, tail
+
 try:
     from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
 except ImportError:
     from toolz import groupby, reduceby, unique, take, concat, nth, pluck
-import datetime
-import toolz
-import math
+
 from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
                     By, Sort, Head, Apply, Summary, Like, IsIn,
-                    DateTime, Date, Time, Millisecond, ElemWise, symbol,
+                    DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp)
+                    UTCFromTimestamp, notnull)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -50,7 +52,6 @@ from .pyfunc import lambdify
 from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
-import math
 from math import *
 
 
@@ -87,12 +88,13 @@ def child(x):
     if hasattr(x, '_inputs') and len(x._inputs) == 1:
         return x._inputs[0]
     raise NotImplementedError("Found expression with multiple children.\n"
-            "Perhaps Broadcast Optimize was not called")
+                              "Perhaps Broadcast Optimize was not called")
 
 
 def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
+    >>> from blaze import symbol
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> expr = accounts['amount'].map(lambda x: x + 1)
     >>> f = recursive_rowfunc(expr, accounts)
@@ -121,6 +123,7 @@ def rowfunc(t):
 def rowfunc(t):
     """ Rowfunc provides a function that can be mapped onto a sequence.
 
+    >>> from blaze import symbol
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> f = rowfunc(accounts['amount'])
 
@@ -224,6 +227,11 @@ def compute_up(expr, data, **kwargs):
     return rowfunc(expr)(data)
 
 
+@dispatch(notnull)
+def rowfunc(_):
+    return lambda x: x is not None
+
+
 def concat_maybe_tuples(vals):
     """
 
@@ -260,7 +268,7 @@ def deepmap(func, *data, **kwargs):
     if n == 1:
         return map(func, *data)
     else:
-        return map(compose(tuple, partial(deepmap, func, n=n-1)), *data)
+        return map(compose(tuple, partial(deepmap, func, n=n - 1)), *data)
 
 
 @dispatch(Merge)
@@ -392,7 +400,7 @@ def compute_up(t, seq, **kwargs):
         row = toolz.first(seq)
     except StopIteration:
         return ()
-    seq = concat([[row], seq]) # re-add row to seq
+    seq = concat([[row], seq])  # re-add row to seq
 
     if isinstance(row, list):
         seq = map(tuple, seq)
@@ -473,7 +481,7 @@ def reduce_by_funcs(t):
     """
     grouper = rrowfunc(t.grouper, t._child)
     if (isinstance(t.apply, Reduction) and
-        type(t.apply) in binops):
+            type(t.apply) in binops):
 
         binop, combiner, initial = binops[type(t.apply)]
         applier = rrowfunc(t.apply._child, t._child)
@@ -484,14 +492,15 @@ def reduce_by_funcs(t):
         return grouper, binop2, combiner, initial
 
     elif (isinstance(t.apply, Summary) and
-        builtins.all(type(val) in binops for val in t.apply.values)):
+          builtins.all(type(val) in binops for val in t.apply.values)):
 
-        binops2, combiners, inits = zip(*[binops[type(v)] for v in t.apply.values])
+        binops2, combiners, inits = zip(
+            *[binops[type(v)] for v in t.apply.values])
         appliers = [rrowfunc(v._child, t._child) for v in t.apply.values]
 
         def binop2(accs, x):
             return tuple(binop(acc, applier(x)) for binop, acc, applier in
-                        zip(binops2, accs, appliers))
+                         zip(binops2, accs, appliers))
 
         def combiner(a, b):
             return tuple(c(x, y) for c, x, y in zip(combiners, a, b))
@@ -506,13 +515,14 @@ def compute_up(t, seq, **kwargs):
     t = By(grouper, apply)
     if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
         (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
-                                                for val in t.apply.values))):
+                                                       for val in t.apply.values))):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
         d = reduceby(grouper, binop, seq, initial)
     else:
         grouper = rrowfunc(t.grouper, t._child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t._child: v})) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t._child: v}))
+                 for k, v in groups.items())
 
     if isscalar(t.grouper.dshape.measure):
         keyfunc = lambda x: (x,)
@@ -538,9 +548,10 @@ def pair_assemble(t):
     on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
     left_self_columns = [t.lhs.fields.index(c) for c in t.lhs.fields
-                                            if c not in listpack(t.on_left)]
+                         if c not in listpack(t.on_left)]
     right_self_columns = [t.rhs.fields.index(c) for c in t.rhs.fields
-                                            if c not in listpack(t.on_right)]
+                          if c not in listpack(t.on_right)]
+
     def assemble(pair):
         a, b = pair
         if a is not None:
@@ -583,9 +594,9 @@ def compute_up(t, lhs, rhs, **kwargs):
     on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
     left_default = (None if t.how in ('right', 'outer')
-                         else toolz.itertoolz.no_default)
+                    else toolz.itertoolz.no_default)
     right_default = (None if t.how in ('left', 'outer')
-                         else toolz.itertoolz.no_default)
+                     else toolz.itertoolz.no_default)
 
     pairs = toolz.join(on_left, lhs,
                        on_right, rhs,
@@ -635,10 +646,10 @@ def compute_up(expr, data, **kwargs):
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
         result = tuple(compute(val, {expr._child: data})
-                        for val, data in zip(expr.values, datas))
+                       for val, data in zip(expr.values, datas))
     else:
         result = tuple(compute(val, {expr._child: data})
-                        for val in expr.values)
+                       for val in expr.values)
 
     if expr.keepdims:
         return (result,)
@@ -648,8 +659,9 @@ def compute_up(expr, data, **kwargs):
 
 def like_regex_predicate(expr):
     regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
-                    for name, pattern in expr.patterns.items())
+                   for name, pattern in expr.patterns.items())
     regex_tup = [regexes.get(name, None) for name in expr.fields]
+
     def predicate(tup):
         for item, regex in zip(tup, regex_tup):
             if regex and not regex.match(item):
@@ -680,8 +692,8 @@ def compute_up(expr, seq, **kwargs):
                 return tail(-index, seq)[0]
     if isinstance(index, slice):
         if (index.start and index.start < 0 and
-            index.stop is None and
-            index.step in (1, None)):
+                index.stop is None and
+                index.step in (1, None)):
             return tail(-index.start, seq)
         else:
             return itertools.islice(seq, index.start, index.stop, index.step)

@@ -67,6 +67,7 @@ class Broadcast(ElemWise):
         return self._scalar_expr._subs(dict(zip(self._scalars,
                                                 self._children)))
 
+
 def scalar_symbols(exprs):
     """
     Gives a sequence of scalar symbols to mirror these expressions

@@ -22,7 +22,6 @@ b = bcolz.ctable(np.array([(1, 1., np.datetime64('2010-01-01')),
 
 t = symbol('t', 'var * {a: int64, b: float64, date: ?date}')
 
-
 to = symbol('to', 'var * {a: int64, b: float64}')
 bo = bcolz.ctable(np.array([(1, 1.), (2, 2.), (3, np.nan)],
                            dtype=[('a', 'i8'), ('b', 'f8')]))
@@ -146,6 +145,10 @@ def test_unicode_field_names():
 
     assert eq(compute(s[u'a'], b)[:], compute(s['a'], b)[:])
     assert eq(compute(s[[u'a', u'c']], b)[:], compute(s[['a', 'c']], b)[:])
+    assert eq(compute(s[u'a'], b)[:],
+              compute(s['a'],  b)[:])
+    assert eq(compute(s[[u'a', u'c']], b)[:],
+              compute(s[['a', 'c']],  b)[:])
 
 
 def test_chunksize_inference():
@@ -153,3 +156,8 @@ def test_chunksize_inference():
                               dtype=[('a', 'i8'), ('b', 'f8'), ('c', 'f8')]),
                      chunklen=2)
     assert get_chunksize(b) == 2
+
+
+def test_notnull():
+    with pytest.raises(AttributeError):
+        t.b.notnull
