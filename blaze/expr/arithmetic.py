@@ -63,7 +63,7 @@ class Op(ElemWise):
         return tuple(op for op in self._operands if isinstance(op, Expr))
 
 class BinOp(Op):
-    __slots__ = '_hash'
+    __slots__ = '_hash',
     __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
@@ -129,7 +129,7 @@ def maxshape(shapes):
 
 
 class UnaryOp(Op):
-    __slots__ = '_hash'
+    __slots__ = '_hash',
 
     def __init__(self, child):
         super(Op, self).__init__([child])
