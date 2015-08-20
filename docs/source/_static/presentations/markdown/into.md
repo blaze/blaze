@@ -101,7 +101,7 @@ def numpy_to_list(x, **kwargs):
 
 ### Questions?
 
-* Source: [https://github.com/ContinuumIO/into](https://github.com/ContinuumIO/into)
+* Source: [https://github.com/blaze/into](https://github.com/blaze/into)
 * Docs: [http://into.readthedocs.org/en/latest/](http://into.readthedocs.org/en/latest/)
 * Blog: [http://matthewrocklin.com/blog](http://matthewrocklin.com/blog)
 

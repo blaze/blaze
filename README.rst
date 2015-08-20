@@ -1,8 +1,8 @@
-.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
+.. image:: https://raw.github.com/blaze/blaze/master/docs/source/svg/blaze_med.png
    :align: center
 
 |Build Status| |Coverage Status| |Join the chat at
-https://gitter.im/ContinuumIO/blaze|
+https://gitter.im/blaze/blaze|
 
 **Blaze** translates a subset of modified NumPy and Pandas-like syntax
 to databases and other computing systems. Blaze allows Python users a
@@ -125,10 +125,10 @@ Development builds are accessible
 ::
 
     conda install blaze -c blaze
-    pip install http://github.com/ContinuumIO/blaze --upgrade
+    pip install http://github.com/blaze/blaze --upgrade
 
 You may want to view `the docs <http://blaze.pydata.org>`__, `the
-tutorial <http://github.com/ContinuumIO/blaze-tutorial>`__, `some
+tutorial <http://github.com/blaze/blaze-tutorial>`__, `some
 blogposts <http://continuum.io/blog/tags/blaze>`__, or the `mailing list
 archives <https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev>`__.
 
@@ -140,9 +140,9 @@ details.
 
 Blaze development is sponsored by Continuum Analytics.
 
-.. |Build Status| image:: https://travis-ci.org/ContinuumIO/blaze.png
-   :target: https://travis-ci.org/ContinuumIO/blaze
-.. |Coverage Status| image:: https://coveralls.io/repos/ContinuumIO/blaze/badge.png
-   :target: https://coveralls.io/r/ContinuumIO/blaze
-.. |Join the chat at https://gitter.im/ContinuumIO/blaze| image:: https://badges.gitter.im/Join%20Chat.svg
-   :target: https://gitter.im/ContinuumIO/blaze?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+.. |Build Status| image:: https://travis-ci.org/blaze/blaze.png
+   :target: https://travis-ci.org/blaze/blaze
+.. |Coverage Status| image:: https://coveralls.io/repos/blaze/blaze/badge.png
+   :target: https://coveralls.io/r/blaze/blaze
+.. |Join the chat at https://gitter.im/blaze/blaze| image:: https://badges.gitter.im/Join%20Chat.svg
+   :target: https://gitter.im/blaze/blaze?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge

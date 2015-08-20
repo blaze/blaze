@@ -14,7 +14,7 @@ Blaze depends on many other projects, both projects that develop alongside
 blaze (like ``odo``) as well a number of community projects (like ``pandas``).
 
 Blaze development happens in the following projects, all of which are available
-on github.com/ContinuumIO/project-name
+on github.com/blaze/project-name
 
 *  Blaze_
 *  DataShape_
@@ -26,14 +26,14 @@ Bleeding edge binaries are kept up-to-date on the ``blaze`` conda channel.
 New developers likely only need to interact with one or two of these libraries so we recommend downloading everything by the conda channel and then only cloning those git repositories that you actively need::
 
     conda install -c blaze blaze  # install everything from dev channel
-    git clone git://github.com/ContinuumIO/blaze.git  # only clone blaze and odo
-    git clone git://github.com/ContinuumIO/odo.git  # only clone blaze and odo
+    git clone git://github.com/blaze/blaze.git  # only clone blaze and odo
+    git clone git://github.com/blaze/odo.git  # only clone blaze and odo
 
-.. _DyND: https://github.com/ContinuumIO/dynd-python
-.. _Odo: https://github.com/ContinuumIO/odo
-.. _Dask: https://github.com/ContinuumIO/dask
-.. _Blaze: https://github.com/ContinuumIO/blaze
-.. _DataShape: https://github.com/ContinuumIO/datashape
+.. _DyND: https://github.com/blaze/dynd-python
+.. _Odo: https://github.com/blaze/odo
+.. _Dask: https://github.com/blaze/dask
+.. _Blaze: https://github.com/blaze/blaze
+.. _DataShape: https://github.com/blaze/datashape
 .. _conda: http://conda.pydata.org/
 .. _Anaconda: http://continuum.io/downloads
 .. _anaconda.org: https://anaconda.org/
@@ -49,7 +49,7 @@ with tests passing on all platforms, and features are developed in
 descriptively named feature branches and merged via github's
 Pull Requests.
 
-.. _this github page: https://github.com/ContinuumIO/blaze
+.. _this github page: https://github.com/blaze/blaze
 .. _GitHub Flow: http://scottchacon.com/2011/08/31/github-flow.html
 
 
