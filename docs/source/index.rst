@@ -5,7 +5,7 @@
 **Blaze** translates a subset of modified NumPy and Pandas-like syntax to
 databases and other computing systems.  Blaze allows Python users a familiar
 interface to query data living in other data storage systems.   Blaze is sponsored primarily by 
-`Continuum Analytics <http://www.continuum.io>_`, and a
+`Continuum Analytics <http://www.continuum.io>`_, and a
 `DARPA XDATA <http://www.darpa.mil/program/XDATA>`_ grant.
 
 
