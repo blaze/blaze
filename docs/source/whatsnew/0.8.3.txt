@@ -10,6 +10,8 @@ New Expressions
 * Adds :class:`~blaze.expr.collections.Tail` which acts as an opposite to
   head. This is exposed throught the :func:`~blaze.expr.collections.tail` function.
   This returns the last ``n`` elements from a collection. (:issue:`1187`)
+* Adds :class:`~blaze.expr.math.notnull` returning an indicator of whether
+  values in a field are null (:issue:`697`, :issue:`733`)
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
