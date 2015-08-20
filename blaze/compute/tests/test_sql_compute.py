@@ -1371,8 +1371,8 @@ def test_merge_compute():
                           (4, 'Dennis', 400, 4000)]
 
 
-def test_isnull():
-    result = compute(nt[~nt.name.isnull()], ns)
+def test_notnull():
+    result = compute(nt[nt.name.notnull()], ns)
     expected = """SELECT
         nullaccounts.name,
         nullaccounts.amount,

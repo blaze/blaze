@@ -833,25 +833,20 @@ def test_compute_up_on_base():
     assert compute(s.minute, d) == d.minute
 
 
-def test_isnull():
+def test_notnull():
     data = [('Alice', -100, None),
             (None, None, None),
             ('Bob', 300, 'New York City')]
     t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
-    expr = t.name.isnull()
+    expr = t.name.notnull()
     result = compute(expr, data)
-    assert list(result) == [False, True, False]
+    assert list(result) == [True, False, True]
 
 
-@pytest.mark.xfail
-def test_isnull_whole_collection():
-    data = [('Alice', -100, None),
-            (None, None, None),
-            ('Bob', 300, 'New York City')]
+def test_notnull_whole_collection():
     t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
-    expr = t.isnull()
-    result = compute(expr, data)
-    assert list(result) == [False, True, False]
+    with pytest.raises(AttributeError):
+        t.notnull
 
 
 @pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])

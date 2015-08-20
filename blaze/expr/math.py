@@ -12,7 +12,8 @@ from .expressions import schema_method_list
 __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
            'atan', 'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc',
-           'isnan', 'isnull', 'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
+           'isnan', 'notnull', 'RealMath', 'IntegerMath', 'BooleanMath',
+           'Math']
 
 
 class Math(UnaryOp):
@@ -68,7 +69,7 @@ class BooleanMath(Math):
 
 
 class isnan(BooleanMath): pass
-class isnull(BooleanMath): pass
+class notnull(BooleanMath): pass
 
 
 def truncate(expr, precision):
@@ -91,5 +92,5 @@ schema_method_list.extend([
     (isreal, set([isnan])),
     (isnumeric, set([truncate])),
     (lambda ds: isinstance(ds, Option) or isinstance(ds.measure, Option),
-     set([isnull]))
+     set([notnull]))
 ])

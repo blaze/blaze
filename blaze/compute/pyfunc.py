@@ -4,7 +4,7 @@ import pandas as pd
 from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
-                    USub, Not, isnull)
+                    USub, Not, notnull)
 from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
@@ -164,11 +164,11 @@ def _print_python(expr, leaves=None):
             toolz.assoc(scope, funcname, expr.func))
 
 
-@dispatch(isnull)
+@dispatch(notnull)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
-    scope.update(dict(isnull=lambda x: x is None))
-    return 'isnull(%s)' % child, scope
+    return ('notnull(%s)' % child,
+            toolz.merge(scope, dict(notnull=lambda x: x is not None)))
 
 
 @dispatch(Expr)

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 
 import numpy as np
 
@@ -11,8 +11,6 @@ import pandas.util.testing as tm
 from pandas import DataFrame, Series
 
 from string import ascii_lowercase
-
-import datashape
 
 from blaze.compute.core import compute
 from blaze import dshape, discover, transform
@@ -707,8 +705,8 @@ def test_by_with_complex_summary():
     assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
 
 
-def test_isnull():
-    assert (compute(nt.name.isnull(), ndf) == ndf.name.isnull()).all()
+def test_notnull():
+    assert (compute(nt.name.notnull(), ndf) == ndf.name.notnull()).all()
 
 
 def test_isnan():

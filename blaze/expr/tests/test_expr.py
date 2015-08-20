@@ -127,14 +127,13 @@ def test_map_with_rename():
     assert result.fields == ['date']
 
 
-def test_non_option_does_not_have_isnull():
+def test_non_option_does_not_have_notnull():
     s = symbol('s', '5 * int32')
-    assert not hasattr(s, 'dropna')
-    assert not hasattr(s, 'isnull')
+    assert not hasattr(s, 'notnull')
 
 
-def test_null_dshape():
-    assert symbol('s', '5 * ?int32').isnull().dshape == 5 * bool_
+def test_notnull_dshape():
+    assert symbol('s', '5 * ?int32').notnull().dshape == 5 * bool_
 
 
 def test_hash_to_different_values():

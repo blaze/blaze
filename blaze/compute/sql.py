@@ -57,7 +57,7 @@ from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, isnull
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -69,6 +69,7 @@ from ..utils import listpack
 
 
 __all__ = ['sa', 'select']
+
 
 def inner_columns(s):
     try:
@@ -842,9 +843,9 @@ def compute_up(expr, data, **kwargs):
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 
-@dispatch(isnull, ColumnElement)
+@dispatch(notnull, ColumnElement)
 def compute_up(expr, data, **kwargs):
-    return data == None
+    return data != None
 
 
 @toolz.memoize

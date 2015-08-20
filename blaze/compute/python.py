@@ -38,7 +38,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp, isnull)
+                    UTCFromTimestamp, notnull)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -227,9 +227,9 @@ def compute_up(expr, data, **kwargs):
     return rowfunc(expr)(data)
 
 
-@dispatch(isnull)
+@dispatch(notnull)
 def rowfunc(_):
-    return lambda x: x is None
+    return lambda x: x is not None
 
 
 def concat_maybe_tuples(vals):

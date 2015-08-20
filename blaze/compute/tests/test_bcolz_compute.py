@@ -158,15 +158,6 @@ def test_chunksize_inference():
     assert get_chunksize(b) == 2
 
 
-@pytest.mark.xfail(raises=AttributeError,
-                   reason="bcolz doesn't support NA values")
-def test_isnull():
-    assert (compute(t.b.isnull(), b) == np.array([False, False, False])).all()
-    assert (compute(nt.b.isnull(), nb) == np.array([True, False, False])).all()
-
-
-@pytest.mark.xfail(raises=AttributeError,
-                   reason="bcolz doesn't support NA values, use isnan")
-def test_dropna():
-    e = t.b.dropna()
-    assert (compute(e, bo) == bcolz.carray([1.0, 2.0])).all()
+def test_notnull():
+    with pytest.raises(AttributeError):
+        t.b.notnull
