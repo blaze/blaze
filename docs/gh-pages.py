@@ -32,7 +32,7 @@ from subprocess import Popen, PIPE, CalledProcessError, check_call
 pages_dir = 'gh-pages'
 html_dir = 'build/html'
 pdf_dir = 'build/latex'
-pages_repo = 'git@github.com:ContinuumIO/blaze-webpage.git'
+pages_repo = 'git@github.com:blaze/blaze-webpage.git'
 
 #-----------------------------------------------------------------------------
 # Functions

@@ -4,7 +4,9 @@
 
 **Blaze** translates a subset of modified NumPy and Pandas-like syntax to
 databases and other computing systems.  Blaze allows Python users a familiar
-interface to query data living in other data storage systems.
+interface to query data living in other data storage systems.   Blaze is sponsored primarily by 
+`Continuum Analytics <http://www.continuum.io>`_, and a
+`DARPA XDATA <http://www.darpa.mil/program/XDATA>`_ grant.
 
 
 Ecosystem
@@ -13,13 +15,16 @@ Ecosystem
 Several projects have come out of Blaze development other than the Blaze
 project itself.
 
-* Blaze: Translates NumPy/Pandas-like syntax to systems like databases.
+* Blaze: Translates NumPy/Pandas-like syntax to data computing systems (e.g. database, in-memory, distributed-computing) including data gate-way server that can sit on computing machines near the data --- moving the expression to the data. 
 
   Blaze presents a pleasant and familiar interface to us regardless of
-  what computational solution or database we use.  It mediates our
-  interaction with files, data structures, and databases, optimizing and
-  translating our query as appropriate to provide a smooth and interactive
-  session.
+  what computational solution or database we use (e.g. spark, impala, SQL databases, 
+  No-SQL data-stores, raw-files).  It mediates our interaction with files, data structures, 
+  and databases, optimizing and translating our query as appropriate to provide a smooth and interactive
+  session.   It allows the data scientists and analyst to write their queries in a unified way that does 
+  not have to change because the data is stored in another format or a different data-store. 
+  It also provides a server-component that allows URIs to be used to easily serve views on data and refer to Data 
+  remotely in local scripts, queries, and programs.
 
 * Odo_: Migrates data between formats.
 
@@ -28,10 +33,19 @@ project itself.
   by leveraging a sophisticated and extensible network of conversions.
 
 * Dask.array_: Multi-core / on-disk NumPy arrays
+* Dask.dataframe_ : Multi-core / on-disk Pandas data-frames
 
   Dask.arrays provide blocked algorithms on top of NumPy to handle
   larger-than-memory arrays and to leverage multiple cores.  They are a
   drop-in replacement for a commonly used subset of NumPy algorithms.
+  
+  Dask.dataframes provide blocked algorithms on top of Pandas to handle 
+  larger-than-memory data-frames and to leverage multiple cores.   They 
+  are a drop-in replacement for a subset of Pandas use-cases.
+  
+  Dask also has a general "Bag" type and a way to build "task graphs"
+  using simple decorators as well as nascent distributed schedulers in 
+  addition to the multi-core and multi-threaded schedulers.
 
 * DyND_: In-memory dynamic arrays
 
@@ -42,7 +56,11 @@ project itself.
 
 These projects are mutually independent.  The rest of this documentation is
 just about the Blaze project itself.  See the pages linked to above for ``odo``
-or ``dask.array``.
+or ``dask.array``.    Other projects that have spun out of or are linked to 
+Blaze efforts include:
+    * bcolz_ : http://bcolz.blosc.org/ -- A columnar data container that can be compressed.
+    * castra_ : https://github.com/Blosc/castra -- partitioned storage system based on blosc compression.
+    
 
 
 Blaze
@@ -118,4 +136,5 @@ Older versions of these documents can be found here_.
 .. _`See previous blog posts about Blaze`: http://continuum.io/blog/tags/blaze
 .. _Odo: http://odo.pydata.org/
 .. _Dask.array: http://dask.pydata.org/
+.. _Dask.dataframe: http://dask.pydata.org
 .. _DyND: https://github.com/libdynd/libdynd

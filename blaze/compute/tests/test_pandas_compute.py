@@ -3,10 +3,13 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 from datetime import datetime, timedelta
+
+import numpy as np
+
 import pandas as pd
 import pandas.util.testing as tm
-import numpy as np
 from pandas import DataFrame, Series
+
 from string import ascii_lowercase
 
 from blaze.compute.core import compute
@@ -18,11 +21,16 @@ from blaze.compatibility import builtins, xfail, assert_series_equal
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],
                 ['Bob', 200, 2],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
+
+ndf = DataFrame([['Alice', 100.0, 1],
+                 ['Bob', np.nan, 2],
+                 [np.nan, 50.0, 3]], columns=['name', 'amount', 'id'])
 
 
 tbig = symbol('tbig',
@@ -502,7 +510,6 @@ def test_summary_by():
                           ['Bob', 1, 201]], columns=['name', 'count', 'sum'])
     tm.assert_frame_equal(result, expected)
 
-
 @pytest.mark.xfail(raises=TypeError,
                    reason=('pandas backend cannot support non Reduction '
                            'subclasses'))
@@ -698,6 +705,14 @@ def test_by_with_complex_summary():
     assert list(result.total) == [150 + 4 - 1, 200 + 2 - 1]
 
 
+def test_notnull():
+    assert (compute(nt.name.notnull(), ndf) == ndf.name.notnull()).all()
+
+
+def test_isnan():
+    assert (compute(nt.amount.isnan(), ndf) == ndf.amount.isnull()).all()
+
+
 @pytest.mark.parametrize('keys', [[1], [2, 3]])
 def test_isin(keys):
     expr = t[t.id.isin(keys)]
@@ -779,3 +794,12 @@ def test_count_keepdims_frame():
     s = symbol('s', discover(df))
     assert_series_equal(compute(s.count(keepdims=True), df),
                         pd.Series([df.shape[0]], name='s_count'))
+
+
+def test_time_field():
+    data = pd.Series(pd.date_range(start='20120101', end='20120102', freq='H'))
+    s = symbol('s', discover(data))
+    result = compute(s.time, data)
+    expected = data.dt.time
+    expected.name = 's_time'
+    assert_series_equal(result, expected)

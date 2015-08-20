@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import ast
-from itertools import repeat
 
 from toolz import merge
 
@@ -21,13 +20,14 @@ def generate_methods(node_names, funcs, builder):
 
 
 arithmetic_ops = ['Eq', 'Ne', 'Lt', 'Gt', 'Le', 'Ge', 'BitAnd', 'BitOr',
-        'Invert', 'USub', 'Add', 'Mult', 'Div', 'FloorDiv', 'Pow', 'Mod',
-        'Sub']
+                  'Invert', 'USub', 'Add', 'Mult', 'Div', 'FloorDiv', 'Pow',
+                  'Mod', 'Sub']
 
 
 @generate_methods(arithmetic_ops, arithmetic_ops,
                   builder=lambda func: lambda self, node: getattr(arithmetic, func))
 class BlazeParser(ast.NodeVisitor):
+
     def __init__(self, dtypes, scope):
         self.dtypes = dtypes
         self.scope = scope
@@ -82,7 +82,7 @@ class BlazeParser(ast.NodeVisitor):
 
 # Operations like sin, cos, exp, isnan, floor, ceil, ...
 math_operators = dict((k, v) for k, v in math.__dict__.items()
-                if isinstance(v, type) and issubclass(v, Expr))
+                      if isinstance(v, type) and issubclass(v, Expr))
 safe_scope = {'__builtins__': {},  # Python 2
               'builtins': {}}      # Python 3
 

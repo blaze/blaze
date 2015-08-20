@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from itertools import chain
 
-from operator import and_, eq
+from operator import and_, eq, attrgetter
 from copy import copy
 
 import sqlalchemy as sa
@@ -33,7 +33,7 @@ from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe
+from toolz import unique, concat, pipe, first
 from toolz.compatibility import zip
 from toolz.curried import map
 
@@ -54,11 +54,10 @@ from .core import compute_up, compute, base
 
 
 from ..expr import (
-    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice,
-    BinOp, UnaryOp, Join, mean, var, std, Reduction, count,
-    FloorDiv, UnaryStringFunction, strlen, DateTime, Coerce,
-    nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge,
-    common_subexpression, Summary, Like, nelements, Concat,
+    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
+    Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -145,6 +144,17 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
+@dispatch(BinOp, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    if isinstance(t.lhs, Expr):
+        return t.op(column, t.rhs)
+    else:
+        return t.op(t.lhs, column)
+
+
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
 @compute_up.register(BinOp, ColumnElement, (ColumnElement, base))
 def binop_sql(t, lhs, rhs, **kwargs):
@@ -182,24 +192,12 @@ def compute_up(expr, data, scope=None, **kwargs):
     return sa.select([data]).where(predicate)
 
 
-@dispatch(Selection, Select)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-    return s.where(predicate)
-
-
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
+    ns = dict((t._child[col.name], col)
+              for col in getattr(s, 'inner_columns', s.columns))
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-
     try:
         return s.where(predicate)
     except AttributeError:
@@ -255,9 +253,20 @@ def _join_selectables(a, b, condition=None, **kwargs):
                                 a.join(b.froms[0], condition, **kwargs))
 
 
+
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
+
+
+_getname = attrgetter('name')
+
+
+def _clean_join_name(opposite_side_colnames, suffix, c):
+    if c.name not in opposite_side_colnames:
+        return c
+    else:
+        return c.label(c.name + suffix)
 
 
 @dispatch(Join, ClauseElement, ClauseElement)
@@ -293,13 +302,13 @@ def compute_up(t, lhs, rhs, **kwargs):
     # Perform join
     if t.how == 'inner':
         join = _join_selectables(lhs, rhs, condition=condition)
-        main, other = lhs, rhs
+        main = lhs
     elif t.how == 'left':
         main, other = lhs, rhs
         join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
     elif t.how == 'right':
         join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
-        main, other = rhs, lhs
+        main = rhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise ValueError("SQLAlchemy doesn't support full outer Join")
@@ -318,18 +327,21 @@ def compute_up(t, lhs, rhs, **kwargs):
         cols = lambda x: list(x.columns)
 
     main_cols = cols(main)
-    other_cols = cols(other)
     left_cols = cols(lhs)
+    left_names = set(map(_getname, left_cols))
     right_cols = cols(rhs)
+    right_names = set(map(_getname, right_cols))
 
     left_suffix, right_suffix = t.suffixes
     fields = [
         f.replace(left_suffix, '').replace(right_suffix, '') for f in t.fields
     ]
     columns = [c for c in main_cols if c.name in t._on_left]
-    columns += [c for c in left_cols
+    columns += [_clean_join_name(right_names, left_suffix, c)
+                for c in left_cols
                 if c.name in fields and c.name not in t._on_left]
-    columns += [c for c in right_cols
+    columns += [_clean_join_name(left_names, right_suffix, c)
+                for c in right_cols
                 if c.name in fields and c.name not in t._on_right]
 
     if isinstance(join, Select):
@@ -379,7 +391,7 @@ def compute_up(expr, data, **kwargs):
     return select([compute(expr, d, post_compute=False)])
 
 
-@dispatch(Distinct, sa.Column)
+@dispatch(Distinct, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.distinct(*t.on).label(t._name)
 
@@ -829,6 +841,11 @@ def compute_up(expr, data, **kwargs):
     func_name = type(expr).__name__
     func_name = string_func_names.get(func_name, func_name)
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
+
+
+@dispatch(notnull, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return data != None
 
 
 @toolz.memoize
