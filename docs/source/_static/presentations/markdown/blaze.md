@@ -159,7 +159,7 @@ Blaze is generic (that's the point) but we give up *a lot*:
 
 ### Questions?
 
-* Source: [https://github.com/ContinuumIO/blaze](https://github.com/ContinuumIO/blaze)
+* Source: [https://github.com/blaze/blaze](https://github.com/blaze/blaze)
 * Docs: [http://blaze.pydata.org/](http://blaze.pydata.org/)
 
 ```python

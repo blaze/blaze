@@ -36,7 +36,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               ]
 
 
-extlinks = dict(issue=('https://github.com/ContinuumIO/blaze/issues/%s', '#'))
+extlinks = dict(issue=('https://github.com/blaze/blaze/issues/%s', '#'))
 
 # -- Math ---------------------------------------------------------------------
 

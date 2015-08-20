@@ -8,5 +8,5 @@ as its type system.
 * Documentation_
 * Source_
 
-.. _Source: https://github.com/ContinuumIO/datashape
+.. _Source: https://github.com/blaze/datashape
 .. _Documentation: http://datashape.pydata.org/
