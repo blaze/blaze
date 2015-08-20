@@ -13,7 +13,7 @@ from ..expr import (
     std, var, count, nunique, Summary, IsIn,
     BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
     UTCFromTimestamp, DateTimeTruncate,
-    Transpose, TensorDot, Coerce, IsNull
+    Transpose, TensorDot, Coerce, isnan
 )
 from ..utils import keywords
 
@@ -337,14 +337,9 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
-@dispatch(IsNull, np.ndarray)
+@dispatch(isnan, np.ndarray)
 def compute_up(expr, data, **kwargs):
-    try:
-        import numexpr as ne
-    except ImportError:
-        return data != data
-    else:
-        return ne.evaluate('data != data', local_dict={'data': data})
+    return np.isnan(data)
 
 
 @dispatch(np.ndarray)
