@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import datashape
-from datashape import dshape, var, datetime_, float32, int64
+from datashape import dshape, var, datetime_, float32, int64, bool_
 
 from blaze.expr import symbol, label, Field
 
@@ -134,9 +134,7 @@ def test_non_option_does_not_have_isnull():
 
 
 def test_null_dshape():
-    s = symbol('s', '5 * ?int32')
-    assert str(s.dropna().dshape) == 'var * int32'
-    assert str(s.isnull().dshape) == 'var * bool'
+    assert symbol('s', '5 * ?int32').isnull().dshape == 5 * bool_
 
 
 def test_hash_to_different_values():

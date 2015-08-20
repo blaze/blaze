@@ -715,29 +715,6 @@ def test_isnan():
     assert (compute(nt.amount.isnan(), ndf) == ndf.amount.isnull()).all()
 
 
-@pytest.mark.xfail(raises=AttributeError,
-                   reason='logic not worked out here')
-def test_isnull_whole_table():
-    # any
-    assert (compute(nt.isnull(), ndf) == ndf.isnull()).all().all()
-
-    # all
-    lhs = compute(nt.dropna(how='all'), ndf).fillna(-9999)
-    rhs = ndf.dropna(how='all').fillna(-9999)
-    assert (lhs == rhs).all().all()
-
-
-def test_dropna():
-    # only how='any' makes sense for Series
-    assert (compute(nt.name.dropna(), ndf) == ndf.name.dropna()).all()
-
-
-@pytest.mark.xfail(raises=AttributeError,
-                   reason='logic not worked out here')
-def test_dropna_whole_table():
-    assert (compute(nt.dropna(), ndf) == ndf.dropna()).all().all()
-
-
 @pytest.mark.parametrize('keys', [[1], [2, 3]])
 def test_isin(keys):
     expr = t[t.id.isin(keys)]

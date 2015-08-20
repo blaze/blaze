@@ -36,7 +36,7 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise, symbol,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp, IsNull, DropNA)
+                    UTCFromTimestamp, isnull)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
@@ -307,21 +307,6 @@ def compute_up(t, a, b, **kwargs):
     # TODO: Tee if necessary
     func = rowfunc(t)
     return deepmap(func, a, b, n=ndim(t.lhs))
-
-
-@dispatch(DropNA, Sequence)
-def compute_up(expr, data, **kwargs):
-    f = rowfunc(expr._child.isnull())
-    data = iter(data)
-    first_el = toolz.first(data)
-
-    def mapper(x):
-        if (isinstance(first_el, Iterable) and
-                not isinstance(first_el, Iterable)):
-            return not getattr(builtins, expr.how)(x)
-        else:
-            return not x
-    return filter(compose(mapper, f), concat(([first_el], data)))
 
 
 @dispatch(Selection, Sequence)

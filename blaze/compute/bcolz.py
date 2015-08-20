@@ -5,10 +5,8 @@ from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
                     Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
-                    Reduction, symbol, IsIn)
-from ..expr import Label, Distinct, By, Slice
-from ..expr import Expr, DropNA, IsNull
-from ..expr import path
+                    Reduction, symbol, IsIn, Label, Distinct, By, Slice, Expr,
+                    path)
 from ..expr.optimize import lean_projection
 from ..expr.split import split
 from ..partition import partitions
@@ -59,18 +57,6 @@ def compute_down(expr, data, **kwargs):
         return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
     else:
         raise MDNotImplementedError()
-
-
-@dispatch(DropNA, (bcolz.ctable, bcolz.carray))
-def compute_up(expr, data, **kwargs):
-    expr = expr._child.isnull()
-    notnulls = bcolz.eval('~nulls', user_dict={'nulls': compute_up(expr, data,
-                                                                   **kwargs)})
-    if notnulls.ndim == 1:
-        cond = notnulls
-    else:
-        cond = getattr(np, expr.how)(notnulls, axis=1)
-    return data[cond]
 
 
 @dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
