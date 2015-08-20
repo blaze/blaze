@@ -24,14 +24,14 @@ Blaze may also be installed using ``pip``:
 
     pip install blaze --upgrade
     or
-    pip install git+https://github.com/ContinuumIO/blaze  --upgrade
+    pip install git+https://github.com/blaze/blaze  --upgrade
 
 If you are interested in the development version of Blaze you can
 obtain the source from Github.
 
 ::
 
-    $ git clone git@github.com:ContinuumIO/blaze.git
+    $ git clone git@github.com:blaze/blaze.git
 
 Anaconda can be downloaded for all platforms here:
 http://continuum.io/anaconda.html .
@@ -91,11 +91,11 @@ non-trivial to install.  We recommend installation throgh ``conda``.
 
 
 .. _numpy: http://www.numpy.org/
-.. _odo: https://github.com/ContinuumIO/odo
+.. _odo: https://github.com/blaze/odo
 .. _h5py: http://docs.h5py.org/en/latest/
 .. _pytest: http://pytest.org/latest/
-.. _dynd-python: https://github.com/ContinuumIO/dynd-python
-.. _datashape: https://github.com/ContinuumIO/datashape
+.. _dynd-python: https://github.com/blaze/dynd-python
+.. _datashape: https://github.com/blaze/datashape
 .. _pandas: http://pandas.pydata.org/
 .. _cytoolz: https://github.com/pytoolz/cytoolz/
 .. _sqlalchemy: http://www.sqlalchemy.org/

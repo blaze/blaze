@@ -13,7 +13,7 @@ from ..expr import (
     std, var, count, nunique, Summary, IsIn,
     BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
     UTCFromTimestamp, DateTimeTruncate,
-    Transpose, TensorDot, Coerce,
+    Transpose, TensorDot, Coerce, isnan
 )
 from ..utils import keywords
 
@@ -335,6 +335,11 @@ def compute_up(expr, data, **kwargs):
                     - offset)
                     .astype(np_dtype))
     return result
+
+
+@dispatch(isnan, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return np.isnan(data)
 
 
 @dispatch(np.ndarray)

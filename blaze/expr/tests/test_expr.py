@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import datashape
-from datashape import dshape, var, datetime_, float32, int64
+from datashape import dshape, var, datetime_, float32, int64, bool_
 
 from blaze.expr import symbol, label, Field
 
@@ -125,6 +125,15 @@ def test_map_with_rename():
     with pytest.raises(ValueError):
         result.relabel(timestamp='date')
     assert result.fields == ['date']
+
+
+def test_non_option_does_not_have_notnull():
+    s = symbol('s', '5 * int32')
+    assert not hasattr(s, 'notnull')
+
+
+def test_notnull_dshape():
+    assert symbol('s', '5 * ?int32').notnull().dshape == 5 * bool_
 
 
 def test_hash_to_different_values():

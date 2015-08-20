@@ -833,6 +833,22 @@ def test_compute_up_on_base():
     assert compute(s.minute, d) == d.minute
 
 
+def test_notnull():
+    data = [('Alice', -100, None),
+            (None, None, None),
+            ('Bob', 300, 'New York City')]
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
+    expr = t.name.notnull()
+    result = compute(expr, data)
+    assert list(result) == [True, False, True]
+
+
+def test_notnull_whole_collection():
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
+    with pytest.raises(AttributeError):
+        t.notnull
+
+
 @pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])
 def test_isin(keys):
     expr = t[t.name.isin(keys)]

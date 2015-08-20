@@ -17,7 +17,7 @@ a new version of Blaze.
    so they need to be updated to match.
 
 3. Update the release notes /docs/source/releases.rst
-   You may use a github URL like https://github.com/ContinuumIO/blaze/compare/0.6.0...master for assistance.
+   You may use a github URL like https://github.com/blaze/blaze/compare/0.6.0...master for assistance.
 
 4. Verify build is working on all platforms.  Binstar-build
    can assist with this.

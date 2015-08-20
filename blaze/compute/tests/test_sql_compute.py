@@ -57,6 +57,7 @@ def data():
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 metadata = sa.MetaData()
 
@@ -72,6 +73,12 @@ tdate = symbol('t',
                     id: int,
                     occurred_on: datetime
                 }""")
+
+ns = sa.Table('nullaccounts', metadata,
+              sa.Column('name', sa.String, nullable=True),
+              sa.Column('amount', sa.REAL),
+              sa.Column('id', sa.Integer, primary_key=True),
+              )
 
 sdate = sa.Table('accdate', metadata,
                  sa.Column('name', sa.String),
@@ -149,6 +156,7 @@ def test_arithmetic():
         str(sa.select([s.c.amount + s.c.id * 2]))
 
 
+
 def test_join():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -198,7 +206,6 @@ def test_join():
               amounts.name = ids.name) as anon_1
     order by
         anon_1.amount asc""")
-
 
 def test_clean_complex_join():
     metadata = sa.MetaData()
@@ -513,8 +520,9 @@ def test_head():
 
 
 def test_label():
-    assert str(compute((t['amount'] * 10).label('foo'), s, post_compute=False))\
-        == str((s.c.amount * 10).label('foo'))
+    assert (str(compute((t['amount'] * 10).label('foo'),
+                        s, post_compute=False)) ==
+            str((s.c.amount * 10).label('foo')))
 
 
 def test_relabel():
@@ -522,6 +530,19 @@ def test_relabel():
     expected = select([s.c.name.label('NAME'), s.c.amount, s.c.id.label('ID')])
 
     assert str(result) == str(expected)
+
+
+def test_merge():
+    col = (t['amount'] * 2).label('new')
+
+    expr = merge(t['name'], col)
+
+    result = str(compute(expr, s))
+
+    assert 'amount * ' in result
+    assert 'FROM accounts' in result
+    assert 'SELECT accounts.name' in result
+    assert 'new' in result
 
 
 def test_projection_of_selection():
@@ -683,7 +704,6 @@ def test_clean_join():
 
     assert (normalize(str(result)) == normalize(expected1) or
             normalize(str(result)) == normalize(expected2))
-
 
 def test_like():
     expr = t.like(name='Alice*')
@@ -1336,8 +1356,20 @@ def test_merge_compute():
         result = into(list, compute(expr, {s: data}))
 
         assert result == [(1, 'Alice', 100, 1000),
-                          (2, 'Bob',   200, 2000),
+                          (2, 'Bob', 200, 2000),
                           (4, 'Dennis', 400, 4000)]
+
+
+def test_notnull():
+    result = compute(nt[nt.name.notnull()], ns)
+    expected = """SELECT
+        nullaccounts.name,
+        nullaccounts.amount,
+        nullaccounts.id
+    FROM nullaccounts
+    WHERE nullaccounts.name is not null
+    """
+    assert normalize(str(result)) == normalize(expected)
 
 
 def test_head_limit():

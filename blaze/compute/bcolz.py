@@ -5,10 +5,8 @@ from multipledispatch import MDNotImplementedError
 
 from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
                     Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
-                    Reduction, symbol, IsIn)
-from ..expr import Label, Distinct, By, Slice
-from ..expr import Expr
-from ..expr import path
+                    Reduction, symbol, IsIn, Label, Distinct, By, Slice, Expr,
+                    path)
 from ..expr.optimize import lean_projection
 from ..expr.split import split
 from ..partition import partitions
