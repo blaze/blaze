@@ -1,7 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape import real, int_, bool_
+from datashape import Option, real, int_, bool_, isreal, isnumeric
+
 from .arithmetic import UnaryOp
+from .expressions import schema_method_list
+
 
 # Here follows a large number of unary operators.  These were selected by
 # taking the intersection of the functions in ``math`` and ``numpy``
@@ -9,7 +12,7 @@ from .arithmetic import UnaryOp
 __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
            'atan', 'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc',
-           'isnan', 'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
+           'isnan', 'isnull', 'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
 
 
 class Math(UnaryOp):
@@ -65,6 +68,7 @@ class BooleanMath(Math):
 
 
 class isnan(BooleanMath): pass
+class isnull(BooleanMath): pass
 
 
 def truncate(expr, precision):
@@ -83,11 +87,9 @@ def truncate(expr, precision):
     return expr // precision * precision
 
 
-from datashape.predicates import isreal, isnumeric
-
-from .expressions import schema_method_list
-
 schema_method_list.extend([
     (isreal, set([isnan])),
-    (isnumeric, set([truncate]))
-        ])
+    (isnumeric, set([truncate])),
+    (lambda ds: isinstance(ds, Option) or isinstance(ds.measure, Option),
+     set([isnull]))
+])
