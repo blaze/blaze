@@ -79,30 +79,78 @@ def inner_columns(s):
     raise TypeError()
 
 
+@dispatch(Projection, Select)
+def compute_up(expr, data, **kwargs):
+    d = dict((c.name, c) for c in getattr(data, 'inner_columns', data.c))
+    return data.with_only_columns([d[field] for field in expr.fields])
+
+
 @dispatch(Projection, Selectable)
+def compute_up(expr, data, **kwargs):
+    return compute(expr, sa.select([data]), post_compute=False)
+
+
+@dispatch(Projection, sa.Column)
+def compute_up(expr, data, **kwargs):
+    selectables = [
+        compute(expr._child[field], data, post_compute=False)
+        for field in expr.fields
+    ]
+    froms = set(toolz.concat(s.froms for s in selectables))
+    assert 1 <= len(froms) <= 2
+    result = unify_froms(sa.select(first(sel.inner_columns)
+                                   for sel in selectables),
+                         froms)
+    return result.where(unify_wheres(selectables))
+
+
+@dispatch(Projection, Select)
+def compute_up(expr, data, **kwargs):
+    return data.with_only_columns(
+        first(compute(expr._child[field], data,
+                      post_compute=False).inner_columns)
+        for field in expr.fields
+    )
+
+
+@dispatch(Field, FromClause)
 def compute_up(t, s, **kwargs):
-    d = dict((c.name, c) for c in inner_columns(s))
-    return select(s).with_only_columns([d[field] for field in t.fields])
+    return s.c[t._name]
 
 
-@dispatch((Field, Projection), Select)
-def compute_up(t, s, **kwargs):
-    cols = list(s.inner_columns)
-    cols = [lower_column(cols[t._child.fields.index(c)]) for c in t.fields]
-    return s.with_only_columns(cols)
+def unify_froms(select, selectables):
+    return reduce(lambda x, y: x.select_from(y), selectables, select)
 
 
-@dispatch(Field, ClauseElement)
-def compute_up(t, s, **kwargs):
-    return s.c.get(t._name)
+def unify_wheres(selectables):
+    return reduce(and_,
+                  unique((s._whereclause for s in selectables
+                          if hasattr(s, '_whereclause')), key=str))
+
+
+@dispatch(Field, Select)
+def compute_up(expr, data, **kwargs):
+    name = expr._name
+    try:
+        inner_columns = list(data.inner_columns)
+        names = list(c.name for c in data.inner_columns)
+        column = inner_columns[names.index(name)]
+    except (KeyError, ValueError):
+        single_column_select = compute(expr, first(data.inner_columns),
+                                       post_compute=False)
+        column = first(single_column_select.inner_columns)
+        result = unify_froms(sa.select([column]),
+                             data.froms + single_column_select.froms)
+        return result.where(unify_wheres([data, single_column_select]))
+    else:
+        return data.with_only_columns([column])
 
 
 @dispatch(Field, sa.Column)
 def compute_up(t, s, **kwargs):
-    assert 0 <= len(s.foreign_keys) <= 1, 'only one foreign key allowed'
+    assert len(s.foreign_keys) == 1, 'exactly one foreign key allowed'
     key_col = first(s.foreign_keys).column
-    join = s.table.join(key_col.table, onclause=s == key_col)
-    return sa.select([key_col.table.c[t._name]]).select_from(join)
+    return sa.select([key_col.table.c[t._name]]).where(s == key_col)
 
 
 @dispatch(Broadcast, Select)
@@ -882,7 +930,7 @@ def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
 
 
-@dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
+@dispatch(DateTime, ColumnElement)
 def compute_up(expr, data, **kwargs):
     if expr.attr == 'date':
         return sa.func.date(data).label(expr._name)
