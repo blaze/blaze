@@ -150,5 +150,5 @@ container type.
    <odo.backends.csv.CSV object at ...>
 
 
-.. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.csv
-.. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/blaze/examples/data/iris.db
+.. _`iris dataset`: https://raw.githubusercontent.com/blaze/blaze/master/blaze/examples/data/iris.csv
+.. _`sqlite file`: https://raw.githubusercontent.com/blaze/blaze/master/blaze/examples/data/iris.db
