@@ -22,18 +22,51 @@ def _coerce_str(bytes_or_str):
     return bytes_or_str.decode('utf-8')
 
 
-class OutOfData(Exception):
+class OutOfData(StopIteration):
+    """An exception used to indicate that a lazy unpacker does not have
+    enough data to return an object.
+    """
     pass
 
 
 class JsonUnpacker(object):
-    def __init__(self):
-        self._buffer = bytearray()
+    """A class for consuming a stream of bytes yielding json objects as they
+    are read.
+
+    Objects may be extracted with either the ``unpack`` method or the
+    iteration protocol.
+
+    Parameters
+    ----------
+    buffer_ : bytearray, optional
+        The initial buffer to consume from.
+    """
+    def __init__(self, buffer_=None):
+        self._buffer = bytearray() if buffer_ is None else buffer_
 
     def feed(self, next_bytes):
+        """Feed new data into the unpacker.
+
+        Parameters
+        ----------
+        next_bytes : bytes
+            New bytes to append to our internal buffer.
+        """
         self._buffer.extend(next_bytes)
 
     def unpack(self):
+        """Consume one json object from our buffer.
+
+        Returns
+        -------
+        obj : any
+            The first json object in our buffer if any exists.
+
+        Raises
+        ------
+        OutOfData
+            If there is not enough data in the buffer to return an object.
+        """
         buffer_ = self._buffer
         loads = json_module.loads
         for n in range(len(buffer_) + 1):
