@@ -53,7 +53,7 @@ def name(o):
 
 class Op(ElemWise):
     __slots__ = '_hash', 'operands'
-    __inputs__ = 'operands',
+    __inputs__ = '_operands',
 
     def __init__(self, operands):
         self._operands=operands
@@ -64,7 +64,7 @@ class Op(ElemWise):
 
 class BinOp(Op):
     __slots__ = '_hash',
-    __inputs__ = 'lhs', 'rhs'
+    #__inputs__ = 'lhs', 'rhs'   # are these needed?
 
     def __init__(self, lhs, rhs):
         super(BinOp, self).__init__([lhs, rhs])
