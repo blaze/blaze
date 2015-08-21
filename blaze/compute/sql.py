@@ -123,9 +123,9 @@ def unify_froms(select, selectables):
 
 
 def unify_wheres(selectables):
-    return reduce(and_,
-                  unique((s._whereclause for s in selectables
-                          if hasattr(s, '_whereclause')), key=str))
+    clauses = list(unique((s._whereclause for s in selectables
+                           if hasattr(s, '_whereclause')), key=str))
+    return reduce(and_, clauses) if clauses else None
 
 
 @dispatch(Field, Select)
@@ -541,22 +541,21 @@ def compute_up(expr, data, **kwargs):
 @dispatch(By, sa.Column)
 def compute_up(expr, data, scope=None, **kwargs):
     data = lower_column(data)
-
-    try:
-        # if we have a fkey relationship on the grouper we need to compute it
-        grouper = compute(expr.grouper, scope, post_compute=False, **kwargs)
-    except NotImplementedError:
-        # otherwise we use the input scope
-        grouper = data
+    grouper = compute(expr.grouper, scope, post_compute=False, **kwargs)
 
     app = expr.apply
-    if isinstance(app, Reduction):
-        reductions = [compute(app, data, post_compute=False)]
-    elif isinstance(app, Summary):
-        reductions = [compute(val, data, post_compute=None).label(name)
-                      for val, name in zip(app.values, app.fields)]
+    reductions = [compute(val, data, post_compute=None).label(name)
+                  for val, name in zip(app.values, app.fields)]
 
-    return sa.select([grouper] + reductions).group_by(grouper)
+    froms = chain(getattr(grouper, 'froms', getattr(grouper, 'table', [])),
+                  toolz.concat(r.element.froms for r in reductions))
+    inner_cols = chain(getattr(grouper, 'inner_columns', grouper),
+                            toolz.concat(r.element.inner_columns
+                                         if hasattr(getattr(r, 'element', None), 'inner_columns')
+                                         else [r] for r in reductions))
+    wheres = unify_wheres([grouper] + reductions)
+    sel = unify_froms(sa.select(inner_cols, whereclause=wheres), froms)
+    return sel.group_by(*grouper.inner_columns)
 
 
 @dispatch(By, ClauseElement)
