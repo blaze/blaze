@@ -15,7 +15,7 @@ import pandas.util.testing as tm
 
 from datashape import dshape
 from odo import odo, resource, drop, discover
-from blaze import symbol, compute, concat
+from blaze import symbol, compute, concat, by
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -149,16 +149,16 @@ def pkey(base_url, main):
                     np.random.uniform(10000, 20000, size=n),
                     np.random.randint(main.count().scalar(), size=n)))
     try:
-        main = odo(data, base_url % 'pkey',
+        pkey = odo(data, base_url % 'pkey',
                    dshape=dshape('var * {id: !int64, sym: string, price: float64, main: map[int64, T]}'),
                    foreign_keys=dict(main=main.c.id))
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
         try:
-            yield main
+            yield pkey
         finally:
-            drop(main)
+            drop(pkey)
 
 
 @pytest.yield_fixture
@@ -175,9 +175,9 @@ def fkey(base_url, pkey):
         pytest.skip(str(e))
     else:
         try:
-            yield main
+            yield fkey
         finally:
-            drop(main)
+            drop(fkey)
 
 
 @pytest.yield_fixture
