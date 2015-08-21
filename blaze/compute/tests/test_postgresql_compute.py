@@ -333,3 +333,17 @@ def test_foreign_key_chain(fkey):
     WHERE fkey.sym_id = pkey.id and pkey.main = main.id
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_foreign_key_group_by(fkey):
+    t = symbol('fkey', discover(fkey))
+    expr = by(t.sym_id.sym, avg_price=t.sym_id.price.mean())
+    result = compute(expr, fkey)
+    expected = """SELECT
+        pkey.sym,
+        avg(pkey.price) AS avg_price
+    FROM pkey, fkey
+    WHERE fkey.sym_id = pkey.id
+    GROUP BY pkey.sym
+    """
+    assert normalize(str(result)) == normalize(expected)
