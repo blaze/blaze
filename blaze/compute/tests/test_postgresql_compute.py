@@ -123,7 +123,10 @@ def orders(base_url, products):
             drop(orders)
 
 
-@pytest.yield_fixture
+# TODO: scope these as module because I think pytest is caching sa.Table, which
+# doesn't work if remove it after every run
+
+@pytest.yield_fixture(scope='module')
 def main(base_url):
     try:
         main = odo([(i, np.random.randint(10)) for i in range(13)],
@@ -138,7 +141,7 @@ def main(base_url):
             drop(main)
 
 
-@pytest.yield_fixture
+@pytest.yield_fixture(scope='module')
 def pkey(base_url, main):
     choices = [u'AAPL', u'HPQ', u'ORCL', u'IBM', u'DOW', u'SBUX', u'AMD',
                u'INTC', u'GOOG', u'PRU', u'MSFT', u'AIG', u'TXN', u'DELL',
@@ -161,10 +164,10 @@ def pkey(base_url, main):
             drop(pkey)
 
 
-@pytest.yield_fixture
+@pytest.yield_fixture(scope='module')
 def fkey(base_url, pkey):
     try:
-        main = odo([(i,
+        fkey = odo([(i,
                      np.random.randint(pkey.count().scalar()),
                      np.random.randint(10000))
                     for i in range(10)],
