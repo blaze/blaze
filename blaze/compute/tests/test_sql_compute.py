@@ -16,8 +16,8 @@ from toolz import unique
 
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
-    symbol, discover, transform, summary, by, sin, join,
-    floor, cos, merge, nunique, mean, sum, count, exp, concat,
+    symbol, transform, summary, by, sin, join,
+    floor, cos, merge, nunique, mean, sum, count, exp
 )
 from blaze.compatibility import xfail
 from blaze.utils import tmpfile, example
@@ -538,9 +538,33 @@ def test_label():
 
 def test_relabel():
     result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), s)
-    expected = select([s.c.name.label('NAME'), s.c.amount, s.c.id.label('ID')])
+    from_ = s.alias()
+    expected = select([
+        from_.c.name.label('NAME'),
+        from_.c.amount,
+        from_.c.id.label('ID'),
+    ])
 
     assert str(result) == str(expected)
+
+
+def test_relabel_selection():
+    result = compute(
+        t[['name', 'id']].relabel(name='new_name', id='new_id'),
+        s,
+    )
+    assert normalize(str(result)) == normalize(
+        """
+        select
+            anon_1.name as new_name,
+            anon_1.id as new_id
+        from
+            (select
+                 accounts.name as name,
+                 accounts.id as id
+             from accounts) as anon_1
+        """,
+    )
 
 
 def test_merge():

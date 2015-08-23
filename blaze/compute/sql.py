@@ -686,6 +686,7 @@ def post_compute(t, s, **kwargs):
 
 @dispatch(ReLabel, Selectable)
 def compute_up(t, s, **kwargs):
+    s = s.alias()
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
