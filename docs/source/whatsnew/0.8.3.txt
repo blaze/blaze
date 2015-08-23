@@ -29,6 +29,7 @@ Improved Backends
 
 * Blaze now tries a bit harder to avoid generating ``ScalarSelects`` when using
   the SQL backend (:issue:`1201`, :issue:`1205`)
+* ReLabel expressions on the SQL backend are now flattened (:issue:`1217`).
 
 API Changes
 ~~~~~~~~~~~
