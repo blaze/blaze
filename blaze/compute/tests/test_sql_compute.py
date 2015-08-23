@@ -536,34 +536,27 @@ def test_label():
             str((s.c.amount * 10).label('foo')))
 
 
-def test_relabel():
-    result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), s)
-    from_ = s.alias()
+def test_relabel_table():
+    result = compute(t.relabel(name='NAME', id='ID'), s)
     expected = select([
-        from_.c.name.label('NAME'),
-        from_.c.amount,
-        from_.c.id.label('ID'),
+        s.c.name.label('NAME'),
+        s.c.amount,
+        s.c.id.label('ID'),
     ])
 
     assert str(result) == str(expected)
 
 
-def test_relabel_selection():
+def test_relabel_projection():
     result = compute(
         t[['name', 'id']].relabel(name='new_name', id='new_id'),
         s,
     )
     assert normalize(str(result)) == normalize(
-        """
-        select
-            anon_1.name as new_name,
-            anon_1.id as new_id
-        from
-            (select
-                 accounts.name as name,
-                 accounts.id as id
-             from accounts) as anon_1
-        """,
+        """SELECT
+            accounts.name AS new_name,
+            accounts.id AS new_id
+        FROM accounts""",
     )
 
 
