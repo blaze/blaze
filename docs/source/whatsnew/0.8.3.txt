@@ -69,3 +69,5 @@ Bug Fixes
   (:issue:`1207`)
 * Fixed a bug where the wrong value was being passed into
   :func:`~blaze.expr.datetime.time` (:issue:`1213`)
+* Fixed a bug in sql relabel that prevented relabeling anything that generated
+  a subselect. (:issue:`1216`)
