@@ -413,7 +413,7 @@ def test_mixed_types():
                  dtype=[('count', '<i4'), ('total', '<i8')])
     aggregate = symbol('aggregate', discover(x))
     result = compute(aggregate.total.sum(axis=(0,)) /
-                     aggregate.count.sum(axis=(0,)), x)
+                     aggregate['count'].sum(axis=(0,)), x)
     expected = (x['total'].sum(axis=0, keepdims=True) /
                 x['count'].sum(axis=0, keepdims=True)).squeeze()
     np.testing.assert_array_equal(result, expected)
