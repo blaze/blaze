@@ -398,17 +398,17 @@ class Join(Expr):
 
     @property
     def on_left(self):
-        if isinstance(self._on_left, tuple):
-            return list(self._on_left)
-        else:
-            return self._on_left
+        on_left = self._on_left
+        if isinstance(on_left, tuple):
+            return list(on_left)
+        return on_left
 
     @property
     def on_right(self):
-        if isinstance(self._on_right, tuple):
-            return list(self._on_right)
-        else:
-            return self._on_right
+        on_right = self._on_right
+        if isinstance(on_right, tuple):
+            return list(on_right)
+        return on_right
 
     @property
     def schema(self):
@@ -435,22 +435,31 @@ class Join(Expr):
         """
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
-        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
-                  if name in self.on_left]
+        on_left = self.on_left
+        on_right = self.on_right
+
+        right_params = self.rhs.schema[0].parameters[0]
+        joined = [
+            [name, extract_option(dt)
+             if isinstance(dt, Option) and
+             not isinstance(right_params[n], Option) else dt]
+            for n, (name, dt) in enumerate(self.lhs.schema[0].parameters[0])
+            if name in on_left
+        ]
 
         left = [[name, dt] for name, dt in
                 zip(self.lhs.fields, types_of_fields(
                     self.lhs.fields, self.lhs))
-                if name not in self.on_left]
+                if name not in on_left]
 
         right = [[name, dt] for name, dt in
                  zip(self.rhs.fields, types_of_fields(
                      self.rhs.fields, self.rhs))
-                 if name not in self.on_right]
+                 if name not in on_right]
 
         # Handle overlapping but non-joined case, e.g.
-        left_other = [name for name, dt in left if name not in self.on_left]
-        right_other = [name for name, dt in right if name not in self.on_right]
+        left_other = [name for name, dt in left if name not in on_left]
+        right_other = [name for name, dt in right if name not in on_right]
         overlap = set.intersection(set(left_other), set(right_other))
         left_suffix, right_suffix = self.suffixes
         left = [[name + left_suffix if name in overlap else name, dt]
@@ -492,9 +501,28 @@ def types_of_fields(fields, expr):
     else:
         if isinstance(fields, (tuple, list, set)):
             assert len(fields) == 1
-            fields = fields[0]
+            fields, = fields
         assert fields == expr._name
         return expr.dshape.measure
+
+
+def extract_option(type_):
+    """Extract the underlying type out of an option type.
+    If ``type_`` is not an option type, then this is a nop.
+
+    Parameters
+    ----------
+    type_ : DataShape
+        The type to extract the underlying type of.
+
+    Returns
+    -------
+    underlying : DataShape
+        The underlying type.
+    """
+    if isinstance(type_, Option):
+        return type_.ty
+    return type_
 
 
 @copydoc(Join)
@@ -513,7 +541,8 @@ def join(lhs, rhs, on_left=None, on_right=None,
     if not on_left or not on_right:
         raise ValueError("Can not Join.  No shared columns between %s and %s" %
                          (lhs, rhs))
-    if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
+    if (extract_option(types_of_fields(on_left, lhs)) !=
+            extract_option(types_of_fields(on_right, rhs))):
         raise TypeError("Schema's of joining columns do not match")
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
