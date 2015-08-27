@@ -52,7 +52,8 @@ API Changes
   and let things like ``sa.sql.elements.Label`` objects through (:issue:`1212`)
 * Methods now take priority over field names when using attribute access
   for :class:`~blaze.expr.expressions.Field` instances to fix a bug that
-  prevented accessing the Field at all (:issue:`1204`). For example::
+  prevented accessing the method at all (:issue:`1204`). Here's an
+  example of how this works::
 
      >>> from blaze import symbol
      >>> t = symbol('t', 'var * {max: float64, isin: int64, count: int64}')
@@ -86,3 +87,5 @@ Bug Fixes
   :func:`~blaze.expr.datetime.time` (:issue:`1213`)
 * Fixed a bug in sql relabel that prevented relabeling anything that generated
   a subselect. (:issue:`1216`)
+* Fixed a bug where methods weren't accesssible on fields with the same
+  name (:issue:`1204`)
