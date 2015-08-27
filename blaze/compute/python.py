@@ -535,7 +535,7 @@ def compute_up(t, seq, **kwargs):
     return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
 
 
-def pair_assemble(t):
+def pair_assemble(t, on_left, on_right):
     """ Combine a pair of records into a single record
 
     This is mindful to shared columns as well as missing records
@@ -544,8 +544,6 @@ def pair_assemble(t):
         from cytoolz import get  # not curried version
     except:
         from toolz import get
-    on_left = [t.lhs.fields.index(col) for col in listpack(t.on_left)]
-    on_right = [t.rhs.fields.index(col) for col in listpack(t.on_right)]
 
     left_self_columns = [t.lhs.fields.index(c) for c in t.lhs.fields
                          if c not in listpack(t.on_left)]
@@ -556,12 +554,9 @@ def pair_assemble(t):
         a, b = pair
         if a is not None:
             joined = get(on_left, a)
-        else:
-            joined = get(on_right, b)
-
-        if a is not None:
             left_entries = get(left_self_columns, a)
         else:
+            joined = get(on_right, b)
             left_entries = (None,) * (len(t.lhs.fields) - len(on_left))
 
         if b is not None:
@@ -603,7 +598,7 @@ def compute_up(t, lhs, rhs, **kwargs):
                        left_default=left_default,
                        right_default=right_default)
 
-    assemble = pair_assemble(t)
+    assemble = pair_assemble(t, on_left, on_right)
 
     return map(assemble, pairs)
 
