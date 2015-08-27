@@ -363,11 +363,11 @@ def test_graph_double_join():
     result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
     result = sorted(map(tuple, result))
     expected = sorted([('A', 3, 1),
-                    ('A', 2, 1),
-                    ('A', 5, 1),
-                    ('F', 1, 6),
-                    ('F', 2, 6),
-                    ('F', 4, 6)])
+                       ('A', 2, 1),
+                       ('A', 5, 1),
+                       ('F', 1, 6),
+                       ('F', 2, 6),
+                       ('F', 4, 6)])
 
     assert result == expected
 
