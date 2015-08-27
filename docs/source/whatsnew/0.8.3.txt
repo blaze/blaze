@@ -20,9 +20,10 @@ Improved Expressions
   parameter to allow distinct on a subset of columns (:issue:`1159`)
 * :class:`~blaze.expr.reductions.Reduction` instances are now named as their
   class name if their ``_child`` attribute is named ``'_'`` (:issue:`1198`)
-* :class:`~blaze.expr.collections.Join` expressions now support joining types
-  against their corrosponding optional type (eg. ``int`` -> ``?int``)
-  (:issue:`1193`, :issue:`1218`).
+* :class:`~blaze.expr.collections.Join` expressions now promotes the types of
+  the fields being joined on. This allows us to join things like ``int32``
+  and ``int64`` and have the result be an int64. This also allows us to join
+  any type ``a`` with ``?a``. (:issue:`1193`, :issue:`1218`).
 
 New Backends
 ~~~~~~~~~~~~
