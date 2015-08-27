@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
 from itertools import chain
 
 import datashape
@@ -17,6 +18,7 @@ from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Field
 from .expressions import dshape_method_list
 from ..compatibility import zip_longest, _strtypes
+from ..utils import listpack
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
@@ -534,11 +536,21 @@ def join(lhs, rhs, on_left=None, on_right=None,
     if isinstance(on_right, tuple):
         on_right = list(on_right)
     if not on_left or not on_right:
-        raise ValueError("Can not Join.  No shared columns between %s and %s" %
-                         (lhs, rhs))
-    if promote(types_of_fields(on_left, lhs),
-               types_of_fields(on_right, rhs)) == object_:
-        raise TypeError("Schema's of joining columns do not match")
+        raise ValueError(
+            "Can not Join.  No shared columns between %s and %s" % (lhs, rhs),
+        )
+    left_types = listpack(types_of_fields(on_left, lhs))
+    right_types = listpack(types_of_fields(on_right, rhs))
+    for n, promotion in enumerate(map(partial(promote, promote_option=False),
+                                      left_types,
+                                      right_types)):
+        if promotion == object_:
+            raise TypeError(
+                "Schema's of joining columns do not match,"
+                ' no promotion found for %s=%s and %s=%s' % (
+                    on_left[n], left_types[n], on_right[n], right_types[n],
+                ),
+            )
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                  else on_right)

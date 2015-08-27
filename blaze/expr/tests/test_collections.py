@@ -91,6 +91,28 @@ def test_join_option_types():
     assert join(b, a, 'x').dshape == dshape('var * {x: int}')
 
 
+def test_join_mismatched_schema():
+    a = symbol('a', 'var * {x: int}')
+    b = symbol('b', 'var * {x: string}')
+
+    with pytest.raises(TypeError):
+        join(a, b, 'x')
+
+
+def test_join_type_promotion():
+    a = symbol('a', 'var * {x: int32}')
+    b = symbol('b', 'var * {x: int64}')
+
+    assert join(a, b, 'x').dshape == dshape('var * {x: int64}')
+
+
+def test_join_type_promotion_option():
+    a = symbol('a', 'var * {x: ?int32}')
+    b = symbol('b', 'var * {x: int64}')
+
+    assert join(a, b, 'x').dshape == dshape('var * {x: int64}')
+
+
 def test_isin():
     a = symbol('a', 'var * {x: int, y: string}')
     assert hasattr(a.x, 'isin')
