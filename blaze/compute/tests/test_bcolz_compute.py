@@ -7,7 +7,10 @@ from datashape import discover, dshape
 
 import numpy as np
 
+import pandas.util.testing as tm
+
 from odo import into
+from blaze import by
 from blaze.expr import symbol
 from blaze.compute.core import compute, pre_compute
 from blaze.compute.bcolz import get_chunksize
@@ -161,3 +164,13 @@ def test_chunksize_inference():
 def test_notnull():
     with pytest.raises(AttributeError):
         t.b.notnull
+
+
+def test_by_with_single_row():
+    ct = bcolz.ctable([[1, 1, 3, 3], [1, 2, 3, 4]], names=list('ab'))
+    t = symbol('t', discover(ct))
+    subset = t[t.a == 3]
+    expr = by(subset.a, b_sum=subset.b.sum())
+    result = compute(expr, ct)
+    expected = compute(expr, ct, optimize=False)
+    tm.assert_frame_equal(result, expected)
