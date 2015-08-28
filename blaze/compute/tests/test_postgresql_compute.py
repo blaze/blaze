@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, date
 import itertools
 import re
 
@@ -25,9 +25,12 @@ def normalize(s):
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
+db_url = 'postgresql://postgres@localhost/test'
+
+
 @pytest.fixture
 def url():
-    return 'postgresql://postgres@localhost/test::%s' % next(names)
+    return'%s::%s' % (db_url, next(names))
 
 
 @pytest.yield_fixture
@@ -176,3 +179,14 @@ def test_distinct_on(sql):
     FROM {tbl}) AS anon_1 ORDER BY anon_1."A" ASC
     """.format(tbl=sql.name))
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
+
+
+def test_date_of_datetime_function_call():
+    now = symbol('now', 'datetime')
+    assert isinstance(
+        compute(
+            now.date,
+            sa.func.now(bind=resource(db_url)),
+        ).execute().fetchall()[0][0],
+        date,
+    )
