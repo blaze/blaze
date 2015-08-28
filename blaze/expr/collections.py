@@ -450,9 +450,8 @@ class Join(Expr):
         if not isinstance(on_right, list):
             on_right = on_right,
 
-        mapping = dict(zip(on_right, on_left))
         right_types = keymap(
-            lambda k: mapping.get(k),
+            dict(zip(on_right, on_left)).get,
             dict(self.rhs.schema[0].parameters[0]),
         )
         joined = (
