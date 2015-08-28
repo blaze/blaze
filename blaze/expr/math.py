@@ -2,9 +2,8 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import Option, real, int_, bool_, isreal, isnumeric
 
-from .arithmetic import UnaryOp
+from .arithmetic import Op
 from .expressions import schema_method_list
-
 
 # Here follows a large number of unary operators.  These were selected by
 # taking the intersection of the functions in ``math`` and ``numpy``
@@ -16,7 +15,7 @@ __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'Math']
 
 
-class Math(UnaryOp):
+class Math(Op):
     pass
 
 

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import operator
-from toolz import first
+from toolz import first, compose
 import numpy as np
 import pandas as pd
 from datashape import dshape, var, DataShape
@@ -16,6 +16,7 @@ from ..compatibility import _strtypes
 
 
 __all__ = '''
+Op
 BinOp
 UnaryOp
 Arithmetic
@@ -50,18 +51,34 @@ def name(o):
         return None
 
 
-class BinOp(ElemWise):
-    __slots__ = '_hash', 'lhs', 'rhs'
-    __inputs__ = 'lhs', 'rhs'
+class Op(ElemWise):
+    __slots__ = '_hash', 'operands'
+    __inputs__ = '_operands',
+
+    def __init__(self, operands):
+        self._operands=operands
+
+    @property
+    def _inputs(self):
+        return tuple(op for op in self._operands if isinstance(op, Expr))
+
+class BinOp(Op):
+    __slots__ = '_hash',
+    #__inputs__ = 'lhs', 'rhs'   # are these needed?
 
     def __init__(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
+        super(BinOp, self).__init__([lhs, rhs])
 
     def __str__(self):
-        lhs = parenthesize(eval_str(self.lhs))
-        rhs = parenthesize(eval_str(self.rhs))
-        return '%s %s %s' % (lhs, self.symbol, rhs)
+        return (' %s ' % self.symbol).join(map(compose(parenthesize, eval_str), self._operands))
+
+    @property
+    def lhs(self):
+        return self._operands[0]
+
+    @property
+    def rhs(self):
+        return self._operands[1]
 
     @property
     def _name(self):
@@ -74,15 +91,6 @@ class BinOp(ElemWise):
             return r
         if l == r:
             return l
-
-    @property
-    def _inputs(self):
-        result = []
-        if isinstance(self.lhs, Expr):
-            result.append(self.lhs)
-        if isinstance(self.rhs, Expr):
-            result.append(self.rhs)
-        return tuple(result)
 
 
 def maxvar(L):
@@ -120,14 +128,18 @@ def maxshape(shapes):
     return tuple(map(maxvar, zip(*shapes)))
 
 
-class UnaryOp(ElemWise):
-    __slots__ = '_hash', '_child',
+class UnaryOp(Op):
+    __slots__ = '_hash',
 
     def __init__(self, child):
-        self._child = child
+        super(Op, self).__init__([child])
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self._child))
+
+    @property
+    def _child(self):
+        return self._operands[0]
 
     @property
     def symbol(self):
