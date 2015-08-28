@@ -181,12 +181,6 @@ def test_distinct_on(sql):
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
 
 
-def test_date_of_datetime_function_call():
-    now = symbol('now', 'datetime')
-    assert isinstance(
-        compute(
-            now.date,
-            sa.func.now(bind=resource(db_url)),
-        ).execute().fetchall()[0][0],
-        date,
-    )
+def test_function_in_expr():
+    s = symbol('s', 'int32')
+    assert odo(compute(s + 1, sa.func.max(1, bind=resource(db_url))), int) == 2

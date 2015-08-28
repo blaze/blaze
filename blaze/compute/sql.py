@@ -16,6 +16,7 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
+from functools import wraps
 import itertools
 from itertools import chain
 
@@ -79,25 +80,77 @@ def inner_columns(s):
     raise TypeError()
 
 
-@dispatch(Projection, Selectable)
+def ensure_bind(f):
+    """Ensure that the bind is properly copied up after compute_up.
+
+    Parameters
+    ----------
+    f : callable
+        The compute_up function to wrap.
+
+    Returns
+    -------
+    wrapped : callable
+        The wrapped compute_up.
+    """
+    @wraps(f)
+    def wrapped(expr, *args, **kwargs):
+        if not args:
+            return f(expr, *args, **kwargs)
+
+        data, args = args[0], args[1:]
+        if isinstance(data, sa.engine.Engine):
+            bind = data
+        else:
+            bind = data.bind
+        e = f(expr, data, *args, **kwargs)
+        try:
+            e.bind = bind
+        except AttributeError:
+            pass
+        return e
+
+    return wrapped
+
+
+def dispatch_and_bind(*args):
+    """Custom dispatch that wraps the function in an ``ensure_bind``.
+
+    Parameters
+    ----------
+    *args
+        Forwarded to ``blaze.dispatch.dispatch``
+    **kwargs
+        Forwarded to ``blaze.dispatch.dispatch``
+
+    Returns
+    -------
+    dispatcher : callable
+        A decorator that will both wrap the function in ``ensure_types``
+        and the normal ``blaze.dispatch.dispatch``.
+    """
+    return toolz.compose(dispatch(*args), ensure_bind)
+
+
+@dispatch_and_bind(Projection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     d = dict((c.name, c) for c in inner_columns(s))
     return select(s).with_only_columns([d[field] for field in t.fields])
 
 
-@dispatch((Field, Projection), Select)
+@dispatch_and_bind((Field, Projection), Select)
 def compute_up(t, s, **kwargs):
     cols = list(s.inner_columns)
     cols = [lower_column(cols[t._child.fields.index(c)]) for c in t.fields]
     return s.with_only_columns(cols)
 
 
-@dispatch(Field, ClauseElement)
+@dispatch_and_bind(Field, ClauseElement)
 def compute_up(t, s, **kwargs):
     return s.c.get(t._name)
 
 
-@dispatch(Broadcast, Select)
+@dispatch_and_bind(Broadcast, Select)
 def compute_up(t, s, **kwargs):
     cols = list(inner_columns(s))
     d = dict((t._scalars[0][c], cols[i])
@@ -109,7 +162,7 @@ def compute_up(t, s, **kwargs):
     return s.with_only_columns([result])
 
 
-@dispatch(Broadcast, Selectable)
+@dispatch_and_bind(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
     cols = list(inner_columns(s))
     d = dict((t._scalars[0][c], cols[i])
@@ -117,7 +170,7 @@ def compute_up(t, s, **kwargs):
     return compute(t._scalar_expr, d, post_compute=False).label(t._name)
 
 
-@dispatch(Concat, (Select, Selectable), (Select, Selectable))
+@dispatch_and_bind(Concat, (Select, Selectable), (Select, Selectable))
 def compute_up(t, lhs, rhs, **kwargs):
     if t.axis != 0:
         raise ValueError(
@@ -128,13 +181,13 @@ def compute_up(t, lhs, rhs, **kwargs):
     return select(lhs).union_all(select(rhs)).alias()
 
 
-@dispatch(Broadcast, sa.Column)
+@dispatch_and_bind(Broadcast, sa.Column)
 def compute_up(t, s, **kwargs):
     expr = t._scalar_expr
     return compute(expr, s, post_compute=False).label(expr._name)
 
 
-@dispatch(BinOp, ColumnElement)
+@dispatch_and_bind(BinOp, ColumnElement)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
@@ -142,7 +195,7 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-@dispatch(BinOp, Select)
+@dispatch_and_bind(BinOp, Select)
 def compute_up(t, data, **kwargs):
     assert len(data.c) == 1, \
         'Select cannot have more than a single column when doing arithmetic'
@@ -155,11 +208,12 @@ def compute_up(t, data, **kwargs):
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
 @compute_up.register(BinOp, ColumnElement, (ColumnElement, base))
+@ensure_bind
 def binop_sql(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(FloorDiv, ColumnElement)
+@dispatch_and_bind(FloorDiv, ColumnElement)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return sa.func.floor(data / t.rhs)
@@ -169,28 +223,29 @@ def compute_up(t, data, **kwargs):
 
 @compute_up.register(FloorDiv, (ColumnElement, base), ColumnElement)
 @compute_up.register(FloorDiv, ColumnElement, (ColumnElement, base))
+@ensure_bind
 def binop_sql(t, lhs, rhs, **kwargs):
     return sa.func.floor(lhs / rhs)
 
 
-@dispatch(isnan, ColumnElement)
+@dispatch_and_bind(isnan, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s == float('nan')
 
 
-@dispatch(UnaryOp, ColumnElement)
+@dispatch_and_bind(UnaryOp, ColumnElement)
 def compute_up(t, s, **kwargs):
     sym = t.symbol
     return getattr(t, 'op', getattr(safuncs, sym, getattr(sa.func, sym)))(s)
 
 
-@dispatch(Selection, sa.sql.ColumnElement)
+@dispatch_and_bind(Selection, sa.sql.ColumnElement)
 def compute_up(expr, data, scope=None, **kwargs):
     predicate = compute(expr.predicate, data, post_compute=False)
     return sa.select([data]).where(predicate)
 
 
-@dispatch(Selection, Selectable)
+@dispatch_and_bind(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
     ns = dict((t._child[col.name], col)
               for col in getattr(s, 'inner_columns', s.columns))
@@ -229,12 +284,12 @@ def name(sel):
     return next(table_names)
 
 
-@dispatch(Select, Select)
+@dispatch_and_bind(Select, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
 
-@dispatch(Select, ClauseElement)
+@dispatch_and_bind(Select, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(a.froms) > 1:
         raise MDNotImplementedError()
@@ -243,7 +298,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
                                 a.froms[0].join(b, condition, **kwargs))
 
 
-@dispatch(ClauseElement, Select)
+@dispatch_and_bind(ClauseElement, Select)
 def _join_selectables(a, b, condition=None, **kwargs):
     if len(b.froms) > 1:
         raise MDNotImplementedError()
@@ -252,7 +307,7 @@ def _join_selectables(a, b, condition=None, **kwargs):
 
 
 
-@dispatch(ClauseElement, ClauseElement)
+@dispatch_and_bind(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
 
@@ -267,7 +322,7 @@ def _clean_join_name(opposite_side_colnames, suffix, c):
         return c.label(c.name + suffix)
 
 
-@dispatch(Join, ClauseElement, ClauseElement)
+@dispatch_and_bind(Join, ClauseElement, ClauseElement)
 def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(lhs, ColumnElement):
         lhs = select(lhs)
@@ -378,7 +433,7 @@ def reconstruct_select(columns, original, **kwargs):
                      **kwargs)
 
 
-@dispatch((nunique, Reduction), Select)
+@dispatch_and_bind((nunique, Reduction), Select)
 def compute_up(expr, data, **kwargs):
     if expr.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -389,22 +444,22 @@ def compute_up(expr, data, **kwargs):
     return select([compute(expr, d, post_compute=False)])
 
 
-@dispatch(Distinct, ColumnElement)
+@dispatch_and_bind(Distinct, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.distinct(*t.on).label(t._name)
 
 
-@dispatch(Distinct, Select)
+@dispatch_and_bind(Distinct, Select)
 def compute_up(t, s, **kwargs):
     return s.distinct(*t.on)
 
 
-@dispatch(Distinct, Selectable)
+@dispatch_and_bind(Distinct, Selectable)
 def compute_up(t, s, **kwargs):
     return select(s).distinct(*t.on)
 
 
-@dispatch(Reduction, ClauseElement)
+@dispatch_and_bind(Reduction, ClauseElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -421,7 +476,7 @@ prefixes = {
 }
 
 
-@dispatch((std, var), sql.elements.ColumnElement)
+@dispatch_and_bind((std, var), sql.elements.ColumnElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -430,12 +485,12 @@ def compute_up(t, s, **kwargs):
     return getattr(sa.func, full_funcname)(s).label(t._name)
 
 
-@dispatch(count, Selectable)
+@dispatch_and_bind(count, Selectable)
 def compute_up(t, s, **kwargs):
     return s.count()
 
 
-@dispatch(count, sa.Table)
+@dispatch_and_bind(count, sa.Table)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -447,12 +502,12 @@ def compute_up(t, s, **kwargs):
     return sa.func.count(c)
 
 
-@dispatch(nelements, (Select, ClauseElement))
+@dispatch_and_bind(nelements, (Select, ClauseElement))
 def compute_up(t, s, **kwargs):
     return compute_up(t._child.count(), s)
 
 
-@dispatch(count, Select)
+@dispatch_and_bind(count, Select)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -469,19 +524,19 @@ def compute_up(t, s, **kwargs):
     return select([list(inner_columns(result))[0].label(t._name)])
 
 
-@dispatch(nunique, sa.Column)
+@dispatch_and_bind(nunique, sa.Column)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     return sa.func.count(s.distinct())
 
 
-@dispatch(nunique, Selectable)
+@dispatch_and_bind(nunique, Selectable)
 def compute_up(expr, data, **kwargs):
     return select(data).distinct().alias(next(aliases)).count()
 
 
-@dispatch(By, sa.Column)
+@dispatch_and_bind(By, sa.Column)
 def compute_up(expr, data, **kwargs):
     grouper = lower_column(data)
     app = expr.apply
@@ -494,7 +549,7 @@ def compute_up(expr, data, **kwargs):
     return sa.select([grouper] + reductions).group_by(grouper)
 
 
-@dispatch(By, ClauseElement)
+@dispatch_and_bind(By, ClauseElement)
 def compute_up(expr, data, **kwargs):
     if not valid_grouper(expr):
         raise TypeError("Grouper must have a non-nested record or one "
@@ -592,7 +647,7 @@ def valid_reducer(expr):
              (isrecord(measure) and not is_nested_record(measure))))
 
 
-@dispatch(By, Select)
+@dispatch_and_bind(By, Select)
 def compute_up(expr, data, **kwargs):
     if not valid_grouper(expr):
         raise TypeError("Grouper must have a non-nested record or one "
@@ -626,7 +681,7 @@ def compute_up(expr, data, **kwargs):
                               group_by=grouper)
 
 
-@dispatch(Sort, (Selectable, Select))
+@dispatch_and_bind(Sort, (Selectable, Select))
 def compute_up(t, s, **kwargs):
     s = select(s.alias())
     direction = sa.asc if t.ascending else sa.desc
@@ -634,7 +689,7 @@ def compute_up(t, s, **kwargs):
     return s.order_by(*cols)
 
 
-@dispatch(Sort, (sa.Table, ColumnElement))
+@dispatch_and_bind(Sort, (sa.Table, ColumnElement))
 def compute_up(t, s, **kwargs):
     s = select(s)
     direction = sa.asc if t.ascending else sa.desc
@@ -642,34 +697,34 @@ def compute_up(t, s, **kwargs):
     return s.order_by(*cols)
 
 
-@dispatch(Head, FromClause)
+@dispatch_and_bind(Head, FromClause)
 def compute_up(t, s, **kwargs):
     if s._limit is not None and s._limit <= t.n:
         return s
     return s.limit(t.n)
 
 
-@dispatch(Head, sa.Table)
+@dispatch_and_bind(Head, sa.Table)
 def compute_up(t, s, **kwargs):
     return s.select().limit(t.n)
 
 
-@dispatch(Head, ColumnElement)
+@dispatch_and_bind(Head, ColumnElement)
 def compute_up(t, s, **kwargs):
     return sa.select([s]).limit(t.n)
 
 
-@dispatch(Head, ScalarSelect)
+@dispatch_and_bind(Head, ScalarSelect)
 def compute_up(t, s, **kwargs):
     return compute(t, s.element, post_compute=False)
 
 
-@dispatch(Label, ColumnElement)
+@dispatch_and_bind(Label, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
-@dispatch(Label, FromClause)
+@dispatch_and_bind(Label, FromClause)
 def compute_up(t, s, **kwargs):
     assert len(s.c) == 1, \
         'expected %s to have a single column but has %d' % (s, len(s.c))
@@ -677,12 +732,12 @@ def compute_up(t, s, **kwargs):
     return reconstruct_select([inner_column.label(t.label)], s).as_scalar()
 
 
-@dispatch(Expr, ScalarSelect)
+@dispatch_and_bind(Expr, ScalarSelect)
 def post_compute(t, s, **kwargs):
     return s.element
 
 
-@dispatch(ReLabel, Selectable)
+@dispatch_and_bind(ReLabel, Selectable)
 def compute_up(expr, data, **kwargs):
     names = data.c.keys()
     assert names == expr._child.fields
@@ -693,7 +748,7 @@ def compute_up(expr, data, **kwargs):
     )
 
 
-@dispatch(FromClause)
+@dispatch_and_bind(FromClause)
 def get_inner_columns(sel):
     try:
         return list(sel.inner_columns)
@@ -701,26 +756,26 @@ def get_inner_columns(sel):
         return list(map(lower_column, sel.c.values()))
 
 
-@dispatch(ColumnElement)
+@dispatch_and_bind(ColumnElement)
 def get_inner_columns(c):
     return [c]
 
 
-@dispatch(ScalarSelect)
+@dispatch_and_bind(ScalarSelect)
 def get_inner_columns(sel):
     inner_columns = list(sel.inner_columns)
     assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
     return list(map(lower_column, inner_columns))
 
 
-@dispatch(sa.sql.functions.Function)
+@dispatch_and_bind(sa.sql.functions.Function)
 def get_inner_columns(f):
     unique_columns = unique(concat(map(get_inner_columns, f.clauses)))
     lowered = [x.label(getattr(x, 'name', None)) for x in unique_columns]
     return [getattr(sa.func, f.name)(*lowered)]
 
 
-@dispatch(sa.sql.elements.Label)
+@dispatch_and_bind(sa.sql.elements.Label)
 def get_inner_columns(label):
     """
     Notes
@@ -735,17 +790,17 @@ def get_inner_columns(label):
     return [lower_column(c).label(name) for c in inner_columns]
 
 
-@dispatch(Select)
+@dispatch_and_bind(Select)
 def get_all_froms(sel):
     return list(unique(sel.locate_all_froms()))
 
 
-@dispatch(sa.Table)
+@dispatch_and_bind(sa.Table)
 def get_all_froms(t):
     return [t]
 
 
-@dispatch(ColumnClause)
+@dispatch_and_bind(ColumnClause)
 def get_all_froms(c):
     return [c.table]
 
@@ -758,7 +813,7 @@ def get_clause(data, kind):
     return clause.clauses if clause is not None else None
 
 
-@dispatch(Merge, (Selectable, Select, sa.Column))
+@dispatch_and_bind(Merge, (Selectable, Select, sa.Column))
 def compute_up(expr, data, **kwargs):
     # get the common subexpression of all the children in the merge
     subexpression = common_subexpression(*expr.children)
@@ -777,7 +832,7 @@ def compute_up(expr, data, **kwargs):
     return reconstruct_select(columns, data, from_obj=from_obj)
 
 
-@dispatch(Summary, Select)
+@dispatch_and_bind(Summary, Select)
 def compute_up(t, s, scope=None, **kwargs):
     d = dict((t._child[c], list(inner_columns(s))[i])
              for i, c in enumerate(t._child.fields))
@@ -792,7 +847,7 @@ def compute_up(t, s, scope=None, **kwargs):
     return s.with_only_columns(cols)
 
 
-@dispatch(Summary, ClauseElement)
+@dispatch_and_bind(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
     scope = {t._child: s}
     return sa.select(
@@ -801,12 +856,12 @@ def compute_up(t, s, **kwargs):
     )
 
 
-@dispatch(Like, Selectable)
+@dispatch_and_bind(Like, Selectable)
 def compute_up(t, s, **kwargs):
     return compute_up(t, select(s), **kwargs)
 
 
-@dispatch(Like, Select)
+@dispatch_and_bind(Like, Select)
 def compute_up(t, s, **kwargs):
     items = [(f.c.get(name), pattern.replace('*', '%'))
              for name, pattern in t.patterns.items()
@@ -830,19 +885,19 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
     return compiler.visit_function(element, **kwargs)
 
 
-@dispatch(strlen, ColumnElement)
+@dispatch_and_bind(strlen, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
-@dispatch(UnaryStringFunction, ColumnElement)
+@dispatch_and_bind(UnaryStringFunction, ColumnElement)
 def compute_up(expr, data, **kwargs):
     func_name = type(expr).__name__
     func_name = string_func_names.get(func_name, func_name)
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 
-@dispatch(notnull, ColumnElement)
+@dispatch_and_bind(notnull, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data != None
 
@@ -861,20 +916,15 @@ def table_of_engine(engine, name):
     return table_of_metadata(metadata, name)
 
 
-@dispatch(Field, sa.engine.Engine)
+@dispatch_and_bind(Field, sa.engine.Engine)
 def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
 
 
-@dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
+@dispatch_and_bind(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
 def compute_up(expr, data, **kwargs):
     if expr.attr == 'date':
-        col, = get_inner_columns(data)
-        d = sa.func.date(col).label(expr._name)
-        # Manually reassign the bind, cannot pass to function:
-        # https://bitbucket.org/zzzeek/sqlalchemy/issues/3519
-        d.bind = data.bind
-        return d
+        return sa.func.date(data).label(expr._name)
 
     return sa.extract(expr.attr, data).label(expr._name)
 
@@ -907,22 +957,22 @@ def optimize(expr, _):
     return broadcast_collect(expr)
 
 
-@dispatch(Field, sa.MetaData)
+@dispatch_and_bind(Field, sa.MetaData)
 def compute_up(expr, data, **kwargs):
     return table_of_metadata(data, expr._name)
 
 
-@dispatch(Expr, ClauseElement)
+@dispatch_and_bind(Expr, ClauseElement)
 def post_compute(_, s, **kwargs):
     return select(s)
 
 
-@dispatch(IsIn, ColumnElement)
+@dispatch_and_bind(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
 
 
-@dispatch(Slice, (Select, Selectable, ColumnElement))
+@dispatch_and_bind(Slice, (Select, Selectable, ColumnElement))
 def compute_up(expr, data, **kwargs):
     index = expr.index[0]  # [0] replace_slices returns tuple ((start, stop), )
     if isinstance(index, slice):
@@ -959,6 +1009,6 @@ def compute_up(expr, data, **kwargs):
         return select(data).offset(start).limit(stop - start)
 
 
-@dispatch(Coerce, ColumnElement)
+@dispatch_and_bind(Coerce, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)
