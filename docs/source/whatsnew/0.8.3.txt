@@ -64,7 +64,7 @@ API Changes
      >>> t.count.max()  # AttributeError
      Traceback (most recent call last):
         ...
-     AttributeError: n must be >= 0
+     AttributeError: ...
 
 Bug Fixes
 ~~~~~~~~~
