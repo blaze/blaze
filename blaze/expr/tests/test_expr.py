@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import types
+
 import pandas as pd
 
 import pytest
@@ -165,3 +167,17 @@ def test_coerce_record():
     s = symbol('s', 'var * {a: int64, b: float64}')
     expr = s.coerce('{a: float64, b: float32}')
     assert str(expr) == "s.coerce(to='{a: float64, b: float32}')"
+
+
+def test_method_before_name():
+    t = symbol('t', 'var * {isin: int64, max: float64, count: int64}')
+    assert isinstance(t['isin'], Field)
+    assert isinstance(t['max'], Field)
+    assert isinstance(t.max, Field)
+    assert isinstance(t.isin, Field)
+    assert isinstance(t['isin'].isin, types.MethodType)
+    assert isinstance(t['max'].max, types.MethodType)
+    assert isinstance(t.max.max, types.MethodType)
+    assert isinstance(t.isin.isin, types.MethodType)
+    with pytest.raises(AttributeError):
+        t.count.max()
