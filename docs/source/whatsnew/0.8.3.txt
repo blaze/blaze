@@ -87,5 +87,7 @@ Bug Fixes
   :func:`~blaze.expr.datetime.time` (:issue:`1213`)
 * Fixed a bug in sql relabel that prevented relabeling anything that generated
   a subselect. (:issue:`1216`)
-* Fixed a bug where methods weren't accesssible on fields with the same
+* Fixed a bug where methods weren't accessible on fields with the same
   name (:issue:`1204`)
+* Fixed a bug where optimized expressions going into a pandas group by were
+  incorrectly assigning extra values to the child DataFrame (:issue:`1221`)
