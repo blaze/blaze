@@ -101,3 +101,5 @@ Bug Fixes
   when executed against a sql function that returned a datetime.
   For example: ``compute(symbol('s', 'datetime').date, sa.func.now())``
   (:issue:`1224`).
+* Fixed a bug where using a sqlalchemy function as a datasource in an expression
+  would sometimes lose the bind information. (:issue:`1224`).
