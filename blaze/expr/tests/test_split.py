@@ -46,7 +46,7 @@ def test_mean():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(agg.total.sum() / agg.count.sum())
+    assert agg_expr.isidentical(agg.total.sum() / agg['count'].sum())
 
 
 def test_var():

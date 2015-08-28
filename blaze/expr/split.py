@@ -46,7 +46,7 @@ from math import floor
 from .core import *
 from .expressions import *
 from .strings import Like
-from .expressions import ndim, shape
+from .expressions import shape
 from .math import sqrt
 from .reductions import *
 from .split_apply_combine import *
@@ -163,7 +163,7 @@ def _split_chunk(expr, leaf=None, chunk=None, keepdims=True):
 @dispatch(mean)
 def _split_agg(expr, leaf=None, agg=None):
     total = agg.total.sum(axis=expr.axis, keepdims=expr.keepdims)
-    count = agg.count.sum(axis=expr.axis, keepdims=expr.keepdims)
+    count = agg['count'].sum(axis=expr.axis, keepdims=expr.keepdims)
 
     return total / count
 

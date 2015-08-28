@@ -177,25 +177,27 @@ class Expr(Node):
         try:
             result = object.__getattribute__(self, key)
         except AttributeError:
-            base_fields = self.fields
-            fields = dict(zip(map(valid_identifier, base_fields),
-                              base_fields))
-            if base_fields and key in fields:
+            fields = dict(zip(map(valid_identifier, self.fields),
+                              self.fields))
+
+            # prefer the method if there's a field with the same name
+            methods = toolz.merge(
+                schema_methods(self.dshape.measure),
+                dshape_methods(self.dshape)
+            )
+            if key in methods:
+                func = methods[key]
+                if func in method_properties:
+                    result = func(self)
+                else:
+                    result = boundmethod(func, self)
+            elif self.fields and key in fields:
                 if isscalar(self.dshape.measure):  # t.foo.foo is t.foo
                     result = self
                 else:
                     result = self[fields[key]]
             else:
-                d = toolz.merge(schema_methods(self.dshape.measure),
-                                dshape_methods(self.dshape))
-                if key in d:
-                    func = d[key]
-                    if func in method_properties:
-                        result = func(self)
-                    else:
-                        result = boundmethod(func, self)
-                else:
-                    raise
+                raise
         _attr_cache[(self, key)] = result
         return result
 

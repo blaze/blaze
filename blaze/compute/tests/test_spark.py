@@ -48,15 +48,15 @@ t_idx = symbol('idx', 'var * {name: string, node_id: int32}')
 t_arc = symbol('arc', 'var * {node_out: int32, node_id: int32}')
 
 
-def test_spark_symbol(rdd):
+def test_symbol(rdd):
     assert compute(t, rdd) == rdd
 
 
-def test_spark_projection(rdd):
+def test_projection(rdd):
     assert compute(t['name'], rdd).collect() == [row[0] for row in data]
 
 
-def test_spark_multicols_projection(rdd):
+def test_multicols_projection(rdd):
     result = compute(t[['amount', 'name']], rdd).collect()
     expected = [(100, 'Alice'), (200, 'Bob'), (50, 'Alice')]
 
@@ -84,7 +84,7 @@ reduction_exprs = [
     t['amount'].std()]
 
 
-def test_spark_reductions(rdd):
+def test_reductions(rdd):
     for expr in reduction_exprs:
         result = compute(expr, rdd)
         expected = compute(expr, data)
@@ -112,57 +112,60 @@ exprs = [
     t.map(lambda tup: tup[1] + tup[2], 'real'),
     t.like(name='Alice'),
     t['amount'].apply(identity, 'var * real', splittable=True),
-    t['amount'].map(inc, 'int')]
+    t['amount'].map(inc, 'int')
+]
 
 
-def test_spark_basic(rdd):
-    check_exprs_against_python(exprs, data, rdd)
+def tuplify(x):
+    return tuple(x) if isinstance(x, list) else x
 
 
-def check_exprs_against_python(exprs, data, rdd):
-    any_bad = False
-    for expr in exprs:
-        result = compute(expr, rdd).collect()
-        expected = list(compute(expr, data))
-        if not result == expected:
-            any_bad = True
-            print("Expression:", expr)
-            print("Spark:", result)
-            print("Python:", expected)
-
-    assert not any_bad
+@pytest.mark.parametrize('expr', exprs)
+def test_basic(rdd, expr):
+    result = set(map(tuplify, compute(expr, rdd).collect()))
+    expected = set(map(tuplify, compute(expr, data)))
+    assert result == expected
 
 
-def test_spark_big_by(sc):
-    tbig = symbol(
-        'tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
+tbig = symbol(
+    'tbig', 'var * {name: string, sex: string[1], amount: int, id: int}')
 
-    big_exprs = [
-        by(tbig[['name', 'sex']], total=tbig['amount'].sum()),
-        by(tbig[['name', 'sex']], total=(tbig['id'] + tbig['amount']).sum())]
+big_exprs = [
+    by(tbig[['name', 'sex']], total=tbig['amount'].sum()),
+    by(tbig[['name', 'sex']], total=(tbig['id'] + tbig['amount']).sum())]
 
-    databig = [['Alice', 'F', 100, 1],
-               ['Alice', 'F', 100, 3],
-               ['Drew', 'F', 100, 4],
-               ['Drew', 'M', 100, 5],
-               ['Drew', 'M', 200, 5]]
 
-    rddbig = sc.parallelize(databig)
-
-    check_exprs_against_python(big_exprs, databig, rddbig)
+@pytest.mark.parametrize('expr', big_exprs)
+def test_big_by(sc, expr):
+    data = [['Alice', 'F', 100, 1],
+            ['Alice', 'F', 100, 3],
+            ['Drew', 'F', 100, 4],
+            ['Drew', 'M', 100, 5],
+            ['Drew', 'M', 200, 5]]
+    rdd = sc.parallelize(data)
+    result = set(map(tuplify, compute(expr, rdd).collect()))
+    expected = set(map(tuplify, compute(expr, data)))
+    assert result == expected
 
 
 def test_head(rdd):
     assert list(compute(t.head(1), rdd)) == list(compute(t.head(1), data))
 
 
-def test_sort(rdd):
-    check_exprs_against_python([
-        t.sort('amount'),
-        t.sort('amount', ascending=True),
-        t.sort(t['amount'], ascending=True),
-        t.sort(-t['amount'].label('foo') + 1, ascending=True),
-        t.sort(['amount', 'id'])], data, rdd)
+sort_exprs = [
+    t.sort('amount'),
+    t.sort('amount', ascending=True),
+    t.sort(t['amount'], ascending=True),
+    t.sort(-t['amount'].label('foo') + 1, ascending=True),
+    t.sort(['amount', 'id'])
+]
+
+
+@pytest.mark.parametrize('expr', sort_exprs)
+def test_sort(rdd, expr):
+    result = compute(expr, rdd).collect()
+    expected = list(compute(expr, data))
+    assert result == expected
 
 
 def test_distinct(rdd):
