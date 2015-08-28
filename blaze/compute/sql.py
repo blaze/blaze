@@ -869,7 +869,12 @@ def compute_up(expr, data, **kwargs):
 @dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
 def compute_up(expr, data, **kwargs):
     if expr.attr == 'date':
-        return sa.func.date(data).label(expr._name)
+        col, = get_inner_columns(data)
+        d = sa.func.date(col).label(expr._name)
+        # Manually reassign the bind, cannot pass to function:
+        # https://bitbucket.org/zzzeek/sqlalchemy/issues/3519
+        d.bind = data.bind
+        return d
 
     return sa.extract(expr.attr, data).label(expr._name)
 

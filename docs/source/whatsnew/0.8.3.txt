@@ -97,3 +97,7 @@ Bug Fixes
   to be constructed ultimately resulting in incorrect results on
   expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll and
   @jcrist for discussion around solving the issue.
+* Fixed a bug where selecting the date attribute out of a datetime would fail
+  when executed against a sql function that returned a datetime.
+  For example: ``compute(symbol('s', 'datetime').date, sa.func.now())``
+  (:issue:`1224`).

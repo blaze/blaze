@@ -1854,3 +1854,10 @@ def test_distinct_on_label():
     FROM accounts
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_date_of_datetime_function_call():
+    now = symbol('now', 'datetime')
+    assert normalize(str(compute(now.date, sa.func.now()))) == normalize(
+        'select date(now()) as now_date',
+    )
