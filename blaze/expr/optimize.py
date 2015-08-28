@@ -64,7 +64,7 @@ def _lean(expr, fields=None):
 
 @dispatch(Arithmetic)
 def _lean(expr, fields=None):
-    lhs, right_fields  = _lean(expr.lhs, fields=())
+    lhs, right_fields = _lean(expr.lhs, fields=())
     rhs, left_fields = _lean(expr.rhs, fields=())
     new_fields = set(fields) | set(left_fields) | set(right_fields)
 
