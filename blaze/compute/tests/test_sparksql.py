@@ -3,7 +3,8 @@ from __future__ import absolute_import, print_function, division
 import sys
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.version_info[0] == 3)
+pytestmark = pytest.mark.skipif(sys.version_info[0] == 3,
+                                reason="PyHive doesn't work with Python 3.x")
 
 pyspark = pytest.importorskip('pyspark')
 py4j = pytest.importorskip('py4j')
