@@ -360,7 +360,7 @@ def compute_by(t, s, g, df):
 
     if not df.index.equals(preapply.index):
         df = df.loc[preapply.index]
-    df2 = concat_nodup(df.loc[preapply.index], preapply)
+    df2 = concat_nodup(df, preapply)
 
     groups = df2.groupby(g)
 
