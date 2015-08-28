@@ -10,6 +10,7 @@ from datashape import (
 from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first, compose,
+    keymap,
 )
 import toolz.curried.operator as op
 from odo.utils import copydoc
@@ -449,9 +450,13 @@ class Join(Expr):
         if not isinstance(on_right, list):
             on_right = on_right,
 
-        right_params = self.rhs.schema[0].parameters[0]
+        mapping = dict(zip(on_right, on_left))
+        right_types = keymap(
+            lambda k: mapping.get(k),
+            dict(self.rhs.schema[0].parameters[0]),
+        )
         joined = (
-            (name, promote(dt, right_params[n][1], promote_option=False))
+            (name, promote(dt, right_types[name], promote_option=False))
             for n, (name, dt) in enumerate(filter(
                 compose(op.contains(on_left), first),
                 self.lhs.schema[0].parameters[0]
@@ -541,6 +546,13 @@ def join(lhs, rhs, on_left=None, on_right=None,
         )
     left_types = listpack(types_of_fields(on_left, lhs))
     right_types = listpack(types_of_fields(on_right, rhs))
+    if len(left_types) != len(right_types):
+        raise ValueError(
+            'Length of on_left=%d not equal to lenght of on_right=%d' % (
+                len(left_types), len(right_types),
+            ),
+        )
+
     for n, promotion in enumerate(map(partial(promote, promote_option=False),
                                       left_types,
                                       right_types)):
