@@ -358,6 +358,8 @@ def compute_by(t, s, g, df):
                                   [compute(v._child, {t._child: df})
                                    for v in one.values])))
 
+    if not df.index.equals(preapply.index):
+        df = df.loc[preapply.index]
     df2 = concat_nodup(df, preapply)
 
     groups = df2.groupby(g)
