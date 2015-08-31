@@ -129,7 +129,7 @@ def orders(base_url, products):
 @pytest.yield_fixture(scope='module')
 def main(base_url):
     try:
-        main = odo([(i, np.random.randint(10)) for i in range(13)],
+        main = odo([(i, int(np.random.randint(10))) for i in range(13)],
                    base_url % 'main',
                    dshape=dshape('var * {id: !int64, data: int64}'))
     except sa.exc.OperationalError as e:
@@ -147,10 +147,10 @@ def pkey(base_url, main):
                u'INTC', u'GOOG', u'PRU', u'MSFT', u'AIG', u'TXN', u'DELL',
                u'PEP']
     n = 100
-    data = list(zip(np.arange(n),
-                    np.random.choice(choices, size=n),
-                    np.random.uniform(10000, 20000, size=n),
-                    np.random.randint(main.count().scalar(), size=n)))
+    data = list(zip(range(n),
+                    np.random.choice(choices, size=n).tolist(),
+                    np.random.uniform(10000, 20000, size=n).tolist(),
+                    np.random.randint(main.count().scalar(), size=n).tolist()))
     try:
         pkey = odo(data, base_url % 'pkey',
                    dshape=dshape('var * {id: !int64, sym: string, price: float64, main: map[int64, T]}'),
@@ -168,8 +168,8 @@ def pkey(base_url, main):
 def fkey(base_url, pkey):
     try:
         fkey = odo([(i,
-                     np.random.randint(pkey.count().scalar()),
-                     np.random.randint(10000))
+                     int(np.random.randint(pkey.count().scalar())),
+                     int(np.random.randint(10000)))
                     for i in range(10)],
                    base_url % 'fkey',
                    dshape=dshape('var * {id: !int64, sym_id: map[int64, T], size: int64}'),
