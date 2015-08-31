@@ -811,6 +811,11 @@ def get_all_froms(t):
     return [t]
 
 
+@dispatch(sa.sql.elements.ColumnElement)
+def get_all_froms(colelement):
+    return list(unique(concat(map(get_all_froms, colelement.get_children()))))
+
+
 @dispatch((ScalarSelect, sa.sql.elements.Label))
 def get_all_froms(element):
     return get_all_froms(element.element)
