@@ -73,7 +73,7 @@ class BinOp(ElemWise):
         if r and not l:
             return r
         if l == r:
-            return l
+            return '%s_%s_%s' % (l, type(self).__name__.lower(), r)
 
     @property
     def _inputs(self):
