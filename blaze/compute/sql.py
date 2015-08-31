@@ -96,7 +96,7 @@ def compute_up(expr, data, **kwargs):
         compute(expr._child[field], data, post_compute=False)
         for field in expr.fields
     ]
-    froms = set(toolz.concat(s.froms for s in selectables))
+    froms = set(concat(s.froms for s in selectables))
     assert 1 <= len(froms) <= 2
     result = unify_froms(sa.select(first(sel.inner_columns)
                                    for sel in selectables),
@@ -547,15 +547,17 @@ def compute_up(expr, data, scope=None, **kwargs):
     reductions = [compute(val, data, post_compute=None).label(name)
                   for val, name in zip(app.values, app.fields)]
 
-    froms = chain(getattr(grouper, 'froms', getattr(grouper, 'table', [])),
-                  toolz.concat(r.element.froms for r in reductions))
-    inner_cols = chain(getattr(grouper, 'inner_columns', grouper),
-                            toolz.concat(r.element.inner_columns
-                                         if hasattr(getattr(r, 'element', None), 'inner_columns')
-                                         else [r] for r in reductions))
+    froms = list(unique(chain(get_all_froms(grouper),
+                              concat(map(get_all_froms, reductions)))))
+    inner_cols = list(getattr(grouper, 'inner_columns', [grouper]))
+    grouper_cols = inner_cols[:]
+    inner_cols.extend(concat(
+        getattr(getattr(r, 'element', None), 'inner_columns', [r])
+        for r in reductions
+    ))
     wheres = unify_wheres([grouper] + reductions)
     sel = unify_froms(sa.select(inner_cols, whereclause=wheres), froms)
-    return sel.group_by(*grouper.inner_columns)
+    return sel.group_by(*grouper_cols)
 
 
 @dispatch(By, ClauseElement)
@@ -807,6 +809,16 @@ def get_all_froms(sel):
 @dispatch(sa.Table)
 def get_all_froms(t):
     return [t]
+
+
+@dispatch((ScalarSelect, sa.sql.elements.Label))
+def get_all_froms(element):
+    return get_all_froms(element.element)
+
+
+@dispatch(sa.sql.functions.FunctionElement)
+def get_all_froms(function):
+    return list(unique(concat(map(get_all_froms, function.clauses.clauses))))
 
 
 @dispatch(ColumnClause)
