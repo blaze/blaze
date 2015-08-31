@@ -855,3 +855,10 @@ def test_isin(keys):
     result = list(compute(expr, data))
     expected = [el for el in data if el[0] in keys]
     assert result == expected
+
+
+def test_simple_add():
+    x = symbol('x', 'int')
+    expr = x + x + x
+    result = compute(expr, 1)
+    assert result == 3
