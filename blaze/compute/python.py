@@ -535,15 +535,40 @@ def compute_up(t, seq, **kwargs):
     return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
 
 
-def pair_assemble(t, on_left, on_right):
+def pair_assemble(t, on_left=None, on_right=None):
     """ Combine a pair of records into a single record
 
     This is mindful to shared columns as well as missing records
+
+    Parameters
+    ----------
+    t : Join
+        The join to combine.
+    on_left : list of column indicies, optional
+        The column indicies of the left columns.
+    on_right : list of column indicies, optional
+        The column indicies of the right columns.
+
+    Returns
+    -------
+    assemble : callable
+        A function that assembles the data from a row of the
+        left and right data sources.
     """
     try:
         from cytoolz import get  # not curried version
     except:
         from toolz import get
+    on_left = (
+        on_left
+        if on_left is not None else
+        [t.lhs.fields.index(col) for col in listpack(t.on_left)]
+    )
+    on_right = (
+        on_right
+        if on_right is not None else
+        [t.rhs.fields.index(col) for col in listpack(t.on_right)]
+    )
 
     left_self_columns = [t.lhs.fields.index(c) for c in t.lhs.fields
                          if c not in listpack(t.on_left)]
