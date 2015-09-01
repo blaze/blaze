@@ -43,7 +43,7 @@ def test_names():
     assert Add(y, x)._name != x._name
     assert Add(y, x)._name != y._name
 
-    assert Add(x, x)._name == '%s_add_%s' % (x._name, x._name)
+    assert Add(x, x)._name == x._name
 
 
 def test_inputs():
