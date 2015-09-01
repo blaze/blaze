@@ -150,7 +150,7 @@ def spark_join(t, lhs, rhs, **kwargs):
                          "{'inner', 'left', 'right', 'outer'}" % how)
 
     rdd = joiner(rhs)
-    assemble = pair_assemble(t)
+    assemble = pair_assemble(t, on_left, on_right)
 
     return rdd.map(lambda x: assemble(x[1]))
 

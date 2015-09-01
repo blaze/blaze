@@ -554,9 +554,12 @@ def pair_assemble(t, on_left, on_right):
         a, b = pair
         if a is not None:
             joined = get(on_left, a)
-            left_entries = get(left_self_columns, a)
         else:
             joined = get(on_right, b)
+
+        if a is not None:
+            left_entries = get(left_self_columns, a)
+        else:
             left_entries = (None,) * (len(t.lhs.fields) - len(on_left))
 
         if b is not None:
