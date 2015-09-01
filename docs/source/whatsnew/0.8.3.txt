@@ -93,5 +93,5 @@ Bug Fixes
   incorrectly assigning extra values to the child DataFrame (:issue:`1221`)
 * Fixed a bug where multiple same-named operands caused incorrect scope
   to be constructed ultimately resulting in incorrect results on
-  expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll
-  for the suggested fix.
+  expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll and
+  @jcrist for discussion around solving the issue.
