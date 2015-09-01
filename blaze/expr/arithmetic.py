@@ -62,12 +62,14 @@ class BinOp(ElemWise):
             return None
         l = getattr(self.lhs, '_name', None)
         r = getattr(self.rhs, '_name', None)
-        if l and not r:
+        if l is not None and r is None:
             return l
-        if r and not l:
+        elif r is not None and l is None:
             return r
-        if l == r:
+        elif l == r:
             return l
+        else:
+            return None
 
     @property
     def _inputs(self):
