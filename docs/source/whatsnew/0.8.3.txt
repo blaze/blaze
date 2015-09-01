@@ -8,7 +8,8 @@ New Expressions
 ~~~~~~~~~~~~~~~
 
 * Adds :class:`~blaze.expr.collections.Tail` which acts as an opposite to
-  head. This is exposed throught the :func:`~blaze.expr.collections.tail` function.
+  head. This is exposed throught the :func:`~blaze.expr.collections.tail`
+  function.
   This returns the last ``n`` elements from a collection. (:issue:`1187`)
 * Adds :class:`~blaze.expr.math.notnull` returning an indicator of whether
   values in a field are null (:issue:`697`, :issue:`733`)
@@ -48,8 +49,9 @@ API Changes
   :class:`~blaze.server.client.Client` objects can pass an optional
   ``auth`` keyword which should be a tuple of (username, password) to
   send to the server. (:issue:`1175`)
-* We now allow :class:`~blaze.expr.collections.Distinct` expressions on ``ColumnElement`` to be more general
-  and let things like ``sa.sql.elements.Label`` objects through (:issue:`1212`)
+* We now allow :class:`~blaze.expr.collections.Distinct` expressions on
+  ``ColumnElement`` to be more general and let things like
+  ``sa.sql.elements.Label`` objects through (:issue:`1212`)
 * Methods now take priority over field names when using attribute access
   for :class:`~blaze.expr.expressions.Field` instances to fix a bug that
   prevented accessing the method at all (:issue:`1204`). Here's an
