@@ -452,13 +452,13 @@ class Join(Expr):
 
         right_types = keymap(
             dict(zip(on_right, on_left)).get,
-            dict(self.rhs.schema[0].parameters[0]),
+            self.rhs.dshape.measure.dict,
         )
         joined = (
             (name, promote(dt, right_types[name], promote_option=False))
             for n, (name, dt) in enumerate(filter(
                 compose(op.contains(on_left), first),
-                self.lhs.schema[0].parameters[0]
+                self.lhs.dshape.measure.fields,
             ))
         )
 
