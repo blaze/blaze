@@ -43,13 +43,6 @@ Not
 '''.split()
 
 
-def name(o):
-    if hasattr(o, '_name'):
-        return o._name
-    else:
-        return None
-
-
 class BinOp(ElemWise):
     __slots__ = '_hash', 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
@@ -67,7 +60,8 @@ class BinOp(ElemWise):
     def _name(self):
         if not isscalar(self.dshape.measure):
             return None
-        l, r = name(self.lhs), name(self.rhs)
+        l = getattr(self.lhs, '_name', None)
+        r = getattr(self.rhs, '_name', None)
         if l and not r:
             return l
         if r and not l:
