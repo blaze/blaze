@@ -94,11 +94,14 @@ def ensure_bind(f):
         The wrapped compute_up.
     """
     @wraps(f)
-    def wrapped(expr, *args, **kwargs):
-        if not args:
-            return f(expr, *args, **kwargs)
-
-        data, args = args[0], args[1:]
+    def wrapped(*args, **kwargs):
+        # We don't use names for the positional arguments because this might
+        # change the mix of args and kwargs when forwarding.
+        # For example, `f` might expect a kwarg called `expr`, or `data`, and
+        # if we named our positional argument this then we would get a
+        # `TypeError` at call time if we passed args in the positional slot
+        # and keyword slot.
+        expr, data, args = args[0], args[1], args[2:]
         if isinstance(data, sa.engine.Engine):
             bind = data
         else:
