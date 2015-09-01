@@ -278,6 +278,7 @@ def makeleaf(expr):
     if expr in _leaf_cache:
         return _leaf_cache[expr]
     if isinstance(expr, Symbol):  # Idempotent on symbols
+        _used_tokens.add((name, expr._token))
         return expr
     if (name, token) in _used_tokens:
         for token in itertools.count():
