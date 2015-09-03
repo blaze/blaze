@@ -1,14 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape import *
-from datashape.predicates import iscollection
 import itertools
+
 from toolz import curry
 
-from .expressions import *
-from .expressions import Field, Map
+from datashape import DataShape, iscollection
+
+from .expressions import Field, Map, ElemWise, symbol, shape
 from .arithmetic import maxshape, Arithmetic, UnaryOp
-from .math import Math, sin
+from .math import Math
 from .datetime import DateTime
 
 __all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
@@ -23,10 +23,12 @@ def broadcast(expr, leaves, scalars=None):
 
 
 class Broadcast(ElemWise):
+
     """ Fuse scalar expressions over collections
 
     Given elementwise operations on collections, e.g.
 
+    >>> from blaze import sin
     >>> a = symbol('a', '100 * int')
     >>> t = symbol('t', '100 * {x: int, y: int}')
 
@@ -106,7 +108,7 @@ WantToBroadcast = (Arithmetic, Math, Map, DateTime, UnaryOp)
 
 
 def broadcast_collect(expr, Broadcastable=Broadcastable,
-                            WantToBroadcast=WantToBroadcast):
+                      WantToBroadcast=WantToBroadcast):
     """ Collapse expression down using Broadcast - Tabular cases only
 
     Expressions of type Broadcastables are swallowed into Broadcast
@@ -124,13 +126,13 @@ def broadcast_collect(expr, Broadcastable=Broadcastable,
     Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * (exp(-((t.x - 1.3) ** 2)))))
     """
     if (isinstance(expr, WantToBroadcast) and
-        iscollection(expr.dshape)):
+            iscollection(expr.dshape)):
         leaves = leaves_of_type(Broadcastable, expr)
         expr = broadcast(expr, sorted(leaves, key=str))
 
     # Recurse down
     children = [broadcast_collect(i, Broadcastable, WantToBroadcast)
-            for i in expr._inputs]
+                for i in expr._inputs]
     return expr._subs(dict(zip(expr._inputs, children)))
 
 

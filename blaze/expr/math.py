@@ -69,7 +69,22 @@ class BooleanMath(Math):
 
 
 class isnan(BooleanMath): pass
-class notnull(BooleanMath): pass
+
+
+class notnull(BooleanMath):
+    """ Return whether an expression is not null
+
+    Examples
+    --------
+    >>> from blaze import symbol, compute
+    >>> s = symbol('s', 'var * int64')
+    >>> expr = notnull(s)
+    >>> expr.dshape
+    dshape("var * bool")
+    >>> list(compute(expr, [1, 2, None, 3]))
+    [True, True, False, True]
+    """
+    pass
 
 
 def truncate(expr, precision):

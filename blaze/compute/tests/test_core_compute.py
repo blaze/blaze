@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
+import operator
 
 from datashape import discover, dshape
 
@@ -9,7 +10,7 @@ from blaze.compute.core import (compute_up, compute, bottom_up_until_type_break,
                                 swap_resources_into_scope)
 from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
-from blaze.compatibility import raises
+from blaze.compatibility import raises, reduce
 from blaze.utils import example
 
 import pandas as pd
@@ -137,3 +138,10 @@ def test_raises_on_valid_expression_but_no_implementation():
     df = [(1.0,), (2.0,), (3.0,)]
     with pytest.raises(NotImplementedError):
         compute(expr, df)
+
+
+@pytest.mark.parametrize('n', range(2, 11))
+def test_simple_add(n):
+    x = symbol('x', 'int')
+    expr = reduce(operator.add, [x] * n)
+    assert compute(expr, 1) == n

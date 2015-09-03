@@ -6,8 +6,7 @@ import os
 import sys
 from fnmatch import fnmatch
 
-import setuptools
-from distutils.core import setup
+from setuptools import setup
 
 import versioneer
 

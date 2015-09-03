@@ -132,6 +132,23 @@ tutorial <http://github.com/blaze/blaze-tutorial>`__, `some
 blogposts <http://continuum.io/blog/tags/blaze>`__, or the `mailing list
 archives <https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev>`__.
 
+
+Development setup
+=================
+
+The quickest way to install all Blaze dependencies with ``conda`` is as
+follows
+
+::
+
+    conda install blaze spark dynd-python -c libdynd -c blaze -c anaconda-cluster -y
+    conda remove odo blaze blaze-core datashape -y
+
+After running these commands, clone ``odo``, ``blaze``, and ``datashape`` from
+GitHub directly.  These three projects release together.  Run ``python setup.py
+develop`` to make development installations of each.
+
+
 License
 =======
 

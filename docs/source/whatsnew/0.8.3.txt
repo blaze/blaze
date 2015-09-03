@@ -8,7 +8,8 @@ New Expressions
 ~~~~~~~~~~~~~~~
 
 * Adds :class:`~blaze.expr.collections.Tail` which acts as an opposite to
-  head. This is exposed throught the :func:`~blaze.expr.collections.tail` function.
+  head. This is exposed throught the :func:`~blaze.expr.collections.tail`
+  function.
   This returns the last ``n`` elements from a collection. (:issue:`1187`)
 * Adds :class:`~blaze.expr.math.notnull` returning an indicator of whether
   values in a field are null (:issue:`697`, :issue:`733`)
@@ -48,8 +49,9 @@ API Changes
   :class:`~blaze.server.client.Client` objects can pass an optional
   ``auth`` keyword which should be a tuple of (username, password) to
   send to the server. (:issue:`1175`)
-* We now allow :class:`~blaze.expr.collections.Distinct` expressions on ``ColumnElement`` to be more general
-  and let things like ``sa.sql.elements.Label`` objects through (:issue:`1212`)
+* We now allow :class:`~blaze.expr.collections.Distinct` expressions on
+  ``ColumnElement`` to be more general and let things like
+  ``sa.sql.elements.Label`` objects through (:issue:`1212`)
 * Methods now take priority over field names when using attribute access
   for :class:`~blaze.expr.expressions.Field` instances to fix a bug that
   prevented accessing the method at all (:issue:`1204`). Here's an
@@ -91,3 +93,7 @@ Bug Fixes
   name (:issue:`1204`)
 * Fixed a bug where optimized expressions going into a pandas group by were
   incorrectly assigning extra values to the child DataFrame (:issue:`1221`)
+* Fixed a bug where multiple same-named operands caused incorrect scope
+  to be constructed ultimately resulting in incorrect results on
+  expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll and
+  @jcrist for discussion around solving the issue.
