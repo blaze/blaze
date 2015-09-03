@@ -97,3 +97,5 @@ Bug Fixes
   to be constructed ultimately resulting in incorrect results on
   expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll and
   @jcrist for discussion around solving the issue.
+* Fixed a bug where using a sqlalchemy function as a datasource in an expression
+  would sometimes lose the bind information. (:issue:`1224`).
