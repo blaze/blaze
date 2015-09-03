@@ -7,9 +7,9 @@ from datashape import dshape, isdatelike, isnumeric
 
 
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
-           'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
-           'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-           'time', 'UTCFromTimestamp', 'DateTimeTruncate']
+           'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second',
+           'Millisecond', 'millisecond', 'Microsecond', 'microsecond', 'Date',
+           'date', 'Time', 'time', 'UTCFromTimestamp', 'DateTimeTruncate']
 
 
 class DateTime(ElemWise):
