@@ -547,7 +547,7 @@ def join(lhs, rhs, on_left=None, on_right=None,
     right_types = listpack(types_of_fields(on_right, rhs))
     if len(left_types) != len(right_types):
         raise ValueError(
-            'Length of on_left=%d not equal to lenght of on_right=%d' % (
+            'Length of on_left=%d not equal to length of on_right=%d' % (
                 len(left_types), len(right_types),
             ),
         )
