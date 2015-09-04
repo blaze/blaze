@@ -358,16 +358,28 @@ def test_graph_double_join():
     t_arc = symbol('t_arc', 'var * {a: int32, b: int32}')
     t_wanted = symbol('t_wanted', 'var * {name: string}')
 
+    # >>> compute(join(t_idx, t_arc, 'b'), {t_idx: idx, t_arc: arc})
+    # [[1, A, 3],
+    #  [1, A, 2],
+    #  [1, A, 5],
+    #  [3, C, 1],
+    #  [3, C, 2],
+    #  [3, C, 4],
+    #  [3, C, 5],
+    #  [6, F, 1],
+    #  [6, F, 2],
+    #  [6, F, 4]]
+
     j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
     result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
     result = sorted(map(tuple, result))
-    expected = sorted([('A', 3, 1),
-                    ('A', 2, 1),
-                    ('A', 5, 1),
-                    ('F', 1, 6),
-                    ('F', 2, 6),
-                    ('F', 4, 6)])
+    expected = sorted([('A', 1, 3),
+                       ('A', 1, 2),
+                       ('A', 1, 5),
+                       ('F', 6, 1),
+                       ('F', 6, 2),
+                       ('F', 6, 4)])
 
     assert result == expected
 
