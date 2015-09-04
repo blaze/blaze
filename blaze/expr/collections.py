@@ -1,18 +1,25 @@
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
+from itertools import chain
 
 import datashape
-from datashape import DataShape, Option, Record, Unit, dshape, var, Fixed, Var
+from datashape import (
+    DataShape, Option, Record, Unit, dshape, var, Fixed, Var, promote, object_,
+)
 from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
-    isdistinct, frequencies, concat as tconcat, unique, get, first,
+    isdistinct, frequencies, concat as tconcat, unique, get, first, compose,
+    keymap,
 )
+import toolz.curried.operator as op
 from odo.utils import copydoc
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Field
 from .expressions import dshape_method_list
 from ..compatibility import zip_longest, _strtypes
+from ..utils import listpack
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
@@ -398,17 +405,17 @@ class Join(Expr):
 
     @property
     def on_left(self):
-        if isinstance(self._on_left, tuple):
-            return list(self._on_left)
-        else:
-            return self._on_left
+        on_left = self._on_left
+        if isinstance(on_left, tuple):
+            return list(on_left)
+        return on_left
 
     @property
     def on_right(self):
-        if isinstance(self._on_right, tuple):
-            return list(self._on_right)
-        else:
-            return self._on_right
+        on_right = self._on_right
+        if isinstance(on_right, tuple):
+            return list(on_right)
+        return on_right
 
     @property
     def schema(self):
@@ -435,35 +442,57 @@ class Join(Expr):
         """
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
-        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
-                  if name in self.on_left]
+        on_left = self.on_left
+        if not isinstance(on_left, list):
+            on_left = on_left,
 
-        left = [[name, dt] for name, dt in
-                zip(self.lhs.fields, types_of_fields(
-                    self.lhs.fields, self.lhs))
-                if name not in self.on_left]
+        on_right = self.on_right
+        if not isinstance(on_right, list):
+            on_right = on_right,
 
-        right = [[name, dt] for name, dt in
-                 zip(self.rhs.fields, types_of_fields(
-                     self.rhs.fields, self.rhs))
-                 if name not in self.on_right]
+        right_types = keymap(
+            dict(zip(on_right, on_left)).get,
+            self.rhs.dshape.measure.dict,
+        )
+        joined = (
+            (name, promote(dt, right_types[name], promote_option=False))
+            for n, (name, dt) in enumerate(filter(
+                compose(op.contains(on_left), first),
+                self.lhs.dshape.measure.fields,
+            ))
+        )
+
+        left = [
+            (name, dt) for name, dt in zip(
+                self.lhs.fields,
+                types_of_fields(self.lhs.fields, self.lhs)
+            ) if name not in on_left
+        ]
+
+        right = [
+            (name, dt) for name, dt in zip(
+                self.rhs.fields,
+                types_of_fields(self.rhs.fields, self.rhs)
+            ) if name not in on_right
+        ]
 
         # Handle overlapping but non-joined case, e.g.
-        left_other = [name for name, dt in left if name not in self.on_left]
-        right_other = [name for name, dt in right if name not in self.on_right]
-        overlap = set.intersection(set(left_other), set(right_other))
+        left_other = set(name for name, dt in left if name not in on_left)
+        right_other = set(name for name, dt in right if name not in on_right)
+        overlap = left_other & right_other
+
         left_suffix, right_suffix = self.suffixes
-        left = [[name + left_suffix if name in overlap else name, dt]
-                for name, dt in left]
-        right = [[name + right_suffix if name in overlap else name, dt]
-                 for name, dt in right]
+        left = ((name + left_suffix if name in overlap else name, dt)
+                for name, dt in left)
+        right = ((name + right_suffix if name in overlap else name, dt)
+                 for name, dt in right)
 
         if self.how in ('right', 'outer'):
-            left = [[name, option(dt)] for name, dt in left]
+            left = ((name, option(dt)) for name, dt in left)
         if self.how in ('left', 'outer'):
-            right = [[name, option(dt)] for name, dt in right]
+            right = ((name, option(dt)) for name, dt in right)
 
-        return dshape(Record(joined + left + right))
+        return dshape(Record(chain(joined, left, right)))
 
     @property
     def dshape(self):
@@ -492,7 +521,7 @@ def types_of_fields(fields, expr):
     else:
         if isinstance(fields, (tuple, list, set)):
             assert len(fields) == 1
-            fields = fields[0]
+            fields, = fields
         assert fields == expr._name
         return expr.dshape.measure
 
@@ -511,10 +540,28 @@ def join(lhs, rhs, on_left=None, on_right=None,
     if isinstance(on_right, tuple):
         on_right = list(on_right)
     if not on_left or not on_right:
-        raise ValueError("Can not Join.  No shared columns between %s and %s" %
-                         (lhs, rhs))
-    if types_of_fields(on_left, lhs) != types_of_fields(on_right, rhs):
-        raise TypeError("Schema's of joining columns do not match")
+        raise ValueError(
+            "Can not Join.  No shared columns between %s and %s" % (lhs, rhs),
+        )
+    left_types = listpack(types_of_fields(on_left, lhs))
+    right_types = listpack(types_of_fields(on_right, rhs))
+    if len(left_types) != len(right_types):
+        raise ValueError(
+            'Length of on_left=%d not equal to length of on_right=%d' % (
+                len(left_types), len(right_types),
+            ),
+        )
+
+    for n, promotion in enumerate(map(partial(promote, promote_option=False),
+                                      left_types,
+                                      right_types)):
+        if promotion == object_:
+            raise TypeError(
+                "Schema's of joining columns do not match,"
+                ' no promotion found for %s=%s and %s=%s' % (
+                    on_left[n], left_types[n], on_right[n], right_types[n],
+                ),
+            )
     _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                  else on_right)

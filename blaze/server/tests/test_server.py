@@ -468,3 +468,21 @@ def test_auth(test_with_auth, username, password, serial):
         headers=headers,
     )
     assert v.status_code == 401
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_minute_query(test, serial):
+    expr = t.events.when.minute
+    query = {'expr': to_tree(expr)}
+    result = test.post(
+        '/compute',
+        headers=mimetype(serial),
+        data=serial.dumps(query)
+    )
+    expected = {
+        'data': [0, 0],
+        'names': ['when_minute'],
+        'datashape': '2 * int64'
+    }
+    assert result.status_code == 200
+    assert expected == serial.loads(result.data)

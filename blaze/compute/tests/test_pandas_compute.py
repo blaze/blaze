@@ -311,6 +311,20 @@ def test_join_suffixes():
     tm.assert_frame_equal(result, expected)
 
 
+def test_join_promotion():
+    a_data = pd.DataFrame([[0.0, 1.5], [1.0, 2.5]], columns=list('ab'))
+    b_data = pd.DataFrame([[0, 1], [1, 2]], columns=list('ac'))
+    a = symbol('a', discover(a_data))
+    b = symbol('b', discover(b_data))
+
+    joined = join(a, b, 'a')
+    assert joined.dshape == dshape('var * {a: float64, b: ?float64, c: int64}')
+
+    expected = pd.merge(a_data, b_data, on='a')
+    result = compute(joined, {a: a_data, b: b_data})
+    tm.assert_frame_equal(result, expected)
+
+
 def test_sort():
     tm.assert_frame_equal(compute(t.sort('amount'), df),
                           df.sort('amount'))

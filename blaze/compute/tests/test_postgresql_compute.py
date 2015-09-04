@@ -15,7 +15,7 @@ import pandas.util.testing as tm
 
 from datashape import dshape
 from odo import odo, resource, drop, discover
-from blaze import symbol, compute, concat, by
+from blaze import symbol, compute, concat, by, join
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -27,25 +27,42 @@ def normalize(s):
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
-@pytest.fixture
-def name():
-    return next(names)
-
-
-@pytest.fixture(scope='session')
-def base_url():
+def url():
     return 'postgresql://postgres@localhost/test::%s'
-
-
-@pytest.fixture
-def url(base_url, name):
-    return base_url % name
 
 
 @pytest.yield_fixture
 def sql(url):
     try:
-        t = resource(url, dshape='var * {A: string, B: int64}')
+        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
+def sqla(url):
+    try:
+        t = resource(url % next(names), dshape='var * {A: ?string, B: ?int32}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([('a', 1), (None, 1), ('c', None)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
+def sqlb(url):
+    try:
+        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -59,7 +76,7 @@ def sql(url):
 @pytest.yield_fixture
 def sql_with_dts(url):
     try:
-        t = resource(url, dshape='var * {A: datetime}')
+        t = resource(url % next(names), dshape='var * {A: datetime}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -71,11 +88,11 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
-def sql_two_tables(base_url):
+def sql_two_tables(url):
     dshape = 'var * {a: int32}'
     try:
-        t = resource(url(base_url, next(names)), dshape=dshape)
-        u = resource(url(base_url, next(names)), dshape=dshape)
+        t = resource(url % next(names), dshape=dshape)
+        u = resource(url % next(names), dshape=dshape)
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -186,7 +203,7 @@ def fkey(base_url, pkey):
 @pytest.yield_fixture
 def sql_with_float(url):
     try:
-        t = resource(url, dshape='var * {c: float64}')
+        t = resource(url % next(names), dshape='var * {c: float64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -353,3 +370,11 @@ def test_foreign_key_group_by(fkey):
     GROUP BY pkey.sym
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_join_type_promotion(sqla, sqlb):
+    t, s = symbol(sqla.name, discover(sqla)), symbol(sqlb.name, discover(sqlb))
+    expr = join(t, s, 'B', how='inner')
+    result = set(map(tuple, compute(expr, {t: sqla, s: sqlb}).execute().fetchall()))
+    expected = set([(1, 'a', 'a'), (1, None, 'a')])
+    assert result == expected
