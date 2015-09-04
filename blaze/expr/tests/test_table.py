@@ -241,7 +241,7 @@ def test_join():
     assert join(t, s, 'name').on_right == 'name'
 
     assert join(t, r, ('name', 'amount')).on_left == ['name', 'amount']
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         join(t, q, 'name')
     with pytest.raises(ValueError):
         join(t, s, how='upside_down')
