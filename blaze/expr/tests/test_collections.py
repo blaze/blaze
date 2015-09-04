@@ -95,7 +95,7 @@ def test_join_mismatched_schema():
     a = symbol('a', 'var * {x: int}')
     b = symbol('b', 'var * {x: string}')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         join(a, b, 'x')
 
 
