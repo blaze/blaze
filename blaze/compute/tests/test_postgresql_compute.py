@@ -27,13 +27,13 @@ def normalize(s):
 
 @pytest.fixture
 def url():
-    return 'postgresql://postgres@localhost/test::%s' % next(names)
+    return 'postgresql://postgres@localhost/test::%s'
 
 
 @pytest.yield_fixture
 def sql(url):
     try:
-        t = resource(url, dshape='var * {A: string, B: int64}')
+        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -45,10 +45,9 @@ def sql(url):
 
 
 @pytest.yield_fixture
-def sqla():
+def sqla(url):
     try:
-        url = 'postgresql://postgres@localhost/test::%s' % next(names)
-        t = resource(url, dshape='var * {A: ?string, B: ?int32}')
+        t = resource(url % next(names), dshape='var * {A: ?string, B: ?int32}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -60,10 +59,9 @@ def sqla():
 
 
 @pytest.yield_fixture
-def sqlb():
+def sqlb(url):
     try:
-        url = 'postgresql://postgres@localhost/test::%s' % next(names)
-        t = resource(url, dshape='var * {A: string, B: int64}')
+        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -77,7 +75,7 @@ def sqlb():
 @pytest.yield_fixture
 def sql_with_dts(url):
     try:
-        t = resource(url, dshape='var * {A: datetime}')
+        t = resource(url % next(names), dshape='var * {A: datetime}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -89,11 +87,11 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
-def sql_two_tables():
+def sql_two_tables(url):
     dshape = 'var * {a: int32}'
     try:
-        t = resource(url(), dshape=dshape)
-        u = resource(url(), dshape=dshape)
+        t = resource(url % next(names), dshape=dshape)
+        u = resource(url % next(names), dshape=dshape)
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -107,7 +105,7 @@ def sql_two_tables():
 @pytest.yield_fixture
 def sql_with_float(url):
     try:
-        t = resource(url, dshape='var * {c: float64}')
+        t = resource(url % next(names), dshape='var * {c: float64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
