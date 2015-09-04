@@ -27,6 +27,7 @@ def normalize(s):
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
+@pytest.fixture(scope='module')
 def url():
     return 'postgresql://postgres@localhost/test::%s'
 
@@ -103,15 +104,15 @@ def sql_two_tables(url):
             drop(u)
 
 
-@pytest.yield_fixture
-def products(base_url):
+@pytest.yield_fixture(scope='module')
+def products(url):
     try:
-        products = resource(base_url % 'products',
+        products = resource(url % 'products',
                             dshape="""var * {
-                                product_id: !int64,
+                                product_id: int64,
                                 color: ?string,
                                 price: float64
-                            }""")
+                            }""", primary_key=['product_id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -121,16 +122,18 @@ def products(base_url):
             drop(products)
 
 
-@pytest.yield_fixture
-def orders(base_url, products):
+@pytest.yield_fixture(scope='module')
+def orders(url, products):
     try:
-        orders = resource(base_url % 'orders',
+        orders = resource(url % 'orders',
                           dshape="""var * {
-                            order_id: !int64,
+                            order_id: int64,
                             product_id: map[int64, T],
                             quantity: int64
                           }
-                          """, foreign_keys=dict(product_id=products.c.product_id))
+                          """,
+                          foreign_keys=dict(product_id=products.c.product_id),
+                          primary_key=['order_id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -144,11 +147,12 @@ def orders(base_url, products):
 # doesn't work if remove it after every run
 
 @pytest.yield_fixture(scope='module')
-def main(base_url):
+def main(url):
     try:
         main = odo([(i, int(np.random.randint(10))) for i in range(13)],
-                   base_url % 'main',
-                   dshape=dshape('var * {id: !int64, data: int64}'))
+                   url % 'main',
+                   dshape=dshape('var * {id: int64, data: int64}'),
+                   primary_key=['id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -159,7 +163,7 @@ def main(base_url):
 
 
 @pytest.yield_fixture(scope='module')
-def pkey(base_url, main):
+def pkey(url, main):
     choices = [u'AAPL', u'HPQ', u'ORCL', u'IBM', u'DOW', u'SBUX', u'AMD',
                u'INTC', u'GOOG', u'PRU', u'MSFT', u'AIG', u'TXN', u'DELL',
                u'PEP']
@@ -169,9 +173,10 @@ def pkey(base_url, main):
                     np.random.uniform(10000, 20000, size=n).tolist(),
                     np.random.randint(main.count().scalar(), size=n).tolist()))
     try:
-        pkey = odo(data, base_url % 'pkey',
-                   dshape=dshape('var * {id: !int64, sym: string, price: float64, main: map[int64, T]}'),
-                   foreign_keys=dict(main=main.c.id))
+        pkey = odo(data, url % 'pkey',
+                   dshape=dshape('var * {id: int64, sym: string, price: float64, main: map[int64, T]}'),
+                   foreign_keys=dict(main=main.c.id),
+                   primary_key=['id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -182,15 +187,16 @@ def pkey(base_url, main):
 
 
 @pytest.yield_fixture(scope='module')
-def fkey(base_url, pkey):
+def fkey(url, pkey):
     try:
         fkey = odo([(i,
                      int(np.random.randint(pkey.count().scalar())),
                      int(np.random.randint(10000)))
                     for i in range(10)],
-                   base_url % 'fkey',
-                   dshape=dshape('var * {id: !int64, sym_id: map[int64, T], size: int64}'),
-                   foreign_keys=dict(sym_id=pkey.c.id))
+                   url % 'fkey',
+                   dshape=dshape('var * {id: int64, sym_id: map[int64, T], size: int64}'),
+                   foreign_keys=dict(sym_id=pkey.c.id),
+                   primary_key=['id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
