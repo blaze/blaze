@@ -2,11 +2,27 @@
 .. image:: svg/blaze_med.png
    :align: center
 
-**Blaze** translates a subset of modified NumPy and Pandas-like syntax to
+Blaze
+-----
+
+**Blaze** is a tool that allows Python users a familiar interface to query data living in other data storage systems. It is the next generation of NumPy, Python’s extremely popular array library. Blaze aims to extend the structural properties of NumPy arrays to a wider variety of table and array-like structures that support commonly requested features such as missing values, type heterogeneity, and labeled arrays. Blaze connects a NumPy/Pandas user interface to external databases.  Users can write intuitive high-level queries in Python and have those queries translated to their database of choice.  This frees the user from the intricacies of their database of choice and lets them move freely between technologies.
+
+Blaze consists of the following components:
+
+*   A symbolic expression system to describe and reason about analytic queries
+*   A set of interpreters from that query system to various databases / computational engines
+
+This architecture allows a single Blaze code to run against several
+computational backends.  Blaze interacts rapidly with the user and only
+communicates with the database when necessary.  Blaze is also able to analyze
+and optimize queries to improve the interactive experience.
+
+Blaze translates a subset of modified NumPy and Pandas-like syntax to
 databases and other computing systems.  Blaze allows Python users a familiar
 interface to query data living in other data storage systems.   Blaze is sponsored primarily by 
 `Continuum Analytics <http://www.continuum.io>`_, and a
 `DARPA XDATA <http://www.darpa.mil/program/XDATA>`_ grant.
+
 
 
 Ecosystem
@@ -61,21 +77,6 @@ Blaze efforts include:
     * bcolz_ : http://bcolz.blosc.org/ -- A columnar data container that can be compressed.
     * castra_ : https://github.com/Blosc/castra -- partitioned storage system based on blosc compression.
     
-
-
-Blaze
------
-
-Blaze is a high-level user interface for databases and array computing systems.
-It consists of the following components:
-
-*   A symbolic expression system to describe and reason about analytic queries
-*   A set of interpreters from that query system to various databases / computational engines
-
-This architecture allows a single Blaze code to run against several
-computational backends.  Blaze interacts rapidly with the user and only
-communicates with the database when necessary.  Blaze is also able to analyze
-and optimize queries to improve the interactive experience.
 
 
 Presentations
