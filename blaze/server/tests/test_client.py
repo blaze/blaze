@@ -99,6 +99,13 @@ def test_custom_expressions():
     assert list(map(tuple, compute(CustomExpr(t.accounts), ec))) == into(list, df)
 
 
+def test_client_dataset_fails():
+    with pytest.raises(ValueError):
+        Data('blaze://localhost::accounts')
+    with pytest.raises(ValueError):
+        resource('blaze://localhost::accounts')
+
+
 def test_client_dataset():
-    d = Data('blaze://localhost::accounts')
-    assert list(map(tuple, into(list, d))) == into(list, df)
+    d = Data('blaze://localhost')
+    assert list(map(tuple, into(list, d.accounts))) == into(list, df)

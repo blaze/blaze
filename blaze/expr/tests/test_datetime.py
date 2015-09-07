@@ -79,3 +79,12 @@ def test_resample():
                 "weekly_avg=mean(t.amount), "
                 "weekly_max_size=max(t.size))")
     assert repr(expr) == expected
+
+
+@pytest.mark.parametrize('attr',
+                         ['date', 'year', 'month', 'day', 'time', 'hour',
+                          'second', 'millisecond', 'microsecond'])
+def test_attributes(attr):
+    t = symbol('t', 'var * datetime')
+    assert getattr(t, attr).dshape is not None
+    assert getattr(t, attr)._child is t

@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
-from blaze.expr import symbol, by, exp, summary, Broadcast, join
+from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
 from blaze import sin
 from odo import into
 from datashape import discover, to_numpy, dshape
@@ -104,7 +104,7 @@ def test_count_nan():
     assert compute(t.count(), x) == 2
 
 
-def test_Distinct():
+def test_distinct():
     x = np.array([('Alice', 100),
                   ('Alice', -200),
                   ('Bob', 100),
@@ -117,6 +117,62 @@ def test_Distinct():
               np.unique(x['name']))
     assert eq(compute(t.distinct(), x),
               np.unique(x))
+
+
+def test_distinct_on_recarray():
+    rec = pd.DataFrame(
+        [[0, 1],
+         [0, 2],
+         [1, 1],
+         [1, 2]],
+        columns=('a', 'b'),
+    ).to_records(index=False)
+
+    s = symbol('s', discover(rec))
+    assert (
+        compute(s.distinct('a'), rec) ==
+        pd.DataFrame(
+            [[0, 1],
+             [1, 1]],
+            columns=('a', 'b'),
+        ).to_records(index=False)
+    ).all()
+
+
+def test_distinct_on_structured_array():
+    arr = np.array(
+        [(0., 1.),
+         (0., 2.),
+         (1., 1.),
+         (1., 2.)],
+        dtype=[('a', 'f4'), ('b', 'f4')],
+    )
+
+    s = symbol('s', discover(arr))
+    assert(
+        compute(s.distinct('a'), arr) ==
+        np.array([(0., 1.), (1., 1.)], dtype=arr.dtype)
+    ).all()
+
+
+def test_distinct_on_str():
+    rec = pd.DataFrame(
+        [['a', 'a'],
+         ['a', 'b'],
+         ['b', 'a'],
+         ['b', 'b']],
+        columns=('a', 'b'),
+    ).to_records(index=False).astype([('a', '<U1'), ('b', '<U1')])
+
+    s = symbol('s', discover(rec))
+    assert (
+        compute(s.distinct('a'), rec) ==
+        pd.DataFrame(
+            [['a', 'a'],
+             ['b', 'a']],
+            columns=('a', 'b'),
+        ).to_records(index=False).astype([('a', '<U1'), ('b', '<U1')])
+    ).all()
 
 
 def test_sort():
@@ -136,6 +192,11 @@ def test_sort():
 def test_head():
     assert eq(compute(t.head(2), x),
               x[:2])
+
+
+def test_tail():
+    assert eq(compute(t.tail(2), x),
+              x[-2:])
 
 
 def test_label():
@@ -352,7 +413,7 @@ def test_mixed_types():
                  dtype=[('count', '<i4'), ('total', '<i8')])
     aggregate = symbol('aggregate', discover(x))
     result = compute(aggregate.total.sum(axis=(0,)) /
-                     aggregate.count.sum(axis=(0,)), x)
+                     aggregate['count'].sum(axis=(0,)), x)
     expected = (x['total'].sum(axis=0, keepdims=True) /
                 x['count'].sum(axis=0, keepdims=True)).squeeze()
     np.testing.assert_array_equal(result, expected)
@@ -438,3 +499,62 @@ def test_nunique_recarray():
     s = symbol('s', discover(b))
     expr = s.nunique()
     assert compute(expr, b) == len(np.unique(b))
+
+
+def test_str_repeat():
+    a = np.array(('a', 'b', 'c'))
+    s = symbol('s', discover(a))
+    expr = s.repeat(3)
+    assert all(compute(expr, a) == np.char.multiply(a, 3))
+
+
+def test_str_interp():
+    a = np.array(('%s', '%s', '%s'))
+    s = symbol('s', discover(a))
+    expr = s.interp(1)
+    assert all(compute(expr, a) == np.char.mod(a, 1))
+
+
+def test_timedelta_arith():
+    dates = np.arange('2014-01-01', '2014-02-01', dtype='datetime64')
+    delta = np.timedelta64(1, 'D')
+    sym = symbol('s', discover(dates))
+    assert (compute(sym + delta, dates) == dates + delta).all()
+    assert (compute(sym - delta, dates) == dates - delta).all()
+
+
+def test_coerce():
+    x = np.arange(1, 3)
+    s = symbol('s', discover(x))
+    np.testing.assert_array_equal(compute(s.coerce('float64'), x),
+                                  np.arange(1.0, 3.0))
+
+
+def test_concat_arr():
+    s_data = np.arange(15)
+    t_data = np.arange(15, 30)
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(concat(s, t), {s: s_data, t: t_data}) ==
+        np.arange(30)
+    ).all()
+
+
+def test_concat_mat():
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+
+    assert (
+        compute(concat(s, t), {s: s_data, t: t_data}) ==
+        np.arange(30).reshape(10, 3)
+    ).all()
+    assert (
+        compute(concat(s, t, axis=1), {s: s_data, t: t_data}) ==
+        np.concatenate((s_data, t_data), axis=1)
+    ).all()

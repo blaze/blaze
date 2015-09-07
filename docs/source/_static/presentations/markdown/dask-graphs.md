@@ -7,7 +7,7 @@ blocked algorithms.
 ### Make a dask array of ones
 
     >>> import dask.array as da
-    >>> x = da.ones(15, blockshape=(5,))
+    >>> x = da.ones(15, chunks=(5,))
 
 ### And visualize the resulting dask graph
 
@@ -58,7 +58,7 @@ increasingly complex blocked algorithm task graphs.
 
 ### Ghosting (shared boundaries)
 
-    >>> x = da.ones(100, blockshape=(10,))
+    >>> x = da.ones(100, chunks=(10,))
     >>> g = da.ghost.ghost(x, depth={0: 2}, boundary={0: np.nan})
 
 ![](images/dask.ghost.png)
@@ -67,7 +67,7 @@ increasingly complex blocked algorithm task graphs.
 
 ### Two Dimensional Algorithms
 
-    >>> x = da.ones((15, 15), blockshape=(5, 5))
+    >>> x = da.ones((15, 15), chunks=(5, 5))
 
 
 ### Partial Reductions

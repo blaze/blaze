@@ -1,0 +1,11 @@
+Release 0.8.2
+-------------
+
+:Release: 0.8.2
+:Date: July 9th, 2015
+
+
+Bug Fixes
+~~~~~~~~~
+
+* Fix broken sdist tarball

@@ -1,7 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape import real, int_, bool_
+from datashape import Option, real, int_, bool_, isreal, isnumeric
+
 from .arithmetic import UnaryOp
+from .expressions import schema_method_list
+
 
 # Here follows a large number of unary operators.  These were selected by
 # taking the intersection of the functions in ``math`` and ``numpy``
@@ -9,7 +12,8 @@ from .arithmetic import UnaryOp
 __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
            'atan', 'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc',
-           'isnan', 'RealMath', 'IntegerMath', 'BooleanMath', 'Math']
+           'isnan', 'notnull', 'RealMath', 'IntegerMath', 'BooleanMath',
+           'Math']
 
 
 class Math(UnaryOp):
@@ -67,11 +71,27 @@ class BooleanMath(Math):
 class isnan(BooleanMath): pass
 
 
+class notnull(BooleanMath):
+    """ Return whether an expression is not null
+
+    Examples
+    --------
+    >>> from blaze import symbol, compute
+    >>> s = symbol('s', 'var * int64')
+    >>> expr = notnull(s)
+    >>> expr.dshape
+    dshape("var * bool")
+    >>> list(compute(expr, [1, 2, None, 3]))
+    [True, True, False, True]
+    """
+    pass
+
+
 def truncate(expr, precision):
     """ Truncate number to precision
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> from blaze import symbol, compute
     >>> x = symbol('x', 'real')
@@ -83,11 +103,9 @@ def truncate(expr, precision):
     return expr // precision * precision
 
 
-from datashape.predicates import isreal, isnumeric
-
-from .expressions import schema_method_list
-
 schema_method_list.extend([
     (isreal, set([isnan])),
-    (isnumeric, set([truncate]))
-        ])
+    (isnumeric, set([truncate])),
+    (lambda ds: isinstance(ds, Option) or isinstance(ds.measure, Option),
+     set([notnull]))
+])

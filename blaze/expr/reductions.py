@@ -1,14 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-from numpy import inf
-
-import toolz
-
 import datashape
-
 from datashape import Record, DataShape, dshape, TimeDelta
 from datashape import coretypes as ct
 from datashape.predicates import iscollection, isboolean, isnumeric, isdatelike
+from numpy import inf
+from odo.utils import copydoc
+import toolz
 
 from .core import common_subexpression
 from .expressions import Expr, ndim
@@ -80,10 +78,11 @@ class Reduction(Expr):
 
     @property
     def _name(self):
-        try:
-            return self._child._name + '_' + type(self).__name__
-        except (AttributeError, ValueError, TypeError):
+        child_name = self._child._name
+        if child_name is None or child_name == '_':
             return type(self).__name__
+        else:
+            return '%s_%s' % (child_name, type(self).__name__)
 
     def __str__(self):
         kwargs = list()
@@ -265,6 +264,7 @@ class Summary(Expr):
         return s
 
 
+@copydoc(Summary)
 def summary(keepdims=False, axis=None, **kwargs):
     items = sorted(kwargs.items(), key=toolz.first)
     names = tuple(map(toolz.first, items))
@@ -286,9 +286,6 @@ def summary(keepdims=False, axis=None, **kwargs):
     if not isinstance(axis, tuple):
         axis = (axis,)
     return Summary(child, names, values, keepdims=keepdims, axis=axis)
-
-
-summary.__doc__ = Summary.__doc__
 
 
 def vnorm(expr, ord=None, axis=None, keepdims=False):

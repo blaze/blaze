@@ -6,6 +6,8 @@ build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   {% if environ.get('GIT_DESCRIBE_NUMBER', '0') == '0' %}string: py{{ environ.get('PY_VER').replace('.', '') }}_0
   {% else %}string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}{% endif %}
+  entry_points:
+    - blaze-server = blaze.server.spider:_main
 
 source:
   git_url: ../
@@ -13,15 +15,27 @@ source:
 requirements:
   build:
     - python
-
-  run:
-    - python
-    - datashape >=0.4.4
-    - odo >=0.3.1
+    - setuptools
+    - datashape >=0.4.6
+    - odo >=0.3.3
     - flask
     - multipledispatch >=0.4.7
     - numpy >=1.7
-    - pandas >=0.15.0,<0.16.1
+    - pandas >=0.15.0
+    - psutil
+    - requests
+    - sqlalchemy >=0.8.0
+    - toolz
+    - cytoolz
+
+  run:
+    - python
+    - datashape >=0.4.6
+    - odo >=0.3.3
+    - flask
+    - multipledispatch >=0.4.7
+    - numpy >=1.7
+    - pandas >=0.15.0
     - psutil
     - requests
     - sqlalchemy >=0.8.0
@@ -34,6 +48,8 @@ test:
     - dask
     - dynd-python
     - pytables
+    - pyyaml
+    - h5py
 
   commands:
     - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX

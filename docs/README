@@ -5,11 +5,11 @@ The blaze documentation is split over two repositories:
 
     The user and developer documentation:
 
-         https://github.com/ContinuumIO/blaze/tree/master/docs (the 'docs' directory)
+         https://github.com/blaze/blaze/tree/master/docs (the 'docs' directory)
 
     The webpage, blaze.pydata.org:
 
-        https://github.com/ContinuumIO/blaze/tree/gh-pages
+        https://github.com/blaze/blaze/tree/gh-pages
 
 User and Developer Documentation
 ================================
@@ -26,7 +26,7 @@ check the documentation:
     $ make html
     $ open build/html/index.html
 
-This documentation can be uploaded to http://blaze.pydata.org/dev/index.html
+This documentation can be uploaded to http://blaze.pydata.org/en/latest/index.html
 using the gh-pages.py script under docs/:
 
     $ python gh-pages.py
@@ -35,5 +35,5 @@ then verify the repository under the 'gh-pages' directory and use 'git push'.
 
 Webpage
 =======
-The blaze webpage on blaze.pydata.org can be fetched from here: https://github.com/ContinuumIO/blaze/tree/gh-pages
+The blaze webpage on blaze.pydata.org can be fetched from here: https://github.com/blaze/blaze/tree/gh-pages
 The documentation is linked to in the 'dev' subdirectory.

@@ -10,7 +10,7 @@ Imports and Construction
 
    import numpy as np
    import pandas as pd
-   from blaze import Data, by, join, merge
+   from blaze import Data, by, join, merge, concat
 
    # construct a DataFrame
    df = pd.DataFrame({
@@ -39,7 +39,7 @@ Imports and Construction
 | Selection       |    df[df.amount > 300]                                          |    df[df.amount > 300]                            |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
-|  Group By       |                                                                 |                                                   |
+| Group By        |                                                                 |                                                   |
 |                 |    df.groupby('name').amount.mean()                             |    by(df.name, amount=df.amount.mean())           |
 |                 |    df.groupby(['name', 'id']).amount.mean()                     |    by(merge(df.name, df.id),                      |
 |                 |                                                                 |       amount=df.amount.mean())                    |
@@ -62,11 +62,20 @@ Imports and Construction
 |                 |                                                                 |                                                   |
 | Drop duplicates |    df.drop_duplicates()                                         |    df.distinct()                                  |
 |                 |    df.name.drop_duplicates()                                    |    df.name.distinct()                             |
+|                 +-----------------------------------------------------------------+---------------------------------------------------+
+|                 | .. code-block::python                                           | .. code-block::python                             |
+|                 |                                                                 |                                                   |
+|                 |    df.drop_duplicates(subset=('name', 'amount'))                |    df.distinct(df.name, df.amount)                |
+|                 |                                                                 |    df.distinct('name', 'amount')                  |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 |                 | .. code-block:: python                                          | .. code-block:: python                            |
 |                 |                                                                 |                                                   |
 | Reductions      |    df.amount.mean()                                             |    df.amount.mean()                               |
 |                 |    df.amount.value_counts()                                     |    df.amount.count_values()                       |
++-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+|                 | .. code-block:: python                                          | .. code-block:: python                            |
+| Concatenate     |                                                                 |                                                   |
+|                 |    pd.concat((df, df))                                          |    concat(df, df)                                 |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Column Type     | .. code-block:: python                                          | .. code-block:: python                            |
 | Information     |                                                                 |                                                   |
@@ -74,7 +83,7 @@ Imports and Construction
 |                 |    df.amount.dtype                                              |    df.amount.dshape                               |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 
-Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `odo <https://github.com/ContinuumIO/odo>`_ library. In many cases, blaze will able to handle datasets that can't fit into main memory, which is something that can't be easily done with pandas.
+Blaze can simplify and make more readable some common IO tasks that one would want to do with pandas. These examples make use of the `odo <https://github.com/blaze/odo>`_ library. In many cases, blaze will able to handle datasets that can't fit into main memory, which is something that can't be easily done with pandas.
 
 
 .. code-block:: python

@@ -1,6 +1,10 @@
 from __future__ import absolute_import, print_function, division
 
+import sys
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.version_info[0] == 3,
+                                reason="PyHive doesn't work with Python 3.x")
 
 pyspark = pytest.importorskip('pyspark')
 py4j = pytest.importorskip('py4j')
@@ -13,11 +17,14 @@ import shutil
 from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
+import pandas.util.testing as tm
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
+
 try:
     from pyspark.sql import DataFrame as SparkDataFrame
 except ImportError:
     from pyspark.sql import SchemaRDD as SparkDataFrame
+
 from pyspark import HiveContext, SQLContext
 from pyspark.sql import Row, SchemaRDD
 from odo import odo, discover
@@ -29,6 +36,8 @@ data = [['Alice', 100.0, 1],
         ['Alice', 50.0, 3]]
 
 date_data = []
+
+np.random.seed(0)
 
 for attr in ('YearBegin', 'MonthBegin', 'Day', 'Hour', 'Minute', 'Second'):
     rng = pd.date_range(start='now', periods=len(data),
@@ -237,14 +246,17 @@ def test_column_arithmetic(ctx, db):
 
 # pyspark doesn't use __version__ so we use this kludge
 # should submit a bug report upstream to get __version__
-fail_on_spark_one_two = pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
-                                          raises=py4j.protocol.Py4JJavaError,
-                                          reason=('math functions only '
-                                                  'supported in HiveContext'))
+def fail_on_spark_one_two(x):
+    if hasattr(pyspark.sql, 'types'):
+        return x
+    else:
+        return pytest.mark.xfail(x, raises=py4j.protocol.Py4JJavaError,
+                                 reason=('math functions only supported in '
+                                         'HiveContext'))
 
 
-@pytest.mark.parametrize('func', map(fail_on_spark_one_two,
-                                     [sin, cos, tan, exp]))
+@pytest.mark.parametrize('func', list(map(fail_on_spark_one_two,
+                                          [sin, cos, tan, exp])))
 def test_math(ctx, db, func):
     expr = func(db.t.amount)
     result = compute(expr, ctx)
@@ -336,7 +348,7 @@ def test_strlen(ctx, db):
 
 date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
                                 attr,
-                                raises=Py4JJavaError,
+                                raises=(Py4JJavaError, AssertionError),
                                 reason=('date attribute %r not supported '
                                         'without hive') % attr)
               for attr in ['year', 'month', 'day', 'hour', 'minute', 'second']]
@@ -350,11 +362,14 @@ date_attrs += [pytest.mark.xfail(attr,
 
 @pytest.mark.parametrize('attr', date_attrs)
 def test_by_with_date(ctx, db, attr):
+    # TODO: investigate CSV writing precision between pandas 0.16.0 and 0.16.1
+    # TODO: see if we can use odo to convert the dshape of an existing
+    #       DataFrame
     expr = by(getattr(db.dates.ds, attr),
               mean=db.dates.amount.mean())
-    result = odo(compute(expr, ctx), set)
-    expected = odo(compute(expr, {db: {'dates': date_df}}), set)
-    assert result == expected
+    result = odo(compute(expr, ctx), pd.DataFrame).sort('mean').reset_index(drop=True)
+    expected = compute(expr, {db: {'dates': date_df}}).sort('mean').reset_index(drop=True)
+    tm.assert_frame_equal(result, expected, check_dtype=False)
 
 
 @pytest.mark.parametrize('keys', [[1], [1, 2]])

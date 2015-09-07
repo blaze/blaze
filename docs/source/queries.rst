@@ -8,9 +8,9 @@ We use the well known iris dataset
 
 .. code-block:: python
 
-   >>> from blaze import *
+   >>> from blaze import Data
    >>> iris = Data('blaze/examples/data/iris.csv')
-   >>> iris  # doctest: +SKIP
+   >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -26,7 +26,7 @@ Select individual columns using attributes
 
 .. code-block:: python
 
-   >>> iris.species  # doctest: +SKIP
+   >>> iris.species
            species
    0   Iris-setosa
    1   Iris-setosa
@@ -38,7 +38,7 @@ Or item access
 
 .. code-block:: python
 
-   >>> iris['species']  # doctest: +SKIP
+   >>> iris['species']
            species
    0   Iris-setosa
    1   Iris-setosa
@@ -50,7 +50,7 @@ Select many columns using a list of names
 
 .. code-block:: python
 
-   >>> iris[['sepal_length', 'species']]  # doctest: +SKIP
+   >>> iris[['sepal_length', 'species']]
        sepal_length      species
    0            5.1  Iris-setosa
    1            4.9  Iris-setosa
@@ -66,7 +66,8 @@ Use mathematical operators and functions as normal
 
 .. code-block:: python
 
-   >>> log(iris.sepal_length * 10)  # doctest: +SKIP
+   >>> from blaze import log
+   >>> log(iris.sepal_length * 10)
        sepal_length
    0       3.931826
    1       3.891820
@@ -88,11 +89,12 @@ either as methods or as base functions.
 
 .. code-block:: python
 
-   >>> iris.sepal_length.mean()  # doctest: +SKIP
-   5.843333333333334
+   >>> iris.sepal_length.mean()  # doctest: +ELLIPSIS
+   5.84333333333333...
 
-   >>> mean(iris.sepal_length)  # doctest: +SKIP
-   5.843333333333334
+   >>> from blaze import mean
+   >>> mean(iris.sepal_length)  # doctest: +ELLIPSIS
+   5.84333333333333...
 
 
 Split-Apply-Combine
@@ -112,6 +114,7 @@ length by species.
 
 .. code-block:: python
 
+   >>> from blaze import by
    >>> by(iris.species, shortest=iris.petal_length.min(),
    ...                   longest=iris.petal_length.max(),
    ...                   average=iris.petal_length.mean())
@@ -171,3 +174,51 @@ Relabel Column names
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
    2            4.7          3.2           1.3          0.2  Iris-setosa
+
+========
+Examples
+========
+
+Blaze can help solve many common problems that data analysts and scientists encounter. Here are a few examples of common issues that can be solved using  blaze.
+
+Combining separate, gzipped csv files.
+--------------------------------------
+
+.. code-block:: python
+
+   >>> from blaze import odo
+   >>> from pandas import DataFrame
+   >>> odo('blaze/examples/data/accounts_*.csv.gz', DataFrame)
+      id      name  amount
+   0   1     Alice     100
+   1   2       Bob     200
+   2   3   Charlie     300
+   3   4       Dan     400
+   4   5     Edith     500
+
+
+Split-Apply-Combine
+-------------------
+
+.. code-block:: python
+
+   >>> from blaze import Data, by
+   >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
+   >>> t
+       sepal_length  sepal_width  petal_length  petal_width      species
+   0            5.1          3.5           1.4          0.2  Iris-setosa
+   1            4.9          3.0           1.4          0.2  Iris-setosa
+   2            4.7          3.2           1.3          0.2  Iris-setosa
+   3            4.6          3.1           1.5          0.2  Iris-setosa
+   4            5.0          3.6           1.4          0.2  Iris-setosa
+   5            5.4          3.9           1.7          0.4  Iris-setosa
+   6            4.6          3.4           1.4          0.3  Iris-setosa
+   7            5.0          3.4           1.5          0.2  Iris-setosa
+   8            4.4          2.9           1.4          0.2  Iris-setosa
+   9            4.9          3.1           1.5          0.1  Iris-setosa
+   ...
+   >>> by(t.species, max=t.petal_length.max(), min=t.petal_length.min())
+              species  max  min
+   0      Iris-setosa  1.9  1.0
+   1  Iris-versicolor  5.1  3.0
+   2   Iris-virginica  6.9  4.5

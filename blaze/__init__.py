@@ -67,6 +67,9 @@ with ignoring(ImportError):
     from .pytables import *
     from .compute.pytables import *
 
+
+from .expr import concat  # Some module re-export toolz.concat and * catches it.
+
 restart_ordering()  # Restart multipledispatch ordering and do ordering
 
 inf = float('inf')

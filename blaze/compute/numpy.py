@@ -7,12 +7,14 @@ from pandas import DataFrame, Series
 from datashape import to_numpy, to_numpy_dtype
 from numbers import Number
 
-from ..expr import Reduction, Field, Projection, Broadcast, Selection, ndim
-from ..expr import Distinct, Sort, Head, Label, ReLabel, Expr, Slice, Join
-from ..expr import std, var, count, nunique, Summary, IsIn
-from ..expr import BinOp, UnaryOp, USub, Not, nelements
-from ..expr import UTCFromTimestamp, DateTimeTruncate
-from ..expr import Transpose, TensorDot
+from ..expr import (
+    Reduction, Field, Projection, Broadcast, Selection, ndim,
+    Distinct, Sort, Tail, Head, Label, ReLabel, Expr, Slice, Join,
+    std, var, count, nunique, Summary, IsIn,
+    BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
+    UTCFromTimestamp, DateTimeTruncate,
+    Transpose, TensorDot, Coerce, isnan
+)
 from ..utils import keywords
 
 from .core import base, compute
@@ -45,7 +47,7 @@ try:
     from .numba import broadcast_numba as broadcast_ndarray
 except ImportError:
     def broadcast_ndarray(t, *data, **kwargs):
-        scope = kwargs.pop('scope')
+        del kwargs['scope']
         d = dict(zip(t._scalar_expr._leaves(), data))
         return compute(t._scalar_expr, d, **kwargs)
 
@@ -53,6 +55,46 @@ except ImportError:
 compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
 for i in range(2, 6):
     compute_up.register(Broadcast, *([(np.ndarray, Number)] * i))(broadcast_ndarray)
+
+
+@dispatch(Repeat, np.ndarray)
+def compute_up(t, data, _char_mul=np.char.multiply, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return _char_mul(data, t.rhs)
+    else:
+        return _char_mul(t.lhs, data)
+
+
+@compute_up.register(Repeat, np.ndarray, (np.ndarray, base))
+@compute_up.register(Repeat, base, np.ndarray)
+def compute_up_np_repeat(t, lhs, rhs, _char_mul=np.char.multiply, **kwargs):
+    return _char_mul(lhs, rhs)
+
+
+def _interp(arr, v, _Series=pd.Series, _charmod=np.char.mod):
+    """
+    Delegate to the most efficient string formatting technique based on
+    the length of the array.
+    """
+    if len(arr) >= 145:
+        return _Series(arr) % v
+
+    return _charmod(arr, v)
+
+
+@dispatch(Interp, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return _interp(data, t.rhs)
+    else:
+        return _interp(t.lhs, data)
+
+
+@compute_up.register(Interp, np.ndarray, (np.ndarray, base))
+@compute_up.register(Interp, base, np.ndarray)
+def compute_up_np_interp(t, lhs, rhs, **kwargs):
+    return _interp(lhs, rhs)
+
 
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
@@ -157,9 +199,21 @@ def compute_up(t, x, **kwargs):
             keepdims=t.keepdims)
 
 
+@compute_up.register(Distinct, np.recarray)
+def recarray_distinct(t, rec, **kwargs):
+    return pd.DataFrame.from_records(rec).drop_duplicates(
+        subset=t.on or None).to_records(index=False).astype(rec.dtype)
+
+
 @dispatch(Distinct, np.ndarray)
-def compute_up(t, x, **kwargs):
-    return np.unique(x)
+def compute_up(t, arr, _recarray_distinct=recarray_distinct, **kwargs):
+    if t.on:
+        if getattr(arr.dtype, 'names', None) is not None:
+            return _recarray_distinct(t, arr, **kwargs).view(np.ndarray)
+        else:
+            raise ValueError('malformed expression: no columns to distinct on')
+
+    return np.unique(arr)
 
 
 @dispatch(Sort, np.ndarray)
@@ -181,6 +235,11 @@ def compute_up(t, x, **kwargs):
 @dispatch(Head, np.ndarray)
 def compute_up(t, x, **kwargs):
     return x[:t.n]
+
+
+@dispatch(Tail, np.ndarray)
+def compute_up(t, x, **kwargs):
+    return x[-t.n:]
 
 
 @dispatch(Label, np.ndarray)
@@ -278,6 +337,11 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
+@dispatch(isnan, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return np.isnan(data)
+
+
 @dispatch(np.ndarray)
 def chunks(x, chunksize=1024):
     start = 0
@@ -311,3 +375,13 @@ def join_ndarray(expr, lhs, rhs, **kwargs):
     if isinstance(rhs, np.ndarray):
         rhs = DataFrame(rhs)
     return compute_up(expr, lhs, rhs, **kwargs)
+
+
+@dispatch(Coerce, np.ndarray)
+def compute_up(expr, data, **kwargs):
+    return data.astype(to_numpy_dtype(expr.schema))
+
+
+@dispatch(Concat, np.ndarray, np.ndarray)
+def compute_up(expr, lhs, rhs, _concat=np.concatenate, **kwargs):
+    return _concat((lhs, rhs), axis=expr.axis)

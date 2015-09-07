@@ -7,6 +7,9 @@ from collections import Iterator
 from odo.utils import records_to_tuples
 
 
+__all__ = ['pre_compute']
+
+
 @dispatch(Expr, JSON)
 def pre_compute(expr, data, **kwargs):
     seq = into(list, data, **kwargs)

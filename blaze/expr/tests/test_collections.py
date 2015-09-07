@@ -1,7 +1,9 @@
 import pytest
 
+from datashape import dshape
+
 from blaze.expr import symbol
-from blaze.expr.collections import merge, join, transform
+from blaze.expr.collections import merge, join, transform, concat
 from blaze.utils import raises
 from blaze.compatibility import builtins
 from toolz import isdistinct
@@ -56,6 +58,15 @@ def test_join_on_same_table():
     assert len(c.fields) == 3
 
 
+def test_join_suffixes():
+    a = symbol('a', 'var * {x: int, y: int}')
+    b = join(a, a, 'x', suffixes=('_l', '_r'))
+
+    assert isdistinct(b.fields)
+    assert len(b.fields) == 3
+    assert set(b.fields) == set(['x', 'y_l', 'y_r'])
+
+
 def test_join_on_single_column():
     a = symbol('a', 'var * {x: int, y: int, z: int}')
     b = symbol('b', 'var * {x: int, y: int, w: int}')
@@ -72,6 +83,36 @@ def test_raise_error_if_join_on_no_columns():
     assert raises(ValueError, lambda: join(a, b))
 
 
+def test_join_option_types():
+    a = symbol('a', 'var * {x: ?int}')
+    b = symbol('b', 'var * {x: int}')
+
+    assert join(a, b, 'x').dshape == dshape('var * {x: int}')
+    assert join(b, a, 'x').dshape == dshape('var * {x: int}')
+
+
+def test_join_mismatched_schema():
+    a = symbol('a', 'var * {x: int}')
+    b = symbol('b', 'var * {x: string}')
+
+    with pytest.raises(TypeError):
+        join(a, b, 'x')
+
+
+def test_join_type_promotion():
+    a = symbol('a', 'var * {x: int32}')
+    b = symbol('b', 'var * {x: int64}')
+
+    assert join(a, b, 'x').dshape == dshape('var * {x: int64}')
+
+
+def test_join_type_promotion_option():
+    a = symbol('a', 'var * {x: ?int32}')
+    b = symbol('b', 'var * {x: int64}')
+
+    assert join(a, b, 'x').dshape == dshape('var * {x: int64}')
+
+
 def test_isin():
     a = symbol('a', 'var * {x: int, y: string}')
     assert hasattr(a.x, 'isin')
@@ -84,3 +125,65 @@ def test_isin_no_expressions():
     b = symbol('b', 'var * int')
     with pytest.raises(TypeError):
         a.isin(b)
+
+
+def test_concat_table():
+    a = symbol('a', '3 * {a: int32, b: int32}')
+    b = symbol('a', '5 * {a: int32, b: int32}')
+    v = symbol('v', 'var * {a: int32, b: int32}')
+
+    assert concat(a, b).dshape == dshape('8 * {a: int32, b: int32}')
+    assert concat(a, v).dshape == dshape('var * {a: int32, b: int32}')
+
+
+def test_concat_mat():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * int32')
+    v = symbol('v', 'var * 5 * int32')
+    u = symbol('u', '3 * var * int32')
+
+    assert concat(a, b, axis=0).dshape == dshape('6 * 5 * int32')
+    assert concat(a, b, axis=1).dshape == dshape('3 * 10 * int32')
+    assert concat(a, v, axis=0).dshape == dshape('var * 5 * int32')
+    assert concat(a, u, axis=1).dshape == dshape('3 * var * int32')
+
+
+def test_concat_arr():
+    a = symbol('a', '3 * int32')
+    b = symbol('b', '5 * int32')
+    v = symbol('v', 'var * int32')
+
+    assert concat(a, b).dshape == dshape('8 * int32')
+    assert concat(a, v).dshape == dshape('var * int32')
+
+
+def test_concat_different_measure():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * float64')
+
+    with pytest.raises(TypeError):
+        concat(a, b)
+
+
+def test_concat_different_along_concat_axis():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 6 * int32')
+
+    with pytest.raises(TypeError):
+        concat(a, b, axis=0)
+
+
+def test_concat_negative_axis():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * int32')
+
+    with pytest.raises(ValueError):
+        concat(a, b, axis=-1)
+
+
+def test_concat_axis_too_great():
+    a = symbol('a', '3 * 5 * int32')
+    b = symbol('b', '3 * 5 * int32')
+
+    with pytest.raises(ValueError):
+        concat(a, b, axis=2)

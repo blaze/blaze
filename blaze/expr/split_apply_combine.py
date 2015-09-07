@@ -1,9 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
+import re
+
 from .core import common_subexpression
-from .expressions import Expr, symbol
+from .expressions import Expr
 from .reductions import Reduction, Summary, summary
 from ..dispatch import dispatch
+from .expressions import dshape_method_list
+
 from datashape import dshape, Record, Option, Unit, var
 
 __all__ = ['by', 'By', 'count_values']
@@ -27,6 +31,7 @@ class By(Expr):
     Examples
     --------
 
+    >>> from blaze import symbol
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> e = by(t['name'], total=t['amount'].sum())
 
@@ -61,8 +66,10 @@ class By(Expr):
         return var * self.schema
 
     def __str__(self):
-        app = str(self.apply)[len('summary('):-len(')')]
-        return '%s(%s, %s)' % (type(self).__name__.lower(), self.grouper, app)
+        return '%s(%s, %s)' % (type(self).__name__.lower(),
+                               self.grouper,
+                               re.sub(r'^summary\((.*)\)$', r'\1',
+                                      str(self.apply)))
 
 
 @dispatch(Expr, Reduction)
@@ -95,8 +102,6 @@ def count_values(expr, sort=True):
         result = result.sort('count', ascending=False)
     return result
 
-
-from .expressions import dshape_method_list
 
 dshape_method_list.extend([
     (lambda ds: len(ds.shape) == 1, set([count_values])),

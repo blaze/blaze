@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from itertools import chain
 
-from operator import and_, eq
+from operator import and_, eq, attrgetter
 from copy import copy
 
 import sqlalchemy as sa
@@ -27,29 +27,41 @@ import sqlalchemy as sa
 from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.elements import ClauseElement, ColumnElement
+from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
+from sqlalchemy.sql.selectable import FromClause, ScalarSelect
 from sqlalchemy.engine import Engine
 
 import toolz
 
-from toolz import unique, concat, pipe
+from toolz import unique, concat, pipe, first
+from toolz.compatibility import zip
 from toolz.curried import map
+
+import numpy as np
+import numbers
+
+import warnings
 
 from multipledispatch import MDNotImplementedError
 
-from odo.backends.sql import metadata_of_engine
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
+
+from datashape.predicates import iscollection, isscalar, isrecord
 
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
 
-from ..expr import Projection, Selection, Field, Broadcast, Expr, IsIn
-from ..expr import (BinOp, UnaryOp, USub, Join, mean, var, std, Reduction,
-                    count, FloorDiv, UnaryStringFunction, strlen, DateTime)
-from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Summary, Like, nelements
+
+from ..expr import (
+    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
+    Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
+)
 
 from ..expr.broadcast import broadcast_collect
+from ..expr.math import isnan
 
 from ..compatibility import reduce
 
@@ -87,10 +99,10 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+    cols = list(inner_columns(s))
+    d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
-    name = t._scalar_expr._name
-    result = compute(t._scalar_expr, d, post_compute=False).label(name)
+    result = compute(t._scalar_expr, d, post_compute=False).label(t._name)
 
     s = copy(s)
     s.append_column(result)
@@ -99,10 +111,21 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    d = dict((t._scalars[0][c], list(inner_columns(s))[i])
+    cols = list(inner_columns(s))
+    d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
-    name = t._scalar_expr._name
-    return compute(t._scalar_expr, d, post_compute=False).label(name)
+    return compute(t._scalar_expr, d, post_compute=False).label(t._name)
+
+
+@dispatch(Concat, (Select, Selectable), (Select, Selectable))
+def compute_up(t, lhs, rhs, **kwargs):
+    if t.axis != 0:
+        raise ValueError(
+            'Cannot concat along a non-zero axis in sql; perhaps you want'
+            " 'merge'?",
+        )
+
+    return select(lhs).union_all(select(rhs)).alias()
 
 
 @dispatch(Broadcast, sa.Column)
@@ -117,6 +140,17 @@ def compute_up(t, data, **kwargs):
         return t.op(data, t.rhs)
     else:
         return t.op(t.lhs, data)
+
+
+@dispatch(BinOp, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    if isinstance(t.lhs, Expr):
+        return t.op(column, t.rhs)
+    else:
+        return t.op(t.lhs, column)
 
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
@@ -139,29 +173,29 @@ def binop_sql(t, lhs, rhs, **kwargs):
     return sa.func.floor(lhs / rhs)
 
 
+@dispatch(isnan, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return s == float('nan')
+
+
 @dispatch(UnaryOp, ColumnElement)
 def compute_up(t, s, **kwargs):
     sym = t.symbol
     return getattr(t, 'op', getattr(safuncs, sym, getattr(sa.func, sym)))(s)
 
 
-@dispatch(Selection, Select)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col) for col in s.inner_columns)
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
-    return s.where(predicate)
+@dispatch(Selection, sa.sql.ColumnElement)
+def compute_up(expr, data, scope=None, **kwargs):
+    predicate = compute(expr.predicate, data, post_compute=False)
+    return sa.select([data]).where(predicate)
 
 
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], lower_column(col)) for col in s.columns)
+    ns = dict((t._child[col.name], col)
+              for col in getattr(s, 'inner_columns', s.columns))
     predicate = compute(t.predicate, toolz.merge(ns, scope),
                         optimize=False, post_compute=False)
-    if isinstance(predicate, Select):
-        predicate = list(list(predicate.columns)[0].base_columns)[0]
     try:
         return s.where(predicate)
     except AttributeError:
@@ -181,9 +215,6 @@ def select(s):
         s = sa.select(s)
     return s
 
-
-def computefull(t, s):
-    return select(compute(t, s))
 
 table_names = ('table_%d' % i for i in itertools.count(1))
 
@@ -220,9 +251,20 @@ def _join_selectables(a, b, condition=None, **kwargs):
                                 a.join(b.froms[0], condition, **kwargs))
 
 
+
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
+
+
+_getname = attrgetter('name')
+
+
+def _clean_join_name(opposite_side_colnames, suffix, c):
+    if c.name not in opposite_side_colnames:
+        return c
+    else:
+        return c.label(c.name + suffix)
 
 
 @dispatch(Join, ClauseElement, ClauseElement)
@@ -232,8 +274,9 @@ def compute_up(t, lhs, rhs, **kwargs):
     if isinstance(rhs, ColumnElement):
         rhs = select(rhs)
     if name(lhs) == name(rhs):
-        lhs = lhs.alias('%s_left' % name(lhs))
-        rhs = rhs.alias('%s_right' % name(rhs))
+        left_suffix, right_suffix = t.suffixes
+        lhs = lhs.alias('%s%s' % (name(lhs), left_suffix))
+        rhs = rhs.alias('%s%s' % (name(rhs), right_suffix))
 
     lhs = alias_it(lhs)
     rhs = alias_it(rhs)
@@ -257,13 +300,13 @@ def compute_up(t, lhs, rhs, **kwargs):
     # Perform join
     if t.how == 'inner':
         join = _join_selectables(lhs, rhs, condition=condition)
-        main, other = lhs, rhs
+        main = lhs
     elif t.how == 'left':
         main, other = lhs, rhs
         join = _join_selectables(lhs, rhs, condition=condition, isouter=True)
     elif t.how == 'right':
         join = _join_selectables(rhs, lhs, condition=condition, isouter=True)
-        main, other = rhs, lhs
+        main = rhs
     else:
         # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
         raise ValueError("SQLAlchemy doesn't support full outer Join")
@@ -282,15 +325,21 @@ def compute_up(t, lhs, rhs, **kwargs):
         cols = lambda x: list(x.columns)
 
     main_cols = cols(main)
-    other_cols = cols(other)
     left_cols = cols(lhs)
+    left_names = set(map(_getname, left_cols))
     right_cols = cols(rhs)
+    right_names = set(map(_getname, right_cols))
 
-    fields = [f.replace('_left', '').replace('_right', '') for f in t.fields]
+    left_suffix, right_suffix = t.suffixes
+    fields = [
+        f.replace(left_suffix, '').replace(right_suffix, '') for f in t.fields
+    ]
     columns = [c for c in main_cols if c.name in t._on_left]
-    columns += [c for c in left_cols
+    columns += [_clean_join_name(right_names, left_suffix, c)
+                for c in left_cols
                 if c.name in fields and c.name not in t._on_left]
-    columns += [c for c in right_cols
+    columns += [_clean_join_name(left_names, right_suffix, c)
+                for c in right_cols
                 if c.name in fields and c.name not in t._on_right]
 
     if isinstance(join, Select):
@@ -304,6 +353,31 @@ names = {
 }
 
 
+def reconstruct_select(columns, original, **kwargs):
+    return sa.select(columns,
+                     from_obj=kwargs.pop('from_obj', None),
+                     whereclause=kwargs.pop('whereclause',
+                                            getattr(original,
+                                                    '_whereclause', None)),
+                     bind=kwargs.pop('bind', original.bind),
+                     distinct=kwargs.pop('distinct',
+                                         getattr(original,
+                                                 '_distinct', False)),
+                     group_by=kwargs.pop('group_by',
+                                         getattr(original,
+                                                 '_group_by_clause', None)),
+                     having=kwargs.pop('having',
+                                       getattr(original, '_having', None)),
+                     limit=kwargs.pop('limit',
+                                      getattr(original, '_limit', None)),
+                     offset=kwargs.pop('offset',
+                                       getattr(original, '_offset', None)),
+                     order_by=kwargs.pop('order_by',
+                                         getattr(original,
+                                                 '_order_by_clause', None)),
+                     **kwargs)
+
+
 @dispatch((nunique, Reduction), Select)
 def compute_up(expr, data, **kwargs):
     if expr.axis != (0,):
@@ -315,17 +389,22 @@ def compute_up(expr, data, **kwargs):
     return select([compute(expr, d, post_compute=False)])
 
 
-@dispatch(Distinct, sa.Column)
+@dispatch(Distinct, ColumnElement)
 def compute_up(t, s, **kwargs):
-    return s.distinct().label(t._name)
+    return s.distinct(*t.on).label(t._name)
 
 
 @dispatch(Distinct, Select)
 def compute_up(t, s, **kwargs):
-    return s.distinct()
+    return s.distinct(*t.on)
 
 
-@dispatch(Reduction, sql.elements.ClauseElement)
+@dispatch(Distinct, Selectable)
+def compute_up(t, s, **kwargs):
+    return select(s).distinct(*t.on)
+
+
+@dispatch(Reduction, ClauseElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
@@ -353,7 +432,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(count, Selectable)
 def compute_up(t, s, **kwargs):
-    return compute_up(t, select(s), **kwargs)
+    return s.count()
 
 
 @dispatch(count, sa.Table)
@@ -402,20 +481,14 @@ def compute_up(expr, data, **kwargs):
     return select(data).distinct().alias(next(aliases)).count()
 
 
-@dispatch(Distinct, Selectable)
-def compute_up(t, s, **kwargs):
-    return select(s).distinct()
-
-
 @dispatch(By, sa.Column)
-def compute_up(t, s, **kwargs):
-    grouper = lower_column(s)
-    scope = {t._child: s}
-    app = t.apply
+def compute_up(expr, data, **kwargs):
+    grouper = lower_column(data)
+    app = expr.apply
     if isinstance(app, Reduction):
-        reductions = [compute(app, scope, post_compute=False)]
+        reductions = [compute(app, data, post_compute=False)]
     elif isinstance(app, Summary):
-        reductions = [compute(val, scope, post_compute=None).label(name)
+        reductions = [compute(val, data, post_compute=None).label(name)
                       for val, name in zip(app.values, app.fields)]
 
     return sa.select([grouper] + reductions).group_by(grouper)
@@ -423,22 +496,17 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(By, ClauseElement)
 def compute_up(expr, data, **kwargs):
-    if (isinstance(expr.grouper, (Field, Projection)) or
-            expr.grouper is expr._child):
-        grouper = [lower_column(data.c.get(col))
-                   for col in expr.grouper.fields]
-    elif isinstance(expr.grouper, DateTime):
-        grouper = [compute(expr.grouper, data, post_compute=False)]
-    else:
-        raise ValueError("Grouper must be a projection, field or "
-                         "DateTime expression, got %s" % expr.grouper)
+    if not valid_grouper(expr):
+        raise TypeError("Grouper must have a non-nested record or one "
+                        "dimensional collection datashape, "
+                        "got %s of type %r with dshape %s" %
+                        (expr.grouper, type(expr.grouper).__name__,
+                         expr.dshape))
+    grouper = get_inner_columns(compute(expr.grouper, data,
+                                        post_compute=False))
     app = expr.apply
-    scope = {expr._child: data}
-    if isinstance(expr.apply, Reduction):
-        reductions = [compute(app, scope, post_compute=False)]
-    elif isinstance(expr.apply, Summary):
-        reductions = [compute(val, scope, post_compute=False).label(name)
-                      for val, name in zip(app.values, app.fields)]
+    reductions = [compute(val, data, post_compute=False).label(name)
+                  for val, name in zip(app.values, app.fields)]
 
     return sa.select(grouper + reductions).group_by(*grouper)
 
@@ -491,83 +559,141 @@ def alias_it(s):
         return s
 
 
+def is_nested_record(measure):
+    """Predicate for checking whether `measure` is a nested ``Record`` dshape
+
+    Examples
+    --------
+    >>> from datashape import dshape
+    >>> is_nested_record(dshape('{a: int32, b: int32}').measure)
+    False
+    >>> is_nested_record(dshape('{a: var * ?float64, b: ?string}').measure)
+    True
+    """
+    if not isrecord(measure):
+        raise TypeError('Input must be a Record type got %s of type %r' %
+                        (measure, type(measure).__name__))
+    return not all(isscalar(t) for t in measure.types)
+
+
+def valid_grouper(expr):
+    ds = expr.dshape
+    measure = ds.measure
+    return (iscollection(ds) and
+            (isscalar(measure) or
+             (isrecord(measure) and not is_nested_record(measure))))
+
+
+def valid_reducer(expr):
+    ds = expr.dshape
+    measure = ds.measure
+    return (not iscollection(ds) and
+            (isscalar(measure) or
+             (isrecord(measure) and not is_nested_record(measure))))
+
+
 @dispatch(By, Select)
-def compute_up(t, s, **kwargs):
+def compute_up(expr, data, **kwargs):
+    if not valid_grouper(expr):
+        raise TypeError("Grouper must have a non-nested record or one "
+                        "dimensional collection datashape, "
+                        "got %s of type %r with dshape %s" %
+                        (expr.grouper, type(expr.grouper).__name__, expr.dshape))
 
-    # TODO: this should restrict according to dshape, not expression type
-    if not (isinstance(t.grouper, (Field, Projection, DateTime)) or
-            t.grouper is t._child):
-        raise ValueError("Grouper must be a Field, Projection or DateTime, "
-                         "got %s of type %r" % (t.grouper,
-                                                type(t.grouper).__name__))
+    s = alias_it(data)
 
-    s = alias_it(s)
-
-    # TODO: Do we need to be this restrictive here?
-    if isinstance(t.apply, (Summary, Reduction)):
-        reduction = compute(t.apply, {t._child: s}, post_compute=False)
+    if valid_reducer(expr.apply):
+        reduction = compute(expr.apply, s, post_compute=False)
     else:
-        raise TypeError('apply must be a Summary or Reduction expression')
+        raise TypeError('apply must be a Summary expression')
 
-    grouper = get_inner_columns(compute(t.grouper, {t._child: s}))
-    reduction_columns = pipe(reduction.inner_columns, map(get_inner_columns),
+    grouper = get_inner_columns(compute(expr.grouper, s, post_compute=False))
+    reduction_columns = pipe(reduction.inner_columns,
+                             map(get_inner_columns),
                              concat)
     columns = list(unique(chain(grouper, reduction_columns)))
     if (not isinstance(s, sa.sql.selectable.Alias) or
             (hasattr(s, 'froms') and isinstance(s.froms[0],
                                                 sa.sql.selectable.Join))):
         assert len(s.froms) == 1, 'only a single FROM clause supported for now'
-        from_obj = s.froms[0]
+        from_obj, = s.froms
     else:
         from_obj = None
 
-    return sa.select(columns=columns,
-                     whereclause=getattr(s, 'element', s)._whereclause,
-                     from_obj=from_obj,
-                     distinct=getattr(s, 'element', s)._distinct,
-                     group_by=grouper,
-                     having=None,  # TODO: we don't have an expression for this
-                     limit=getattr(s, 'element', s)._limit,
-                     offset=getattr(s, 'element', s)._offset,
-                     order_by=get_clause(getattr(s, 'element', s), 'order_by'))
+    return reconstruct_select(columns,
+                              getattr(s, 'element', s),
+                              from_obj=from_obj,
+                              group_by=grouper)
 
 
-@dispatch(Sort, ClauseElement)
+@dispatch(Sort, (Selectable, Select))
 def compute_up(t, s, **kwargs):
-    s = select(s)
+    s = select(s.alias())
     direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(getattr(s.c, c))) for c in listpack(t.key)]
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
 
-@dispatch(Head, Select)
+@dispatch(Sort, (sa.Table, ColumnElement))
+def compute_up(t, s, **kwargs):
+    s = select(s)
+    direction = sa.asc if t.ascending else sa.desc
+    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
+    return s.order_by(*cols)
+
+
+@dispatch(Head, FromClause)
 def compute_up(t, s, **kwargs):
     if s._limit is not None and s._limit <= t.n:
         return s
     return s.limit(t.n)
 
 
-@dispatch(Head, ClauseElement)
+@dispatch(Head, sa.Table)
 def compute_up(t, s, **kwargs):
-    return select(s).limit(t.n)
+    return s.select().limit(t.n)
 
 
-@dispatch(Label, ClauseElement)
+@dispatch(Head, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return sa.select([s]).limit(t.n)
+
+
+@dispatch(Head, ScalarSelect)
+def compute_up(t, s, **kwargs):
+    return compute(t, s.element, post_compute=False)
+
+
+@dispatch(Label, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
-@dispatch(ReLabel, Selectable)
+@dispatch(Label, FromClause)
 def compute_up(t, s, **kwargs):
-    columns = [getattr(s.c, col).label(new_col)
-               if col != new_col else
-               getattr(s.c, col)
-               for col, new_col in zip(t._child.fields, t.fields)]
-
-    return select(columns)
+    assert len(s.c) == 1, \
+        'expected %s to have a single column but has %d' % (s, len(s.c))
+    inner_column, = s.inner_columns
+    return reconstruct_select([inner_column.label(t.label)], s).as_scalar()
 
 
-@dispatch(sa.sql.FromClause)
+@dispatch(Expr, ScalarSelect)
+def post_compute(t, s, **kwargs):
+    return s.element
+
+
+@dispatch(ReLabel, Selectable)
+def compute_up(expr, data, **kwargs):
+    names = data.c.keys()
+    assert names == expr._child.fields
+    d = dict(zip(names, getattr(data, 'inner_columns', data.c)))
+    return sa.select(
+        d[col].label(new_col) if col != new_col else d[col]
+        for col, new_col in zip(expr._child.fields, expr.fields)
+    )
+
+
+@dispatch(FromClause)
 def get_inner_columns(sel):
     try:
         return list(sel.inner_columns)
@@ -575,16 +701,16 @@ def get_inner_columns(sel):
         return list(map(lower_column, sel.c.values()))
 
 
-@dispatch(sa.sql.elements.ColumnElement)
+@dispatch(ColumnElement)
 def get_inner_columns(c):
     return [c]
 
 
-@dispatch(sa.sql.selectable.ScalarSelect)
+@dispatch(ScalarSelect)
 def get_inner_columns(sel):
     inner_columns = list(sel.inner_columns)
     assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
-    return list(map(lower_column, sel.inner_columns))
+    return list(map(lower_column, inner_columns))
 
 
 @dispatch(sa.sql.functions.Function)
@@ -619,7 +745,7 @@ def get_all_froms(t):
     return [t]
 
 
-@dispatch(sa.sql.elements.ColumnClause)
+@dispatch(ColumnClause)
 def get_all_froms(c):
     return [c.table]
 
@@ -648,15 +774,7 @@ def compute_up(expr, data, **kwargs):
     # we need these getattrs if data is a ColumnClause or Table
     from_obj = get_all_froms(data)
     assert len(from_obj) == 1, 'only a single FROM clause supported'
-    return sa.select(columns,
-                     from_obj=from_obj,
-                     whereclause=getattr(data, '_whereclause', None),
-                     distinct=getattr(data, '_distinct', False),
-                     having=getattr(data, '_having', None),
-                     group_by=get_clause(data, 'group_by'),
-                     limit=getattr(data, '_limit', None),
-                     offset=getattr(data, '_offset', None),
-                     order_by=get_clause(data, 'order_by'))
+    return reconstruct_select(columns, data, from_obj=from_obj)
 
 
 @dispatch(Summary, Select)
@@ -676,8 +794,11 @@ def compute_up(t, s, scope=None, **kwargs):
 
 @dispatch(Summary, ClauseElement)
 def compute_up(t, s, **kwargs):
-    return select([compute(value, {t._child: s}, post_compute=None).label(name)
-                   for value, name in zip(t.values, t.fields)])
+    scope = {t._child: s}
+    return sa.select(
+        compute(value, scope, post_compute=None).label(name)
+        for value, name in zip(t.values, t.fields)
+    )
 
 
 @dispatch(Like, Selectable)
@@ -721,8 +842,15 @@ def compute_up(expr, data, **kwargs):
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 
+@dispatch(notnull, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return data != None
+
+
 @toolz.memoize
 def table_of_metadata(metadata, name):
+    if metadata.schema is not None:
+        name = '.'.join((metadata.schema, name))
     if name not in metadata.tables:
         metadata.reflect(views=metadata.bind.dialect.supports_views)
     return metadata.tables[name]
@@ -740,6 +868,9 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
 def compute_up(expr, data, **kwargs):
+    if expr.attr == 'date':
+        return sa.func.date(data).label(expr._name)
+
     return sa.extract(expr.attr, data).label(expr._name)
 
 
@@ -766,7 +897,7 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-@dispatch(Expr, sa.sql.elements.ClauseElement)
+@dispatch(Expr, ClauseElement)
 def optimize(expr, _):
     return broadcast_collect(expr)
 
@@ -776,7 +907,7 @@ def compute_up(expr, data, **kwargs):
     return table_of_metadata(data, expr._name)
 
 
-@dispatch(Expr, sa.sql.elements.ClauseElement)
+@dispatch(Expr, ClauseElement)
 def post_compute(_, s, **kwargs):
     return select(s)
 
@@ -784,3 +915,45 @@ def post_compute(_, s, **kwargs):
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
+
+
+@dispatch(Slice, (Select, Selectable, ColumnElement))
+def compute_up(expr, data, **kwargs):
+    index = expr.index[0]  # [0] replace_slices returns tuple ((start, stop), )
+    if isinstance(index, slice):
+        start = index.start or 0
+        if start < 0:
+            raise ValueError('start value of slice cannot be negative'
+                             ' with a SQL backend')
+
+        stop = index.stop
+        if stop is not None and stop < 0:
+            raise ValueError('stop value of slice cannot be negative with a '
+                             'SQL backend.')
+
+        if index.step is not None and index.step != 1:
+            raise ValueError('step parameter in slice objects not supported '
+                             'with SQL backend')
+
+    elif isinstance(index, (np.integer, numbers.Integral)):
+        if index < 0:
+            raise ValueError('integer slice cannot be negative for the'
+                             ' SQL backend')
+        start = index
+        stop = start + 1
+    else:
+        raise TypeError('type %r not supported for slicing wih SQL backend'
+                        % type(index).__name__)
+
+    warnings.warn('The order of the result set from a Slice expression '
+                  'computed against the SQL backend is not deterministic.')
+
+    if stop is None:  # Represents open-ended slice. e.g. [3:]
+        return select(data).offset(start)
+    else:
+        return select(data).offset(start).limit(stop - start)
+
+
+@dispatch(Coerce, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)

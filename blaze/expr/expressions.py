@@ -1,28 +1,28 @@
 from __future__ import absolute_import, division, print_function
 
-import toolz
-import datashape
+from keyword import iskeyword
 import re
 
-from keyword import iskeyword
-
+import datashape
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed
+from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 import numpy as np
-
+from odo.utils import copydoc
+import toolz
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed
-from datashape.predicates import isscalar, iscollection, isboolean, isrecord
-
-from ..compatibility import _strtypes, builtins, boundmethod
+from ..compatibility import _strtypes, builtins, boundmethod, PY2
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
+from .utils import hashable_index, replace_slices
+
 
 __all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
            'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'Slice', 'shape', 'ndim', 'label',
-           'symbol']
+           'ReLabel', 'relabel', 'Apply', 'apply', 'Slice', 'shape', 'ndim',
+           'label', 'symbol', 'Coerce', 'coerce']
 
 
 _attr_cache = dict()
@@ -169,22 +169,25 @@ class Expr(Node):
         except AttributeError:
             fields = dict(zip(map(valid_identifier, self.fields),
                               self.fields))
-            if self.fields and key in fields:
+
+            # prefer the method if there's a field with the same name
+            methods = toolz.merge(
+                schema_methods(self.dshape.measure),
+                dshape_methods(self.dshape)
+            )
+            if key in methods:
+                func = methods[key]
+                if func in method_properties:
+                    result = func(self)
+                else:
+                    result = boundmethod(func, self)
+            elif self.fields and key in fields:
                 if isscalar(self.dshape.measure):  # t.foo.foo is t.foo
                     result = self
                 else:
                     result = self[fields[key]]
             else:
-                d = toolz.merge(schema_methods(self.dshape.measure),
-                                dshape_methods(self.dshape))
-                if key in d:
-                    func = d[key]
-                    if func in method_properties:
-                        result = func(self)
-                    else:
-                        result = boundmethod(func, self)
-                else:
-                    raise
+                raise
         _attr_cache[(self, key)] = result
         return result
 
@@ -239,8 +242,8 @@ class Symbol(Expr):
     """
     Symbolic data.  The leaf of a Blaze expression
 
-    Example
-    -------
+    Examples
+    --------
     >>> points = symbol('points', '5 * 3 * {x: int, y: int}')
     >>> points
     points
@@ -289,25 +292,28 @@ class ElemWise(Expr):
 
 class Field(ElemWise):
     """
-    A single field from an expression
+    A single field from an expression.
 
-    Get a single field from an expression with record-type schema.  Collapses
-    that record.  We store the name of the field in the ``_name`` attribute.
+    Get a single field from an expression with record-type schema.
+    We store the name of the field in the ``_name`` attribute.
 
-    SELECT a
-    FROM table
-
+    Examples
+    --------
     >>> points = symbol('points', '5 * 3 * {x: int32, y: int32}')
     >>> points.x.dshape
     dshape("5 * 3 * int32")
+
+    For fields that aren't valid Python identifiers, use ``[]`` syntax:
+
+    >>> points = symbol('points', '5 * 3 * {"space station": float64}')
+    >>> points['space station'].dshape
+    dshape("5 * 3 * float64")
     """
     __slots__ = '_hash', '_child', '_name'
 
     def __str__(self):
-        if re.match('^\w+$', self._name):
-            return '%s.%s' % (self._child, self._name)
-        else:
-            return "%s['%s']" % (self._child, self._name)
+        fmt = '%s.%s' if isvalid_identifier(self._name) else '%s[%r]'
+        return fmt % (self._child, self._name)
 
     @property
     def _expr(self):
@@ -324,10 +330,7 @@ class Field(ElemWise):
 
 
 class Projection(ElemWise):
-    """ Select fields from data
-
-    SELECT a, b, c
-    FROM table
+    """Select a subset of fields from data.
 
     Examples
     --------
@@ -335,7 +338,6 @@ class Projection(ElemWise):
     ...                   'var * {name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{name: string, amount: int32}")
-
     >>> accounts[['name', 'amount']]
     accounts[['name', 'amount']]
 
@@ -369,6 +371,7 @@ class Projection(ElemWise):
                                                                self.fields))
 
 
+@copydoc(Projection)
 def projection(expr, names):
     if not names:
         raise ValueError("Projection with no names")
@@ -379,10 +382,6 @@ def projection(expr, names):
                          "where expression has names %s" %
                          (names, expr.fields))
     return Projection(expr, tuple(names))
-projection.__doc__ = Projection.__doc__
-
-
-from .utils import hashable_index, replace_slices
 
 
 def sanitize_index_lists(ind):
@@ -415,6 +414,18 @@ def sliceit(child, index):
 
 
 class Slice(Expr):
+    """Elements `start` until `stop`. On many backends, a `step` parameter
+    is also allowed.
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts[2:7].dshape
+    dshape("5 * {name: string, amount: int32}")
+    >>> accounts[2:7:2].dshape
+    dshape("3 * {name: string, amount: int32}")
+    """
     __slots__ = '_hash', '_child', '_index'
 
     @property
@@ -426,10 +437,11 @@ class Slice(Expr):
         return replace_slices(self._index)
 
     def __str__(self):
-        if type(self.index) == tuple:
-            return '%s[%s]' % (self._child, ', '.join(map(str, self._index)))
+        if isinstance(self.index, tuple):
+            index = ', '.join(map(str, self._index))
         else:
-            return '%s[%s]' % (self._child, self._index)
+            index = str(self._index)
+        return '%s[%s]' % (self._child, index)
 
 
 class Selection(Expr):
@@ -454,6 +466,7 @@ class Selection(Expr):
         return DataShape(*(shape + [self._child.dshape.measure]))
 
 
+@copydoc(Selection)
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
@@ -473,11 +486,9 @@ def selection(table, predicate):
 
     return table._subs({subexpr: Selection(subexpr, predicate)})
 
-selection.__doc__ = Selection.__doc__
-
 
 class Label(ElemWise):
-    """A Labeled expression
+    """An expression with a name.
 
     Examples
     --------
@@ -505,20 +516,17 @@ class Label(ElemWise):
     def _get_field(self, key):
         if key[0] == self.fields[0]:
             return self
-        else:
-            raise ValueError("Column Mismatch: %s" % key)
+        raise ValueError("Column Mismatch: %s" % key)
 
     def __str__(self):
-        return "label(%s, %r)" % (self._child, self.label)
+        return 'label(%s, %r)' % (self._child, self.label)
 
 
+@copydoc(Label)
 def label(expr, lab):
     if expr._name == lab:
         return expr
     return Label(expr, lab)
-
-
-label.__doc__ = Label.__doc__
 
 
 class ReLabel(ElemWise):
@@ -546,13 +554,17 @@ class ReLabel(ElemWise):
 
     Notes
     -----
-    When names are not valid Python names, such as integers, you must pass a
-    dictionary to ``relabel``. For example
+    When names are not valid Python names, such as integers or string with
+    spaces, you must pass a dictionary to ``relabel``. For example
 
     .. code-block:: python
 
-       s = symbol('s', 'var * {"0": int64}')
+       >>> s = symbol('s', 'var * {"0": int64}')
+       >>> s.relabel({'0': 'foo'})
        s.relabel({'0': 'foo'})
+       >>> t = symbol('t', 'var * {"whoo hoo": ?float32}')
+       >>> t.relabel({"whoo hoo": 'foo'})
+       t.relabel({'whoo hoo': 'foo'})
 
     See Also
     --------
@@ -576,6 +588,7 @@ class ReLabel(ElemWise):
         return '%s.relabel(%s)' % (self._child, rest)
 
 
+@copydoc(ReLabel)
 def relabel(child, labels=None, **kwargs):
     labels = labels or dict()
     labels = toolz.merge(labels, kwargs)
@@ -596,8 +609,6 @@ def relabel(child, labels=None, **kwargs):
         else:
             return child
     return ReLabel(child, labels)
-
-relabel.__doc__ = ReLabel.__doc__
 
 
 class Map(ElemWise):
@@ -654,6 +665,12 @@ class Map(ElemWise):
             return self._child._name
 
 
+if PY2:
+    copydoc(Map, Expr.map.im_func)
+else:
+    copydoc(Map, Expr.map)
+
+
 class Apply(Expr):
     """ Apply an arbitrary Python function onto an expression
 
@@ -665,7 +682,7 @@ class Apply(Expr):
 
     You must provide the datashape of the result with the ``dshape=`` keyword.
     For datashape examples see
-        http://datashape.pydata.org/grammar.html#some-simple-examples
+    http://datashape.pydata.org/grammar.html#some-simple-examples
 
     If using a chunking backend and your operation may be safely split and
     concatenated then add the ``splittable=True`` keyword argument
@@ -691,10 +708,41 @@ class Apply(Expr):
         return dshape(self._dshape)
 
 
+@copydoc(Apply)
 def apply(expr, func, dshape, splittable=False):
     return Apply(expr, func, datashape.dshape(dshape), splittable)
 
-apply.__doc__ = Apply.__doc__
+
+class Coerce(Expr):
+    """Coerce an expression to a different type.
+
+    Examples
+    --------
+    >>> t = symbol('t', '100 * float64')
+    >>> t.coerce(to='int64')
+    t.coerce(to='int64')
+    >>> t.coerce('float32')
+    t.coerce(to='float32')
+    >>> t.coerce('int8').dshape
+    dshape("100 * int8")
+    """
+    __slots__ = '_hash', '_child', 'to'
+
+    @property
+    def schema(self):
+        return self.to
+
+    @property
+    def dshape(self):
+        return DataShape(*(self._child.shape + (self.schema,)))
+
+    def __str__(self):
+        return '%s.coerce(to=%r)' % (self._child, str(self.schema))
+
+
+@copydoc(Coerce)
+def coerce(expr, to):
+    return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
 
 
 dshape_method_list = list()
@@ -746,10 +794,11 @@ def ndim(expr):
 dshape_method_list.extend([
     (lambda ds: True, set([apply])),
     (iscollection, set([shape, ndim])),
+    (lambda ds: iscollection(ds) and isscalar(ds.measure), set([coerce]))
 ])
 
 schema_method_list.extend([
-    (isscalar, set([label, relabel])),
+    (isscalar, set([label, relabel, coerce])),
     (isrecord, set([relabel])),
 ])
 

@@ -6,14 +6,9 @@ import os
 import sys
 from fnmatch import fnmatch
 
-from distutils.core import setup
+from setuptools import setup
 
 import versioneer
-versioneer.VCS = 'git'
-versioneer.versionfile_source = os.path.join('blaze', '_version.py')
-versioneer.versionfile_build = versioneer.versionfile_source
-versioneer.tag_prefix = ''  # tags are like 1.2.0
-versioneer.parentdir_prefix = 'blaze-'  # dirname like 'myproject-1.2.0'
 
 
 def ispackage(x):
@@ -54,7 +49,7 @@ package_data += [x.replace('blaze' + os.sep, '')
                  for x in find_data_files(exts)]
 
 
-with open('README.md') as f:
+with open('README.rst') as f:
     longdesc = f.read()
 
 with open('requirements-strict.txt') as f:
@@ -83,6 +78,9 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    entry_points={
+        'console_scripts': ['blaze-server = blaze.server.spider:_main']
+    },
     package_data={'blaze': package_data},
     packages=packages
 )

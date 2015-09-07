@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from .expressions import Expr, ElemWise
+from .expressions import ElemWise
 from .expressions import schema_method_list, method_properties
 
 from toolz.compatibility import map
@@ -8,15 +8,20 @@ from toolz.compatibility import map
 from .split_apply_combine import By, summary
 
 from datashape import dshape
-from datashape.predicates import isdatelike, isnumeric, isscalar, isrecord
+from datashape.predicates import isdatelike, isnumeric, isrecord
+from .expressions import ElemWise, schema_method_list, method_properties
+
 import datashape
+from datashape import dshape, isdatelike, isnumeric
 
 
-__all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
-           'day', 'Hour', 'hour', 'Second', 'second', 'Millisecond',
-           'millisecond', 'Microsecond', 'microsecond', 'Date', 'date', 'Time',
-           'time', 'UTCFromTimestamp', 'DateTimeTruncate', 'Resample',
-           'resample']
+__all__ = [
+    'DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
+    'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second',
+    'Millisecond', 'millisecond', 'Microsecond', 'microsecond', 'Date',
+    'date', 'Time', 'time', 'UTCFromTimestamp', 'DateTimeTruncate',
+    'Resample', 'resample'
+]
 
 
 class DateTime(ElemWise):
@@ -76,7 +81,7 @@ class Time(DateTime):
 
 
 def time(expr):
-    return Time(Expr)
+    return Time(expr)
 
 
 class Hour(DateTime):
@@ -157,8 +162,8 @@ _unit_aliases = {
 def normalize_time_unit(s):
     """ Normalize time input to one of 'year', 'second', 'millisecond', etc..
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> normalize_time_unit('milliseconds')
     'millisecond'
@@ -197,8 +202,8 @@ class DateTimeTruncate(DateTime):
 def truncate(expr, *args, **kwargs):
     """ Truncate datetime expression
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> from blaze import symbol, compute
     >>> from datetime import datetime

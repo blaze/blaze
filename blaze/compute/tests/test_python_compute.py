@@ -13,7 +13,7 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (symbol, by, merge, join, count, Distinct,
+from blaze.expr import (symbol, by, merge, join, count, distinct,
                         Apply, sum, min, max, any, summary,
                         count, std, head, transform)
 import numpy as np
@@ -283,14 +283,14 @@ def test_column_of_column():
             list(compute(t['name'], data))
 
 
-def test_Distinct():
-    assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
-    assert set(compute(Distinct(t), data)) == set(map(tuple, data))
-    e = Distinct(t)
+def test_distinct():
+    assert set(compute(distinct(t['name']), data)) == set(['Alice', 'Bob'])
+    assert set(compute(distinct(t), data)) == set(map(tuple, data))
+    e = distinct(t)
     assert list(compute(e, [])) == []
 
 
-def test_Distinct_count():
+def test_distinct_count():
     t2 = t['name'].distinct()
     gby = by(t2, total=t2.count())
     result = set(compute(gby, data))
@@ -358,16 +358,28 @@ def test_graph_double_join():
     t_arc = symbol('t_arc', 'var * {a: int32, b: int32}')
     t_wanted = symbol('t_wanted', 'var * {name: string}')
 
+    # >>> compute(join(t_idx, t_arc, 'b'), {t_idx: idx, t_arc: arc})
+    # [[1, A, 3],
+    #  [1, A, 2],
+    #  [1, A, 5],
+    #  [3, C, 1],
+    #  [3, C, 2],
+    #  [3, C, 4],
+    #  [3, C, 5],
+    #  [6, F, 1],
+    #  [6, F, 2],
+    #  [6, F, 4]]
+
     j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
     result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
     result = sorted(map(tuple, result))
-    expected = sorted([('A', 3, 1),
-                    ('A', 2, 1),
-                    ('A', 5, 1),
-                    ('F', 1, 6),
-                    ('F', 2, 6),
-                    ('F', 4, 6)])
+    expected = sorted([('A', 1, 3),
+                       ('A', 1, 2),
+                       ('A', 1, 5),
+                       ('F', 6, 1),
+                       ('F', 6, 2),
+                       ('F', 6, 4)])
 
     assert result == expected
 
@@ -831,6 +843,22 @@ def test_compute_up_on_base():
     d = datetime.now()
     s = symbol('s', 'datetime')
     assert compute(s.minute, d) == d.minute
+
+
+def test_notnull():
+    data = [('Alice', -100, None),
+            (None, None, None),
+            ('Bob', 300, 'New York City')]
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
+    expr = t.name.notnull()
+    result = compute(expr, data)
+    assert list(result) == [True, False, True]
+
+
+def test_notnull_whole_collection():
+    t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
+    with pytest.raises(AttributeError):
+        t.notnull
 
 
 @pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])

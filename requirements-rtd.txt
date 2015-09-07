@@ -1,7 +1,7 @@
 numpy >= 1.7
 pandas >= 0.15.0
-datashape >= 0.4.4
-odo >= 0.3.1
+git+git://github.com/blaze/datashape.git
+git+git://github.com/blaze/odo.git
 cytoolz
 toolz
 multipledispatch >= 0.4.7

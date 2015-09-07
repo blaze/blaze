@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import datetime
-from functools import wraps
 
 try:
     from cytoolz import nth
@@ -24,7 +23,7 @@ from .compatibility import map, zip
 
 from .dispatch import dispatch
 
-thread_pool = ThreadPool(psutil.NUM_CPUS)
+thread_pool = ThreadPool(psutil.cpu_count())
 
 
 def nth_list(n, seq):
@@ -160,5 +159,5 @@ def listpack(x):
 def json_dumps(dt):
     s = dt.isoformat()
     if not dt.tzname():
-        s = s + 'Z'
+        s += 'Z'
     return s
