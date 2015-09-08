@@ -364,7 +364,7 @@ def test_foreign_key_chain(fkey):
 
 @pytest.mark.xfail(raises=AssertionError,
                    reason='CTE mucks up generation here')
-@pytest.mark.parametrize('grouper', ['sym_id', ['sym_id']])
+@pytest.mark.parametrize('grouper', ['sym', ['sym']])
 def test_foreign_key_group_by(fkey, grouper):
     t = symbol('fkey', discover(fkey))
     expr = by(t.sym_id[grouper], avg_price=t.sym_id.price.mean())
