@@ -379,6 +379,19 @@ def test_foreign_key_group_by(fkey, grouper):
     assert normalize(str(result)) == normalize(expected)
 
 
+def test_group_by_map(fkey):
+    t = symbol('fkey', discover(fkey))
+    expr = by(t.sym_id, id_count=t.size.count())
+    result = compute(expr, fkey)
+    expected = """SELECT
+        fkey.sym_id,
+        count(fkey.size) AS id_count
+    FROM fkey
+    GROUP BY fkey.sym_id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
 def test_join_type_promotion(sqla, sqlb):
     t, s = symbol(sqla.name, discover(sqla)), symbol(sqlb.name, discover(sqlb))
     expr = join(t, s, 'B', how='inner')
