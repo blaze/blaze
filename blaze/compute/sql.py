@@ -560,12 +560,12 @@ def compute_up(expr, data, scope=None, **kwargs):
 
 @dispatch(By, ClauseElement)
 def compute_up(expr, data, **kwargs):
-    if not valid_grouper(expr):
+    if not valid_grouper(expr.grouper):
         raise TypeError("Grouper must have a non-nested record or one "
                         "dimensional collection datashape, "
                         "got %s of type %r with dshape %s" %
                         (expr.grouper, type(expr.grouper).__name__,
-                         expr.dshape))
+                         expr.grouper.dshape))
     grouper = get_inner_columns(compute(expr.grouper, data,
                                         post_compute=False))
     app = expr.apply
@@ -644,7 +644,7 @@ def valid_grouper(expr):
     ds = expr.dshape
     measure = ds.measure
     return (iscollection(ds) and
-            (isscalar(measure) or
+            (isscalar(getattr(measure, 'key', measure)) or
              (isrecord(measure) and not is_nested_record(measure))))
 
 
@@ -658,11 +658,12 @@ def valid_reducer(expr):
 
 @dispatch(By, Select)
 def compute_up(expr, data, **kwargs):
-    if not valid_grouper(expr):
+    if not valid_grouper(expr.grouper):
         raise TypeError("Grouper must have a non-nested record or one "
                         "dimensional collection datashape, "
                         "got %s of type %r with dshape %s" %
-                        (expr.grouper, type(expr.grouper).__name__, expr.dshape))
+                        (expr.grouper, type(expr.grouper).__name__,
+                         expr.grouper.dshape))
 
     s = alias_it(data)
 
