@@ -637,7 +637,7 @@ def is_nested_record(measure):
     if not isrecord(measure):
         raise TypeError('Input must be a Record type got %s of type %r' %
                         (measure, type(measure).__name__))
-    return not all(isscalar(t) for t in measure.types)
+    return not all(isscalar(getattr(t, 'key', t)) for t in measure.types)
 
 
 def valid_grouper(expr):
