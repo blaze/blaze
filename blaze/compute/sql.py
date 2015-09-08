@@ -57,7 +57,8 @@ from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
+    Resample, by, DateTimeTruncate
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -957,3 +958,92 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Coerce, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)
+
+
+# make_interval(years int DEFAULT 0,
+#               months int DEFAULT 0,
+#               weeks int DEFAULT 0,
+#               days int DEFAULT 0,
+#               hours int DEFAULT 0,
+#               mins int DEFAULT 0,
+#               secs double precision DEFAULT 0.0)
+
+
+freq_map = {
+    'year': 'years',
+    'month': 'months',
+    'week': 'weeks',
+    'day': 'days',
+    'hour': 'hours',
+    'minute': 'mins',
+    'second': 'secs',
+}
+
+
+def make_interval(measure, unit):
+    if unit not in freq_map:
+        if unit == 'millisecond':
+            measure /= 1e3
+        elif unit == 'microsecond':
+            measure /= 1e6
+        elif unit == 'nanosecond':
+            measure /= 1e9
+        else:
+            raise ValueError('invalid unit %r' % unit)
+    args = toolz.merge(
+        dict.fromkeys(freq_map.values(), 0),
+        {freq_map.get(unit, 'secs'): measure}
+    )
+    return sa.func.make_interval(args['years'], args['months'], args['weeks'],
+                                 args['days'], args['hours'], args['mins'],
+                                 args['secs'])
+
+
+# microseconds
+# milliseconds
+# second
+# minute
+# hour
+# day
+# week
+# month
+# quarter
+# year
+# decade
+# century
+# millennium
+
+
+@dispatch(DateTimeTruncate, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    import pandas as pd
+    offset = pd.Timedelta('%d %s' % (expr.measure, expr.unit)).to_pytimedelta()
+    result = sa.cast(sa.cast(
+        sa.func.floor(sa.extract('epoch', data + offset) / expr.measure) * expr.measure,
+        sa.BIGINT
+    ), data.type) - offset
+    return result.label(expr._name)
+
+
+@dispatch(Resample, FromClause)
+def compute_up(expr, data, **kwargs):
+    start = compute(expr.grouper.min(), data, post_compute=False)
+    stop = compute(expr.grouper.max(), data, post_compute=False)
+    interval = make_interval(expr.grouper.measure, expr.grouper.unit)
+    date_sequence = sa.func.generate_series(start, stop,
+                                            interval).label(expr.grouper._name)
+    initial_values = dict(
+        (k, sa.literal(v).label(k))
+        for k, v in sorted(expr.apply.initial_value.items(), key=first)
+    )
+    index = sa.select(chain([date_sequence], initial_values.values())).cte()
+    aggs = compute(by(expr.grouper, expr.apply), data, post_compute=False).cte()
+    joined = index.join(
+        aggs, onclause=first(aggs.c) == first(index.c), isouter=True
+    )
+    grouper = first(index.c)
+    select_args = [grouper] + [
+        sa.sql.functions.coalesce(agg, initial_values[name]).label(name)
+        for name, agg in aggs.c.items()[1:]
+    ]
+    return sa.select(select_args).select_from(joined).order_by(grouper)
