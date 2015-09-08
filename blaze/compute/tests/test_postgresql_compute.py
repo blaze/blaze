@@ -393,6 +393,17 @@ def test_group_by_map(fkey, grouper):
     assert normalize(str(result)) == normalize(expected)
 
 
+def test_foreign_key_isin(fkey):
+    t = symbol('fkey', discover(fkey))
+    expr = t.sym_id.isin([1, 2])
+    result = compute(expr, fkey)
+    expected = """SELECT
+        fkey.sym_id IN (%(sym_id_1)s, %(sym_id_2)s) AS anon_1
+    FROM fkey
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
 def test_join_type_promotion(sqla, sqlb):
     t, s = symbol(sqla.name, discover(sqla)), symbol(sqlb.name, discover(sqlb))
     expr = join(t, s, 'B', how='inner')
