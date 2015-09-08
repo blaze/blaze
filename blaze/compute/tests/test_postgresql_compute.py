@@ -364,7 +364,7 @@ def test_foreign_key_chain(fkey):
 
 @pytest.mark.xfail(raises=AssertionError,
                    reason='CTE mucks up generation here')
-@pytest.mark.parametrize('grouper', ['sym', ['sym']])
+@pytest.mark.parametrize('grouper', ['sym_id', ['sym_id']])
 def test_foreign_key_group_by(fkey, grouper):
     t = symbol('fkey', discover(fkey))
     expr = by(t.sym_id[grouper], avg_price=t.sym_id.price.mean())
@@ -379,9 +379,10 @@ def test_foreign_key_group_by(fkey, grouper):
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_group_by_map(fkey):
+@pytest.mark.parametrize('grouper', ['sym_id', ['sym_id']])
+def test_group_by_map(fkey, grouper):
     t = symbol('fkey', discover(fkey))
-    expr = by(t.sym_id, id_count=t.size.count())
+    expr = by(t[grouper], id_count=t.size.count())
     result = compute(expr, fkey)
     expected = """SELECT
         fkey.sym_id,
