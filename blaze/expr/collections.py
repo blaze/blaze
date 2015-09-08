@@ -715,5 +715,6 @@ def isin(expr, keys):
 dshape_method_list.extend([
     (iscollection, set([sort, head, tail])),
     (lambda ds: len(ds.shape) == 1, set([distinct])),
-    (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin])),
+    (lambda ds: (len(ds.shape) == 1 and
+                 isscalar(getattr(ds.measure, 'key', ds.measure))), set([isin])),
 ])
