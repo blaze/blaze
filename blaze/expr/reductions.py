@@ -100,13 +100,19 @@ class Reduction(Expr):
         else:
             return '%s(%s)' % (name, self._child)
 
+    @property
+    def initial_value(self):
+        return None
+
 
 class any(Reduction):
     schema = dshape(ct.bool_)
+    initial_value = False
 
 
 class all(Reduction):
     schema = dshape(ct.bool_)
+    initial_value = True
 
 
 class sum(Reduction):
@@ -114,6 +120,10 @@ class sum(Reduction):
     @property
     def schema(self):
         return DataShape(datashape.maxtype(super(sum, self).schema))
+
+    @property
+    def initial_value(self):
+        return self.schema.measure.to_numpy_dtype()().item()
 
 
 class max(Reduction):
@@ -125,7 +135,8 @@ class min(Reduction):
 
 
 class mean(Reduction):
-    schema = dshape(ct.real)
+    schema = dshape(ct.float64)
+    initial_value = 0.0
 
 
 class var(Reduction):
@@ -184,10 +195,12 @@ class count(Reduction):
 
     """ The number of non-null elements """
     schema = dshape(ct.int32)
+    initial_value = 0
 
 
 class nunique(Reduction):
     schema = dshape(ct.int32)
+    initial_value = 0
 
 
 class nelements(Reduction):
@@ -206,6 +219,7 @@ class nelements(Reduction):
     nelements(t[t.amount < 1])
     """
     schema = dshape(ct.int32)
+    initial_value = 0
 
 
 def nrows(expr):
@@ -262,6 +276,12 @@ class Summary(Expr):
             s += ', keepdims=True'
         s += ')'
         return s
+
+    @property
+    def initial_value(self):
+        return dict(
+            (name, v.initial_value) for name, v in zip(self.names, self.values)
+        )
 
 
 @copydoc(Summary)
