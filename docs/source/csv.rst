@@ -133,6 +133,6 @@ editing automatically generated datashapes
 
 Providing a datashape removes data type ambiguity from the transfer.
 
-.. _`out-of-core`: ../ooc.html
-.. _`datashape`: ../datashape.html
+.. _`out-of-core`: ./ooc.html
+.. _`datashape`: ./datashape.html
 .. _`pandas.read_csv`: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.io.parsers.read_csv.html
