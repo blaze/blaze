@@ -101,3 +101,6 @@ Bug Fixes
   to be constructed ultimately resulting in incorrect results on
   expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll and
   @jcrist for discussion around solving the issue.
+* Fixed a bug where :func:`~blaze.expr.datetime.minute` and
+  :class:`~blaze.expr.datetime.Minute` were not being exported which made them
+  unusable from the blaze server (:issue:`1232`).
