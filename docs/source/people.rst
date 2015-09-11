@@ -4,11 +4,10 @@ Contributors
 
 Current Core Developers
 ```````````````````````
-
 * Phillip Cloud
-* Matt Rocklin
 * Joe Jevnik
-
+* Matt Rocklin
+* Kurt Smith
 
 Contributors
 ````````````
