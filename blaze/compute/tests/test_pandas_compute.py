@@ -345,7 +345,6 @@ def test_sort_on_series_no_warning(recwarn):
 
     # raises as assertion error if no warning occurs, same thing for below
     with pytest.raises(AssertionError):
-        import ipdb; ipdb.set_trace()
         assert recwarn.pop(FutureWarning)
 
     assert_series_equal(compute(t['amount'].sort(), df), expected)
