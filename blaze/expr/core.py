@@ -291,7 +291,8 @@ def _str(s):
     elif isinstance(s, Node):
         return str(s)
     elif isinstance(s, (list, tuple)):
-        return tuple(_str(x) for x in s)
+        body = ", ".join(_str(x) for x in s)
+        return "({})".format(body if len(s) > 1 else (body + ","))
     else:
         stream = StringIO()
         pprint(s, stream=stream)
