@@ -290,6 +290,8 @@ def _str(s):
         return get_callable_name(s)
     elif isinstance(s, Node):
         return str(s)
+    elif isinstance(s, (list, tuple)):
+        return tuple(_str(x) for x in s)
     else:
         stream = StringIO()
         pprint(s, stream=stream)
