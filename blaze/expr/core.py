@@ -292,7 +292,7 @@ def _str(s):
         return str(s)
     elif isinstance(s, (list, tuple)):
         body = ", ".join(_str(x) for x in s)
-        return "({})".format(body if len(s) > 1 else (body + ","))
+        return "({0})".format(body if len(s) > 1 else (body + ","))
     else:
         stream = StringIO()
         pprint(s, stream=stream)
