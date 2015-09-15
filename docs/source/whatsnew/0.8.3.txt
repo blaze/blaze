@@ -107,3 +107,9 @@ Bug Fixes
 * Fixed a bug where repr was being called on data resources rather than
   string, which caused massive slowdowns on largish expressions running
   against blaze server (:issue:`1240`, :issue:`1247`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+* We now run tests against pandas master to catch incompatibility issues
+  (:issue:`1243`).

@@ -3,6 +3,7 @@ sudo: false
 language: python
 
 matrix:
+  fast_finish: true
   include:
     - python: 2.6
     - python: 2.7
@@ -14,6 +15,15 @@ matrix:
     - python: 3.3
     - python: 3.4
       env: SPARK_VERSION=1.4
+    - python: 2.7
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.4
+    - python: 3.4
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.4
+  allow_failures:
+    - python: 2.7
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.4
+    - python: 3.4
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.4
 
 services:
     - mongodb
@@ -33,8 +43,9 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
-  - source activate test-environment
+  - conda create -n blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba
+  - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
+  - source activate blaze
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
@@ -46,6 +57,7 @@ install:
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
   - pip install git+https://github.com/blaze/odo
+  - if [ -n "$PANDAS_VERSION" ]; then pip install "$PANDAS_VERSION"; fi
 
   # functional libs
   - pip install git+https://github.com/mrocklin/multipledispatch
