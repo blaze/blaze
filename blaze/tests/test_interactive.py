@@ -1,7 +1,6 @@
 from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
 
 import datetime
-from re import sub
 from odo import into, append
 from odo.backends.csv import CSV
 from blaze import discover, transform
@@ -13,6 +12,7 @@ from blaze.utils import tmpfile, example
 from blaze.compatibility import xfail
 import pytest
 import sys
+import re
 from types import MethodType
 
 import pandas as pd
@@ -99,7 +99,7 @@ def test_str_does_not_repr():
     # see GH issue #1240.
     d = Data([('aa', 1), ('b', 2)], dshape='2 * {a: string, b: int64}')
     expr = transform(d, c=d.a.strlen() + d.b)
-    assert sub(r'_\d+', 'XXX', str(expr)) == "Merge(_child=XXX, children=(XXX, label(strlen(_child=XXX.a) + XXX.b, 'c')))"
+    assert re.sub(r'_\d+', 'XXX', str(expr)) == "Merge(_child=XXX, children=(XXX, label(strlen(_child=XXX.a) + XXX.b, 'c')))"
 
 
 def test_repr_of_scalar():
