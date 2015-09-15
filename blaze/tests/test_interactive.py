@@ -12,7 +12,6 @@ from blaze.utils import tmpfile, example
 from blaze.compatibility import xfail
 import pytest
 import sys
-import re
 from types import MethodType
 
 import pandas as pd
@@ -97,9 +96,9 @@ def test_repr():
 
 def test_str_does_not_repr():
     # see GH issue #1240.
-    d = Data([('aa', 1), ('b', 2)], dshape='2 * {a: string, b: int64}')
+    d = Data([('aa', 1), ('b', 2)], name="ZZZ", dshape='2 * {a: string, b: int64}')
     expr = transform(d, c=d.a.strlen() + d.b)
-    assert re.sub(r'_\d+', 'XXX', str(expr)) == "Merge(_child=XXX, children=(XXX, label(strlen(_child=XXX.a) + XXX.b, 'c')))"
+    assert str(expr) == "Merge(_child=ZZZ, children=(ZZZ, label(strlen(_child=ZZZ.a) + ZZZ.b, 'c')))"
 
 
 def test_repr_of_scalar():
