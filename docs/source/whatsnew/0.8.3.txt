@@ -104,3 +104,9 @@ Bug Fixes
 * Fixed a bug where :func:`~blaze.expr.datetime.minute` and
   :class:`~blaze.expr.datetime.Minute` were not being exported which made them
   unusable from the blaze server (:issue:`1232`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+* We now run tests against pandas master to catch incompatibility issues
+  (:issue:`1243`).
