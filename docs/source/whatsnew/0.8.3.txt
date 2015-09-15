@@ -107,6 +107,8 @@ Bug Fixes
 * Fixed a bug where repr was being called on data resources rather than
   string, which caused massive slowdowns on largish expressions running
   against blaze server (:issue:`1240`, :issue:`1247`).
+* Skip a test on Win32 + Python 3.4 and PyTables until this gets sorted out on
+  the library side (:issue:`1251`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
