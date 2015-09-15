@@ -557,7 +557,7 @@ def join(lhs, rhs, on_left=None, on_right=None,
                                       right_types)):
         if promotion == object_:
             raise TypeError(
-                "Schema's of joining columns do not match,"
+                'Schemata of joining columns do not match,'
                 ' no promotion found for %s=%s and %s=%s' % (
                     on_left[n], left_types[n], on_right[n], right_types[n],
                 ),
