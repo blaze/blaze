@@ -107,6 +107,8 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Read from       | .. code-block:: python                                          | .. code-block:: python                            |
 | SQL database    |                                                                 |                                                   |
-|                 |    df = pd.read_sql('select * from t',                          |    df = Data('sqlite://db.db::t')                 |
-|                 |        con='sqlite://db.db')                                    |                                                   |
+|                 |    df = pd.read_sql('select * from t', con='sqlite:///db.db')   |    df = Data('sqlite://db.db::t')                 |
+|                 |                                                                 |                                                   |
+|                 |    df = pd.read_sql('select * from t',                          |                                                   |
+|                 |                     con=sa.create_engine('sqlite:///db.db'))    |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
