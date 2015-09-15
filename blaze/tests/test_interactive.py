@@ -3,7 +3,7 @@ from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
 import datetime
 from odo import into, append
 from odo.backends.csv import CSV
-from blaze import discover
+from blaze import discover, transform
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from blaze.expr import symbol
@@ -92,6 +92,13 @@ def test_repr():
     print(result)
     assert len(result.split('\n')) < 20
     assert '...' in result
+
+
+def test_str_does_not_repr():
+    # see GH issue #1240.
+    d = Data([('aa', 1), ('b', 2)], name="ZZZ", dshape='2 * {a: string, b: int64}')
+    expr = transform(d, c=d.a.strlen() + d.b)
+    assert str(expr) == "Merge(_child=ZZZ, children=(ZZZ, label(strlen(_child=ZZZ.a) + ZZZ.b, 'c')))"
 
 
 def test_repr_of_scalar():
