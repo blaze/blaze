@@ -9,33 +9,32 @@ Continuum Analytics
 Goals
 -----
 
-* Leverage the PyData Stack
-* Medium Data (10GB - 10TB)
-* No Setup (target single machine first)
-* Support Complex Algorithms
-* Use all of our cores
-* Operate well from disk
+* PyData Stack on Medium Data (10GB - 10TB)
+* Multi-core
+* Larger-than-memory
+* Avoid Setup (single-node)
+* Complex Algorithms
 
 
 Solution
 --------
 
-*   High level libraries
+*   High Level: User libraries that mimic PyData libraries
 
     dask.array, dask.dataframe, dask.imperative
 
-*   Dependency Graphs
+*   Task Dependency Graphs
 
-*   Low level Scheduler: low-latency, parallel, memory aware
+*   Low Level: Scheduler low-latency, parallel, memory aware
 
 
 Blocked Algorithms with dask.array
 ----------------------------------
 
-*  Mimic's the Numpy Interface
-*  Operates on larger-than-memory data
-*  Leverages all available cores
-*  Uses NumPy under the hood
+*  Mimic the Numpy Interface
+*  Operate on larger-than-memory data
+*  Leverage all available cores
+*  Use NumPy under the hood
 
 <hr>
 
@@ -131,25 +130,25 @@ Use Case:  TimeSeries Data
 How does this work?
 -------------------
 
-*  Dask.array turns Numpy-ish code
+*  Convert numpy/pandas-ish code
 
-        (2*x + 1) ** 3
+        A.dot(B) - B.mean(axis=0)
 
-*  Into Graphs
+*  Into Task Graphs
 
-![](images/embarrassing.png)
+![](images/fail-case.png)
 
 
 How does this work?
 -------------------
 
-*  Dask.array turns Numpy-ish code
+*  Convert numpy/pandas-ish code
 
-        (2*x + 1) ** 3
+        A.dot(B) - B.mean(axis=0)
 
-*  Then executes those graphs
+*  Then execute those graphs
 
-![](images/embarrassing.gif)
+![](images/fail-case.gif)
 
 
 Ease
