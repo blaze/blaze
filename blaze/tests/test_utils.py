@@ -1,19 +1,11 @@
-import sys
+from datetime import datetime
 import os
 import json
 
+import pandas as pd
 import pytest
 
-from datetime import datetime
-
-import numpy as np
-import pandas as pd
-import h5py
-
-from datashape import dshape
-
-from blaze import discover
-from blaze.utils import tmpfile, json_dumps
+from blaze.utils import tmpfile, json_dumps, object_hook
 
 
 def test_tmpfile():
@@ -26,8 +18,15 @@ def test_tmpfile():
     assert not os.path.exists(f)
 
 
-def test_json_encoder():
-    result = json.dumps([1, datetime(2000, 1, 1, 12, 30, 0)],
-                        default=json_dumps)
-    assert result == '[1, "2000-01-01T12:30:00Z"]'
-    assert json.loads(result) == [1, "2000-01-01T12:30:00Z"]
+@pytest.mark.parametrize('input_,serialized,deserliazied', (
+    ([1, datetime(2000, 1, 1, 12, 30, 0)],
+     '[1, {"__!datetime": "2000-01-01T12:30:00Z"}]',
+     [1, pd.Timestamp("2000-01-01T12:30:00Z")]),
+    ([1, frozenset([1, 2, 3])],
+     '[1, {"__!frozenset": [1, 2, 3]}]',
+     [1, frozenset([1, 2, 3])]),
+))
+def test_json_encoder(input_, serialized, deserliazied):
+    result = json.dumps(input_, default=json_dumps)
+    assert result == serialized
+    assert json.loads(result, object_hook=object_hook) == deserliazied
