@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import json
 
-import pandas as pd
 import pytest
+from pytz import utc
 
 from blaze.utils import tmpfile, json_dumps, object_hook
 
@@ -18,15 +18,13 @@ def test_tmpfile():
     assert not os.path.exists(f)
 
 
-@pytest.mark.parametrize('input_,serialized,deserliazied', (
-    ([1, datetime(2000, 1, 1, 12, 30, 0)],
-     '[1, {"__!datetime": "2000-01-01T12:30:00Z"}]',
-     [1, pd.Timestamp("2000-01-01T12:30:00Z")]),
-    ([1, frozenset([1, 2, 3])],
-     '[1, {"__!frozenset": [1, 2, 3]}]',
-     [1, frozenset([1, 2, 3])]),
+@pytest.mark.parametrize('input_,serialized', (
+    ([1, datetime(2000, 1, 1, 12, 30, 0, 0, utc)],
+     '[1, {"__!datetime": "2000-01-01T12:30:00+00:00"}]'),
+    ([1, frozenset([1, 2, 3])], '[1, {"__!frozenset": [1, 2, 3]}]'),
+    ([1, timedelta(seconds=5)], '[1, {"__!timedelta": 5.0}]'),
 ))
-def test_json_encoder(input_, serialized, deserliazied):
+def test_json_encoder(input_, serialized):
     result = json.dumps(input_, default=json_dumps)
     assert result == serialized
-    assert json.loads(result, object_hook=object_hook) == deserliazied
+    assert json.loads(result, object_hook=object_hook) == input_

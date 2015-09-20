@@ -171,6 +171,11 @@ def json_dumps(ds):
     return {'__!frozenset': list(ds)}
 
 
+@dispatch(datetime.timedelta)
+def json_dumps(ds):
+    return {'__!timedelta': ds.total_seconds()}
+
+
 def object_hook(obj):
     """Convert a json object dict back into a python object.
 
@@ -215,3 +220,8 @@ object_hook.register = setitem(object_hook._converters)
 
 object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
+
+
+@object_hook.register('timedelta')
+def _read_timedelta(ds):
+    return datetime.timedelta(seconds=ds)
