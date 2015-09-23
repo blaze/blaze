@@ -1,0 +1,44 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+* Blaze server now serves a new ``/compute/stream`` endpoint that uses
+  streaming requests. This can be used with
+  :class:`~blaze.server.client.Client` by passing a new ``chunksize`` argument
+  or with the server REST API by passing the chunk size as a query param.
+  (:issue:` #1146`)
+
+None
+
+Bug Fixes
+~~~~~~~~~
+
+None
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None
