@@ -10,7 +10,7 @@ from datashape import (
 from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first, compose,
-    keymap,
+    keymap, memoize
 )
 import toolz.curried.operator as op
 from odo.utils import copydoc
@@ -414,6 +414,7 @@ class Join(Expr):
         return on_right
 
     @property
+    @memoize
     def schema(self):
         """
 
