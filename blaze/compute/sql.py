@@ -1007,3 +1007,10 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Coerce, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)
+
+
+@dispatch(Coerce, Select)
+def compute_up(expr, data, **kwargs):
+    column = first(data.inner_columns)
+    cast = sa.cast(column, dshape_to_alchemy(expr.to)).label(expr._name)
+    return reconstruct_select([cast], data)
