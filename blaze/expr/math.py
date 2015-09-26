@@ -12,7 +12,8 @@ from .expressions import schema_method_list
 __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
            'atan', 'atanh', 'radians', 'degrees', 'atan2', 'ceil', 'floor',
-           'trunc', 'isnan', 'notnull', 'UnaryMath', 'BinaryMath']
+           'trunc', 'isnan', 'notnull', 'UnaryMath', 'BinaryMath',
+           'greatest', 'least']
 
 
 class UnaryMath(UnaryOp):
