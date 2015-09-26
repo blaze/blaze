@@ -155,7 +155,7 @@ def compute_up(t, data, **kwargs):
 
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
-@compute_up.register(BinOp, ColumnElement, (ColumnElement, base))
+@compute_up.register(BinOp, ColumnElement, base)
 def binop_sql(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
@@ -243,7 +243,7 @@ def compute_up(t, data, **kwargs):
 
 
 @compute_up.register(FloorDiv, (ColumnElement, base), ColumnElement)
-@compute_up.register(FloorDiv, ColumnElement, (ColumnElement, base))
+@compute_up.register(FloorDiv, ColumnElement, base)
 def binop_sql(t, lhs, rhs, **kwargs):
     return sa.func.floor(lhs / rhs)
 
