@@ -8,6 +8,7 @@ from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
+from blaze.expr import greatest, least
 from blaze import sin
 from odo import into
 from datashape import discover, to_numpy, dshape
@@ -558,3 +559,25 @@ def test_concat_mat():
         compute(concat(s, t, axis=1), {s: s_data, t: t_data}) ==
         np.concatenate((s_data, t_data), axis=1)
     ).all()
+
+
+def test_least():
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = least(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = s_data
+    assert np.all(result == expected)
+
+
+def test_greatest():
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = greatest(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = t_data
+    assert np.all(result == expected)
