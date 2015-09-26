@@ -4,12 +4,16 @@ import pytest
 
 import numpy as np
 import pandas as pd
+
 from datetime import datetime, date
+
+import numba
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
 from blaze.expr import greatest, least
 from blaze import sin
+import blaze
 from odo import into
 from datashape import discover, to_numpy, dshape
 
@@ -580,4 +584,24 @@ def test_greatest():
     expr = greatest(s, t)
     result = compute(expr, {s: s_data, t: t_data})
     expected = t_data
+    assert np.all(result == expected)
+
+
+binary_name_map = {
+    'atan2': 'arctan2'
+}
+
+
+@pytest.mark.parametrize('funcname',
+                         ['atan2', 'copysign', 'hypot', 'ldexp',
+                          pytest.mark.xfail('fmod', raises=numba.TypingError)])
+def test_binary_math(funcname):
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    scope = {s: s_data, t: t_data}
+    result = compute(getattr(blaze, funcname)(s, t), scope)
+    expected = getattr(np, binary_name_map.get(funcname, funcname))(s_data,
+                                                                    t_data)
     assert np.all(result == expected)
