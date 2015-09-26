@@ -160,6 +160,31 @@ def binop_sql(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
+@dispatch(Pow, ColumnElement)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return sa.func.pow(data, t.rhs)
+    else:
+        return sa.func.pow(t.lhs, data)
+
+
+@dispatch(Pow, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    if isinstance(t.lhs, Expr):
+        return sa.func.pow(column, t.rhs)
+    else:
+        return sa.func.pow(t.lhs, column)
+
+
+@compute_up.register(Pow, (ColumnElement, base), ColumnElement)
+@compute_up.register(Pow, ColumnElement, base)
+def binop_sql_pow(t, lhs, rhs, **kwargs):
+    return sa.func.pow(lhs, rhs)
+
+
 @dispatch(BinaryMath, ColumnElement)
 def compute_up(t, data, **kwargs):
     op = getattr(sa.func, type(t).__name__)
