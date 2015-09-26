@@ -230,6 +230,56 @@ def test_join_type_promotion(sqla, sqlb):
     assert result == expected
 
 
+def test_dist(nyc):
+    def distance(lat1, lon1, lat2, lon2, R=3959):
+        # http://andrew.hedges.name/experiments/haversine/
+        dlon = radians(lon2 - lon1)
+        dlat = radians(lat2 - lat1)
+        a = sin(dlat / 2.0) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2.0) ** 2
+        return R * 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    t = symbol('t', discover(nyc))
+
+    filtered = t[
+        (t.pickup_latitude >= 40.477399) &
+        (t.pickup_latitude <= 40.917577) &
+        (t.dropoff_latitude >= 40.477399) &
+        (t.dropoff_latitude <= 40.917577) &
+        (t.pickup_longitude >= -74.259090) &
+        (t.pickup_longitude <= -73.700272) &
+        (t.dropoff_longitude >= -74.259090) &
+        (t.dropoff_longitude <= -73.700272) &
+        (t.passenger_count < 6)
+    ]
+    dist = distance(filtered.pickup_latitude, filtered.pickup_longitude,
+                    filtered.dropoff_latitude, filtered.dropoff_longitude)
+    transformed = transform(filtered, dist=dist)
+    assert (
+        odo(compute(transformed.dist.max(), nyc), float) ==
+        odo(compute(transformed.dist, nyc), pd.Series).max().item()
+    )
+
+
+def test_multiple_columns_in_transform(nyc):
+    t = symbol('t', discover(nyc))
+    t = t[
+        (t.pickup_latitude >= 40.477399) &
+        (t.pickup_latitude <= 40.917577) &
+        (t.dropoff_latitude >= 40.477399) &
+        (t.dropoff_latitude <= 40.917577) &
+        (t.pickup_longitude >= -74.259090) &
+        (t.pickup_longitude <= -73.700272) &
+        (t.dropoff_longitude >= -74.259090) &
+        (t.dropoff_longitude <= -73.700272) &
+        (t.passenger_count < 6)
+    ]
+    hours = t.trip_time_in_secs.coerce('float64') / 3600.0
+    avg_speed_in_mph = t.trip_distance / hours
+    d = transform(t, avg_speed_in_mph=avg_speed_in_mph, mycol=avg_speed_in_mph + 1)
+    df = odo(compute(d[d.avg_speed_in_mph <= 200], nyc), pd.DataFrame)
+    assert not df.empty
+
+
 def test_coerce_on_select(nyc):
     t = symbol('t', discover(nyc))
     t = t[
