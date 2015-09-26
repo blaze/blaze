@@ -243,8 +243,9 @@ def test_coerce_on_select(nyc):
         (t.dropoff_longitude <= -73.700272) &
         (t.passenger_count < 6)
     ]
-    result = compute(t.passenger_count.coerce('float64'), nyc)
+    t = transform(t, pass_count=t.passenger_count + 1)
+    result = compute(t.pass_count.coerce('float64'), nyc)
     s = odo(result, pd.Series)
     expected = odo(compute(t, nyc),
-                   pd.DataFrame).passenger_count.astype('float64')
+                   pd.DataFrame).passenger_count.astype('float64') + 1.0
     assert list(s) == list(expected)
