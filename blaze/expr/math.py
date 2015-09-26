@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import Option, real, int_, bool_, isreal, isnumeric
 
-from .arithmetic import UnaryOp
+from .arithmetic import UnaryOp, BinOp
 from .expressions import schema_method_list
 
 
@@ -16,62 +16,123 @@ __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'Math']
 
 
-class Math(UnaryOp):
-    pass
+class UnaryMath(UnaryOp):
 
-
-class RealMath(Math):
     """Mathematical unary operator with real valued dshape like sin, or exp
     """
+    __slots__ = '_hash', '_child'
+
+    _dtype = real
     _dtype = real
 
 
-class abs(RealMath): pass
-class sqrt(RealMath): pass
 
-class sin(RealMath): pass
-class sinh(RealMath): pass
-class cos(RealMath): pass
-class cosh(RealMath): pass
-class tan(RealMath): pass
-class tanh(RealMath): pass
-
-class exp(RealMath): pass
-class expm1(RealMath): pass
-class log(RealMath): pass
-class log10(RealMath): pass
-class log1p(RealMath): pass
-
-class acos(RealMath): pass
-class acosh(RealMath): pass
-class asin(RealMath): pass
-class asinh(RealMath): pass
-class atan(RealMath): pass
-class atanh(RealMath): pass
-
-class radians(RealMath): pass
-class degrees(RealMath): pass
+class abs(UnaryMath):
+    pass
 
 
-class IntegerMath(Math):
+class sqrt(UnaryMath):
+    pass
+
+
+class sin(UnaryMath):
+    pass
+
+
+class sinh(UnaryMath):
+    pass
+
+
+class cos(UnaryMath):
+    pass
+
+
+class cosh(UnaryMath):
+    pass
+
+
+class tan(UnaryMath):
+    pass
+
+
+class tanh(UnaryMath):
+    pass
+
+
+class exp(UnaryMath):
+    pass
+
+
+class expm1(UnaryMath):
+    pass
+
+
+class log(UnaryMath):
+    pass
+
+
+class log10(UnaryMath):
+    pass
+
+
+class log1p(UnaryMath):
+    pass
+
+
+class acos(UnaryMath):
+    pass
+
+
+class acosh(UnaryMath):
+    pass
+
+
+class asin(UnaryMath):
+    pass
+
+
+class asinh(UnaryMath):
+    pass
+
+
+class atan(UnaryMath):
+    pass
+
+
+class atanh(UnaryMath):
+    pass
+
+
+class radians(UnaryMath):
+    pass
+
+
+class degrees(UnaryMath):
+    pass
+
+
     """ Mathematical unary operator with int valued dshape like ceil, floor """
     _dtype = int_
 
 
-class ceil(IntegerMath): pass
-class floor(IntegerMath): pass
-class trunc(IntegerMath): pass
+class ceil(UnaryIntegerMath):
+    pass
 
 
-class BooleanMath(Math):
-    """ Mathematical unary operator with bool valued dshape like isnan """
+class floor(UnaryIntegerMath):
+    pass
+
+
+class trunc(UnaryIntegerMath):
+    pass
+
+
+class isnan(UnaryMath):
     _dtype = bool_
 
 
-class isnan(BooleanMath): pass
+class notnull(UnaryOp):
 
-
-class notnull(BooleanMath):
     """ Return whether an expression is not null
 
     Examples
@@ -84,7 +145,7 @@ class notnull(BooleanMath):
     >>> list(compute(expr, [1, 2, None, 3]))
     [True, True, False, True]
     """
-    pass
+    _dtype = bool_
 
 
 def truncate(expr, precision):
