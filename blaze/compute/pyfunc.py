@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pandas as pd
-from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
+from ..expr import (Expr, Symbol, Field, Arithmetic, UnaryMath, BinaryMath,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
                     USub, Not, notnull)
@@ -103,7 +103,7 @@ def _print_python(expr, leaves=None):
     return 'not %s' % parenthesize(child), scope
 
 
-@dispatch(Math)
+@dispatch((UnaryMath, BinaryMath))
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('math.%s(%s)' % (type(expr).__name__, child),

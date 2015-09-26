@@ -159,6 +159,55 @@ def binop_sql(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
+@dispatch(BinaryMath, ColumnElement)
+def compute_up(t, data, **kwargs):
+    op = getattr(sa.func, type(t).__name__)
+    if isinstance(t.lhs, Expr):
+        return op(data, t.rhs)
+    else:
+        return op(t.lhs, data)
+
+
+@dispatch(BinaryMath, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    op = getattr(sa.func, type(t).__name__)
+    if isinstance(t.lhs, Expr):
+        return op(column, t.rhs)
+    else:
+        return op(t.lhs, column)
+
+
+@compute_up.register(BinaryMath, (ColumnElement, base), ColumnElement)
+@compute_up.register(BinaryMath, ColumnElement, base)
+def binary_math_sql(t, lhs, rhs, **kwargs):
+    return getattr(sa.func, type(t).__name__)(lhs, rhs)
+
+
+@compute_up.register(BinaryMath, Select, base)
+def binary_math_sql_select(t, lhs, rhs, **kwargs):
+    left, right = first(lhs.inner_columns), rhs
+    result = getattr(sa.func, type(t).__name__)(left, right)
+    return reconstruct_select([result], lhs)
+
+
+@compute_up.register(BinaryMath, base, Select)
+def binary_math_sql_select(t, lhs, rhs, **kwargs):
+    left, right = lhs, first(rhs.inner_columns)
+    result = getattr(sa.func, type(t).__name__)(left, right)
+    return reconstruct_select([result], rhs)
+
+
+@compute_up.register(BinaryMath, Select, Select)
+def binary_math_sql_select(t, lhs, rhs, **kwargs):
+    left, right = first(lhs.inner_columns), first(rhs.inner_columns)
+    result = getattr(sa.func, type(t).__name__)(left, right)
+    assert lhs.table == rhs.table
+    return reconstruct_select([result], lhs.table)
+
+
 @dispatch(FloorDiv, ColumnElement)
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):

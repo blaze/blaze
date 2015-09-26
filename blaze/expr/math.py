@@ -11,9 +11,8 @@ from .expressions import schema_method_list
 
 __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
-           'atan', 'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc',
-           'isnan', 'notnull', 'RealMath', 'IntegerMath', 'BooleanMath',
-           'Math']
+           'atan', 'atanh', 'radians', 'degrees', 'atan2', 'ceil', 'floor',
+           'trunc', 'isnan', 'notnull', 'UnaryMath', 'BinaryMath']
 
 
 class UnaryMath(UnaryOp):
@@ -23,8 +22,16 @@ class UnaryMath(UnaryOp):
     __slots__ = '_hash', '_child'
 
     _dtype = real
+
+
+class BinaryMath(BinOp):
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
+
     _dtype = real
 
+    def __str__(self):
+        return '%s(%s, %s)' % (type(self).__name__, self.lhs, self.rhs)
 
 
 class abs(UnaryMath):
@@ -110,6 +117,36 @@ class radians(UnaryMath):
 class degrees(UnaryMath):
     pass
 
+
+class atan2(BinaryMath):
+    pass
+
+
+class copysign(BinaryMath):
+    pass
+
+
+class fmod(BinaryMath):
+    pass
+
+
+class hypot(BinaryMath):
+    pass
+
+
+class ldexp(BinaryMath):
+    pass
+
+
+class greatest(BinaryMath):
+    pass
+
+
+class least(BinaryMath):
+    pass
+
+
+class UnaryIntegerMath(UnaryMath):
 
     """ Mathematical unary operator with int valued dshape like ceil, floor """
     _dtype = int_
