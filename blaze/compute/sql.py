@@ -57,7 +57,8 @@ from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
+    BinaryMath, Pow
 )
 
 from ..expr.broadcast import broadcast_collect
