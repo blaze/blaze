@@ -13,7 +13,9 @@ import pandas as pd
 import pandas.util.testing as tm
 
 from odo import odo, resource, drop, discover
-from blaze import symbol, compute, concat, join
+from blaze import symbol, compute, concat, join, sin, cos, radians, atan2
+from blaze import sqrt, transform
+from blaze.utils import example
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -38,6 +40,20 @@ def sql(url):
         pytest.skip(str(e))
     else:
         t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture(scope='module')
+def nyc():
+    try:
+        t = odo(example('nyc.csv'),
+                'postgresql://postgres@localhost/test::nyc')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
         try:
             yield t
         finally:
@@ -212,3 +228,23 @@ def test_join_type_promotion(sqla, sqlb):
     result = set(map(tuple, compute(expr, {t: sqla, s: sqlb}).execute().fetchall()))
     expected = set([(1, 'a', 'a'), (1, None, 'a')])
     assert result == expected
+
+
+def test_coerce_on_select(nyc):
+    t = symbol('t', discover(nyc))
+    t = t[
+        (t.pickup_latitude >= 40.477399) &
+        (t.pickup_latitude <= 40.917577) &
+        (t.dropoff_latitude >= 40.477399) &
+        (t.dropoff_latitude <= 40.917577) &
+        (t.pickup_longitude >= -74.259090) &
+        (t.pickup_longitude <= -73.700272) &
+        (t.dropoff_longitude >= -74.259090) &
+        (t.dropoff_longitude <= -73.700272) &
+        (t.passenger_count < 6)
+    ]
+    result = compute(t.passenger_count.coerce('float64'), nyc)
+    s = odo(result, pd.Series)
+    expected = odo(compute(t, nyc),
+                   pd.DataFrame).passenger_count.astype('float64')
+    assert list(s) == list(expected)
