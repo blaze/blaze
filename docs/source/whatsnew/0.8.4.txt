@@ -1,0 +1,29 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+New Backends
+~~~~~~~~~~~~
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+API Changes
+~~~~~~~~~~~
+
+* When a CSV file consists of all strings, you must pass
+  ``has_header=True`` when using the ``Data`` constructor (:issue:`1254`).
+
+Bug Fixes
+~~~~~~~~~
+
+Miscellaneous
+~~~~~~~~~~~~~
