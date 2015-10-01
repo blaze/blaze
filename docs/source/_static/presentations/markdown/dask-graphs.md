@@ -11,8 +11,7 @@ blocked algorithms.
 
 ### And visualize the resulting dask graph
 
-    >>> from dask.dot import dot_graph
-    >>> dot_graph(x.dask)
+    >>> x.visualize('dask.pdf')
 
 ![](images/dask.ones.png)
 
@@ -32,13 +31,6 @@ increasingly complex blocked algorithm task graphs.
     >>> (x + 1) * 2
 
 ![](images/dask.ones2.png)
-
-
-### Elementwise operations
-
-    >>> ((x + 1) * 2) ** 3
-
-![](images/dask.ones3.png)
 
 
 ### Reductions
@@ -99,4 +91,3 @@ increasingly complex blocked algorithm task graphs.
 
 We can compound these operations forever.  Constructing larger and larger
 graphs before we hand off the work to a scheduler to execute.
-
