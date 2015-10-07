@@ -212,3 +212,15 @@ def test_join_type_promotion(sqla, sqlb):
     result = set(map(tuple, compute(expr, {t: sqla, s: sqlb}).execute().fetchall()))
     expected = set([(1, 'a', 'a'), (1, None, 'a')])
     assert result == expected
+
+
+@pytest.mark.parametrize(['n', 'column'],
+                         [(1, 'A'), (-1, 'A'),
+                          (1, 'B'), (-1, 'B'),
+                          (0, 'A'), (0, 'B')])
+def test_shift_on_column(n, column, sql):
+    t = symbol('t', discover(sql))
+    expr = t[column].shift(n)
+    result = odo(compute(expr, sql), pd.Series)
+    expected = odo(sql, pd.DataFrame)[column].shift(n)
+    tm.assert_series_equal(result, expected)
