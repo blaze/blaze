@@ -11,10 +11,10 @@ import datashape
 from datashape import discover, Tuple, Record, DataShape, var
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
 import numpy as np
+import pandas as pd
 from odo import resource, odo
 from odo.utils import ignoring, copydoc
 from odo.compatibility import unicode
-from pandas import DataFrame, Series
 
 
 from .expr import Expr, Symbol, ndim
@@ -179,27 +179,20 @@ def concrete_head(expr, n=10):
     if not iscollection(expr.dshape):
         return odo(head, object)
     elif isrecord(expr.dshape.measure):
-        return odo(head, DataFrame)
+        return odo(head, pd.DataFrame)
     else:
-        df = odo(head, DataFrame)
-        df.columns = [expr._name]
-        return df
-    result = compute(head)
-
-    if len(result) == 0:
-        return DataFrame(columns=expr.fields)
-    if isrecord(expr.dshape.measure):
-        return odo(result, DataFrame, dshape=expr.dshape)
-    else:
-        df = odo(result, DataFrame, dshape=expr.dshape)
-        df.columns = [expr._name]
+        df = odo(head, pd.DataFrame)
+        if expr._name is not None:
+            df.columns = [expr._name]
+        else:
+            df.columns = np.arange(len(df.columns))
         return df
 
 
 def repr_tables(expr, n=10):
     result = concrete_head(expr, n).rename(columns={None: ''})
 
-    if isinstance(result, (DataFrame, Series)):
+    if isinstance(result, (pd.DataFrame, pd.Series)):
         s = repr(result)
         if len(result) > 10:
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
@@ -277,7 +270,7 @@ def expr_repr(expr, n=10):
     return s
 
 
-@dispatch(DataFrame)
+@dispatch(pd.DataFrame)
 def to_html(df):
     return df.to_html()
 
