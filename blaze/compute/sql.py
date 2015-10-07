@@ -57,7 +57,8 @@ from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
+    Shift
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -957,3 +958,8 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Coerce, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)
+
+
+@dispatch(Shift, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.func.lag(data, expr.n).over().label(expr._name)
