@@ -6,10 +6,17 @@
 Continuum Analytics
 
 
+### Dask is a Python library for out-of-core, parallel processing
+
+<hr>
+
+### mostly for a single node
+
+
 `dask`
 ------
 
-*  High level collections
+*  High level collections + Blocked algorithms
     *  `dask.array = numpy + threading`
     *  `dask.dataframe = pandas + threading`
     *  `dask.bag = map + ... + multiprocessing`
