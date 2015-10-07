@@ -4,8 +4,6 @@ import datetime
 from odo import into, append
 from odo.backends.csv import CSV
 from blaze import discover, transform
-from blaze.compute.core import compute
-from blaze.compute.python import compute
 from blaze.expr import symbol
 from datashape import dshape
 from blaze.utils import tmpfile, example
@@ -354,7 +352,7 @@ def test_scalar_sql_compute():
 
 def test_no_name_for_simple_data():
     d = Data([1, 2, 3])
-    assert repr(d) == '    \n0  1\n1  2\n2  3'
+    assert repr(d) == '   0\n0  1\n1  2\n2  3'
     assert not d._name
 
     d = Data(1)
@@ -407,3 +405,10 @@ def test_functions_as_bound_methods():
         assert isinstance(attr, MethodType)
         # Make sure this is bound to the correct object.
         assert attr.__self__ is t
+
+
+def test_repr_data_with_no_column_spec():
+    raw = [('a', 1)]
+    result = Data(raw)
+    expected = pd.DataFrame(raw)
+    assert repr(result) == repr(expected)
