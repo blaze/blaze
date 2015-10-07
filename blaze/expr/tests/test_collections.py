@@ -1,6 +1,7 @@
 import pytest
 
 from datashape import dshape
+from datashape.util.testing import assert_dshape_equal
 
 from blaze.expr import symbol
 from blaze.expr.collections import merge, join, transform, concat
@@ -18,6 +19,15 @@ def test_merge():
 
     assert set(expr.fields) == set(['name', 'y'])
     assert expr.y.isidentical(e.x.label('y'))
+
+
+def test_merge_options():
+    s = symbol('s', 'var * {a: ?A, b: ?B}')
+
+    merged = merge(a=s.a, b=s.b)
+    assert_dshape_equal(merged.dshape, dshape('var * {a: ?A, b: ?B}'))
+    assert_dshape_equal(merged.a.dshape, dshape('var * ?A'))
+    assert_dshape_equal(merged.b.dshape, dshape('var * ?B'))
 
 
 def test_merge_on_single_argument_is_noop():
