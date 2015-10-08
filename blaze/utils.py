@@ -160,9 +160,15 @@ def listpack(x):
 
 @dispatch(datetime.datetime)
 def json_dumps(dt):
-    s = dt.isoformat()
-    if not dt.tzname():
-        s += 'Z'
+    if dt is pd.NaT:
+        # NaT has an isoformat but it is totally invalid.
+        # This keeps the parsing on the client side simple.
+        s = 'NaT'
+    else:
+        s = dt.isoformat()
+        if not dt.tzname():
+            s += 'Z'
+
     return {'__!datetime': s}
 
 
