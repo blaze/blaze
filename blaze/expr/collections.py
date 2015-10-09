@@ -735,8 +735,8 @@ class Shift(ElemWise):
             return Option(measure)
 
     def __str__(self):
-        return '%s.%s(n=%d)' % (
-            self._child, type(self).__name__.lower(), self.n
+        return '%s(%s, n=%d)' % (
+            type(self).__name__.lower(), self._child, self.n
         )
 
 

@@ -204,6 +204,6 @@ def test_shift():
     assert t.shift(1).dshape == dshape('var * ?float64')
     assert t.shift(0).dshape == t.dshape
     assert t.shift(-1).dshape == dshape('var * ?float64')
-    assert repr(t.shift(1)) == 't.shift(n=1)'
-    assert repr(t.shift(0)) == 't.shift(n=0)'
-    assert repr(t.shift(-1)) == 't.shift(n=-1)'
+    assert repr(t.shift(1)) == 'shift(t, n=1)'
+    assert repr(t.shift(0)) == 'shift(t, n=0)'
+    assert repr(t.shift(-1)) == 'shift(t, n=-1)'
