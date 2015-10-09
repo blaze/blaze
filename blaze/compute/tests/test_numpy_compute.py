@@ -565,25 +565,51 @@ def test_concat_mat():
     ).all()
 
 
-def test_least():
-    s_data = np.arange(15).reshape(5, 3)
-    t_data = np.arange(15, 30).reshape(5, 3)
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_least(dtype):
+    s_data = np.arange(15, dtype=dtype).reshape(5, 3)
+    t_data = np.arange(15, 30, dtype=dtype).reshape(5, 3)
     s = symbol('s', discover(s_data))
     t = symbol('t', discover(t_data))
     expr = least(s, t)
     result = compute(expr, {s: s_data, t: t_data})
-    expected = s_data
+    expected = np.minimum(s_data, t_data)
     assert np.all(result == expected)
 
 
-def test_greatest():
-    s_data = np.arange(15).reshape(5, 3)
-    t_data = np.arange(15, 30).reshape(5, 3)
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_least_mixed(dtype):
+    s_data = np.array([2, 1], dtype=dtype)
+    t_data = np.array([1, 2], dtype=dtype)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = least(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = np.minimum(s_data, t_data)
+    assert np.all(result == expected)
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_greatest(dtype):
+    s_data = np.arange(15, dtype=dtype).reshape(5, 3)
+    t_data = np.arange(15, 30, dtype=dtype).reshape(5, 3)
     s = symbol('s', discover(s_data))
     t = symbol('t', discover(t_data))
     expr = greatest(s, t)
     result = compute(expr, {s: s_data, t: t_data})
-    expected = t_data
+    expected = np.maximum(s_data, t_data)
+    assert np.all(result == expected)
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_greatest_mixed(dtype):
+    s_data = np.array([2, 1], dtype=dtype)
+    t_data = np.array([1, 2], dtype=dtype)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = greatest(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = np.maximum(s_data, t_data)
     assert np.all(result == expected)
 
 
