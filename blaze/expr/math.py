@@ -35,134 +35,57 @@ class BinaryMath(BinOp):
         return '%s(%s, %s)' % (type(self).__name__, self.lhs, self.rhs)
 
 
-class abs(UnaryMath):
-    pass
+_unary_math_names = (
+    'abs',
+    'sqrt',
+    'sin',
+    'sinh',
+    'cos',
+    'cosh',
+    'tan',
+    'tanh',
+    'exp',
+    'expm1',
+    'log',
+    'log10',
+    'log1p',
+    'acos',
+    'acosh',
+    'asin',
+    'asinh',
+    'atan',
+    'atanh',
+    'radians',
+    'degrees',
+)
 
 
-class sqrt(UnaryMath):
-    pass
+for name in _unary_math_names:
+    locals()[name] = type(name, (UnaryMath,), {})
 
 
-class sin(UnaryMath):
-    pass
+_binary_math_names = (
+    'atan2',
+    'copysign',
+    'fmod',
+    'hypot',
+    'ldexp',
+    'greatest',
+    'least'
+)
+
+for name in _binary_math_names:
+    locals()[name] = type(name, (BinaryMath,), {})
 
 
-class sinh(UnaryMath):
-    pass
+_unary_integer_math = (
+    'ceil',
+    'floor',
+    'trunc',
+)
 
-
-class cos(UnaryMath):
-    pass
-
-
-class cosh(UnaryMath):
-    pass
-
-
-class tan(UnaryMath):
-    pass
-
-
-class tanh(UnaryMath):
-    pass
-
-
-class exp(UnaryMath):
-    pass
-
-
-class expm1(UnaryMath):
-    pass
-
-
-class log(UnaryMath):
-    pass
-
-
-class log10(UnaryMath):
-    pass
-
-
-class log1p(UnaryMath):
-    pass
-
-
-class acos(UnaryMath):
-    pass
-
-
-class acosh(UnaryMath):
-    pass
-
-
-class asin(UnaryMath):
-    pass
-
-
-class asinh(UnaryMath):
-    pass
-
-
-class atan(UnaryMath):
-    pass
-
-
-class atanh(UnaryMath):
-    pass
-
-
-class radians(UnaryMath):
-    pass
-
-
-class degrees(UnaryMath):
-    pass
-
-
-class atan2(BinaryMath):
-    pass
-
-
-class copysign(BinaryMath):
-    pass
-
-
-class fmod(BinaryMath):
-    pass
-
-
-class hypot(BinaryMath):
-    pass
-
-
-class ldexp(BinaryMath):
-    pass
-
-
-class greatest(BinaryMath):
-    pass
-
-
-class least(BinaryMath):
-    pass
-
-
-class UnaryIntegerMath(UnaryMath):
-
-    """ Mathematical unary operator with int valued dshape like ceil, floor """
-    _dtype = int_
-
-
-class ceil(UnaryIntegerMath):
-    pass
-
-
-class floor(UnaryIntegerMath):
-    pass
-
-
-class trunc(UnaryIntegerMath):
-    pass
+for name in _unary_integer_math:
+    locals()[name] = type(name, (UnaryMath,), dict(_dtype=int_))
 
 
 class isnan(UnaryMath):
@@ -191,7 +114,6 @@ def truncate(expr, precision):
 
     Examples
     --------
-
     >>> from blaze import symbol, compute
     >>> x = symbol('x', 'real')
     >>> compute(x.truncate(10), 123)
