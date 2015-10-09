@@ -5,7 +5,6 @@ language: python
 matrix:
   fast_finish: true
   include:
-    - python: 2.6
     - python: 2.7
       env: SPARK_VERSION=1.2
     - python: 2.7
@@ -32,8 +31,6 @@ addons:
   postgresql: "9.3"
 
 
-# Note: conda is not available for anything but python 2.7. So below we try to install
-# conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
   # Install conda
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -47,8 +44,6 @@ install:
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
 
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' || $TRAVIS_PYTHON_VERSION == '3.4' ]]; then conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive -c blaze; fi
 
