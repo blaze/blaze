@@ -224,3 +224,13 @@ def test_shift_on_column(n, column, sql):
     result = odo(compute(expr, sql), pd.Series)
     expected = odo(sql, pd.DataFrame)[column].shift(n)
     tm.assert_series_equal(result, expected)
+
+
+@pytest.mark.parametrize('n', [-1, 0, 1])
+def test_shift_arithmetic(sql, n):
+    t = symbol('t', discover(sql))
+    expr = t.B - t.B.shift(n)
+    result = odo(compute(expr, sql), pd.Series)
+    df = odo(sql, pd.DataFrame)
+    expected = df.B - df.B.shift(n)
+    tm.assert_series_equal(result, expected)
