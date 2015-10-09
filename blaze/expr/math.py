@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import Option, real, int_, bool_, isreal, isnumeric
 
-from .arithmetic import UnaryOp, BinOp
+from .arithmetic import UnaryOp, BinOp, Arithmetic
 from .expressions import schema_method_list
 
 
@@ -70,12 +70,20 @@ _binary_math_names = (
     'fmod',
     'hypot',
     'ldexp',
-    'greatest',
-    'least'
 )
 
 for name in _binary_math_names:
     locals()[name] = type(name, (BinaryMath,), {})
+
+
+class greatest(Arithmetic):
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
+
+
+class least(Arithmetic):
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
 
 
 _unary_integer_math = (
