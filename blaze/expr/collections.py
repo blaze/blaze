@@ -710,7 +710,7 @@ def isin(expr, keys):
     return IsIn(expr, frozenset(keys))
 
 
-class Shift(ElemWise):
+class Shift(Expr):
     """ Shift a column backward or forward by N elements
 
     Parameters
@@ -733,6 +733,10 @@ class Shift(ElemWise):
             return measure
         else:
             return Option(measure)
+
+    @property
+    def dshape(self):
+        return DataShape(*(self._child.dshape.shape + tuple(self.schema)))
 
     def __str__(self):
         return '%s(%s, n=%d)' % (
