@@ -88,7 +88,7 @@ binary_types = {
 }
 
 
-binary_mappings = {
+fallback_binary_mappings = {
     'greatest': {
         builtins: max,
         np: np.maximum,
@@ -120,9 +120,9 @@ for funcname in binary_math_names:  # hypot, atan2, fmod, ...
         for pair in pairs:
             if hasattr(module, funcname):
                 d.add(pair, getattr(module, funcname))
-            elif funcname in binary_mappings:
-                assert module in binary_mappings[funcname], module.__name__
-                d.add(pair, binary_mappings[funcname][module])
+            elif funcname in fallback_binary_mappings:
+                assert module in fallback_binary_mappings[funcname], module.__name__
+                d.add(pair, fallback_binary_mappings[funcname][module])
 
     namespace[funcname] = d
     locals()[funcname] = d
