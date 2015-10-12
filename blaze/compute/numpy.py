@@ -109,22 +109,6 @@ def compute_up_least(expr, lhs, rhs, **kwargs):
     return np.minimum(lhs, rhs)
 
 
-@dispatch(greatest, np.ndarray)
-def compute_up(expr, data, **kwargs):
-    if isinstance(expr.lhs, Expr):
-        return np.maximum(data, expr.rhs)
-    else:
-        return np.maximum(expr.lhs, data)
-
-
-@dispatch(least, np.ndarray)
-def compute_up(expr, data, **kwargs):
-    if isinstance(expr.lhs, Expr):
-        return np.minimum(data, expr.rhs)
-    else:
-        return np.minimum(expr.lhs, data)
-
-
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
