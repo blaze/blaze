@@ -455,7 +455,10 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Sort, Series)
 def compute_up(t, s, **kwargs):
-    return s.order(ascending=t.ascending)
+    try:
+        return s.sort_values(ascending=t.ascending)
+    except AttributeError:
+        return s.order(ascending=t.ascending)
 
 
 @dispatch(Head, (Series, DataFrame))

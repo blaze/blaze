@@ -256,21 +256,17 @@ def schema_concat(exprs):
 
     In the case of Units, the name is taken from expr.name
     """
-    names, values = [], []
+    new_fields = []
     for c in exprs:
         schema = c.schema[0]
-        if isinstance(schema, Option):
-            schema = schema.ty
         if isinstance(schema, Record):
-            names.extend(schema.names)
-            values.extend(schema.types)
-        elif isinstance(schema, Unit):
-            names.append(c._name)
-            values.append(schema)
+            new_fields.extend(schema.fields)
+        elif isinstance(schema, (Unit, Option)):
+            new_fields.append((c._name, schema))
         else:
             raise TypeError("All schemas must have Record or Unit shape."
-                            "\nGot %s" % c.schema[0])
-    return dshape(Record(list(zip(names, values))))
+                            "\nGot %s" % schema)
+    return dshape(Record(new_fields))
 
 
 class Merge(ElemWise):
@@ -557,7 +553,7 @@ def join(lhs, rhs, on_left=None, on_right=None,
                                       right_types)):
         if promotion == object_:
             raise TypeError(
-                "Schema's of joining columns do not match,"
+                'Schemata of joining columns do not match,'
                 ' no promotion found for %s=%s and %s=%s' % (
                     on_left[n], left_types[n], on_right[n], right_types[n],
                 ),
