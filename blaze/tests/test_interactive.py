@@ -367,9 +367,17 @@ def test_coerce_date_and_datetime():
     d = Data(x)
     assert repr(d) == repr(x)
 
-    x = datetime.datetime.now()
+    x = pd.Timestamp.now()
     d = Data(x)
     assert repr(d) == repr(x)
+
+    x = np.nan
+    d = Data(x, dshape='datetime')
+    assert repr(d) == repr(pd.NaT)
+
+    x = float('nan')
+    d = Data(x, dshape='datetime')
+    assert repr(d) == repr(pd.NaT)
 
 
 def test_highly_nested_repr():
