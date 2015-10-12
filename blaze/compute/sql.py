@@ -470,11 +470,11 @@ def compute_up(t, s, **kwargs):
     return select([list(inner_columns(result))[0].label(t._name)])
 
 
-@dispatch(nunique, sa.Column)
+@dispatch(nunique, ColumnElement)
 def compute_up(t, s, **kwargs):
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
-    return sa.func.count(s.distinct())
+    return sa.sql.functions.count(s.distinct())
 
 
 @dispatch(nunique, Selectable)
@@ -1016,34 +1016,56 @@ def make_interval(measure, unit):
 
 @dispatch(DateTimeTruncate, ColumnElement)
 def compute_up(expr, data, **kwargs):
-    import pandas as pd
-    offset = pd.Timedelta('%d %s' % (expr.measure, expr.unit)).to_pytimedelta()
-    result = sa.cast(sa.cast(
-        sa.func.floor(sa.extract('epoch', data + offset) / expr.measure) * expr.measure,
-        sa.BIGINT
-    ), data.type) - offset
-    return result.label(expr._name)
+    offset = sa.extract(
+        'epoch',
+        sa.cast('%d %s' % (expr.measure, expr.unit), sa.Interval)
+    )
+    return sa.func.timezone(
+        'UTC',
+        sa.func.to_timestamp(
+            sa.func.floor(sa.extract('epoch', data) / offset) * offset
+        )
+    ).label(expr._name)
 
 
-@dispatch(Resample, FromClause)
+@dispatch(Resample, (Select, Selectable))
 def compute_up(expr, data, **kwargs):
-    start = compute(expr.grouper.min(), data, post_compute=False)
-    stop = compute(expr.grouper.max(), data, post_compute=False)
-    interval = make_interval(expr.grouper.measure, expr.grouper.unit)
-    date_sequence = sa.func.generate_series(start, stop,
-                                            interval).label(expr.grouper._name)
-    initial_values = dict(
-        (k, sa.literal(v).label(k))
-        for k, v in sorted(expr.apply.initial_value.items(), key=first)
-    )
-    index = sa.select(chain([date_sequence], initial_values.values())).cte()
-    aggs = compute(by(expr.grouper, expr.apply), data, post_compute=False).cte()
+    # step 1: group by
+    expr_grouper = expr.grouper
+    grouper_name = expr_grouper._name
+    aggs = compute(
+        by(expr.grouper, expr.apply).sort(grouper_name),
+        data,
+        post_compute=False
+    ).cte()
+
+    # step 2: sequence generation
+    agg_grouper = aggs.c[grouper_name]
+    start = sa.sql.functions.min(agg_grouper)
+    stop = sa.sql.functions.max(agg_grouper)
+
+    index = sa.select([
+        sa.func.generate_series(
+            start, stop, make_interval(expr_grouper.measure, expr_grouper.unit)
+        ).label()
+    ]).cte()
+
+    # step 3: left outer join
+    index_grouper = first(index.c)
     joined = index.join(
-        aggs, onclause=first(aggs.c) == first(index.c), isouter=True
+        aggs,
+        onclause=agg_grouper == index_grouper,
+        isouter=True  # generates a LEFT OUTER JOIN expression
     )
-    grouper = first(index.c)
-    select_args = [grouper] + [
+
+    # step 4: coalesce
+    initial_values = {
+        k: sa.literal(v).label(k) for k, v in expr.apply.initial_value.items()
+    }
+    select_args = [index_grouper] + [
         sa.sql.functions.coalesce(agg, initial_values[name]).label(name)
         for name, agg in aggs.c.items()[1:]
     ]
-    return sa.select(select_args).select_from(joined).order_by(grouper)
+
+    # step 5: order by
+    return sa.select(select_args).select_from(joined).order_by(index_grouper)
