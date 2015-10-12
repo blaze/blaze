@@ -9,7 +9,12 @@ import pytest
 import datashape
 from datashape import dshape, var, datetime_, float32, int64, bool_
 
-from blaze.expr import symbol, label, Field
+from blaze.expr import symbol, label, Field, Expr, Node
+
+
+def test_empty_slots():
+    assert Expr.__slots__ == ()
+    assert Node.__slots__ == ()
 
 
 def test_Symbol():
