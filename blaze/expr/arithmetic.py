@@ -57,6 +57,12 @@ class BinOp(ElemWise):
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
     @property
+    def dshape(self):
+        # TODO: better inference.  e.g. int + int -> int
+        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
+                           (self._dtype,)))
+
+    @property
     def _name(self):
         if not isscalar(self.dshape.measure):
             return None
@@ -147,12 +153,6 @@ class Arithmetic(BinOp):
         # integer, for example
         lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
         return promote(lhs, rhs)
-
-    @property
-    def dshape(self):
-        # TODO: better inference.  e.g. int + int -> int
-        return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
-                           (self._dtype,)))
 
 
 class Add(Arithmetic):
