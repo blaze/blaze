@@ -1,0 +1,38 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+* Removed support for Python 2.6 (:issue:`1267`).
+* Removed support for Python 3.3 (:issue:`1270`).
+
+Bug Fixes
+~~~~~~~~~
+
+* Fixed a bug where ``Merge`` expressions would unpack option types in their
+  fields. This could cause you to have a table where ``expr::{a: int32}`` but
+  ``expr.a::?int32``. Note that the dotted acces is an option (:issue:`1262`).

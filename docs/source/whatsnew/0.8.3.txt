@@ -1,8 +1,8 @@
-Release |version|
------------------
+Release 0.8.3
+-------------
 
-:Release: |version|
-:Date: TBD
+:Release: 0.8.3
+:Date: September 15, 2015
 
 New Expressions
 ~~~~~~~~~~~~~~~
@@ -101,3 +101,17 @@ Bug Fixes
   to be constructed ultimately resulting in incorrect results on
   expressions like ``x + x + x`` (:issue:`1227`). Thanks to @llllllllll and
   @jcrist for discussion around solving the issue.
+* Fixed a bug where :func:`~blaze.expr.datetime.minute` and
+  :class:`~blaze.expr.datetime.Minute` were not being exported which made them
+  unusable from the blaze server (:issue:`1232`).
+* Fixed a bug where repr was being called on data resources rather than
+  string, which caused massive slowdowns on largish expressions running
+  against blaze server (:issue:`1240`, :issue:`1247`).
+* Skip a test on Win32 + Python 3.4 and PyTables until this gets sorted out on
+  the library side (:issue:`1251`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+* We now run tests against pandas master to catch incompatibility issues
+  (:issue:`1243`).

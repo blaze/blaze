@@ -25,6 +25,11 @@ try:
 except ImportError:
     from pyspark.sql import SchemaRDD as SparkDataFrame
 
+try:
+    from pyspark.sql.utils import AnalysisException
+except ImportError:
+    AnalysisException = Py4JJavaError
+
 from pyspark import HiveContext, SQLContext
 from pyspark.sql import Row, SchemaRDD
 from odo import odo, discover
@@ -354,7 +359,7 @@ date_attrs = [pytest.mark.xfail(not hasattr(pyspark.sql, 'types'),
               for attr in ['year', 'month', 'day', 'hour', 'minute', 'second']]
 
 date_attrs += [pytest.mark.xfail(attr,
-                                 raises=Py4JJavaError,
+                                 raises=(Py4JJavaError, AnalysisException),
                                  reason=('Hive does not support date '
                                          'attribute %r') % attr)
                for attr in ['millisecond', 'microsecond']]

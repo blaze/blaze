@@ -3,13 +3,12 @@ from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
 import datetime
 from odo import into, append
 from odo.backends.csv import CSV
-from blaze import discover
+from blaze import discover, transform
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from blaze.expr import symbol
 from datashape import dshape
 from blaze.utils import tmpfile, example
-from blaze.compatibility import xfail
 import pytest
 import sys
 from types import MethodType
@@ -31,10 +30,11 @@ t = Data(data, fields=['name', 'amount'])
 
 x = np.ones((2, 2))
 
+
 def test_table_raises_on_inconsistent_inputs():
     with pytest.raises(ValueError):
         t = Data(data, schema='{name: string, amount: float32}',
-            dshape=dshape("{name: string, amount: float32}"))
+                 dshape=dshape("{name: string, amount: float32}"))
 
 
 def test_resources():
@@ -94,6 +94,15 @@ def test_repr():
     assert '...' in result
 
 
+def test_str_does_not_repr():
+    # see GH issue #1240.
+    d = Data([('aa', 1), ('b', 2)], name="ZZZ",
+             dshape='2 * {a: string, b: int64}')
+    expr = transform(d, c=d.a.strlen() + d.b)
+    assert str(
+        expr) == "Merge(_child=ZZZ, children=(ZZZ, label(strlen(_child=ZZZ.a) + ZZZ.b, 'c')))"
+
+
 def test_repr_of_scalar():
     assert repr(t.amount.sum()) == '300'
 
@@ -140,6 +149,7 @@ def test_to_html():
     assert to_html(1) == '1'
 
     assert to_html(t.count()) == '2'
+
 
 def test_to_html_on_arrays():
     s = to_html(Data(np.ones((2, 2))))
@@ -206,7 +216,7 @@ def test_into_nd_array_column_failure():
 def test_Data_attribute_repr():
     t = Data(CSV(example('accounts-datetimes.csv')))
     result = t.when.day
-    expected = pd.DataFrame({'when_day': [1,2,3,4,5]})
+    expected = pd.DataFrame({'when_day': [1, 2, 3, 4, 5]})
     assert repr(result) == repr(expected)
 
 
@@ -216,6 +226,7 @@ def test_can_trivially_create_csv_Data():
     # in context
     with Data(example('iris.csv')) as d:
         assert d is not None
+
 
 def test_can_trivially_create_csv_Data_with_unicode():
     if sys.version[0] == '2':
@@ -230,7 +241,10 @@ def test_can_trivially_create_sqlite_table():
     with Data('sqlite:///'+example('iris.db')+'::iris') as d:
         assert d is not None
 
-@xfail(reason="h5py/pytables mismatch")
+
+@pytest.mark.xfail(sys.platform != 'darwin', reason="h5py/pytables mismatch")
+@pytest.mark.skipif(sys.version_info[:2] == (3, 4) and sys.platform == 'win32',
+                    reason='PyTables + Windows + Python 3.4 crashes')
 def test_can_trivially_create_pytables():
     pytest.importorskip('tables')
     with Data(example('accounts.h5')+'::/accounts') as d:
@@ -307,7 +321,9 @@ def test_iter():
     assert list(d + 1) == [2, 2, 2, 2]
 
 
-@xfail(reason="DataFrame constructor doesn't yet support __array__")
+@pytest.mark.xfail(
+    reason="DataFrame constructor doesn't yet support __array__"
+)
 def test_DataFrame():
     x = np.array([(1, 2), (1., 2.)], dtype=[('a', 'i4'), ('b', 'f4')])
     d = Data(x)
@@ -331,7 +347,7 @@ def test_head_compute():
 
 def test_scalar_sql_compute():
     t = into('sqlite:///:memory:::t', data,
-            dshape=dshape('var * {name: string, amount: int}'))
+             dshape=dshape('var * {name: string, amount: int}'))
     d = Data(t)
     assert repr(d.amount.sum()) == '300'
 
