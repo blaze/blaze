@@ -81,6 +81,9 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
+
+    __slots__ = ()
+
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, Record):
             if fieldname == self._name:
