@@ -12,7 +12,7 @@ source:
 
 requirements:
   run:
-    - python
+    - python >=2.7
     - numpy >=1.7
     - blaze-core
     - h5py
