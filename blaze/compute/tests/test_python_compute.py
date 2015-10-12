@@ -11,11 +11,12 @@ from collections import Iterator, Iterable
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
-from blaze import dshape
+from blaze import dshape, symbol, discover
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (symbol, by, merge, join, count, distinct,
-                        Apply, sum, min, max, any, summary,
-                        count, std, head, transform)
+from blaze.expr import (
+    by, merge, join, distinct, sum, min, max, any, summary, count, std, head,
+    transform, greatest, least
+)
 import numpy as np
 
 from blaze import cos, sin
@@ -867,3 +868,19 @@ def test_isin(keys):
     result = list(compute(expr, data))
     expected = [el for el in data if el[0] in keys]
     assert result == expected
+
+
+def test_greatest():
+    s_data, t_data = [1, 2], [2, 1]
+    s, t = symbol('s', discover(s_data)), symbol('t', discover(t_data))
+    result = compute(greatest(s, t), {s: s_data, t: t_data})
+    expected = np.maximum(s_data, t_data).tolist()
+    assert list(result) == expected
+
+
+def test_least():
+    s_data, t_data = [1, 2], [2, 1]
+    s, t = symbol('s', discover(s_data)), symbol('t', discover(t_data))
+    result = compute(least(s, t), {s: s_data, t: t_data})
+    expected = np.minimum(s_data, t_data).tolist()
+    assert list(result) == expected
