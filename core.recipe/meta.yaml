@@ -14,7 +14,7 @@ source:
 
 requirements:
   build:
-    - python >=2.7
+    - python 2.7*|3.4*
     - setuptools
     - datashape >=0.4.6
     - odo >=0.3.3
@@ -29,7 +29,7 @@ requirements:
     - cytoolz
 
   run:
-    - python >=2.7
+    - python 2.7*|3.4*
     - datashape >=0.4.6
     - odo >=0.3.3
     - flask
