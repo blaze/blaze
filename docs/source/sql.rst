@@ -117,3 +117,46 @@ object to ``Data``. For example:
    dshape("{table_a: var * {a: ?int32}, table_b: var * {b: ?int32}}")
 
 .. _`Lahman baseball statistics database`: https://github.com/jknecht/baseball-archive-sqlite/raw/master/lahman2013.sqlite
+
+
+How ``Resample`` is constructed in the SQL backend
+--------------------------------------------------
+We build up resample with the following steps:
+
+1. GROUP BY
+~~~~~~~~~~~
+We first GROUP BY our timestamp column that has been truncated to the requested
+frequency and aggregate using the reductions in ``expr.apply``. When dealing
+with irregularly timestamped data, this step leaves us with aggregated data,
+that are still potentially irregular. The GROUP BY is the core of the resample
+operation and usually the most expensive, since we scan the entire table.
+
+2. Sequence generation
+~~~~~~~~~~~~~~~~~~~~~~
+Since resample guarantees that the resulting timestamp sequence is regularly
+spaced we need to make that happen. In this step, we generate a monotonically
+increasing sequence of values from ``min(group_by.timestamp)`` to
+``max(group_by.timestamp)`` stepping by intervals of the requested resampling
+period.
+
+3. LEFT OUTER JOIN
+~~~~~~~~~~~~~~~~~~
+From step 1 we have our aggregated data, and from step 2 we have our regularly
+spaced sequence of timestamps. By construction, the set of timestamps in the
+aggregated data is a subset or equal to the set of timestamps in the sequence
+from step 2. We need to match up the data in the generated sequence with the
+aggregated data. We do this by LEFT OUTER JOIN-ing the sequence with the
+timestamps in the aggregated data.
+
+4. COALESCE
+~~~~~~~~~~~
+In most cases, when we have a sequence timestamp that isn't in the set of
+timestamps in the aggregated data we want to return a NULL value, but not in
+every case. COUNT operations are a notable case: instead of NULL we want 0 to
+be the aggregate value when no values are found at a particular timestamp. To
+do this we coalesce the NULLs received from the LEFT OUTER JOIN with a set of
+initial values defined by the reduction expression.
+
+5. ORDER BY
+~~~~~~~~~~~
+Finally, we sort our results in ascending order by the sequence timestamps.
