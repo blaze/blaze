@@ -739,7 +739,6 @@ def test_nunique_table():
     assert result == len(df.drop_duplicates())
 
 
-<<<<<<< HEAD
 @pytest.fixture
 def tsdf():
     df = tm.makeTimeDataFrame().reset_index().rename(columns=dict(index='on'))
