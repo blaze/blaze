@@ -1,8 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-from ..expr import (Expr, Symbol, Field, Arithmetic, RealMath, Not,
-                    USub, Date, Time, DateTime, Millisecond, Microsecond,
-                    broadcast, sin, cos, isnan, UnaryOp, symbol)
+from ..expr import (Expr, Symbol, Field, Arithmetic, UnaryMath, Not, USub,
+                    isnan, UnaryOp, BinOp)
 from toolz import curry
 import itertools
 from ..expr.broadcast import broadcast_collect
@@ -21,7 +20,7 @@ def parenthesize(s):
 def print_numexpr(leaves, expr):
     """ Print expression to be evaluated in Python
 
-    >>> from blaze.expr import ceil, sin
+    >>> from blaze import symbol, ceil, sin, cos
 
     >>> t = symbol('t', 'var * {x: int, y: int, z: int, when: datetime}')
     >>> print_numexpr([t], t.x + t.y)
@@ -52,7 +51,7 @@ def print_numexpr(leaves, expr):
         return '%s %s %s' % (parenthesize(lhs),
                              expr.symbol,
                              parenthesize(rhs))
-    if isinstance(expr, RealMath):
+    if isinstance(expr, UnaryMath):
         child = print_numexpr(leaves, expr._child)
         return '%s(%s)' % (type(expr).__name__, child)
     if isinstance(expr, UnaryOp) and hasattr(expr, 'symbol'):
@@ -62,12 +61,11 @@ def print_numexpr(leaves, expr):
         child = print_numexpr(leaves, expr._child)
         return '%s != %s' % (parenthsize(child), parenthesize(child))
     raise NotImplementedError("Operation %s not supported by numexpr" %
-            type(expr).__name__)
+                              type(expr).__name__)
 
 
-WantToBroadcast = (Arithmetic, RealMath, Not, USub)
-Broadcastable = (Arithmetic, RealMath, Not, USub)
+Broadcastable = WantToBroadcast = BinOp, UnaryOp
 
 broadcast_numexpr_collect = curry(broadcast_collect,
-        Broadcastable=Broadcastable,
-        WantToBroadcast=WantToBroadcast)
+                                  Broadcastable=Broadcastable,
+                                  WantToBroadcast=WantToBroadcast)

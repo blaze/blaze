@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import Option, real, int_, bool_, isreal, isnumeric
 
-from .arithmetic import UnaryOp
+from .arithmetic import UnaryOp, BinOp, Arithmetic
 from .expressions import schema_method_list
 
 
@@ -11,67 +11,97 @@ from .expressions import schema_method_list
 
 __all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
            'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
-           'atan', 'atanh', 'radians', 'degrees', 'ceil', 'floor', 'trunc',
-           'isnan', 'notnull', 'RealMath', 'IntegerMath', 'BooleanMath',
-           'Math']
+           'atan', 'atanh', 'radians', 'degrees', 'atan2', 'ceil', 'floor',
+           'trunc', 'isnan', 'notnull', 'UnaryMath', 'BinaryMath',
+           'greatest', 'least']
 
 
-class Math(UnaryOp):
-    pass
+class UnaryMath(UnaryOp):
 
-
-class RealMath(Math):
     """Mathematical unary operator with real valued dshape like sin, or exp
     """
+    __slots__ = '_hash', '_child'
+
     _dtype = real
 
 
-class abs(RealMath): pass
-class sqrt(RealMath): pass
+class BinaryMath(BinOp):
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
 
-class sin(RealMath): pass
-class sinh(RealMath): pass
-class cos(RealMath): pass
-class cosh(RealMath): pass
-class tan(RealMath): pass
-class tanh(RealMath): pass
+    _dtype = real
 
-class exp(RealMath): pass
-class expm1(RealMath): pass
-class log(RealMath): pass
-class log10(RealMath): pass
-class log1p(RealMath): pass
-
-class acos(RealMath): pass
-class acosh(RealMath): pass
-class asin(RealMath): pass
-class asinh(RealMath): pass
-class atan(RealMath): pass
-class atanh(RealMath): pass
-
-class radians(RealMath): pass
-class degrees(RealMath): pass
+    def __str__(self):
+        return '%s(%s, %s)' % (type(self).__name__, self.lhs, self.rhs)
 
 
-class IntegerMath(Math):
-    """ Mathematical unary operator with int valued dshape like ceil, floor """
-    _dtype = int_
+_unary_math_names = (
+    'abs',
+    'sqrt',
+    'sin',
+    'sinh',
+    'cos',
+    'cosh',
+    'tan',
+    'tanh',
+    'exp',
+    'expm1',
+    'log',
+    'log10',
+    'log1p',
+    'acos',
+    'acosh',
+    'asin',
+    'asinh',
+    'atan',
+    'atanh',
+    'radians',
+    'degrees',
+)
 
 
-class ceil(IntegerMath): pass
-class floor(IntegerMath): pass
-class trunc(IntegerMath): pass
+for name in _unary_math_names:
+    locals()[name] = type(name, (UnaryMath,), {})
 
 
-class BooleanMath(Math):
-    """ Mathematical unary operator with bool valued dshape like isnan """
+_binary_math_names = (
+    'atan2',
+    'copysign',
+    'fmod',
+    'hypot',
+    'ldexp',
+)
+
+for name in _binary_math_names:
+    locals()[name] = type(name, (BinaryMath,), {})
+
+
+class greatest(Arithmetic):
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
+
+
+class least(Arithmetic):
+    __slots__ = '_hash', 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
+
+
+_unary_integer_math = (
+    'ceil',
+    'floor',
+    'trunc',
+)
+
+for name in _unary_integer_math:
+    locals()[name] = type(name, (UnaryMath,), dict(_dtype=int_))
+
+
+class isnan(UnaryMath):
     _dtype = bool_
 
 
-class isnan(BooleanMath): pass
+class notnull(UnaryOp):
 
-
-class notnull(BooleanMath):
     """ Return whether an expression is not null
 
     Examples
@@ -84,7 +114,7 @@ class notnull(BooleanMath):
     >>> list(compute(expr, [1, 2, None, 3]))
     [True, True, False, True]
     """
-    pass
+    _dtype = bool_
 
 
 def truncate(expr, precision):
@@ -92,7 +122,6 @@ def truncate(expr, precision):
 
     Examples
     --------
-
     >>> from blaze import symbol, compute
     >>> x = symbol('x', 'real')
     >>> compute(x.truncate(10), 123)

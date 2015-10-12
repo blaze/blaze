@@ -4,11 +4,16 @@ import pytest
 
 import numpy as np
 import pandas as pd
+
 from datetime import datetime, date
+
+import numba
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
+from blaze.expr import greatest, least
 from blaze import sin
+import blaze
 from odo import into
 from datashape import discover, to_numpy, dshape
 
@@ -558,3 +563,71 @@ def test_concat_mat():
         compute(concat(s, t, axis=1), {s: s_data, t: t_data}) ==
         np.concatenate((s_data, t_data), axis=1)
     ).all()
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_least(dtype):
+    s_data = np.arange(15, dtype=dtype).reshape(5, 3)
+    t_data = np.arange(15, 30, dtype=dtype).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = least(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = np.minimum(s_data, t_data)
+    assert np.all(result == expected)
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_least_mixed(dtype):
+    s_data = np.array([2, 1], dtype=dtype)
+    t_data = np.array([1, 2], dtype=dtype)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = least(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = np.minimum(s_data, t_data)
+    assert np.all(result == expected)
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_greatest(dtype):
+    s_data = np.arange(15, dtype=dtype).reshape(5, 3)
+    t_data = np.arange(15, 30, dtype=dtype).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = greatest(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = np.maximum(s_data, t_data)
+    assert np.all(result == expected)
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float64'])
+def test_greatest_mixed(dtype):
+    s_data = np.array([2, 1], dtype=dtype)
+    t_data = np.array([1, 2], dtype=dtype)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    expr = greatest(s, t)
+    result = compute(expr, {s: s_data, t: t_data})
+    expected = np.maximum(s_data, t_data)
+    assert np.all(result == expected)
+
+
+binary_name_map = {
+    'atan2': 'arctan2'
+}
+
+
+@pytest.mark.parametrize('funcname',
+                         ['atan2', 'copysign', 'hypot', 'ldexp',
+                          pytest.mark.xfail('fmod', raises=numba.TypingError)])
+def test_binary_math(funcname):
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    scope = {s: s_data, t: t_data}
+    result = compute(getattr(blaze, funcname)(s, t), scope)
+    expected = getattr(np, binary_name_map.get(funcname, funcname))(s_data,
+                                                                    t_data)
+    assert np.all(result == expected)
