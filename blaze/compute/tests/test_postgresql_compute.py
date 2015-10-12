@@ -14,7 +14,7 @@ import pandas.util.testing as tm
 
 from odo import odo, resource, drop, discover
 from blaze import symbol, compute, concat, join, sin, cos, radians, atan2
-from blaze import sqrt, transform
+from blaze import sqrt, transform, Data
 from blaze.utils import example
 
 
@@ -321,3 +321,8 @@ def test_coerce_on_select(nyc):
     expected = odo(compute(t, nyc),
                    pd.DataFrame).passenger_count.astype('float64') + 1.0
     assert list(s) == list(expected)
+
+
+def test_interactive_len(sql):
+    t = Data(sql)
+    assert len(t) == int(t.count())
