@@ -1898,3 +1898,11 @@ def test_tail_sort_in_chilren():
     )))
     result = normalize(str(compute(t.name.sort('id').tail(5), {t: s})))
     assert expected == result
+
+
+def test_selection_inner_inputs():
+    result = normalize(str(compute(t[t.id == tdate.id], {t: s, tdate: sdate})))
+    expected = normalize("""
+    select {a}.name, {a}.amount, {a}.id from {a}, {b} where {a}.id = {b}.id
+    """).format(a=s.name, b=sdate.name)
+    assert result == expected

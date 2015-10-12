@@ -131,8 +131,17 @@ def compute_up(t, df, **kwargs):
 
 
 @dispatch(Selection, (Series, DataFrame))
-def compute_up(t, df, **kwargs):
-    predicate = compute(t.predicate, {t._child: df})
+def compute_up(expr, df, **kwargs):
+    return compute_up(
+        expr,
+        df,
+        compute(expr.predicate, {expr._child: df}),
+        **kwargs
+    )
+
+
+@dispatch(Selection, (Series, DataFrame), Series)
+def compute_up(expr, df, predicate, **kwargs):
     return df[predicate]
 
 

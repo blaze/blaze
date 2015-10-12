@@ -459,6 +459,7 @@ class Selection(Expr):
     >>> deadbeats = accounts[accounts.amount < 0]
     """
     __slots__ = '_hash', '_child', 'predicate'
+    __inputs__ = '_child', 'predicate'
 
     def __str__(self):
         return "%s[%s]" % (self._child, self.predicate)

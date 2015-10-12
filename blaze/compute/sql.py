@@ -262,19 +262,41 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, sa.sql.ColumnElement)
 def compute_up(expr, data, scope=None, **kwargs):
     predicate = compute(expr.predicate, data, post_compute=False)
-    return sa.select([data]).where(predicate)
+    return compute_up(expr, data, predicate, scope=scope, **kwargs)
+
+
+@dispatch(Selection, sa.sql.ColumnElement, ClauseElement)
+def compute_up(expr, col, predicate, **kwargs):
+    return sa.select([col]).where(predicate)
+
+
+def _get_pred(expr, tbl, scope):
+    return compute(
+        expr.predicate,
+        toolz.merge(
+            {
+                expr._child[col.name]: col
+                for col in getattr(tbl, 'inner_columns', tbl.columns)
+            },
+            scope,
+        ),
+        optimize=False,
+        post_compute=False,
+    )
+
 
 
 @dispatch(Selection, Selectable)
 def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col)
-              for col in getattr(s, 'inner_columns', s.columns))
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
+    return compute_up(t, s, _get_pred(t, s, scope), scope=scope, **kwargs)
+
+
+@dispatch(Selection, Selectable, ClauseElement)
+def compute_up(expr, tbl, predicate, scope=None, **kwargs):
     try:
-        return s.where(predicate)
+        return tbl.where(predicate)
     except AttributeError:
-        return select([s]).where(predicate)
+        return select([tbl]).where(predicate)
 
 
 def select(s):
@@ -1005,7 +1027,7 @@ def _subexpr_optimize(expr):
 
 @dispatch(Expr, ClauseElement)
 def optimize(expr, _):
-    collected = broadcast_collect(expr)
+    collected = broadcast_collect(expr, no_recurse=Selection)
     return reduce(
         lambda expr, term: expr._subs({term: _subexpr_optimize(term)}),
         collected._subterms(),

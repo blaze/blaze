@@ -819,6 +819,7 @@ def test_time_field():
     assert_series_equal(result, expected)
 
 
+
 @pytest.mark.parametrize('n', [-1, 0, 1])
 def test_shift(n):
     data = pd.Series(pd.date_range(start='20120101', end='20120102', freq='H'))
@@ -826,3 +827,16 @@ def test_shift(n):
     result = compute(s.shift(n), data)
     expected = data.shift(n)
     assert_series_equal(result, expected)
+
+
+def test_selection_inner_inputs():
+    s_data = pd.DataFrame({'a': np.arange(5)})
+    t_data = pd.DataFrame({'a': np.arange(5)})
+
+    s = symbol('s', 'var * {a: int64}')
+    t = symbol('t', 'var * {a: int64}')
+
+    tm.assert_frame_equal(
+        compute(s[s.a == t.a], {s: s_data, t: t_data}),
+        s_data
+    )
