@@ -37,3 +37,6 @@ Bug Fixes
 * Fixed a bug where ``Merge`` expressions would unpack option types in their
   fields. This could cause you to have a table where ``expr::{a: int32}`` but
   ``expr.a::?int32``. Note that the dotted acces is an option (:issue:`1262`).
+* Fixed a bug that prevented creating a
+  :class:`~blaze.interactive.InteractiveSymbol` that wrapped ``nan`` if the
+  dshape was ``datetime``. This now correctly coerces to `NaT` (:issue:`1272`).
