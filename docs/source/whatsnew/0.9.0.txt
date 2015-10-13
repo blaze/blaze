@@ -43,3 +43,5 @@ Bug Fixes
 * Fixed an issue where blaze client/server could not use `isin` expressions
   because the ``frozenset`` failed to serialize. This also added support for
   rich serialization over json for things like datetimes (:issue:`1255`).
+* Fixed a bug where ``len`` would fail on an interactive expression whose
+  resources were sqlalchemy objects (:issue:`1273`).

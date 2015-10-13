@@ -311,7 +311,7 @@ def table_length(expr):
     try:
         return expr._len()
     except ValueError:
-        return compute(expr.count())
+        return int(expr.count())
 
 
 Expr.__repr__ = expr_repr
