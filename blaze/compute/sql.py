@@ -58,7 +58,7 @@ from ..expr import (
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
     ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
-    BinaryMath, Pow
+    Shift, BinaryMath, Pow
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -1119,3 +1119,8 @@ def compute_up(expr, data, **kwargs):
     column = first(data.inner_columns)
     cast = sa.cast(column, dshape_to_alchemy(expr.to)).label(expr._name)
     return reconstruct_select([cast], data)
+
+
+@dispatch(Shift, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.func.lag(data, expr.n).over().label(expr._name)

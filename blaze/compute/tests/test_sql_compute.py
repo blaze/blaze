@@ -1843,3 +1843,14 @@ def test_distinct_on_label():
     FROM accounts
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.mark.parametrize('n', [-1, 0, 1])
+def test_shift_on_column(n):
+    expr = t.name.shift(n)
+    result = compute(expr, s)
+    expected = """SELECT
+        lag(accounts.name, :lag_1) over () as name
+    FROM accounts
+    """
+    assert normalize(str(result)) == normalize(expected)
