@@ -54,6 +54,12 @@ In the first case of incorrect guessing of CSV dialect (e.g. delimiter) Blaze
 respects and passes through all keyword arguments to `pandas.read_csv`_.
 
 
+.. note::
+
+   In the case of a CSV file with all string data, you must pass the
+   ``has_header=True`` argument if the first row is the header row.
+
+
 
 Correcting Column Types
 ~~~~~~~~~~~~~~~~~~~~~~~
