@@ -219,7 +219,7 @@ def object_hook(obj):
     if not key.startswith('__!'):
         return obj
 
-    return object_hook._converters[key[3:]](obj[key])
+    return object_hook._converters[key[len('__!'):]](obj[key])
 object_hook._converters = {}
 object_hook.register = setitem(object_hook._converters)
 
