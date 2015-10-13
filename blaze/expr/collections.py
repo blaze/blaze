@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import numbers
+import numpy as np
 from functools import partial
 from itertools import chain
 
@@ -24,7 +26,7 @@ from ..utils import listpack
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
            'merge', 'head', 'sort', 'Join', 'join', 'transform', 'Concat',
-           'concat', 'Tail', 'tail']
+           'concat', 'Tail', 'tail', 'Shift', 'shift']
 
 
 class Sort(Expr):
@@ -708,8 +710,49 @@ def isin(expr, keys):
     return IsIn(expr, frozenset(keys))
 
 
+class Shift(Expr):
+    """ Shift a column backward or forward by N elements
+
+    Parameters
+    ----------
+    expr : Expr
+        The expression to shift. This expression's dshape should be columnar
+    n : int
+        The number of elements to shift by. If n < 0 then shift backward,
+        if n == 0 do nothing, else shift forward.
+    """
+    __slots__ = '_hash', '_child', 'n'
+
+    @property
+    def schema(self):
+        measure = self._child.schema.measure
+
+        # if we are not shifting or we are already an Option type then return
+        # the child's schema
+        if not self.n or isinstance(measure, Option):
+            return measure
+        else:
+            return Option(measure)
+
+    @property
+    def dshape(self):
+        return DataShape(*(self._child.dshape.shape + tuple(self.schema)))
+
+    def __str__(self):
+        return '%s(%s, n=%d)' % (
+            type(self).__name__.lower(), self._child, self.n
+        )
+
+
+@copydoc(Shift)
+def shift(expr, n):
+    if not isinstance(n, (numbers.Integral, np.integer)):
+        raise TypeError('n must be an integer')
+    return Shift(expr, n)
+
+
 dshape_method_list.extend([
     (iscollection, set([sort, head, tail])),
-    (lambda ds: len(ds.shape) == 1, set([distinct])),
+    (lambda ds: len(ds.shape) == 1, set([distinct, shift])),
     (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin])),
 ])

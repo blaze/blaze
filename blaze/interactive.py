@@ -14,7 +14,7 @@ import numpy as np
 from odo import resource, odo
 from odo.utils import ignoring, copydoc
 from odo.compatibility import unicode
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Timestamp
 
 
 from .expr import Expr, Symbol, ndim
@@ -239,7 +239,7 @@ def coerce_scalar(result, dshape):
     elif 'bool' in dshape:
         return coerce_to(bool, result)
     elif 'datetime' in dshape:
-        return coerce_to(datetime.datetime, result)
+        return coerce_to(Timestamp, result)
     elif 'date' in dshape:
         return coerce_to(datetime.date, result)
     else:

@@ -47,7 +47,7 @@ from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
                     UnaryStringFunction, nunique, Coerce, Concat,
-                    isnan, notnull)
+                    isnan, notnull, Shift)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 
@@ -615,3 +615,8 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Coerce, Series)
 def compute_up(expr, data, **kwargs):
     return data.astype(to_numpy_dtype(expr.schema))
+
+
+@dispatch(Shift, Series)
+def compute_up(expr, data, **kwargs):
+    return data.shift(expr.n)

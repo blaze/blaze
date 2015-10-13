@@ -133,8 +133,10 @@ def test_multi_column_join():
 def test_unary_op():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
 
+
 def test_abs():
     assert (compute(abs(t['amount']), df) == abs(df['amount'])).all()
+
 
 def test_neg():
     assert_series_equal(compute(-t['amount'], df),
@@ -814,4 +816,13 @@ def test_time_field():
     result = compute(s.time, data)
     expected = data.dt.time
     expected.name = 's_time'
+    assert_series_equal(result, expected)
+
+
+@pytest.mark.parametrize('n', [-1, 0, 1])
+def test_shift(n):
+    data = pd.Series(pd.date_range(start='20120101', end='20120102', freq='H'))
+    s = symbol('s', discover(data))
+    result = compute(s.shift(n), data)
+    expected = data.shift(n)
     assert_series_equal(result, expected)
