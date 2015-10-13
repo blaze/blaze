@@ -45,12 +45,12 @@ from ..dispatch import dispatch
 from .core import compute, compute_up, base
 
 from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
-                    Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, std, var, Like, Slice, summary,
-                    ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
-                    UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Resample, Coerce, Concat,
-                    isnan, notnull, UnaryOp, BinOp, Interp)
+                    Reduction, Distinct, Join, By, Summary, Label, ReLabel, Map,
+                    Apply, Merge, std, var, Like, Slice, summary, ElemWise,
+                    DateTime, Millisecond, Expr, IsIn, UTCFromTimestamp,
+                    nelements, DateTimeTruncate, count, UnaryStringFunction,
+                    nunique, Resample, Coerce, Concat, isnan, notnull, UnaryOp,
+                    BinOp, Interp, Shift)
 from ..expr import symbol, common_subexpression
 
 from ..compatibility import _inttypes
@@ -691,3 +691,8 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Coerce, Series)
 def compute_up(expr, data, **kwargs):
     return data.astype(to_numpy_dtype(expr.schema))
+
+
+@dispatch(Shift, Series)
+def compute_up(expr, data, **kwargs):
+    return data.shift(expr.n)
