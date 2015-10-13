@@ -123,7 +123,7 @@ class sum(Reduction):
 
     @property
     def initial_value(self):
-        return self.schema.measure.to_numpy_dtype()().item()
+        return self.schema.measure.to_numpy_dtype().type().item()
 
 
 class max(Reduction):
