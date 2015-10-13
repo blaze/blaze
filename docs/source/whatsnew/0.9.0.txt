@@ -40,3 +40,6 @@ Bug Fixes
 * Fixed a bug that prevented creating a
   :class:`~blaze.interactive.InteractiveSymbol` that wrapped ``nan`` if the
   dshape was ``datetime``. This now correctly coerces to `NaT` (:issue:`1272`).
+* Fixed an issue where blaze client/server could not use `isin` expressions
+  because the ``frozenset`` failed to serialize. This also added support for
+  rich serialization over json for things like datetimes (:issue:`1255`).
