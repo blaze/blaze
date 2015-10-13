@@ -1136,7 +1136,7 @@ def compute_up(expr, data, **kwargs):
     initial_values = {
         k: sa.literal(v).label(k) for k, v in expr.apply.initial_value.items()
     }
-    select_args = [index_grouper] + [
+    select_args = [index_grouper.label(grouper_name)] + [
         sa.sql.functions.coalesce(agg, initial_values[name]).label(name)
         for name, agg in aggs.c.items()[1:]
     ]
