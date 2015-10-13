@@ -230,6 +230,28 @@ def test_join_type_promotion(sqla, sqlb):
     assert result == expected
 
 
+@pytest.mark.parametrize(['n', 'column'],
+                         [(1, 'A'), (-1, 'A'),
+                          (1, 'B'), (-1, 'B'),
+                          (0, 'A'), (0, 'B')])
+def test_shift_on_column(n, column, sql):
+    t = symbol('t', discover(sql))
+    expr = t[column].shift(n)
+    result = odo(compute(expr, sql), pd.Series)
+    expected = odo(sql, pd.DataFrame)[column].shift(n)
+    tm.assert_series_equal(result, expected)
+
+
+@pytest.mark.parametrize('n', [-1, 0, 1])
+def test_shift_arithmetic(sql, n):
+    t = symbol('t', discover(sql))
+    expr = t.B - t.B.shift(n)
+    result = odo(compute(expr, sql), pd.Series)
+    df = odo(sql, pd.DataFrame)
+    expected = df.B - df.B.shift(n)
+    tm.assert_series_equal(result, expected)
+
+
 def test_dist(nyc):
     def distance(lat1, lon1, lat2, lon2, R=3959):
         # http://andrew.hedges.name/experiments/haversine/

@@ -7,7 +7,8 @@ Release |version|
 New Expressions
 ~~~~~~~~~~~~~~~
 
-None
+* Add a :func:`~blaze.expr.collections.shift` expression for shifting
+  data backwards or forwards by *N* rows (:issue:`1266`).
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
