@@ -157,8 +157,11 @@ WantToBroadcast = UnaryOp, BinOp
 
 @dispatch(Expr, tb.Table)
 def optimize(expr, seq):
-    return broadcast_numexpr_collect(expr, Broadcastable=Broadcastable,
-                                     WantToBroadcast=WantToBroadcast)
+    return broadcast_numexpr_collect(
+        expr,
+        broadcastable=Broadcastable,
+        want_to_broadcast=WantToBroadcast,
+    )
 
 
 @dispatch(nelements, tb.Table)
