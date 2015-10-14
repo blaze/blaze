@@ -461,6 +461,10 @@ class Selection(Expr):
     __slots__ = '_hash', '_child', 'predicate'
     __inputs__ = '_child', 'predicate'
 
+    @property
+    def _name(self):
+        return self._child._name
+
     def __str__(self):
         return "%s[%s]" % (self._child, self.predicate)
 
