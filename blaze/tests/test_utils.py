@@ -1,19 +1,12 @@
-import sys
+from datetime import datetime, timedelta
 import os
 import json
 
-import pytest
-
-from datetime import datetime
-
-import numpy as np
 import pandas as pd
-import h5py
+import pytest
+from pytz import utc
 
-from datashape import dshape
-
-from blaze import discover
-from blaze.utils import tmpfile, json_dumps
+from blaze.utils import tmpfile, json_dumps, object_hook
 
 
 def test_tmpfile():
@@ -26,8 +19,14 @@ def test_tmpfile():
     assert not os.path.exists(f)
 
 
-def test_json_encoder():
-    result = json.dumps([1, datetime(2000, 1, 1, 12, 30, 0)],
-                        default=json_dumps)
-    assert result == '[1, "2000-01-01T12:30:00Z"]'
-    assert json.loads(result) == [1, "2000-01-01T12:30:00Z"]
+@pytest.mark.parametrize('input_,serialized', (
+    ([1, datetime(2000, 1, 1, 12, 30, 0, 0, utc)],
+     '[1, {"__!datetime": "2000-01-01T12:30:00+00:00"}]'),
+    ([1, pd.NaT], '[1, {"__!datetime": "NaT"}]'),
+    ([1, frozenset([1, 2, 3])], '[1, {"__!frozenset": [1, 2, 3]}]'),
+    ([1, timedelta(seconds=5)], '[1, {"__!timedelta": 5.0}]'),
+))
+def test_json_encoder(input_, serialized):
+    result = json.dumps(input_, default=json_dumps)
+    assert result == serialized
+    assert json.loads(result, object_hook=object_hook) == input_
