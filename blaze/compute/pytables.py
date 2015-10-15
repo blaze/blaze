@@ -7,8 +7,9 @@ from datashape import Record, from_numpy, datetime_, date_
 
 from blaze.expr import (Selection, Head, Field, Broadcast, Projection, Symbol,
                         Sort, Reduction, count, Slice, Expr, nelements,
-                        Arithmetic, USub, Not, UnaryOp, BinOp)
+                        UnaryOp, BinOp)
 from blaze.compatibility import basestring, map
+from blaze.expr.optimize import simple_selections
 from ..dispatch import dispatch
 from .numexpr import broadcast_numexpr_collect, print_numexpr
 
@@ -158,9 +159,10 @@ WantToBroadcast = UnaryOp, BinOp
 @dispatch(Expr, tb.Table)
 def optimize(expr, seq):
     return broadcast_numexpr_collect(
-        expr,
+        simple_selections(expr),
         broadcastable=Broadcastable,
         want_to_broadcast=WantToBroadcast,
+        no_recurse=Selection,
     )
 
 

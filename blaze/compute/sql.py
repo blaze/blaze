@@ -154,9 +154,24 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, column)
 
 
-@compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
-@compute_up.register(BinOp, ColumnElement, base)
+@compute_up.register(
+    BinOp, (Select, ColumnElement, base), (Select, ColumnElement),
+)
+@compute_up.register(BinOp, (Select, ColumnElement), base)
 def binop_sql(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        assert len(lhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %s' % lhs
+        )
+        lhs = first(lhs.inner_columns)
+    if isinstance(rhs, Select):
+        assert len(rhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %s' % rhs
+        )
+        rhs = first(rhs.inner_columns)
+
     return t.op(lhs, rhs)
 
 
