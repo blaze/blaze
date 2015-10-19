@@ -12,7 +12,7 @@ from datashape import (
 from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first, compose,
-    keymap
+    keymap, memoize
 )
 import toolz.curried.operator as op
 from odo.utils import copydoc
@@ -397,7 +397,7 @@ class Join(Expr):
     blaze.expr.collections.Merge
     """
     __slots__ = (
-        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes', '_schema'
+        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes'
     )
     __inputs__ = 'lhs', 'rhs'
 
@@ -416,6 +416,7 @@ class Join(Expr):
         return on_right
 
     @property
+    @memoize
     def schema(self):
         """
 
@@ -438,9 +439,6 @@ class Join(Expr):
         >>> join(a, b, 'x').fields
         ['x', 'y_left', 'y_right']
         """
-
-        if hasattr(self, '_schema'):
-            return self._schema
 
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
@@ -494,9 +492,7 @@ class Join(Expr):
         if self.how in ('left', 'outer'):
             right = ((name, option(dt)) for name, dt in right)
 
-        self._schema = dshape(Record(chain(joined, left, right)))
-
-        return self._schema
+        return dshape(Record(chain(joined, left, right)))
 
     @property
     def dshape(self):
