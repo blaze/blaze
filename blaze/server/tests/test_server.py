@@ -486,3 +486,21 @@ def test_minute_query(test, serial):
     }
     assert result.status_code == 200
     assert expected == serial.loads(result.data)
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_isin(test, serial):
+    expr = t.events.value.isin(frozenset([1]))
+    query = {'expr': to_tree(expr)}
+    result = test.post(
+        '/compute',
+        headers=mimetype(serial),
+        data=serial.dumps(query)
+    )
+    expected = {
+        'data': [True, False],
+        'names': ['value'],
+        'datashape': '2 * bool',
+    }
+    assert result.status_code == 200
+    assert expected == serial.loads(result.data)

@@ -5,7 +5,7 @@ import json as json_module
 import pandas.msgpack as msgpack_module
 
 from ..compatibility import pickle as pickle_module, unicode
-from ..utils import json_dumps
+from ..utils import json_dumps, object_hook
 
 
 SerializationFormat = namedtuple('SerializationFormat', 'name loads dumps')
@@ -19,7 +19,7 @@ def _coerce_str(bytes_or_str):
 
 json = SerializationFormat(
     'json',
-    lambda data: json_module.loads(_coerce_str(data)),
+    lambda data: json_module.loads(_coerce_str(data), object_hook=object_hook),
     partial(json_module.dumps, default=json_dumps),
 )
 pickle = SerializationFormat(
@@ -29,7 +29,7 @@ pickle = SerializationFormat(
 )
 msgpack = SerializationFormat(
     'msgpack',
-    partial(msgpack_module.unpackb, encoding='utf-8'),
+    partial(msgpack_module.unpackb, encoding='utf-8', object_hook=object_hook),
     partial(msgpack_module.packb, default=json_dumps),
 )
 

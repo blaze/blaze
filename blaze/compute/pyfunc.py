@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 import pandas as pd
-from ..expr import (Expr, Symbol, Field, Arithmetic, Math,
+from ..expr import (Expr, Symbol, Field, Arithmetic, UnaryMath, BinaryMath,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
-                    USub, Not, notnull)
+                    USub, Not, notnull, greatest, least)
 from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
@@ -103,11 +103,35 @@ def _print_python(expr, leaves=None):
     return 'not %s' % parenthesize(child), scope
 
 
-@dispatch(Math)
+@dispatch(UnaryMath)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('math.%s(%s)' % (type(expr).__name__, child),
             toolz.merge(scope, {'math': math}))
+
+
+@dispatch(BinaryMath)
+def _print_python(expr, leaves=None):
+    lhs, scope_lhs = print_python(leaves, expr.lhs)
+    rhs, scope_rhs = print_python(leaves, expr.rhs)
+    return ('math.%s(%s, %s)' % (type(expr).__name__, lhs, rhs),
+            toolz.merge(scope_lhs, scope_rhs, {'math': math}))
+
+
+@dispatch(greatest)
+def _print_python(expr, leaves=None):
+    lhs, scope_lhs = print_python(leaves, expr.lhs)
+    rhs, scope_rhs = print_python(leaves, expr.rhs)
+    return ('max(%s, %s)' % (lhs, rhs),
+            toolz.merge(scope_lhs, scope_rhs, {'math': math}))
+
+
+@dispatch(least)
+def _print_python(expr, leaves=None):
+    lhs, scope_lhs = print_python(leaves, expr.lhs)
+    rhs, scope_rhs = print_python(leaves, expr.rhs)
+    return ('min(%s, %s)' % (lhs, rhs),
+            toolz.merge(scope_lhs, scope_rhs, {'math': math}))
 
 
 @dispatch(expr_math.abs)

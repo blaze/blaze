@@ -23,7 +23,7 @@ from collections import Iterator
 from functools import partial
 
 import toolz
-from toolz import map, filter, compose, juxt, identity, tail
+from toolz import map, filter, compose, juxt, identity, tail, flip
 
 try:
     from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
@@ -38,11 +38,10 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp, notnull)
+                    UTCFromTimestamp, notnull, UnaryMath, greatest, least)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
-from ..expr import (BinOp, UnaryOp, RealMath, IntegerMath, BooleanMath, USub,
-                    Not, nelements)
+from ..expr import BinOp, UnaryOp, USub, Not, nelements
 from ..compatibility import builtins, apply, unicode, _inttypes
 from .core import compute, compute_up, optimize, base
 
@@ -198,7 +197,7 @@ def rowfunc(expr):
     return partial(pydatetime.truncate, measure=expr.measure, unit=expr.unit)
 
 
-@dispatch((RealMath, IntegerMath, BooleanMath))
+@dispatch(UnaryMath)
 def rowfunc(expr):
     return getattr(math, type(expr).__name__)
 
@@ -220,6 +219,16 @@ def rowfunc(expr):
     if not isinstance(expr.rhs, Expr):
         return lambda x: expr.op(x, expr.rhs)
     return expr.op
+
+
+@dispatch(greatest)
+def rowfunc(_):
+    return max
+
+
+@dispatch(least)
+def rowfunc(_):
+    return min
 
 
 @dispatch(ElemWise, base)
@@ -355,7 +364,7 @@ def compute_up(uop, x, **kwargs):
     return uop.op(x)
 
 
-@dispatch(RealMath, numbers.Real)
+@dispatch(UnaryMath, numbers.Real)
 def compute_up(f, n, **kwargs):
     return getattr(math, type(f).__name__)(n)
 
