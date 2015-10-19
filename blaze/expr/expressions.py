@@ -716,7 +716,7 @@ def apply(expr, func, dshape, splittable=False):
     return Apply(expr, func, datashape.dshape(dshape), splittable)
 
 
-class Coerce(Expr):
+class Coerce(ElemWise):
     """Coerce an expression to a different type.
 
     Examples
@@ -734,10 +734,6 @@ class Coerce(Expr):
     @property
     def schema(self):
         return self.to
-
-    @property
-    def dshape(self):
-        return DataShape(*(self._child.shape + (self.schema,)))
 
     def __str__(self):
         return '%s.coerce(to=%r)' % (self._child, str(self.schema))

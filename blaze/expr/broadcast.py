@@ -6,9 +6,8 @@ from toolz import curry
 
 from datashape import DataShape, iscollection
 
-from .expressions import Field, Map, ElemWise, symbol, shape
-from .arithmetic import maxshape, Arithmetic, UnaryOp
-from .math import Math
+from .expressions import Field, Map, ElemWise, symbol, shape, Coerce
+from .arithmetic import maxshape, Arithmetic, UnaryOp, BinOp
 from .datetime import DateTime
 
 __all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
@@ -103,8 +102,8 @@ def scalar_symbols(exprs):
     return scalars
 
 
-Broadcastable = (Arithmetic, Math, Map, Field, DateTime, UnaryOp)
-WantToBroadcast = (Arithmetic, Math, Map, DateTime, UnaryOp)
+Broadcastable = (Map, Field, DateTime, UnaryOp, BinOp, Coerce)
+WantToBroadcast = (Map, DateTime, UnaryOp, BinOp, Coerce)
 
 
 def broadcast_collect(expr, Broadcastable=Broadcastable,

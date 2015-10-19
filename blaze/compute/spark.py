@@ -5,14 +5,14 @@ from datashape.predicates import isscalar
 
 from ..expr import (Expr, ElemWise, Selection, Sort, Apply, Distinct, Join,
                     By, Label, Summary, by, ReLabel, Like, Reduction, Head)
-from .python import (compute, rrowfunc, rowfunc, ElemWise, pair_assemble,
+from .python import (compute, rrowfunc, rowfunc, pair_assemble,
                      reduce_by_funcs, binops, like_regex_predicate)
 from ..expr.broadcast import broadcast_collect
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
 
-from .core import compute, compute_up
+from .core import compute_up
 
 import py4j
 from pyspark import SparkContext
@@ -58,7 +58,8 @@ rdd_reductions = {
     reductions.mean: RDD.mean,
     reductions.var: RDD.variance,
     reductions.std: RDD.stdev,
-    reductions.nunique: compose(RDD.count, RDD.distinct)}
+    reductions.nunique: compose(RDD.count, RDD.distinct)
+}
 
 
 @dispatch(tuple(rdd_reductions), RDD)

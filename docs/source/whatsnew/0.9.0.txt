@@ -27,11 +27,15 @@ None
 API Changes
 ~~~~~~~~~~~
 
-None
+* Removed support for Python 2.6 (:issue:`1267`).
+* Removed support for Python 3.3 (:issue:`1270`).
 
 Bug Fixes
 ~~~~~~~~~
 
+* Fixed a bug where ``Merge`` expressions would unpack option types in their
+  fields. This could cause you to have a table where ``expr::{a: int32}`` but
+  ``expr.a::?int32``. Note that the dotted acces is an option (:issue:`1262`).
 * Explicitly set ``Node.__slots__`` and ``Expr.__slots__`` to ``()``.  This
   ensures instances of slotted subclasses like ``Join`` do not have a useless
   empty ``__dict__`` attribute (:issue:`1274` and :issue:`1268`).

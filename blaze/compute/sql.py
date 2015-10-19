@@ -57,7 +57,8 @@ from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull
+    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
+    BinaryMath, Pow
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -154,9 +155,83 @@ def compute_up(t, data, **kwargs):
 
 
 @compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
-@compute_up.register(BinOp, ColumnElement, (ColumnElement, base))
+@compute_up.register(BinOp, ColumnElement, base)
 def binop_sql(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
+
+
+@dispatch(Pow, ColumnElement)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return sa.func.pow(data, t.rhs)
+    else:
+        return sa.func.pow(t.lhs, data)
+
+
+@dispatch(Pow, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    if isinstance(t.lhs, Expr):
+        return sa.func.pow(column, t.rhs)
+    else:
+        return sa.func.pow(t.lhs, column)
+
+
+@compute_up.register(Pow, (ColumnElement, base), ColumnElement)
+@compute_up.register(Pow, ColumnElement, base)
+def binop_sql_pow(t, lhs, rhs, **kwargs):
+    return sa.func.pow(lhs, rhs)
+
+
+@dispatch(BinaryMath, ColumnElement)
+def compute_up(t, data, **kwargs):
+    op = getattr(sa.func, type(t).__name__)
+    if isinstance(t.lhs, Expr):
+        return op(data, t.rhs)
+    else:
+        return op(t.lhs, data)
+
+
+@dispatch(BinaryMath, Select)
+def compute_up(t, data, **kwargs):
+    assert len(data.c) == 1, \
+        'Select cannot have more than a single column when doing arithmetic'
+    column = first(data.inner_columns)
+    op = getattr(sa.func, type(t).__name__)
+    if isinstance(t.lhs, Expr):
+        return op(column, t.rhs)
+    else:
+        return op(t.lhs, column)
+
+
+@compute_up.register(BinaryMath, (ColumnElement, base), ColumnElement)
+@compute_up.register(BinaryMath, ColumnElement, base)
+def binary_math_sql(t, lhs, rhs, **kwargs):
+    return getattr(sa.func, type(t).__name__)(lhs, rhs)
+
+
+@compute_up.register(BinaryMath, Select, base)
+def binary_math_sql_select(t, lhs, rhs, **kwargs):
+    left, right = first(lhs.inner_columns), rhs
+    result = getattr(sa.func, type(t).__name__)(left, right)
+    return reconstruct_select([result], lhs)
+
+
+@compute_up.register(BinaryMath, base, Select)
+def binary_math_sql_select(t, lhs, rhs, **kwargs):
+    left, right = lhs, first(rhs.inner_columns)
+    result = getattr(sa.func, type(t).__name__)(left, right)
+    return reconstruct_select([result], rhs)
+
+
+@compute_up.register(BinaryMath, Select, Select)
+def binary_math_sql_select(t, lhs, rhs, **kwargs):
+    left, right = first(lhs.inner_columns), first(rhs.inner_columns)
+    result = getattr(sa.func, type(t).__name__)(left, right)
+    assert lhs.table == rhs.table
+    return reconstruct_select([result], lhs.table)
 
 
 @dispatch(FloorDiv, ColumnElement)
@@ -168,7 +243,7 @@ def compute_up(t, data, **kwargs):
 
 
 @compute_up.register(FloorDiv, (ColumnElement, base), ColumnElement)
-@compute_up.register(FloorDiv, ColumnElement, (ColumnElement, base))
+@compute_up.register(FloorDiv, ColumnElement, base)
 def binop_sql(t, lhs, rhs, **kwargs):
     return sa.func.floor(lhs / rhs)
 
@@ -674,7 +749,7 @@ def compute_up(t, s, **kwargs):
     assert len(s.c) == 1, \
         'expected %s to have a single column but has %d' % (s, len(s.c))
     inner_column, = s.inner_columns
-    return reconstruct_select([inner_column.label(t.label)], s).as_scalar()
+    return reconstruct_select([inner_column.label(t.label)], s)
 
 
 @dispatch(Expr, ScalarSelect)
@@ -957,3 +1032,10 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Coerce, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.cast(data, dshape_to_alchemy(expr.to)).label(expr._name)
+
+
+@dispatch(Coerce, Select)
+def compute_up(expr, data, **kwargs):
+    column = first(data.inner_columns)
+    cast = sa.cast(column, dshape_to_alchemy(expr.to)).label(expr._name)
+    return reconstruct_select([cast], data)

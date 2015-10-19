@@ -13,7 +13,8 @@ from ..expr import (
     std, var, count, nunique, Summary, IsIn,
     BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
     UTCFromTimestamp, DateTimeTruncate,
-    Transpose, TensorDot, Coerce, isnan
+    Transpose, TensorDot, Coerce, isnan,
+    greatest, least
 )
 from ..utils import keywords
 
@@ -96,6 +97,17 @@ def compute_up_np_interp(t, lhs, rhs, **kwargs):
     return _interp(lhs, rhs)
 
 
+@compute_up.register(greatest, np.ndarray, (np.ndarray, base))
+@compute_up.register(greatest, base, np.ndarray)
+def compute_up_greatest(expr, lhs, rhs, **kwargs):
+    return np.maximum(lhs, rhs)
+
+
+@compute_up.register(least, np.ndarray, (np.ndarray, base))
+@compute_up.register(least, base, np.ndarray)
+def compute_up_least(expr, lhs, rhs, **kwargs):
+    return np.minimum(lhs, rhs)
+
 
 @dispatch(BinOp, np.ndarray, (np.ndarray, base))
 def compute_up(t, lhs, rhs, **kwargs):
@@ -122,12 +134,12 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Not, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return ~x
+    return np.logical_not(x)
 
 
 @dispatch(USub, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return -x
+    return np.negative(x)
 
 
 inat = np.datetime64('NaT').view('int64')
