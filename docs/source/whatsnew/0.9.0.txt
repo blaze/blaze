@@ -7,28 +7,25 @@ Release |version|
 New Expressions
 ~~~~~~~~~~~~~~~
 
-None
+* Add a :func:`~blaze.expr.collections.shift` expression for shifting
+  data backwards or forwards by *N* rows (:issue:`1266`).
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
-None
-
 New Backends
 ~~~~~~~~~~~~
 
-None
-
 Improved Backends
 ~~~~~~~~~~~~~~~~~
-
-None
 
 API Changes
 ~~~~~~~~~~~
 
 * Removed support for Python 2.6 (:issue:`1267`).
 * Removed support for Python 3.3 (:issue:`1270`).
+* When a CSV file consists of all strings, you must pass
+  ``has_header=True`` when using the ``Data`` constructor (:issue:`1254`).
 
 Bug Fixes
 ~~~~~~~~~
@@ -39,3 +36,11 @@ Bug Fixes
 * Explicitly set ``Node.__slots__`` and ``Expr.__slots__`` to ``()``.  This
   ensures instances of slotted subclasses like ``Join`` do not have a useless
   empty ``__dict__`` attribute (:issue:`1274` and :issue:`1268`).
+* Fixed a bug that prevented creating a
+  :class:`~blaze.interactive.InteractiveSymbol` that wrapped ``nan`` if the
+  dshape was ``datetime``. This now correctly coerces to `NaT` (:issue:`1272`).
+* Fixed an issue where blaze client/server could not use `isin` expressions
+  because the ``frozenset`` failed to serialize. This also added support for
+  rich serialization over json for things like datetimes (:issue:`1255`).
+* Fixed a bug where ``len`` would fail on an interactive expression whose
+  resources were sqlalchemy objects (:issue:`1273`).

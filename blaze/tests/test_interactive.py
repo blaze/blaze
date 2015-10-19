@@ -367,9 +367,17 @@ def test_coerce_date_and_datetime():
     d = Data(x)
     assert repr(d) == repr(x)
 
-    x = datetime.datetime.now()
+    x = pd.Timestamp.now()
     d = Data(x)
     assert repr(d) == repr(x)
+
+    x = np.nan
+    d = Data(x, dshape='datetime')
+    assert repr(d) == repr(pd.NaT)
+
+    x = float('nan')
+    d = Data(x, dshape='datetime')
+    assert repr(d) == repr(pd.NaT)
 
 
 def test_highly_nested_repr():
@@ -407,3 +415,19 @@ def test_functions_as_bound_methods():
         assert isinstance(attr, MethodType)
         # Make sure this is bound to the correct object.
         assert attr.__self__ is t
+
+
+def test_all_string_infer_header():
+    data = """x,tl,z
+Be careful driving.,hy,en
+Be careful.,hy,en
+Can you translate this for me?,hy,en
+Chicago is very different from Boston.,hy,en
+Don't worry.,hy,en"""
+    with tmpfile('.csv') as fn:
+        with open(fn, 'w') as f:
+            f.write(data)
+
+        data = Data(fn, has_header=True)
+        assert data.data.has_header
+        assert data.fields == ['x', 'tl', 'z']
