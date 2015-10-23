@@ -21,6 +21,7 @@ from itertools import chain
 
 from operator import and_, eq, attrgetter
 from copy import copy
+from datetime import _EPOCH as EPOCH
 
 import sqlalchemy as sa
 
@@ -29,6 +30,7 @@ from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
+from sqlalchemy.sql.functions import GenericFunction
 from sqlalchemy.engine import Engine
 
 import toolz
@@ -1054,23 +1056,252 @@ freq_map = {
 }
 
 
-def make_interval(measure, unit):
+class generate_sequence(GenericFunction):
+    def __init__(self, start, stop, interval, **kwargs):
+        super(generate_sequence, self).__init__(start, stop, interval, **kwargs)
+
+        self.start = start
+        self.stop = stop
+        self.interval = interval
+
+
+@compiles(generate_sequence)
+def generate_series_generic(element, compiler, **kwargs):
+    cte = sa.select([sa.select([element.start]).label('ts')]).cte(recursive=True)
+    query = sa.select([
+        cte.union_all(
+            sa.select([
+                sa.func.datetime_add(cte.c.ts, element.interval).label('ts')
+            ]).where(cte.c.ts < sa.select([element.stop]))
+        )
+    ])
+    return compiler.process(query, **kwargs)
+
+
+@compiles(generate_sequence, 'postgresql')
+def generate_series_postgres(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.generate_series(element.start, element.stop, element.interval),
+        **kwargs
+    )
+
+
+class create_interval(GenericFunction):
+    def __init__(self, value, unit, **kwargs):
+        super(create_interval, self).__init__(value, unit, **kwargs)
+
+        self.value = value
+        self.unit = unit
+
+
+@compiles(create_interval, 'sqlite')
+def create_interval_sqlite(element, compiler, **kwargs):
+    unit = element.unit
+    value = interval_to_number(unit, element.value)
+    final_unit = {
+        'millisecond': 'second',
+        'microsecond': 'second',
+        'nanosecond': 'second'
+    }.get(unit, unit)
+    literal_binds = kwargs.pop('literal_binds', False)
+    return compiler.process(
+        sa.literal(
+            compiler.process(
+                sa.text('+:value %s' % final_unit).bindparams(value=value),
+                literal_binds=True,
+                **kwargs
+            ),
+            type_=sa.String
+        ),
+        literal_binds=literal_binds,
+        **kwargs
+    )
+
+
+@compiles(create_interval, 'mysql')
+def create_interval_mysql(element, compiler, **kwargs):
+    unit = element.unit
+    value = interval_to_number(unit, element.value)
+    final_unit = {
+        'millisecond': 'second',
+        'microsecond': 'second',
+        'nanosecond': 'second'
+    }.get(unit, unit)
+    return compiler.process(
+        sa.text('INTERVAL :value %s' % final_unit).bindparams(value=value)
+        **kwargs
+    )
+
+
+@compiles(create_interval, 'postgresql')
+def create_interval_postgres(element, compiler, **kwargs):
+    unit = element.unit
+    value = interval_to_number(unit, element.value)
+    args = toolz.merge(
+        dict.fromkeys(freq_map.values(), 0), {freq_map.get(unit, 'secs'): value}
+    )
+    return compiler.process(
+        sa.func.make_interval(
+            args['years'], args['months'], args['weeks'], args['days'],
+            args['hours'], args['mins'], args['secs']
+        ),
+        **kwargs
+    )
+
+
+class datetime_add(GenericFunction):
+    def __init__(self, date, interval, **kwargs):
+        super(datetime_add, self).__init__(date, interval, **kwargs)
+
+        self.date = date
+        self.interval = interval
+
+
+@compiles(datetime_add, 'sqlite')
+def date_add_sqlite(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.datetime(element.date, element.interval),
+        **kwargs
+    )
+
+
+@compiles(datetime_add, 'mysql')
+def date_add_mysql(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.date_add(element.date, element.interval),
+        **kwargs
+    )
+
+
+class unixtime_to_timestamp(GenericFunction):
+    def __init__(self, unixtime, **kwargs):
+        super(unixtime_to_timestamp, self).__init__(unixtime, **kwargs)
+        self.unixtime = unixtime
+
+
+@compiles(unixtime_to_timestamp, 'sqlite')
+def unixtime_to_timestamp_sqlite(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.datetime(element.unixtime, 'unixepoch'),
+        **kwargs
+    )
+
+
+@compiles(unixtime_to_timestamp, 'mysql')
+def unixtime_to_timestamp_mysql(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.convert_tz(
+            sa.func.from_unixtime(element.unixtime),
+            sa.text('@@session.time_zone'),  # TODO: is this correct?
+            sa.literal('+00:00', type_=sa.String)
+        ),
+        **kwargs
+    )
+
+
+@compiles(unixtime_to_timestamp, 'postgresql')
+def unixtime_to_timestamp_postgres(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.timezone('UTC', sa.func.to_timestamp(element.unixtime)),
+        **kwargs
+    )
+
+
+class timestamp_to_unixtime(GenericFunction):
+    def __init__(self, timestamp, **kwargs):
+        super(timestamp_to_unixtime, self).__init__(timestamp, **kwargs)
+        self.timestamp = timestamp
+
+
+@compiles(timestamp_to_unixtime, 'sqlite')
+def timestamp_to_unixtime_sqlite(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.strftime(sa.literal('%s', type_=sa.String), element.timestamp),
+        **kwargs
+    )
+
+
+@compiles(timestamp_to_unixtime, 'mysql')
+def timestamp_to_unixtime_mysql(element, compiler, **kwargs):
+    return compiler.process(sa.func.unix_timestamp(element.timestamp), **kwargs)
+
+
+@compiles(timestamp_to_unixtime, 'postgresql')
+def timestamp_to_unixtime_postgres(element, compiler, **kwargs):
+    return compiler.process(sa.extract('epoch', element.timestamp), **kwargs)
+
+
+class interval_to_seconds(GenericFunction):
+    def __init__(self, interval, **kwargs):
+        super(interval_to_seconds, self).__init__(interval, **kwargs)
+        self.interval = interval
+
+
+@compiles(interval_to_seconds, 'sqlite')
+def interval_to_seconds_sqlite(element, compiler, **kwargs):
+    epoch = sa.literal(EPOCH, type_=sa.DATETIME)
+    return compiler.process(
+        sa.func.strftime(
+            sa.literal('%s', type_=sa.String),
+            sa.func.datetime(epoch, element.interval)
+        ),
+        **kwargs
+    )
+
+
+@compiles(interval_to_seconds, 'mysql')
+def interval_to_seconds_mysql(element, compiler, **kwargs):
+    epoch = sa.literal(EPOCH, type_=sa.DATETIME)
+    interval = element.interval
+    return compiler.process(
+        sa.func.timestampdiff(
+            sa.text('SECOND'),
+            epoch,
+            sa.func.timestampadd(sa.text(interval.unit), interval.value, epoch)
+        ),
+        **kwargs
+    )
+
+
+@compiles(interval_to_seconds, 'postgresql')
+def interval_to_seconds_postgres(element, compiler, **kwargs):
+    return compiler.process(sa.extract('epoch', element.interval), **kwargs)
+
+
+def interval_to_number(unit, value):
     if unit not in freq_map:
         if unit == 'millisecond':
-            measure /= 1e3
+            value /= 1e3
         elif unit == 'microsecond':
-            measure /= 1e6
+            value /= 1e6
         elif unit == 'nanosecond':
-            measure /= 1e9
+            value /= 1e9
         else:
             raise ValueError('invalid unit %r' % unit)
-    args = toolz.merge(
-        dict.fromkeys(freq_map.values(), 0),
-        {freq_map.get(unit, 'secs'): measure}
+    return value
+
+
+class floordiv(GenericFunction):
+    def __init__(self, left, right, **kwargs):
+        super(floordiv, self).__init__(left, right, **kwargs)
+        self.left = left
+        self.right = right
+
+
+@compiles(floordiv, 'sqlite')
+def floordiv_sqlite(element, compiler, **kwargs):
+    return compiler.process(
+        sa.cast(sa.func.round((element.left / element.right) - 0.5), sa.BIGINT),
+        **kwargs
     )
-    return sa.func.make_interval(args['years'], args['months'], args['weeks'],
-                                 args['days'], args['hours'], args['mins'],
-                                 args['secs'])
+
+
+@compiles(floordiv)
+def floordiv_default(element, compiler, **kwargs):
+    return compiler.process(
+        sa.func.floor(element.left / element.right),
+        **kwargs
+    )
 
 
 # microseconds
@@ -1090,15 +1321,11 @@ def make_interval(measure, unit):
 
 @dispatch(DateTimeTruncate, ColumnElement)
 def compute_up(expr, data, **kwargs):
-    offset = sa.extract(
-        'epoch',
-        sa.cast('%d %s' % (expr.measure, expr.unit), sa.Interval)
+    offset = sa.func.interval_to_seconds(
+        sa.func.create_interval(expr.measure, expr.unit)
     )
-    return sa.func.timezone(
-        'UTC',
-        sa.func.to_timestamp(
-            sa.func.floor(sa.extract('epoch', data) / offset) * offset
-        )
+    return sa.func.unixtime_to_timestamp(
+        sa.func.floordiv(sa.func.timestamp_to_unixtime(data), offset) * offset
     ).label(expr._name)
 
 
@@ -1119,9 +1346,11 @@ def compute_up(expr, data, **kwargs):
     stop = sa.sql.functions.max(agg_grouper)
 
     index = sa.select([
-        sa.func.generate_series(
-            start, stop, make_interval(expr_grouper.measure, expr_grouper.unit)
-        ).label()
+        sa.func.generate_sequence(
+            start, stop, sa.func.create_interval(
+                expr_grouper.measure, expr_grouper.unit
+            )
+        ).label(None)
     ]).cte()
 
     # step 3: left outer join
