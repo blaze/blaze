@@ -431,3 +431,7 @@ Don't worry.,hy,en"""
         data = Data(fn, has_header=True)
         assert data.data.has_header
         assert data.fields == ['x', 'tl', 'z']
+
+
+def test_csv_with_trailing_commas():
+    assert 'Unnamed: 3' in repr(Data(example('census.csv')))
