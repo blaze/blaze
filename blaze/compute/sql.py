@@ -16,10 +16,12 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
+import math
 import itertools
+
 from itertools import chain
 
-from operator import and_, eq, attrgetter
+from operator import and_, eq, attrgetter, add
 from copy import copy
 from datetime import _EPOCH as EPOCH
 
@@ -1078,6 +1080,27 @@ def generate_series_generic(element, compiler, **kwargs):
     return compiler.process(query, **kwargs)
 
 
+@compiles(generate_sequence, 'mysql')
+def generate_series_mysql(element, compiler, **kwargs):
+    import pandas as pd
+    diff = pd.Timestamp(element.end) - pd.Timestamp(element.start)
+    num_unions = int(math.ceil(math.log(diff, base=10)))
+    unions = [
+        sa.union_all(*map(
+            lambda x: sa.literal(x).label('value'),
+            list(range(10 ** i, 10 ** (i + 1), 10 ** i))
+        )).alias()
+        for i in range(num_unions)
+    ]
+    numbers = sa.select(
+        reduce(add, (union.c.value for union in unions)).label('n')
+    ).select_from(sa.select(unions))
+    query = sa.select([
+        sa.func.dateadd(element.interval.unit, numbers.c.n - 1, element.start)
+    ])
+    return compiler.process(query, **kwargs)
+
+
 @compiles(generate_sequence, 'postgresql')
 def generate_series_postgres(element, compiler, **kwargs):
     return compiler.process(
@@ -1338,7 +1361,7 @@ def compute_up(expr, data, **kwargs):
         by(expr.grouper, expr.apply).sort(grouper_name),
         data,
         post_compute=False
-    ).cte()
+    ).alias()
 
     # step 2: sequence generation
     agg_grouper = aggs.c[grouper_name]
@@ -1351,7 +1374,7 @@ def compute_up(expr, data, **kwargs):
                 expr_grouper.measure, expr_grouper.unit
             )
         ).label(None)
-    ]).cte()
+    ]).alias()
 
     # step 3: left outer join
     index_grouper = first(index.c)
