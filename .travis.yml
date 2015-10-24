@@ -41,7 +41,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml
+  - conda create -n blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
 
@@ -57,8 +57,6 @@ install:
 
   # functional libs
   - pip install git+https://github.com/mrocklin/multipledispatch
-  - pip install git+https://github.com/pytoolz/toolz
-  - pip install git+https://github.com/pytoolz/cytoolz
 
   # Install dask
   - pip install git+https://github.com/blaze/dask

@@ -459,7 +459,7 @@ def reconstruct_select(columns, original, **kwargs):
 def compute_up(expr, data, **kwargs):
     if expr.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
-    data = data.cte(name=next(aliases))
+    data = data.alias(name=next(aliases))
     cols = list(inner_columns(data))
     d = dict((expr._child[c], cols[i])
              for i, c in enumerate(expr._child.fields))
