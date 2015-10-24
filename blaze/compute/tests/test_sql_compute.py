@@ -759,15 +759,19 @@ def test_columnwise_on_complex_selection():
 
 
 def test_reductions_on_complex_selections():
-    assert normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) == \
-        normalize("""
-    with alias as
-        (select accounts.id as id
-         from
-            accounts
-         where
-            accounts.amount > :amount_1)
-    select sum(alias.id) as id_sum from alias""")
+    assert (
+        normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) ==
+        normalize(
+            """
+            select
+                sum(alias.id) as id_sum
+            from (select
+                    accounts.id as id
+                  from accounts
+                  where accounts.amount > :amount_1) as alias
+            """
+        )
+    )
 
 
 def test_clean_summary_by_where():
@@ -948,16 +952,16 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    with alias as
-    (select
-         tab_left.b as b_left
-     from
-         tab as tab_left
-     join
-         tab as tab_right
-     on
-         tab_left.a = tab_right.a)
-    select sum(alias.b_left) as b_left_sum from alias""")
+    select sum(alias.b_left) as b_left_sum from
+        (select
+            tab_left.b as b_left
+        from
+            tab as tab_left
+        join
+            tab as tab_right
+        on
+            tab_left.a = tab_right.a) as
+        alias""")
 
     expr = join(t, t, 'a')
     expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
@@ -1586,11 +1590,11 @@ def test_transform_then_project():
 def test_reduce_does_not_compose():
     expr = by(t.name, counts=t.count()).counts.max()
     result = str(compute(expr, s))
-    expected = """WITH alias AS
-(SELECT count(accounts.id) AS counts
-FROM accounts GROUP BY accounts.name)
- SELECT max(alias.counts) AS counts_max
-FROM alias"""
+    expected = """
+    SELECT max(alias.counts) AS counts_max
+    FROM
+    (SELECT count(accounts.id) AS counts
+    FROM accounts GROUP BY accounts.name) as alias"""
     assert normalize(result) == normalize(expected)
 
 
