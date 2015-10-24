@@ -434,4 +434,17 @@ Don't worry.,hy,en"""
 
 
 def test_csv_with_trailing_commas():
-    assert 'Unnamed: 3' in repr(Data(example('census.csv')))
+    with tmpfile('.csv') as fn:
+        with open(fn, 'wt') as f:
+            f.write('a,b,c, \n1, 2, 3, ')  # note the trailing space in the header
+        csv = CSV(fn)
+        assert discover(csv).measure.names == [
+            'a', 'b', 'c', ''
+        ]
+    with tmpfile('.csv') as fn:
+        with open(fn, 'wt') as f:
+            f.write('a,b,c,\n1, 2, 3, ')  # NO trailing space in the header
+        csv = CSV(fn)
+        assert discover(csv).measure.names == [
+            'a', 'b', 'c', 'Unnamed: 3'
+        ]
