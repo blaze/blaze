@@ -11,7 +11,7 @@ from odo import odo, drop, discover
 
 import pandas as pd
 
-from blaze import symbol, compute
+from blaze import symbol, compute, resample
 from blaze.utils import example, normalize
 
 
@@ -59,3 +59,14 @@ def test_agg_compute(db, data):
     result = compute(expr, data)
     passenger_count = odo(compute(db.nyc.passenger_count, {db: data}), pd.Series)
     assert passenger_count[passenger_count < 4].min() == result.scalar()
+
+
+def test_resample(db, data):
+    expr = resample(
+        db.nyc.pickup_datetime.truncate(days=1),
+        avg_mta_tax=db.nyc.mta_tax.mean()
+    )
+    result = compute(expr, data)
+    expected = """
+    """
+    assert normalize(str(result)) == normalize(expected)
