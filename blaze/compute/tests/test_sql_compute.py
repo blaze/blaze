@@ -5,7 +5,6 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 
 import itertools
-import re
 from distutils.version import LooseVersion
 
 
@@ -20,7 +19,7 @@ from blaze.expr import (
     floor, cos, merge, nunique, mean, sum, count, exp
 )
 from blaze.compatibility import xfail
-from blaze.utils import tmpfile, example
+from blaze.utils import tmpfile, example, normalize
 
 
 def computefull(t, s):
@@ -97,12 +96,6 @@ sbig = sa.Table('accountsbig', metadata,
                 sa.Column('id', sa.Integer, primary_key=True))
 
 
-def normalize(s):
-    s = ' '.join(s.strip().split()).lower()
-    s = re.sub(r'(alias)_?\d*', r'\1', s)
-    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
-
-
 def test_table():
     result = str(computefull(t, s))
     expected = """
@@ -156,7 +149,6 @@ def test_arithmetic():
         str(sa.select([s.c.amount + s.c.id * 2]))
 
 
-
 def test_join():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -206,6 +198,7 @@ def test_join():
               amounts.name = ids.name) as anon_1
     order by
         anon_1.amount asc""")
+
 
 def test_clean_complex_join():
     metadata = sa.MetaData()

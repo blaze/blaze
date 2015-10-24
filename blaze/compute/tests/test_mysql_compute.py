@@ -1,7 +1,5 @@
 from __future__ import absolute_import, print_function, division
 
-import re
-
 from getpass import getuser
 
 import pytest
@@ -14,13 +12,7 @@ from odo import odo, drop, discover
 import pandas as pd
 
 from blaze import symbol, compute
-from blaze.utils import example
-
-
-def normalize(s):
-    s = ' '.join(s.strip().split()).lower()
-    s = re.sub(r'(alias)_?\d*', r'\1', s)
-    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
+from blaze.utils import example, normalize
 
 
 @pytest.yield_fixture(scope='module')
