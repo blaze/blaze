@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import datetime
+import re
 
 try:
     from cytoolz import nth
@@ -231,3 +232,9 @@ object_hook.register('frozenset', frozenset)
 @object_hook.register('timedelta')
 def _read_timedelta(ds):
     return datetime.timedelta(seconds=ds)
+
+
+def normalize(s):
+    s = ' '.join(s.strip().split()).lower()
+    s = re.sub(r'(alias)_?\d*', r'\1', s)
+    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
