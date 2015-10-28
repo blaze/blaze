@@ -85,7 +85,8 @@ queries to span multiple collections.
    >>> from blaze import join
    >>> cities = symbol('cities', 'var * {name: string, city: string}')
    >>> join(accounts, cities, 'name')
-   Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner', suffixes=('_left', '_right'))
+   Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner', suffixes=('_left', '_right'), _schema=dshape("{name: string, id: int32, balance: int32, city: string}"))
+
 
 If given no inputs, ``join`` will join on all columns with shared names between
 the two collections.
