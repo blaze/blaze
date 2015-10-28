@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import weakref
 import numbers
 import numpy as np
 from functools import partial
@@ -417,7 +416,7 @@ class Join(Expr):
         return on_right
 
     @property
-    @memoize(cache=weakref.WeakKeyDictionary())
+    @memoize
     def schema(self):
         """
 
