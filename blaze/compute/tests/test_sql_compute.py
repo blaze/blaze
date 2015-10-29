@@ -5,7 +5,6 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 
 import itertools
-import re
 from distutils.version import LooseVersion
 
 
@@ -20,7 +19,7 @@ from blaze.expr import (
     floor, cos, merge, nunique, mean, sum, count, exp
 )
 from blaze.compatibility import xfail
-from blaze.utils import tmpfile, example
+from blaze.utils import tmpfile, example, normalize
 
 
 def computefull(t, s):
@@ -97,12 +96,6 @@ sbig = sa.Table('accountsbig', metadata,
                 sa.Column('id', sa.Integer, primary_key=True))
 
 
-def normalize(s):
-    s = ' '.join(s.strip().split()).lower()
-    s = re.sub(r'(alias)_?\d*', r'\1', s)
-    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
-
-
 def test_table():
     result = str(computefull(t, s))
     expected = """
@@ -156,7 +149,6 @@ def test_arithmetic():
         str(sa.select([s.c.amount + s.c.id * 2]))
 
 
-
 def test_join():
     metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
@@ -206,6 +198,7 @@ def test_join():
               amounts.name = ids.name) as anon_1
     order by
         anon_1.amount asc""")
+
 
 def test_clean_complex_join():
     metadata = sa.MetaData()
@@ -748,15 +741,19 @@ def test_columnwise_on_complex_selection():
 
 
 def test_reductions_on_complex_selections():
-    assert normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) == \
-        normalize("""
-    with alias as
-        (select accounts.id as id
-         from
-            accounts
-         where
-            accounts.amount > :amount_1)
-    select sum(alias.id) as id_sum from alias""")
+    assert (
+        normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) ==
+        normalize(
+            """
+            select
+                sum(alias.id) as id_sum
+            from (select
+                    accounts.id as id
+                  from accounts
+                  where accounts.amount > :amount_1) as alias
+            """
+        )
+    )
 
 
 def test_clean_summary_by_where():
@@ -937,16 +934,16 @@ def test_join_on_same_table():
     result = compute(expr, {t: T})
 
     assert normalize(str(result)) == normalize("""
-    with alias as
-    (select
-         tab_left.b as b_left
-     from
-         tab as tab_left
-     join
-         tab as tab_right
-     on
-         tab_left.a = tab_right.a)
-    select sum(alias.b_left) as b_left_sum from alias""")
+    select sum(alias.b_left) as b_left_sum from
+        (select
+            tab_left.b as b_left
+        from
+            tab as tab_left
+        join
+            tab as tab_right
+        on
+            tab_left.a = tab_right.a) as
+        alias""")
 
     expr = join(t, t, 'a')
     expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
@@ -1575,11 +1572,11 @@ def test_transform_then_project():
 def test_reduce_does_not_compose():
     expr = by(t.name, counts=t.count()).counts.max()
     result = str(compute(expr, s))
-    expected = """WITH alias AS
-(SELECT count(accounts.id) AS counts
-FROM accounts GROUP BY accounts.name)
- SELECT max(alias.counts) AS counts_max
-FROM alias"""
+    expected = """
+    SELECT max(alias.counts) AS counts_max
+    FROM
+    (SELECT count(accounts.id) AS counts
+    FROM accounts GROUP BY accounts.name) as alias"""
     assert normalize(result) == normalize(expected)
 
 

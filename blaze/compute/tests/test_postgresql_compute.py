@@ -1,7 +1,6 @@
 from datetime import timedelta
 from operator import methodcaller
 import itertools
-import re
 
 import pytest
 
@@ -17,19 +16,13 @@ from datashape import dshape
 from odo import odo, resource, drop, discover
 from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
 from blaze import sqrt, transform, Data
-from blaze.utils import example
+from blaze.utils import example, normalize
 
 
 names = ('tbl%d' % i for i in itertools.count())
 
 
-def normalize(s):
-    s = ' '.join(s.strip().split()).lower()
-    s = re.sub(r'(alias)_?\d*', r'\1', s)
-    return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
-
-
-@pytest.fixture(scope='module')
+@pytest.fixture
 def url():
     return 'postgresql://postgres@localhost/test::%s'
 
