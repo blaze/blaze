@@ -3,12 +3,14 @@ from __future__ import absolute_import, division, print_function
 import numbers
 from datetime import date, datetime
 import toolz
-from toolz import first, concat, memoize, unique, assoc
+from toolz import first, unique, assoc
 import itertools
 from collections import Iterator
+import pandas as pd
+from odo import odo
 
 from ..compatibility import basestring
-from ..expr import Expr, Field, Symbol, symbol, eval_str
+from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
@@ -479,3 +481,16 @@ def compute(expr, d, **kwargs):
 @dispatch(Field, dict)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
+
+
+@compute_up.register(Join, object, object)
+def join_dataframe_to_selectable(expr, lhs, rhs, scope=None, **kwargs):
+    lexpr, rexpr = expr._leaves()
+    return compute(
+        expr,
+        {
+            lexpr: odo(lhs, pd.DataFrame, dshape=lexpr.dshape),
+            rexpr: odo(rhs, pd.DataFrame, dshape=rexpr.dshape)
+        },
+        **kwargs
+    )
