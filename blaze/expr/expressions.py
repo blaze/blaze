@@ -71,7 +71,7 @@ def valid_identifier(s):
     >>> valid_identifier('1a')
     """
     if isinstance(s, _strtypes):
-        if s[0].isdigit():
+        if not s or s[0].isdigit():
             return
         return s.replace(' ', '_').replace('.', '_').replace('-', '_')
     return s

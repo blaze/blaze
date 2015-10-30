@@ -43,3 +43,5 @@ Bug Fixes
   resources were sqlalchemy objects (:issue:`1273`).
 * Use aliases instead of common table expressions (CTEs) because MySQL doesn't
   have CTEs (:issue:`1278`).
+* Fixed a bug where we couldn't display an empty string identifier
+  in interactive mode (:issue:`1279`).
