@@ -67,7 +67,7 @@ def valid_identifier(s):
     >>> valid_identifier('1a')
     """
     if isinstance(s, _strtypes):
-        if s[0].isdigit():
+        if not s or s[0].isdigit():
             return
         return s.replace(' ', '_').replace('.', '_').replace('-', '_')
     return s
@@ -81,6 +81,8 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
+
+    __slots__ = ()
 
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, Record):
