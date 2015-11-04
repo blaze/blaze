@@ -59,3 +59,7 @@ Bug Fixes
   (:issue:`1288`).
 * Fixed a bug where comparisons to a empty string magically converted
   the empty string to ``None`` (:issue:`1308`).
+* Fixed a bug where leaves that only appeared in the predicate of a selection
+  would not be in scope in time to compute the predicate. This would cause whole
+  expressions like ``a[a > b]`` to fail because ``b`` was not in scope
+  (:issue:`1275`).
