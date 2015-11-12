@@ -1,7 +1,9 @@
 from __future__ import absolute_import, print_function, division
 
+from pprint import pprint
 from getpass import getuser
 
+import sqlparse
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
@@ -67,6 +69,6 @@ def test_resample(db, data):
         avg_mta_tax=db.nyc.mta_tax.mean()
     )
     result = compute(expr, data)
-    expected = """
-    """
-    assert normalize(str(result)) == normalize(expected)
+    print(sqlparse.format(str(result), reindent=True))
+    result = result.execute().fetchall()
+    pprint(result)

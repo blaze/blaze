@@ -16,14 +16,16 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
-import math
+import numbers
 import itertools
+import datetime
 
 from itertools import chain
 
 from operator import and_, eq, attrgetter, add
 from copy import copy
-from datetime import _EPOCH as EPOCH
+
+EPOCH = datetime.datetime(1970, 1, 1, 0, 0)
 
 import sqlalchemy as sa
 
@@ -1082,22 +1084,29 @@ def generate_series_generic(element, compiler, **kwargs):
 
 @compiles(generate_sequence, 'mysql')
 def generate_series_mysql(element, compiler, **kwargs):
-    import pandas as pd
-    diff = pd.Timestamp(element.end) - pd.Timestamp(element.start)
-    num_unions = int(math.ceil(math.log(diff, base=10)))
+    assert isinstance(element.interval.value, numbers.Integral), \
+        'got value %s of type %r, expected integer' % (
+            element.interval.value,
+            type(element.interval.value).__name__,
+        )
+    diff = sa.func.timestampdiff(
+        sa.text(element.interval.unit), element.start, element.stop
+    ) / element.interval.value
+    num_unions = int(sa.func.ceil(sa.func.log10(diff)).execute().scalar())
     unions = [
         sa.union_all(*map(
-            lambda x: sa.literal(x).label('value'),
-            list(range(10 ** i, 10 ** (i + 1), 10 ** i))
+            lambda x: sa.select([sa.literal(x).label('value')]),
+            range(0, 10 ** (i + 1), 10 ** i)
         )).alias()
         for i in range(num_unions)
     ]
-    numbers = sa.select(
+    nums = sa.select([
         reduce(add, (union.c.value for union in unions)).label('n')
-    ).select_from(sa.select(unions))
-    query = sa.select([
-        sa.func.dateadd(element.interval.unit, numbers.c.n - 1, element.start)
-    ])
+    ]).alias()
+    query = sa.func.timestampadd(
+        sa.text(element.interval.unit), nums.c.n, element.start
+    )
+    import ipdb; ipdb.set_trace()
     return compiler.process(query, **kwargs)
 
 
@@ -1151,7 +1160,7 @@ def create_interval_mysql(element, compiler, **kwargs):
         'nanosecond': 'second'
     }.get(unit, unit)
     return compiler.process(
-        sa.text('INTERVAL :value %s' % final_unit).bindparams(value=value)
+        sa.text('INTERVAL :value %s' % final_unit).bindparams(value=value),
         **kwargs
     )
 
@@ -1274,7 +1283,7 @@ def interval_to_seconds_sqlite(element, compiler, **kwargs):
 
 @compiles(interval_to_seconds, 'mysql')
 def interval_to_seconds_mysql(element, compiler, **kwargs):
-    epoch = sa.literal(EPOCH, type_=sa.DATETIME)
+    epoch = str(EPOCH)
     interval = element.interval
     return compiler.process(
         sa.func.timestampdiff(
