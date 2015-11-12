@@ -4,7 +4,7 @@ import operator
 from toolz import first
 import numpy as np
 import pandas as pd
-from datashape import dshape, var, DataShape
+from datashape import dshape, var, DataShape, Option
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from datashape import coretypes as ct, discover, unsigned, promote, optionify
@@ -323,7 +323,14 @@ interp = _mkbin('interp', Interp, reflected=False, private=False)
 
 
 class Relational(Arithmetic):
-    _dtype = ct.bool_
+    @property
+    def _dtype(self):
+        # we can't simply use .schema or .datashape because we may have a bare
+        # integer, for example
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        if isinstance(lhs, Option) or isinstance(rhs, Option):
+            return Option(ct.bool_)
+        return ct.bool_
 
 
 class Eq(Relational):
