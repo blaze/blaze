@@ -171,8 +171,8 @@ class Expr(Node):
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
-        if key in ('_hash', '_schema'):
-            raise AttributeError()
+        if key == '_hash':
+            raise AttributeError(key)
         try:
             return _attr_cache[(self, key)]
         except KeyError:
