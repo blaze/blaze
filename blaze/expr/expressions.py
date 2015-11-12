@@ -85,6 +85,9 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
+
+    __slots__ = ()
+
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, (Record, datashape.Map)):
             if fieldname == self._name:
@@ -168,7 +171,7 @@ class Expr(Node):
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
-        if key == '_hash':
+        if key in ('_hash', '_schema'):
             raise AttributeError()
         try:
             return _attr_cache[(self, key)]

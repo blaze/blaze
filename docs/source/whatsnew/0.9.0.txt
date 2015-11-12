@@ -33,6 +33,9 @@ Bug Fixes
 * Fixed a bug where ``Merge`` expressions would unpack option types in their
   fields. This could cause you to have a table where ``expr::{a: int32}`` but
   ``expr.a::?int32``. Note that the dotted acces is an option (:issue:`1262`).
+* Explicitly set ``Node.__slots__`` and ``Expr.__slots__`` to ``()``.  This
+  ensures instances of slotted subclasses like ``Join`` do not have a useless
+  empty ``__dict__`` attribute (:issue:`1274` and :issue:`1268`).
 * Fixed a bug that prevented creating a
   :class:`~blaze.interactive.InteractiveSymbol` that wrapped ``nan`` if the
   dshape was ``datetime``. This now correctly coerces to `NaT` (:issue:`1272`).

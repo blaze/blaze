@@ -66,6 +66,7 @@ class Node(object):
 
     blaze.expr.expressions.Expr
     """
+    __slots__ = ()
     __inputs__ = '_child',
 
     def __init__(self, *args, **kwargs):
