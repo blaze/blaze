@@ -322,7 +322,7 @@ _sub, _rsub = _mkbin('sub', Sub)
 interp = _mkbin('interp', Interp, reflected=False, private=False)
 
 
-class Relational(Arithmetic):
+class _Optional(Arithmetic):
     @property
     def _dtype(self):
         # we can't simply use .schema or .datashape because we may have a bare
@@ -331,6 +331,11 @@ class Relational(Arithmetic):
         if isinstance(lhs, Option) or isinstance(rhs, Option):
             return Option(ct.bool_)
         return ct.bool_
+
+
+class Relational(_Optional):
+    # Leave this to separate relationals from other types of optionals.
+    pass
 
 
 class Eq(Relational):
@@ -363,22 +368,22 @@ class Lt(Relational):
     op = operator.lt
 
 
-class And(Arithmetic):
+class And(_Optional):
     symbol = '&'
     op = operator.and_
-    _dtype = ct.bool_
 
 
-class Or(Arithmetic):
+class Or(_Optional):
     symbol = '|'
     op = operator.or_
-    _dtype = ct.bool_
 
 
 class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
-    _dtype = ct.bool_
+
+    def _dtype(self):
+        return self._child.dshape
 
     def __str__(self):
         return '~%s' % parenthesize(eval_str(self._child))
