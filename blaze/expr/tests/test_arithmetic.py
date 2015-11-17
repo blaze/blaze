@@ -1,7 +1,10 @@
-from blaze.expr import Add, USub, Not, Gt, Mult, Concat, Interp, Repeat
-from blaze import symbol
-from datashape import dshape
+from itertools import product
 import pytest
+
+from blaze.expr import Add, USub, Not, Gt, Mult, Concat, Interp, Repeat, \
+    Relational
+from blaze import symbol
+from datashape import dshape, Option
 
 
 x = symbol('x', '5 * 3 * int32')
@@ -11,6 +14,10 @@ z = symbol('z', '5 * 3 * int64')
 a = symbol('a', 'int32')
 b = symbol('b', '5 * 3 * bool')
 cs = symbol('cs', 'string')
+d = symbol('d', '5*3*?int32')
+e = symbol('e', '?int32')
+f = symbol('f', '?bool')
+optionals = {d, e, f}
 
 
 def test_arithmetic_dshape_on_collections():
@@ -27,12 +34,26 @@ def test_unary_ops_are_elemwise():
     assert Not(b).shape == b.shape
 
 
-def test_relations_maintain_shape():
-    assert Gt(x, y).shape == x.shape
+@pytest.mark.parametrize('sym', (b, f))
+def test_not_dshape(sym):
+    if sym in optionals:
+        assert Not(sym).schema == dshape(Option('bool'))
+    else:
+        assert Not(sym).schema == dshape('bool')
 
 
-def test_relations_are_boolean():
-    assert Gt(x, y).schema == dshape('bool')
+@pytest.mark.parametrize('relation_type', Relational.__subclasses__())
+def test_relations_maintain_shape(relation_type):
+    assert relation_type(x, y).shape == x.shape
+
+
+@pytest.mark.parametrize('relation_type', Relational.__subclasses__())
+@pytest.mark.parametrize('lhs,rhs', product((x, y, d, e, f), repeat=2))
+def test_relations_are_boolean(lhs, rhs, relation_type):
+    if lhs in optionals or rhs in optionals:
+        assert relation_type(lhs, rhs).schema == dshape(Option('bool'))
+    else:
+        assert relation_type(lhs, rhs).schema == dshape('bool')
 
 
 def test_names():

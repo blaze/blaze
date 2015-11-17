@@ -382,8 +382,9 @@ class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
 
+    @property
     def _dtype(self):
-        return self._child.dshape
+        return self._child.schema
 
     def __str__(self):
         return '~%s' % parenthesize(eval_str(self._child))
