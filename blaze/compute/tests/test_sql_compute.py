@@ -1864,8 +1864,8 @@ def test_shift_on_column(n):
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_empty_string_comparison():
-    expr = t.amount[t.name == '']
+def test_empty_string_comparison_with_option_type():
+    expr = nt.amount[nt.name == '']
     result = compute(expr, s)
     expected = """
     SELECT accounts.amount
