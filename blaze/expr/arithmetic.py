@@ -231,7 +231,7 @@ class USub(UnaryOp):
 
 @dispatch(ct.Option, object)
 def scalar_coerce(ds, val):
-    return scalar_coerce(ds.ty, val) if val is not None or val == 0 else None
+    return scalar_coerce(ds.ty, val) if val is not None else None
 
 
 @dispatch((ct.Record, ct.Mono, ct.Option, DataShape), Expr)
