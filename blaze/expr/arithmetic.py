@@ -241,15 +241,20 @@ def scalar_coerce(ds, val):
 
 @dispatch(ct.Date, _strtypes)
 def scalar_coerce(_, val):
+    if val == '':
+        raise TypeError('%r is not a valid date' % val)
     dt = dt_parse(val)
-    if dt.time():
-        raise ValueError("Can not coerce %s to type Date, "
-                "contains time information")
+    if dt.time():  # TODO: doesn't work with python 3.5
+        raise TypeError(
+            "Can not coerce %r to type Date, contains time information" % val
+        )
     return dt.date()
 
 
 @dispatch(ct.DateTime, _strtypes)
 def scalar_coerce(_, val):
+    if val == '':
+        raise TypeError('%r is not a valid datetime' % val)
     return pd.Timestamp(val)
 
 
