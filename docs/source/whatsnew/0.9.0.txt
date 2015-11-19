@@ -48,5 +48,7 @@ Bug Fixes
   have CTEs (:issue:`1278`).
 * Fixed a bug where we couldn't display an empty string identifier
   in interactive mode (:issue:`1279`).
+* Fixed a bug where comparisons with optionals that should have resulted in
+  optionals did not (:issue:`1292`).
 * Fixed a bug where ``Join.schema`` would not always be instantiated
   (:issue:`1288`).

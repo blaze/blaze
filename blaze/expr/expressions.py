@@ -248,11 +248,6 @@ def _symbol_key(args, kwargs):
     return (name, ds, token)
 
 
-@memoize(cache=_symbol_cache, key=_symbol_key)
-def symbol(name, dshape, token=None):
-    return Symbol(name, dshape, token=token)
-
-
 class Symbol(Expr):
     """
     Symbolic data.  The leaf of a Blaze expression
@@ -282,6 +277,12 @@ class Symbol(Expr):
 
     def _resources(self):
         return dict()
+
+
+@memoize(cache=_symbol_cache, key=_symbol_key)
+@copydoc(Symbol)
+def symbol(name, dshape, token=None):
+    return Symbol(name, dshape, token=token)
 
 
 @dispatch(Symbol, dict)
