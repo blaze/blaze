@@ -277,7 +277,11 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, sa.sql.ColumnElement)
 def compute_up(expr, data, scope=None, **kwargs):
     predicate = compute(expr.predicate, data, post_compute=False)
-    return compute_up(expr, data, predicate, scope=scope, **kwargs)
+    return compute(
+        expr,
+        {expr._child: data, expr.predicate: predicate},
+        **kwargs
+    )
 
 
 @dispatch(Selection, sa.sql.ColumnElement, ColumnElement)
@@ -287,22 +291,23 @@ def compute_up(expr, col, predicate, **kwargs):
 
 @dispatch(Selection, Selectable)
 def compute_up(expr, sel, scope=None, **kwargs):
-    return compute_up(
+    return compute(
         expr,
-        sel,
-        compute(
-            expr.predicate,
-            toolz.merge(
-                {
-                    expr._child[col.name]: col
-                    for col in getattr(sel, 'inner_columns', sel.columns)
-                },
-                scope,
+        {
+            expr._child: sel,
+            expr.predicate: compute(
+                expr.predicate,
+                toolz.merge(
+                    {
+                        expr._child[col.name]: col
+                        for col in getattr(sel, 'inner_columns', sel.columns)
+                    },
+                    scope,
+                ),
+                optimize=False,
+                post_compute=False,
             ),
-            optimize=False,
-            post_compute=False,
-        ),
-        scope=scope,
+        },
         **kwargs
     )
 
