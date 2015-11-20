@@ -280,7 +280,7 @@ def compute_up(expr, data, scope=None, **kwargs):
     return compute_up(expr, data, predicate, scope=scope, **kwargs)
 
 
-@dispatch(Selection, sa.sql.ColumnElement, ClauseElement)
+@dispatch(Selection, sa.sql.ColumnElement, ColumnElement)
 def compute_up(expr, col, predicate, **kwargs):
     return sa.select([col]).where(predicate)
 
@@ -306,7 +306,7 @@ def compute_up(t, s, scope=None, **kwargs):
     return compute_up(t, s, _get_pred(t, s, scope), scope=scope, **kwargs)
 
 
-@dispatch(Selection, Selectable, ClauseElement)
+@dispatch(Selection, Selectable, ColumnElement)
 def compute_up(expr, tbl, predicate, scope=None, **kwargs):
     try:
         return tbl.where(predicate)
