@@ -285,25 +285,26 @@ def compute_up(expr, col, predicate, **kwargs):
     return sa.select([col]).where(predicate)
 
 
-def _get_pred(expr, tbl, scope):
-    return compute(
-        expr.predicate,
-        toolz.merge(
-            {
-                expr._child[col.name]: col
-                for col in getattr(tbl, 'inner_columns', tbl.columns)
-            },
-            scope,
-        ),
-        optimize=False,
-        post_compute=False,
-    )
-
-
-
 @dispatch(Selection, Selectable)
-def compute_up(t, s, scope=None, **kwargs):
-    return compute_up(t, s, _get_pred(t, s, scope), scope=scope, **kwargs)
+def compute_up(expr, sel, scope=None, **kwargs):
+    return compute_up(
+        expr,
+        sel,
+        compute(
+            expr.predicate,
+            toolz.merge(
+                {
+                    expr._child[col.name]: col
+                    for col in getattr(sel, 'inner_columns', sel.columns)
+                },
+                scope,
+            ),
+            optimize=False,
+            post_compute=False,
+        ),
+        scope=scope,
+        **kwargs
+    )
 
 
 @dispatch(Selection, Selectable, ColumnElement)
