@@ -1873,3 +1873,28 @@ def test_empty_string_comparison_with_option_type():
     WHERE accounts.name = :name_1
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_tail_no_sort():
+    assert (
+        normalize(str(compute(t.head(), {t: s}))) ==
+        normalize(str(compute(t.tail(), {t: s})))
+    )
+
+
+def test_tail_of_sort():
+    expected = normalize(str(compute(
+        t.sort('id', ascending=False).head(5).sort('id'),
+        {t: s},
+    )))
+    result = normalize(str(compute(t.sort('id').tail(5), {t: s})))
+    assert expected == result
+
+
+def test_tail_sort_in_chilren():
+    expected = normalize(str(compute(
+        t.name.sort('id', ascending=False).head(5).sort('id'),
+        {t: s},
+    )))
+    result = normalize(str(compute(t.name.sort('id').tail(5), {t: s})))
+    assert expected == result

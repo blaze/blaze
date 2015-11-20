@@ -56,9 +56,9 @@ from .core import compute_up, compute, base
 from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
-    Shift, BinaryMath, Pow
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
+    Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
+    notnull, Shift, BinaryMath, Pow,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -972,9 +972,45 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
+@dispatch(Expr)
+def _subexpr_optimize(expr):
+    return expr
+
+
+@dispatch(Tail)
+def _subexpr_optimize(expr):
+    child = sorter = expr._child
+    while not isinstance(sorter, Sort):
+        try:
+            sorter = sorter._child
+        except AttributeError:
+            break
+    else:
+        # Invert the sort order, then take the head, then re-sort based on
+        # the original key.
+        return child._subs({
+            sorter: sorter._child.sort(
+                sorter._key,
+                ascending=not sorter.ascending,
+            ),
+        }).head(expr.n).sort(sorter._key, ascending=sorter.ascending)
+
+    # If there is no sort order, then we can swap out a head with a tail.
+    # This is equivalent in this backend and considerably faster.
+    warnings.warn(
+        "'tail' of a sql operation with no sort is the same as 'head'",
+    )
+    return child.head(expr.n)
+
+
 @dispatch(Expr, ClauseElement)
 def optimize(expr, _):
-    return broadcast_collect(expr)
+    collected = broadcast_collect(expr)
+    return reduce(
+        lambda expr, term: expr._subs({term: _subexpr_optimize(term)}),
+        collected._subterms(),
+        collected,
+    )
 
 
 @dispatch(Field, sa.MetaData)
