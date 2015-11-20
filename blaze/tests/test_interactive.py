@@ -431,3 +431,23 @@ Don't worry.,hy,en"""
         data = Data(fn, has_header=True)
         assert data.data.has_header
         assert data.fields == ['x', 'tl', 'z']
+
+
+def test_csv_with_trailing_commas():
+    with tmpfile('.csv') as fn:
+        with open(fn, 'wt') as f:
+            # note the trailing space in the header
+            f.write('a,b,c, \n1, 2, 3, ')
+        csv = CSV(fn)
+        assert repr(Data(fn))
+        assert discover(csv).measure.names == [
+            'a', 'b', 'c', ''
+        ]
+    with tmpfile('.csv') as fn:
+        with open(fn, 'wt') as f:
+            f.write('a,b,c,\n1, 2, 3, ')  # NO trailing space in the header
+        csv = CSV(fn)
+        assert repr(Data(fn))
+        assert discover(csv).measure.names == [
+            'a', 'b', 'c', 'Unnamed: 3'
+        ]

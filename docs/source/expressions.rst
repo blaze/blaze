@@ -87,6 +87,7 @@ queries to span multiple collections.
    >>> join(accounts, cities, 'name')
    Join(lhs=accounts, rhs=cities, _on_left='name', _on_right='name', how='inner', suffixes=('_left', '_right'))
 
+
 If given no inputs, ``join`` will join on all columns with shared names between
 the two collections.
 

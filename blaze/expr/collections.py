@@ -12,9 +12,10 @@ from datashape import (
 from datashape.predicates import isscalar, iscollection, isrecord
 from toolz import (
     isdistinct, frequencies, concat as tconcat, unique, get, first, compose,
-    keymap,
+    keymap
 )
 import toolz.curried.operator as op
+from toolz import memoize
 from odo.utils import copydoc
 
 from .core import common_subexpression
@@ -397,7 +398,7 @@ class Join(Expr):
     blaze.expr.collections.Merge
     """
     __slots__ = (
-        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes',
+        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes'
     )
     __inputs__ = 'lhs', 'rhs'
 
@@ -416,6 +417,7 @@ class Join(Expr):
         return on_right
 
     @property
+    @memoize
     def schema(self):
         """
 
@@ -438,6 +440,7 @@ class Join(Expr):
         >>> join(a, b, 'x').fields
         ['x', 'y_left', 'y_right']
         """
+
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
 
         on_left = self.on_left

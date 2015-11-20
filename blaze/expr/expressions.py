@@ -67,7 +67,7 @@ def valid_identifier(s):
     >>> valid_identifier('1a')
     """
     if isinstance(s, _strtypes):
-        if s[0].isdigit():
+        if not s or s[0].isdigit():
             return
         return s.replace(' ', '_').replace('.', '_').replace('-', '_')
     return s
@@ -81,6 +81,9 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
+
+    __slots__ = ()
+
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, Record):
             if fieldname == self._name:
@@ -159,7 +162,7 @@ class Expr(Node):
 
     def __getattr__(self, key):
         if key == '_hash':
-            raise AttributeError()
+            raise AttributeError(key)
         try:
             return _attr_cache[(self, key)]
         except:
@@ -233,11 +236,6 @@ def _symbol_key(args, kwargs):
     return (name, ds, token)
 
 
-@memoize(cache=_symbol_cache, key=_symbol_key)
-def symbol(name, dshape, token=None):
-    return Symbol(name, dshape, token=token)
-
-
 class Symbol(Expr):
     """
     Symbolic data.  The leaf of a Blaze expression
@@ -267,6 +265,12 @@ class Symbol(Expr):
 
     def _resources(self):
         return dict()
+
+
+@memoize(cache=_symbol_cache, key=_symbol_key)
+@copydoc(Symbol)
+def symbol(name, dshape, token=None):
+    return Symbol(name, dshape, token=token)
 
 
 @dispatch(Symbol, dict)
