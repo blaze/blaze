@@ -164,7 +164,7 @@ class Server(object):
         )
         self.data = data
 
-    def run(self, port=DEFAULT_PORT, retry=True, **kwargs):
+    def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
         """Run the server.
 
         Parameters

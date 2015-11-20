@@ -31,9 +31,10 @@ API Changes
   ``has_header=True`` when using the ``Data`` constructor (:issue:`1254`).
 * Comparing ``date`` and ``datetime`` datashaped things to the empty
   string now raises a ``TypeError`` (:issue:`1308`).
-* :meth:`blaze.server.Server.run` no longer forwards positional arguments to the
-  inner flask app's ``run`` method. All keyword arguments not consumed by the
-  blaze server ``run`` are still forwarded (:issue:`xxxx`).
+* :meth:`blaze.server.Server.run` no longer retries binding to a new port by
+  default. Also, positional arguments are no longer forwarded to the inner flask
+  app's ``run`` method. All keyword arguments not consumed by the blaze server
+  ``run`` are still forwarded (:issue:`1316`).
 
 Bug Fixes
 ~~~~~~~~~
@@ -63,10 +64,10 @@ Bug Fixes
 * Fixed a bug where comparisons to a empty string magically converted
   the empty string to ``None`` (:issue:`1308`).
 * Fix the ``retry`` kwarg to the blaze server. When ``retry`` is False, an
-  exception is now properly raised if the port is in use. (:issue:`xxxx`).
+  exception is now properly raised if the port is in use. (:issue:`1316`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
 * :meth:`blaze.server.Server.run` now uses :func:`warnings.warn` instead of
-  ``print`` when it fails to bind to a port and is retrying (:issue:`xxxx`).
+  ``print`` when it fails to bind to a port and is retrying (:issue:`1316`).
