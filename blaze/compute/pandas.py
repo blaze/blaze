@@ -37,6 +37,13 @@ from datashape import to_numpy_dtype
 from datashape.predicates import isscalar
 
 from odo import into
+try:
+    import dask.dataframe as dd
+    DaskDataFrame = dd.DataFrame
+    DaskSeries = dd.Series
+except ImportError:
+    DaskDataFrame = pd.DataFrame
+    DaskSeries = pd.Series
 
 from ..dispatch import dispatch
 
@@ -57,18 +64,18 @@ from ..compatibility import _inttypes
 __all__ = []
 
 
-@dispatch(Projection, DataFrame)
+@dispatch(Projection, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return df[list(t.fields)]
 
 
-@dispatch(Field, (DataFrame, DataFrameGroupBy))
+@dispatch(Field, (DataFrame, DataFrameGroupBy, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     assert len(t.fields) == 1
     return df[t.fields[0]]
 
 
-@dispatch(Field, Series)
+@dispatch(Field, (Series, DaskSeries))
 def compute_up(t, data, **kwargs):
     assert len(t.fields) == 1
     if t.fields[0] == data.name:
@@ -78,7 +85,7 @@ def compute_up(t, data, **kwargs):
                          % (t.fields[0], data.name))
 
 
-@dispatch(Broadcast, DataFrame)
+@dispatch(Broadcast, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
     return compute(t._expr, d)
@@ -104,7 +111,7 @@ def compute_up_pd_interp(t, lhs, rhs, **kwargs):
 
 
 
-@dispatch(BinOp, Series)
+@dispatch(BinOp, (Series, DaskSeries))
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
@@ -112,12 +119,12 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-@dispatch(BinOp, Series, (Series, base))
+@dispatch(BinOp, (Series, DaskSeries), (Series, base, DaskSeries))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(BinOp, (Series, base), Series)
+@dispatch(BinOp, (Series, base, DaskSeries), (Series, DaskSeries))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
@@ -131,7 +138,7 @@ def compute_up(t, df, **kwargs):
     return f(df)
 
 
-@dispatch(Selection, (Series, DataFrame))
+@dispatch(Selection, (Series, DataFrame, DaskSeries, DaskDataFrame))
 def compute_up(expr, df, **kwargs):
     return compute_up(
         expr,
@@ -146,7 +153,7 @@ def compute_up(expr, df, predicate, **kwargs):
     return df[predicate]
 
 
-@dispatch(Join, DataFrame, DataFrame)
+@dispatch(Join, (DataFrame, DaskDataFrame), (DataFrame, DaskDataFrame))
 def compute_up(t, lhs, rhs, **kwargs):
     """ Join two pandas data frames on arbitrary columns
 
@@ -177,7 +184,7 @@ def compute_up(expr, data, **kwargs):
     return data.notnull()
 
 
-pandas_structure = DataFrame, Series, DataFrameGroupBy, SeriesGroupBy
+pandas_structure = DataFrame, DaskDataFrame, Series, DataFrameGroupBy, SeriesGroupBy
 
 
 @dispatch(Concat, pandas_structure, pandas_structure)
@@ -213,7 +220,7 @@ def compute_up(t, s, **kwargs):
     return result
 
 
-@dispatch(Distinct, DataFrame)
+@dispatch(Distinct, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return df.drop_duplicates(subset=t.on or None).reset_index(drop=True)
 
@@ -259,7 +266,7 @@ def unpack(seq):
 Grouper = ElemWise, Series, list
 
 
-@dispatch(By, list, DataFrame)
+@dispatch(By, list, (DataFrame, DaskDataFrame))
 def get_grouper(c, grouper, df):
     return grouper
 
@@ -392,12 +399,12 @@ def compute_by(t, s, g, df):
     return result3
 
 
-@dispatch(Expr, DataFrame)
+@dispatch(Expr, (DataFrame, DaskDataFrame))
 def post_compute_by(t, df):
     return df.reset_index(drop=True)
 
 
-@dispatch((Summary, Reduction), DataFrame)
+@dispatch((Summary, Reduction), (DataFrame, DaskDataFrame))
 def post_compute_by(t, df):
     return df.reset_index()
 
@@ -466,12 +473,12 @@ pdsort = getattr(
 )
 
 
-@dispatch(Sort, DataFrame)
+@dispatch(Sort, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return pdsort(df, t.key, ascending=t.ascending)
 
 
-@dispatch(Sort, Series)
+@dispatch(Sort, (Series, DaskSeries))
 def compute_up(t, s, **kwargs):
     try:
         return s.sort_values(ascending=t.ascending)
@@ -479,19 +486,22 @@ def compute_up(t, s, **kwargs):
         return s.order(ascending=t.ascending)
 
 
-@dispatch(Head, (Series, DataFrame))
+@dispatch(Head, (Series, DataFrame, DaskDataFrame, DaskSeries))
 def compute_up(t, df, **kwargs):
     return df.head(t.n)
 
 
-@dispatch(Tail, (Series, DataFrame))
+@dispatch(Tail, (Series, DataFrame, DaskDataFrame, DaskSeries))
 def compute_up(t, df, **kwargs):
     return df.tail(t.n)
 
 
-@dispatch(Label, DataFrame)
+@dispatch(Label, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
-    return DataFrame(df, columns=[t.label])
+    if isinstance(df, DataFrame):
+        return DataFrame(df, columns=[t.label])
+    else:
+        return DaskDataFrame(df, columns=[t.label])
 
 
 @dispatch(Label, Series)
@@ -499,12 +509,12 @@ def compute_up(t, df, **kwargs):
     return Series(df, name=t.label)
 
 
-@dispatch(ReLabel, DataFrame)
+@dispatch(ReLabel, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return df.rename(columns=dict(t.labels))
 
 
-@dispatch(ReLabel, Series)
+@dispatch(ReLabel, (Series, DaskSeries))
 def compute_up(t, s, **kwargs):
     labels = t.labels
     if len(labels) > 1:
@@ -514,7 +524,7 @@ def compute_up(t, s, **kwargs):
     return Series(s, name=replacement)
 
 
-@dispatch(Map, DataFrame)
+@dispatch(Map, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return df.apply(lambda tup: t.func(*tup), axis=1)
 
@@ -543,11 +553,14 @@ def compute_up(t, df, scope=None, **kwargs):
     return pd.concat(children, axis=1)
 
 
-@dispatch(Summary, DataFrame)
+@dispatch(Summary, (DataFrame, DaskDataFrame))
 def compute_up(expr, data, **kwargs):
     values = [compute(val, {expr._child: data}) for val in expr.values]
     if expr.keepdims:
-        return DataFrame([values], columns=expr.fields)
+        if isinstance(data, Dataframe):
+            return DataFrame([values], columns=expr.fields)
+        else:
+            return DaskDataFrame([values], columns=expr.fields)
     else:
         return Series(dict(zip(expr.fields, values)))
 
@@ -560,7 +573,7 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
-@dispatch(Like, DataFrame)
+@dispatch(Like, (DataFrame, DaskDataFrame))
 def compute_up(expr, df, **kwargs):
     arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
             for name, pattern in expr.patterns.items()]
@@ -608,7 +621,7 @@ def compute_up(expr, df, **kwargs):
         raise NotImplementedError()
 
 
-@dispatch(count, DataFrame)
+@dispatch(count, (DataFrame, DaskDataFrame))
 def compute_up(expr, df, **kwargs):
     result = df.shape[0]
     if expr.keepdims:
