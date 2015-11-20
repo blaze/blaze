@@ -62,7 +62,8 @@ Bug Fixes
   (:issue:`1288`).
 * Fixed a bug where comparisons to a empty string magically converted
   the empty string to ``None`` (:issue:`1308`).
-* Fix the ``retry`` kwarg to the blaze server (:issue:`xxxx`).
+* Fix the ``retry`` kwarg to the blaze server. When ``retry`` is False, an
+  exception is now properly raised if the port is in use. (:issue:`xxxx`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

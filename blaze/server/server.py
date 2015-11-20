@@ -185,10 +185,12 @@ class Server(object):
             # Blocks until the server is shut down.
             self.app.run(port=port, **kwargs)
         except socket.error:
+            if not retry:
+                raise
+
             warn("Oops, couldn't connect on port %d.  Is it busy?" % port)
-            if retry:
-                # Attempt to start the server on a new port.
-                self.run(port=port + 1, retry=retry, **kwargs)
+            # Attempt to start the server on a new port.
+            self.run(port=port + 1, retry=retry, **kwargs)
 
 
 @api.route('/datashape', methods=['GET'])
