@@ -498,10 +498,7 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Label, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
-    if isinstance(df, DataFrame):
-        return DataFrame(df, columns=[t.label])
-    else:
-        return DaskDataFrame(df, columns=[t.label])
+    return type(df)(df, columns=[t.label])
 
 
 @dispatch(Label, Series)
@@ -557,10 +554,7 @@ def compute_up(t, df, scope=None, **kwargs):
 def compute_up(expr, data, **kwargs):
     values = [compute(val, {expr._child: data}) for val in expr.values]
     if expr.keepdims:
-        if isinstance(data, Dataframe):
-            return DataFrame([values], columns=expr.fields)
-        else:
-            return DaskDataFrame([values], columns=expr.fields)
+        return type(data)([values], columns=expr.fields)
     else:
         return Series(dict(zip(expr.fields, values)))
 
