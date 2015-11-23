@@ -15,14 +15,13 @@ from toolz import (
     keymap
 )
 import toolz.curried.operator as op
-from toolz import memoize
 from odo.utils import copydoc
 
 from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Field
 from .expressions import dshape_method_list
 from ..compatibility import zip_longest, _strtypes
-from ..utils import listpack
+from ..utils import listpack, weakmemoize
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
@@ -47,8 +46,7 @@ class Sort(Expr):
     """
     __slots__ = '_hash', '_child', '_key', 'ascending'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return self._child.dshape
 
     @property
@@ -135,8 +133,7 @@ class Distinct(Expr):
     """
     __slots__ = '_hash', '_child', 'on'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return datashape.var * self._child.dshape.measure
 
     @property
@@ -177,8 +174,7 @@ def distinct(expr, *on):
 class _HeadOrTail(Expr):
     __slots__ = '_hash', '_child', 'n'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return self.n * self._child.dshape.subshape[0]
 
     def _len(self):
@@ -285,8 +281,7 @@ class Merge(ElemWise):
     """
     __slots__ = '_hash', '_child', 'children'
 
-    @property
-    def schema(self):
+    def _schema(self):
         return schema_concat(self.children)
 
     @property
@@ -416,9 +411,7 @@ class Join(Expr):
             return list(on_right)
         return on_right
 
-    @property
-    @memoize
-    def schema(self):
+    def _schema(self):
         """
 
         Examples
@@ -495,8 +488,7 @@ class Join(Expr):
 
         return dshape(Record(chain(joined, left, right)))
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         # TODO: think if this can be generalized
         return var * self.schema
 
@@ -621,8 +613,7 @@ class Concat(Expr):
     __slots__ = '_hash', 'lhs', 'rhs', 'axis'
     __inputs__ = 'lhs', 'rhs'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         axis = self.axis
         ldshape = self.lhs.dshape
         lshape = ldshape.shape
@@ -695,8 +686,7 @@ class IsIn(ElemWise):
     """
     __slots__ = '_hash', '_child', '_keys'
 
-    @property
-    def schema(self):
+    def _schema(self):
         return datashape.bool_
 
     def __str__(self):
@@ -726,8 +716,7 @@ class Shift(Expr):
     """
     __slots__ = '_hash', '_child', 'n'
 
-    @property
-    def schema(self):
+    def _schema(self):
         measure = self._child.schema.measure
 
         # if we are not shifting or we are already an Option type then return
@@ -737,8 +726,7 @@ class Shift(Expr):
         else:
             return Option(measure)
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return DataShape(*(self._child.dshape.shape + tuple(self.schema)))
 
     def __str__(self):

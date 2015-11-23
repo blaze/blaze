@@ -12,8 +12,8 @@ from datashape import dshape, var, datetime_, float32, int64, bool_
 from blaze.expr import symbol, label, Field, Expr, Node
 
 
-def test_empty_slots():
-    assert Expr.__slots__ == ()
+def test_slots():
+    assert Expr.__slots__ == ('_hash', '__weakref__')
     assert Node.__slots__ == ()
 
 

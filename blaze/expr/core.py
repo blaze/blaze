@@ -5,11 +5,11 @@ import toolz
 import inspect
 
 from toolz import unique, concat, compose, partial
-import toolz
 from pprint import pprint
 
 from ..compatibility import StringIO, _strtypes, builtins
 from ..dispatch import dispatch
+from ..utils import weakmemoize
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
@@ -70,13 +70,28 @@ class Node(object):
     __inputs__ = '_child',
 
     def __init__(self, *args, **kwargs):
-        assert frozenset(kwargs).issubset(self.__slots__)
+        slots = set(self.__slots__)
+        if not frozenset(slots) <= slots:
+            raise TypeError('Unknown keywords: %s' % (set(kwargs) - slots))
 
+        assigned = set()
         for slot, arg in zip(self.__slots__[1:], args):
+            assigned.add(slot)
             setattr(self, slot, arg)
 
         for key, value in kwargs.items():
+            if key in assigned:
+                raise TypeError(
+                    '%s got multiple values for argument %r' % (
+                        type(self).__name__,
+                        key,
+                    ),
+                )
+            assigned.add(key)
             setattr(self, key, value)
+
+        for slot in slots - assigned:
+            setattr(self, slot, None)
 
     @property
     def _args(self):
@@ -113,11 +128,10 @@ class Node(object):
     isidentical = isidentical
 
     def __hash__(self):
-        try:
-            return self._hash
-        except AttributeError:
-            self._hash = hash((type(self), self._args))
-            return self._hash
+        hash_ = self._hash
+        if hash_ is None:
+            hash_ = self._hash = hash((type(self), self._args))
+        return hash_
 
     def __str__(self):
         rep = ["%s=%s" % (slot, _str(arg))

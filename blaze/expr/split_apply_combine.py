@@ -49,8 +49,7 @@ class By(Expr):
     def _child(self):
         return common_subexpression(self.grouper, self.apply)
 
-    @property
-    def schema(self):
+    def _schema(self):
         grouper_names, grouper_types = _names_and_types(self.grouper)
         apply_names, apply_types = _names_and_types(self.apply)
 
@@ -59,8 +58,7 @@ class By(Expr):
 
         return dshape(Record(list(zip(names, types))))
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         # TODO: think if this should be generalized
         return var * self.schema
 
