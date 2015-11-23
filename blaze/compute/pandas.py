@@ -457,7 +457,7 @@ def concat_nodup(a, b):
 
 @dispatch(Sort, DataFrame)
 def compute_up(t, df, **kwargs):
-    return df.sort(t.key, ascending=t.ascending)
+    return df.sort_values(by=t.key, ascending=t.ascending)
 
 
 @dispatch(Sort, Series)

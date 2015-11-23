@@ -329,13 +329,13 @@ def test_join_promotion():
 
 def test_sort():
     tm.assert_frame_equal(compute(t.sort('amount'), df),
-                          df.sort('amount'))
+                          df.sort_values(by='amount'))
 
     tm.assert_frame_equal(compute(t.sort('amount', ascending=True), df),
-                          df.sort('amount', ascending=True))
+                          df.sort_values(by='amount', ascending=True))
 
     tm.assert_frame_equal(compute(t.sort(['amount', 'id']), df),
-                          df.sort(['amount', 'id']))
+                          df.sort_values(by=['amount', 'id']))
 
 
 def test_sort_on_series_no_warning(recwarn):
@@ -484,8 +484,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = df.sort('id').to_records(index=False)
-    expected = expected.sort('id').to_records(index=False)
+    result = df.sort_values(by='id').to_records(index=False)
+    expected = expected.sort_values(by='id').to_records(index=False)
     np.array_equal(result, expected)
 
     df = compute(join(lsym, rsym, how='outer'), {lsym: left, rsym: right})
@@ -496,8 +496,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = df.sort('id').to_records(index=False)
-    expected = expected.sort('id').to_records(index=False)
+    result = df.sort_values(by='id').to_records(index=False)
+    expected = expected.sort_values(by='id').to_records(index=False)
     np.array_equal(result, expected)
 
 
