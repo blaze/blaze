@@ -67,3 +67,8 @@ Bug Fixes
   local filesystem (:issue:`1323`).
 * Updated a test to reflect changes from odo
   `#366 <https://github.com/blaze/odo/issues/366>`_ (:issue:`1323`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+* Memoize dshape and schema methods (:issue:`1319`).
