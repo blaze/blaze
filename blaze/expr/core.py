@@ -5,9 +5,9 @@ import toolz
 import inspect
 
 from toolz import unique, concat, compose, partial
-from pprint import pprint
+from pprint import pformat
 
-from ..compatibility import StringIO, _strtypes, builtins
+from ..compatibility import _strtypes, builtins
 from ..dispatch import dispatch
 from ..compatibility import pickle
 
@@ -279,8 +279,22 @@ def get_callable_name(o):
     """
     # special case partial objects
     if isinstance(o, partial):
-        return 'partial(%s, %s)' % (get_callable_name(o.func),
-                                    ', '.join(map(str, o.args)))
+        keywords = o.keywords
+        kwds = (
+            ', '.join('%s=%r' % item for item in keywords.items())
+            if keywords else
+            ''
+        )
+        args = ', '.join(map(repr, o.args))
+        arguments = []
+        if args:
+            arguments.append(args)
+        if kwds:
+            arguments.append(kwds)
+        return 'partial(%s, %s)' % (
+            get_callable_name(o.func),
+            ', '.join(arguments),
+        )
 
     try:
         # python 3 makes builtins look nice
@@ -302,7 +316,7 @@ def get_callable_name(o):
 def _str(s):
     """ Wrap single quotes around strings """
     if isinstance(s, str):
-        return "'%s'" % s
+        return repr(s)
     elif callable(s):
         return get_callable_name(s)
     elif isinstance(s, Node):
@@ -311,9 +325,7 @@ def _str(s):
         body = ", ".join(_str(x) for x in s)
         return "({0})".format(body if len(s) > 1 else (body + ","))
     else:
-        stream = StringIO()
-        pprint(s, stream=stream)
-        return stream.getvalue().rstrip()
+        return pformat(s).rstrip()
 
 
 @dispatch(Node)
