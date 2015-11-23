@@ -79,6 +79,7 @@ class InteractiveSymbol(Symbol):
         self._name = name or (next(names)
                               if isrecord(dshape.measure)
                               else None)
+        self._hash = None
 
     def _resources(self):
         return {self: self.data}
