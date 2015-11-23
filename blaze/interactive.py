@@ -71,7 +71,7 @@ class InteractiveSymbol(Symbol):
     0    Bob
     1  Edith
     """
-    __slots__ = 'data', 'dshape', '_name'
+    __slots__ = '_hash', 'data', 'dshape', '_name'
 
     def __init__(self, data, dshape, name=None):
         self.data = data
@@ -85,12 +85,15 @@ class InteractiveSymbol(Symbol):
         return {self: self.data}
 
     @property
-    def _args(self):
-        return id(self.data), self.dshape, self._name
-
-    def __setstate__(self, state):
-        for slot, arg in zip(self.__slots__, state):
-            setattr(self, slot, arg)
+    def _hashargs(self):
+        data = self.data
+        try:
+            # cannot use isinstance(data, Hashable)
+            # some classes give a false positive
+            hash(data)
+        except TypeError:
+            data = id(data)
+        return data, self.dshape, self._name
 
 
 @copydoc(InteractiveSymbol)

@@ -9,7 +9,7 @@ from pprint import pprint
 
 from ..compatibility import StringIO, _strtypes, builtins
 from ..dispatch import dispatch
-from ..utils import weakmemoize
+from ..compatibility import pickle
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
@@ -47,7 +47,7 @@ def isidentical(a, b):
     if type(a) != type(b):
         return False
     if isinstance(a, Node):
-        return all(map(isidentical, a._args, b._args))
+        return all(map(isidentical, a._hashargs, b._hashargs))
     if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
         return len(a) == len(b) and all(map(isidentical, a, b))
     return a == b
@@ -97,6 +97,8 @@ class Node(object):
     def _args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__[1:])
 
+    _hashargs = _args
+
     @property
     def _inputs(self):
         return tuple(getattr(self, i) for i in self.__inputs__)
@@ -130,7 +132,7 @@ class Node(object):
     def __hash__(self):
         hash_ = self._hash
         if hash_ is None:
-            hash_ = self._hash = hash((type(self), self._args))
+            hash_ = self._hash = hash((type(self), self._hashargs))
         return hash_
 
     def __str__(self):
@@ -172,10 +174,10 @@ class Node(object):
         return other in set(self._subterms())
 
     def __getstate__(self):
-        return self._args
+        return tuple(map(pickle.dumps, self._args))
 
     def __setstate__(self, state):
-        self.__init__(*state)
+        self.__init__(*map(pickle.loads, state))
 
     def __eq__(self, other):
         ident = self.isidentical(other)

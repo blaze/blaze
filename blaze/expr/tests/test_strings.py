@@ -1,5 +1,5 @@
 import datashape
-from blaze.expr import TableSymbol, like
+from blaze.expr import TableSymbol, like, Like
 
 
 def test_like():
