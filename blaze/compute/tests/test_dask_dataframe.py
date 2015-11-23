@@ -4,7 +4,7 @@ import pandas.util.testing as tm
 
 import dask.dataframe as dd
 
-from blaze.expr import symbol
+from blaze.expr import symbol, distinct
 from blaze.compute.core import compute
 from blaze.compatibility import builtins
 
@@ -67,3 +67,60 @@ def test_series_columnwise():
     t = symbol('t', 'var * {a: int64}')
     result = compute(t.a + 1, s)
     eq(result, data)
+
+
+def test_projection():
+    eq(compute(t[['name', 'id']], ddf), df[['name', 'id']])
+
+
+def test_field_on_series():
+    expr = symbol('s', 'var * int')
+    data = pd.Series([1, 2, 3, 4], name='s')
+    s = dd.from_pandas(data, npartitions=2)
+    eq(compute(expr.s, data), data)
+
+
+def test_selection():
+    eq(compute(t[t['amount'] == 0], ddf), df[df['amount'] == 0])
+    eq(compute(t[t['amount'] > 150], ddf), df[df['amount'] > 150])
+
+
+def test_selection_out_of_order():
+    expr = t['name'][t['amount'] < 100]
+    expected = df.loc[df.amount < 100, 'name']
+    result = compute(expr, ddf)
+    eq(result, expected)
+
+
+def test_selection_inner_inputs():
+    s_data = pd.DataFrame({'a': np.arange(5)})
+    t_data = pd.DataFrame({'a': np.arange(5)})
+
+    s_dd = dd.from_pandas(s_data, npartitions=2)
+    t_dd = dd.from_pandas(t_data, npartitions=2)
+
+    s = symbol('s', 'var * {a: int64}')
+    t = symbol('t', 'var * {a: int64}')
+
+    eq(compute(s[s.a == t.a], {s: s_dd, t: t_dd}), s_data)
+
+
+def test_distinct():
+    dftoobig = pd.DataFrame([['Alice', 'F', 100, 1],
+                             ['Alice', 'F', 100, 1],
+                             ['Alice', 'F', 100, 3],
+                             ['Drew', 'F', 100, 4],
+                             ['Drew', 'M', 100, 5],
+                             ['Drew', 'F', 100, 4],
+                             ['Drew', 'M', 100, 5],
+                             ['Drew', 'M', 200, 5],
+                             ['Drew', 'M', 200, 5]],
+                            columns=['name', 'sex', 'amount', 'id'])
+    ddftoobig = dd.from_pandas(dftoobig, npartitions=2)
+
+    d_t = distinct(tbig)
+    d_ddf = compute(d_t, ddftoobig)
+
+    eq(d_df, dfbig)
+    # Test idempotence
+    eq(compute(d_t, d_ddf), d_df)
