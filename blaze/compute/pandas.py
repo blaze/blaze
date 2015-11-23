@@ -148,12 +148,13 @@ def compute_up(expr, df, **kwargs):
     )
 
 
-@dispatch(Selection, (Series, DataFrame), Series)
+@dispatch(Selection, (Series, DataFrame, DaskSeries, DaskDataFrame), 
+                     (Series, DaskSeries))
 def compute_up(expr, df, predicate, **kwargs):
     return df[predicate]
 
 
-@dispatch(Join, (DataFrame, DaskDataFrame), (DataFrame, DaskDataFrame))
+@dispatch(Join, DataFrame, DataFrame)
 def compute_up(t, lhs, rhs, **kwargs):
     """ Join two pandas data frames on arbitrary columns
 
@@ -220,7 +221,7 @@ def compute_up(t, s, **kwargs):
     return result
 
 
-@dispatch(Distinct, (DataFrame, DaskDataFrame))
+@dispatch(Distinct, DataFrame)
 def compute_up(t, df, **kwargs):
     return df.drop_duplicates(subset=t.on or None).reset_index(drop=True)
 
