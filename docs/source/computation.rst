@@ -35,7 +35,7 @@ Our goal is to produce the result implied by the expression
 
 .. code-block:: python
 
-   >>> 205
+   >>> np.sum(xdata ** 2 + ydata)
    205
 
 Using many small functions defined for each backend to do small pieces of this
