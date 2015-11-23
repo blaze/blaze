@@ -21,7 +21,7 @@ from .core import common_subexpression
 from .expressions import Expr, ElemWise, label, Field
 from .expressions import dshape_method_list
 from ..compatibility import zip_longest, _strtypes
-from ..utils import listpack, weakmemoize
+from ..utils import listpack
 
 
 __all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
