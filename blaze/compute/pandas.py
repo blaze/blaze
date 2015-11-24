@@ -635,7 +635,7 @@ def compute_up(expr, data, **kwargs):
                   name=expr._name)
 
 
-@dispatch(IsIn, Series)
+@dispatch(IsIn, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
 
