@@ -151,6 +151,7 @@ def test_coerce_series():
     eq(result, expected)
 
 
-def test_nelements():
+def test_nelements_count():
     assert compute(t.nelements(), ddf) == len(df)
     assert compute(t.nrows, ddf) == len(df)
+    assert compute(count(t), ddf) == len(df)

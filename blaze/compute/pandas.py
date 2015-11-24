@@ -617,7 +617,7 @@ def compute_up(expr, df, **kwargs):
         raise NotImplementedError()
 
 
-@dispatch(count, (DataFrame, DaskDataFrame))
+@dispatch(count, DataFrame)
 def compute_up(expr, df, **kwargs):
     result = df.shape[0]
     if expr.keepdims:
@@ -630,10 +630,13 @@ def compute_up(expr, df, **kwargs):
     return df.shape[0]
 
 
-@dispatch(nelements, (DaskDataFrame, DaskSeries))
+@dispatch((count, nelements), (DaskDataFrame, DaskSeries))
 def compute_up(expr, df, **kwargs):
-    warnings.warn("Calculating `nelements` of a dask object can be slow.")
-    return len(df)
+    warnings.warn("Counting the elements of a dask object can be slow.")
+    result = len(df)
+    if expr.keepdims:
+        result = DaskSeries([result], name=expr._name)
+    return result
 
 
 @dispatch(DateTimeTruncate, Series)
