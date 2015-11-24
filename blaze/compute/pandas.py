@@ -205,7 +205,7 @@ def get_scalar(result):
         return result
 
 
-@dispatch(Reduction, (Series, SeriesGroupBy))
+@dispatch(Reduction, (Series, SeriesGroupBy, DaskSeries))
 def compute_up(t, s, **kwargs):
     result = get_scalar(getattr(s, t.symbol)())
     if t.keepdims:

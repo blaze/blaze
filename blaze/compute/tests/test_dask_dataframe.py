@@ -4,7 +4,7 @@ import pandas.util.testing as tm
 
 import dask.dataframe as dd
 
-from blaze.expr import symbol, distinct
+from blaze.expr import symbol, mean, count, sum, min, max, any, var, std
 from blaze.compute.core import compute
 from blaze.compatibility import builtins
 
