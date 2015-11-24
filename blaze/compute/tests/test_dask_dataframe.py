@@ -149,3 +149,8 @@ def test_coerce_series():
     result = compute(t.coerce(to='int64'), dds)
     expected = pd.Series([1, 2, 3, 4], name=s.name)
     eq(result, expected)
+
+
+def test_nelements():
+    assert compute(t.nelements(), ddf) == len(df)
+    assert compute(t.nrows, ddf) == len(df)
