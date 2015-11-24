@@ -1,20 +1,22 @@
 from __future__ import absolute_import, division, print_function
 
 import numbers
-import toolz
 import inspect
 
+import numpy as np
+import toolz
 from toolz import unique, concat, compose, partial
+import pandas as pd
 from pprint import pformat
 
 from ..compatibility import _strtypes, builtins
 from ..dispatch import dispatch
-from ..compatibility import pickle
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
 base = (numbers.Number,) + _strtypes
+arrtypes = np.ndarray, pd.core.generic.NDFrame
 
 
 def isidentical(a, b):
@@ -44,10 +46,12 @@ def isidentical(a, b):
     """
     if isinstance(a, base) and isinstance(b, base):
         return a == b
+    if isinstance(a, arrtypes) and isinstance(b, arrtypes):
+        return np.array_equal(a, b)
     if type(a) != type(b):
         return False
     if isinstance(a, Node):
-        return all(map(isidentical, a._hashargs, b._hashargs))
+        return all(map(isidentical, a._args, b._args))
     if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
         return len(a) == len(b) and all(map(isidentical, a, b))
     return a == b
@@ -174,10 +178,10 @@ class Node(object):
         return other in set(self._subterms())
 
     def __getstate__(self):
-        return tuple(map(pickle.dumps, self._args))
+        return tuple(self._args)
 
     def __setstate__(self, state):
-        self.__init__(*map(pickle.loads, state))
+        self.__init__(*state)
 
     def __eq__(self, other):
         ident = self.isidentical(other)
