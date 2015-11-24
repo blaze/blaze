@@ -1,5 +1,6 @@
 from datetime import timedelta
 import itertools
+import tempfile
 
 import pytest
 
@@ -12,6 +13,7 @@ import pandas as pd
 import pandas.util.testing as tm
 
 from odo import odo, resource, drop, discover
+from odo.utils import tmpfile
 from blaze import symbol, compute, concat, join, sin, cos, radians, atan2
 from blaze import sqrt, transform, Data
 from blaze.utils import example, normalize
@@ -41,16 +43,20 @@ def sql(url):
 
 @pytest.yield_fixture(scope='module')
 def nyc():
-    try:
-        t = odo(example('nyc.csv'),
-                'postgresql://postgres@localhost/test::nyc')
-    except sa.exc.OperationalError as e:
-        pytest.skip(str(e))
-    else:
-        try:
-            yield t
-        finally:
-            drop(t)
+    with open(example('nyc.csv'), 'rb') as f:
+        raw = f.read()
+        with tmpfile('.csv') as name:
+            with open(name, 'wb') as g:
+                g.write(raw)
+            try:
+                t = odo(name, 'postgresql://postgres@localhost/test::nyc')
+            except sa.exc.OperationalError as e:
+                pytest.skip(str(e))
+            else:
+                try:
+                    yield t
+                finally:
+                    drop(t)
 
 
 @pytest.yield_fixture
