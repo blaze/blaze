@@ -105,22 +105,17 @@ def test_selection_inner_inputs():
     eq(compute(s[s.a == t.a], {s: s_dd, t: t_dd}), s_data)
 
 
-def test_distinct():
-    dftoobig = pd.DataFrame([['Alice', 'F', 100, 1],
-                             ['Alice', 'F', 100, 1],
-                             ['Alice', 'F', 100, 3],
-                             ['Drew', 'F', 100, 4],
-                             ['Drew', 'M', 100, 5],
-                             ['Drew', 'F', 100, 4],
-                             ['Drew', 'M', 100, 5],
-                             ['Drew', 'M', 200, 5],
-                             ['Drew', 'M', 200, 5]],
-                            columns=['name', 'sex', 'amount', 'id'])
-    ddftoobig = dd.from_pandas(dftoobig, npartitions=2)
-
-    d_t = distinct(tbig)
-    d_ddf = compute(d_t, ddftoobig)
-
-    eq(d_df, dfbig)
-    # Test idempotence
-    eq(compute(d_t, d_ddf), d_df)
+def test_reductions():
+    assert compute(mean(t['amount']), ddf) == 350 / 3
+    assert compute(count(t['amount']), df) == 3
+    assert compute(sum(t['amount']), df) == 100 + 200 + 50
+    assert compute(min(t['amount']), df) == 50
+    assert compute(max(t['amount']), df) == 200
+    assert compute(any(t['amount'] > 150), df) is True
+    assert compute(any(t['amount'] > 250), df) is False
+    assert compute(var(t['amount']), df) == df.amount.var(ddof=0)
+    assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
+    assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
+    assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
+    assert compute(t.amount[0], df) == df.amount.iloc[0]
+    assert compute(t.amount[-1], df) == df.amount.iloc[-1]
