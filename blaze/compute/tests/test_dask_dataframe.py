@@ -138,11 +138,6 @@ def test_summary_on_series():
     assert compute(expr, ser) == [(3, 1)]
 
 
-def test_nelements():
-    assert compute(t.nelements(), ddf) == len(df)
-    assert compute(t.nrows, ddf) == len(df)
-
-
 @pytest.mark.parametrize('keys', [[1], [2, 3]])
 def test_isin(keys):
     expr = t[t.id.isin(keys)]

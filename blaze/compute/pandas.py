@@ -624,9 +624,9 @@ def compute_up(expr, df, **kwargs):
     return result
 
 
-@dispatch(nelements, (DataFrame, Series, DaskDataFrame, DaskSeries))
+@dispatch(nelements, (DataFrame, Series))
 def compute_up(expr, df, **kwargs):
-    return len(df)
+    return df.shape[0]
 
 
 @dispatch(DateTimeTruncate, Series)
