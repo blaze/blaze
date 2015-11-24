@@ -76,16 +76,9 @@ expression.
        z._args == (log(x - 1), y)
        x._args == ('x', 'int64')
 
-* ``._hashargs``: The arguments in a form that is hashable. This is only
-  different from ``._args`` when the arguments contain things that are not
-  normally hashable with the ``hash`` builtin function
-
-  .. code-block:: python
-
-     >>> bz.Data([1])._hashargs
-     (140148670342984, dshape("1 * int64"), None)
-
-  Because lists are not hashable, the hash here is the ``id`` of the list.
+*  ``._hashargs``: The arguments in a form that is hashable. This is only
+   different from ``._args`` when the arguments contain things that are not
+   normally hashable with the ``hash`` builtin function.
 
 *  ``._inputs``: All children of a node, excluding parameters.  All inputs are
    Blaze expressions.::
