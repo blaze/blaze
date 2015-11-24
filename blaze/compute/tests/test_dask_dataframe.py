@@ -4,7 +4,7 @@ import pandas.util.testing as tm
 
 import dask.dataframe as dd
 
-from blaze.expr import symbol, mean, count, sum, min, max, any, var, std
+from blaze.expr import symbol, mean, count, sum, min, max, any, var, std, summary
 from blaze.compute.core import compute
 from blaze.compatibility import builtins
 
@@ -119,3 +119,23 @@ def test_reductions():
     assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
     assert compute(t.amount[0], df) == df.amount.iloc[0]
     assert compute(t.amount[-1], df) == df.amount.iloc[-1]
+
+
+def test_summary():
+    expr = summary(count=t.id.count(), sum=t.amount.sum())
+    eq(compute(expr, ddf), pd.Series({'count': 3, 'sum': 350}))
+
+
+def test_summary_on_series():
+    ser = dd.from_pandas(pd.Series([1, 2, 3]), npartitions=2)
+    s = symbol('s', '3 * int')
+    expr = summary(max=s.max(), min=s.min())
+    assert compute(expr, ser) == (3, 1)
+
+    expr = summary(max=s.max(), min=s.min(), keepdims=True)
+    assert compute(expr, ser) == [(3, 1)]
+
+
+def test_nelements():
+    assert compute(t.nelements(), ddf) == len(df)
+    assert compute(t.nrows, ddf) == len(df)

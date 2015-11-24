@@ -479,7 +479,7 @@ def compute_up(t, df, **kwargs):
     return pdsort(df, t.key, ascending=t.ascending)
 
 
-@dispatch(Sort, (Series, DaskSeries))
+@dispatch(Sort, Series)
 def compute_up(t, s, **kwargs):
     try:
         return s.sort_values(ascending=t.ascending)
@@ -497,7 +497,7 @@ def compute_up(t, df, **kwargs):
     return df.tail(t.n)
 
 
-@dispatch(Label, (DataFrame, DaskDataFrame))
+@dispatch(Label, DataFrame)
 def compute_up(t, df, **kwargs):
     return type(df)(df, columns=[t.label])
 
@@ -522,7 +522,7 @@ def compute_up(t, s, **kwargs):
     return Series(s, name=replacement)
 
 
-@dispatch(Map, (DataFrame, DaskDataFrame))
+@dispatch(Map, DataFrame)
 def compute_up(t, df, **kwargs):
     return df.apply(lambda tup: t.func(*tup), axis=1)
 
@@ -560,7 +560,7 @@ def compute_up(expr, data, **kwargs):
         return Series(dict(zip(expr.fields, values)))
 
 
-@dispatch(Summary, Series)
+@dispatch(Summary, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     result = tuple(compute(val, {expr._child: data}) for val in expr.values)
     if expr.keepdims:
@@ -568,7 +568,7 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
-@dispatch(Like, (DataFrame, DaskDataFrame))
+@dispatch(Like, DataFrame)
 def compute_up(expr, df, **kwargs):
     arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
             for name, pattern in expr.patterns.items()]
@@ -624,7 +624,7 @@ def compute_up(expr, df, **kwargs):
     return result
 
 
-@dispatch(nelements, (DataFrame, Series))
+@dispatch(nelements, (DataFrame, Series, DaskDataFrame, DaskSeries))
 def compute_up(expr, df, **kwargs):
     return df.shape[0]
 
