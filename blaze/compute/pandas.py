@@ -267,7 +267,7 @@ def unpack(seq):
 Grouper = ElemWise, Series, list
 
 
-@dispatch(By, list, (DataFrame, DaskDataFrame))
+@dispatch(By, list, DataFrame)
 def get_grouper(c, grouper, df):
     return grouper
 
