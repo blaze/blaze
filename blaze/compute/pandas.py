@@ -640,7 +640,7 @@ def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
 
 
-@dispatch(Coerce, Series)
+@dispatch(Coerce, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     return data.astype(to_numpy_dtype(expr.schema))
 
