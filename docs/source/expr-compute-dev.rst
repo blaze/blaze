@@ -28,10 +28,10 @@ expression defines a fixed set of fields in the ``__slots__`` attribute
 .. code-block:: python
 
    class Selection(Expr):
-       __slots__ = '_child', 'predicate'
+       __slots__ = '_hash', '_child', 'predicate'
 
    class Field(ElemWise):
-       __slots__ = '_child', 'fieldname'
+       __slots__ = '_hash', '_child', 'fieldname'
 
 
 To create a node in the tree explicitly we create a Python object of this class
@@ -211,3 +211,77 @@ out the ``sqlalchemy.Table`` object and call ``compute_up`` on that.  When
 we're finished and have successfully translated our Blaze expression to a
 SQLAlchemy expression we want to post-process this result by actually running
 the query in our SQL database and returning the concrete results.
+
+
+
+Adding Expressions
+------------------
+
+Expressions can be added by creating a new subclass of
+:class:`blaze.expr.expressions.Expr`. When adding a class, one should define all
+of the instance data that the type will need in the ``__slots__``. This should
+probably include a ``_hash``. which will be used to cache the hash value of the
+node. Often we should defer to the ``__init__`` defined on the super class. This
+will reflect the signature from the ``__slots__``.
+
+To define the shape of our new expression, we should implement the
+``_dshape`` method. This method should use the shapes of the arguments
+passed in the constructor plus knowledge of this type of transformation to
+return the datashape of this expression. For example, thinking of ``sum``, we
+would probably want a method like:
+
+.. code-block:: python
+
+   def _dshape(self):
+       # Drop the dimension of the child reducing to a scalar type.
+       return self._child.schema.measure
+
+
+Here we see the ``.schema`` attribute being used. This attribute dispatches to
+another optional method: ``_schema``. This method should return the datashape
+with the shape stripped off, or just the data type. If this is not defined, it
+will be implemented in terms of the ``_dshape`` method. This is often convenient
+for subclasses where the rules about the ``schema`` change but the rules for the
+dimensions are all the same, like :class:`blaze.expr.reductions.Reduction`.
+
+The constructor is not public construction point for a blaze expression. After
+the class is defined a pairing function should be added to construct and type
+check the new node. For example, if our node is ``Concat``, then the functions
+should be called ``concat``. We will want to decorate this function with
+:func:`odo.utils.copydoc` to pull the docstring from the class. This function's
+main job is type checking the operands. Any constructed node should be in a
+valid state. If the types do not check out, simply raise a ``TypeError`` with a
+helpful message to the user.
+
+Now that the new expression class is defined and the types work out, it must be
+dispatched to in the compute backends. For each backend that can implement this
+new feature, a corrosponding ``compute_up`` dispatch should be defined. For
+example, assuming we just defined ``sum``, we would need to implement something
+like:
+
+.. code-block:: python
+
+   @dispatch(sum, np.ndarray)
+   def compute_up(expr, arr, **kwargs):
+       ...
+
+   @dispatch(sum, pd.Series)
+   def compute_up(expr, arr, **kwargs):
+       ...
+
+   @dispatch(sum, (list, tuple))
+   def compute_up(expr, arr, **kwargs):
+       ...
+
+   ...
+
+
+Each of these function definitions should appear in the ``blaze.compute.*``
+module for the given backend. For example, the ``ndarray`` definition should go
+in ``blaze.compute.numpy``.
+
+After implementing the various compute up functions, tests should be written for
+this behavior. Tests should be added to ``blaze/expr/tests`` for the expression
+itself, including tests against the construction and the dshape. Tests are also
+needed for each of the particular backend implementations to assert that the
+results of performing the computation is correct accross our various backends.
