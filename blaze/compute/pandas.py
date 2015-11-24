@@ -629,6 +629,11 @@ def compute_up(expr, df, **kwargs):
     return df.shape[0]
 
 
+@dispatch(nelements, (DaskDataFrame, DaskSeries))
+def compute_up(expr, df, **kwargs):
+    return len(df)
+
+
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
     return Series(compute_up(expr, into(np.ndarray, data), **kwargs),
