@@ -363,9 +363,11 @@ def fancify_summary(expr):
 def compute_by(t, s, g, df):
     one, two, three = fancify_summary(s)  # see above
     names = one.fields
-    preapply = DataFrame(dict(zip(names,
-                                  [compute(v._child, {t._child: df})
-                                   for v in one.values])))
+    preapply = DataFrame(
+        dict(
+            zip(names, [compute(v._child, {t._child: df}) for v in one.values])
+        )
+    )
 
     if not df.index.equals(preapply.index):
         df = df.loc[preapply.index]
@@ -383,7 +385,9 @@ def compute_by(t, s, g, df):
     result2 = pd.concat(cols, axis=1)
 
     # Rearrange columns to match names order
-    result3 = result2[sorted(result2.columns, key=lambda t: s.fields.index(t))]
+    result3 = result2[
+        sorted(result2.columns, key=lambda t, s=s: s.fields.index(t))
+    ]
     return result3
 
 
