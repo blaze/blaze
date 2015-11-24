@@ -1,21 +1,20 @@
-from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
-
 import datetime
-from odo import into, append
-from odo.backends.csv import CSV
-from blaze import discover, transform
-from blaze.compute.core import compute
-from blaze.compute.python import compute
-from blaze.expr import symbol
-from datashape import dshape
-from blaze.utils import tmpfile, example
-import pytest
 import sys
 from types import MethodType
 
+from datashape import dshape
 import pandas as pd
 import pandas.util.testing as tm
+import pytest
 import numpy as np
+from odo import into, append
+from odo.backends.csv import CSV
+
+from blaze import discover, transform
+from blaze.compatibility import pickle
+from blaze.expr import symbol
+from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
+from blaze.utils import tmpfile, example
 
 data = (('Alice', 100),
         ('Bob', 200))
@@ -451,3 +450,12 @@ def test_csv_with_trailing_commas():
         assert discover(csv).measure.names == [
             'a', 'b', 'c', 'Unnamed: 3'
         ]
+
+
+def test_pickle_roundtrip():
+    ds = Data(1)
+    assert ds.isidentical(pickle.loads(pickle.dumps(ds)))
+    assert (ds + 1).isidentical(pickle.loads(pickle.dumps(ds + 1)))
+    es = Data(np.array([1, 2, 3]))
+    assert es.isidentical(pickle.loads(pickle.dumps(es)))
+    assert (es + 1).isidentical(pickle.loads(pickle.dumps(es + 1)))
