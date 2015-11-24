@@ -6,7 +6,7 @@ import pandas.util.testing as tm
 
 import dask.dataframe as dd
 
-from blaze.expr import symbol, mean, count, sum, min, max, any, var, std, summary
+from blaze.expr import symbol, mean, count, sum, min, max, any, var, std, summary, discover
 from blaze.compute.core import compute
 from blaze.compatibility import builtins
 
@@ -143,4 +143,13 @@ def test_isin(keys):
     expr = t[t.id.isin(keys)]
     result = compute(expr, ddf)
     expected = df.loc[df.id.isin(keys)]
+    eq(result, expected)
+
+
+def test_coerce_series():
+    s = pd.Series(list('1234'), name='a')
+    dds = dd.from_pandas(s, npartitions=2)
+    t = symbol('t', discover(s))
+    result = compute(t.coerce(to='int64'), dds)
+    expected = pd.Series([1, 2, 3, 4], name=s.name)
     eq(result, expected)
