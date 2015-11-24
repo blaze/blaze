@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 import fnmatch
 import itertools
 from distutils.version import LooseVersion
+import warnings
 
 import numpy as np
 
@@ -631,6 +632,7 @@ def compute_up(expr, df, **kwargs):
 
 @dispatch(nelements, (DaskDataFrame, DaskSeries))
 def compute_up(expr, df, **kwargs):
+    warnings.warn("Calculating `nelements` of a dask object can be slow.")
     return len(df)
 
 
