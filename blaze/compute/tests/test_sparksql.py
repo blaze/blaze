@@ -17,6 +17,8 @@ import os
 import itertools
 import shutil
 
+from functools import partial
+
 from py4j.protocol import Py4JJavaError
 import numpy as np
 import pandas as pd
@@ -342,17 +344,15 @@ def test_strlen(ctx, db):
 
 @pytest.mark.parametrize(
     'attr',
-    [
-        'year', 'month', 'day', 'hour', 'minute', 'second',
-        pytest.mark.xfail(
-            'millisecond',
-            raises=(Py4JJavaError, AnalysisException)
-        ),
-        pytest.mark.xfail(
-            'microsecond',
-            raises=(Py4JJavaError, AnalysisException)
-        ),
-    ]
+    ['year', 'month', 'day', 'hour', 'minute', 'second'] + list(
+        map(
+            partial(
+                pytest.mark.xfail,
+                raises=(Py4JJavaError, AnalysisException)
+            ),
+            ['millisecond', 'microsecond']
+        )
+    )
 )
 def test_by_with_date(ctx, db, attr):
     # TODO: investigate CSV writing precision between pandas 0.16.0 and 0.16.1
