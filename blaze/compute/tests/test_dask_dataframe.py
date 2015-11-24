@@ -1,3 +1,5 @@
+import pytest
+
 import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
@@ -139,3 +141,11 @@ def test_summary_on_series():
 def test_nelements():
     assert compute(t.nelements(), ddf) == len(df)
     assert compute(t.nrows, ddf) == len(df)
+
+
+@pytest.mark.parametrize('keys', [[1], [2, 3]])
+def test_isin(keys):
+    expr = t[t.id.isin(keys)]
+    result = compute(expr, ddf)
+    expected = df.loc[df.id.isin(keys)]
+    eq(result, expected)
