@@ -320,7 +320,7 @@ def test_join_promotion():
     b = symbol('b', discover(b_data))
 
     joined = join(a, b, 'a')
-    assert joined.dshape == dshape('var * {a: float64, b: ?float64, c: int64}')
+    assert joined.dshape == dshape('var * {a: float64, b: float64, c: int64}')
 
     expected = pd.merge(a_data, b_data, on='a')
     result = compute(joined, {a: a_data, b: b_data})
