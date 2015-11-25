@@ -9,6 +9,7 @@ from .serialization import (
     json as json_format,
     pickle as pickle_format,
     msgpack as msgpack_format,
+    stream_formats,
 )
 
 
@@ -24,5 +25,6 @@ __all__ = [
     'json_format',
     'msgpack_format',
     'pickle_format',
+    'stream_formats',
     'to_tree',
 ]

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import Iterable
 import socket
 import functools
 import re
@@ -22,7 +23,7 @@ from toolz import assoc
 
 from datashape import Mono, discover
 from datashape.predicates import iscollection, isscalar
-from odo import odo
+from odo import odo, chunks
 
 import blaze
 from blaze import compute
@@ -31,6 +32,7 @@ from blaze.compute import compute_up
 
 from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol, coerce_scalar
+from ..compatibility import map
 from ..expr import Expr, symbol
 
 
@@ -352,28 +354,17 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
-                            '|'.join(x.name for x in all_formats))
+class _ComputationFailed(Exception):
+    def __init__(self, msg, status):
+        self._msg = msg
+        self._status = status
+
+    @property
+    def astuple(self):
+        return self._msg, self._status
 
 
-@api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
-@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
-@authorization
-def compserver():
-    content_type = request.headers['content-type']
-    matched = mimetype_regex.match(content_type)
-
-    if matched is None:
-        return 'Unsupported serialization format %s' % content_type, 415
-
-    try:
-        serial = _get_format(matched.groups()[0])
-    except KeyError:
-        return (
-            "Unsupported serialization format '%s'" % matched.groups()[0],
-            415,
-        )
-
+def _process_request(serial, chunksize=None):
     try:
         payload = serial.loads(request.data)
     except ValueError:
@@ -391,18 +382,84 @@ def compserver():
         result = compute(expr, {leaf: dataset})
 
         if iscollection(expr.dshape):
-            result = odo(result, list)
+            result = odo(
+                result,
+                chunks(list) if chunksize else list,
+                chunksize=chunksize,
+            )
         elif isscalar(expr.dshape):
             result = coerce_scalar(result, str(expr.dshape))
     except NotImplementedError as e:
         # 501: Not Implemented
-        return ("Computation not supported:\n%s" % e, 501)
+        raise _ComputationFailed(
+            "Computation not supported:\n%s" % e, 501
+        )
     except Exception as e:
         # 500: Internal Server Error
-        return ("Computation failed with message:\n%s" % e, 500)
+        raise _ComputationFailed(
+            "Computation failed with message:\n%s" % e, 500
+        )
+
+    return expr, result
+
+
+mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
+                            '|'.join(x.name for x in all_formats))
+
+
+@api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@authorization
+def compserver():
+    content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
+
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
+
+    try:
+        serial = _get_format(matched.groups()[0])
+    except KeyError:
+        return 'Unsupported serialization format %s' % matched, 415
+
+    try:
+        expr, result = _process_request(serial)
+    except _ComputationFailed as e:
+        return e.astuple
 
     return serial.dumps({
         'datashape': str(expr.dshape),
         'data': result,
         'names': expr.fields
     })
+
+
+@api.route('/compute/stream', methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+def streamserver():
+    content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
+
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
+
+    try:
+        serial = _get_format(matched.groups()[0])
+    except KeyError:
+        return 'Unsupported serialization format %s' % matched, 415
+
+    try:
+        chunksize = int(request.args.get('chunksize', 1000))
+    except ValueError:
+        return 'chunksize must be an integer', 422
+
+    try:
+        expr, result = _process_request(serial, chunksize)
+    except _ComputationFailed as e:
+        return e.astuple
+
+    return Response(
+        map(serial.dumps, result)
+        if isinstance(result, Iterable) else
+        (serial.dumps({'d': result}) for _ in (None,)),
+    )
