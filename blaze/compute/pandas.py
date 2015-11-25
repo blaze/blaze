@@ -51,7 +51,7 @@ from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 
-from ..compatibility import _inttypes
+from ..compatibility import _inttypes, pandas_sort
 
 __all__ = []
 
@@ -457,7 +457,7 @@ def concat_nodup(a, b):
 
 @dispatch(Sort, DataFrame)
 def compute_up(t, df, **kwargs):
-    return df.sort_values(by=t.key, ascending=t.ascending)
+    return pandas_sort(df, t.key, ascending=t.ascending)
 
 
 @dispatch(Sort, Series)
