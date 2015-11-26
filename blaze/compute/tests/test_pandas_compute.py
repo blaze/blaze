@@ -13,12 +13,12 @@ from pandas import DataFrame, Series
 from string import ascii_lowercase
 
 from blaze.compute.core import compute
+from blaze.compute.pandas import pdsort
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat)
-from blaze.compatibility import (builtins, xfail, assert_series_equal,
-                                 pandas_sort)
+from blaze.compatibility import builtins, xfail, assert_series_equal
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
@@ -330,13 +330,13 @@ def test_join_promotion():
 
 def test_sort():
     tm.assert_frame_equal(compute(t.sort('amount'), df),
-                          pandas_sort(df, 'amount'))
+                          pdsort(df, 'amount'))
 
     tm.assert_frame_equal(compute(t.sort('amount', ascending=True), df),
-                          pandas_sort(df, 'amount', ascending=True))
+                          pdsort(df, 'amount', ascending=True))
 
     tm.assert_frame_equal(compute(t.sort(['amount', 'id']), df),
-                          pandas_sort(df, ['amount', 'id']))
+                          pdsort(df, ['amount', 'id']))
 
 
 def test_sort_on_series_no_warning(recwarn):
@@ -485,8 +485,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = pandas_sort(df, 'id').to_records(index=False)
-    expected = pandas_sort(expected, 'id').to_records(index=False)
+    result = pdsort(df, 'id').to_records(index=False)
+    expected = pdsort(expected, 'id').to_records(index=False)
     np.array_equal(result, expected)
 
     df = compute(join(lsym, rsym, how='outer'), {lsym: left, rsym: right})
@@ -497,8 +497,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = pandas_sort(df, 'id').to_records(index=False)
-    expected = pandas_sort(expected, 'id').to_records(index=False)
+    result = pdsort(df, 'id').to_records(index=False)
+    expected = pdsort(expected, 'id').to_records(index=False)
     np.array_equal(result, expected)
 
 

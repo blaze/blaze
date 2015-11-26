@@ -18,6 +18,7 @@ from __future__ import absolute_import, division, print_function
 
 import fnmatch
 import itertools
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -51,7 +52,7 @@ from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 
-from ..compatibility import _inttypes, pandas_sort
+from ..compatibility import _inttypes
 
 __all__ = []
 
@@ -455,9 +456,15 @@ def concat_nodup(a, b):
             return pd.concat([a, b], axis=1)
 
 
+pdsort = getattr(
+    pd.DataFrame,
+    'sort' if LooseVersion(pd.__version__) < '0.17.0' else 'sort_values'
+)
+
+
 @dispatch(Sort, DataFrame)
 def compute_up(t, df, **kwargs):
-    return pandas_sort(df, t.key, ascending=t.ascending)
+    return pdsort(df, t.key, ascending=t.ascending)
 
 
 @dispatch(Sort, Series)

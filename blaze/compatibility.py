@@ -2,11 +2,8 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 from types import MethodType
-from distutils.version import LooseVersion
 
 import pandas.util.testing as tm
-
-import pandas as pd
 
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
@@ -136,17 +133,3 @@ def assert_series_equal(left, right, check_names=True, **kwargs):
         if check_names:
             assert left.name == right.name
         return tm.assert_series_equal(left, right, **kwargs)
-
-
-def _pandas_sort_old(df, *args, **kwargs):
-    """Use pd.sort() for older versions"""
-    return df.sort(*args, **kwargs)
-
-def _pandas_sort_new(df, *args, **kwargs):
-    """Use pd.sort_values() for newer versions"""
-    return df.sort_values(*args, **kwargs)
-
-if LooseVersion(pd.__version__) < '0.17.0':
-    pandas_sort = _pandas_sort_old
-else:
-    pandas_sort = _pandas_sort_new
