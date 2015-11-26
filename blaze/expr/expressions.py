@@ -23,10 +23,32 @@ from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices
 
 
-__all__ = ['Expr', 'ElemWise', 'Field', 'Symbol', 'discover', 'Projection',
-           'projection', 'Selection', 'selection', 'Label', 'label', 'Map',
-           'ReLabel', 'relabel', 'Apply', 'apply', 'Slice', 'shape', 'ndim',
-           'label', 'symbol', 'Coerce', 'coerce']
+__all__ = [
+    'Apply',
+    'Coerce',
+    'ElemWise',
+    'Expr',
+    'Field',
+    'Label',
+    'Map',
+    'Projection',
+    'ReLabel',
+    'Selection',
+    'SimpleSelection',
+    'Slice',
+    'Symbol',
+    'apply',
+    'coerce',
+    'discover',
+    'label',
+    'label',
+    'ndim',
+    'projection',
+    'relabel',
+    'selection',
+    'shape',
+    'symbol',
+]
 
 
 _attr_cache = dict()
@@ -475,6 +497,11 @@ class Selection(Expr):
     >>> deadbeats = accounts[accounts.amount < 0]
     """
     __slots__ = '_hash', '_child', 'predicate'
+    __inputs__ = '_child', 'predicate'
+
+    @property
+    def _name(self):
+        return self._child._name
 
     def __str__(self):
         return "%s[%s]" % (self._child, self.predicate)
@@ -484,6 +511,13 @@ class Selection(Expr):
         shape = list(self._child.dshape.shape)
         shape[0] = Var()
         return DataShape(*(shape + [self._child.dshape.measure]))
+
+
+class SimpleSelection(Selection):
+    """Internal selection class that does not treat the predicate as an input.
+    """
+    __slots__ = Selection.__slots__
+    __inputs__ = '_child',
 
 
 @copydoc(Selection)

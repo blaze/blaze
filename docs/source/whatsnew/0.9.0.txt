@@ -19,6 +19,9 @@ New Backends
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
+* Adds support for :func:`~blaze.expr.collections.tail` in the sql backend
+  (:issue:`1289`).
+
 API Changes
 ~~~~~~~~~~~
 
@@ -56,3 +59,11 @@ Bug Fixes
   (:issue:`1288`).
 * Fixed a bug where comparisons to a empty string magically converted
   the empty string to ``None`` (:issue:`1308`).
+* Fixed a bug where leaves that only appeared in the predicate of a selection
+  would not be in scope in time to compute the predicate. This would cause whole
+  expressions like ``a[a > b]`` to fail because ``b`` was not in scope
+  (:issue:`1275`).
+* Fix a broken test on machines that don't allow postgres to read from the
+  local filesystem (:issue:`1323`).
+* Updated a test to reflect changes from odo
+  `#366 <https://github.com/blaze/odo/issues/366>`_ (:issue:`1323`).

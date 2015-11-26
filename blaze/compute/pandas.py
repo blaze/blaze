@@ -131,8 +131,17 @@ def compute_up(t, df, **kwargs):
 
 
 @dispatch(Selection, (Series, DataFrame))
-def compute_up(t, df, **kwargs):
-    predicate = compute(t.predicate, {t._child: df})
+def compute_up(expr, df, **kwargs):
+    return compute_up(
+        expr,
+        df,
+        compute(expr.predicate, {expr._child: df}),
+        **kwargs
+    )
+
+
+@dispatch(Selection, (Series, DataFrame), Series)
+def compute_up(expr, df, predicate, **kwargs):
     return df[predicate]
 
 
@@ -354,9 +363,11 @@ def fancify_summary(expr):
 def compute_by(t, s, g, df):
     one, two, three = fancify_summary(s)  # see above
     names = one.fields
-    preapply = DataFrame(dict(zip(names,
-                                  [compute(v._child, {t._child: df})
-                                   for v in one.values])))
+    preapply = DataFrame(
+        dict(
+            zip(names, [compute(v._child, {t._child: df}) for v in one.values])
+        )
+    )
 
     if not df.index.equals(preapply.index):
         df = df.loc[preapply.index]
@@ -374,7 +385,9 @@ def compute_by(t, s, g, df):
     result2 = pd.concat(cols, axis=1)
 
     # Rearrange columns to match names order
-    result3 = result2[sorted(result2.columns, key=lambda t: s.fields.index(t))]
+    result3 = result2[
+        sorted(result2.columns, key=lambda t, s=s: s.fields.index(t))
+    ]
     return result3
 
 

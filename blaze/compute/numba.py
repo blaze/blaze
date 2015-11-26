@@ -32,8 +32,11 @@ def optimize_ndarray(expr, *data, **kwargs):
                 for dt in leaf.dshape.measure.types)):
             return expr
     else:
-        return broadcast_collect(expr, Broadcastable=Broadcastable,
-                                 WantToBroadcast=Broadcastable)
+        return broadcast_collect(
+            expr,
+            broadcastable=Broadcastable,
+            want_to_broadcast=Broadcastable,
+        )
 
 
 for i in range(1, 11):
