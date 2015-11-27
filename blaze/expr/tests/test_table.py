@@ -763,14 +763,14 @@ class TestRepr(object):
         s = str(expr)
         assert s == ("Map(_child=t.amount, "
                      "func=partial(%s, 1), "
-                     "_schema=None, _name0=None)" %
+                     "_asschema=None, _name0=None)" %
                      funcname('test_partial_lambda'))
 
     def test_lambda(self, t):
         expr = t.amount.map(lambda x: x)
         s = str(expr)
         assert s == ("Map(_child=t.amount, "
-                     "func=%s, _schema=None, _name0=None)" %
+                     "func=%s, _asschema=None, _name0=None)" %
                      funcname('test_lambda'))
 
     def test_partial(self, t):
@@ -780,14 +780,14 @@ class TestRepr(object):
         s = str(expr)
         assert s == ("Map(_child=t.amount, "
                      "func=partial(%s, 1), "
-                     "_schema=None, _name0=None)" % funcname('test_partial',
-                                                                'myfunc'))
+                     "_asschema=None, _name0=None)" % funcname('test_partial',
+                                                               'myfunc'))
 
     def test_builtin(self, t):
         expr = t.amount.map(datetime.fromtimestamp)
         s = str(expr)
         assert s == ("Map(_child=t.amount, "
-                     "func=datetime.fromtimestamp, _schema=None,"
+                     "func=datetime.fromtimestamp, _asschema=None,"
                      " _name0=None)")
 
     def test_udf(self, t):
@@ -796,7 +796,7 @@ class TestRepr(object):
         expr = t.amount.map(myfunc)
         s = str(expr)
         assert s == ("Map(_child=t.amount, "
-                     "func=%s, _schema=None,"
+                     "func=%s, _asschema=None,"
                      " _name0=None)" % funcname('test_udf', 'myfunc'))
 
     def test_nested_partial(self, t):
@@ -806,7 +806,7 @@ class TestRepr(object):
         expr = t.amount.map(f)
         s = str(expr)
         assert s == ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
-                     " _schema=None, _name0=None)" %
+                     " _asschema=None, _name0=None)" %
                      funcname('test_nested_partial', 'myfunc'))
 
 

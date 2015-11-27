@@ -50,9 +50,9 @@ class Reduction(Expr):
         axis = tuple(sorted(axis))
         self.axis = axis
         self.keepdims = keepdims
+        self._hash = None
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         axis = self.axis
         if self.keepdims:
             shape = tuple(1 if i in axis else d
@@ -63,8 +63,7 @@ class Reduction(Expr):
                           if i not in axis)
         return DataShape(*(shape + (self.schema,)))
 
-    @property
-    def schema(self):
+    def _schema(self):
         schema = self._child.schema[0]
         if isinstance(schema, Record) and len(schema.types) == 1:
             result = toolz.first(schema.types)
@@ -110,10 +109,8 @@ class all(Reduction):
 
 
 class sum(Reduction):
-
-    @property
-    def schema(self):
-        return DataShape(datashape.maxtype(super(sum, self).schema))
+    def _schema(self):
+        return DataShape(datashape.maxtype(super(sum, self)._schema()))
 
 
 class max(Reduction):
@@ -239,9 +236,9 @@ class Summary(Expr):
         self.values = values
         self.keepdims = keepdims
         self.axis = axis
+        self._hash = None
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         axis = self.axis
         if self.keepdims:
             shape = tuple(1 if i in axis else d
