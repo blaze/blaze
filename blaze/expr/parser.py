@@ -65,11 +65,20 @@ class BlazeParser(ast.NodeVisitor):
         return self.visit(op)(self.visit(operand))
 
     def visit_Call(self, node):
-        assert len(node.args) <= 1, 'only single argument functions allowed'
-        assert not node.keywords
-        assert node.starargs is None, 'starargs not allowed'
-        assert node.kwargs is None, 'kwargs not allowed'
+        if len(node.args) > 1:
+            raise TypeError('only single argument functions allowed')
+        if node.keywords:
+            raise TypeError(
+                'function calls with keyword arguments are not allowed'
+            )
+        if getattr(node, 'starargs', None) is not None:
+            raise TypeError('starargs not allowed')
+        if getattr(node, 'kwargs', None) is not None:
+            raise TypeError('kwargs not allowed')
         return self.visit(node.func)(*map(self.visit, node.args))
+
+    def visit_Starred(self, node):
+        raise TypeError('starargs not allowed')
 
     def visit(self, node):
         name = node.__class__.__name__
