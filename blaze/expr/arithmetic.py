@@ -175,6 +175,23 @@ class Sub(Arithmetic):
     symbol = '-'
     op = operator.sub
 
+    @property
+    def _dtype(self):
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+
+        # TODO: kind of a hack, we really want a function signature interface
+        # TODO: add support for ct.Time dshapes
+        if (isinstance(lhs, (ct.Date, ct.DateTime)) and
+                isinstance(rhs, (ct.Date, ct.DateTime))):
+            # unless we have only dates we always want to promote to
+            # timedelta[us]
+            if isinstance(lhs, ct.Date) and isinstance(rhs, ct.Date):
+                return ct.TimeDelta('D')
+            else:
+                return ct.timedelta_
+        else:
+            return promote(lhs, rhs)
+
 
 class Div(Arithmetic):
     symbol = '/'

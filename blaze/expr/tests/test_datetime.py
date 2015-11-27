@@ -75,3 +75,18 @@ def test_attributes(attr):
     t = symbol('t', 'var * datetime')
     assert getattr(t, attr).dshape is not None
     assert getattr(t, attr)._child is t
+
+
+@pytest.mark.parametrize(
+    ['lhs', 'rhs', 'expected'],
+    [
+        # TODO: add time support
+        ('date', 'date', 'timedelta["D"]'),
+        ('date', 'datetime', 'timedelta["us"]'),
+        ('datetime', 'datetime', 'timedelta["us"]'),
+        ('datetime', 'date', 'timedelta["us"]'),
+    ]
+)
+def test_datetime_subtraction_gives_timedelta(lhs, rhs, expected):
+    left, right = symbol('s', lhs), symbol('t', rhs)
+    assert (left - right).dshape == dshape(expected)
