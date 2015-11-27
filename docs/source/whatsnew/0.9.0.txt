@@ -76,3 +76,4 @@ Miscellaneous
 
 * Make expressions (subclasses of Expr) weak referencable (:issue:`1319).
 * Memoize dshape and schema methods (:issue:`1319`).
+* Add Python 3.5 support.
