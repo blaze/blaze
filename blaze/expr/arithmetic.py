@@ -189,6 +189,8 @@ class Sub(Arithmetic):
                 return ct.TimeDelta('D')
             else:
                 return ct.timedelta_
+        elif isinstance(lhs, ct.Time) or isinstance(rhs, ct.Time):
+            raise TypeError('Difference of two Time types not implemented')
         else:
             return promote(lhs, rhs)
 
