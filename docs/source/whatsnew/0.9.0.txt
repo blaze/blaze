@@ -67,3 +67,12 @@ Bug Fixes
   local filesystem (:issue:`1323`).
 * Updated a test to reflect changes from odo
   `#366 <https://github.com/blaze/odo/issues/366>`_ (:issue:`1323`).
+* Fixed pickling of blaze expressions with interactive symbols (:issue:`1319`).
+* Fixed repring partials in blaze expression to show keyword arguments
+  (:issue:`1319`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+* Make expressions (subclasses of Expr) weak referencable (:issue:`1319).
+* Memoize dshape and schema methods (:issue:`1319`).

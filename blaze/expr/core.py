@@ -1,20 +1,22 @@
 from __future__ import absolute_import, division, print_function
 
 import numbers
-import toolz
 import inspect
 
-from toolz import unique, concat, compose, partial
+import numpy as np
 import toolz
-from pprint import pprint
+from toolz import unique, concat, compose, partial
+import pandas as pd
+from pprint import pformat
 
-from ..compatibility import StringIO, _strtypes, builtins
+from ..compatibility import _strtypes, builtins
 from ..dispatch import dispatch
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
 base = (numbers.Number,) + _strtypes
+arrtypes = np.ndarray, pd.core.generic.NDFrame
 
 
 def isidentical(a, b):
@@ -44,6 +46,8 @@ def isidentical(a, b):
     """
     if isinstance(a, base) and isinstance(b, base):
         return a == b
+    if isinstance(a, arrtypes) and isinstance(b, arrtypes):
+        return np.array_equal(a, b)
     if type(a) != type(b):
         return False
     if isinstance(a, Node):
@@ -70,17 +74,34 @@ class Node(object):
     __inputs__ = '_child',
 
     def __init__(self, *args, **kwargs):
-        assert frozenset(kwargs).issubset(self.__slots__)
+        slots = set(self.__slots__)
+        if not frozenset(slots) <= slots:
+            raise TypeError('Unknown keywords: %s' % (set(kwargs) - slots))
 
+        assigned = set()
         for slot, arg in zip(self.__slots__[1:], args):
+            assigned.add(slot)
             setattr(self, slot, arg)
 
         for key, value in kwargs.items():
+            if key in assigned:
+                raise TypeError(
+                    '%s got multiple values for argument %r' % (
+                        type(self).__name__,
+                        key,
+                    ),
+                )
+            assigned.add(key)
             setattr(self, key, value)
+
+        for slot in slots - assigned:
+            setattr(self, slot, None)
 
     @property
     def _args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__[1:])
+
+    _hashargs = _args
 
     @property
     def _inputs(self):
@@ -113,11 +134,10 @@ class Node(object):
     isidentical = isidentical
 
     def __hash__(self):
-        try:
-            return self._hash
-        except AttributeError:
-            self._hash = hash((type(self), self._args))
-            return self._hash
+        hash_ = self._hash
+        if hash_ is None:
+            hash_ = self._hash = hash((type(self), self._hashargs))
+        return hash_
 
     def __str__(self):
         rep = ["%s=%s" % (slot, _str(arg))
@@ -158,7 +178,7 @@ class Node(object):
         return other in set(self._subterms())
 
     def __getstate__(self):
-        return self._args
+        return tuple(self._args)
 
     def __setstate__(self, state):
         self.__init__(*state)
@@ -263,8 +283,22 @@ def get_callable_name(o):
     """
     # special case partial objects
     if isinstance(o, partial):
-        return 'partial(%s, %s)' % (get_callable_name(o.func),
-                                    ', '.join(map(str, o.args)))
+        keywords = o.keywords
+        kwds = (
+            ', '.join('%s=%r' % item for item in keywords.items())
+            if keywords else
+            ''
+        )
+        args = ', '.join(map(repr, o.args))
+        arguments = []
+        if args:
+            arguments.append(args)
+        if kwds:
+            arguments.append(kwds)
+        return 'partial(%s, %s)' % (
+            get_callable_name(o.func),
+            ', '.join(arguments),
+        )
 
     try:
         # python 3 makes builtins look nice
@@ -286,7 +320,7 @@ def get_callable_name(o):
 def _str(s):
     """ Wrap single quotes around strings """
     if isinstance(s, str):
-        return "'%s'" % s
+        return repr(s)
     elif callable(s):
         return get_callable_name(s)
     elif isinstance(s, Node):
@@ -295,9 +329,7 @@ def _str(s):
         body = ", ".join(_str(x) for x in s)
         return "({0})".format(body if len(s) > 1 else (body + ","))
     else:
-        stream = StringIO()
-        pprint(s, stream=stream)
-        return stream.getvalue().rstrip()
+        return pformat(s).rstrip()
 
 
 @dispatch(Node)

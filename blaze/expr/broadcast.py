@@ -51,8 +51,7 @@ class Broadcast(ElemWise):
     """
     __slots__ = '_hash', '_children', '_scalars', '_scalar_expr'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         myshape = maxshape(map(shape, self._children))
         return DataShape(*(myshape + (self._scalar_expr.schema,)))
 
