@@ -10,7 +10,7 @@ from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from datashape import coretypes as ct, discover, unsigned, promote, optionify
 
 from .core import parenthesize, eval_str
-from .expressions import Expr, shape, ElemWise
+from .expressions import Expr, shape, ElemWise, schema_method_list
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
@@ -189,8 +189,6 @@ class Sub(Arithmetic):
                 return ct.TimeDelta('D')
             else:
                 return ct.timedelta_
-        elif isinstance(lhs, ct.Time) or isinstance(rhs, ct.Time):
-            raise TypeError('Difference of two Time types not implemented')
         else:
             return promote(lhs, rhs)
 
@@ -432,14 +430,14 @@ BitAnd = And
 BitOr = Or
 
 
-from .expressions import schema_method_list
-
-
 schema_method_list.extend([
     (isnumeric,
      set([_add, _radd, _mul, _rmul, _div, _rdiv, _floordiv, _rfloordiv, _sub,
           _rsub, _pow, _rpow, _mod, _rmod,  _neg])),
     (isscalar, set([_eq, _ne, _lt, _le, _gt, _ge])),
     (isboolean, set([_or, _ror, _and, _rand, _invert])),
-    (isdatelike, set([_add, _radd, _sub, _rsub])),
-    ])
+    (
+        lambda s: isdatelike(s) and not isinstance(s, ct.Time),
+        set([_add, _radd, _sub, _rsub])
+    ),
+])
