@@ -75,3 +75,34 @@ def test_attributes(attr):
     t = symbol('t', 'var * datetime')
     assert getattr(t, attr).dshape is not None
     assert getattr(t, attr)._child is t
+
+
+@pytest.mark.parametrize(
+    ['lhs', 'rhs', 'expected'],
+    [
+        # TODO: add time support
+        ('date', 'date', 'timedelta["D"]'),
+        ('date', 'datetime', 'timedelta["us"]'),
+        ('datetime', 'datetime', 'timedelta["us"]'),
+        ('datetime', 'date', 'timedelta["us"]'),
+        pytest.mark.xfail(('time', 'datetime', 'timedelta["us"]')),
+        pytest.mark.xfail(('time', 'time', 'timedelta["us"]')),
+        pytest.mark.xfail(('datetime', 'time', 'timedelta["us"]')),
+    ]
+)
+def test_datetime_subtraction_gives_timedelta(lhs, rhs, expected):
+    left, right = symbol('s', lhs), symbol('t', rhs)
+    assert (left - right).dshape == dshape(expected)
+
+
+# TODO: again we need function signatures here, or another way to validate ALL
+# inputs. It's not enough just to look at the immediate child's dshape to know
+# whether we should allow an operation, we need to look at the types of every
+# input
+@pytest.mark.xfail(
+    raises=(TypeError, AttributeError),
+    reason='Not sure if this should work'
+)
+@pytest.mark.parametrize(['lhs', 'rhs'], [('date', 'time'), ('time', 'date')])
+def test_time_subtraction_fails(lhs, rhs):
+    assert (symbol('s', lhs) - symbol('t', rhs)).dshape is not None
