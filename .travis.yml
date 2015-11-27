@@ -69,7 +69,7 @@ install:
   - pip install git+https://github.com/blaze/dask
 
   # Install PyMongo
-  - pip install pymongo
+  - pip install 'pymongo<3'
 
   # Install dynd
   - conda install -c mwiebe dynd-python
