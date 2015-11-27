@@ -24,9 +24,9 @@ Objective: find the name of accounts with negative amount
 
 Using MongoDB query language
 
->> db.mydata.aggregate([{'$match': {'amount': {'$lt': 0}}}, # doctest: +SKIP
 ..                      {'$project': {'name': 1, '_id': 0}}])['result']
 [{'name': 'Bob'}, {'name': 'Edith'}]
+>> db.mydata.aggregate([{'$match': {'amount': {'$lt': 0}}}, # doctest: +SKIP
 
 Using Blaze
 
@@ -92,6 +92,8 @@ from ..expr import (
     nunique,
     sum,
     symbol,
+    Label,
+    ReLabel,
 )
 from ..expr.broadcast import broadcast_collect, Broadcastable
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
@@ -237,6 +239,19 @@ def compute_up(t, q, **kwargs):
     return q.append({'$project': dict((col, 1) for col in t.fields)})
 
 
+@dispatch(Label, MongoQuery)
+def compute_up(t, q, **kwargs):
+    return q.append({'$project': {t._name: '$%s' % t._child._name}})
+
+
+@dispatch(ReLabel, MongoQuery)
+def compute_up(t, q, **kwargs):
+    labels = t.labels
+    return q.append({
+        '$project': {labels.get(old, old): '$%s' % old for old in labels}
+    })
+
+
 @dispatch(SimpleSelection, MongoQuery)
 def compute_up(expr, data, **kwargs):
     predicate = optimize(expr.predicate, data)
@@ -324,7 +339,9 @@ def group_apply(expr):
                               % type(expr).__name__)
 
 
-reductions = {mean: '$avg', count: '$sum', max: '$max', min: '$min', sum: '$sum'}
+reductions = {
+    mean: '$avg', count: '$sum', max: '$max', min: '$min', sum: '$sum'
+}
 
 
 def scalar_expr(expr):
