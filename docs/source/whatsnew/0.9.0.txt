@@ -76,4 +76,6 @@ Miscellaneous
 
 * Make expressions (subclasses of Expr) weak referencable (:issue:`1319).
 * Memoize dshape and schema methods (:issue:`1319`).
+* Use ``pandas.DataFrame.sort_values()`` with pandas version >= 0.17.0
+  (:issue:`1321`).
 * Add Python 3.5 support.
