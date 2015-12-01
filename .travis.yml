@@ -29,6 +29,8 @@ matrix:
     - python: 3.4
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.5
+      env:
+    - python: 3.5
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
 
 services:
@@ -88,7 +90,7 @@ before_script:
 
 script:
   - echo '[pytest]' > pytest.ini
-  - echo 'addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
+  - echo "addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs" >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
   - coverage run --include='blaze/*' $(which py.test)
   - coverage report --show-missing
