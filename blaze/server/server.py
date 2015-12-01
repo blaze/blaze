@@ -26,7 +26,7 @@ from datashape.predicates import iscollection, isscalar
 from odo import odo
 
 import blaze
-from blaze import compute
+from blaze import compute, resource
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
@@ -150,8 +150,6 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'data', 'port'
-
     def __init__(self, data=None, formats=None, authorization=None):
         app = self.app = Flask('blaze.server.server')
         if data is None:
@@ -423,3 +421,31 @@ def compserver():
         'data': result,
         'names': expr.fields
     })
+
+@api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@authorization
+def addserver():
+    content_type = request.headers['content-type']
+    matched = mimetype_regex.match(content_type)
+
+    if matched is None:
+        return 'Unsupported serialization format %s' % content_type, 415
+
+    try:
+        serial = _get_format(matched.groups()[0])
+    except KeyError:
+        return (
+            "Unsupported serialization format '%s'" % matched.groups()[0],
+            415,
+        )
+
+    try:
+        payload = serial.loads(request.data)
+    except ValueError:
+        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+
+
+    _get_data.cache[flask.current_app].update({(k, resource(v))
+                                               for k, v in payload.items()})
+    return 'OK'
