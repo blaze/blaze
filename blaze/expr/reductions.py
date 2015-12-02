@@ -14,6 +14,38 @@ from .strings import isstring
 from .expressions import dshape_method_list, method_properties
 
 
+class Window(Expr):
+    __slots__ = (
+        '_hash',
+        '_child', 'group_by', 'sort_by', 'preceding', 'following',
+        '_asdshape'
+    )
+
+    __inputs__ = '_child', 'group_by', 'sort_by'
+
+    def __str__(self):
+        slots = 'group_by', 'sort_by', 'preceding', 'following'
+        return '%s(%s, %s)' % (
+            type(self).__name__,
+            self._child,
+            ', '.join('%s=%r' % (slot, getattr(self, slot)) for slot in slots)
+        )
+
+    @property
+    def _inputs(self):
+        return list(filter(
+            lambda x: x is not None,
+            [getattr(self, i) for i in self.__inputs__]
+        ))
+
+    def _dshape(self):
+        return self._asdshape
+
+    @property
+    def _name(self):
+        return self._child._name
+
+
 class Reduction(Expr):
 
     """ A column-wise reduction
@@ -98,6 +130,19 @@ class Reduction(Expr):
             return '%s(%s, %s)' % (name, self._child, ', '.join(kwargs))
         else:
             return '%s(%s)' % (name, self._child)
+
+    def over(self,
+             group_by=None, sort_by=None, preceding=None, following=None):
+        return Window(
+            self,
+            group_by=group_by,
+            sort_by=sort_by,
+            preceding=preceding,
+            following=following,
+            _asdshape=DataShape(
+                *(self._child._child.shape + (self._child.schema,))
+            ),
+        )
 
 
 class any(Reduction):
