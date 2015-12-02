@@ -4,11 +4,10 @@ import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
 
-import dask.dataframe as dd
+dd = pytest.importorskip('dask.dataframe')
 
-from blaze.expr import symbol, mean, count, sum, min, max, any, var, std, summary, discover
-from blaze.compute.core import compute
-from blaze.compatibility import builtins
+from blaze import symbol, discover, compute
+from blaze.expr import mean, count, sum, min, max, var, std, summary
 
 
 def eq(a, b):
@@ -16,6 +15,7 @@ def eq(a, b):
         tm.assert_frame_equal(a.compute(), b)
     elif isinstance(b, dd.Series):
         tm.assert_series_equal(a.compute(), b)
+
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
@@ -45,6 +45,7 @@ ddfbig = dd.from_pandas(dfbig, npartitions=2)
 def test_symbol():
     eq(compute(t, ddf), df)
 
+
 def test_head():
     eq(compute(t.head(1), ddf), df.head(1))
 
@@ -63,6 +64,7 @@ def test_relabel_series():
     result = compute(t.relabel({'name': 'NAME'}), ddf.name)
     assert result.name == 'NAME'
 
+
 def test_series_columnwise():
     data = pd.Series([1, 2, 3, 4], name='a')
     s = dd.from_pandas(data, npartitions=2)
@@ -79,7 +81,7 @@ def test_field_on_series():
     expr = symbol('s', 'var * int')
     data = pd.Series([1, 2, 3, 4], name='s')
     s = dd.from_pandas(data, npartitions=2)
-    eq(compute(expr.s, data), data)
+    eq(compute(expr.s, s), data)
 
 
 def test_selection():
