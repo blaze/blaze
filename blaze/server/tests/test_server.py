@@ -13,7 +13,8 @@ from toolz import pipe
 
 from odo import odo
 from blaze.utils import example
-from blaze import discover, symbol, by, CSV, compute, join, into, resource
+from blaze import (discover, symbol, by, CSV, compute, join, into, resource,
+                   Data)
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.serialization import all_formats
@@ -47,6 +48,14 @@ def server():
 @pytest.yield_fixture
 def test(server):
     with server.app.test_client() as c:
+        yield c
+
+
+@pytest.yield_fixture
+def empty_server():
+    s = Server(formats=all_formats)
+    s.app.testing = True
+    with s.app.test_client() as c:
         yield c
 
 
@@ -504,3 +513,35 @@ def test_isin(test, serial):
     }
     assert result.status_code == 200
     assert expected == serial.loads(result.data)
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_data_to_empty_server(empty_server, serial):
+    # add data
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': iris_path})
+    response1 = empty_server.post(
+        '/add',
+        headers=mimetype(serial),
+        data=blob,
+    )
+    assert 'OK' in response1.status
+
+    # check for expected server datashape
+    response2 = empty_server.get('/datashape')
+    expected2 = str(discover({'iris': resource(iris_path)}))
+    assert response2.data.decode('utf-8') == expected2
+
+    # compute on added data
+    t = Data({'iris': resource(iris_path)})
+    expr = t.iris.petal_length.sum()
+
+    response3 = empty_server.post(
+        '/compute',
+        data=serial.dumps({'expr': to_tree(expr)}),
+        headers=mimetype(serial)
+    )
+
+    result3 = serial.loads(response3.data)['data']
+    expected3 = compute(expr, {'iris': resource(iris_path)})
+    assert result3 == expected3
