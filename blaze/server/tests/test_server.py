@@ -59,6 +59,15 @@ def empty_server():
         yield c
 
 
+@pytest.yield_fixture
+def iris_server():
+    iris = CSV(example('iris.csv'))
+    s = Server(iris, all_formats)
+    s.app.testing = True
+    with s.app.test_client() as c:
+        yield c
+
+
 def test_datasets(test):
     response = test.get('/datashape')
     assert response.data.decode('utf-8') == str(discover(data))
@@ -190,15 +199,6 @@ def dont_test_compute_with_namespace(test, serial):
     data = serial.loads(response.data)
     assert data['data'] == expected
     assert data['names'] == ['name']
-
-
-@pytest.yield_fixture
-def iris_server():
-    iris = CSV(example('iris.csv'))
-    s = Server(iris, all_formats)
-    s.app.testing = True
-    with s.app.test_client() as c:
-        yield c
 
 
 iris = CSV(example('iris.csv'))
