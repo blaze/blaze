@@ -13,6 +13,7 @@ from pandas import DataFrame, Series
 from string import ascii_lowercase
 
 from blaze.compute.core import compute
+from blaze.compute.pandas import pdsort
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
@@ -329,13 +330,13 @@ def test_join_promotion():
 
 def test_sort():
     tm.assert_frame_equal(compute(t.sort('amount'), df),
-                          df.sort('amount'))
+                          pdsort(df, 'amount'))
 
     tm.assert_frame_equal(compute(t.sort('amount', ascending=True), df),
-                          df.sort('amount', ascending=True))
+                          pdsort(df, 'amount', ascending=True))
 
     tm.assert_frame_equal(compute(t.sort(['amount', 'id']), df),
-                          df.sort(['amount', 'id']))
+                          pdsort(df, ['amount', 'id']))
 
 
 def test_sort_on_series_no_warning(recwarn):
@@ -484,8 +485,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = df.sort('id').to_records(index=False)
-    expected = expected.sort('id').to_records(index=False)
+    result = pdsort(df, 'id').to_records(index=False)
+    expected = pdsort(expected, 'id').to_records(index=False)
     np.array_equal(result, expected)
 
     df = compute(join(lsym, rsym, how='outer'), {lsym: left, rsym: right})
@@ -496,8 +497,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = df.sort('id').to_records(index=False)
-    expected = expected.sort('id').to_records(index=False)
+    result = pdsort(df, 'id').to_records(index=False)
+    expected = pdsort(expected, 'id').to_records(index=False)
     np.array_equal(result, expected)
 
 

@@ -3,11 +3,12 @@ from __future__ import absolute_import, division, print_function
 import os
 import datetime
 import re
+from weakref import WeakKeyDictionary
 
 try:
-    from cytoolz import nth
+    from cytoolz import nth, memoize
 except ImportError:
-    from toolz import nth
+    from toolz import nth, memoize
 
 from toolz.curried.operator import setitem
 
@@ -238,3 +239,20 @@ def normalize(s):
     s = ' '.join(s.strip().split()).lower()
     s = re.sub(r'(alias)_?\d*', r'\1', s)
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
+
+
+def weakmemoize(f):
+    """Memoize ``f`` with a ``WeakKeyDictionary`` to allow the arguments
+    to be garbage collected.
+
+    Parameters
+    ----------
+    f : callable
+        The function to memoize.
+
+    Returns
+    -------
+    g : callable
+        ``f`` with weak memoiza
+    """
+    return memoize(f, cache=WeakKeyDictionary())
