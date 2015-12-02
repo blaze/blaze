@@ -58,7 +58,7 @@ from ..expr import (
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
     Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow,
+    notnull, Shift, BinaryMath, Pow, Window
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -1123,3 +1123,116 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Shift, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.func.lag(data, expr.n).over().label(expr._name)
+
+
+class Over(ColumnElement):
+    def __init__(self, element, kind, group_by, sort_by, preceding, following):
+        self.element = element
+        self.kind = kind
+        if sort_by is not None:
+            self.sort_by = sa.sql.elements.ClauseList(
+                *sa.util.to_list(sort_by),
+                _literal_as_text=sa.sql.elements._literal_as_label_reference)
+        else:
+            self.sort_by = sort_by
+        if group_by is not None:
+            self.group_by = sa.sql.elements.ClauseList(
+                *sa.util.to_list(group_by),
+                _literal_as_text=sa.sql.elements._literal_as_label_reference)
+        else:
+            self.group_by = group_by
+        self.preceding = preceding
+        self.following = following
+
+    @sa.util.memoized_property
+    def type(self):
+        return self.element.type
+
+    def get_children(self, **kwargs):
+        return [
+            c for c in (
+                self.element,
+                self.group_by,
+                self.sort_by,
+            ) if c is not None
+        ]
+
+    def _copy_internals(self, clone=lambda x, **kw: x._clone(), **kw):
+        self.element = clone(self.element, **kw)
+        if self.group_by is not None:
+            self.group_by = clone(self.group_by, **kw)
+        if self.sort_by is not None:
+            self.sort_by = clone(self.sort_by, **kw)
+
+    @property
+    def _from_objects(self):
+        return list(itertools.chain(*[
+            c._from_objects for c in (
+                self.element,
+                self.group_by,
+                self.sort_by
+            ) if c is not None
+        ]))
+
+
+@compiles(Over)
+def compile_over_postgresql(element, compiler, **kwargs):
+    s = '%s OVER (' % compiler.process(element.element, **kwargs)
+    # group by
+    if element.group_by is not None:
+        s += 'PARTITION BY %s ' % compiler.process(element.group_by, **kwargs)
+
+    # order by
+    if element.sort_by is not None:
+        s += 'ORDER BY %s ' % compiler.process(element.sort_by, **kwargs)
+
+    if element.kind == 'RANGE':
+        if element.preceding is not None:
+            raise ValueError('`value` PRECEDING is not supported in RANGE mode')
+        if element.following is not None:
+            raise ValueError('`value` FOLLOWING is not supported in RANGE mode')
+
+    s += '%s BETWEEN %s PRECEDING AND %s)' % (
+        element.kind,
+        'UNBOUNDED' if element.preceding is None else element.preceding,
+        'CURRENT ROW' if element.following is None else element.following
+    )
+    return s
+
+
+@compute_up.register(Window, ColumnElement)
+def compute_up_window(expr, data, **kwargs):
+    """No sort by or group by clauses"""
+    return Over(
+        data,
+        kind=expr.kind,
+        group_by=expr.group_by,
+        sort_by=expr.sort_by,
+        preceding=expr.preceding,
+        following=expr.following
+    ).label(expr._name)
+
+@compute_up.register(Window, ColumnElement, ColumnElement)
+def compute_up_window(expr, data, spec, **kwargs):
+    """One of sort by or group by"""
+    return Over(
+        data,
+        kind=expr.kind,
+        group_by=spec if expr.group_by is not None else None,
+        sort_by=spec if expr.sort_by is not None else None,
+        preceding=expr.preceding,
+        following=expr.following
+    ).label(expr._name)
+
+
+@compute_up.register(Window, ColumnElement, ColumnElement, ColumnElement)
+def compute_up_window(expr, data, group_by, sort_by, **kwargs):
+    """Both sort by and group by"""
+    return Over(
+        data,
+        kind=expr.kind,
+        group_by=group_by,
+        sort_by=sort_by,
+        preceding=expr.preceding,
+        following=expr.following
+    ).label(expr._name)
