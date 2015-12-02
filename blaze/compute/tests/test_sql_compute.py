@@ -1906,3 +1906,45 @@ def test_selection_inner_inputs():
     select {a}.name, {a}.amount, {a}.id from {a}, {b} where {a}.id = {b}.id
     """).format(a=s.name, b=sdate.name)
     assert result == expected
+
+
+def test_basic_window():
+    expr = tdate.amount.sum().over(preceding=2)
+    result = compute(expr, sdate)
+    expected = """
+    select sum({0.name}.amount) over (rows
+    between 2 preceding and current row) as amount_sum from {0.name}
+    """.format(sdate)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_window_with_ordering():
+    expr = tdate.amount.sum().over(preceding=2, sort_by=tdate.occurred_on)
+    result = compute(expr, sdate)
+    expected = """
+    select sum({0.name}.amount) over (order by {0.name}.occurred_on rows
+    between 2 preceding and current row) as amount_sum from {0.name}
+    """.format(sdate)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_window_with_grouping():
+    expr = tdate.amount.sum().over(preceding=2, group_by=tdate.name)
+    result = compute(expr, sdate)
+    expected = """
+    select sum({0.name}.amount) over (partition by {0.name}.name rows
+    between 2 preceding and current row) as amount_sum from {0.name}
+    """.format(sdate)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_window_with_grouping_and_ordering():
+    expr = tdate.amount.sum().over(preceding=2, sort_by=tdate.occurred_on,
+                                   group_by=tdate.name)
+    result = compute(expr, sdate)
+    expected = """
+    select sum({0.name}.amount) over (partition by {0.name}.name
+    order by {0.name}.occurred_on rows
+    between 2 preceding and current row) as amount_sum from {0.name}
+    """.format(sdate)
+    assert normalize(str(result)) == normalize(expected)
