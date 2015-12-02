@@ -100,17 +100,18 @@ def test_reduction_naming_with_generated_leaves():
 
 
 @pytest.mark.parametrize(
-    ['group_by', 'sort_by', 'preceding', 'following'],
+    ['reduction', 'group_by', 'sort_by', 'preceding', 'following'],
     list(product(
+        ['sum', 'mean', 'count'],
         list('ab'),
         list('ab'),
         [None, 0, 3],
         [None, 0, 3]
     ))
 )
-def test_basic_over(group_by, sort_by, preceding, following):
+def test_basic_over(reduction, group_by, sort_by, preceding, following):
     t = symbol('t', 'var * {a: int64, b: ?float64}')
-    expr = t.b.sum().over(
+    expr = getattr(t.b, reduction)().over(
         group_by=group_by,
         sort_by=sort_by,
         preceding=preceding,
