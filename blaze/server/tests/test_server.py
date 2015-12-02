@@ -545,3 +545,37 @@ def test_add_data_to_empty_server(empty_server, serial):
     result3 = serial.loads(response3.data)['data']
     expected3 = compute(expr, {'iris': resource(iris_path)})
     assert result3 == expected3
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_data_to_server(test, serial):
+    # add data
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': iris_path})
+    response1 = test.post(
+        '/add',
+        headers=mimetype(serial),
+        data=blob,
+    )
+    assert 'OK' in response1.status
+
+    # check for expected server datashape
+    response2 = test.get('/datashape')
+    data2 = data.copy()
+    data2.update({'iris': resource(iris_path)})
+    expected2 = str(discover(data2))
+    assert response2.data.decode('utf-8') == expected2
+
+    # compute on added data
+    t = Data({'iris': resource(iris_path)})
+    expr = t.iris.petal_length.sum()
+
+    response3 = test.post(
+        '/compute',
+        data=serial.dumps({'expr': to_tree(expr)}),
+        headers=mimetype(serial)
+    )
+
+    result3 = serial.loads(response3.data)['data']
+    expected3 = compute(expr, {'iris': resource(iris_path)})
+    assert result3 == expected3
