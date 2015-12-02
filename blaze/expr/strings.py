@@ -1,17 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from datashape import String
-from datashape.predicates import isrecord
+from datashape import String, DataShape, Option, bool_
 from odo.utils import copydoc
 
-from .expressions import Expr, schema_method_list, ElemWise
+from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
 
 __all__ = ['Like', 'like', 'strlen', 'UnaryStringFunction']
 
 
-class Like(Expr):
+class Like(ElemWise):
 
     """ Filter expression by string comparison
 
@@ -25,19 +24,19 @@ class Like(Expr):
     >>> list(compute(expr, data))
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
-    __slots__ = '_hash', '_child', '_patterns'
-
-    @property
-    def patterns(self):
-        return dict(self._patterns)
+    __slots__ = '_hash', '_child', 'pattern'
 
     def _dshape(self):
-        return datashape.var * self._child.dshape.subshape[0]
+        shape, schema = self._child.dshape.shape, self._child.schema
+        schema = Option(bool_) if isinstance(schema.measure, Option) else bool_
+        return DataShape(*(shape + (schema,)))
 
 
 @copydoc(Like)
-def like(child, **kwargs):
-    return Like(child, tuple(kwargs.items()))
+def like(child, pattern):
+    if not isinstance(pattern, basestring):
+        raise TypeError('pattern argument must be a string')
+    return Like(child, pattern)
 
 
 class UnaryStringFunction(ElemWise):
@@ -61,12 +60,10 @@ _mul, _rmul = _mkbin('mul', Repeat)
 
 
 schema_method_list.extend([
-    (isstring, set([_add, _radd, _mod, _rmod, _mul, _rmul, repeat, interp])),
-    (lambda ds: isstring(ds) or (isrecord(ds.measure) and
-                                 any(isinstance(getattr(typ, 'ty', typ),
-                                                String)
-                                     for typ in ds.measure.types)),
-     set([like])),
-    (lambda ds: isinstance(getattr(ds.measure, 'ty', ds.measure), String),
-     set([strlen]))
+    (
+        isstring,
+        set([
+            _add, _radd, _mod, _rmod, _mul, _rmul, repeat, interp, like, strlen
+        ])
+    )
 ])
