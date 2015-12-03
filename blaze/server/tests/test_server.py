@@ -579,3 +579,28 @@ def test_add_data_to_server(test, serial):
     result3 = serial.loads(response3.data)['data']
     expected3 = compute(expr, {'iris': resource(iris_path)})
     assert result3 == expected3
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_cant_add_data_to_server(iris_server, serial):
+    # try adding more data to server
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': iris_path})
+    response1 = iris_server.post(
+        '/add',
+        headers=mimetype(serial),
+        data=blob,
+    )
+    assert '400' in response1.status
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_bad_add_payload(empty_server, serial):
+    # try adding more data to server
+    blob = serial.dumps('This is not a mutable mapping.')
+    response1 = empty_server.post(
+        '/add',
+        headers=mimetype(serial),
+        data=blob,
+    )
+    assert '400' in response1.status
