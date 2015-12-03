@@ -439,7 +439,7 @@ def ordered_intersect(a, b):
     return [x for x in unique(concat((a, b))) if x in common]
 
 
-def common_subexpression(*exprs):
+def common_subexpression(expr, *exprs):
     """ Common sub expression between subexpressions
 
     Examples
@@ -451,8 +451,10 @@ def common_subexpression(*exprs):
     t
     """
     # only one expression has itself as a common subexpression
-    if len(exprs) == 1:
-        return exprs[0]
+    if not exprs:
+        return expr
+
+    exprs = (expr,) + exprs
 
     # get leaves for every expression
     all_leaves = [expr._leaves() for expr in exprs]
