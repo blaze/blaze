@@ -3,13 +3,15 @@ from __future__ import absolute_import, division, print_function
 import numbers
 import inspect
 
+from pprint import pformat
+from functools import reduce
+
 import numpy as np
 import toolz
-from toolz import unique, concat, compose, partial
+from toolz import unique, concat, partial, first
 import pandas as pd
-from pprint import pformat
 
-from ..compatibility import _strtypes, builtins
+from ..compatibility import _strtypes
 from ..dispatch import dispatch
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
@@ -140,9 +142,11 @@ class Node(object):
         return hash_
 
     def __str__(self):
-        rep = ["%s=%s" % (slot, _str(arg))
-                for slot, arg in zip(self.__slots__[1:], self._args)]
-        return "%s(%s)" % (type(self).__name__, ', '.join(rep))
+        rep = [
+            '%s=%s' % (slot, _str(arg))
+            for slot, arg in zip(self.__slots__[1:], self._args)
+        ]
+        return '%s(%s)' % (type(self).__name__, ', '.join(rep))
 
     def __repr__(self):
         return str(self)
@@ -411,21 +415,53 @@ def path(a, b):
     yield a
 
 
+def ordered_intersect(a, b):
+    common = set(a) & set(b)
+    return [x for x in concat((a, b)) if x in common]
+
+
 def common_subexpression(*exprs):
     """ Common sub expression between subexpressions
 
     Examples
     --------
 
-    >>> from blaze.expr import symbol, common_subexpression
-
+    >>> from blaze.expr import symbol
     >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> common_subexpression(t.x, t.y)
     t
     """
-    sets = [set(subterms(t)) for t in exprs]
-    return builtins.max(set.intersection(*sets),
-                        key=compose(len, str))
+    # only one expression has itself as a common subexpression
+    if len(exprs) == 1:
+        return exprs[0]
+
+    # get leaves for every expression
+    all_leaves = [expr._leaves() for expr in exprs]
+
+    # leaves common to all expressions
+    leaves = set.intersection(*map(set, all_leaves))
+
+    # no common leaves therefore no common subexpression
+    if not leaves:
+        raise ValueError(
+            'No common leaves found in expressions %s' % list(exprs)
+        )
+
+    # list of paths from each expr to each leaf
+    pathlist = [list(path(expr, leaf)) for expr in exprs for leaf in leaves]
+
+    # ordered intersection of paths
+    common = reduce(ordered_intersect, pathlist)
+    if not common:
+        raise ValueError(
+            'No common subexpression found in paths to leaf: %s' % list(
+                map(set, pathlist)
+            )
+        )
+
+    # the first expression is the deepest node in the tree that is an ancestor
+    # of every expression in `exprs`
+    return common[0]
 
 
 def eval_str(expr):
