@@ -34,13 +34,6 @@ class Window(Expr):
             ', '.join('%s=%r' % (slot, getattr(self, slot)) for slot in slots)
         )
 
-    @property
-    def _inputs(self):
-        return [
-            i for i in [getattr(self, i) for i in self.__inputs__]
-            if i is not None and isinstance(i, Expr)
-        ]
-
     def _dshape(self):
         return self._asdshape
 
