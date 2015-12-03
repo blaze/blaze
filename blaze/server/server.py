@@ -20,7 +20,7 @@ except ImportError:
             return wrapped
         return wrapper
 
-from toolz import assoc
+from toolz import assoc, valmap
 
 from datashape import Mono, discover
 from datashape.predicates import iscollection, isscalar
@@ -113,6 +113,32 @@ def authorization(f):
 
         return f(*args, **kwargs)
     return authorized
+
+
+def check_request(f):
+    @functools.wraps(f)
+    def check():
+        content_type = request.headers['content-type']
+        matched = mimetype_regex.match(content_type)
+
+        if matched is None:
+            return 'Unsupported serialization format %s' % content_type, 415
+
+        try:
+            serial = _get_format(matched.groups()[0])
+        except KeyError:
+            return (
+                "Unsupported serialization format '%s'" % matched.groups()[0],
+                415,
+            )
+
+        try:
+            payload = serial.loads(request.data)
+        except ValueError:
+            return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+
+        return f(payload, serial)
+    return check
 
 
 class Server(object):
@@ -375,26 +401,8 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
-def compserver():
-    content_type = request.headers['content-type']
-    matched = mimetype_regex.match(content_type)
-
-    if matched is None:
-        return 'Unsupported serialization format %s' % content_type, 415
-
-    try:
-        serial = _get_format(matched.groups()[0])
-    except KeyError:
-        return (
-            "Unsupported serialization format '%s'" % matched.groups()[0],
-            415,
-        )
-
-    try:
-        payload = serial.loads(request.data)
-    except ValueError:
-        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
-
+@check_request
+def compserver(payload, serial):
     ns = payload.get('namespace', dict())
     dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
@@ -426,38 +434,19 @@ def compserver():
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
-def addserver():
-    content_type = request.headers['content-type']
-    matched = mimetype_regex.match(content_type)
-
-    if matched is None:
-        return 'Unsupported serialization format %s' % content_type, 415
-
-    try:
-        serial = _get_format(matched.groups()[0])
-    except KeyError:
-        return (
-            "Unsupported serialization format '%s'" % matched.groups()[0],
-            415,
-        )
-
-    try:
-        payload = serial.loads(request.data)
-    except ValueError:
-        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
-
-
+@check_request
+def addserver(payload, serial):
     data = _get_data.cache[flask.current_app]
 
     data_not_mm_msg = ("Cannot update blaze server data since its current data"
                        " is a %s and not a mutable mapping (dictionary like).")
     if not isinstance(data, collections.MutableMapping):
-        return (data_not_mm_msg % type(data), 400)
+        return (data_not_mm_msg % type(data), 422)
 
     payload_not_mm_msg = ("Cannot update blaze server with a %s payload, since"
                           " it is not a mutable mapping (dictionary like).")
     if not isinstance(payload, collections.MutableMapping):
-        return (payload_not_mm_msg % type(payload), 400)
+        return (payload_not_mm_msg % type(payload), 422)
 
-    data.update({(k, resource(v)) for k, v in payload.items()})
+    data.update(valmap(resource, payload))
     return 'OK'
