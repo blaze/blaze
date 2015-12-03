@@ -74,6 +74,8 @@ Bug Fixes
 * Fixed pickling of blaze expressions with interactive symbols (:issue:`1319`).
 * Fixed repring partials in blaze expression to show keyword arguments
   (:issue:`1319`).
+* Fixed a bug where :func:`~blaze.expr.core.common_subexpression` gave the
+  wrong answer (:issue:`1325`, :issue:`1338`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
