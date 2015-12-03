@@ -404,6 +404,8 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @check_request
 def compserver(payload, serial):
     ns = payload.get('namespace', dict())
+    compute_kwargs = payload.get('compute_kwargs') or {}
+    odo_kwargs = payload.get('odo_kwargs') or {}
     dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
 
@@ -412,10 +414,10 @@ def compserver(payload, serial):
     leaf = expr._leaves()[0]
 
     try:
-        result = compute(expr, {leaf: dataset})
+        result = compute(expr, {leaf: dataset}, **compute_kwargs)
 
         if iscollection(expr.dshape):
-            result = odo(result, list)
+            result = odo(result, list, **odo_kwargs)
         elif isscalar(expr.dshape):
             result = coerce_scalar(result, str(expr.dshape))
     except NotImplementedError as e:

@@ -26,6 +26,16 @@ Improved Backends
 * Adds support for :func:`~blaze.expr.collections.tail` in the sql backend
   (:issue:`1289`).
 * Blaze Server now supports dynamically adding datasets (:issue:`1329`).
+* Two new keyword only arguments are added to :func:`~blaze.compute` for use
+  when computing against a :class:`~blaze.Client` object:
+
+  1. ``compute_kwargs``: This is a dictionary to send to the server to use as
+     keyword arguments when calling ``compute`` on the server.
+  2. ``odo_kwargs``: This is a dictionary to send to the server to use aas
+     keyword arguments when calling ``odo`` on the server.
+
+  This extra information is completely optional and will have different meanings
+  based on the backend of the data on the server (:issue:`1342`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
