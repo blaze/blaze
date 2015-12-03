@@ -35,6 +35,12 @@ def test_merge_on_single_argument_is_noop():
     assert merge(t.name).isidentical(t.name)
 
 
+def test_merge_common_subexpression():
+    t = symbol('t', 'var * {a: float64}')
+    result = common_subexpression(t.a - t.a % 3, t.a % 3)
+    assert result.isidentical(t.a)
+
+
 def test_transform():
     t = symbol('t', '5 * {x: int, y: int}')
     expr = transform(t, z=t.x + t.y)
@@ -208,9 +214,3 @@ def test_shift():
     assert repr(t.shift(1)) == 'shift(t, n=1)'
     assert repr(t.shift(0)) == 'shift(t, n=0)'
     assert repr(t.shift(-1)) == 'shift(t, n=-1)'
-
-
-def test_merge_cse():
-    t = symbol('t', 'var * {a: float64}')
-    result = common_subexpression(t.a - t.a % 3, t.a % 3)
-    assert result.isidentical(t.a)

@@ -589,7 +589,7 @@ def test_nested_transform():
     tm.assert_frame_equal(result, df)
 
 
-def test_transform_with_cse():
+def test_transform_with_common_subexpression():
     df = DataFrame(np.random.rand(5, 2), columns=list('ab'))
     t = symbol('t', discover(df))
     expr = transform(t, c=t.a - t.a % 3, d=t.a % 3)
@@ -604,7 +604,7 @@ def test_transform_with_cse():
     tm.assert_frame_equal(result, expected)
 
 
-def test_merge_with_cse():
+def test_merge_with_common_subexpression():
     df = DataFrame(np.random.rand(5, 2), columns=list('ab'))
     t = symbol('t', discover(df))
     expr = merge((t.a - t.a % 3).label('a'), (t.a % 3).label('b'))
