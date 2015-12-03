@@ -267,7 +267,7 @@ def ordered_intersect(*sets):
 
     Returns
     -------
-    list
+    generator
 
     Examples
     --------
