@@ -4,15 +4,16 @@ import numbers
 import inspect
 
 from pprint import pformat
-from functools import reduce
+from functools import reduce, partial
 
 import numpy as np
 import toolz
-from toolz import unique, concat, partial
+from toolz import unique, concat, first
 import pandas as pd
 
 from ..compatibility import _strtypes
 from ..dispatch import dispatch
+from ..utils import ordered_intersect
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
@@ -415,30 +416,6 @@ def path(a, b):
     yield a
 
 
-def ordered_intersect(a, b):
-    """Set intersection of two sequences that preserves order.
-
-    Parameters
-    ----------
-    a, b : Sequence
-
-    Returns
-    -------
-    list
-
-    Examples
-    --------
-    >>> ordered_intersect('abcd', 'cdef')
-    ['c', 'd']
-    >>> ordered_intersect('bcda', 'bdfga')
-    ['b', 'd', 'a']
-    >>> ordered_intersect('zega', 'age')  # first sequence determines ordering
-    ['e', 'g', 'a']
-    """
-    common = set(a) & set(b)
-    return [x for x in unique(concat((a, b))) if x in common]
-
-
 def common_subexpression(expr, *exprs):
     """ Common sub expression between subexpressions
 
@@ -482,7 +459,7 @@ def common_subexpression(expr, *exprs):
 
     # the first expression is the deepest node in the tree that is an ancestor
     # of every expression in `exprs`
-    return common[0]
+    return first(common)
 
 
 def eval_str(expr):
