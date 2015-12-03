@@ -4,6 +4,7 @@ from datashape import dshape
 from datashape.util.testing import assert_dshape_equal
 
 from blaze.expr import symbol
+from blaze.expr.core import common_subexpression
 from blaze.expr.collections import merge, join, transform, concat
 from blaze.utils import raises
 from blaze.compatibility import builtins
@@ -207,3 +208,9 @@ def test_shift():
     assert repr(t.shift(1)) == 'shift(t, n=1)'
     assert repr(t.shift(0)) == 'shift(t, n=0)'
     assert repr(t.shift(-1)) == 'shift(t, n=-1)'
+
+
+def test_merge_cse():
+    t = symbol('t', 'var * {a: float64}')
+    result = common_subexpression(t.a - t.a % 3, t.a % 3)
+    assert result.isidentical(t.a)
