@@ -1918,16 +1918,16 @@ def test_basic_window():
 @pytest.mark.parametrize(
     'expr',
     [
-        tdate.amount.sum().over(preceding=2, sort_by=tdate.occurred_on),
-        tdate.amount.sum().over(preceding=2).sort_by(tdate.occurred_on)
+        tdate.amount.sum().over(preceding=2, sort=tdate.occurred_on),
+        tdate.amount.sum().over(preceding=2).sort(tdate.occurred_on)
     ]
 )
 def test_window_with_ordering(expr):
     result = compute(expr, sdate)
     expected = """
-    select sum({0.name}.amount) over (order by {0.name}.occurred_on rows
-    between 2 preceding and current row) as amount_sum from {0.name}
-    """.format(sdate)
+    select sum({0}.amount) over (order by {0}.occurred_on rows
+    between 2 preceding and current row) as amount_sum from {0}
+    """.format(sdate.name)
     assert normalize(str(result)) == normalize(expected)
 
 
@@ -1951,11 +1951,11 @@ def test_window_with_grouping(expr):
     'expr',
     [
         tdate.amount.sum().over(
-            preceding=2, sort_by=tdate.occurred_on, group_by=tdate.name
+            preceding=2, sort=tdate.occurred_on, group_by=tdate.name
         ),
         tdate.amount.sum().over(
             preceding=2
-        ).sort_by(tdate.occurred_on).group_by(tdate.name)
+        ).sort(tdate.occurred_on).group_by(tdate.name)
     ]
 )
 def test_window_with_grouping_and_ordering(expr):
@@ -1966,3 +1966,9 @@ def test_window_with_grouping_and_ordering(expr):
     """.format(sdate.name)
     result = compute(expr, sdate)
     assert normalize(str(result)) == normalize(expected)
+
+
+def test_window_frame_specification_failure_mode():
+    base = tdate.amount.sum()
+    with pytest.raises(ValueError):
+        base.over(preceding=-1)

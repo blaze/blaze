@@ -20,14 +20,14 @@ from .expressions import dshape_method_list, method_properties
 class Window(Expr):
     __slots__ = (
         '_hash',
-        '_child', '_group_by', '_sort_by', 'preceding', 'following',
+        '_child', '_group_by', '_sort', 'preceding', 'following',
         '_asdshape'
     )
 
-    __inputs__ = '_child', '_group_by', '_sort_by'
+    __inputs__ = '_child', '_group_by', '_sort'
 
     def __str__(self):
-        slots = '_group_by', '_sort_by', 'preceding', 'following'
+        slots = '_group_by', '_sort', 'preceding', 'following'
         return '%s(%s, %s)' % (
             type(self).__name__,
             self._child,
@@ -41,11 +41,11 @@ class Window(Expr):
     def _name(self):
         return self._child._name
 
-    def sort_by(self, key):
+    def sort(self, by):
         return type(self)(
             self._child,
             _group_by=self._group_by,
-            _sort_by=key,
+            _sort=by,
             preceding=self.preceding,
             following=self.following,
             _asdshape=self._asdshape
@@ -55,7 +55,7 @@ class Window(Expr):
         return type(self)(
             self._child,
             _group_by=key,
-            _sort_by=self._sort_by,
+            _sort=self._sort,
             preceding=self.preceding,
             following=self.following,
             _asdshape=self._asdshape
@@ -148,7 +148,7 @@ class Reduction(Expr):
             return '%s(%s)' % (name, self._child)
 
     def over(
-        self, group_by=None, sort_by=None, preceding=None, following=None
+        self, group_by=None, sort=None, preceding=None, following=None
     ):
         """Create a Window expression.
 
@@ -159,7 +159,7 @@ class Reduction(Expr):
         group_by : str or Expr
             The name of a column or another Blaze expression to use for
             *partitioning* the column being reduced over.
-        sort_by : str or Expr
+        sort : str or Expr
             The name of a column or another Blaze expression to use for
             *ordering* the column being reduced over.
         preceding : int
@@ -177,26 +177,34 @@ class Reduction(Expr):
         -------
         Window
         """
-        if preceding is not None and not isinstance(
-            preceding, (numbers.Integral, np.integer)
-        ):
-            raise TypeError(
-                '"preceding" must be an integer, got %s of type %r' % (
-                    preceding, type(preceding).__name__
+        if preceding is not None:
+            if not isinstance(preceding, (numbers.Integral, np.integer)):
+                raise TypeError(
+                    '"preceding" must be an integer, got %s of type %r' % (
+                        preceding, type(preceding).__name__
+                    )
                 )
-            )
-        if following is not None and not isinstance(
-            following, (numbers.Integral, np.integer)
-        ):
-            raise TypeError(
-                '"following" must be an integer, got %s of type %r' % (
-                    following, type(following).__name__
+            if preceding < 0:
+                raise ValueError(
+                    '"preceding" must be greater than or equal to 0, got %d' %
+                    preceding
                 )
-            )
+        if following is not None:
+            if not isinstance(following, (numbers.Integral, np.integer)):
+                raise TypeError(
+                    '"following" must be an integer, got %s of type %r' % (
+                        following, type(following).__name__
+                    )
+                )
+            if following < 0:
+                raise ValueError(
+                    '"following" must be greater than or equal to 0, got %d' %
+                    following
+                )
         return Window(
             self,
             _group_by=group_by,
-            _sort_by=sort_by,
+            _sort=sort,
             preceding=preceding,
             following=following,
             _asdshape=DataShape(

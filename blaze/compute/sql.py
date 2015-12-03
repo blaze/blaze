@@ -1198,7 +1198,7 @@ def compute_up_window_no_sort_no_group(expr, data, **kwargs):
     return Over(
         data,
         group_by=expr._group_by,
-        sort_by=expr._sort_by,
+        sort_by=expr._sort,
         preceding=expr.preceding,
         following=expr.following
     ).label(expr._name)
@@ -1210,7 +1210,7 @@ def compute_up_window_one_of_sort_or_group(expr, data, spec, **kwargs):
     return Over(
         data,
         group_by=spec if expr._group_by is not None else None,
-        sort_by=spec if expr._sort_by is not None else None,
+        sort_by=spec if expr._sort is not None else None,
         preceding=expr.preceding,
         following=expr.following
     ).label(expr._name)
