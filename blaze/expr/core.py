@@ -8,7 +8,7 @@ from functools import reduce
 
 import numpy as np
 import toolz
-from toolz import unique, concat, partial, first
+from toolz import unique, concat, partial
 import pandas as pd
 
 from ..compatibility import _strtypes
@@ -416,8 +416,27 @@ def path(a, b):
 
 
 def ordered_intersect(a, b):
+    """Set intersection of two sequences that preserves order.
+
+    Parameters
+    ----------
+    a, b : Sequence
+
+    Returns
+    -------
+    list
+
+    Examples
+    --------
+    >>> ordered_intersect('abcd', 'cdef')
+    ['c', 'd']
+    >>> ordered_intersect('bcda', 'bdfga')
+    ['b', 'd', 'a']
+    >>> ordered_intersect('zega', 'age')  # first sequence determines ordering
+    ['e', 'g', 'a']
+    """
     common = set(a) & set(b)
-    return [x for x in concat((a, b)) if x in common]
+    return [x for x in unique(concat((a, b))) if x in common]
 
 
 def common_subexpression(*exprs):
