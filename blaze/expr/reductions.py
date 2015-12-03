@@ -20,14 +20,14 @@ from .expressions import dshape_method_list, method_properties
 class Window(Expr):
     __slots__ = (
         '_hash',
-        '_child', 'group_by', 'sort_by', 'preceding', 'following',
+        '_child', '_group_by', '_sort_by', 'preceding', 'following',
         '_asdshape'
     )
 
-    __inputs__ = '_child', 'group_by', 'sort_by'
+    __inputs__ = '_child', '_group_by', '_sort_by'
 
     def __str__(self):
-        slots = 'group_by', 'sort_by', 'preceding', 'following'
+        slots = '_group_by', '_sort_by', 'preceding', 'following'
         return '%s(%s, %s)' % (
             type(self).__name__,
             self._child,
@@ -40,6 +40,26 @@ class Window(Expr):
     @property
     def _name(self):
         return self._child._name
+
+    def sort_by(self, key):
+        return type(self)(
+            self._child,
+            _group_by=self._group_by,
+            _sort_by=key,
+            preceding=self.preceding,
+            following=self.following,
+            _asdshape=self._asdshape
+        )
+
+    def group_by(self, key):
+        return type(self)(
+            self._child,
+            _group_by=key,
+            _sort_by=self._sort_by,
+            preceding=self.preceding,
+            following=self.following,
+            _asdshape=self._asdshape
+        )
 
 
 class Reduction(Expr):
@@ -175,8 +195,8 @@ class Reduction(Expr):
             )
         return Window(
             self,
-            group_by=group_by,
-            sort_by=sort_by,
+            _group_by=group_by,
+            _sort_by=sort_by,
             preceding=preceding,
             following=following,
             _asdshape=DataShape(

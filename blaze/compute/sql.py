@@ -1197,8 +1197,8 @@ def compute_up_window_no_sort_no_group(expr, data, **kwargs):
     """No sort by or group by clauses"""
     return Over(
         data,
-        group_by=expr.group_by,
-        sort_by=expr.sort_by,
+        group_by=expr._group_by,
+        sort_by=expr._sort_by,
         preceding=expr.preceding,
         following=expr.following
     ).label(expr._name)
@@ -1209,8 +1209,8 @@ def compute_up_window_one_of_sort_or_group(expr, data, spec, **kwargs):
     """One of sort by or group by"""
     return Over(
         data,
-        group_by=spec if expr.group_by is not None else None,
-        sort_by=spec if expr.sort_by is not None else None,
+        group_by=spec if expr._group_by is not None else None,
+        sort_by=spec if expr._sort_by is not None else None,
         preceding=expr.preceding,
         following=expr.following
     ).label(expr._name)

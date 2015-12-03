@@ -876,9 +876,6 @@ def test_lower_column():
                     sa.Column('country', sa.String),
                     )
 
-    tname = symbol('name', discover(name))
-    tcity = symbol('city', discover(city))
-
     assert lower_column(name.c.id) is name.c.id
     assert lower_column(select(name).c.id) is name.c.id
 
@@ -1271,7 +1268,7 @@ def test_transform_where():
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_merge():
+def test_merge_part2():
     col = (t['amount'] * 2).label('new')
 
     expr = merge(t['name'], col)
@@ -1918,8 +1915,14 @@ def test_basic_window():
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_window_with_ordering():
-    expr = tdate.amount.sum().over(preceding=2, sort_by=tdate.occurred_on)
+@pytest.mark.parametrize(
+    'expr',
+    [
+        tdate.amount.sum().over(preceding=2, sort_by=tdate.occurred_on),
+        tdate.amount.sum().over(preceding=2).sort_by(tdate.occurred_on)
+    ]
+)
+def test_window_with_ordering(expr):
     result = compute(expr, sdate)
     expected = """
     select sum({0.name}.amount) over (order by {0.name}.occurred_on rows
@@ -1928,23 +1931,38 @@ def test_window_with_ordering():
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_window_with_grouping():
-    expr = tdate.amount.sum().over(preceding=2, group_by=tdate.name)
+@pytest.mark.parametrize(
+    'expr',
+    [
+        tdate.amount.sum().over(preceding=2, group_by=tdate.name),
+        tdate.amount.sum().over(preceding=2).group_by(tdate.name)
+    ]
+)
+def test_window_with_grouping(expr):
     result = compute(expr, sdate)
     expected = """
-    select sum({0.name}.amount) over (partition by {0.name}.name rows
-    between 2 preceding and current row) as amount_sum from {0.name}
-    """.format(sdate)
+    select sum({0}.amount) over (partition by {0}.name rows
+    between 2 preceding and current row) as amount_sum from {0}
+    """.format(sdate.name)
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_window_with_grouping_and_ordering():
-    expr = tdate.amount.sum().over(preceding=2, sort_by=tdate.occurred_on,
-                                   group_by=tdate.name)
-    result = compute(expr, sdate)
+@pytest.mark.parametrize(
+    'expr',
+    [
+        tdate.amount.sum().over(
+            preceding=2, sort_by=tdate.occurred_on, group_by=tdate.name
+        ),
+        tdate.amount.sum().over(
+            preceding=2
+        ).sort_by(tdate.occurred_on).group_by(tdate.name)
+    ]
+)
+def test_window_with_grouping_and_ordering(expr):
     expected = """
-    select sum({0.name}.amount) over (partition by {0.name}.name
-    order by {0.name}.occurred_on rows
-    between 2 preceding and current row) as amount_sum from {0.name}
-    """.format(sdate)
+    select sum({0}.amount) over (partition by {0}.name
+    order by {0}.occurred_on rows
+    between 2 preceding and current row) as amount_sum from {0}
+    """.format(sdate.name)
+    result = compute(expr, sdate)
     assert normalize(str(result)) == normalize(expected)
