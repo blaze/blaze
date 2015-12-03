@@ -187,6 +187,11 @@ class Reduction(Expr):
             preceding=preceding,
             following=following,
             _asdshape=DataShape(
+                # self._child will always exist but self._child._child won't,
+                # because we create a new leaf in `compute` and by the time
+                # compute_up(Window, ...) is called self._child._child won't
+                # exist. We only need the dimensions here, so we just do it
+                # once during construction of the expression.
                 *(self._child._child.shape + (self._child.schema,))
             )
         )
