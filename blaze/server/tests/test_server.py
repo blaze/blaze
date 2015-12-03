@@ -591,7 +591,7 @@ def test_cant_add_data_to_server(iris_server, serial):
         headers=mimetype(serial),
         data=blob,
     )
-    assert '400' in response1.status
+    assert '422' in response1.status
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -603,4 +603,4 @@ def test_bad_add_payload(empty_server, serial):
         headers=mimetype(serial),
         data=blob,
     )
-    assert '400' in response1.status
+    assert '422' in response1.status
