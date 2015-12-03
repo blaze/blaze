@@ -20,7 +20,7 @@ from .expressions import dshape_method_list, method_properties
 class Window(Expr):
     __slots__ = (
         '_hash',
-        '_child', 'kind', 'group_by', 'sort_by', 'preceding', 'following',
+        '_child', 'group_by', 'sort_by', 'preceding', 'following',
         '_asdshape'
     )
 
@@ -134,13 +134,36 @@ class Reduction(Expr):
         else:
             return '%s(%s)' % (name, self._child)
 
-    def over(self, kind='ROWS',
-             group_by=None, sort_by=None, preceding=None, following=None):
-        kind = kind.upper()
-        if kind != 'ROWS' and kind != 'RANGE':
-            raise ValueError(
-                '"kind" must be either "ROWS" or "RANGE" (case insensitive)'
-            )
+    def over(
+        self, group_by=None, sort_by=None, preceding=None, following=None
+    ):
+        """Create a Window expression.
+
+        Used to implement things like rolling and cumulative computations.
+
+        Parameters
+        ----------
+        group_by : str or Expr
+            The name of a column or another Blaze expression to use for
+            *partitioning* the column being reduced over.
+        sort_by : str or Expr
+            The name of a column or another Blaze expression to use for
+            *ordering* the column being reduced over.
+        preceding : int
+            The number of rows to look behind, relative to the
+            current row. For example, ``preceding=2`` would look back 2 rows +
+            the current row for a total window size of 3. Defaults to
+            considering **every previous row**.
+        following : int
+            The number of rows to look ahead, relative to the current row.
+            For example, ``following=2`` would look ahead 2 rows + the current
+            row for a total window size of 3. Defaults to not looking ahead
+            **at all**, i.e., just considering the current row.
+
+        Returns
+        -------
+        Window
+        """
         if preceding is not None and not isinstance(
             preceding, (numbers.Integral, np.integer)
         ):
@@ -159,7 +182,6 @@ class Reduction(Expr):
             )
         return Window(
             self,
-            kind=kind,
             group_by=group_by,
             sort_by=sort_by,
             preceding=preceding,
