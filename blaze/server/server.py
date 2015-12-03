@@ -4,6 +4,7 @@ import socket
 import functools
 import re
 from warnings import warn
+import collections
 
 import flask
 from flask import Blueprint, Flask, request, Response
@@ -446,6 +447,17 @@ def addserver():
         return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
 
 
-    _get_data.cache[flask.current_app].update({(k, resource(v))
-                                               for k, v in payload.items()})
+    data = _get_data.cache[flask.current_app]
+
+    data_not_mm_msg = ("Cannot update blaze server data since its current data"
+                       " is a %s and not a mutable mapping (dictionary like).")
+    if not isinstance(data, collections.MutableMapping):
+        return (data_not_mm_msg % type(data), 400)
+
+    payload_not_mm_msg = ("Cannot update blaze server with a %s payload, since"
+                          " it is not a mutable mapping (dictionary like).")
+    if not isinstance(payload, collections.MutableMapping):
+        return (payload_not_mm_msg % type(payload), 400)
+
+    data.update({(k, resource(v)) for k, v in payload.items()})
     return 'OK'
