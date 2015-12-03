@@ -48,9 +48,6 @@ __all__ = [
 ]
 
 
-_attr_cache = dict()
-
-
 def isvalid_identifier(s):
     """Check whether a string is a valid Python identifier
 
@@ -104,8 +101,7 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
-
-    __slots__ = '_hash', '__weakref__'
+    __slots__ = '_hash', '__weakref__', '__dict__'
 
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, Record):
@@ -200,10 +196,6 @@ class Expr(Node):
         assert key != '_hash', \
             '%s should set _hash in __init__' % type(self).__name__
         try:
-            return _attr_cache[(self, key)]
-        except:
-            pass
-        try:
             result = object.__getattribute__(self, key)
         except AttributeError:
             fields = dict(zip(map(valid_identifier, self.fields),
@@ -227,7 +219,9 @@ class Expr(Node):
                     result = self[fields[key]]
             else:
                 raise
-        _attr_cache[(self, key)] = result
+
+        # cache the attribute lookup, getattr will not be invoked again.
+        setattr(self, key, result)
         return result
 
     @property
