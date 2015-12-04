@@ -38,6 +38,10 @@ API Changes
 * ``Like`` expressions behave like a predicate, and operate on columns,
   rather than performing the selection for you on a table
   (:issue:`1333`, :issue:`1340`).
+* :meth:`blaze.server.Server.run` no longer retries binding to a new port by
+  default. Also, positional arguments are no longer forwarded to the inner flask
+  app's ``run`` method. All keyword arguments not consumed by the blaze server
+  ``run`` are still forwarded (:issue:`1316`).
 
 Bug Fixes
 ~~~~~~~~~
@@ -66,6 +70,8 @@ Bug Fixes
   (:issue:`1288`).
 * Fixed a bug where comparisons to a empty string magically converted
   the empty string to ``None`` (:issue:`1308`).
+* Fix the ``retry`` kwarg to the blaze server. When ``retry`` is False, an
+  exception is now properly raised if the port is in use. (:issue:`1316`).
 * Fixed a bug where leaves that only appeared in the predicate of a selection
   would not be in scope in time to compute the predicate. This would cause whole
   expressions like ``a[a > b]`` to fail because ``b`` was not in scope
@@ -85,6 +91,8 @@ Bug Fixes
 Miscellaneous
 ~~~~~~~~~~~~~
 
+* :meth:`blaze.server.Server.run` now uses :func:`warnings.warn` instead of
+  ``print`` when it fails to bind to a port and is retrying (:issue:`1316`).
 * Make expressions (subclasses of Expr) weak referencable (:issue:`1319).
 * Memoize dshape and schema methods (:issue:`1319`).
 * Use ``pandas.DataFrame.sort_values()`` with pandas version >= 0.17.0
