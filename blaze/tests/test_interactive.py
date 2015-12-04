@@ -456,6 +456,6 @@ def test_pickle_roundtrip():
     assert (es + 1).isidentical(pickle.loads(pickle.dumps(es + 1)))
 
 
-@pytest.mark.xfail(raises=ValueError)
 def test_nameless_data():
-    repr(Data([('a', 1)]))
+    data = [('a', 1)]
+    assert repr(data) in repr(Data(data))
