@@ -60,7 +60,7 @@ from ..expr import (
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
     ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
-    Resample, by, DateTimeTruncate, Shift, BinaryMath, Pow
+    Resample, by, DateTimeTruncate, Shift, BinaryMath, Pow, Tail,
 )
 
 from ..expr.broadcast import broadcast_collect
