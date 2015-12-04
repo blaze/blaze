@@ -94,6 +94,9 @@ Bug Fixes
   that had cached an attribute access (:issue:`1335`).
 * Fixed a bug where :func:`~blaze.expr.core.common_subexpression` gave the
   wrong answer (:issue:`1325`, :issue:`1338`).
+* ``BinaryMath`` operations without numba installed were failing (:issue:`1343`).
+* win32 tests were failing for ``hypot`` and ``atan2`` due to slight differences
+  in numpy vs numba implementations of those functions (:issue:`1343`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
