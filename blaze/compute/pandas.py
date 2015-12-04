@@ -569,11 +569,9 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
-@dispatch(Like, DataFrame)
-def compute_up(expr, df, **kwargs):
-    arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
-            for name, pattern in expr.patterns.items()]
-    return df[np.logical_and.reduce(arrs)]
+@dispatch(Like, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.contains(r'^%s$' % fnmatch.translate(expr.pattern))
 
 
 def get_date_attr(s, attr, name):
