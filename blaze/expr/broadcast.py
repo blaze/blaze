@@ -65,8 +65,14 @@ class Broadcast(ElemWise):
 
     @property
     def _full_expr(self):
-        return self._scalar_expr._subs(dict(zip(self._scalars,
-                                                self._children)))
+        return self._scalar_expr._subs(
+            dict(zip(self._scalars, self._children))
+        )
+
+    @property
+    def _args(self):
+        # XXX: is this a hack?
+        return super(Broadcast, self)._args + self._full_expr._args
 
 
 def scalar_symbols(exprs):
