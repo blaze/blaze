@@ -91,6 +91,7 @@ def issubtype(a, b):
         return True
     return False
 
+
 def type_change(old, new):
     """ Was there a significant type change between old and new data?
 
@@ -244,9 +245,11 @@ _names = ('leaf_%d' % i for i in itertools.count(1))
 
 _leaf_cache = dict()
 _used_tokens = set()
+
 def _reset_leaves():
     _leaf_cache.clear()
     _used_tokens.clear()
+
 
 def makeleaf(expr):
     """ Name of a new leaf replacement for this expression
