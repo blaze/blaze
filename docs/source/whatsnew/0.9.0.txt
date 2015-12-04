@@ -35,6 +35,9 @@ API Changes
   ``has_header=True`` when using the ``Data`` constructor (:issue:`1254`).
 * Comparing ``date`` and ``datetime`` datashaped things to the empty
   string now raises a ``TypeError`` (:issue:`1308`).
+* ``Like`` expressions behave like a predicate, and operate on columns,
+  rather than performing the selection for you on a table
+  (:issue:`1333`, :issue:`1340`).
 
 Bug Fixes
 ~~~~~~~~~
