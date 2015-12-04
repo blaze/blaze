@@ -921,7 +921,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Like, ColumnElement)
 def compute_up(t, s, **kwargs):
-    return s.like(t.pattern)
+    return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
 string_func_names = {
