@@ -630,7 +630,7 @@ def test_binary_math(funcname):
     result = compute(getattr(blaze, funcname)(s, t), scope)
     expected = getattr(np, binary_name_map.get(funcname, funcname))(s_data,
                                                                     t_data)
-    assert np.all(result == expected)
+    np.testing.assert_array_almost_equal(result, expected)
 
 
 def test_selection_inner_inputs():
