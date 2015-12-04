@@ -149,7 +149,7 @@ def compute_up(expr, df, **kwargs):
     )
 
 
-@dispatch(Selection, (Series, DataFrame, DaskSeries, DaskDataFrame), 
+@dispatch(Selection, (Series, DataFrame, DaskSeries, DaskDataFrame),
                      (Series, DaskSeries))
 def compute_up(expr, df, predicate, **kwargs):
     return df[predicate]
