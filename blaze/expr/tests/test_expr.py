@@ -52,7 +52,7 @@ def test_nested_fields():
 
 def test_partialed_methods_have_docstrings():
     e = symbol('e', '3 * 5 * {name: string, amount: int}')
-    assert 'string comparison' in e.like.__doc__
+    assert 'string comparison' in e.name.like.__doc__
 
 
 def test_relabel():

@@ -308,23 +308,23 @@ def test_summary_complex_arith_multiple(bank):
 
 def test_like(bank):
     bank.create_index([('name', pymongo.TEXT)])
-    expr = t.like(name='*Alice*')
+    expr = t[t.name.like('*Alice*')]
     result = compute(expr, bank)
     assert set(result) == set((('Alice', 100), ('Alice', 200)))
 
 
 def test_like_multiple(big_bank):
-    expr = bigt.like(name='*Bob*', city='*York*')
+    expr = bigt[bigt.name.like('*Bob*') & bigt.city.like('*York*')]
     result = compute(expr, big_bank)
-    assert set(result) == set((('Bob', 100, 'New York City'),
-                               ('Bob', 200, 'New York City')))
+    assert set(result) == set(
+        (('Bob', 100, 'New York City'), ('Bob', 200, 'New York City'))
+    )
 
 
 def test_like_mulitple_no_match(big_bank):
     # make sure we aren't OR-ing the matches
-    expr = bigt.like(name='*York*', city='*Bob*')
-    result = compute(expr, big_bank)
-    assert not set(result)
+    expr = bigt[bigt.name.like('*York*') & bigt.city.like('*Bob*')]
+    assert not set(compute(expr, big_bank))
 
 
 def test_missing_values(missing_vals):

@@ -66,9 +66,6 @@ def test_multicols_projection(rdd):
     assert result == expected
 
 
-inc = lambda x: x + 1
-
-
 reduction_exprs = [
     t['amount'].sum(),
     t['amount'].min(),
@@ -81,7 +78,8 @@ reduction_exprs = [
     t['amount'].mean(),
     t['amount'].var(),
     summary(a=t.amount.sum(), b=t.id.count()),
-    t['amount'].std()]
+    t['amount'].std()
+]
 
 
 def test_reductions(rdd):
@@ -110,18 +108,20 @@ exprs = [
     by(t['name'], total=(t['amount'] + 1).sum()),
     (t['amount'] * 1).label('foo'),
     t.map(lambda tup: tup[1] + tup[2], 'real'),
-    t.like(name='Alice'),
+    t[t.name.like('Alice')],
     t['amount'].apply(identity, 'var * real', splittable=True),
-    t['amount'].map(inc, 'int')
+    t['amount'].map(lambda x: x + 1, 'int')
 ]
+
+exprs = list(zip(map(str, exprs), exprs))
 
 
 def tuplify(x):
     return tuple(x) if isinstance(x, list) else x
 
 
-@pytest.mark.parametrize('expr', exprs)
-def test_basic(rdd, expr):
+@pytest.mark.parametrize(['string', 'expr'], exprs)
+def test_basic(rdd, string, expr):
     result = set(map(tuplify, compute(expr, rdd).collect()))
     expected = set(map(tuplify, compute(expr, data)))
     assert result == expected

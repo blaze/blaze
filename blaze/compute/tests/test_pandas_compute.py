@@ -590,7 +590,7 @@ def test_nested_transform():
 
 
 def test_like():
-    expr = t.like(name='Alice*')
+    expr = t[t.name.like('Alice*')]
     expected = DataFrame([['Alice', 100, 1],
                           ['Alice', 50, 3]],
                          columns=['name', 'amount', 'id'])

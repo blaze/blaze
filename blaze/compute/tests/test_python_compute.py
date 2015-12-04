@@ -628,14 +628,18 @@ def test_scalar_arithmetic():
 
 def test_like():
     t = symbol('t', 'var * {name: string, city: string}')
-    data = [('Alice Smith', 'New York'),
-            ('Bob Smith', 'Chicago'),
-            ('Alice Walker', 'LA')]
+    data = [
+        ('Alice Smith', 'New York'),
+        ('Bob Smith', 'Chicago'),
+        ('Alice Walker', 'LA')
+    ]
 
-    assert list(compute(t.like(name='Alice*'), data)) == [data[0], data[2]]
-    assert list(compute(t.like(name='lice*'), data)) == []
-    assert list(compute(t.like(name='*Smith*'), data)) == [data[0], data[1]]
-    assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
+    assert list(compute(t[t.name.like('Alice*')], data)) == [data[0], data[2]]
+    assert list(compute(t[t.name.like('lice*')], data)) == []
+    assert list(compute(t[t.name.like('*Smith*')], data)) == [data[0], data[1]]
+    assert list(
+        compute(t[t.name.like('*Smith*') & t.city.like('New York')], data)
+    ) == [data[0]]
 
 
 def test_datetime_comparison():
