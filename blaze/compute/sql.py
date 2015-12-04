@@ -25,8 +25,6 @@ from itertools import chain
 from operator import and_, eq, attrgetter, add
 from copy import copy
 
-EPOCH = datetime.datetime(1970, 1, 1, 0, 0)
-
 import sqlalchemy as sa
 
 from sqlalchemy import sql, Table, MetaData
@@ -44,7 +42,6 @@ from toolz.compatibility import zip
 from toolz.curried import map
 
 import numpy as np
-import numbers
 
 import warnings
 
@@ -57,7 +54,6 @@ from datashape.predicates import iscollection, isscalar, isrecord
 from ..dispatch import dispatch
 
 from .core import compute_up, compute, base
-
 
 from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
@@ -73,6 +69,8 @@ from ..expr.math import isnan
 from ..compatibility import reduce
 
 from ..utils import listpack
+
+EPOCH = datetime.datetime(1970, 1, 1, 0, 0)
 
 
 __all__ = ['sa', 'select']
