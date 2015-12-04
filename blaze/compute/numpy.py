@@ -270,6 +270,11 @@ def compute_up(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel._child: x})]
 
 
+@dispatch(Selection, np.ndarray, np.ndarray)
+def compute_up(expr, arr, predicate, **kwargs):
+    return arr[predicate]
+
+
 @dispatch(UTCFromTimestamp, np.ndarray)
 def compute_up(expr, data, **kwargs):
     return (data * 1e6).astype('datetime64[us]')

@@ -51,8 +51,7 @@ class Broadcast(ElemWise):
     """
     __slots__ = '_hash', '_children', '_scalars', '_scalar_expr'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         myshape = maxshape(map(shape, self._children))
         return DataShape(*(myshape + (self._scalar_expr.schema,)))
 
@@ -66,8 +65,14 @@ class Broadcast(ElemWise):
 
     @property
     def _full_expr(self):
-        return self._scalar_expr._subs(dict(zip(self._scalars,
-                                                self._children)))
+        return self._scalar_expr._subs(
+            dict(zip(self._scalars, self._children))
+        )
+
+    @property
+    def _args(self):
+        # XXX: is this a hack?
+        return super(Broadcast, self)._args + self._full_expr._args
 
 
 def scalar_symbols(exprs):
@@ -107,8 +112,10 @@ Broadcastable = (Map, Field, DateTime, UnaryOp, BinOp, Coerce, Shift)
 WantToBroadcast = (Map, DateTime, UnaryOp, BinOp, Coerce, Shift)
 
 
-def broadcast_collect(expr, Broadcastable=Broadcastable,
-                      WantToBroadcast=WantToBroadcast):
+def broadcast_collect(expr,
+                      broadcastable=Broadcastable,
+                      want_to_broadcast=WantToBroadcast,
+                      no_recurse=None):
     """ Collapse expression down using Broadcast - Tabular cases only
 
     Expressions of type Broadcastables are swallowed into Broadcast
@@ -125,15 +132,20 @@ def broadcast_collect(expr, Broadcastable=Broadcastable,
     >>> broadcast_collect(expr)
     Broadcast(_children=(t,), _scalars=(t,), _scalar_expr=t.x + (2 * (exp(-((t.x - 1.3) ** 2)))))
     """
-    if (isinstance(expr, WantToBroadcast) and
+    if (isinstance(expr, want_to_broadcast) and
             iscollection(expr.dshape)):
-        leaves = leaves_of_type(Broadcastable, expr)
+        leaves = leaves_of_type(broadcastable, expr)
         expr = broadcast(expr, sorted(leaves, key=str))
 
+    if no_recurse is not None and isinstance(expr, no_recurse):
+        return expr
+
     # Recurse down
-    children = [broadcast_collect(i, Broadcastable, WantToBroadcast)
-                for i in expr._inputs]
-    return expr._subs(dict(zip(expr._inputs, children)))
+    children = (
+        broadcast_collect(i, broadcastable, want_to_broadcast, no_recurse)
+        for i in expr._inputs
+    )
+    return expr._subs({e: c for e, c in zip(expr._inputs, children)})
 
 
 @curry

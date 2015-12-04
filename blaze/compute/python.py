@@ -324,6 +324,12 @@ def compute_up(t, seq, **kwargs):
     return filter(predicate, seq)
 
 
+@dispatch(Selection, Sequence, Sequence)
+def compute_up(expr, seq, predicate, **kwargs):
+    preds = iter(predicate)
+    return filter(lambda _: next(preds), seq)
+
+
 @dispatch(Reduction, Sequence)
 def compute_up(t, seq, **kwargs):
     if t.axis != (0,):

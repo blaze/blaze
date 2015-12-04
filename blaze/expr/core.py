@@ -1,20 +1,25 @@
 from __future__ import absolute_import, division, print_function
 
 import numbers
-import toolz
 import inspect
 
-from toolz import unique, concat, compose, partial
-import toolz
-from pprint import pprint
+from pprint import pformat
+from functools import reduce, partial
 
-from ..compatibility import StringIO, _strtypes, builtins
+import numpy as np
+import toolz
+from toolz import unique, concat, first
+import pandas as pd
+
+from ..compatibility import _strtypes
 from ..dispatch import dispatch
+from ..utils import ordered_intersect
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
 base = (numbers.Number,) + _strtypes
+arrtypes = np.ndarray, pd.core.generic.NDFrame
 
 
 def isidentical(a, b):
@@ -44,6 +49,8 @@ def isidentical(a, b):
     """
     if isinstance(a, base) and isinstance(b, base):
         return a == b
+    if isinstance(a, arrtypes) and isinstance(b, arrtypes):
+        return np.array_equal(a, b)
     if type(a) != type(b):
         return False
     if isinstance(a, Node):
@@ -70,17 +77,34 @@ class Node(object):
     __inputs__ = '_child',
 
     def __init__(self, *args, **kwargs):
-        assert frozenset(kwargs).issubset(self.__slots__)
+        slots = set(self.__slots__)
+        if not frozenset(slots) <= slots:
+            raise TypeError('Unknown keywords: %s' % (set(kwargs) - slots))
 
+        assigned = set()
         for slot, arg in zip(self.__slots__[1:], args):
+            assigned.add(slot)
             setattr(self, slot, arg)
 
         for key, value in kwargs.items():
+            if key in assigned:
+                raise TypeError(
+                    '%s got multiple values for argument %r' % (
+                        type(self).__name__,
+                        key,
+                    ),
+                )
+            assigned.add(key)
             setattr(self, key, value)
+
+        for slot in slots - assigned:
+            setattr(self, slot, None)
 
     @property
     def _args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__[1:])
+
+    _hashargs = _args
 
     @property
     def _inputs(self):
@@ -113,16 +137,17 @@ class Node(object):
     isidentical = isidentical
 
     def __hash__(self):
-        try:
-            return self._hash
-        except AttributeError:
-            self._hash = hash((type(self), self._args))
-            return self._hash
+        hash_ = self._hash
+        if hash_ is None:
+            hash_ = self._hash = hash((type(self), self._hashargs))
+        return hash_
 
     def __str__(self):
-        rep = ["%s=%s" % (slot, _str(arg))
-                for slot, arg in zip(self.__slots__[1:], self._args)]
-        return "%s(%s)" % (type(self).__name__, ', '.join(rep))
+        rep = [
+            '%s=%s' % (slot, _str(arg))
+            for slot, arg in zip(self.__slots__[1:], self._args)
+        ]
+        return '%s(%s)' % (type(self).__name__, ', '.join(rep))
 
     def __repr__(self):
         return str(self)
@@ -158,7 +183,7 @@ class Node(object):
         return other in set(self._subterms())
 
     def __getstate__(self):
-        return self._args
+        return tuple(self._args)
 
     def __setstate__(self, state):
         self.__init__(*state)
@@ -263,8 +288,22 @@ def get_callable_name(o):
     """
     # special case partial objects
     if isinstance(o, partial):
-        return 'partial(%s, %s)' % (get_callable_name(o.func),
-                                    ', '.join(map(str, o.args)))
+        keywords = o.keywords
+        kwds = (
+            ', '.join('%s=%r' % item for item in keywords.items())
+            if keywords else
+            ''
+        )
+        args = ', '.join(map(repr, o.args))
+        arguments = []
+        if args:
+            arguments.append(args)
+        if kwds:
+            arguments.append(kwds)
+        return 'partial(%s, %s)' % (
+            get_callable_name(o.func),
+            ', '.join(arguments),
+        )
 
     try:
         # python 3 makes builtins look nice
@@ -286,7 +325,7 @@ def get_callable_name(o):
 def _str(s):
     """ Wrap single quotes around strings """
     if isinstance(s, str):
-        return "'%s'" % s
+        return repr(s)
     elif callable(s):
         return get_callable_name(s)
     elif isinstance(s, Node):
@@ -295,9 +334,7 @@ def _str(s):
         body = ", ".join(_str(x) for x in s)
         return "({0})".format(body if len(s) > 1 else (body + ","))
     else:
-        stream = StringIO()
-        pprint(s, stream=stream)
-        return stream.getvalue().rstrip()
+        return pformat(s).rstrip()
 
 
 @dispatch(Node)
@@ -379,21 +416,50 @@ def path(a, b):
     yield a
 
 
-def common_subexpression(*exprs):
+def common_subexpression(expr, *exprs):
     """ Common sub expression between subexpressions
 
     Examples
     --------
 
-    >>> from blaze.expr import symbol, common_subexpression
-
+    >>> from blaze.expr import symbol
     >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> common_subexpression(t.x, t.y)
     t
     """
-    sets = [set(subterms(t)) for t in exprs]
-    return builtins.max(set.intersection(*sets),
-                        key=compose(len, str))
+    # only one expression has itself as a common subexpression
+    if not exprs:
+        return expr
+
+    exprs = (expr,) + exprs
+
+    # get leaves for every expression
+    all_leaves = [expr._leaves() for expr in exprs]
+
+    # leaves common to all expressions
+    leaves = set.intersection(*map(set, all_leaves))
+
+    # no common leaves therefore no common subexpression
+    if not leaves:
+        raise ValueError(
+            'No common leaves found in expressions %s' % list(exprs)
+        )
+
+    # list of paths from each expr to each leaf
+    pathlist = [list(path(expr, leaf)) for expr in exprs for leaf in leaves]
+
+    # ordered intersection of paths
+    common = reduce(ordered_intersect, pathlist)
+    if not common:
+        raise ValueError(
+            'No common subexpression found in paths to leaf: %s' % list(
+                map(set, pathlist)
+            )
+        )
+
+    # the first expression is the deepest node in the tree that is an ancestor
+    # of every expression in `exprs`
+    return first(common)
 
 
 def eval_str(expr):

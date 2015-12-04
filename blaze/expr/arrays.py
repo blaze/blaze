@@ -9,6 +9,7 @@ from .expressions import Expr, ndim, symbol
 
 __all__ = 'Transpose', 'TensorDot', 'dot', 'transpose', 'tensordot'
 
+
 class Transpose(Expr):
     """ Transpose dimensions in an N-Dimensional array
 
@@ -31,8 +32,7 @@ class Transpose(Expr):
     """
     __slots__ = '_hash', '_child', 'axes'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         s = self._child.shape
         return DataShape(*(tuple([s[i] for i in self.axes]) +
                            (self._child.dshape.measure,)))
@@ -74,8 +74,7 @@ class TensorDot(Expr):
     __slots__ = '_hash', 'lhs', 'rhs', '_left_axes', '_right_axes'
     __inputs__ = 'lhs', 'rhs'
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         # Compute shape
         shape = tuple([d for i, d in enumerate(self.lhs.shape)
                          if i not in self._left_axes] +

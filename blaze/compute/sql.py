@@ -154,9 +154,24 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, column)
 
 
-@compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
-@compute_up.register(BinOp, ColumnElement, base)
+@compute_up.register(
+    BinOp, (Select, ColumnElement, base), (Select, ColumnElement),
+)
+@compute_up.register(BinOp, (Select, ColumnElement), base)
 def binop_sql(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        assert len(lhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %s' % lhs
+        )
+        lhs = first(lhs.inner_columns)
+    if isinstance(rhs, Select):
+        assert len(rhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %s' % rhs
+        )
+        rhs = first(rhs.inner_columns)
+
     return t.op(lhs, rhs)
 
 
@@ -262,19 +277,47 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, sa.sql.ColumnElement)
 def compute_up(expr, data, scope=None, **kwargs):
     predicate = compute(expr.predicate, data, post_compute=False)
-    return sa.select([data]).where(predicate)
+    return compute(
+        expr,
+        {expr._child: data, expr.predicate: predicate},
+        **kwargs
+    )
+
+
+@dispatch(Selection, sa.sql.ColumnElement, ColumnElement)
+def compute_up(expr, col, predicate, **kwargs):
+    return sa.select([col]).where(predicate)
 
 
 @dispatch(Selection, Selectable)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col)
-              for col in getattr(s, 'inner_columns', s.columns))
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
+def compute_up(expr, sel, scope=None, **kwargs):
+    return compute(
+        expr,
+        {
+            expr._child: sel,
+            expr.predicate: compute(
+                expr.predicate,
+                toolz.merge(
+                    {
+                        expr._child[col.name]: col
+                        for col in getattr(sel, 'inner_columns', sel.columns)
+                    },
+                    scope,
+                ),
+                optimize=False,
+                post_compute=False,
+            ),
+        },
+        **kwargs
+    )
+
+
+@dispatch(Selection, Selectable, ColumnElement)
+def compute_up(expr, tbl, predicate, scope=None, **kwargs):
     try:
-        return s.where(predicate)
+        return tbl.where(predicate)
     except AttributeError:
-        return select([s]).where(predicate)
+        return select([tbl]).where(predicate)
 
 
 def select(s):
@@ -1005,7 +1048,7 @@ def _subexpr_optimize(expr):
 
 @dispatch(Expr, ClauseElement)
 def optimize(expr, _):
-    collected = broadcast_collect(expr)
+    collected = broadcast_collect(expr, no_recurse=Selection)
     return reduce(
         lambda expr, term: expr._subs({term: _subexpr_optimize(term)}),
         collected._subterms(),
