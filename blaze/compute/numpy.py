@@ -14,7 +14,7 @@ from ..expr import (
     BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
     UTCFromTimestamp, DateTimeTruncate,
     Transpose, TensorDot, Coerce, isnan,
-    greatest, least, BinaryMath,
+    greatest, least, BinaryMath, atan2,
 )
 from ..utils import keywords
 
@@ -127,30 +127,33 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-_binary_math_names = {
-    'atan2': 'arctan2'
-}
-
-
-def _get_numpy_func(expr):
-    name = type(expr).__name__
-    return getattr(np, _binary_math_names.get(name, name))
-
-
 @compute_up.register(BinaryMath, np.ndarray, (np.ndarray, base))
 @compute_up.register(BinaryMath, base, np.ndarray)
 def compute_up_binary_math(t, lhs, rhs, **kwargs):
-    func = _get_numpy_func(t)
-    return func(lhs, rhs)
+    return getattr(np, type(t).__name__)(lhs, rhs)
 
 
 @dispatch(BinaryMath, np.ndarray)
 def compute_up(t, data, **kwargs):
-    func = _get_numpy_func(t)
+    func = getattr(np, type(t).__name__)
     if isinstance(t.lhs, Expr):
         return func(data, t.rhs)
     else:
         return func(t.lhs, data)
+
+
+@compute_up.register(atan2, np.ndarray, (np.ndarray, base))
+@compute_up.register(atan2, base, np.ndarray)
+def compute_up_binary_math(t, lhs, rhs, **kwargs):
+    return np.arctan2(lhs, rhs)
+
+
+@dispatch(atan2, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        return np.arctan2(data, t.rhs)
+    else:
+        return np.arctan2(t.lhs, data)
 
 
 @dispatch(UnaryOp, np.ndarray)
