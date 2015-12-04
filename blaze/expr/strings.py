@@ -6,6 +6,7 @@ from odo.utils import copydoc
 
 from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
+from ..compatibility import basestring
 
 __all__ = ['Like', 'like', 'strlen', 'UnaryStringFunction']
 
@@ -16,7 +17,7 @@ class Like(ElemWise):
 
     >>> from blaze import symbol, like, compute
     >>> t = symbol('t', 'var * {name: string, city: string}')
-    >>> expr = like(t, name='Alice*')
+    >>> expr = t[t.name.like('Alice*')]
 
     >>> data = [('Alice Smith', 'New York'),
     ...         ('Bob Jones', 'Chicago'),
