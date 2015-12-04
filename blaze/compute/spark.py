@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import fnmatch
+
 from toolz import compose, identity
 from datashape.predicates import isscalar
 
@@ -7,8 +9,9 @@ from ..expr import (
     Expr, ElemWise, SimpleSelection, Sort, Apply, Distinct, Join, By, Label,
     Summary, by, ReLabel, Like, Reduction, Head
 )
-from .python import (compute, rrowfunc, rowfunc, pair_assemble,
-                     reduce_by_funcs, binops, like_regex_predicate)
+from .python import (
+    compute, rrowfunc, rowfunc, pair_assemble, reduce_by_funcs, binops
+)
 from ..expr.broadcast import broadcast_collect
 from ..expr.optimize import simple_selections
 from ..compatibility import builtins, unicode
@@ -202,5 +205,6 @@ def compute_up(t, rdd, **kwargs):
 
 @dispatch(Like, RDD)
 def compute_up(t, rdd, **kwargs):
-    predicate = like_regex_predicate(t)
-    return rdd.filter(predicate)
+    def func(value, pattern=t.pattern):
+        return fnmatch.fnmatch(value, pattern)
+    return rdd.map(func)
