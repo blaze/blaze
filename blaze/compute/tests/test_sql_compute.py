@@ -338,17 +338,17 @@ def test_count_on_table():
     result = compute(t[t.amount > 0].count(), s)
     assert (
         normalize(str(result)) == normalize("""
-        SELECT count(accounts.id) as count_1
+        SELECT count(accounts.id) as t_count
         FROM accounts
         WHERE accounts.amount > :amount_1""")
 
         or
 
         normalize(str(result)) == normalize("""
-        SELECT count(alias.id) as count
+        SELECT count(alias.id) as t_count
         FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS id
               FROM accounts
-              WHERE accounts.amount > :amount_1) as alias"""))
+              WHERE accounts.amount > :amount_1) as alias_2"""))
 
 
 def test_distinct():
@@ -729,6 +729,7 @@ def test_clean_join():
 
     assert (normalize(str(result)) == normalize(expected1) or
             normalize(str(result)) == normalize(expected2))
+
 
 def test_like():
     expr = t.like(name='Alice*')
@@ -1908,3 +1909,47 @@ def test_multiple_table_join(lhs, rhs):
     result = compute(expr, {lexpr: lhs, rexpr: rhs})
     expected = pd.merge(lhs, odo(rhs, pd.DataFrame), on='c')
     tm.assert_frame_equal(result, expected)
+
+
+def test_empty_string_comparison_with_option_type():
+    expr = nt.amount[nt.name == '']
+    result = compute(expr, s)
+    expected = """
+    SELECT accounts.amount
+    FROM accounts
+    WHERE accounts.name = :name_1
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_tail_no_sort():
+    assert (
+        normalize(str(compute(t.head(), {t: s}))) ==
+        normalize(str(compute(t.tail(), {t: s})))
+    )
+
+
+def test_tail_of_sort():
+    expected = normalize(str(compute(
+        t.sort('id', ascending=False).head(5).sort('id'),
+        {t: s},
+    )))
+    result = normalize(str(compute(t.sort('id').tail(5), {t: s})))
+    assert expected == result
+
+
+def test_tail_sort_in_chilren():
+    expected = normalize(str(compute(
+        t.name.sort('id', ascending=False).head(5).sort('id'),
+        {t: s},
+    )))
+    result = normalize(str(compute(t.name.sort('id').tail(5), {t: s})))
+    assert expected == result
+
+
+def test_selection_inner_inputs():
+    result = normalize(str(compute(t[t.id == tdate.id], {t: s, tdate: sdate})))
+    expected = normalize("""
+    select {a}.name, {a}.amount, {a}.id from {a}, {b} where {a}.id = {b}.id
+    """).format(a=s.name, b=sdate.name)
+    assert result == expected

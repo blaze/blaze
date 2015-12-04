@@ -56,9 +56,9 @@ from .core import compute_up, compute, base
 from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Label, Concat,
-    ReLabel, Merge, common_subexpression, Summary, Like, nelements, notnull,
-    Shift, BinaryMath, Pow
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
+    Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
+    notnull, Shift, BinaryMath, Pow,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -154,9 +154,24 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, column)
 
 
-@compute_up.register(BinOp, (ColumnElement, base), ColumnElement)
-@compute_up.register(BinOp, ColumnElement, base)
+@compute_up.register(
+    BinOp, (Select, ColumnElement, base), (Select, ColumnElement),
+)
+@compute_up.register(BinOp, (Select, ColumnElement), base)
 def binop_sql(t, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        assert len(lhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %s' % lhs
+        )
+        lhs = first(lhs.inner_columns)
+    if isinstance(rhs, Select):
+        assert len(rhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %s' % rhs
+        )
+        rhs = first(rhs.inner_columns)
+
     return t.op(lhs, rhs)
 
 
@@ -262,19 +277,47 @@ def compute_up(t, s, **kwargs):
 @dispatch(Selection, sa.sql.ColumnElement)
 def compute_up(expr, data, scope=None, **kwargs):
     predicate = compute(expr.predicate, data, post_compute=False)
-    return sa.select([data]).where(predicate)
+    return compute(
+        expr,
+        {expr._child: data, expr.predicate: predicate},
+        **kwargs
+    )
+
+
+@dispatch(Selection, sa.sql.ColumnElement, ColumnElement)
+def compute_up(expr, col, predicate, **kwargs):
+    return sa.select([col]).where(predicate)
 
 
 @dispatch(Selection, Selectable)
-def compute_up(t, s, scope=None, **kwargs):
-    ns = dict((t._child[col.name], col)
-              for col in getattr(s, 'inner_columns', s.columns))
-    predicate = compute(t.predicate, toolz.merge(ns, scope),
-                        optimize=False, post_compute=False)
+def compute_up(expr, sel, scope=None, **kwargs):
+    return compute(
+        expr,
+        {
+            expr._child: sel,
+            expr.predicate: compute(
+                expr.predicate,
+                toolz.merge(
+                    {
+                        expr._child[col.name]: col
+                        for col in getattr(sel, 'inner_columns', sel.columns)
+                    },
+                    scope,
+                ),
+                optimize=False,
+                post_compute=False,
+            ),
+        },
+        **kwargs
+    )
+
+
+@dispatch(Selection, Selectable, ColumnElement)
+def compute_up(expr, tbl, predicate, scope=None, **kwargs):
     try:
-        return s.where(predicate)
+        return tbl.where(predicate)
     except AttributeError:
-        return select([s]).where(predicate)
+        return select([tbl]).where(predicate)
 
 
 def select(s):
@@ -972,9 +1015,45 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
+@dispatch(Expr)
+def _subexpr_optimize(expr):
+    return expr
+
+
+@dispatch(Tail)
+def _subexpr_optimize(expr):
+    child = sorter = expr._child
+    while not isinstance(sorter, Sort):
+        try:
+            sorter = sorter._child
+        except AttributeError:
+            break
+    else:
+        # Invert the sort order, then take the head, then re-sort based on
+        # the original key.
+        return child._subs({
+            sorter: sorter._child.sort(
+                sorter._key,
+                ascending=not sorter.ascending,
+            ),
+        }).head(expr.n).sort(sorter._key, ascending=sorter.ascending)
+
+    # If there is no sort order, then we can swap out a head with a tail.
+    # This is equivalent in this backend and considerably faster.
+    warnings.warn(
+        "'tail' of a sql operation with no sort is the same as 'head'",
+    )
+    return child.head(expr.n)
+
+
 @dispatch(Expr, ClauseElement)
 def optimize(expr, _):
-    return broadcast_collect(expr)
+    collected = broadcast_collect(expr, no_recurse=Selection)
+    return reduce(
+        lambda expr, term: expr._subs({term: _subexpr_optimize(term)}),
+        collected._subterms(),
+        collected,
+    )
 
 
 @dispatch(Field, sa.MetaData)

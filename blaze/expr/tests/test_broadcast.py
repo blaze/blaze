@@ -59,8 +59,11 @@ def test_optimize_broadcast():
     expr = (t.distinct().x + 1).distinct()
 
     expected = broadcast(t.distinct().x + 1, [t.distinct()]).distinct()
-    result = broadcast_collect(expr, Broadcastable=(Field, Arithmetic),
-                                     WantToBroadcast=(Field, Arithmetic))
+    result = broadcast_collect(
+        expr,
+        broadcastable=(Field, Arithmetic),
+        want_to_broadcast=(Field, Arithmetic),
+    )
 
     assert result.isidentical(expected)
 
@@ -76,8 +79,11 @@ def test_leaves_of_type():
 def test_broadcast_collect_doesnt_collect_scalars():
     expr = xx + yy * a
 
-    assert broadcast_collect(expr, Broadcastable=Arithmetic,
-                                   WantToBroadcast=Arithmetic).isidentical(expr)
+    assert broadcast_collect(
+        expr,
+        broadcastable=Arithmetic,
+        want_to_broadcast=Arithmetic,
+    ).isidentical(expr)
 
 
 def test_table_broadcast():

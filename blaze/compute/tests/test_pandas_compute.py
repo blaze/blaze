@@ -13,6 +13,7 @@ from pandas import DataFrame, Series
 from string import ascii_lowercase
 
 from blaze.compute.core import compute
+from blaze.compute.pandas import pdsort
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
@@ -320,7 +321,7 @@ def test_join_promotion():
     b = symbol('b', discover(b_data))
 
     joined = join(a, b, 'a')
-    assert joined.dshape == dshape('var * {a: float64, b: ?float64, c: int64}')
+    assert joined.dshape == dshape('var * {a: float64, b: float64, c: int64}')
 
     expected = pd.merge(a_data, b_data, on='a')
     result = compute(joined, {a: a_data, b: b_data})
@@ -329,13 +330,13 @@ def test_join_promotion():
 
 def test_sort():
     tm.assert_frame_equal(compute(t.sort('amount'), df),
-                          df.sort('amount'))
+                          pdsort(df, 'amount'))
 
     tm.assert_frame_equal(compute(t.sort('amount', ascending=True), df),
-                          df.sort('amount', ascending=True))
+                          pdsort(df, 'amount', ascending=True))
 
     tm.assert_frame_equal(compute(t.sort(['amount', 'id']), df),
-                          df.sort(['amount', 'id']))
+                          pdsort(df, ['amount', 'id']))
 
 
 def test_sort_on_series_no_warning(recwarn):
@@ -484,8 +485,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = df.sort('id').to_records(index=False)
-    expected = expected.sort('id').to_records(index=False)
+    result = pdsort(df, 'id').to_records(index=False)
+    expected = pdsort(expected, 'id').to_records(index=False)
     np.array_equal(result, expected)
 
     df = compute(join(lsym, rsym, how='outer'), {lsym: left, rsym: right})
@@ -496,8 +497,8 @@ def test_outer_join():
                           (4., 'Dennis', 400., 'Moscow')],
                          columns=['id', 'name', 'amount', 'city'])
 
-    result = df.sort('id').to_records(index=False)
-    expected = expected.sort('id').to_records(index=False)
+    result = pdsort(df, 'id').to_records(index=False)
+    expected = pdsort(expected, 'id').to_records(index=False)
     np.array_equal(result, expected)
 
 
@@ -586,6 +587,36 @@ def test_nested_transform():
     df['timestamp'] = df.timestamp.map(datetime.fromtimestamp)
     df['date'] = df.timestamp.map(lambda x: x.date())
     tm.assert_frame_equal(result, df)
+
+
+def test_transform_with_common_subexpression():
+    df = DataFrame(np.random.rand(5, 2), columns=list('ab'))
+    t = symbol('t', discover(df))
+    expr = transform(t, c=t.a - t.a % 3, d=t.a % 3)
+    result = compute(expr, df)
+    expected = pd.concat(
+        [df[c] for c in df.columns] + [
+            pd.Series(df.a - df.a % 3, name='c'),
+            pd.Series(df.a % 3, name='d')
+        ],
+        axis=1
+    )
+    tm.assert_frame_equal(result, expected)
+
+
+def test_merge_with_common_subexpression():
+    df = DataFrame(np.random.rand(5, 2), columns=list('ab'))
+    t = symbol('t', discover(df))
+    expr = merge((t.a - t.a % 3).label('a'), (t.a % 3).label('b'))
+    result = compute(expr, {t: df})
+    expected = pd.concat(
+        [
+            pd.Series(df.a - df.a % 3, name='a'),
+            pd.Series(df.a % 3, name='b')
+        ],
+        axis=1
+    )
+    tm.assert_frame_equal(result, expected)
 
 
 def test_like():
@@ -819,6 +850,7 @@ def test_time_field():
     assert_series_equal(result, expected)
 
 
+
 @pytest.mark.parametrize('n', [-1, 0, 1])
 def test_shift(n):
     data = pd.Series(pd.date_range(start='20120101', end='20120102', freq='H'))
@@ -826,3 +858,16 @@ def test_shift(n):
     result = compute(s.shift(n), data)
     expected = data.shift(n)
     assert_series_equal(result, expected)
+
+
+def test_selection_inner_inputs():
+    s_data = pd.DataFrame({'a': np.arange(5)})
+    t_data = pd.DataFrame({'a': np.arange(5)})
+
+    s = symbol('s', 'var * {a: int64}')
+    t = symbol('t', 'var * {a: int64}')
+
+    tm.assert_frame_equal(
+        compute(s[s.a == t.a], {s: s_data, t: t_data}),
+        s_data
+    )

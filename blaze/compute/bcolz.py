@@ -1,13 +1,23 @@
 from __future__ import absolute_import, division, print_function
 
-from toolz import curry, concat, first
+from weakref import WeakKeyDictionary
+
+from toolz import curry, concat, first, memoize
 from multipledispatch import MDNotImplementedError
 
-from ..expr import (Selection, Head, Field, Projection, ReLabel, ElemWise,
-                    Arithmetic, Broadcast, Symbol, Summary, Like, Sort, Apply,
-                    Reduction, symbol, IsIn, Label, Distinct, By, Slice, Expr,
-                    path)
-from ..expr.optimize import lean_projection
+from ..expr import (
+    Distinct,
+    ElemWise,
+    Expr,
+    Field,
+    Head,
+    Projection,
+    Slice,
+    Symbol,
+    path,
+    symbol,
+)
+from ..expr.optimize import lean_projection, simple_selections
 from ..expr.split import split
 from ..partition import partitions
 from .core import compute
@@ -28,24 +38,63 @@ __all__ = ['bcolz']
 COMFORTABLE_MEMORY_SIZE = 1e9
 
 
-@dispatch(Expr, (bcolz.ctable, bcolz.carray))
+@memoize(cache=WeakKeyDictionary())
+def box(type_):
+    """Create a non-iterable box type for an object.
+
+    Parameters
+    ----------
+    type_ : type
+        The type to create a box for.
+
+    Returns
+    -------
+    box : type
+        A type to box values of type ``type_``.
+    """
+    class c(object):
+        __slots__ = 'value',
+
+        def __init__(self, value):
+            if not isinstance(value, type_):
+                raise TypeError(
+                    "values must be of type '%s' (received '%s')" % (
+                        type_.__name__, type(value).__name__,
+                    ),
+                )
+            self.value = value
+
+    c.__name__ = 'Boxed%s' + type_.__name__
+    return c
+
+
+@dispatch(Expr, (box(bcolz.ctable), box(bcolz.carray)))
 def optimize(expr, _):
-    return lean_projection(expr)  # This is handled in pre_compute
+    return simple_selections(lean_projection(expr))
 
 
 @dispatch(Expr, (bcolz.ctable, bcolz.carray))
 def pre_compute(expr, data, scope=None, **kwargs):
-    return data
+    # box the data so that we don't need to deal with ambiguity of ctable
+    # and carray being instances of the Iterator ABC.
+    return box(type(data))(data)
 
 
-@dispatch((bcolz.carray, bcolz.ctable))
+@dispatch(Expr, (box(bcolz.ctable), box(bcolz.carray)))
+def post_compute(expr, data, **kwargs):
+    # Unbox the bcolz objects.
+    return data.value
+
+
+@dispatch((box(bcolz.carray), box(bcolz.ctable)))
 def discover(data):
-    return datashape.from_numpy(data.shape, data.dtype)
+    val = data.value
+    return datashape.from_numpy(val.shape, val.dtype)
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
 
 
-@dispatch(Head, (bcolz.ctable, bcolz.carray))
+@dispatch(Head, (box(bcolz.ctable), box(bcolz.carray)))
 def compute_down(expr, data, **kwargs):
     """ Cheap and simple computation in simple case
 
@@ -54,34 +103,25 @@ def compute_down(expr, data, **kwargs):
     parallelism"""
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(expr, leaf)):
-        return compute(expr, {leaf: into(Iterator, data)}, **kwargs)
+        val = data.value
+        return compute(expr, {leaf: into(Iterator, val)}, **kwargs)
     else:
         raise MDNotImplementedError()
 
 
-@dispatch((Broadcast, Arithmetic, ReLabel, Summary, Like, Sort, Label, Head,
-           Selection, ElemWise, Apply, Reduction, Distinct, By, IsIn),
-          (bcolz.ctable, bcolz.carray))
+@dispatch(Field, box(bcolz.ctable))
 def compute_up(expr, data, **kwargs):
-    """ This is only necessary because issubclass(bcolz.carray, Iterator)
-
-    So we have to explicitly avoid the streaming Python backend"""
-    raise NotImplementedError()
+    return data.value[str(expr._name)]
 
 
-@dispatch(Field, bcolz.ctable)
+@dispatch(Projection, box(bcolz.ctable))
 def compute_up(expr, data, **kwargs):
-    return data[str(expr._name)]
+    return data.value[list(map(str, expr.fields))]
 
 
-@dispatch(Projection, bcolz.ctable)
+@dispatch(Slice, (box(bcolz.carray), box(bcolz.ctable)))
 def compute_up(expr, data, **kwargs):
-    return data[list(map(str, expr.fields))]
-
-
-@dispatch(Slice, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, x, **kwargs):
-    return x[expr.index]
+    return data.value[expr.index]
 
 
 def compute_chunk(source, chunk, chunk_expr, data_index):
@@ -99,8 +139,9 @@ def get_chunksize(data):
                         type(data).__name__)
 
 
-@dispatch(Expr, (bcolz.carray, bcolz.ctable))
+@dispatch(Expr, (box(bcolz.carray), box(bcolz.ctable)))
 def compute_down(expr, data, chunksize=None, map=None, **kwargs):
+    data = data.value
     if map is None:
         map = get_default_pmap()
 
@@ -111,9 +152,11 @@ def compute_down(expr, data, chunksize=None, map=None, **kwargs):
 
     # If the bottom expression is a projection or field then want to do
     # compute_up first
-    children = set(e for e in expr._traverse()
-                   if isinstance(e, Expr)
-                   and any(i is expr._leaves()[0] for i in e._inputs))
+    children = {
+        e for e in expr._traverse()
+        if isinstance(e, Expr)
+        and any(i is expr._leaves()[0] for i in e._inputs)
+    }
     if len(children) == 1 and isinstance(first(children), (Field, Projection)):
         raise MDNotImplementedError()
 
@@ -136,3 +179,18 @@ def compute_down(expr, data, chunksize=None, map=None, **kwargs):
                         type(parts[0]).__name__)
 
     return compute(agg_expr, {agg: intermediate})
+
+
+def _asarray(a):
+    if isinstance(a, (bcolz.carray, bcolz.ctable)):
+        return a[:]
+    return np.array(list(a))
+
+
+@compute_down.register(Expr, (box(bcolz.carray), box(bcolz.ctable)), Iterable)
+@compute_down.register(Expr, Iterable, (box(bcolz.carray), box(bcolz.ctable)))
+def bcolz_mixed(expr, a, b, **kwargs):
+    return compute(
+        expr,
+        dict(zip(expr._leaves(), map(_asarray, (a.value, b.value)))),
+    )

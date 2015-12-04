@@ -2,14 +2,18 @@ from __future__ import absolute_import, division, print_function
 
 import types
 
-import pandas as pd
-
-import pytest
-
 import datashape
 from datashape import dshape, var, datetime_, float32, int64, bool_
+import pandas as pd
+import pytest
 
-from blaze.expr import symbol, label, Field
+from blaze.compatibility import pickle
+from blaze.expr import symbol, label, Field, Expr, Node
+
+
+def test_slots():
+    assert Expr.__slots__ == ('_hash', '__weakref__', '__dict__')
+    assert Node.__slots__ == ()
 
 
 def test_Symbol():
@@ -145,10 +149,6 @@ def test_hash_to_different_values():
     assert expr2 & expr is not None
     assert hash(expr) == hash(expr2)
 
-    from blaze.expr.expressions import _attr_cache
-    assert (expr, '_and') in _attr_cache
-    assert (expr2, '_and') in _attr_cache
-
 
 @pytest.mark.parametrize('dshape', [var * float32,
                                     dshape('var * float32'),
@@ -181,3 +181,9 @@ def test_method_before_name():
     assert isinstance(t.isin.isin, types.MethodType)
     with pytest.raises(AttributeError):
         t.count.max()
+
+
+def test_pickle_roundtrip():
+    t = symbol('t', 'var * int64')
+    expr = (t + 1).mean()  # some expression with more than one node.
+    assert expr.isidentical(pickle.loads(pickle.dumps(expr)))

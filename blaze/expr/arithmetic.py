@@ -4,7 +4,7 @@ import operator
 from toolz import first
 import numpy as np
 import pandas as pd
-from datashape import dshape, var, DataShape
+from datashape import dshape, var, DataShape, Option
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from datashape import coretypes as ct, discover, unsigned, promote, optionify
@@ -50,14 +50,14 @@ class BinOp(ElemWise):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self._hash = None
 
     def __str__(self):
         lhs = parenthesize(eval_str(self.lhs))
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         # TODO: better inference.  e.g. int + int -> int
         return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
                            (self._dtype,)))
@@ -127,6 +127,7 @@ class UnaryOp(ElemWise):
 
     def __init__(self, child):
         self._child = child
+        self._hash = None
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self._child))
@@ -135,8 +136,7 @@ class UnaryOp(ElemWise):
     def symbol(self):
         return type(self).__name__
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return DataShape(*(shape(self._child) + (self._dtype,)))
 
     @property
@@ -231,10 +231,7 @@ class USub(UnaryOp):
 
 @dispatch(ct.Option, object)
 def scalar_coerce(ds, val):
-    if val or val == 0:
-        return scalar_coerce(ds.ty, val)
-    else:
-        return None
+    return scalar_coerce(ds.ty, val) if val is not None else None
 
 
 @dispatch((ct.Record, ct.Mono, ct.Option, DataShape), Expr)
@@ -244,15 +241,20 @@ def scalar_coerce(ds, val):
 
 @dispatch(ct.Date, _strtypes)
 def scalar_coerce(_, val):
+    if val == '':
+        raise TypeError('%r is not a valid date' % val)
     dt = dt_parse(val)
-    if dt.time():
-        raise ValueError("Can not coerce %s to type Date, "
-                "contains time information")
+    if dt.time():  # TODO: doesn't work with python 3.5
+        raise TypeError(
+            "Can not coerce %r to type Date, contains time information" % val
+        )
     return dt.date()
 
 
 @dispatch(ct.DateTime, _strtypes)
 def scalar_coerce(_, val):
+    if val == '':
+        raise TypeError('%r is not a valid datetime' % val)
     return pd.Timestamp(val)
 
 
@@ -322,8 +324,20 @@ _sub, _rsub = _mkbin('sub', Sub)
 interp = _mkbin('interp', Interp, reflected=False, private=False)
 
 
-class Relational(Arithmetic):
-    _dtype = ct.bool_
+class _Optional(Arithmetic):
+    @property
+    def _dtype(self):
+        # we can't simply use .schema or .datashape because we may have a bare
+        # integer, for example
+        lhs, rhs = discover(self.lhs).measure, discover(self.rhs).measure
+        if isinstance(lhs, Option) or isinstance(rhs, Option):
+            return Option(ct.bool_)
+        return ct.bool_
+
+
+class Relational(_Optional):
+    # Leave this to separate relationals from other types of optionals.
+    pass
 
 
 class Eq(Relational):
@@ -356,22 +370,23 @@ class Lt(Relational):
     op = operator.lt
 
 
-class And(Arithmetic):
+class And(_Optional):
     symbol = '&'
     op = operator.and_
-    _dtype = ct.bool_
 
 
-class Or(Arithmetic):
+class Or(_Optional):
     symbol = '|'
     op = operator.or_
-    _dtype = ct.bool_
 
 
 class Not(UnaryOp):
     symbol = '~'
     op = operator.invert
-    _dtype = ct.bool_
+
+    @property
+    def _dtype(self):
+        return self._child.schema
 
     def __str__(self):
         return '~%s' % parenthesize(eval_str(self._child))

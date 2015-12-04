@@ -59,13 +59,15 @@ def print_numexpr(leaves, expr):
         return '%s%s' % (expr.symbol, parenthesize(child))
     if isinstance(expr, isnan):
         child = print_numexpr(leaves, expr._child)
-        return '%s != %s' % (parenthsize(child), parenthesize(child))
+        return '%s != %s' % (parenthesize(child), parenthesize(child))
     raise NotImplementedError("Operation %s not supported by numexpr" %
                               type(expr).__name__)
 
 
 Broadcastable = WantToBroadcast = BinOp, UnaryOp
 
-broadcast_numexpr_collect = curry(broadcast_collect,
-                                  Broadcastable=Broadcastable,
-                                  WantToBroadcast=WantToBroadcast)
+broadcast_numexpr_collect = curry(
+    broadcast_collect,
+    broadcastable=Broadcastable,
+    want_to_broadcast=WantToBroadcast
+)

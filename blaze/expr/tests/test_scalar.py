@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
 import sys
 
 from blaze.expr.arithmetic import (scalar_coerce, Mult, Add, dshape)
 from blaze.expr.math import sin, cos, isnan, exp, log
 from blaze.expr import symbol, eval_str, exprify
-from blaze.compatibility import xfail, basestring, raises
+from blaze.compatibility import xfail, basestring
 from datetime import date, datetime
 
 x = symbol('x', 'real')
@@ -172,27 +173,27 @@ class TestExprify(object):
     def test_failing_exprify(self):
         dtypes = self.dtypes
 
-        with raises(AssertionError):
+        with pytest.raises(AssertionError):
             exprify('x < y < z', dtypes)
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('os.listdir()', {})
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('os.listdir()', {'os': 'int', 'os.listdir': 'real'})
 
-        with raises(ValueError):
+        with pytest.raises(ValueError):
             exprify('__x + __y', {'__x': 'int', '__y': 'real'})
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('y if x else y', dtypes)
 
     def test_functiondef_fail(self):
         dtypes = self.dtypes
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('lambda x, y: x + y', dtypes)
 
-        with raises(SyntaxError):
+        with pytest.raises(SyntaxError):
             exprify('def f(x): return x', dtypes={'x': 'int'})
 
     def test_comprehensions_fail(self):
@@ -205,36 +206,36 @@ class TestExprify(object):
             # and we don't allow them in versions that do
             error = NotImplementedError
 
-        with raises(error):
+        with pytest.raises(error):
             exprify('{x: y for z in y}', dtypes)
 
-        with raises(error):
+        with pytest.raises(error):
             exprify('{x for z in y}', dtypes)
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('[x for z in y]', dtypes)
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('(x for y in z)', dtypes)
 
     def test_boolop_fails(self):
         dtypes = self.dtypes
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('x or y', dtypes)
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('x and y', dtypes)
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             exprify('not x', dtypes)
 
     def test_scope(self):
         dtypes = {'sin': 'int'}
-        with raises(ValueError):
+        with pytest.raises(ValueError):
             exprify('sin + 1', dtypes)
 
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             sin + 1
 
 
@@ -242,7 +243,7 @@ def test_scalar_coerce():
     assert scalar_coerce('int', 1) == 1
     assert scalar_coerce('int', '1') == 1
     assert scalar_coerce('{x: int}', '1') == 1
-    with raises(TypeError):
+    with pytest.raises(TypeError):
         scalar_coerce('{x: int, y: int}', '1')
 
     assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
@@ -250,12 +251,13 @@ def test_scalar_coerce():
     assert (scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') ==
             datetime(2012, 1, 1, 12, 0, 0))
 
-    with raises(ValueError):
+    with pytest.raises(TypeError):
         scalar_coerce('date', 'Jan 1st, 2012 12:00:00')
 
     assert scalar_coerce('?date', 'Jan 1st, 2012') == date(2012, 1, 1)
     assert scalar_coerce('?date', '2012-12-01') == date(2012, 12, 1)
-    assert scalar_coerce('?date', '') == None
+    with pytest.raises(TypeError):
+        scalar_coerce('?date', '')
     assert scalar_coerce('?int', 0) == 0
     assert scalar_coerce('?int', '0') == 0
     x = symbol('x', '?int')
