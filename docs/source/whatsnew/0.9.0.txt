@@ -26,7 +26,7 @@ Improved Backends
 * Adds support for :func:`~blaze.expr.collections.tail` in the sql backend
   (:issue:`1289`).
 
-Experimental Backends
+Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
 * There is now support for joining tables from multiple sources. This
