@@ -80,7 +80,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Blaze'
-copyright = u'2012, Continuum Analytics'
+copyright = u'2015, Continuum Analytics'
 
 #------------------------------------------------------------------------
 # Path Munging
