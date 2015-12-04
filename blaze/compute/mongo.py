@@ -56,17 +56,47 @@ from toolz import pluck, first, get, compose
 import toolz
 import datetime
 
-from ..expr import (Sort, count, nunique, nelements, Selection,
-                    mean, Reduction, Head, ReLabel, Distinct, ElemWise, By,
-                    Symbol, Projection, Field, sum, min, max, Gt, Lt, Ge, Le,
-                    Eq, Ne, And, Or, Summary, Like, Broadcast, DateTime,
-                    Microsecond, Date, Time, Expr, symbol, Arithmetic, floor,
-                    ceil, FloorDiv)
+from ..expr import (
+    And,
+    Arithmetic,
+    Broadcast,
+    By,
+    Distinct,
+    Eq,
+    Expr,
+    Field,
+    FloorDiv,
+    Ge,
+    Gt,
+    Head,
+    Le,
+    Like,
+    Lt,
+    Ne,
+    Or,
+    Projection,
+    Reduction,
+    Selection,
+    SimpleSelection,
+    Sort,
+    Summary,
+    Symbol,
+    ceil,
+    count,
+    floor,
+    math,
+    max,
+    mean,
+    min,
+    nelements,
+    nunique,
+    sum,
+    symbol,
+)
 from ..expr.broadcast import broadcast_collect, Broadcastable
-from ..expr import math
 from ..expr.datetime import Day, Month, Year, Minute, Second, UTCFromTimestamp
+from ..expr.optimize import simple_selections
 from ..compatibility import _strtypes
-
 from ..dispatch import dispatch
 
 
@@ -121,7 +151,7 @@ class MongoQuery(object):
 
 @dispatch(Expr, (MongoQuery, Collection))
 def optimize(expr, seq):
-    return broadcast_collect(expr)
+    return broadcast_collect(simple_selections(expr), no_recurse=SimpleSelection)
 
 
 @dispatch(Head, MongoQuery)
@@ -207,7 +237,7 @@ def compute_up(t, q, **kwargs):
     return q.append({'$project': dict((col, 1) for col in t.fields)})
 
 
-@dispatch(Selection, MongoQuery)
+@dispatch(SimpleSelection, MongoQuery)
 def compute_up(expr, data, **kwargs):
     predicate = optimize(expr.predicate, data)
 

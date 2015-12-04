@@ -45,7 +45,6 @@ def test_path():
 def test_hash():
     e = symbol('e', 'int')
     assert '_hash' in e.__slots__
-    assert not hasattr(e, '_hash')
     h = hash(e)
     assert isinstance(h, int)
     assert h == hash(e)

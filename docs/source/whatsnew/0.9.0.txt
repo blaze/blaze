@@ -16,8 +16,15 @@ Improved Expressions
 New Backends
 ~~~~~~~~~~~~
 
+* Initial support for dask.dataframe has been added, see (:issue:`1317`).
+  Please send feedback via an issue or pull request if we missed any
+  expressions you need.
+
 Improved Backends
 ~~~~~~~~~~~~~~~~~
+
+* Adds support for :func:`~blaze.expr.collections.tail` in the sql backend
+  (:issue:`1289`).
 
 API Changes
 ~~~~~~~~~~~
@@ -34,7 +41,7 @@ Bug Fixes
 
 * Fixed a bug where ``Merge`` expressions would unpack option types in their
   fields. This could cause you to have a table where ``expr::{a: int32}`` but
-  ``expr.a::?int32``. Note that the dotted acces is an option (:issue:`1262`).
+  ``expr.a::?int32``. Note that the dotted access is an option (:issue:`1262`).
 * Explicitly set ``Node.__slots__`` and ``Expr.__slots__`` to ``()``.  This
   ensures instances of slotted subclasses like ``Join`` do not have a useless
   empty ``__dict__`` attribute (:issue:`1274` and :issue:`1268`).
@@ -56,3 +63,26 @@ Bug Fixes
   (:issue:`1288`).
 * Fixed a bug where comparisons to a empty string magically converted
   the empty string to ``None`` (:issue:`1308`).
+* Fixed a bug where leaves that only appeared in the predicate of a selection
+  would not be in scope in time to compute the predicate. This would cause whole
+  expressions like ``a[a > b]`` to fail because ``b`` was not in scope
+  (:issue:`1275`).
+* Fix a broken test on machines that don't allow postgres to read from the
+  local filesystem (:issue:`1323`).
+* Updated a test to reflect changes from odo
+  `#366 <https://github.com/blaze/odo/issues/366>`_ (:issue:`1323`).
+* Fixed pickling of blaze expressions with interactive symbols (:issue:`1319`).
+* Fixed repring partials in blaze expression to show keyword arguments
+  (:issue:`1319`).
+* Fixed a memory leak that would preserve the lifetime of any blaze expression
+  that had cached an attribute access (:issue:`1335`).
+* Fixed a bug where :func:`~blaze.expr.core.common_subexpression` gave the
+  wrong answer (:issue:`1325`, :issue:`1338`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+* Make expressions (subclasses of Expr) weak referencable (:issue:`1319).
+* Memoize dshape and schema methods (:issue:`1319`).
+* Use ``pandas.DataFrame.sort_values()`` with pandas version >= 0.17.0
+  (:issue:`1321`).

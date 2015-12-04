@@ -50,14 +50,14 @@ class BinOp(ElemWise):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self._hash = None
 
     def __str__(self):
         lhs = parenthesize(eval_str(self.lhs))
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         # TODO: better inference.  e.g. int + int -> int
         return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
                            (self._dtype,)))
@@ -127,6 +127,7 @@ class UnaryOp(ElemWise):
 
     def __init__(self, child):
         self._child = child
+        self._hash = None
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self._child))
@@ -135,8 +136,7 @@ class UnaryOp(ElemWise):
     def symbol(self):
         return type(self).__name__
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return DataShape(*(shape(self._child) + (self._dtype,)))
 
     @property

@@ -31,8 +31,7 @@ class Like(Expr):
     def patterns(self):
         return dict(self._patterns)
 
-    @property
-    def dshape(self):
+    def _dshape(self):
         return datashape.var * self._child.dshape.subshape[0]
 
 

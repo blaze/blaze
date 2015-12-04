@@ -31,8 +31,7 @@ class DateTime(ElemWise):
     def __str__(self):
         return '%s.%s' % (str(self._child), type(self).__name__.lower())
 
-    @property
-    def schema(self):
+    def _schema(self):
         return dshape(self._dtype)
 
     @property

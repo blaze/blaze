@@ -59,12 +59,29 @@ expression.
 
         type(z) == pow
 
-*  ``._args``: All children of a node, including parameters.  Args may include both Blaze expressions and other variables like strings::
+*  ``dshape``: The shape and type of the data for this expression. This is often
+   more important that the actual type of the node::
+
+   .. code-block:: python
+
+   >>> s = symbol('s', 'var * float64')
+   >>> s.dshape
+   dshape("var * float64")
+   >>> s.mean().dshape
+   dshape("float64")
+
+*  ``._args``: All children of a node, including parameters.  Args may include
+   both Blaze expressions and other variables like strings::
 
        z._args == (log(x - 1), y)
        x._args == ('x', 'int64')
 
-*  ``._inputs``: All children of a node, excluding parameters.  All inputs are Blaze expressions.::
+*  ``._hashargs``: The arguments in a form that is hashable. This is only
+   different from ``._args`` when the arguments contain things that are not
+   normally hashable with the ``hash`` builtin function.
+
+*  ``._inputs``: All children of a node, excluding parameters.  All inputs are
+   Blaze expressions.::
 
        z._inputs == (log(x - 1), y)
        x._inputs == ()

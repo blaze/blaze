@@ -631,3 +631,16 @@ def test_binary_math(funcname):
     expected = getattr(np, binary_name_map.get(funcname, funcname))(s_data,
                                                                     t_data)
     assert np.all(result == expected)
+
+
+def test_selection_inner_inputs():
+    s_data = np.arange(5).reshape(5, 1)
+    t_data = np.arange(5).reshape(5, 1)
+
+    s = symbol('s', 'var * {a: int64}')
+    t = symbol('t', 'var * {a: int64}')
+
+    assert (
+        compute(s[s.a == t.a], {s: s_data, t: t_data}) ==
+        s_data
+    ).all()
