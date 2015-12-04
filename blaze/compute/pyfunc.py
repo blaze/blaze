@@ -4,11 +4,12 @@ import pandas as pd
 from ..expr import (Expr, Symbol, Field, Arithmetic, UnaryMath, BinaryMath,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
-                    USub, Not, notnull, greatest, least)
+                    USub, Not, notnull, greatest, least, atan2)
 from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
 from . import pydatetime
+import numpy as np
 import datetime
 import math
 import toolz
@@ -106,32 +107,38 @@ def _print_python(expr, leaves=None):
 @dispatch(UnaryMath)
 def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
-    return ('math.%s(%s)' % (type(expr).__name__, child),
-            toolz.merge(scope, {'math': math}))
+    return ('np.%s(%s)' % (type(expr).__name__, child),
+            toolz.merge(scope, {'np': np}))
 
 
 @dispatch(BinaryMath)
 def _print_python(expr, leaves=None):
     lhs, scope_lhs = print_python(leaves, expr.lhs)
     rhs, scope_rhs = print_python(leaves, expr.rhs)
-    return ('math.%s(%s, %s)' % (type(expr).__name__, lhs, rhs),
-            toolz.merge(scope_lhs, scope_rhs, {'math': math}))
+    return ('np.%s(%s, %s)' % (type(expr).__name__, lhs, rhs),
+            toolz.merge(scope_lhs, scope_rhs, {'np': np}))
+
+
+@dispatch(atan2)
+def _print_python(expr, leaves=None):
+    lhs, scope_lhs = print_python(leaves, expr.lhs)
+    rhs, scope_rhs = print_python(leaves, expr.rhs)
+    return ('np.arctan2(%s, %s)' % (lhs, rhs),
+            toolz.merge(scope_lhs, scope_rhs, {'np': np}))
 
 
 @dispatch(greatest)
 def _print_python(expr, leaves=None):
     lhs, scope_lhs = print_python(leaves, expr.lhs)
     rhs, scope_rhs = print_python(leaves, expr.rhs)
-    return ('max(%s, %s)' % (lhs, rhs),
-            toolz.merge(scope_lhs, scope_rhs, {'math': math}))
+    return 'max(%s, %s)' % (lhs, rhs), toolz.merge(scope_lhs, scope_rhs)
 
 
 @dispatch(least)
 def _print_python(expr, leaves=None):
     lhs, scope_lhs = print_python(leaves, expr.lhs)
     rhs, scope_rhs = print_python(leaves, expr.rhs)
-    return ('min(%s, %s)' % (lhs, rhs),
-            toolz.merge(scope_lhs, scope_rhs, {'math': math}))
+    return 'min(%s, %s)' % (lhs, rhs), toolz.merge(scope_lhs, scope_rhs)
 
 
 @dispatch(expr_math.abs)
