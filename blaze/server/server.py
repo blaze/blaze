@@ -436,6 +436,12 @@ def compserver(payload, serial):
 @authorization
 @check_request
 def addserver(payload, serial):
+    """Add a data resource to the server.
+
+    The reuest should contain serialized MutableMapping (dictionary) like
+    object, and the server should already be hosting a MutableMapping
+    resource.
+    """
     data = _get_data.cache[flask.current_app]
 
     data_not_mm_msg = ("Cannot update blaze server data since its current data"
