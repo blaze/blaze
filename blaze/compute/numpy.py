@@ -296,12 +296,19 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Selection, np.ndarray)
 def compute_up(sel, x, **kwargs):
-    return x[compute(sel.predicate, {sel._child: x})]
+    predicate = compute(sel.predicate, {sel._child: x})
+    cond = getattr(predicate, 'values', predicate)
+    return x[cond]
 
 
 @dispatch(Selection, np.ndarray, np.ndarray)
 def compute_up(expr, arr, predicate, **kwargs):
     return arr[predicate]
+
+
+@dispatch(Selection, np.ndarray, Series)
+def compute_up(expr, arr, predicate, **kwargs):
+    return arr[predicate.values]
 
 
 @dispatch(UTCFromTimestamp, np.ndarray)

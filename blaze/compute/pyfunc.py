@@ -4,13 +4,14 @@ import pandas as pd
 from ..expr import (Expr, Symbol, Field, Arithmetic, UnaryMath, BinaryMath,
                     Date, Time, DateTime, Millisecond, Microsecond, broadcast,
                     sin, cos, Map, UTCFromTimestamp, DateTimeTruncate, symbol,
-                    USub, Not, notnull, greatest, least, atan2)
+                    USub, Not, notnull, greatest, least, atan2, Like)
 from ..expr import math as expr_math
 from ..expr.expressions import valid_identifier
 from ..dispatch import dispatch
 from . import pydatetime
 import numpy as np
 import datetime
+import fnmatch
 import math
 import toolz
 import itertools
@@ -200,6 +201,15 @@ def _print_python(expr, leaves=None):
     child, scope = print_python(leaves, expr._child)
     return ('notnull(%s)' % child,
             toolz.merge(scope, dict(notnull=lambda x: x is not None)))
+
+
+@dispatch(Like)
+def _print_python(expr, leaves):
+    child, scope = print_python(leaves, expr._child)
+    return (
+        'fnmatch(%s, %r)' % (child, expr.pattern),
+        toolz.merge(scope, dict(fnmatch=fnmatch.fnmatch))
+    )
 
 
 @dispatch(Expr)

@@ -732,11 +732,19 @@ def test_clean_join():
 
 
 def test_like():
-    expr = t.like(name='Alice*')
+    expr = t[t.name.like('Alice*')]
     assert normalize(str(compute(expr, s))) == normalize("""
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
+
+def test_not_like():
+    expr = t[~t.name.like('Alice*')]
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name NOT LIKE :name_1""")
 
 
 def test_strlen():

@@ -17,13 +17,12 @@ import fnmatch
 import operator
 import datetime
 import math
-import re
 
 from collections import Iterator
 from functools import partial
 
 import toolz
-from toolz import map, filter, compose, juxt, identity, tail, flip
+from toolz import map, filter, compose, juxt, identity, tail
 
 try:
     from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
@@ -695,24 +694,11 @@ def compute_up(expr, data, **kwargs):
         return result
 
 
-def like_regex_predicate(expr):
-    regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
-                   for name, pattern in expr.patterns.items())
-    regex_tup = [regexes.get(name, None) for name in expr.fields]
-
-    def predicate(tup):
-        for item, regex in zip(tup, regex_tup):
-            if regex and not regex.match(item):
-                return False
-        return True
-
-    return predicate
-
-
 @dispatch(Like, Sequence)
 def compute_up(expr, seq, **kwargs):
-    predicate = like_regex_predicate(expr)
-    return filter(predicate, seq)
+    def func(x, pattern=expr.pattern):
+        return fnmatch.fnmatch(x, pattern)
+    return map(func, seq)
 
 
 @dispatch(Slice, Sequence)
