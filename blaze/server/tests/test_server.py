@@ -732,4 +732,3 @@ def test_compute_kwargs(test, serial):
         odo(data['data'], DataFrame, dshape=dshape),
         DumbResource.df,
     )
->>>>>>> ENH: allow clients to send extra compute and odo kwargs

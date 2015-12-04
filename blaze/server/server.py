@@ -425,7 +425,10 @@ def compserver(payload, serial):
         return ("Computation not supported:\n%s" % e, 501)
     except Exception as e:
         # 500: Internal Server Error
-        return ("Computation failed with message:\n%s" % e, 500)
+        return (
+            "Computation failed with message:\n%s: %s" % (type(e).__name__, e),
+            500,
+        )
 
     return serial.dumps({
         'datashape': str(expr.dshape),
