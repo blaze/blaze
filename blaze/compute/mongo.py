@@ -332,7 +332,7 @@ def scalar_expr(expr):
         # broadcast_collect should reach into summary, By, selection
         # And perform these kinds of optimizations itself
         expr2 = broadcast_collect(expr)
-        if not expr2.isidentical(expr):
+        if not expr2 is expr:
             return scalar_expr(expr2)
 
 

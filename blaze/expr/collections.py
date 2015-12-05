@@ -59,7 +59,7 @@ class Sort(Expr):
 
     >>> accounts.sort(-accounts.amount) # doctest: +SKIP
     """
-    __slots__ = '_hash', '_child', '_key', 'ascending'
+    _arguments = '_child', '_key', 'ascending'
 
     def _dshape(self):
         return self._child.dshape
@@ -146,7 +146,7 @@ class Distinct(Expr):
 
 
     """
-    __slots__ = '_hash', '_child', 'on'
+    _arguments = '_child', 'on'
 
     def _dshape(self):
         return datashape.var * self._child.dshape.measure
@@ -173,7 +173,7 @@ def distinct(expr, *on):
     append = _on.append
     for n in on:
         if isinstance(n, Field):
-            if n._child.isidentical(expr):
+            if n._child is expr:
                 n = n._name
             else:
                 raise ValueError('{0} is not a field of {1}'.format(n, expr))
@@ -187,7 +187,7 @@ def distinct(expr, *on):
 
 
 class _HeadOrTail(Expr):
-    __slots__ = '_hash', '_child', 'n'
+    _arguments = '_child', 'n'
 
     def _dshape(self):
         return self.n * self._child.dshape.subshape[0]
@@ -263,7 +263,7 @@ class Sample(Expr):
     >>> accounts.sample(frac=0.1).dshape
     dshape("var * {name: string, amount: int32}")
     """
-    __slots__ = '_hash', '_child', 'n', 'frac'
+    _arguments = '_child', 'n', 'frac'
 
     def _dshape(self):
         return self._child.dshape
@@ -341,7 +341,7 @@ class Merge(ElemWise):
     >>> merge(label(accounts.x, 'X'), label(accounts.name, 'NAME')).dshape
     dshape("var * {X: int32, NAME: string}")
     """
-    __slots__ = '_hash', '_child', 'children'
+    _arguments = '_child', 'children'
 
     def _schema(self):
         return schema_concat(self.children)
@@ -450,9 +450,7 @@ class Join(Expr):
 
     blaze.expr.collections.Merge
     """
-    __slots__ = (
-        '_hash', 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes'
-    )
+    _arguments = 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes'
     __inputs__ = 'lhs', 'rhs'
 
     @property
@@ -668,7 +666,7 @@ class Concat(Expr):
 
     blaze.expr.collections.Merge
     """
-    __slots__ = '_hash', 'lhs', 'rhs', 'axis'
+    _arguments = 'lhs', 'rhs', 'axis'
     __inputs__ = 'lhs', 'rhs'
 
     def _dshape(self):
@@ -742,7 +740,7 @@ class IsIn(ElemWise):
     >>> expr.dshape
     dshape("10 * bool")
     """
-    __slots__ = '_hash', '_child', '_keys'
+    _arguments = '_child', '_keys'
 
     def _schema(self):
         return datashape.bool_
@@ -772,7 +770,7 @@ class Shift(Expr):
         The number of elements to shift by. If n < 0 then shift backward,
         if n == 0 do nothing, else shift forward.
     """
-    __slots__ = '_hash', '_child', 'n'
+    _arguments = '_child', 'n'
 
     def _schema(self):
         measure = self._child.schema.measure

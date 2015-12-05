@@ -66,4 +66,4 @@ def test_slice_with_boolean_list():
 
 def test_slice_with_numpy_array():
     x = symbol('x', '2 * int32')
-    assert x[np.array([True, False])].isidentical(x[[True, False]])
+    assert x[np.array([True, False])] is x[[True, False]]

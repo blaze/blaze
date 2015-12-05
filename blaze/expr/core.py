@@ -1,12 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping
+from collections import Mapping, OrderedDict
 import datetime
-import numbers
+from functools import reduce, partial
 import inspect
+from itertools import repeat
+import numbers
 
 from pprint import pformat
-from functools import reduce, partial
+import warnings
+from weakref import WeakValueDictionary
 
 import toolz
 from toolz import unique, concat, first
@@ -21,42 +24,40 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 base = (numbers.Number,) + _strtypes + (datetime.datetime, datetime.timedelta)
 
 
-def isidentical(a, b):
-    """ Strict equality testing
+def _resolve_args(cls, *args, **kwargs):
+    attrs = cls._arguments
+    attrset = set(attrs)
+    if not set(kwargs) <= attrset:
+        raise TypeError(
+            'unknown keywords: %s' % ', '.join(set(kwargs) - attrset)
+        )
 
-    Different from x == y -> Eq(x, y)
+    attributes = OrderedDict(zip(attrs, repeat(None)))
+    to_add = dict(zip(attrs, args))
+    attributes.update(to_add)
+    added = set(to_add)
 
-    >>> isidentical(1, 1)
-    True
+    for key, value in kwargs.items():
+        if key in added:
+            raise TypeError(
+                '%s got multiple values for argument %r' % (
+                    cls.__name__,
+                    key,
+                ),
+            )
+        attributes[key] = value
+        added.add(key)
 
-    >>> from blaze.expr import symbol
-    >>> x = symbol('x', 'int')
-    >>> isidentical(x, 1)
-    False
+    return attributes
 
-    >>> isidentical(x + 1, x + 1)
-    True
 
-    >>> isidentical(x + 1, x + 2)
-    False
+def _static_identity(ob):
+    return type(ob)._static_identity(*ob._args)
 
-    >>> isidentical((x, x + 1), (x, x + 1))
-    True
 
-    >>> isidentical((x, x + 1), (x, x + 2))
-    False
-    """
-    if a is b:
-        return True
-    if isinstance(a, base) and isinstance(b, base):
-        return a == b
-    if type(a) != type(b):
-        return False
-    if isinstance(a, Node):
-        return all(map(isidentical, a._hashargs, b._hashargs))
-    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
-        return len(a) == len(b) and all(map(isidentical, a, b))
-    return a == b
+def _setattr(ob, name, value):
+    object.__setattr__(ob, name, value)
+    return value
 
 
 class Node(object):
@@ -72,38 +73,38 @@ class Node(object):
 
     blaze.expr.expressions.Expr
     """
-    __slots__ = ()
+    _arguments = '_child',
     __inputs__ = '_child',
+    __expr_instance_cache = WeakValueDictionary()
 
-    def __init__(self, *args, **kwargs):
-        slots = set(self.__slots__)
-        if not frozenset(slots) <= slots:
-            raise TypeError('Unknown keywords: %s' % (set(kwargs) - slots))
+    def __new__(cls, *args, **kwargs):
+        static_id = cls._static_identity(*args, **kwargs)
+        try:
+            return cls.__expr_instance_cache[static_id]
+        except KeyError:
+            cls.__expr_instance_cache[static_id] = self = super(
+                Node,
+                cls,
+            ).__new__(cls)._init(*args, **kwargs)
+            return self
 
-        assigned = set()
-        for slot, arg in zip(self.__slots__[1:], args):
-            assigned.add(slot)
-            setattr(self, slot, arg)
+    def _init(self, *args, **kwargs):
+        for name, arg in _resolve_args(type(self), *args, **kwargs).items():
+            _setattr(self, name, arg)
 
-        for key, value in kwargs.items():
-            if key in assigned:
-                raise TypeError(
-                    '%s got multiple values for argument %r' % (
-                        type(self).__name__,
-                        key,
-                    ),
-                )
-            assigned.add(key)
-            setattr(self, key, value)
+        _setattr(self, '_hash', None)
+        return self
 
-        for slot in slots - assigned:
-            setattr(self, slot, None)
+    def __setattr__(self, name, value):
+        raise AttributeError('cannot set attributes of immutable objects')
 
     @property
     def _args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__[1:])
+        return tuple(getattr(self, slot) for slot in self._arguments)
 
-    _hashargs = _args
+    @classmethod
+    def _static_identity(cls, *args, **kwargs):
+        return (cls,) + tuple(_resolve_args(cls, *args, **kwargs).values())
 
     @property
     def _inputs(self):
@@ -133,18 +134,32 @@ class Node(object):
             return list(unique(concat(i._leaves() for i in self._inputs if
                                       isinstance(i, Node))))
 
-    isidentical = isidentical
+    def isidentical(self, other):
+        """Identity check.
+
+        a.isidentical(b) -> a is b
+        """
+        warnings.warn(
+            'isidentical is deprecated, please use identity checking instead\n'
+            'a.isidentical(b) -> a is b',
+            DeprecationWarning,
+        )
+        return self is other
 
     def __hash__(self):
         hash_ = self._hash
         if hash_ is None:
-            hash_ = self._hash = hash((type(self), self._hashargs))
+            hash_ = _setattr(
+                self,
+                '_hash',
+                hash((type(self), _static_identity(self))),
+            )
         return hash_
 
     def __str__(self):
         rep = [
             '%s=%s' % (slot, _str(arg))
-            for slot, arg in zip(self.__slots__[1:], self._args)
+            for slot, arg in zip(self._arguments, self._args)
         ]
         return '%s(%s)' % (type(self).__name__, ', '.join(rep))
 
@@ -163,7 +178,7 @@ class Node(object):
         >>> from blaze.expr import symbol
         >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
         >>> expr = t.amount + 3
-        >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t.id + 4)
+        >>> expr._subs({3: 4, 'amount': 'id'}) is t.id + 4
         True
         """
         return subs(self, d)
@@ -178,23 +193,14 @@ class Node(object):
     def __contains__(self, other):
         return other in set(self._subterms())
 
-    def __getstate__(self):
+    def __getnewargs__(self):
         return tuple(self._args)
 
-    def __setstate__(self, state):
-        self.__init__(*state)
-
     def __eq__(self, other):
-        ident = self.isidentical(other)
-        if ident is True:
-            return ident
-
         try:
-            return self._eq(other)
+            return self is other or self._eq(other)
         except AttributeError:
-            # e.g., we can't compare whole tables to other things (yet?)
-            pass
-        return False
+            return False
 
     def __ne__(self, other):
         return self._ne(other)
@@ -401,12 +407,12 @@ def path(a, b):
     >>> list(path(expr, t))
     [sum(t.amount), t.amount, <`t` symbol; dshape='...'>]
     """
-    while not a.isidentical(b):
+    while a is not b:
         yield a
         if not a._inputs:
             break
         for child in a._inputs:
-            if any(b.isidentical(node) for node in child._traverse()):
+            if any(b is node for node in child._traverse()):
                 a = child
                 break
     yield a

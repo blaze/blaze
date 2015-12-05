@@ -2,26 +2,34 @@ import datetime
 import sys
 from types import MethodType
 
+import dask.array as da
 from datashape import dshape
 from datashape.util.testing import assert_dshape_equal
 import pandas as pd
 import pandas.util.testing as tm
 import pytest
 import numpy as np
-import dask.array as da
 from odo import into, append
 from odo.backends.csv import CSV
 
 from blaze import discover, transform
 from blaze.compatibility import pickle
 from blaze.expr import symbol
-from blaze.interactive import (data, compute, concrete_head, expr_repr, to_html,
-                               iscorescalar, iscoresequence, iscoretype, into,
-                               coerce_core)
+from blaze.interactive import (
+    coerce_core,
+    compute,
+    concrete_head,
+    data,
+    expr_repr,
+    iscorescalar,
+    iscoresequence,
+    iscoretype,
+    to_html,
+)
 from blaze.utils import tmpfile, example
 
 tdata = (('Alice', 100),
-        ('Bob', 200))
+         ('Bob', 200))
 
 L = [[1, 'Alice',   100],
      [2, 'Bob',    -200],
@@ -40,8 +48,8 @@ def test_discover_on_data():
 
 def test_table_raises_on_inconsistent_inputs():
     with pytest.raises(ValueError) as excinfo:
-        t = data(tdata, schema='{name: string, amount: float32}',
-                 dshape=dshape("{name: string, amount: float32}"))
+        data(tdata, schema='{name: string, amount: float32}',
+             dshape=dshape("{name: string, amount: float32}"))
     assert "specify one of schema= or dshape= keyword" in str(excinfo.value)
 
 
@@ -107,8 +115,9 @@ def test_str_does_not_repr():
     d = data([('aa', 1), ('b', 2)], name="ZZZ",
              dshape='2 * {a: string, b: int64}')
     expr = transform(d, c=d.a.str_len() + d.b)
-    assert str(
-        expr) == "Merge(_child=ZZZ, children=(ZZZ, label(str_len(_child=ZZZ.a) + ZZZ.b, 'c')))"
+    assert (str(expr) ==
+            "Merge(_child=ZZZ, children=(ZZZ, label(str_len(_child=ZZZ.a)"
+            " + ZZZ.b, 'c')))")
 
 
 def test_repr_of_scalar():
@@ -409,7 +418,8 @@ def test_asarray_fails_on_different_column_names():
     with pytest.raises(ValueError) as excinfo:
         data(df, fields=list('abc'))
 
-    inmsg = "data(data_source).relabel(first='a', second='b', third='c') to rename"
+    inmsg = ("data(data_source).relabel(first='a', second='b', third='c')"
+             " to rename")
     assert inmsg in str(excinfo.value)
 
 
@@ -421,13 +431,16 @@ def test_functions_as_bound_methods():
     # Filter out __class__ and friends that are special, these can be
     # callables without being instance methods.
     callable_attrs = filter(
-        callable,
-        (getattr(t, a, None) for a in dir(t) if not a.startswith('__')),
+        callable, (
+            getattr(t, a, None)
+            for a in dir(t)
+            if not (a.startswith('__') or a.endswith('__'))
+        ),
     )
     for attr in callable_attrs:
         assert isinstance(attr, MethodType)
         # Make sure this is bound to the correct object.
-        assert attr.__self__ is t
+        assert attr.__self__ is t or attr.__self__ is type(t)  # classmethod
 
 
 def test_all_string_infer_header():
@@ -510,11 +523,13 @@ def test_isidentical_regr():
                           # test 2-d tabular to dataframe
                           (into(da.core.Array,
                                 [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
-                                chunks=(10,10)),
+                                chunks=(10, 10)),
                            dshape('2 * {a: int, b: int}'),
                            pd.DataFrame),
                           # test 2-d non tabular to ndarray
-                          (into(da.core.Array, [[1, 2], [3, 4]], chunks=(10, 10)),
+                          (into(da.core.Array,
+                                [[1, 2], [3, 4]],
+                                chunks=(10, 10)),
                            dshape('2 *  2 * int'),
                            np.ndarray)])
 def test_coerce_core(data, dshape, exp_type):

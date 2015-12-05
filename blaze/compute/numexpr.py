@@ -39,7 +39,7 @@ def print_numexpr(leaves, expr):
     """
     if not isinstance(expr, Expr):
         return repr(expr)
-    if any(expr.isidentical(leaf) for leaf in leaves):
+    if any(expr is leaf for leaf in leaves):
         return expr._name
     if isinstance(expr, Symbol):
         return expr._name

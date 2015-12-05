@@ -11,7 +11,7 @@ from time import time
 from warnings import warn
 import importlib
 
-from datashape import discover, pprint
+from datashape import discover, pprint, Mono
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
@@ -22,11 +22,9 @@ import blaze
 from blaze import compute, resource
 from blaze.compatibility import ExitStack
 from blaze.compute import compute_up
-from blaze.expr import utils as expr_utils
-
 from .serialization import json, all_formats
 from ..interactive import _Data
-from ..expr import Expr, symbol
+from ..expr import Expr, symbol, utils as expr_utils, Symbol
 
 
 __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
@@ -209,7 +207,7 @@ def check_request(f):
         try:
             serial = _get_format(accepted_mimetypes[content_type])
         except KeyError:
-            return ("Unsupported serialization format '%s'" % matched.groups()[0],
+            return ("Unsupported serialization format '%s'" % content_type,
                     RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
@@ -399,11 +397,15 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
+    elif isinstance(expr, Mono):
+        return str(expr)
     elif isinstance(expr, _Data):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
-        return {'op': type(expr).__name__,
-                'args': [to_tree(arg, names) for arg in expr._args]}
+        return {
+            'op': type(expr).__name__,
+            'args': [to_tree(arg, names) for arg in expr._args],
+        }
     else:
         return expr
 
@@ -484,16 +486,16 @@ def from_tree(expr, namespace=None):
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
         if 'slice' == op:
-            return expr_utils._slice(*[from_tree(arg, namespace)
-                                       for arg in args])
+            return expr_utils._slice(
+                *[from_tree(arg, namespace) for arg in args]
+            )
         if hasattr(blaze.expr, op):
             cls = getattr(blaze.expr, op)
         else:
             cls = expression_from_name(op)
-        if 'Symbol' in op:
-            children = [from_tree(arg) for arg in args]
-        else:
-            children = [from_tree(arg, namespace) for arg in args]
+        if cls is Symbol:
+            cls = symbol
+        children = [from_tree(arg, namespace) for arg in args]
         return cls(*children)
     elif isinstance(expr, (list, tuple)):
         return tuple(from_tree(arg, namespace) for arg in expr)
@@ -504,7 +506,7 @@ def from_tree(expr, namespace=None):
 
 
 accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
-                         in all_formats}
+                      in all_formats}
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])

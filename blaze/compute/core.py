@@ -180,7 +180,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
         scope4 = scope3
 
     # 4. Repeat
-    if expr.isidentical(expr3):
+    if expr is expr3:
         raise NotImplementedError("Don't know how to compute:\n"
                                   "type(expr): %s\n"
                                   "expr: %s\n"
@@ -219,7 +219,7 @@ def makeleaf(expr):
 
     >>> from blaze import sin, cos
     >>> x = symbol('x', 'real')
-    >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
+    >>> makeleaf(cos(x)**2) is (sin(x) ** 2)
     False
 
     >>> makeleaf(t) is t  # makeleaf passes on Symbols
@@ -303,7 +303,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
     # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
     new_expr = expr._subs({
-        i: e for i, e in zip(inputs, exprs) if not i.isidentical(e)
+        i: e for i, e in zip(inputs, exprs) if i is not e
     })
 
     old_expr_leaves = expr._leaves()

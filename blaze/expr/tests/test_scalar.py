@@ -17,8 +17,8 @@ b = symbol('b', 'bool')
 def test_basic():
     expr = (x + y) * 3
 
-    assert eval(str(expr)).isidentical(expr)
-    assert expr.isidentical(Mult(Add(symbol('x', 'real'), symbol('y', 'real')), 3))
+    assert eval(str(expr)) is expr
+    assert expr is Mult(Add(symbol('x', 'real'), symbol('y', 'real')), 3)
 
 
 def test_eval_str():
@@ -43,14 +43,14 @@ def test_str():
 def test_invert():
     x = symbol('x', 'bool')
     expr = ~x
-    assert expr.op(x).isidentical(expr)
+    assert expr.op(x) is expr
 
 
 def test_boolean_math_has_boolean_methods():
     x = symbol('x', '?int')
     expr = ~(isnan(x)) | (x > 0)
 
-    assert eval(str(expr)).isidentical(expr)
+    assert eval(str(expr)) is expr
 
 
 def ishashable(x):
@@ -69,7 +69,7 @@ def test_relationals():
     x = symbol('x', 'real')
     for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1, ~b]:
         assert expr.dshape == dshape('bool')
-        assert eval(str(expr)).isidentical(expr)
+        assert eval(str(expr)) is expr
 
 
 def test_numbers():
@@ -79,7 +79,7 @@ def test_numbers():
                  x**y, x**2, 2**x, x % 5, -x,
                  sin(x), cos(x ** 2), exp(log(y))]:
         assert expr.dshape == dshape('real')
-        assert eval(str(expr)).isidentical(expr)
+        assert eval(str(expr)) is expr
 
     assert (-y).dshape == dshape('int')
 
@@ -116,7 +116,7 @@ class TestExprify(object):
     name = symbol('name', 'string')
 
     def test_basic_arithmetic(self):
-        assert exprify('x + y', self.dtypes).isidentical(self.x + self.y)
+        assert exprify('x + y', self.dtypes) is self.x + self.y
 
         expected = isnan(sin(x) + y)
         result = exprify('isnan(sin(x) + y)', self.dtypes)
@@ -126,49 +126,48 @@ class TestExprify(object):
         assert exprify('-1', {}) == -1
 
         # parsed as UnaryOp(op=USub(), operand=1)
-        assert exprify('-x', self.dtypes).isidentical(-self.x)
+        assert exprify('-x', self.dtypes) is -self.x
 
-        assert exprify('-x + y', self.dtypes).isidentical(-self.x + self.y)
+        assert exprify('-x + y', self.dtypes) is -self.x + self.y
 
         other = self.x * self.y + self.z
-        assert exprify('x * y + z', self.dtypes).isidentical(other)
-        assert exprify('x ** y', self.dtypes).isidentical(self.x ** self.y)
+        assert exprify('x * y + z', self.dtypes) is other
+        assert exprify('x ** y', self.dtypes) is self.x ** self.y
 
         other = self.x / self.y / self.z + 1
-        assert exprify('x / y / z + 1', self.dtypes).isidentical(other)
+        assert exprify('x / y / z + 1', self.dtypes) is other
 
         other = self.x / self.y % self.z + 2 ** self.y
-        assert exprify('x / y % z + 2 ** y', self.dtypes).isidentical(other)
+        assert exprify('x / y % z + 2 ** y', self.dtypes) is other
 
-        assert exprify('x // y', self.dtypes).isidentical(self.x // self.y)
-        assert exprify('1 // y // x', self.dtypes).isidentical(
-            1 // self.y // self.x)
+        assert exprify('x // y', self.dtypes) is self.x // self.y
+        assert exprify('1 // y // x', self.dtypes) is 1 // self.y // self.x
 
     def test_comparison(self):
         other = (self.x == 1) | (self.x == 2)
-        assert exprify('(x == 1) | (x == 2)', self.dtypes).isidentical(other)
+        assert exprify('(x == 1) | (x == 2)', self.dtypes) is other
 
     def test_simple_boolean_not(self):
         x = symbol('x', 'bool')
-        assert exprify('~x', {'x': 'bool'}).isidentical(~x)
+        assert exprify('~x', {'x': 'bool'}) is ~x
 
     def test_literal_string_compare(self):
         other = self.name == "Alice"
         result = exprify('name == "Alice"', {'name': 'string'})
         assert isinstance(result.rhs, basestring)
-        assert result.isidentical(other)
+        assert result is other
 
     def test_literal_int_compare(self):
         other = self.x == 1
         result = exprify('x == 1', self.dtypes)
         assert isinstance(result.rhs, int)
-        assert result.isidentical(other)
+        assert result is other
 
     def test_literal_float_compare(self):
         other = self.y == 1.0
         result = exprify('y == 1.0', self.dtypes)
         assert isinstance(result.rhs, float)
-        assert result.isidentical(other)
+        assert result is other
 
     def test_failing_exprify(self):
         dtypes = self.dtypes

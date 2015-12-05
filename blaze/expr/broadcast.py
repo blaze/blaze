@@ -50,7 +50,7 @@ class Broadcast(ElemWise):
     In practice, expressions are often collected into Broadcast expressions
     automatically.  This class is mainly intented for internal use.
     """
-    __slots__ = '_hash', '_children', '_scalars', '_scalar_expr'
+    _arguments = '_children', '_scalars', '_scalar_expr'
 
     def _dshape(self):
         myshape = maxshape(map(shape, self._children))

@@ -60,13 +60,8 @@ Not
 
 
 class BinOp(ElemWise):
-    __slots__ = '_hash', 'lhs', 'rhs'
+    _arguments = 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
-
-    def __init__(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-        self._hash = None
 
     def __str__(self):
         lhs = parenthesize(eval_str(self.lhs))
@@ -87,11 +82,7 @@ class BinOp(ElemWise):
 
 
 class UnaryOp(ElemWise):
-    __slots__ = '_hash', '_child',
-
-    def __init__(self, child):
-        self._child = child
-        self._hash = None
+    _arguments = '_child',
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self._child))

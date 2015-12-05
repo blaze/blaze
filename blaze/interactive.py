@@ -10,7 +10,13 @@ import warnings
 
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
-from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
+from datashape.predicates import (
+    isscalar,
+    iscollection,
+    isrecord,
+    istabular,
+    _dimensions,
+)
 import numpy as np
 from odo import resource, odo, append, drop
 from odo.utils import ignoring, copydoc
@@ -81,32 +87,34 @@ class _Data(Symbol):
     0    Bob
     1  Edith
     """
-    __slots__ = '_hash', 'data', 'dshape', '_name'
+    _arguments = 'data', 'dshape', '_name'
 
-    def __init__(self, data_source, dshape, name=None):
-        self.data = data_source
-        self.dshape = dshape
-        self._name = name or (next(names)
-                              if isrecord(dshape.measure)
-                              else None)
-        self._hash = None
+    def __new__(cls, data, dshape, name=None):
+        return super(Symbol, cls).__new__(
+            cls,
+            data,
+            dshape,
+            name or (
+                next(names)
+                if isrecord(dshape.measure) else None
+            ),
+        )
 
     def _resources(self):
         return {self: self.data}
 
-    @property
-    def _hashargs(self):
-        data = self.data
+    @classmethod
+    def _static_identity(cls, data, dshape, _name):
         try:
             # cannot use isinstance(data, Hashable)
             # some classes give a false positive
             hash(data)
         except TypeError:
             data = id(data)
-        return data, self.dshape, self._name
+        return cls, data, dshape, _name
 
     def __repr__(self):
-        fmt =  "<'{}' data; _name='{}', dshape='{}'>"
+        fmt = "<'{}' data; _name='{}', dshape='{}'>"
         return fmt.format(type(self.data).__name__,
                           self._name,
                           sanitized_dshape(self.dshape))
@@ -119,12 +127,14 @@ class InteractiveSymbol(_Data):
     """
 
     def __new__(cls, *args, **kwargs):
-        warnings.warn("InteractiveSymbol has been deprecated in 0.10 and will be removed in 0.11.  Use ``data`` to create ``Data`` objects directly.", DeprecationWarning)
+        warnings.warn("InteractiveSymbol has been deprecated in 0.10 and will"
+                      " be removed in 0.11.  Use ``data`` to create ``Data``"
+                      " objects directly.", DeprecationWarning)
         return data(*args, **kwargs)
 
 
 def Data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
-    warnings.warn("""The `Data` callable has been deprecated in 0.10 and will be removed in
+    warnings.warn("""The `Data` callable has been deprecated in 0.10 and willbe removed in
                    version >= 0.11. It has been renamed `data`.""", DeprecationWarning)
     return data(data_source, dshape=dshape, name=name, fields=fields, schema=schema, **kwargs)
 
@@ -428,12 +438,14 @@ def table_length(expr):
         return int(expr.count())
 
 _warning_msg = """
-In version 0.11, Blaze's expresssion repr will return a standard 
+In version 0.11, Blaze's expresssion repr will return a standard
 representation and will no longer implicitly compute.  Use the `peek()`
 method to see a preview of the expression's results.\
 """
 
 use_new_repr = False
+
+
 def _choose_repr(self):
     if use_new_repr:
         return new_repr(self)
@@ -451,7 +463,7 @@ def _warning_repr_html(self):
 
 
 def new_repr(self):
-    fmt =  "<`{}` expression; dshape='{}'>"
+    fmt = "<`{}` expression; dshape='{}'>"
     return fmt.format(type(self).__name__,
                       sanitized_dshape(self.dshape))
 

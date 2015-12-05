@@ -14,7 +14,7 @@ def test_datetime_dshape():
 def test_date_attribute():
     t = symbol('t', '5 * {name: string, when: datetime}')
     expr = t.when.day
-    assert eval(str(expr)).isidentical(expr)
+    assert eval(str(expr)) is expr
 
 
 def test_invalid_date_attribute():

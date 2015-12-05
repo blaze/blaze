@@ -193,14 +193,14 @@ def test_pre_compute_doesnt_collapse_slices(data):
 def test_optimize_slicing(data):
     a = symbol('a', discover(data))
     b = symbol('b', discover(data))
-    assert optimize((a + 1)[:3], data).isidentical(a[:3] + 1)
+    assert optimize((a + 1)[:3], data) is a[:3] + 1
 
-    assert optimize((a + b)[:3], data).isidentical(a[:3] + b[:3])
+    assert optimize((a + b)[:3], data) is a[:3] + b[:3]
 
 
 def test_optimize_slicing_on_file(file):
     f = symbol('f', discover(file))
-    assert optimize((f.x + 1)[:5], file).isidentical(f.x[:5] + 1)
+    assert optimize((f.x + 1)[:5], file) is f.x[:5] + 1
 
 
 def test_arithmetic_and_then_slicing(data):

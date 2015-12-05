@@ -19,7 +19,7 @@ def test_merge():
     expr = merge(name=e.name, y=e.x)
 
     assert set(expr.fields) == set(['name', 'y'])
-    assert expr.y.isidentical(e.x.label('y'))
+    assert expr.y is e.x.label('y')
 
 
 def test_merge_options():
@@ -32,13 +32,13 @@ def test_merge_options():
 
 
 def test_merge_on_single_argument_is_noop():
-    assert merge(t.name).isidentical(t.name)
+    assert merge(t.name) is t.name
 
 
 def test_merge_common_subexpression():
     t = symbol('t', 'var * {a: float64}')
     result = common_subexpression(t.a - t.a % 3, t.a % 3)
-    assert result.isidentical(t.a)
+    assert result is t.a
 
 
 def test_merge_exceptions():
@@ -54,8 +54,9 @@ def test_transform():
     expr = transform(t, z=t.x + t.y)
     assert expr.fields == ['x', 'y', 'z']
 
-    assert builtins.any((t.x + t.y).isidentical(node)
-                        for node in expr._subterms())
+    assert builtins.any(
+        (t.x + t.y) is node for node in expr._subterms()
+    )
 
 
 def test_distinct():

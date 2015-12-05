@@ -30,7 +30,7 @@ class Transpose(Expr):
     >>> x.transpose([2, 0, 1]).shape
     (30, 10, 20)
     """
-    __slots__ = '_hash', '_child', 'axes'
+    _arguments = '_child', 'axes'
 
     def _dshape(self):
         s = self._child.shape
@@ -41,8 +41,7 @@ class Transpose(Expr):
         if self.axes == tuple(range(ndim(self)))[::-1]:
             return 'transpose(%s)' % self._child
         else:
-            return 'transpose(%s, axes=%s)' % (self._child,
-                    list(self.axes))
+            return 'transpose(%s, axes=%s)' % (self._child, list(self.axes))
 
 
 @copydoc(Transpose)
@@ -71,7 +70,7 @@ class TensorDot(Expr):
     >>> tensordot(x, y, axes=[0, 0])
     tensordot(x, y, axes=[0, 0])
     """
-    __slots__ = '_hash', 'lhs', 'rhs', '_left_axes', '_right_axes'
+    _arguments = 'lhs', 'rhs', '_left_axes', '_right_axes'
     __inputs__ = 'lhs', 'rhs'
 
     def _dshape(self):
@@ -89,7 +88,7 @@ class TensorDot(Expr):
         return DataShape(*(shape + (measure,)))
 
     def __str__(self):
-        if self.isidentical(tensordot(self.lhs, self.rhs)):
+        if self is tensordot(self.lhs, self.rhs):
             return 'tensordot(%s, %s)' % (self.lhs, self.rhs)
         else:
             la = self._left_axes
@@ -99,7 +98,8 @@ class TensorDot(Expr):
             if len(ra) == 1:
                 ra = ra[0]
             return 'tensordot(%s, %s, axes=[%s, %s])' % (
-                    self.lhs, self.rhs, str(la), str(ra))
+                self.lhs, self.rhs, str(la), str(ra)
+            )
 
 
 @copydoc(TensorDot)

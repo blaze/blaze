@@ -20,9 +20,9 @@ from blaze.expr import (
 )
 
 
-def test_slots():
-    assert Expr.__slots__ == ('_hash', '__weakref__', '__dict__')
-    assert Node.__slots__ == ()
+def test_arguments():
+    assert Expr._arguments == ('_child',)
+    assert Node._arguments == ('_child',)
 
 
 def test_Symbol():
@@ -37,8 +37,8 @@ def test_symbol_caches():
 
 
 def test_Symbol_tokens():
-    assert symbol('x', 'int').isidentical(symbol('x', 'int'))
-    assert not symbol('x', 'int').isidentical(symbol('x', 'int', 1))
+    assert symbol('x', 'int') is symbol('x', 'int')
+    assert symbol('x', 'int') is not symbol('x', 'int', 1)
 
 
 def test_Field():
@@ -71,7 +71,7 @@ def test_relabel():
 
 def test_meaningless_relabel_doesnt_change_input():
     e = symbol('e', '{name: string, amount: int}')
-    assert e.relabel(amount='amount').isidentical(e)
+    assert e.relabel(amount='amount') is e
 
 
 def test_relabel_with_invalid_identifiers_reprs_as_dict():
@@ -92,7 +92,7 @@ def test_label():
     e = symbol('e', '3 * int')
     assert e._name == 'e'
     assert label(e, 'foo')._name == 'foo'
-    assert label(e, 'e').isidentical(e)
+    assert label(e, 'e') is e
 
 
 def test_fields_with_spaces():
@@ -101,7 +101,7 @@ def test_fields_with_spaces():
     assert 'a b' not in dir(e)
 
     assert 'a_b' in dir(e)
-    assert e.a_b.isidentical(e['a b'])
+    assert e.a_b is e['a b']
 
 
 def test_fields_with_spaces():
@@ -110,7 +110,7 @@ def test_fields_with_spaces():
     assert 'a.b' not in dir(e)
 
     assert 'a_b' in dir(e)
-    assert e.a_b.isidentical(e['a.b'])
+    assert e.a_b is e['a.b']
 
 
 def test_selection_name_matches_child():
@@ -161,7 +161,6 @@ def test_hash_to_different_values():
 
 def test_hash():
     e = symbol('e', 'int')
-    assert '_hash' in e.__slots__
     h = hash(e)
     assert isinstance(h, int)
     assert h == hash(e)

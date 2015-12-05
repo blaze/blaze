@@ -39,7 +39,7 @@ To create a node in the tree explicitly we create a Python object of this class
 .. code-block:: python
 
    >>> from blaze.expr import *
-   >>> t = Symbol('t', 'var * {id: int, name: string, amount: int}')
+   >>> t = symbol('t', 'var * {id: int, name: string, amount: int}')
    >>> amounts = Field(t, 'amount')
 
 This object contains its information in a .args attribute

@@ -24,7 +24,7 @@ from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
 from ..compatibility import _strtypes, builtins, boundmethod, PY2
-from .core import Node, subs, common_subexpression, path
+from .core import Node, subs, common_subexpression, path, _setattr
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices, maxshape
@@ -115,7 +115,6 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
-    __slots__ = '_hash', '__weakref__', '__dict__'
 
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, (Record, datashape.Map)):
@@ -157,17 +156,15 @@ class Expr(Node):
         try:
             m = self._schema
         except AttributeError:
-            pass
+            schema = datashape.dshape(self.dshape.measure)
         else:
-            return m()
+            schema = m()
 
-        self.schema = schema = datashape.dshape(self.dshape.measure)
-        return schema
+        return _setattr(self, 'schema', schema)
 
     @attribute
     def dshape(self):
-        self.dshape = dshape = self._dshape()
-        return dshape
+        return _setattr(self, 'dshape', self._dshape())
 
     @property
     def fields(self):
@@ -217,7 +214,7 @@ class Expr(Node):
 
     def __getattr__(self, key):
         assert key != '_hash', \
-            '%s expressions should set _hash in __init__' % type(self).__name__
+            '%s should set _hash in _init' % type(self).__name__
         try:
             result = object.__getattribute__(self, key)
         except AttributeError:
@@ -243,10 +240,10 @@ class Expr(Node):
                 raise
 
         # cache the attribute lookup, getattr will not be invoked again.
-        setattr(self, key, result)
+        _setattr(self, key, result)
         return result
 
-    @property
+    @attribute
     def _name(self):
         measure = self.dshape.measure
         if len(self._inputs) == 1 and isscalar(getattr(measure, 'key',
@@ -271,25 +268,6 @@ class Expr(Node):
                 pass
         return True
 
-_symbol_cache = dict()
-
-
-def _symbol_key(args, kwargs):
-    if len(args) == 1:
-        name, = args
-        ds = None
-        token = 0
-    if len(args) == 2:
-        name, ds = args
-        token = 0
-    elif len(args) == 3:
-        name, ds, token = args
-        token = token or 0
-    ds = kwargs.get('dshape', ds)
-    token = kwargs.get('token', token)
-    ds = dshape(ds)
-    return (name, ds, token)
-
 
 def sanitized_dshape(dshape, width=50):
     pretty_dshape = datashape.pprint(dshape, width=width).replace('\n', '')
@@ -310,18 +288,8 @@ class Symbol(Expr):
     >>> points.dshape
     dshape("5 * 3 * {x: int32, y: int32}")
     """
-    __slots__ = '_hash', '_name', 'dshape', '_token'
+    _arguments = '_name', 'dshape', '_token'
     __inputs__ = ()
-
-    def __init__(self, name, dshape, token=0):
-        self._name = name
-        if isinstance(dshape, _strtypes):
-            dshape = datashape.dshape(dshape)
-        if isinstance(dshape, Mono) and not isinstance(dshape, DataShape):
-            dshape = DataShape(dshape)
-        self.dshape = dshape
-        self._token = token
-        self._hash = None
 
     def __repr__(self):
         fmt = "<`{}` symbol; dshape='{}'>"
@@ -331,13 +299,12 @@ class Symbol(Expr):
         return self._name or ''
 
     def _resources(self):
-        return dict()
+        return {}
 
 
-@memoize(cache=_symbol_cache, key=_symbol_key)
 @copydoc(Symbol)
 def symbol(name, dshape, token=None):
-    return Symbol(name, dshape, token=token or 0)
+    return Symbol(name, datashape.dshape(dshape), token or 0)
 
 
 @dispatch(Symbol, Mapping)
@@ -380,7 +347,7 @@ class Field(ElemWise):
     >>> points['space station'].dshape
     dshape("5 * 3 * float64")
     """
-    __slots__ = '_hash', '_child', '_name'
+    _arguments = '_child', '_name'
 
     def __str__(self):
         fmt = '%s.%s' if isvalid_identifier(self._name) else '%s[%r]'
@@ -418,7 +385,7 @@ class Projection(ElemWise):
     --------
     blaze.expr.expressions.Field
     """
-    __slots__ = '_hash', '_child', '_fields'
+    _arguments = '_child', '_fields'
 
     @property
     def fields(self):
@@ -499,7 +466,7 @@ class Slice(Expr):
     >>> accounts[2:7:2].dshape
     dshape("3 * {name: string, amount: int32}")
     """
-    __slots__ = '_hash', '_child', '_index'
+    _arguments = '_child', '_index'
 
     def _dshape(self):
         return self._child.dshape.subshape[self.index]
@@ -526,7 +493,7 @@ class Selection(Expr):
     ...                   'var * {name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts.amount < 0]
     """
-    __slots__ = '_hash', '_child', 'predicate'
+    _arguments = '_child', 'predicate'
     __inputs__ = '_child', 'predicate'
 
     @property
@@ -545,7 +512,7 @@ class Selection(Expr):
 class SimpleSelection(Selection):
     """Internal selection class that does not treat the predicate as an input.
     """
-    __slots__ = Selection.__slots__
+    _arguments = Selection._arguments
     __inputs__ = '_child',
 
 
@@ -553,10 +520,11 @@ class SimpleSelection(Selection):
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
-    if not builtins.all(isinstance(node, (ElemWise, Symbol))
-                        or node.isidentical(subexpr)
-                        for node in concat([path(predicate, subexpr),
-                                            path(table, subexpr)])):
+    if not builtins.all(
+            isinstance(node, (ElemWise, Symbol)) or
+            node is subexpr
+            for node in concat([path(predicate, subexpr),
+                                path(table, subexpr)])):
 
         raise ValueError("Selection not properly matched with table:\n"
                          "child: %s\n"
@@ -586,7 +554,7 @@ class Label(ElemWise):
     --------
     blaze.expr.expressions.ReLabel
     """
-    __slots__ = '_hash', '_child', 'label'
+    _arguments = '_child', 'label'
 
     def _schema(self):
         return self._child.schema
@@ -652,7 +620,7 @@ class ReLabel(ElemWise):
     --------
     blaze.expr.expressions.Label
     """
-    __slots__ = '_hash', '_child', 'labels'
+    _arguments = '_child', 'labels'
 
     def _schema(self):
         subs = dict(self.labels)
@@ -710,7 +678,7 @@ class Map(ElemWise):
     --------
     blaze.expr.expresions.Apply
     """
-    __slots__ = '_hash', '_child', 'func', '_asschema', '_name0'
+    _arguments = '_child', 'func', '_asschema', '_name0'
 
     def _schema(self):
         if self._asschema:
@@ -773,7 +741,7 @@ class Apply(Expr):
 
     blaze.expr.expressions.Map
     """
-    __slots__ = '_hash', '_child', 'func', '_asdshape', '_splittable'
+    _arguments = '_child', 'func', '_asdshape', '_splittable'
 
     def _schema(self):
         if iscollection(self.dshape):
@@ -782,7 +750,7 @@ class Apply(Expr):
             raise TypeError("Non-tabular datashape, %s" % self.dshape)
 
     def _dshape(self):
-        return dshape(self._asdshape)
+        return self._asdshape
 
 
 @copydoc(Apply)
@@ -803,7 +771,7 @@ class Coerce(ElemWise):
     >>> t.coerce('int8').dshape
     dshape("100 * int8")
     """
-    __slots__ = '_hash', '_child', 'to'
+    _arguments = '_child', 'to'
 
     def _schema(self):
         return self.to
@@ -837,7 +805,7 @@ class Cast(Expr):
     >>> t.cast('10 * float32').dshape
     dshape("10 * float32")
     """
-    __slots__ = '_hash', '_child', 'to'
+    _arguments = '_child', 'to'
 
     def _dshape(self):
         return self.to
@@ -893,7 +861,7 @@ class Coalesce(Expr):
     >>> coalesce(None, None) is None
     True
     """
-    __slots__ = '_hash', 'lhs', 'rhs', 'dshape'
+    _arguments = 'lhs', 'rhs', 'dshape'
     __inputs__ = 'lhs', 'rhs'
 
     def __str__(self):

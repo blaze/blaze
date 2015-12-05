@@ -58,7 +58,7 @@ def test_axis_kwarg_is_normalized_to_tuple():
 def test_summary_with_multiple_children():
     t = symbol('t', 'var * {x: int, y: int, z: int}')
 
-    assert summary(a=t.x.sum() + t.y.sum())._child.isidentical(t)
+    assert summary(a=t.x.sum() + t.y.sum())._child is t
 
 
 def test_dir():
@@ -71,8 +71,8 @@ def test_dir():
 
 def test_norms():
     x = symbol('x', '5 * 3 * float32')
-    assert x.vnorm().isidentical(x.vnorm('fro'))
-    assert x.vnorm().isidentical(x.vnorm(2))
+    assert x.vnorm() is x.vnorm('fro')
+    assert x.vnorm() is x.vnorm(2)
     assert x.vnorm(axis=0).shape == (3,)
     assert x.vnorm(axis=0, keepdims=True).shape == (1, 3)
 

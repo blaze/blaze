@@ -148,7 +148,7 @@ def recursive_rowfunc(t, stop):
 
     """
     funcs = []
-    while not t.isidentical(stop):
+    while t is not stop:
         funcs.append(rowfunc(t))
         t = child(t)
     return compose(*funcs)
