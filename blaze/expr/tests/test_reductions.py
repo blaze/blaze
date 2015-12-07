@@ -97,3 +97,33 @@ def test_max_min_on_datetime_and_timedelta(reduc, measure):
 
 def test_reduction_naming_with_generated_leaves():
     assert symbol('_', 'var * float64').sum()._name == 'sum'
+
+
+@pytest.mark.parametrize(
+    ['reduction', 'group_by', 'sort', 'preceding', 'following'],
+    list(product(
+        ['sum', 'mean', 'count'],
+        list('ab'),
+        list('ab'),
+        [None, 0, 3],
+        [None, 0, 3]
+    ))
+)
+def test_basic_over(reduction, group_by, sort, preceding, following):
+    t = symbol('t', 'var * {a: int64, b: ?float64}')
+    expr = getattr(t.b, reduction)().over(
+        group_by=group_by,
+        sort=sort,
+        preceding=preceding,
+        following=following
+    )
+    assert expr._group_by is group_by
+    assert expr._sort is sort
+    assert expr.preceding is preceding
+    assert expr.following is following
+
+    assert repr(expr) == \
+        'Window(%s, _group_by=%r, _sort=%r, preceding=%r, following=%r)' % (
+            expr._child,
+            expr._group_by, expr._sort, expr.preceding, expr.following
+        )
