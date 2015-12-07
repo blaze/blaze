@@ -245,7 +245,7 @@ serer using the ``requests`` library.
    ...                             'args': [':leaf', 'petal_length']}]}}
    >>> r = requests.get('http://localhost:6363/compute.json',
    ...                  data=json.dumps(query),
-   ...                  headers={'Content-Type': 'application/json'})  # doctest: +SKIP
+   ...                  headers={'Content-Type': 'application/vnd.blaze+json'})  # doctest: +SKIP
    >>> json.loads(r.content)  # doctest: +SKIP
    {u'data': 563.8000000000004,
     u'names': ['petal_length_sum'],
@@ -295,7 +295,7 @@ We can use standard command line tools such as ``curl`` to interact with the
 server::
 
    $ curl \
-       -H "Content-Type: application/json" \
+       -H "Content-Type: application/vnd.blaze+json" \
        -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
        localhost:6363/compute.json
 
@@ -309,7 +309,7 @@ server::
    }
 
    $ curl \
-       -H "Content-Type: application/json" \
+       -H "Content-Type: application/vnd.blaze+json" \
        -d  '{"expr": {"op": "sum", \
                       "args": [{"op": "Field", \
                                 "args": [":leaf", "petal_Length"]}]}}' \
@@ -328,7 +328,8 @@ Adding Data to the Server
 -------------------------
 
 Data resources can be added to the server from the client by sending a resource
-URI to the server.
+URI to the server. The data initially on the server must have a dictionary-like
+interface to be updated.
 
 .. code-block:: python
 
@@ -336,7 +337,7 @@ URI to the server.
    >>> query = {'accounts': example('accounts.csv')}
    >>> r = requests.get('http://localhost:6363/add',
    ...                  data=json.dumps(query),
-   ...                  headers={'Content-Type': 'application/json'})  # doctest: +SKIP
+   ...                  headers={'Content-Type': 'application/vnd.blaze+json'})  # doctest: +SKIP
 
 
 Advanced Use
