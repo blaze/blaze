@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from datashape import Record, DataShape, dshape, TimeDelta
+from datashape import Record, DataShape, dshape, TimeDelta, Decimal, Option
 from datashape import coretypes as ct
 from datashape.predicates import iscollection, isboolean, isnumeric, isdatelike
 from numpy import inf
@@ -122,7 +122,13 @@ class min(Reduction):
 
 
 class mean(Reduction):
-    schema = dshape(ct.real)
+    def _schema(self):
+        measure = self._child.schema.measure
+        base = getattr(measure, 'ty', measure)
+        return_type = Option if isinstance(measure, Option) else toolz.identity
+        return DataShape(return_type(
+            base if isinstance(base, Decimal) else ct.float64
+        ))
 
 
 class var(Reduction):
