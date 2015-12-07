@@ -324,6 +324,21 @@ These queries deconstruct the Blaze expression as nested JSON.  The ``":leaf"``
 string is a special case pointing to the base data.  Constructing these queries
 can be difficult to do by hand, fortunately Blaze can help you to build them.
 
+Adding Data to the Server
+-------------------------
+
+Data resources can be added to the server from the client by sending a resource
+URI to the server.
+
+.. code-block:: python
+
+   >>> from blaze.utils import example
+   >>> query = {'accounts': example('accounts.csv')}
+   >>> r = requests.get('http://localhost:6363/add',
+   ...                  data=json.dumps(query),
+   ...                  headers={'Content-Type': 'application/json'})  # doctest: +SKIP
+
+
 Advanced Use
 ------------
 
