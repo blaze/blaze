@@ -32,6 +32,8 @@ Experimental Features
 * There is now support for joining tables from multiple sources. This
   is **very experimental** right now, so use it at your own risk. It
   currently only works with things that fit in memory (:issue:`1282`).
+* Foreign columns in database tables that have foreign key relationships
+  can now be accessed with a more concise syntax (:issue:`1192`).
 
 API Changes
 ~~~~~~~~~~~

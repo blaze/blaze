@@ -27,8 +27,9 @@ object or URI with which Blaze is familiar.
 
 .. code-block:: python
 
-   >>> from blaze import *
-   >>> db = Data('sqlite:///blaze/examples/data/iris.db')  # an interactive expression
+   >>> from blaze import Data, Symbol
+   >>> from blaze.utils import example
+   >>> db = Data('sqlite:///%s' % example('iris.db'))  # an interactive expression
    >>> db.iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -84,6 +85,7 @@ Compute calls including ``db`` may omit the customary namespace, e.g.
 
 .. code-block:: python
 
+   >>> from blaze import compute
    >>> expr = db.iris.species.distinct()
 
    >>> # compute(expr, {db: some_sql_object})  # Usually provide a namespace
@@ -104,6 +106,10 @@ the screen a small computation is done to print the computed data instead.
 As an example, this ``__repr__`` function looks something like the following:
 
 .. code-block:: python
+
+   from odo import odo
+   from pandas import DataFrame
+   from blaze import Expr
 
    def __repr__(expr):
        expr = expr.head(10)         # Only need enough to print to the screen

@@ -16,7 +16,8 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> # Server code, run this once.  Leave running.
 
    >>> from blaze import *
-   >>> csv = CSV('blaze/examples/data/iris.csv')
+   >>> from blaze.utils import example
+   >>> csv = CSV(example('iris.csv'))
    >>> Data(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa

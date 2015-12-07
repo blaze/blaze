@@ -404,17 +404,6 @@ def test_by_head():
     t2 = t.head(100)
     expr = by(t2['name'], total=t2['amount'].sum())
     result = compute(expr, s)
-    # s2 = select(s).limit(100)
-    # expected = sa.select([s2.c.name,
-    #                       sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
-    #                      ).group_by(s2.c.name)
-    expected = """
-    SELECT alias.name, sum(alias.amount) as total
-    FROM (SELECT accounts.name AS name, accounts.amount AS amount, accounts.id AS ID
-          FROM accounts
-          LIMIT :param_1) as alias
-    GROUP BY alias.name"""
-
     expected = """
     SELECT accounts.name, sum(accounts.amount) as total
     FROM accounts

@@ -60,7 +60,8 @@ operate on a CSV file of the traditional `iris dataset`_.
 
 .. code-block:: python
 
-   >>> iris = Data('blaze/examples/data/iris.csv')
+   >>> from blaze.utils import example
+   >>> iris = Data(example('iris.csv'))
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -81,7 +82,7 @@ stored in a `sqlite file`_.
 
 .. code-block:: python
 
-   >>> iris = Data('sqlite:///blaze/examples/data/iris.db::iris')
+   >>> iris = Data('sqlite:///%s::iris' % example('iris.db'))
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -134,19 +135,14 @@ container type.
 
 .. code-block:: python
 
-   >>> result = by(iris.species,
-   ...             avg=iris.petal_width.mean())
-
-   >>> result_list = odo(result, list)                     # Push result into a list
-
-   >>> odo(result, DataFrame)                # Push result into a DataFrame
+   >>> result = by(iris.species, avg=iris.petal_width.mean())
+   >>> result_list = odo(result, list)  # Push result into a list
+   >>> odo(result, DataFrame)  # Push result into a DataFrame
               species    avg
    0      Iris-setosa  0.246
    1  Iris-versicolor  1.326
    2   Iris-virginica  2.026
-
-   >>> # Write result to CSV file
-   >>> odo(result, 'blaze/examples/data/output.csv')
+   >>> odo(result, example('output.csv'))  # Write result to CSV file
    <odo.backends.csv.CSV object at ...>
 
 

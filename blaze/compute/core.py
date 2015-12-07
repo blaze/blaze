@@ -15,7 +15,7 @@ from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_up']
 
-base = (numbers.Number, basestring, date, datetime)
+base = numbers.Number, basestring, date, datetime
 
 
 @dispatch(Expr, object)
@@ -172,12 +172,13 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     if pre_compute_:
         scope3 = dict((e, pre_compute_(e, datum,
                                        **assoc(kwargs, 'scope', scope2)))
-                        for e, datum in scope2.items())
+                      for e, datum in scope2.items())
     else:
         scope3 = scope2
     if optimize_:
         try:
-            expr3 = optimize_(expr2, *[scope3[leaf] for leaf in expr2._leaves()])
+            expr3 = optimize_(expr2, *[scope3[leaf]
+                                       for leaf in expr2._leaves()])
             _d = dict(zip(expr2._leaves(), expr3._leaves()))
             scope4 = dict((e._subs(_d), d) for e, d in scope3.items())
         except NotImplementedError:
@@ -190,57 +191,10 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     # 4. Repeat
     if expr.isidentical(expr3):
         raise NotImplementedError("Don't know how to compute:\n"
-                "expr: %s\n"
-                "data: %s" % (expr3, scope4))
+                                  "expr: %s\n"
+                                  "data: %s" % (expr3, scope4))
     else:
         return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
-
-
-def top_to_bottom(d, expr, **kwargs):
-    """ Processes an expression top-down then bottom-up """
-    # Base case: expression is in dict, return associated data
-    if expr in d:
-        return d[expr]
-
-    if not hasattr(expr, '_leaves'):
-        return expr
-
-    leaves = list(expr._leaves())
-    data = [d.get(leaf) for leaf in leaves]
-
-    # See if we have a direct computation path with compute_down
-    try:
-        return compute_down(expr, *data, **kwargs)
-    except NotImplementedError:
-        pass
-
-    optimize_ = kwargs.get('optimize', optimize)
-    pre_compute_ = kwargs.get('pre_compute', pre_compute)
-
-    # Otherwise...
-    # Compute children of this expression
-    if hasattr(expr, '_inputs'):
-        children = [top_to_bottom(d, child, **kwargs)
-                        for child in expr._inputs]
-    else:
-        children = []
-
-    # Did we experience a data type change?
-    if type_change(data, children):
-
-        # If so call pre_compute again
-        if pre_compute_:
-            children = [pre_compute_(expr, child, **kwargs) for child in children]
-
-        # If so call optimize again
-        if optimize_:
-            try:
-                expr = optimize_(expr, *children)
-            except NotImplementedError:
-                pass
-
-    # Compute this expression given the children
-    return compute_up(expr, *children, scope=d, **kwargs)
 
 
 _names = ('leaf_%d' % i for i in itertools.count(1))
@@ -351,12 +305,12 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
     # 1. Recurse down the tree, calling this function on children
     #    (this is the bottom part of bottom up)
     exprs, new_scopes = zip(*[bottom_up_until_type_break(i, scope, **kwargs)
-                             for i in inputs])
+                              for i in inputs])
 
     # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
     new_expr = expr._subs(dict((i, e) for i, e in zip(inputs, exprs)
-                                      if not i.isidentical(e)))
+                               if not i.isidentical(e)))
 
     old_expr_leaves = expr._leaves()
     old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]
@@ -377,34 +331,6 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
                                        **kwargs)}
     except NotImplementedError:
         return new_expr, new_scope
-
-
-def bottom_up(d, expr):
-    """
-    Process an expression from the leaves upwards
-
-    Parameters
-    ----------
-
-    d : dict mapping {Symbol: data}
-        Maps expressions to data elements, likely at the leaves of the tree
-    expr : Expr
-        Expression to compute
-
-    Helper function for ``compute``
-    """
-    # Base case: expression is in dict, return associated data
-    if expr in d:
-        return d[expr]
-
-    # Compute children of this expression
-    children = ([bottom_up(d, child) for child in expr._inputs]
-                if hasattr(expr, '_inputs') else [])
-
-    # Compute this expression given the children
-    result = compute_up(expr, *children, scope=d)
-
-    return result
 
 
 def swap_resources_into_scope(expr, scope):

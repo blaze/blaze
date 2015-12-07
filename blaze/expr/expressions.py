@@ -12,6 +12,10 @@ import toolz
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
+from datashape import dshape, DataShape, Record, Var, Mono, Fixed
+from datashape.predicates import isscalar, iscollection, isboolean, isrecord
+
+from ..compatibility import _strtypes, builtins, boundmethod
 from ..compatibility import _strtypes, builtins, boundmethod, PY2
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
@@ -104,7 +108,7 @@ class Expr(Node):
     __slots__ = '_hash', '__weakref__', '__dict__'
 
     def _get_field(self, fieldname):
-        if not isinstance(self.dshape.measure, Record):
+        if not isinstance(self.dshape.measure, (Record, datashape.Map)):
             if fieldname == self._name:
                 return self
             raise ValueError(
@@ -117,8 +121,8 @@ class Expr(Node):
             return self._get_field(key)
         elif isinstance(key, Expr) and iscollection(key.dshape):
             return selection(self, key)
-        elif (isinstance(key, list)
-                and builtins.all(isinstance(k, _strtypes) for k in key)):
+        elif (isinstance(key, list) and
+              builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
                 return self._project(key)
             else:
@@ -159,6 +163,11 @@ class Expr(Node):
     def fields(self):
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
+        elif isinstance(self.dshape.measure, datashape.Map):
+            if not isrecord(self.dshape.measure.value):
+                raise TypeError('Foreign key must reference a '
+                                'Record datashape')
+            return self.dshape.measure.value.names
         name = getattr(self, '_name', None)
         if name is not None:
             return [self._name]
@@ -183,23 +192,23 @@ class Expr(Node):
 
     def __dir__(self):
         result = dir(type(self))
-        if isrecord(self.dshape.measure) and self.fields:
-            result.extend(list(map(valid_identifier, self.fields)))
+        if (isrecord(self.dshape.measure) or
+            isinstance(self.dshape.measure, datashape.Map) and
+                self.fields):
+            result.extend(map(valid_identifier, self.fields))
 
-        d = toolz.merge(schema_methods(self.dshape.measure),
-                        dshape_methods(self.dshape))
-        result.extend(list(d))
+        result.extend(toolz.merge(schema_methods(self.dshape.measure),
+                                  dshape_methods(self.dshape)))
 
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
         assert key != '_hash', \
-            '%s should set _hash in __init__' % type(self).__name__
+            '%s expressions should set _hash in __init__' % type(self).__name__
         try:
             result = object.__getattribute__(self, key)
         except AttributeError:
-            fields = dict(zip(map(valid_identifier, self.fields),
-                              self.fields))
+            fields = dict(zip(map(valid_identifier, self.fields), self.fields))
 
             # prefer the method if there's a field with the same name
             methods = toolz.merge(
@@ -226,10 +235,12 @@ class Expr(Node):
 
     @property
     def _name(self):
-        if (isscalar(self.dshape.measure) and
-                len(self._inputs) == 1 and
-                isscalar(self._child.dshape.measure)):
-            return self._child._name
+        measure = self.dshape.measure
+        if len(self._inputs) == 1 and isscalar(getattr(measure, 'key',
+                                                       measure)):
+            child_measure = self._child.dshape.measure
+            if isscalar(getattr(child_measure, 'key', child_measure)):
+                return self._child._name
 
     def __enter__(self):
         """ Enter context """
@@ -356,7 +367,10 @@ class Field(ElemWise):
 
     def _dshape(self):
         shape = self._child.dshape.shape
-        schema = self._child.dshape.measure.dict[self._name]
+        measure = self._child.dshape.measure
+
+        # TODO: is this too special-case-y?
+        schema = getattr(measure, 'value', measure).dict[self._name]
 
         shape = shape + schema.shape
         schema = (schema.measure,)
@@ -386,8 +400,9 @@ class Projection(ElemWise):
         return list(self._fields)
 
     def _schema(self):
-        d = self._child.schema[0].dict
-        return DataShape(Record([(name, d[name]) for name in self.fields]))
+        measure = self._child.schema.measure
+        d = getattr(measure, 'value', measure).dict
+        return DataShape(Record((name, d[name]) for name in self.fields))
 
     def __str__(self):
         return '%s[%s]' % (self._child, self.fields)
