@@ -535,6 +535,7 @@ def test_add_data_to_empty_server(empty_server, serial):
             data=blob,
         )
         assert 'OK' in response1.status
+        assert response1.status_code == 200
 
         # check for expected server datashape
         response2 = empty_server.get('/datashape')
@@ -607,7 +608,7 @@ def test_cant_add_data_to_server(iris_server, serial):
         headers=mimetype(serial),
         data=blob,
     )
-    assert '422' in response1.status
+    assert response1.status_code == 422
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -619,4 +620,4 @@ def test_bad_add_payload(empty_server, serial):
         headers=mimetype(serial),
         data=blob,
     )
-    assert '422' in response1.status
+    assert response1.status_code == 422
