@@ -81,6 +81,7 @@ def test_head():
     assert lean_projection(t.sort('x').y.head(5)).isidentical(
                 t[['x','y']].sort('x').y.head(5))
 
+
 def test_elemwise_thats_also_a_column():
     t = symbol('t', 'var * {x: int, time: datetime, y: int}')
     expr = t[t.x > 0].time.truncate(months=1)
@@ -88,13 +89,15 @@ def test_elemwise_thats_also_a_column():
     result = lean_projection(expr)
     assert result._child._child._child.isidentical(t[['time', 'x']])
 
+
 def test_distinct():
     expr = t.distinct()[['x', 'y']]
     assert lean_projection(expr).isidentical(expr)
 
+
 def test_like():
     t = symbol('t', 'var * {name: string, x: int, y: int}')
-    expr = t.like(name='Alice').y
+    expr = t[t.name.like('Alice')].y
 
     result = lean_projection(expr)
     assert result._child._child.isidentical(t[['name', 'y']])

@@ -100,20 +100,16 @@ class InteractiveSymbol(Symbol):
 
 
 @copydoc(InteractiveSymbol)
-def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
-         **kwargs):
-    if columns:
-        raise ValueError("columns argument deprecated, use fields instead")
+def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
     if isinstance(data, InteractiveSymbol):
-        return Data(data.data, dshape, name, fields, columns, schema, **kwargs)
+        return Data(data.data, dshape, name, fields, schema, **kwargs)
 
     if isinstance(data, _strtypes):
-        data = resource(data, schema=schema, dshape=dshape, columns=columns,
-                        **kwargs)
+        data = resource(data, schema=schema, dshape=dshape, **kwargs)
     if (isinstance(data, Iterator) and
             not isinstance(data, tuple(not_an_iterator))):
         data = tuple(data)

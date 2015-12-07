@@ -321,11 +321,7 @@ def merge(*exprs, **kwargs):
             return v.label(k)
     # Get common sub expression
     exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
-    try:
-        child = common_subexpression(*exprs)
-    except Exception:
-        raise ValueError("No common subexpression found for input expressions")
-
+    child = common_subexpression(*exprs)
     result = Merge(child, exprs)
 
     if not isdistinct(result.fields):

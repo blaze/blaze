@@ -1,36 +1,25 @@
 ﻿Blaze Release Procedure
 =======================
 
-This document describes the steps to follow to release
-a new version of Blaze.
+1. Run the conda build recipes across all platforms (Linux, OS X,
+   Windows) including both 32 and 64-bit architectures.
 
-1. Update version numbers in the following locations:
+2. Tag the release version.
 
- * /setup.py
- * /blaze/__init__.py
+```sh
+git tag -a x.x.x -m 'Version x.x.x'
+```
 
-2. Confirm the dependencies and their version numbers in
-   /docs/source/install.rst
-   /requirements.txt
-   In particular, `datashape`, `odo`, etc
-   will typically be released concurrently with `blaze`,
-   so they need to be updated to match.
+3. Push those tags to `blaze` master
 
-3. Update the release notes /docs/source/releases.rst
-   You may use a github URL like https://github.com/blaze/blaze/compare/0.6.0...master for assistance.
+```sh
+git push --tags upstream master
+```
 
-4. Verify build is working on all platforms.  Binstar-build
-   can assist with this.
+3. Upload a tarball to PyPI
 
-5. Tag the release version.
+```sh
+python setup.py sdist upload  # from within your clone of blaze
+```
 
-        git tag -a x.x.x -m 'Version x.x.x'
-
-    And push those tags
-
-        git push --tags
-
-6. Release email to blaze-dev@continuum.io.
-
-7. Update this release procedure document to reflect
-   what needed to be done for the release.
+4. Release email to blaze-dev@continuum.io.

@@ -6,13 +6,13 @@ import re
 from weakref import WeakKeyDictionary
 
 try:
-    from cytoolz import nth, memoize
+    from cytoolz import nth, memoize, unique, concat, first, drop
 except ImportError:
-    from toolz import nth, memoize
+    from toolz import nth, memoize, unique, concat, first, drop
 
 from toolz.curried.operator import setitem
 
-from itertools import islice
+from itertools import islice, chain
 from collections import Iterator
 from multiprocessing.pool import ThreadPool
 
@@ -256,3 +256,29 @@ def weakmemoize(f):
         ``f`` with weak memoiza
     """
     return memoize(f, cache=WeakKeyDictionary())
+
+
+def ordered_intersect(*sets):
+    """Set intersection of two sequences that preserves order.
+
+    Parameters
+    ----------
+    sets : tuple of Sequence
+
+    Returns
+    -------
+    generator
+
+    Examples
+    --------
+    >>> list(ordered_intersect('abcd', 'cdef'))
+    ['c', 'd']
+    >>> list(ordered_intersect('bcda', 'bdfga'))
+    ['b', 'd', 'a']
+    >>> list(ordered_intersect('zega', 'age'))  # 1st sequence determines order
+    ['e', 'g', 'a']
+    >>> list(ordered_intersect('gah', 'bag', 'carge'))
+    ['g', 'a']
+    """
+    common = frozenset.intersection(*map(frozenset, sets))
+    return (x for x in unique(concat(sets)) if x in common)

@@ -999,17 +999,9 @@ def compute_up(t, s, **kwargs):
     )
 
 
-@dispatch(Like, Selectable)
+@dispatch(Like, ColumnElement)
 def compute_up(t, s, **kwargs):
-    return compute_up(t, select(s), **kwargs)
-
-
-@dispatch(Like, Select)
-def compute_up(t, s, **kwargs):
-    items = [(f.c.get(name), pattern.replace('*', '%'))
-             for name, pattern in t.patterns.items()
-             for f in s.froms if name in f.c]
-    return s.where(reduce(and_, [key.like(pattern) for key, pattern in items]))
+    return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
 string_func_names = {

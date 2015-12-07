@@ -4,6 +4,7 @@ from datashape import dshape
 from datashape.util.testing import assert_dshape_equal
 
 from blaze.expr import symbol
+from blaze.expr.core import common_subexpression
 from blaze.expr.collections import merge, join, transform, concat
 from blaze.utils import raises
 from blaze.compatibility import builtins
@@ -32,6 +33,12 @@ def test_merge_options():
 
 def test_merge_on_single_argument_is_noop():
     assert merge(t.name).isidentical(t.name)
+
+
+def test_merge_common_subexpression():
+    t = symbol('t', 'var * {a: float64}')
+    result = common_subexpression(t.a - t.a % 3, t.a % 3)
+    assert result.isidentical(t.a)
 
 
 def test_transform():
