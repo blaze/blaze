@@ -420,6 +420,23 @@ def test_foreign_key_isin(fkey):
     assert normalize(str(result)) == normalize(expected)
 
 
+@pytest.mark.xfail(raises=AssertionError, reason='Not yet implemented')
+def test_foreign_key_merge_expression(fkey):
+    from blaze import merge
+
+    t = symbol('fkey', discover(fkey))
+    expr = merge(t.sym_id.sym, t.sym_id.main.data)
+    expected = """
+        select pkey.sym, main.data
+        from
+            fkey, pkey, main
+        where
+            fkey.sym_id = pkey.id and pkey.main = main.id
+    """
+    result = compute(expr, fkey)
+    assert normalize(str(result)) == normalize(expected)
+
+
 def test_join_type_promotion(sqla, sqlb):
     t, s = symbol(sqla.name, discover(sqla)), symbol(sqlb.name, discover(sqlb))
     expr = join(t, s, 'B', how='inner')
