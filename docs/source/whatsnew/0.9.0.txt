@@ -99,6 +99,8 @@ Bug Fixes
   in numpy vs numba implementations of those functions (:issue:`1343`).
 * Only start up a ``ThreadPool`` when using the h5py backend
   (:issue:`1347`, :issue:`1331`).
+* Fix return type for sum and mean reductions whose children have a
+  ``Decimal`` dshape.
 
 Miscellaneous
 ~~~~~~~~~~~~~

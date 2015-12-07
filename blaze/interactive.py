@@ -1,8 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterator
-import datetime
 from functools import reduce
+
+import decimal
+import datetime
 import itertools
 import operator
 import warnings
@@ -234,6 +236,8 @@ def coerce_to(typ, x):
 def coerce_scalar(result, dshape):
     if 'float' in dshape:
         return coerce_to(float, result)
+    if 'decimal' in dshape:
+        return coerce_to(decimal.Decimal, result)
     elif 'int' in dshape:
         return coerce_to(int, result)
     elif 'bool' in dshape:
