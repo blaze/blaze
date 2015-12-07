@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import socket
 import functools
 import re
+from warnings import warn
 
 import flask
 from flask import Blueprint, Flask, request, Response
@@ -163,17 +164,33 @@ class Server(object):
         )
         self.data = data
 
-    def run(self, *args, **kwargs):
-        """Run the server"""
-        port = kwargs.pop('port', DEFAULT_PORT)
+    def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
+        """Run the server.
+
+        Parameters
+        ----------
+        port : int, optional
+            The port to bind to.
+        retry : bool, optional
+            If the port is busy, should we retry with the next available port?
+        **kwargs
+            Forwarded to the underlying flask app's ``run`` method.
+
+        Notes
+        -----
+        This function blocks forever when successful.
+        """
         self.port = port
         try:
-            self.app.run(*args, port=port, **kwargs)
+            # Blocks until the server is shut down.
+            self.app.run(port=port, **kwargs)
         except socket.error:
-            print("\tOops, couldn't connect on port %d.  Is it busy?" % port)
-            if kwargs.get('retry', True):
-                # Attempt to start the server on a new port.
-                self.run(*args, **assoc(kwargs, 'port', port + 1))
+            if not retry:
+                raise
+
+            warn("Oops, couldn't connect on port %d.  Is it busy?" % port)
+            # Attempt to start the server on a new port.
+            self.run(port=port + 1, retry=retry, **kwargs)
 
 
 @api.route('/datashape', methods=['GET'])

@@ -10,9 +10,13 @@ from distutils.version import LooseVersion
 
 import datashape
 from odo import into, resource, discover
+import numpy as np
+import pandas as pd
+import pandas.util.testing as tm
 from pandas import DataFrame
 from toolz import unique
 
+from odo import odo, drop
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     symbol, transform, summary, by, sin, join,
@@ -726,12 +730,21 @@ def test_clean_join():
     assert (normalize(str(result)) == normalize(expected1) or
             normalize(str(result)) == normalize(expected2))
 
+
 def test_like():
-    expr = t.like(name='Alice*')
+    expr = t[t.name.like('Alice*')]
     assert normalize(str(compute(expr, s))) == normalize("""
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
+
+def test_not_like():
+    expr = t[~t.name.like('Alice*')]
+    assert normalize(str(compute(expr, s))) == normalize("""
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    WHERE accounts.name NOT LIKE :name_1""")
 
 
 def test_strlen():
@@ -1862,6 +1875,48 @@ def test_shift_on_column(n):
     FROM accounts
     """
     assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.fixture
+def lhs():
+    return pd.DataFrame.from_records(
+        dict(zip('cd', row)) for row in zip(
+            ['AAPL', 'FB', 'AMZN', 'FB', 'GOOG'] * 2,
+            list(np.random.rand(10) * 100)
+        )
+    )
+
+
+@pytest.yield_fixture
+def rhs():
+    try:
+        t = resource(
+            'sqlite:///:memory:::rhs',
+            dshape='var * {a: int64, b: ?float64, c: ?string}'
+        )
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            t.insert().values([
+                dict(zip(t.columns.keys(), row)) for row in zip(
+                    range(5),
+                    list(np.random.rand(5) * 100),
+                    ['AAPL', 'AAPL', 'MSFT', 'FB', 'MSFT']
+                )
+            ]).execute()
+            yield t
+        finally:
+            drop(t)
+
+
+def test_multiple_table_join(lhs, rhs):
+    lexpr = symbol('lhs', discover(lhs))
+    rexpr = symbol('rhs', discover(rhs))
+    expr = join(lexpr, rexpr, 'c')
+    result = compute(expr, {lexpr: lhs, rexpr: rhs})
+    expected = pd.merge(lhs, odo(rhs, pd.DataFrame), on='c')
+    tm.assert_frame_equal(result, expected)
 
 
 def test_empty_string_comparison_with_option_type():

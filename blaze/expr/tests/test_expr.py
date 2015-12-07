@@ -12,7 +12,7 @@ from blaze.expr import symbol, label, Field, Expr, Node
 
 
 def test_slots():
-    assert Expr.__slots__ == ('_hash', '__weakref__')
+    assert Expr.__slots__ == ('_hash', '__weakref__', '__dict__')
     assert Node.__slots__ == ()
 
 
@@ -52,7 +52,7 @@ def test_nested_fields():
 
 def test_partialed_methods_have_docstrings():
     e = symbol('e', '3 * 5 * {name: string, amount: int}')
-    assert 'string comparison' in e.like.__doc__
+    assert 'string comparison' in e.name.like.__doc__
 
 
 def test_relabel():
@@ -148,10 +148,6 @@ def test_hash_to_different_values():
     expr2 = s >= '20121001'
     assert expr2 & expr is not None
     assert hash(expr) == hash(expr2)
-
-    from blaze.expr.expressions import _attr_cache
-    assert (expr, '_and') in _attr_cache
-    assert (expr2, '_and') in _attr_cache
 
 
 @pytest.mark.parametrize('dshape', [var * float32,
