@@ -100,7 +100,7 @@ def test_reduction_naming_with_generated_leaves():
 
 
 @pytest.mark.parametrize(
-    ['reduction', 'group_by', 'sort_by', 'preceding', 'following'],
+    ['reduction', 'group_by', 'sort', 'preceding', 'following'],
     list(product(
         ['sum', 'mean', 'count'],
         list('ab'),
@@ -109,21 +109,21 @@ def test_reduction_naming_with_generated_leaves():
         [None, 0, 3]
     ))
 )
-def test_basic_over(reduction, group_by, sort_by, preceding, following):
+def test_basic_over(reduction, group_by, sort, preceding, following):
     t = symbol('t', 'var * {a: int64, b: ?float64}')
     expr = getattr(t.b, reduction)().over(
         group_by=group_by,
-        sort_by=sort_by,
+        sort=sort,
         preceding=preceding,
         following=following
     )
-    assert expr.group_by is group_by
-    assert expr.sort_by is sort_by
+    assert expr._group_by is group_by
+    assert expr._sort is sort
     assert expr.preceding is preceding
     assert expr.following is following
 
     assert repr(expr) == \
-        'Window(%s, group_by=%r, sort_by=%r, preceding=%r, following=%r)' % (
+        'Window(%s, _group_by=%r, _sort=%r, preceding=%r, following=%r)' % (
             expr._child,
-            expr.group_by, expr.sort_by, expr.preceding, expr.following
+            expr._group_by, expr._sort, expr.preceding, expr.following
         )

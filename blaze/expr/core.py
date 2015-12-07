@@ -108,7 +108,10 @@ class Node(object):
 
     @property
     def _inputs(self):
-        return tuple(getattr(self, i) for i in self.__inputs__)
+        return tuple(
+            i for i in (getattr(self, i) for i in self.__inputs__)
+            if isinstance(i, Node)
+        )
 
     def _leaves(self):
         """ Leaves of an expression tree

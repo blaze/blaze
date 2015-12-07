@@ -20,26 +20,19 @@ from .expressions import dshape_method_list, method_properties
 class Window(Expr):
     __slots__ = (
         '_hash',
-        '_child', 'kind', 'group_by', 'sort_by', 'preceding', 'following',
+        '_child', '_group_by', '_sort', 'preceding', 'following',
         '_asdshape'
     )
 
-    __inputs__ = '_child', 'group_by', 'sort_by'
+    __inputs__ = '_child', '_group_by', '_sort'
 
     def __str__(self):
-        slots = 'group_by', 'sort_by', 'preceding', 'following'
+        slots = '_group_by', '_sort', 'preceding', 'following'
         return '%s(%s, %s)' % (
             type(self).__name__,
             self._child,
             ', '.join('%s=%r' % (slot, getattr(self, slot)) for slot in slots)
         )
-
-    @property
-    def _inputs(self):
-        return [
-            i for i in [getattr(self, i) for i in self.__inputs__]
-            if i is not None and isinstance(i, Expr)
-        ]
 
     def _dshape(self):
         return self._asdshape
@@ -47,6 +40,26 @@ class Window(Expr):
     @property
     def _name(self):
         return self._child._name
+
+    def sort(self, by):
+        return type(self)(
+            self._child,
+            _group_by=self._group_by,
+            _sort=by,
+            preceding=self.preceding,
+            following=self.following,
+            _asdshape=self._asdshape
+        )
+
+    def group_by(self, key):
+        return type(self)(
+            self._child,
+            _group_by=key,
+            _sort=self._sort,
+            preceding=self.preceding,
+            following=self.following,
+            _asdshape=self._asdshape
+        )
 
 
 class Reduction(Expr):
@@ -134,37 +147,72 @@ class Reduction(Expr):
         else:
             return '%s(%s)' % (name, self._child)
 
-    def over(self, kind='ROWS',
-             group_by=None, sort_by=None, preceding=None, following=None):
-        kind = kind.upper()
-        if kind != 'ROWS' and kind != 'RANGE':
-            raise ValueError(
-                '"kind" must be either "ROWS" or "RANGE" (case insensitive)'
-            )
-        if preceding is not None and not isinstance(
-            preceding, (numbers.Integral, np.integer)
-        ):
-            raise TypeError(
-                '"preceding" must be an integer, got %s of type %r' % (
-                    preceding, type(preceding).__name__
+    def over(
+        self, group_by=None, sort=None, preceding=None, following=None
+    ):
+        """Create a Window expression.
+
+        Used to implement things like rolling and cumulative computations.
+
+        Parameters
+        ----------
+        group_by : str or Expr
+            The name of a column or another Blaze expression to use for
+            *partitioning* the column being reduced over.
+        sort : str or Expr
+            The name of a column or another Blaze expression to use for
+            *ordering* the column being reduced over.
+        preceding : int
+            The number of rows to look behind, relative to the
+            current row. For example, ``preceding=2`` would look back 2 rows +
+            the current row for a total window size of 3. Defaults to
+            considering **every previous row**.
+        following : int
+            The number of rows to look ahead, relative to the current row.
+            For example, ``following=2`` would look ahead 2 rows + the current
+            row for a total window size of 3. Defaults to not looking ahead
+            **at all**, i.e., just considering the current row.
+
+        Returns
+        -------
+        Window
+        """
+        if preceding is not None:
+            if not isinstance(preceding, (numbers.Integral, np.integer)):
+                raise TypeError(
+                    '"preceding" must be an integer, got %s of type %r' % (
+                        preceding, type(preceding).__name__
+                    )
                 )
-            )
-        if following is not None and not isinstance(
-            following, (numbers.Integral, np.integer)
-        ):
-            raise TypeError(
-                '"following" must be an integer, got %s of type %r' % (
-                    following, type(following).__name__
+            if preceding < 0:
+                raise ValueError(
+                    '"preceding" must be greater than or equal to 0, got %d' %
+                    preceding
                 )
-            )
+        if following is not None:
+            if not isinstance(following, (numbers.Integral, np.integer)):
+                raise TypeError(
+                    '"following" must be an integer, got %s of type %r' % (
+                        following, type(following).__name__
+                    )
+                )
+            if following < 0:
+                raise ValueError(
+                    '"following" must be greater than or equal to 0, got %d' %
+                    following
+                )
         return Window(
             self,
-            kind=kind,
-            group_by=group_by,
-            sort_by=sort_by,
+            _group_by=group_by,
+            _sort=sort,
             preceding=preceding,
             following=following,
             _asdshape=DataShape(
+                # self._child will always exist but self._child._child won't,
+                # because we create a new leaf in `compute` and by the time
+                # compute_up(Window, ...) is called self._child._child won't
+                # exist. We only need the dimensions here, so we just do it
+                # once during construction of the expression.
                 *(self._child._child.shape + (self._child.schema,))
             )
         )

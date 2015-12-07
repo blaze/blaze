@@ -1118,9 +1118,8 @@ def compute_up(expr, data, **kwargs):
 
 
 class Over(ColumnElement):
-    def __init__(self, element, kind, group_by, sort_by, preceding, following):
+    def __init__(self, element, group_by, sort_by, preceding, following):
         self.element = element
-        self.kind = kind
         if sort_by is not None:
             self.sort_by = sa.sql.elements.ClauseList(
                 *sa.util.to_list(sort_by),
@@ -1178,14 +1177,7 @@ def compile_over_postgresql(element, compiler, **kwargs):
     if element.sort_by is not None:
         s += 'ORDER BY %s ' % compiler.process(element.sort_by, **kwargs)
 
-    if element.kind == 'RANGE':
-        if element.preceding is not None:
-            raise ValueError('`value` PRECEDING is not supported in RANGE mode')
-        if element.following is not None:
-            raise ValueError('`value` FOLLOWING is not supported in RANGE mode')
-
-    s += '%s BETWEEN %s PRECEDING AND %s)' % (
-        element.kind,
+    s += 'ROWS BETWEEN %s PRECEDING AND %s)' % (
         'UNBOUNDED' if element.preceding is None else element.preceding,
         'CURRENT ROW' if element.following is None else element.following
     )
@@ -1193,36 +1185,34 @@ def compile_over_postgresql(element, compiler, **kwargs):
 
 
 @compute_up.register(Window, ColumnElement)
-def compute_up_window(expr, data, **kwargs):
+def compute_up_window_no_sort_no_group(expr, data, **kwargs):
     """No sort by or group by clauses"""
     return Over(
         data,
-        kind=expr.kind,
-        group_by=expr.group_by,
-        sort_by=expr.sort_by,
+        group_by=expr._group_by,
+        sort_by=expr._sort,
         preceding=expr.preceding,
         following=expr.following
     ).label(expr._name)
 
+
 @compute_up.register(Window, ColumnElement, ColumnElement)
-def compute_up_window(expr, data, spec, **kwargs):
+def compute_up_window_one_of_sort_or_group(expr, data, spec, **kwargs):
     """One of sort by or group by"""
     return Over(
         data,
-        kind=expr.kind,
-        group_by=spec if expr.group_by is not None else None,
-        sort_by=spec if expr.sort_by is not None else None,
+        group_by=spec if expr._group_by is not None else None,
+        sort_by=spec if expr._sort is not None else None,
         preceding=expr.preceding,
         following=expr.following
     ).label(expr._name)
 
 
 @compute_up.register(Window, ColumnElement, ColumnElement, ColumnElement)
-def compute_up_window(expr, data, group_by, sort_by, **kwargs):
+def compute_up_window_sort_and_group(expr, data, group_by, sort_by, **kwargs):
     """Both sort by and group by"""
     return Over(
         data,
-        kind=expr.kind,
         group_by=group_by,
         sort_by=sort_by,
         preceding=expr.preceding,
