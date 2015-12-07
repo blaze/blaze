@@ -121,7 +121,7 @@ class min(Reduction):
     pass
 
 
-class mean(Reduction):
+class FloatingReduction(Reduction):
     def _schema(self):
         measure = self._child.schema.measure
         base = getattr(measure, 'ty', measure)
@@ -131,7 +131,11 @@ class mean(Reduction):
         ))
 
 
-class var(Reduction):
+class mean(FloatingReduction):
+    pass
+
+
+class var(FloatingReduction):
 
     """Variance
 
@@ -146,14 +150,12 @@ class var(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    schema = dshape(ct.real)
-
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
         super(var, self).__init__(child, *args, **kwargs)
 
 
-class std(Reduction):
+class std(FloatingReduction):
 
     """Standard Deviation
 
@@ -175,8 +177,6 @@ class std(Reduction):
     var
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
-
-    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
