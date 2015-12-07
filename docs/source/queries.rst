@@ -9,7 +9,8 @@ We use the well known iris dataset
 .. code-block:: python
 
    >>> from blaze import Data
-   >>> iris = Data('blaze/examples/data/iris.csv')
+   >>> from blaze.utils import example
+   >>> iris = Data(example('iris.csv'))
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -188,7 +189,7 @@ Combining separate, gzipped csv files.
 
    >>> from blaze import odo
    >>> from pandas import DataFrame
-   >>> odo('blaze/examples/data/accounts_*.csv.gz', DataFrame)
+   >>> odo(example('accounts_*.csv.gz'), DataFrame)
       id      name  amount
    0   1     Alice     100
    1   2       Bob     200
@@ -203,7 +204,7 @@ Split-Apply-Combine
 .. code-block:: python
 
    >>> from blaze import Data, by
-   >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
+   >>> t = Data('sqlite:///%s::iris' % example('iris.db'))
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
