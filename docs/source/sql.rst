@@ -176,9 +176,8 @@ The previous example in blaze looks like this:
      >>> expr = d.orders.product_id.name  # doctest: +SKIP
      >>> print(compute(expr))  # doctest: +SKIP
      SELECT orders.id, p.name
-     FROM orders
-     INNER JOIN products
-         ON orders.product_id = products.id
+     FROM orders as o, products as p
+     WHERE o.product_id = p.id
 
 
 .. warning::
