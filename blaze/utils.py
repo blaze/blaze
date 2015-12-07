@@ -12,9 +12,8 @@ except ImportError:
 
 from toolz.curried.operator import setitem
 
-from itertools import islice, chain
+from itertools import islice
 from collections import Iterator
-from multiprocessing.pool import ThreadPool
 
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
@@ -27,8 +26,6 @@ import numpy as np
 from .compatibility import map, zip
 
 from .dispatch import dispatch
-
-thread_pool = ThreadPool(psutil.cpu_count())
 
 
 def nth_list(n, seq):
