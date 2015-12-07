@@ -97,6 +97,8 @@ Bug Fixes
 * ``BinaryMath`` operations without numba installed were failing (:issue:`1343`).
 * win32 tests were failing for ``hypot`` and ``atan2`` due to slight differences
   in numpy vs numba implementations of those functions (:issue:`1343`).
+* Only start up a ``ThreadPool`` when using the h5py backend
+  (:issue:`1347`, :issue:`1331`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

@@ -6,6 +6,10 @@ from multipledispatch import MDNotImplementedError
 from datashape import DataShape, to_numpy
 from toolz import curry
 
+import psutil
+
+from multiprocessing.pool import ThreadPool
+
 from ..partition import partitions
 from ..expr import Reduction, Field, symbol
 from ..expr import Expr, Slice, ElemWise
@@ -15,7 +19,8 @@ from ..expr.split import split
 
 from .core import compute
 from ..dispatch import dispatch
-from ..utils import available_memory, thread_pool
+from ..utils import available_memory
+
 
 __all__ = []
 
@@ -24,6 +29,7 @@ __all__ = []
 def pre_compute(expr, data, scope=None, **kwargs):
     """ Don't push slices into memory, they're about to come in anyway """
     return data
+
 
 @dispatch(Expr, h5py.Dataset)
 def pre_compute(expr, data, scope=None, **kwargs):
@@ -35,6 +41,7 @@ def pre_compute(expr, data, scope=None, **kwargs):
         return data.value
     else:
         return data
+
 
 @dispatch(Expr, h5py.Dataset)
 def post_compute(expr, data, scope=None):
@@ -46,6 +53,7 @@ def post_compute(expr, data, scope=None):
         return data.value
     else:
         return data
+
 
 @dispatch(Symbol, h5py.Dataset)
 def optimize(expr, data):
@@ -79,6 +87,7 @@ def optimize(expr, data):
         return child._subs(dict(zip(child._inputs, (lhs, rhs))))
     else:
         return expr
+
 
 @dispatch(Symbol, (h5py.File, h5py.Group, h5py.Dataset))
 def compute_up(expr, data, **kwargs):
@@ -123,8 +132,21 @@ def compute_chunk(source, target, chunk, chunk_expr, parts):
     target[target_part] = result
 
 
+thread_pool = None
+
+def _get_map(map):
+    global thread_pool
+
+    if map is None:
+        if thread_pool is None:
+            thread_pool = ThreadPool(psutil.cpu_count())
+        return thread_pool.map
+    else:
+        return map
+
+
 @dispatch(Expr, h5py.Dataset)
-def compute_down(expr, data, map=thread_pool.map, **kwargs):
+def compute_down(expr, data, map=None, **kwargs):
     """ Compute expressions on H5Py datasets by operating on chunks
 
     This uses blaze.expr.split to break a full-array-computation into a
@@ -139,6 +161,8 @@ def compute_down(expr, data, map=thread_pool.map, **kwargs):
     The expression must contain some sort of Reduction.  Both the intermediate
     result and the final result are assumed to fit into memory
     """
+    map = _get_map(map)
+
     leaf = expr._leaves()[0]
     if not any(isinstance(node, Reduction) for node in path(expr, leaf)):
         raise MDNotImplementedError()
@@ -160,9 +184,10 @@ def compute_down(expr, data, map=thread_pool.map, **kwargs):
     target_parts = list(partitions(intermediate, chunksize=chunk_expr.shape,
                                    keepdims=True))
 
-
-    parts = list(map(curry(compute_chunk, data, intermediate, chunk, chunk_expr),
-                           zip(source_parts, target_parts)))
+    list(map(
+        curry(compute_chunk, data, intermediate, chunk, chunk_expr),
+        zip(source_parts, target_parts)
+    ))
 
     # Compute on the aggregate
     return compute(agg_expr, {agg: intermediate})
