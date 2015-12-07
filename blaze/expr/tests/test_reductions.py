@@ -100,7 +100,7 @@ def test_reduction_naming_with_generated_leaves():
     assert symbol('_', 'var * float64').sum()._name == 'sum'
 
 
-@pytest.mark.parametrize('func', ['sum', 'mean'])
+@pytest.mark.parametrize('func', ['sum', 'mean', 'std', 'var'])
 def test_decimal_reduction(func):
     t = symbol('t', 'var * decimal[11, 2]')
     method = getattr(t, func)
