@@ -8,19 +8,20 @@ from .reductions import Reduction, Summary, summary
 from ..dispatch import dispatch
 from .expressions import dshape_method_list
 
-from datashape import dshape, Record, Option, Unit, var
+from datashape import dshape, Record, Map, Unit, var
 
 __all__ = ['by', 'By', 'count_values']
 
 
 def _names_and_types(expr):
     schema = expr.dshape.measure
-    if isinstance(schema, Option):
-        schema = schema.ty
+    schema = getattr(schema, 'ty', schema)
     if isinstance(schema, Record):
         return schema.names, schema.types
     if isinstance(schema, Unit):
         return [expr._name], [expr.dshape.measure]
+    if isinstance(schema, Map):
+        return [expr._name], [expr.dshape.measure.key]
     raise ValueError("Unable to determine name and type of %s" % expr)
 
 

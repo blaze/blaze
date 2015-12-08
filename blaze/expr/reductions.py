@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
+import decimal
 import datashape
-from datashape import Record, DataShape, dshape, TimeDelta
+from datashape import Record, DataShape, dshape, TimeDelta, Decimal, Option
 from datashape import coretypes as ct
 from datashape.predicates import iscollection, isboolean, isnumeric, isdatelike
 from numpy import inf
@@ -12,6 +13,7 @@ from .core import common_subexpression
 from .expressions import Expr, ndim
 from .strings import isstring
 from .expressions import dshape_method_list, method_properties
+from ..dispatch import dispatch
 
 
 class Reduction(Expr):
@@ -120,7 +122,7 @@ class sum(Reduction):
 
     @property
     def initial_value(self):
-        return self.schema.measure.to_numpy_dtype().type().item()
+        return initial_value(self.schema.measure)
 
 
 class max(Reduction):
@@ -131,12 +133,35 @@ class min(Reduction):
     pass
 
 
-class mean(Reduction):
-    schema = dshape(ct.float64)
-    initial_value = 0.0
+class FloatingReduction(Reduction):
+    def _schema(self):
+        measure = self._child.schema.measure
+        base = getattr(measure, 'ty', measure)
+        return_type = Option if isinstance(measure, Option) else toolz.identity
+        return DataShape(return_type(
+            base if isinstance(base, Decimal) else ct.float64
+        ))
+
+    @property
+    def initial_value(self):
+        return initial_value(self.schema.measure)
 
 
-class var(Reduction):
+@dispatch(ct.CType)
+def initial_value(dshape):
+    return 0.0
+
+
+@dispatch(Decimal)
+def initial_value(dshape):
+    return decimal.Decimal(0.0)
+
+
+class mean(FloatingReduction):
+    pass
+
+
+class var(FloatingReduction):
 
     """Variance
 
@@ -151,14 +176,12 @@ class var(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    schema = dshape(ct.real)
-
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
         super(var, self).__init__(child, *args, **kwargs)
 
 
-class std(Reduction):
+class std(FloatingReduction):
 
     """Standard Deviation
 
@@ -180,8 +203,6 @@ class std(Reduction):
     var
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
-
-    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased

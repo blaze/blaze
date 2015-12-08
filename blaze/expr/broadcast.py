@@ -9,6 +9,7 @@ from datashape import DataShape, iscollection
 from .collections import Shift
 from .expressions import Field, Map, ElemWise, symbol, shape, Coerce
 from .arithmetic import maxshape, UnaryOp, BinOp
+from .strings import Like
 from .datetime import DateTime
 
 __all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
@@ -108,8 +109,8 @@ def scalar_symbols(exprs):
     return scalars
 
 
-Broadcastable = (Map, Field, DateTime, UnaryOp, BinOp, Coerce, Shift)
-WantToBroadcast = (Map, DateTime, UnaryOp, BinOp, Coerce, Shift)
+Broadcastable = (Map, Field, DateTime, UnaryOp, BinOp, Coerce, Shift, Like)
+WantToBroadcast = (Map, DateTime, UnaryOp, BinOp, Coerce, Shift, Like)
 
 
 def broadcast_collect(expr,

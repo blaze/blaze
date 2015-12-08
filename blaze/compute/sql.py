@@ -84,22 +84,78 @@ def inner_columns(s):
     raise TypeError()
 
 
+@dispatch(Projection, Select)
+def compute_up(expr, data, **kwargs):
+    d = dict((c.name, c) for c in getattr(data, 'inner_columns', data.c))
+    return data.with_only_columns([d[field] for field in expr.fields])
+
+
 @dispatch(Projection, Selectable)
-def compute_up(t, s, scope=None, **kwargs):
-    d = dict((c.name, c) for c in inner_columns(s))
-    return select(s).with_only_columns([d[field] for field in t.fields])
+def compute_up(expr, data, **kwargs):
+    return compute(expr, sa.select([data]), post_compute=False)
 
 
-@dispatch((Field, Projection), Select)
+@dispatch(Projection, sa.Column)
+def compute_up(expr, data, **kwargs):
+    selectables = [
+        compute(expr._child[field], data, post_compute=False)
+        for field in expr.fields
+    ]
+    froms = set(concat(s.froms for s in selectables))
+    assert 1 <= len(froms) <= 2
+    result = unify_froms(sa.select(first(sel.inner_columns)
+                                   for sel in selectables),
+                         froms)
+    return result.where(unify_wheres(selectables))
+
+
+@dispatch(Projection, Select)
+def compute_up(expr, data, **kwargs):
+    return data.with_only_columns(
+        first(compute(expr._child[field], data,
+                      post_compute=False).inner_columns)
+        for field in expr.fields
+    )
+
+
+@dispatch(Field, FromClause)
 def compute_up(t, s, **kwargs):
-    cols = list(s.inner_columns)
-    cols = [lower_column(cols[t._child.fields.index(c)]) for c in t.fields]
-    return s.with_only_columns(cols)
+    return s.c[t._name]
 
 
-@dispatch(Field, ClauseElement)
+def unify_froms(select, selectables):
+    return reduce(lambda x, y: x.select_from(y), selectables, select)
+
+
+def unify_wheres(selectables):
+    clauses = list(unique((s._whereclause for s in selectables
+                           if hasattr(s, '_whereclause')), key=str))
+    return reduce(and_, clauses) if clauses else None
+
+
+@dispatch(Field, Select)
+def compute_up(expr, data, **kwargs):
+    name = expr._name
+    try:
+        inner_columns = list(data.inner_columns)
+        names = list(c.name for c in data.inner_columns)
+        column = inner_columns[names.index(name)]
+    except (KeyError, ValueError):
+        single_column_select = compute(expr, first(data.inner_columns),
+                                       post_compute=False)
+        column = first(single_column_select.inner_columns)
+        result = unify_froms(sa.select([column]),
+                             data.froms + single_column_select.froms)
+        return result.where(unify_wheres([data, single_column_select]))
+    else:
+        return data.with_only_columns([column])
+
+
+@dispatch(Field, sa.Column)
 def compute_up(t, s, **kwargs):
-    return s.c.get(t._name)
+    assert len(s.foreign_keys) == 1, 'exactly one foreign key allowed'
+    key_col = first(s.foreign_keys).column
+    return sa.select([key_col.table.c[t._name]]).where(s == key_col)
 
 
 @dispatch(Broadcast, Select)
@@ -373,7 +429,6 @@ def _join_selectables(a, b, condition=None, **kwargs):
                                 a.join(b.froms[0], condition, **kwargs))
 
 
-
 @dispatch(ClauseElement, ClauseElement)
 def _join_selectables(a, b, condition=None, **kwargs):
     return a.join(b, condition, **kwargs)
@@ -604,26 +659,35 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(By, sa.Column)
-def compute_up(expr, data, **kwargs):
-    grouper = lower_column(data)
-    app = expr.apply
-    if isinstance(app, Reduction):
-        reductions = [compute(app, data, post_compute=False)]
-    elif isinstance(app, Summary):
-        reductions = [compute(val, data, post_compute=None).label(name)
-                      for val, name in zip(app.values, app.fields)]
+def compute_up(expr, data, scope=None, **kwargs):
+    data = lower_column(data)
+    grouper = compute(expr.grouper, scope, post_compute=False, **kwargs)
 
-    return sa.select([grouper] + reductions).group_by(grouper)
+    app = expr.apply
+    reductions = [compute(val, data, post_compute=None).label(name)
+                  for val, name in zip(app.values, app.fields)]
+
+    froms = list(unique(chain(get_all_froms(grouper),
+                              concat(map(get_all_froms, reductions)))))
+    inner_cols = list(getattr(grouper, 'inner_columns', [grouper]))
+    grouper_cols = inner_cols[:]
+    inner_cols.extend(concat(
+        getattr(getattr(r, 'element', None), 'inner_columns', [r])
+        for r in reductions
+    ))
+    wheres = unify_wheres([grouper] + reductions)
+    sel = unify_froms(sa.select(inner_cols, whereclause=wheres), froms)
+    return sel.group_by(*grouper_cols)
 
 
 @dispatch(By, ClauseElement)
 def compute_up(expr, data, **kwargs):
-    if not valid_grouper(expr):
+    if not valid_grouper(expr.grouper):
         raise TypeError("Grouper must have a non-nested record or one "
                         "dimensional collection datashape, "
                         "got %s of type %r with dshape %s" %
                         (expr.grouper, type(expr.grouper).__name__,
-                         expr.dshape))
+                         expr.grouper.dshape))
     grouper = get_inner_columns(compute(expr.grouper, data,
                                         post_compute=False))
     app = expr.apply
@@ -695,14 +759,14 @@ def is_nested_record(measure):
     if not isrecord(measure):
         raise TypeError('Input must be a Record type got %s of type %r' %
                         (measure, type(measure).__name__))
-    return not all(isscalar(t) for t in measure.types)
+    return not all(isscalar(getattr(t, 'key', t)) for t in measure.types)
 
 
 def valid_grouper(expr):
     ds = expr.dshape
     measure = ds.measure
     return (iscollection(ds) and
-            (isscalar(measure) or
+            (isscalar(getattr(measure, 'key', measure)) or
              (isrecord(measure) and not is_nested_record(measure))))
 
 
@@ -716,11 +780,12 @@ def valid_reducer(expr):
 
 @dispatch(By, Select)
 def compute_up(expr, data, **kwargs):
-    if not valid_grouper(expr):
+    if not valid_grouper(expr.grouper):
         raise TypeError("Grouper must have a non-nested record or one "
                         "dimensional collection datashape, "
                         "got %s of type %r with dshape %s" %
-                        (expr.grouper, type(expr.grouper).__name__, expr.dshape))
+                        (expr.grouper, type(expr.grouper).__name__,
+                         expr.grouper.dshape))
 
     s = alias_it(data)
 
@@ -867,6 +932,21 @@ def get_all_froms(t):
     return [t]
 
 
+@dispatch(sa.sql.elements.ColumnElement)
+def get_all_froms(colelement):
+    return list(unique(concat(map(get_all_froms, colelement.get_children()))))
+
+
+@dispatch((ScalarSelect, sa.sql.elements.Label))
+def get_all_froms(element):
+    return get_all_froms(element.element)
+
+
+@dispatch(sa.sql.functions.FunctionElement)
+def get_all_froms(function):
+    return list(unique(concat(map(get_all_froms, function.clauses.clauses))))
+
+
 @dispatch(ColumnClause)
 def get_all_froms(c):
     return [c.table]
@@ -923,17 +1003,9 @@ def compute_up(t, s, **kwargs):
     )
 
 
-@dispatch(Like, Selectable)
+@dispatch(Like, ColumnElement)
 def compute_up(t, s, **kwargs):
-    return compute_up(t, select(s), **kwargs)
-
-
-@dispatch(Like, Select)
-def compute_up(t, s, **kwargs):
-    items = [(f.c.get(name), pattern.replace('*', '%'))
-             for name, pattern in t.patterns.items()
-             for f in s.froms if name in f.c]
-    return s.where(reduce(and_, [key.like(pattern) for key, pattern in items]))
+    return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
 string_func_names = {
@@ -988,7 +1060,7 @@ def compute_up(expr, data, **kwargs):
     return table_of_engine(data, expr._name)
 
 
-@dispatch(DateTime, (ClauseElement, sa.sql.elements.ColumnElement))
+@dispatch(DateTime, ColumnElement)
 def compute_up(expr, data, **kwargs):
     if expr.attr == 'date':
         return sa.func.date(data).label(expr._name)

@@ -45,12 +45,13 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 from __future__ import absolute_import, division, print_function
 
 import numbers
+import fnmatch
+
 from operator import attrgetter
 
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-import fnmatch
 from datashape.predicates import isscalar
 from toolz import pluck, first, get, compose
 import toolz
@@ -70,16 +71,15 @@ from ..expr import (
     Gt,
     Head,
     Le,
-    Like,
     Lt,
     Ne,
     Or,
     Projection,
     Reduction,
-    Selection,
     SimpleSelection,
     Sort,
     Summary,
+    Like,
     Symbol,
     ceil,
     count,
@@ -253,13 +253,6 @@ def compute_up(expr, data, **kwargs):
     d = dict((s[c], symbol(c, s[c].dshape.measure)) for c in s.fields)
     expr = predicate._scalar_expr._subs(d)
     return data.append({'$match': match(expr)})
-
-
-@dispatch(Like, MongoQuery)
-def compute_up(t, q, **kwargs):
-    pats = dict((name, {'$regex': fnmatch.translate(pattern)})
-                for name, pattern in t.patterns.items())
-    return q.append({'$match': pats})
 
 
 @dispatch(By, MongoQuery)
@@ -465,10 +458,43 @@ def name(e):
         return e
 
 
-# Reflective binary operator, e.g. (x < y) -> (y > x)
-binop_swap = {Lt: Gt, Gt: Lt, Ge: Le, Le: Ge, Eq: Eq, Ne: Ne}
+opnames = {
+    Lt: '$lt',
+    Le: '$lte',
+    Gt: '$gt',
+    Ge: '$gte',
+    Ne: '$ne',
+    And: '$and',
+    Or: '$or',
+    Like: '$regex',
+}
 
 
+@dispatch((Lt, Le, Gt, Ge, Ne))
+def match(expr):
+    return {name(expr.lhs): {opnames[type(expr)]: expr.rhs}}
+
+
+@dispatch((And, Or))
+def match(expr):
+    return {opnames[type(expr)]: [match(expr.lhs), match(expr.rhs)]}
+
+
+@dispatch(Eq)
+def match(expr):
+    return {name(expr.lhs): name(expr.rhs)}
+
+
+@dispatch(Like)
+def match(expr):
+    return {
+        name(expr._child): {
+            opnames[type(expr)]: fnmatch.translate(expr.pattern)
+        }
+    }
+
+
+@dispatch(object)
 def match(expr):
     """ Match query for MongoDB
 
@@ -487,23 +513,6 @@ def match(expr):
     >>> match((x > 10) | (name == 'Alice'))
     {'$or': [{'x': {'$gt': 10}}, {'name': 'Alice'}]}
     """
-    if not isinstance(expr.lhs, Expr):
-        return match(binop_swap(type(expr))(expr.lhs, expr.rhs))
-    if isinstance(expr, Eq):
-        return {name(expr.lhs): name(expr.rhs)}
-    if isinstance(expr, Lt):
-        return {name(expr.lhs): {'$lt': expr.rhs}}
-    if isinstance(expr, Le):
-        return {name(expr.lhs): {'$lte': expr.rhs}}
-    if isinstance(expr, Gt):
-        return {name(expr.lhs): {'$gt': expr.rhs}}
-    if isinstance(expr, Ge):
-        return {name(expr.lhs): {'$gte': expr.rhs}}
-    if isinstance(expr, And):
-        return {'$and': [match(expr.lhs), match(expr.rhs)]}
-    if isinstance(expr, Or):
-        return {'$or': [match(expr.lhs), match(expr.rhs)]}
-    if isinstance(expr, Ne):
-        return {name(expr.lhs): {'$ne': expr.rhs}}
-    raise NotImplementedError("Matching not supported on expressions of type "
-                              "%r" % type(expr).__name__)
+    raise NotImplementedError(
+        'Matching not supported on expressions of type %r' % type(expr).__name__
+    )

@@ -4,6 +4,7 @@ import pytest
 
 from blaze.expr import symbol, summary
 from datashape import dshape
+from datashape.util.testing import assert_dshape_equal
 
 
 def test_reduction_dshape():
@@ -97,3 +98,10 @@ def test_max_min_on_datetime_and_timedelta(reduc, measure):
 
 def test_reduction_naming_with_generated_leaves():
     assert symbol('_', 'var * float64').sum()._name == 'sum'
+
+
+@pytest.mark.parametrize('func', ['sum', 'mean', 'std', 'var'])
+def test_decimal_reduction(func):
+    t = symbol('t', 'var * decimal[11, 2]')
+    method = getattr(t, func)
+    assert_dshape_equal(method().dshape, dshape("decimal[11, 2]"))

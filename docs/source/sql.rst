@@ -119,6 +119,73 @@ object to ``Data``. For example:
 .. _`Lahman baseball statistics database`: https://github.com/jknecht/baseball-archive-sqlite/raw/master/lahman2013.sqlite
 
 
+Foreign Keys and Automatic Joins
+--------------------------------
+
+Often times one wants to access the columns of a table into which we have a foreign key.
+
+For example, given a ``products`` table with this schema:
+
+  .. code-block:: sql
+
+     create table products (
+         id integer primary key,
+         name text
+     )
+
+and an ``orders`` table with this schema:
+
+  .. code-block:: sql
+
+     create table orders (
+         id integer primary key,
+         product_id integer references (id) products,
+         quantity integer
+     )
+
+we want to get the name of the products in every order. In SQL, you would write the following join:
+
+  .. code-block:: sql
+
+     select
+         o.id, p.name
+     from
+         orders o
+             inner join
+         products p
+             on o.product_id = p.id
+
+
+This is fairly straightforward. However, when you have more than two joins the SQL
+gets unruly and hard to read. What we really want is a syntactically simply way to
+follow the chain of foreign key relationships and be able to access columns in
+foreign tables without having to write a lot of code. This is where blaze comes in.
+
+Blaze can generate the above joins for you, so instead of writing a bunch of joins in
+SQL you can simply access the columns of a foreign table as if they were columns on
+the foreign key column.
+
+The previous example in blaze looks like this:
+
+  .. code-block:: python
+
+     >>> from blaze import Data, compute
+     >>> d = Data('postgresql://localhost/db')  # doctest: +SKIP
+     >>> d.fields  # doctest: +SKIP
+     ['products', 'orders']
+     >>> expr = d.orders.product_id.name  # doctest: +SKIP
+     >>> print(compute(expr))  # doctest: +SKIP
+     SELECT orders.id, p.name
+     FROM orders as o, products as p
+     WHERE o.product_id = p.id
+
+
+.. warning::
+
+   The above feature is very experimental right now. We would
+   appreciate bug reports and feedback on the API.
+
+
 How ``Resample`` is constructed in the SQL backend
 --------------------------------------------------
 We build up resample with the following steps:

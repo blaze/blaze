@@ -394,11 +394,6 @@ def test_asarray_fails_on_different_column_names():
         Data(df, fields=list('abc'))
 
 
-def test_data_does_not_accept_columns_kwarg():
-    with pytest.raises(ValueError):
-        Data([(1, 2), (3, 4)], columns=list('ab'))
-
-
 def test_functions_as_bound_methods():
     """
     Test that all functions on an InteractiveSymbol are instance methods
@@ -459,3 +454,8 @@ def test_pickle_roundtrip():
     es = Data(np.array([1, 2, 3]))
     assert es.isidentical(pickle.loads(pickle.dumps(es)))
     assert (es + 1).isidentical(pickle.loads(pickle.dumps(es + 1)))
+
+
+def test_nameless_data():
+    data = [('a', 1)]
+    assert repr(data) in repr(Data(data))

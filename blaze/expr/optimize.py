@@ -122,13 +122,6 @@ def _lean(expr, fields=None):
     return expr._subs({expr._child: child}), fields
 
 
-@dispatch(Like)
-def _lean(expr, fields=None):
-    child, new_fields = _lean(expr._child,
-                              fields=set(fields) | set(expr.patterns.keys()))
-    return expr._subs({expr._child: child}), new_fields
-
-
 @dispatch(Sort)
 def _lean(expr, fields=None):
     key = expr.key
