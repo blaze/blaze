@@ -4,6 +4,7 @@ import socket
 import functools
 import re
 from warnings import warn
+import collections
 
 import flask
 from flask import Blueprint, Flask, request, Response
@@ -19,14 +20,14 @@ except ImportError:
             return wrapped
         return wrapper
 
-from toolz import assoc
+from toolz import assoc, valmap
 
 from datashape import Mono, discover
 from datashape.predicates import iscollection, isscalar
 from odo import odo
 
 import blaze
-from blaze import compute
+from blaze import compute, resource
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
@@ -114,6 +115,32 @@ def authorization(f):
     return authorized
 
 
+def check_request(f):
+    @functools.wraps(f)
+    def check():
+        content_type = request.headers['content-type']
+        matched = mimetype_regex.match(content_type)
+
+        if matched is None:
+            return 'Unsupported serialization format %s' % content_type, 415
+
+        try:
+            serial = _get_format(matched.groups()[0])
+        except KeyError:
+            return (
+                "Unsupported serialization format '%s'" % matched.groups()[0],
+                415,
+            )
+
+        try:
+            payload = serial.loads(request.data)
+        except ValueError:
+            return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+
+        return f(payload, serial)
+    return check
+
+
 class Server(object):
 
     """ Blaze Data Server
@@ -150,8 +177,6 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'data', 'port'
-
     def __init__(self, data=None, formats=None, authorization=None):
         app = self.app = Flask('blaze.server.server')
         if data is None:
@@ -376,26 +401,8 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
 @crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
-def compserver():
-    content_type = request.headers['content-type']
-    matched = mimetype_regex.match(content_type)
-
-    if matched is None:
-        return 'Unsupported serialization format %s' % content_type, 415
-
-    try:
-        serial = _get_format(matched.groups()[0])
-    except KeyError:
-        return (
-            "Unsupported serialization format '%s'" % matched.groups()[0],
-            415,
-        )
-
-    try:
-        payload = serial.loads(request.data)
-    except ValueError:
-        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
-
+@check_request
+def compserver(payload, serial):
     ns = payload.get('namespace', dict())
     dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
@@ -423,3 +430,29 @@ def compserver():
         'data': result,
         'names': expr.fields
     })
+
+@api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
+@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@authorization
+@check_request
+def addserver(payload, serial):
+    """Add a data resource to the server.
+
+    The reuest should contain serialized MutableMapping (dictionary) like
+    object, and the server should already be hosting a MutableMapping
+    resource.
+    """
+    data = _get_data.cache[flask.current_app]
+
+    data_not_mm_msg = ("Cannot update blaze server data since its current data"
+                       " is a %s and not a mutable mapping (dictionary like).")
+    if not isinstance(data, collections.MutableMapping):
+        return (data_not_mm_msg % type(data), 422)
+
+    payload_not_mm_msg = ("Cannot update blaze server with a %s payload, since"
+                          " it is not a mutable mapping (dictionary like).")
+    if not isinstance(payload, collections.MutableMapping):
+        return (payload_not_mm_msg % type(payload), 422)
+
+    data.update(valmap(resource, payload))
+    return 'OK'
