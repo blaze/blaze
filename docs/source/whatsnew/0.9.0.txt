@@ -31,7 +31,7 @@ Improved Backends
 
   1. ``compute_kwargs``: This is a dictionary to send to the server to use as
      keyword arguments when calling ``compute`` on the server.
-  2. ``odo_kwargs``: This is a dictionary to send to the server to use aas
+  2. ``odo_kwargs``: This is a dictionary to send to the server to use as
      keyword arguments when calling ``odo`` on the server.
 
   This extra information is completely optional and will have different meanings
