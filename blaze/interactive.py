@@ -232,7 +232,7 @@ def coerce_to(typ, x, odo_kwargs=None):
     try:
         return typ(x)
     except TypeError:
-        return odo(x, typ, **odo_kwargs or {})
+        return odo(x, typ, **(odo_kwargs or {}))
 
 
 def coerce_scalar(result, dshape, odo_kwargs=None):
