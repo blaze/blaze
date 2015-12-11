@@ -255,7 +255,7 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
 
 def expr_repr(expr, n=10):
     # Pure Expressions, not interactive
-    if not expr._resources():
+    if not set(expr._resources().keys()).issuperset(expr._leaves()):
         return str(expr)
 
     # Scalars
