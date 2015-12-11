@@ -6,9 +6,10 @@ from toolz import curry, concat
 import pandas as pd
 import numpy as np
 from collections import Iterator, Iterable
-from odo import into
+from odo import into, Temp
 from odo.chunks import chunks
 from odo.backends.csv import CSV
+from odo.backends.url import URL
 from multipledispatch import MDNotImplementedError
 
 from ..dispatch import dispatch
@@ -52,6 +53,11 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
         return into(chunks(pd.DataFrame), data, dshape=leaf.dshape, **kwargs)
     else:
         return into(pd.DataFrame, data, dshape=leaf.dshape, **kwargs)
+
+
+@dispatch((Expr, Head), URL(CSV))
+def pre_compute(expr, data, **kwargs):
+    return pre_compute(expr, into(Temp(CSV), data, **kwargs), **kwargs)
 
 
 Cheap = (Head, ElemWise, Distinct, Symbol)
