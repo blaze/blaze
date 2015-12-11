@@ -20,6 +20,7 @@ import fnmatch
 import itertools
 from distutils.version import LooseVersion
 import warnings
+from collections import defaultdict
 
 import numpy as np
 
@@ -30,6 +31,7 @@ from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 
 from toolz import merge as merge_dicts
+from toolz import groupby
 from toolz.curried import pipe, filter, map, concat
 
 import datashape
@@ -372,13 +374,23 @@ def fancify_summary(expr):
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
     one, two, three = fancify_summary(s)  # see above
-    names = one.fields
-    preapply = DataFrame(
-        dict(
-            zip(names, [compute(v._child, {t._child: df}) for v in one.values])
+
+    names_columns = list(zip(one.fields, one.values))
+    func = lambda x: not isinstance(x[1], count)
+    is_field = defaultdict(lambda: iter([]), groupby(func, names_columns))
+
+    preapply = DataFrame(dict(
+        zip([name for name, _ in is_field[True]],
+            [compute(col._child, {t._child: df}) for _, col in is_field[True]]
+            )
         )
     )
 
+    if len(list(is_field[False])) > 0:
+        emptys = DataFrame([0] * len(df.index),
+                           index=df.index,
+                           columns=[name for name, _ in is_field[False]])
+        preapply = concat_nodup(preapply, emptys)
     if not df.index.equals(preapply.index):
         df = df.loc[preapply.index]
     df2 = concat_nodup(df, preapply)
