@@ -459,3 +459,16 @@ def test_pickle_roundtrip():
 def test_nameless_data():
     data = [('a', 1)]
     assert repr(data) in repr(Data(data))
+
+
+def test_partially_bound_expr():
+    df = pd.DataFrame([(1, 'Alice', 100),
+                       (2, 'Bob', -200),
+                       (3, 'Charlie', 300),
+                       (4, 'Denis', 400),
+                       (5, 'Edith', -500)],
+                      columns=['id', 'name', 'balance'])
+    data = Data(df, name='data')
+    a = symbol('a', 'int')
+    expr = data.name[data.balance > a]
+    assert repr(expr) == 'data[data.balance > a].name'
