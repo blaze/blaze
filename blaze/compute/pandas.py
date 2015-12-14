@@ -386,7 +386,7 @@ def compute_by(t, s, g, df):
         )
     )
 
-    if len(list(is_field[False])) > 0:
+    if list(is_field[False]):
         emptys = DataFrame([0] * len(df.index),
                            index=df.index,
                            columns=[name for name, _ in is_field[False]])
