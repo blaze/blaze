@@ -8,12 +8,16 @@ from contextlib import contextmanager
 from copy import copy
 
 import datashape
+from datashape.util.testing import assert_dshape_equal
 import numpy as np
+from odo import odo, convert
 from datetime import datetime
 from pandas import DataFrame
+from pandas.util.testing import assert_frame_equal
 from toolz import pipe
 
-from odo import odo
+from blaze.dispatch import dispatch
+from blaze.expr import Expr
 from blaze.utils import example
 from blaze import (discover, symbol, by, CSV, compute, join, into, resource,
                    Data)
@@ -34,10 +38,43 @@ events = DataFrame([[1, datetime(2000, 1, 1, 12, 0, 0)],
 
 db = resource('sqlite:///' + example('iris.db'))
 
-data = {'accounts': accounts,
-          'cities': cities,
-          'events': events,
-              'db': db}
+
+class DumbResource(object):
+    df = DataFrame({
+        'a': np.arange(5),
+        'b': np.arange(5, 10),
+    })
+
+    class NoResource(Exception):
+        pass
+
+
+@convert.register(DataFrame, DumbResource)
+def dumb_to_df(d, return_df=None, **kwargs):
+    if return_df is None:
+        raise DumbResource.NoResource('return_df must be passed')
+    to_return = odo(return_df, DataFrame, dshape=discover(d))
+    assert_frame_equal(to_return, DumbResource.df)
+    return to_return
+
+
+@dispatch(Expr, DumbResource)
+def compute_down(expr, d, **kwargs):
+    return dumb_to_df(d, **kwargs)
+
+
+@discover.register(DumbResource)
+def _discover_dumb(d):
+    return discover(DumbResource.df)
+
+
+data = {
+    'accounts': accounts,
+    'cities': cities,
+    'events': events,
+    'db': db,
+    'dumb': DumbResource(),
+}
 
 
 @pytest.fixture(scope='module')
@@ -621,3 +658,77 @@ def test_bad_add_payload(empty_server, serial):
         data=blob,
     )
     assert response1.status_code == 422
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_odo_kwargs(test, serial):
+    expr = t.dumb
+    bad_query = {'expr': to_tree(expr)}
+
+    result = test.post(
+        '/compute',
+        headers=mimetype(serial),
+        data=serial.dumps(bad_query),
+    )
+    assert result.status_code == 500
+    assert b'return_df must be passed' in result.data
+
+    good_query = {
+        'expr': to_tree(expr),
+        'odo_kwargs': {
+            'return_df': odo(DumbResource.df, list),
+        },
+    }
+    result = test.post(
+        '/compute',
+        headers=mimetype(serial),
+        data=serial.dumps(good_query)
+    )
+    assert result.status_code == 200
+    data = serial.loads(result.data)
+    dshape = discover(DumbResource.df)
+    assert_dshape_equal(
+        datashape.dshape(data['datashape']),
+        dshape,
+    )
+    assert_frame_equal(
+        odo(data['data'], DataFrame, dshape=dshape),
+        DumbResource.df,
+    )
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_compute_kwargs(test, serial):
+    expr = t.dumb.sort()
+    bad_query = {'expr': to_tree(expr)}
+
+    result = test.post(
+        '/compute',
+        headers=mimetype(serial),
+        data=serial.dumps(bad_query),
+    )
+    assert result.status_code == 500
+    assert b'return_df must be passed' in result.data
+
+    good_query = {
+        'expr': to_tree(expr),
+        'compute_kwargs': {
+            'return_df': odo(DumbResource.df, list),
+        },
+    }
+    result = test.post(
+        '/compute',
+        headers=mimetype(serial),
+        data=serial.dumps(good_query)
+    )
+    assert result.status_code == 200
+    data = serial.loads(result.data)
+    dshape = discover(DumbResource.df)
+    assert_dshape_equal(
+        datashape.dshape(data['datashape']),
+        dshape,
+    )
+    assert_frame_equal(
+        odo(data['data'], DataFrame, dshape=dshape),
+        DumbResource.df,
+    )

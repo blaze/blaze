@@ -1,10 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterator
-from functools import reduce
-
 import decimal
 import datetime
+from functools import reduce, partial
 import itertools
 import operator
 import warnings
@@ -229,26 +228,27 @@ def short_dshape(ds, nlines=5):
     return s
 
 
-def coerce_to(typ, x):
+def coerce_to(typ, x, odo_kwargs=None):
     try:
         return typ(x)
     except TypeError:
-        return odo(x, typ)
+        return odo(x, typ, **(odo_kwargs or {}))
 
 
-def coerce_scalar(result, dshape):
+def coerce_scalar(result, dshape, odo_kwargs=None):
+    coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
     if 'float' in dshape:
-        return coerce_to(float, result)
+        return coerce_(float)
     if 'decimal' in dshape:
-        return coerce_to(decimal.Decimal, result)
+        return coerce_(decimal.Decimal)
     elif 'int' in dshape:
-        return coerce_to(int, result)
+        return coerce_(int)
     elif 'bool' in dshape:
-        return coerce_to(bool, result)
+        return coerce_(bool)
     elif 'datetime' in dshape:
-        return coerce_to(Timestamp, result)
+        return coerce_(Timestamp)
     elif 'date' in dshape:
-        return coerce_to(datetime.date, result)
+        return coerce_(datetime.date)
     else:
         return result
 
