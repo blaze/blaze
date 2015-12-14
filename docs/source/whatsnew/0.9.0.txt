@@ -26,6 +26,8 @@ Improved Backends
 * Adds support for :func:`~blaze.expr.collections.tail` in the sql backend
   (:issue:`1289`).
 * Blaze Server now supports dynamically adding datasets (:issue:`1329`).
+* Can now point :func:`~blaze.interactive.Data` to URLs of CSVs
+  (:issue:`1336`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
