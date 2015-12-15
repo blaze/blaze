@@ -115,7 +115,10 @@ def iris_server():
 
 def test_datasets(test):
     response = test.get('/datashape')
-    assert response.data.decode('utf-8') == str(discover(data))
+    assert_dshape_equal(
+            datashape.dshape(response.data.decode('utf-8')),
+            datashape.dshape(discover(data))
+            )
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -598,7 +601,7 @@ def test_add_data_to_empty_server(empty_server, serial):
 def test_add_data_to_server(serial):
     with temp_server(data) as test:
         # add data
-        initial_datashape = test.get('/datashape').data.decode('utf-8')
+        initial_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
         iris_path = example('iris.csv')
         blob = serial.dumps({'iris': iris_path})
         response1 = test.post(
@@ -610,15 +613,13 @@ def test_add_data_to_server(serial):
         assert response1.status_code == 200
 
         # check for expected server datashape
-        new_datashape = test.get('/datashape').data.decode('utf-8')
+        new_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
         data2 = data.copy()
         data2.update({'iris': resource(iris_path)})
-        expected2 = str(discover(data2))
+        expected2 = datashape.dshape(discover(data2))
         from pprint import pprint as pp
-        #import ipdb; ipdb.set_trace()
-        assert new_datashape == expected2
-        a = new_datashape != initial_datashape
-        assert new_datashape != initial_datashape
+        assert_dshape_equal(new_datashape, expected2)
+        assert new_datashape.measure.fields != initial_datashape.measure.fields
 
         # compute on added data
         t = Data({'iris': resource(iris_path)})
