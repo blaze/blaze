@@ -871,3 +871,8 @@ def test_selection_inner_inputs():
         compute(s[s.a == t.a], {s: s_data, t: t_data}),
         s_data
     )
+
+
+def test_by_with_reduction_on_df():
+    expr = by(tbig.name, id_sum=tbig.id.sum(), count=tbig.count())
+    compute(expr, dfbig)
