@@ -5,6 +5,7 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 
 import itertools
+import sqlite3
 from distutils.version import LooseVersion
 
 
@@ -1899,6 +1900,9 @@ def rhs():
             drop(t)
 
 
+
+@pytest.mark.skipif(LooseVersion(sqlite3.version) <= '2.6.0',
+                    reason="Older sqlite3 versions don't support this")
 def test_multiple_table_join(lhs, rhs):
     lexpr = symbol('lhs', discover(lhs))
     rexpr = symbol('rhs', discover(rhs))
