@@ -36,6 +36,8 @@ Improved Backends
 
   This extra information is completely optional and will have different meanings
   based on the backend of the data on the server (:issue:`1342`).
+* Can now point :func:`~blaze.interactive.Data` to URLs of CSVs
+  (:issue:`1336`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
