@@ -62,6 +62,8 @@ API Changes
   default. Also, positional arguments are no longer forwarded to the inner flask
   app's ``run`` method. All keyword arguments not consumed by the blaze server
   ``run`` are still forwarded (:issue:`1316`).
+* :class:`~blaze.server.Server` represents datashapes in a canonical form with
+  consistent linebreaks for use by non-Python clients (:issue:`1361`).
 
 Bug Fixes
 ~~~~~~~~~

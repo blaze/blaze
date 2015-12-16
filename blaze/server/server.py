@@ -22,7 +22,7 @@ except ImportError:
 
 from toolz import assoc, valmap
 
-from datashape import Mono, discover
+from datashape import Mono, discover, pprint
 from datashape.predicates import iscollection, isscalar
 from odo import odo
 
@@ -222,7 +222,7 @@ class Server(object):
 @crossdomain(origin='*', methods=['GET'])
 @authorization
 def shape():
-    return str(discover(_get_data()))
+    return pprint(discover(_get_data()), width=0)
 
 
 def to_tree(expr, names=None):
@@ -431,7 +431,7 @@ def compserver(payload, serial):
         )
 
     return serial.dumps({
-        'datashape': str(expr.dshape),
+        'datashape': pprint(expr.dshape, width=0),
         'data': result,
         'names': expr.fields
     })
