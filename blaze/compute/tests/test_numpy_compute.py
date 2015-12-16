@@ -9,8 +9,6 @@ import pandas as pd
 
 from datetime import datetime, date
 
-import numba
-
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
 from blaze.expr import greatest, least
@@ -623,7 +621,7 @@ binary_name_map = {
 @pytest.mark.parametrize(
     ['func', 'kwargs'],
     (
-        pytest.mark.xfail((x, y), raises=numba.TypingError)
+        pytest.mark.skipif(True, "Raises numba.TypingError")
         if x == 'fmod' else (x, y)
         for x, y in itertools.product(
             [
