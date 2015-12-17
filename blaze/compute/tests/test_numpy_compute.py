@@ -620,18 +620,8 @@ binary_name_map = {
 
 @pytest.mark.parametrize(
     ['func', 'kwargs'],
-    (
-        pytest.mark.skipif(True, "Raises numba.TypingError")
-        if x == 'fmod' else (x, y)
-        for x, y in itertools.product(
-            [
-                'copysign',
-                'ldexp',
-            ],
-            [dict(optimize=False), dict()]
-        )
+    itertools.product(['copysign', 'ldexp'], [dict(optimize=False), dict()])
     )
-)
 def test_binary_math(func, kwargs):
     s_data = np.arange(15).reshape(5, 3)
     t_data = np.arange(15, 30).reshape(5, 3)
