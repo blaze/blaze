@@ -655,7 +655,7 @@ def test_floating_binary_math(func, kwargs):
     scope = {s: s_data, t: t_data}
     result = compute(getattr(blaze, func)(s, t), scope, **kwargs)
     expected = getattr(np, binary_name_map.get(func, func))(s_data, t_data)
-    np.testing.assert_allclose(result, expected, equal_nan=True)
+    np.testing.assert_allclose(result, expected)
 
 
 def test_selection_inner_inputs():
