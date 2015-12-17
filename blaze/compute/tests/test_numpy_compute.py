@@ -9,8 +9,6 @@ import pandas as pd
 
 from datetime import datetime, date
 
-import numba
-
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
 from blaze.expr import greatest, least
@@ -622,18 +620,8 @@ binary_name_map = {
 
 @pytest.mark.parametrize(
     ['func', 'kwargs'],
-    (
-        pytest.mark.xfail((x, y), raises=numba.TypingError)
-        if x == 'fmod' else (x, y)
-        for x, y in itertools.product(
-            [
-                'copysign',
-                'ldexp',
-            ],
-            [dict(optimize=False), dict()]
-        )
+    itertools.product(['copysign', 'ldexp'], [dict(optimize=False), dict()])
     )
-)
 def test_binary_math(func, kwargs):
     s_data = np.arange(15).reshape(5, 3)
     t_data = np.arange(15, 30).reshape(5, 3)
@@ -657,7 +645,7 @@ def test_floating_binary_math(func, kwargs):
     scope = {s: s_data, t: t_data}
     result = compute(getattr(blaze, func)(s, t), scope, **kwargs)
     expected = getattr(np, binary_name_map.get(func, func))(s_data, t_data)
-    np.testing.assert_allclose(result, expected, equal_nan=True)
+    np.testing.assert_allclose(result, expected)
 
 
 def test_selection_inner_inputs():
