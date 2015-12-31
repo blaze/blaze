@@ -189,6 +189,9 @@ class Node(object):
         self.__init__(*state)
 
     def __eq__(self, other):
+        if self is other:
+            return True
+
         ident = self.isidentical(other)
         if ident is True:
             return ident
