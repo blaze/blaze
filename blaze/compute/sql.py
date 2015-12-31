@@ -999,6 +999,13 @@ def compute_up(t, s, **kwargs):
     )
 
 
+@dispatch(Like, Select)
+def compute_up(t, s, **kwargs):
+    assert len(s.c) == 1, \
+            'Select cannot have more than a single column when filtering with `like`'
+    return compute_up(t, first(s.inner_columns), **kwargs)
+
+
 @dispatch(Like, ColumnElement)
 def compute_up(t, s, **kwargs):
     return s.like(t.pattern.replace('*', '%').replace('?', '_'))
