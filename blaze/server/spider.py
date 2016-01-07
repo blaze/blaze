@@ -103,7 +103,8 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
         if 'source' not in info:
             raise ValueError('source key not found for data source named %r' %
                              name)
-        map(importlib.import_module, info.pop('imports', []))
+        for mod in info.pop('imports', []):
+            importlib.import_module(mod)
         source = info['source']
         if os.path.isdir(source) and info.get('recurse', False):
             extra_kwargs = toolz.dissoc(info, 'source', 'recurse')
