@@ -25,14 +25,16 @@ project itself.
   other data storage systems.  One Blaze query can work across data ranging
   from a CSV file to a distributed database.
 
-  Blaze presents a pleasant and familiar interface to us regardless of
-  what computational solution or database we use (e.g. Spark, Impala, SQL databases,
-  No-SQL data-stores, raw-files).  It mediates our interaction with files, data structures,
-  and databases, optimizing and translating our query as appropriate to provide a smooth and interactive
-  session.   It allows the data scientists and analyst to write their queries in a unified way that does
-  not have to change because the data is stored in another format or a different data-store.
-  It also provides a server-component that allows URIs to be used to easily serve views on data and refer to Data
-  remotely in local scripts, queries, and programs.
+  Blaze presents a pleasant and familiar interface to us regardless of what
+  computational solution or database we use (e.g. Spark, Impala, SQL databases,
+  No-SQL data-stores, raw-files).  It mediates our interaction with files, data
+  structures, and databases, optimizing and translating our query as
+  appropriate to provide a smooth and interactive session.   It allows the data
+  scientists and analyst to write their queries in a unified way that does not
+  have to change because the data is stored in another format or a different
+  data-store.  It also provides a server-component that allows URIs to be used
+  to easily serve views on data and refer to Data remotely in local scripts,
+  queries, and programs.
 
 * DataShape_: A data type system
 

@@ -64,9 +64,6 @@ install:
   # Install PyMongo
   - pip install pymongo
 
-  # Install dynd
-  - conda install -c mwiebe dynd-python
-
   # Install coveralls
   - pip install coveralls
 
