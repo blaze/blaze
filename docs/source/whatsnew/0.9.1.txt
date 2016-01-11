@@ -1,0 +1,33 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: December 17th, 2015
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+New Backends
+~~~~~~~~~~~~
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+* Blaze Server no longer depends on `Bokeh` for CORS handling, and now uses the
+  `flask-cors` third-party package (:issue:`1378`).
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+API Changes
+~~~~~~~~~~~
+
+Bug Fixes
+~~~~~~~~~
+
+Miscellaneous
+~~~~~~~~~~~~~
+
