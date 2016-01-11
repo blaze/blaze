@@ -1,23 +1,39 @@
 from datetime import timedelta
 from operator import methodcaller
 import itertools
-import tempfile
 
 import pytest
 
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('psycopg2')
 
+from datashape import dshape
 import numpy as np
+from odo import odo, resource, drop, discover
+from odo.utils import tmpfile
 import pandas as pd
-
 import pandas.util.testing as tm
 
-from datashape import dshape
-from odo import odo, resource, drop, discover
-from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
-from odo.utils import tmpfile
-from blaze import sqrt, transform, Data
+from blaze import (
+    Data,
+    atan2,
+    by,
+    compute,
+    concat,
+    cos,
+    join,
+    radians,
+    sin,
+    sqrt,
+    symbol,
+    transform,
+)
+from blaze.expr import (
+    DateTime,
+    DateTimeTruncate,
+    Millisecond,
+    UTCFromTimestamp,
+)
 from blaze.utils import example, normalize
 
 
@@ -303,6 +319,22 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+
+
+def test_datetime_fields(sql_with_dts):
+    dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
+    s = symbol('s', discover(dates))
+
+    for field in DateTime.__subclasses__():
+        # millisecond is not supported in pandas
+        if field in (UTCFromTimestamp, DateTimeTruncate, Millisecond):
+            continue
+        assert (
+            odo(compute(getattr(s, field.attr), sql_with_dts), pd.Series) ==
+            getattr(dates.dt, field.attr)
+        ).all()
+
+    assert (odo(compute(s.millisecond, sql_with_dts), pd.Series) == 0).all()
 
 
 def test_coerce_bool_and_sum(sql):

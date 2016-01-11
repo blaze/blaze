@@ -6,9 +6,9 @@ import re
 from weakref import WeakKeyDictionary
 
 try:
-    from cytoolz import nth, memoize, unique, concat, first, drop
+    from cytoolz import nth, memoize, unique, concat, first, drop, curry
 except ImportError:
-    from toolz import nth, memoize, unique, concat, first, drop
+    from toolz import nth, memoize, unique, concat, first, drop, curry
 
 from toolz.curried.operator import setitem
 
@@ -279,3 +279,52 @@ def ordered_intersect(*sets):
     """
     common = frozenset.intersection(*map(frozenset, sets))
     return (x for x in unique(concat(sets)) if x in common)
+
+
+@curry
+def apply(f, *args, **kwargs):
+    """Apply a function to arguments.
+
+    Parameters
+    ----------
+    f : callable
+        The function to call
+    *args, **kwargs
+    **kwargs
+        Arguments to feed to the callable.
+
+    Returns
+    -------
+    a : any
+        The result of ``f(**args, **kwargs)``
+
+
+    Examples
+    --------
+    >>> from blaze.utils import apply
+    >>> from toolz.curried.operator import add, sub
+    >>> fs = add(1), sub(1)
+    >>> tuple(map(apply, fs, (1, 2)))
+    (2, -1)
+
+    Class decorator
+    >>> instance = apply
+    >>> @instance
+    ... class obj:
+    ...     def f(self):
+    ...         return 'f'
+    ...
+    >>> obj.f()
+    'f'
+    >>> issubclass(obj, object)
+    Traceback (most recent call last):
+        ...
+    TypeError: issubclass() arg 1 must be a class
+    >>> isinstance(obj, type)
+    False
+    """
+    return f(*args, **kwargs)
+
+
+# Alias for use as a class decorator.
+instance = apply

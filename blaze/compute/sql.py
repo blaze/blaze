@@ -54,11 +54,46 @@ from .core import compute_up, compute, base
 
 
 from ..expr import (
-    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
-    Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
-    Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow,
+    BinOp,
+    BinaryMath,
+    Broadcast,
+    By,
+    Coerce,
+    Concat,
+    Date,
+    DateTime,
+    Distinct,
+    Expr,
+    Field,
+    FloorDiv,
+    Head,
+    IsIn,
+    Join,
+    Label,
+    Like,
+    Merge,
+    Pow,
+    Projection,
+    ReLabel,
+    Reduction,
+    Selection,
+    Shift,
+    Slice,
+    Sort,
+    Summary,
+    Tail,
+    Time,
+    UnaryOp,
+    UnaryStringFunction,
+    common_subexpression,
+    count,
+    mean,
+    nelements,
+    notnull,
+    nunique,
+    std,
+    strlen,
+    var,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -1065,10 +1100,17 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(DateTime, ColumnElement)
 def compute_up(expr, data, **kwargs):
-    if expr.attr == 'date':
-        return sa.func.date(data).label(expr._name)
-
     return sa.extract(expr.attr, data).label(expr._name)
+
+
+@dispatch(Date, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.func.date(data).label(expr._name)
+
+
+@dispatch(Time, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.cast(data, sa.Time)
 
 
 @compiles(sa.sql.elements.Extract, 'hive')

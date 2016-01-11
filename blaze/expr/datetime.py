@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from .expressions import ElemWise, schema_method_list, method_properties
-
 import datashape
 from datashape import dshape, isdatelike, isnumeric
+
+from .expressions import ElemWise, schema_method_list, method_properties
+from blaze.utils import instance
 
 
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
@@ -26,9 +27,10 @@ class DateTime(ElemWise):
     def _name(self):
         return '%s_%s' % (self._child._name, self.attr)
 
-    @property
-    def attr(self):
-        return type(self).__name__.lower()
+    @instance
+    class attr(object):
+        def __get__(self, instance, owner):
+            return owner.__name__.lower()
 
 
 class Date(DateTime):
