@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 pytest.importorskip('flask')
+pytest.importorskip('flask.ext.cors')
 
 from base64 import b64encode
 from contextlib import contextmanager
@@ -417,48 +418,34 @@ def test_serialization_endpoints(test, serial):
     assert respdata['names'] == ['petal_length_sum']
 
 
-@pytest.fixture
-def has_bokeh():
-    try:
-        from bokeh.server.crossdomain import crossdomain
-    except ImportError as e:
-        pytest.skip(str(e))
-
-
-@pytest.mark.parametrize('serial', all_formats)
-def test_cors_compute(test, serial, has_bokeh):
-    expr = t.db.iris.petal_length.sum()
-    res = test.post(
-        '/compute',
-        data=serial.dumps(dict(expr=to_tree(expr))),
-        headers=mimetype(serial)
-    )
-
+def test_cors_compute(test):
+    res = test.options('/compute')
     assert res.status_code == 200
-    assert res.headers['Access-Control-Allow-Origin'] == '*'
-    assert 'HEAD' in res.headers['Access-Control-Allow-Methods']
-    assert 'OPTIONS' in res.headers['Access-Control-Allow-Methods']
-    assert 'POST' in res.headers['Access-Control-Allow-Methods']
-
+    assert 'HEAD' in res.headers['Allow']
+    assert 'OPTIONS' in res.headers['Allow']
+    assert 'POST' in res.headers['Allow']
     # we don't allow gets because we're always sending data
-    assert 'GET' not in res.headers['Access-Control-Allow-Methods']
+    assert 'GET' not in res.headers['Allow']
 
 
-@pytest.mark.parametrize('method',
-                         ['get',
-                          pytest.mark.xfail('head', raises=AssertionError),
-                          pytest.mark.xfail('options', raises=AssertionError),
-                          pytest.mark.xfail('post', raises=AssertionError)])
-def test_cors_datashape(test, method, has_bokeh):
-    res = getattr(test, method)('/datashape')
+def test_cors_datashape(test):
+    res = test.options('/datashape')
     assert res.status_code == 200
-    assert res.headers['Access-Control-Allow-Origin'] == '*'
-    assert 'HEAD' not in res.headers['Access-Control-Allow-Methods']
-    assert 'OPTIONS' not in res.headers['Access-Control-Allow-Methods']
-    assert 'POST' not in res.headers['Access-Control-Allow-Methods']
+    assert 'HEAD' in res.headers['Allow']
+    assert 'OPTIONS' in res.headers['Allow']
+    assert 'GET' in res.headers['Allow']
+    # we don't allow posts because we're just getting (meta)data.
+    assert 'POST' not in res.headers['Allow']
 
-    # we only allow GET requests
-    assert 'GET' in res.headers['Access-Control-Allow-Methods']
+
+def test_cors_add(test):
+    res = test.options('/add')
+    assert res.status_code == 200
+    assert 'HEAD' in res.headers['Allow']
+    assert 'POST' in res.headers['Allow']
+    assert 'OPTIONS' in res.headers['Allow']
+    # we don't allow get because we're sending data.
+    assert 'GET' not in res.headers['Allow']
 
 
 @pytest.fixture(scope='module')
