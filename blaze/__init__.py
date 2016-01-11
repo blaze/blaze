@@ -18,10 +18,10 @@ from datashape import dshape, discover
 from .utils import ignoring
 from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var,
-        transform)
+                   mean, merge, nunique, relabel, selection, sort, summary,
+                   var, transform, resample)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
-        second, time, year)
+                   second, time, year)
 from .expr.arrays import (tensordot, transpose)
 from .expr.functions import *
 from .index import create_index

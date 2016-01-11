@@ -16,6 +16,9 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
+from collections import defaultdict
+
+import pandas.core.datetools as dt
 import fnmatch
 import itertools
 from distutils.version import LooseVersion
@@ -53,13 +56,12 @@ from ..dispatch import dispatch
 from .core import compute, compute_up, base
 
 from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
-                    Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, std, var, Like, Slice, summary,
-                    ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
-                    UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Coerce, Concat,
-                    isnan, notnull, Shift)
-from ..expr import UnaryOp, BinOp, Interp
+                    Reduction, Distinct, Join, By, Summary, Label, ReLabel, Map,
+                    Apply, Merge, std, var, Like, Slice, summary, ElemWise,
+                    DateTime, Millisecond, Expr, IsIn, UTCFromTimestamp,
+                    nelements, DateTimeTruncate, count, UnaryStringFunction,
+                    nunique, Resample, Coerce, Concat, isnan, notnull, UnaryOp,
+                    BinOp, Interp, Shift)
 from ..expr import symbol, common_subexpression
 
 from ..compatibility import _inttypes
@@ -658,6 +660,80 @@ def compute_up(expr, data, **kwargs):
 @dispatch(IsIn, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
+
+
+freq_map = {
+    'year': dt.YearBegin(),
+    'month': dt.MonthEnd(),
+    'week': dt.Week(),
+    'day': dt.Day(),
+    'hour': dt.Hour(),
+    'minute': dt.Minute(),
+    'second': dt.Second(),
+    'millisecond': dt.Milli(),
+    'microsecond': dt.Micro(),
+    'nanosecond': dt.Nano(),
+}
+
+
+def get_measure_unit(expr):
+    try:
+        return expr.measure, expr.unit
+    except AttributeError:
+        return expr._child.measure, expr._child.unit
+
+
+@dispatch(Merge, Reduction, DataFrame)
+def compute_resample(expr, agg, data):
+    """Multiple frequencies, single reduction"""
+    children = expr.children
+    groupers = [pd.Grouper(key=g._child._name, freq=measure * freq_map[unit])
+                for g, (measure, unit) in zip(children,
+                                              map(get_measure_unit, children))]
+    return data.groupby(groupers).agg({agg._child._name: agg.symbol})
+
+
+@dispatch(Merge, Summary, DataFrame)
+def compute_resample(expr, agg, data):
+    """Multiple frequencies, multiple reductions"""
+    children = expr.children
+    groupers = [pd.Grouper(key=g._child._name, freq=measure * freq_map[unit])
+                for g, (measure, unit) in zip(children,
+                                              map(get_measure_unit, children))]
+    how = defaultdict(list)
+    for f in agg.values:
+        how[f._child._name].append(f.symbol)
+    return data.groupby(groupers).agg(how)
+
+
+@dispatch(DateTimeTruncate, Summary, DataFrame)
+def compute_resample(expr, agg, data):
+    """Single frequency, multiple reductions"""
+    how = defaultdict(list)
+    for f in agg.values:
+        how[f._child._name].append(f.symbol)
+
+    measure, unit = get_measure_unit(expr)
+    grouper = pd.Grouper(key=expr._child._name, freq=measure * freq_map[unit])
+    return data.groupby(grouper).agg(dict(how))
+
+
+@dispatch(DateTimeTruncate, Reduction, DataFrame)
+def compute_resample(expr, agg, data):
+    """Single frequency, single reduction"""
+    freq = expr.measure * freq_map[expr.unit]
+    key = expr._child._name
+    name = agg._child._name
+    return data.groupby(pd.Grouper(key=key, freq=freq)).agg({name: agg.symbol})
+
+
+@dispatch(Resample, DataFrame)
+def compute_up(expr, data, **kwargs):
+    grouper, app = expr.grouper, expr.apply
+    result = compute_resample(grouper, app, data).sort_index(axis=1)
+    result.index.names = grouper.fields
+    result.columns = app.fields
+    return result.reset_index()
 
 
 @dispatch(Coerce, (Series, DaskSeries))

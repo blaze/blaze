@@ -1,15 +1,27 @@
 from __future__ import absolute_import, division, print_function
 
+from .expressions import ElemWise
+from .expressions import schema_method_list, method_properties
+
+from toolz.compatibility import map
+
+from .split_apply_combine import By, summary
+
+from datashape import dshape
+from datashape.predicates import isdatelike, isnumeric, isrecord
 from .expressions import ElemWise, schema_method_list, method_properties
 
 import datashape
 from datashape import dshape, isdatelike, isnumeric
 
 
-__all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
-           'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second',
-           'Millisecond', 'millisecond', 'Microsecond', 'microsecond', 'Date',
-           'date', 'Time', 'time', 'UTCFromTimestamp', 'DateTimeTruncate']
+__all__ = [
+    'DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
+    'day', 'Hour', 'hour', 'Minute', 'minute', 'Second', 'second',
+    'Millisecond', 'millisecond', 'Microsecond', 'microsecond', 'Date',
+    'date', 'Time', 'time', 'UTCFromTimestamp', 'DateTimeTruncate',
+    'Resample', 'resample'
+]
 
 
 class DateTime(ElemWise):
@@ -231,3 +243,19 @@ schema_method_list.extend([
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,
                           microsecond, date, time, utcfromtimestamp])
+
+
+class Resample(By):
+    __slots__ = '_hash', 'grouper', 'apply'
+
+
+def resample(child, **kwargs):
+    if (not isdatelike(child.dshape) and
+        isrecord(child.dshape) and not all(map(isdatelike,
+                                               child.dshape.measure.types))):
+        raise TypeError('Input expression must have a date or datetime dshape '
+                        'or be a Record dshape with all date or datetime '
+                        'columns')
+    if not all(f.dshape for f in kwargs.values()):
+        raise TypeError('Arguments must all have a scalar dshape')
+    return Resample(child, summary(**kwargs))

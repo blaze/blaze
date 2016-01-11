@@ -17,7 +17,7 @@ from blaze.compute.pandas import pdsort
 from blaze import dshape, discover, transform
 from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
-                        var, std, concat)
+                        var, std, concat, resample)
 from blaze.compatibility import builtins, xfail, assert_series_equal
 
 
@@ -770,6 +770,114 @@ def test_nunique_table():
     expr = t.nunique()
     result = compute(expr, df)
     assert result == len(df.drop_duplicates())
+
+
+@pytest.fixture
+def tsdf():
+    df = tm.makeTimeDataFrame().reset_index().rename(columns=dict(index='on'))
+    df['when'] = df.on.copy()
+    return df
+
+
+@pytest.fixture
+def ts(tsdf):
+    return symbol('ts', discover(tsdf))
+
+
+def test_resample(ts, tsdf):
+    expr = resample(ts.on.truncate(days=2), two_day_avg=ts.A.mean())
+    result = compute(expr, tsdf)
+    expected = tsdf.set_index('on').A.resample('2D', how='mean').reset_index()
+    tm.assert_frame_equal(result,
+                          expected.rename(columns=dict(A='two_day_avg')))
+
+
+def test_resample_single_frequency_two_aggs_different_columns(ts, tsdf):
+    expr = resample(ts.on.truncate(days=2),
+                    avg_a=ts.A.mean(), sum_b=ts.B.sum())
+    result = compute(expr, tsdf)
+    how = {'A': 'mean', 'B': 'sum'}
+    expected = tsdf.set_index('on').resample('2D', how=how)
+    expected.columns = ['avg_a', 'sum_b']
+    tm.assert_frame_equal(result, expected.reset_index())
+
+
+def test_resample_single_frequency_two_aggs_same_column(ts, tsdf):
+    expr = resample(ts.on.truncate(days=2),
+                    avg_a=ts.A.mean(), sum_a=ts.A.sum())
+    result = compute(expr, tsdf)
+    expected = (tsdf.set_index('on')
+                    .A
+                    .resample('2D', how=['mean', 'sum'])
+                    .reset_index())
+    tm.assert_frame_equal(result,
+                          expected.rename(columns={'sum': 'sum_a',
+                                                   'mean': 'avg_a'}))
+
+
+def test_resample_two_frequencies_two_aggs(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2),
+                          ts.on.truncate(month=1).label('monthly')),
+                    two_day_avg=ts.A.mean(),
+                    monthly_avg=ts.B.mean())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper(key='on', freq='2D'),
+                pd.Grouper(key='on', freq='M')]
+    expected = tsdf.groupby(groupers).agg({'A': 'mean', 'B': 'mean'})
+    expected.index.names = ['on', 'monthly']
+    expected.columns = ['monthly_avg', 'two_day_avg']
+    expected = expected.sort_index(axis=1).reset_index()
+    tm.assert_frame_equal(result, expected)
+
+
+def test_resample_two_frequencies_one_agg(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2).label('two_day_on'),
+                          ts.on.truncate(days=3)),
+                    two_day_avg=ts.A.mean())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper(key='on', freq='2D'),
+                pd.Grouper(key='on', freq='3D')]
+    expected = tsdf.groupby(groupers).agg({'A': 'mean'})
+    expected.index.names = ['two_day_on', 'on']
+    expected.columns = ['two_day_avg']
+    expected = expected.reset_index()
+    tm.assert_frame_equal(result, expected)
+
+
+@pytest.mark.xfail(raises=ValueError, reason='Repeated columns')
+def test_resample_two_frequencies_no_repeat_columns_two_aggs(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2), ts.on.truncate(month=1)),
+                    two_day_avg=ts.A.mean(),
+                    three_day_avg=ts.B.mean())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper(key='on', freq='2D'),
+                pd.Grouper(key='on', freq='M')]
+    expected = tsdf.groupby(groupers).agg({'A': 'mean',
+                                           'B': 'mean'}).reset_index()
+    tm.assert_frame_equal(result, expected)
+
+
+@pytest.mark.xfail(raises=ValueError, reason='Repeated columns')
+def test_resample_two_frequencies_no_repeat_columns_one_agg(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2), ts.on.truncate(days=3)),
+                    two_day_avg=ts.A.mean())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper()]
+    expected = tsdf.groupby(groupers).agg({'A': 'mean'})
+    tm.assert_frame_equal(result, expected)
+
+
+def test_resample_two_frequencies_on_different_columns_two_aggs(ts, tsdf):
+    expr = resample(merge(ts.on.truncate(days=2), ts.when.truncate(days=3)),
+                    two_day_avg=ts.A.mean(),
+                    three_day_max=ts.B.max())
+    result = compute(expr, tsdf)
+    groupers = [pd.Grouper(key='on', freq='2D'),
+                pd.Grouper(key='when', freq='3D')]
+    expected = tsdf.groupby(groupers).agg({'A': 'mean', 'B': 'max'})
+    expected.columns = ['three_day_max', 'two_day_avg']
+    expected = expected.sort_index(axis=1).reset_index()
+    tm.assert_frame_equal(result, expected)
 
 
 def test_str_concat():

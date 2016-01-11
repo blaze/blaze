@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import decimal
 import datashape
 from datashape import Record, DataShape, dshape, TimeDelta, Decimal, Option
 from datashape import coretypes as ct
@@ -12,6 +13,7 @@ from .core import common_subexpression
 from .expressions import Expr, ndim
 from .strings import isstring
 from .expressions import dshape_method_list, method_properties
+from ..dispatch import dispatch
 
 
 class Reduction(Expr):
@@ -99,18 +101,28 @@ class Reduction(Expr):
         else:
             return '%s(%s)' % (name, self._child)
 
+    @property
+    def initial_value(self):
+        return None
+
 
 class any(Reduction):
     schema = dshape(ct.bool_)
+    initial_value = False
 
 
 class all(Reduction):
     schema = dshape(ct.bool_)
+    initial_value = True
 
 
 class sum(Reduction):
     def _schema(self):
         return DataShape(datashape.maxtype(super(sum, self)._schema()))
+
+    @property
+    def initial_value(self):
+        return initial_value(self.schema.measure)
 
 
 class max(Reduction):
@@ -129,6 +141,20 @@ class FloatingReduction(Reduction):
         return DataShape(return_type(
             base if isinstance(base, Decimal) else ct.float64
         ))
+
+    @property
+    def initial_value(self):
+        return initial_value(self.schema.measure)
+
+
+@dispatch(ct.CType)
+def initial_value(dshape):
+    return 0.0
+
+
+@dispatch(Decimal)
+def initial_value(dshape):
+    return decimal.Decimal(0.0)
 
 
 class mean(FloatingReduction):
@@ -187,10 +213,12 @@ class count(Reduction):
 
     """ The number of non-null elements """
     schema = dshape(ct.int32)
+    initial_value = 0
 
 
 class nunique(Reduction):
     schema = dshape(ct.int32)
+    initial_value = 0
 
 
 class nelements(Reduction):
@@ -209,6 +237,7 @@ class nelements(Reduction):
     nelements(t[t.amount < 1])
     """
     schema = dshape(ct.int32)
+    initial_value = 0
 
 
 def nrows(expr):
@@ -265,6 +294,12 @@ class Summary(Expr):
             s += ', keepdims=True'
         s += ')'
         return s
+
+    @property
+    def initial_value(self):
+        return dict(
+            (name, v.initial_value) for name, v in zip(self.names, self.values)
+        )
 
 
 @copydoc(Summary)

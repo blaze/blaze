@@ -26,6 +26,7 @@ def _names_and_types(expr):
 
 
 class By(Expr):
+
     """ Split-Apply-Combine Operator
 
     Examples
@@ -103,4 +104,4 @@ def count_values(expr, sort=True):
 
 dshape_method_list.extend([
     (lambda ds: len(ds.shape) == 1, set([count_values])),
-    ])
+])
