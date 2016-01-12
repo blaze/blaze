@@ -177,10 +177,12 @@ class Sub(Arithmetic):
 
     @property
     def _dtype(self):
-        if (discover(self.lhs).measure == datetime_ and
-            discover(self.rhs).measure == datetime_):
+        lmeasure = discover(self.lhs).measure
+        rmeasure = discover(self.rhs).measure
+        if (getattr(lmeasure, 'ty', lmeasure) == datetime_ and
+            getattr(rmeasure, 'ty', rmeasure) == datetime_):
 
-            return timedelta_
+            return optionify(lmeasure, rmeasure, timedelta_)
 
         return super(Sub, self)._dtype
 
