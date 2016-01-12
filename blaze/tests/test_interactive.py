@@ -380,6 +380,13 @@ def test_coerce_date_and_datetime():
     assert repr(d) == repr(pd.NaT)
 
 
+def test_coerce_timedelta():
+    x = datetime.timedelta(days=1, hours=2, minutes=3)
+    d = Data(x)
+
+    assert repr(d) == repr(x)
+
+
 def test_highly_nested_repr():
     data = [[0, [[1, 2], [3]], 'abc']]
     d = Data(data)
