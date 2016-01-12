@@ -4,10 +4,24 @@ import operator
 from toolz import first
 import numpy as np
 import pandas as pd
-from datashape import dshape, var, DataShape, Option, datetime_, timedelta_
-from dateutil.parser import parse as dt_parse
+from datashape import (
+    DataShape,
+    DateTime,
+    Option,
+    TimeDelta,
+    coretypes as ct,
+    datetime_,
+    discover,
+    dshape,
+    optionify,
+    promote,
+    timedelta_,
+    unsigned,
+    var,
+)
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
-from datashape import coretypes as ct, discover, unsigned, promote, optionify
+from dateutil.parser import parse as dt_parse
+
 
 from .core import parenthesize, eval_str
 from .expressions import Expr, shape, ElemWise
@@ -159,6 +173,30 @@ class Add(Arithmetic):
     symbol = '+'
     op = operator.add
 
+    @property
+    def _dtype(self):
+        lmeasure = discover(self.lhs).measure
+        lty = getattr(lmeasure, 'ty', lmeasure)
+        rmeasure = discover(self.rhs).measure
+        rty = getattr(rmeasure, 'ty', rmeasure)
+        if lmeasure == datetime_ and rmeasure == datetime_:
+            raise TypeError('cannot add datetime to datetime')
+
+        l_is_datetime = lty == datetime_
+        if l_is_datetime or rty == datetime_:
+            if l_is_datetime:
+                other = rty
+            else:
+                other = lty
+            if isinstance(other, TimeDelta):
+                return optionify(lmeasure, rmeasure, datetime_)
+            else:
+                raise TypeError(
+                    'can only add timedeltas to datetimes',
+                )
+
+        return super(Add, self)._dtype
+
 
 class Mult(Arithmetic):
     symbol = '*'
@@ -178,11 +216,18 @@ class Sub(Arithmetic):
     @property
     def _dtype(self):
         lmeasure = discover(self.lhs).measure
+        lty = getattr(lmeasure, 'ty', lmeasure)
         rmeasure = discover(self.rhs).measure
-        if (getattr(lmeasure, 'ty', lmeasure) == datetime_ and
-            getattr(rmeasure, 'ty', rmeasure) == datetime_):
-
-            return optionify(lmeasure, rmeasure, timedelta_)
+        rty = getattr(rmeasure, 'ty', rmeasure)
+        if lty == datetime_:
+            if isinstance(rty, DateTime):
+                return optionify(lmeasure, rmeasure, timedelta_)
+            if isinstance(rty, TimeDelta):
+                return optionify(lmeasure, rmeasure, datetime_)
+            else:
+                raise TypeError(
+                    'can only subtract timedelta or datetime from datetime',
+                )
 
         return super(Sub, self)._dtype
 

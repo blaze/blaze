@@ -16,6 +16,7 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import itertools
 from itertools import chain
 
@@ -607,11 +608,23 @@ prefixes = {
 
 @dispatch((std, var), sql.elements.ColumnElement)
 def compute_up(t, s, **kwargs):
+    measure = t.schema.measure
+    is_timedelta = isinstance(getattr(measure, 'ty', measure), TimeDelta)
+    if is_timedelta:
+        # part 1 of 2 to work around the fact that postgres does not have
+        # timedelta var or std: cast to a double which is seconds
+        s = sa.extract('epoch', s)
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     funcname = 'samp' if t.unbiased else 'pop'
     full_funcname = '%s_%s' % (prefixes[type(t)], funcname)
-    return getattr(sa.func, full_funcname)(s).label(t._name)
+    ret = getattr(sa.func, full_funcname)(s)
+    if is_timedelta:
+        # part 2 of 2 to work around the fact that postgres does not have
+        # timedelta var or std: cast back from seconds by
+        # multiplying by a 1 second timedelta
+        ret = ret * datetime.timedelta(seconds=1)
+    return ret.label(t._name)
 
 
 @dispatch(count, Selectable)

@@ -14,9 +14,13 @@ Improved Expressions
   general ``Select`` queries that result from
   :class:`~blaze.expr.collections.Join` operations rather than soely
   ``ColumnElement`` queries (:issue:`1371` :issue:`1373`).
+* Adds ``std`` and ``var`` reductions for ``timedelta`` types for sql and pandas
+  backends (:issue:`1382`).
 
 New Backends
 ~~~~~~~~~~~~
+
+None
 
 Improved Backends
 ~~~~~~~~~~~~~~~~~
@@ -27,8 +31,12 @@ Improved Backends
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
+None
+
 API Changes
 ~~~~~~~~~~~
+
+None
 
 Bug Fixes
 ~~~~~~~~~
@@ -48,6 +56,14 @@ Bug Fixes
   like ``s[s.a == s.a[s.a == 1]].a`` would turn into ``s[s.a == s.a].a`` because
   we would pull the inner column out of the ``s[s.a == 1]`` and lose the filter
   (:issue:`1396`).
+* Fixed a type issue where ``datetime - datetime :: datetime`` instead of
+  ``timedelta`` (:issue:`1382`).
+* Fixed a bug that prevented :func:`~blaze.expr.expressions.coerce` to fail when
+  computing against ``ColumnElement``\s. This would break ``coerce`` for many
+  sql operations (:issue:`1382`).
+* Fixed reductions over ``timedelta`` returning ``float`` (:issue:`1382`).
+* Fixed interactive repr for ``timedelta`` not coercing to ``timedelta``
+  objects (:issue:`1382`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
