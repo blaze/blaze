@@ -10,6 +10,11 @@ New Expressions
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
+* The :class:`~blaze.expr.string.Like` expression was improved to support more
+  general ``Select`` queries that result from
+  :class:`~blaze.expr.collections.Join` operations rather than soely
+  ``ColumnElement`` queries (:issue:`1371` :issue:`1373`).
+
 New Backends
 ~~~~~~~~~~~~
 
