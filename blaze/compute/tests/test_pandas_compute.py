@@ -799,6 +799,10 @@ def test_timedelta_arith():
     delta = timedelta(days=1)
     assert (compute(sym + delta, series) == series + delta).all()
     assert (compute(sym - delta, series) == series - delta).all()
+    assert (
+        compute(sym - (sym - delta), series) ==
+        series - (series - delta)
+    ).all()
 
 
 def test_coerce_series():

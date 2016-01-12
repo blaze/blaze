@@ -4,7 +4,7 @@ import operator
 from toolz import first
 import numpy as np
 import pandas as pd
-from datashape import dshape, var, DataShape, Option
+from datashape import dshape, var, DataShape, Option, datetime_, timedelta_
 from dateutil.parser import parse as dt_parse
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from datashape import coretypes as ct, discover, unsigned, promote, optionify
@@ -174,6 +174,15 @@ class Repeat(Arithmetic):
 class Sub(Arithmetic):
     symbol = '-'
     op = operator.sub
+
+    @property
+    def _dtype(self):
+        if (discover(self.lhs).measure == datetime_ and
+            discover(self.rhs).measure == datetime_):
+
+            return timedelta_
+
+        return super(Sub, self)._dtype
 
 
 class Div(Arithmetic):

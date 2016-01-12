@@ -526,6 +526,10 @@ def test_timedelta_arith():
     sym = symbol('s', discover(dates))
     assert (compute(sym + delta, dates) == dates + delta).all()
     assert (compute(sym - delta, dates) == dates - delta).all()
+    assert (
+        compute(sym - (sym - delta), dates) ==
+        dates - (dates - delta)
+    ).all()
 
 
 def test_coerce():

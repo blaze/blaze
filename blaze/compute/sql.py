@@ -46,6 +46,7 @@ from multipledispatch import MDNotImplementedError
 
 from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
+from datashape import TimeDelta
 from datashape.predicates import iscollection, isscalar, isrecord
 
 from ..dispatch import dispatch
@@ -58,7 +59,7 @@ from ..expr import (
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
     Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow, DateTimeTruncate,
+    notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -207,7 +208,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     return select(lhs).union_all(select(rhs)).alias()
 
 
-@dispatch(Broadcast, sa.Column)
+@dispatch(Broadcast, ColumnElement)
 def compute_up(t, s, **kwargs):
     expr = t._scalar_expr
     return compute(expr, s, post_compute=False).label(expr._name)
@@ -1108,9 +1109,28 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-@dispatch(Expr)
+@dispatch(object)
 def _subexpr_optimize(expr):
     return expr
+
+
+@dispatch(Expr)
+def _subexpr_optimize(expr):
+    return type(expr)(*map(_subexpr_optimize, expr._args))
+
+
+timedelta_ns = TimeDelta(unit='ns')
+
+
+@dispatch(Sub)
+def _subexpr_optimize(expr):
+    new_expr = type(expr)(*map(_subexpr_optimize, expr._args))
+    schema = expr.schema
+    # we have a timedelta shaped expression; sql timedeltas are in `ns` units
+    # so we should coerce this exprssion over
+    if isinstance(schema, TimeDelta) and schema.unit != 'ns':
+        new_expr = new_expr.coerce(timedelta_ns)
+    return new_expr
 
 
 @dispatch(Tail)

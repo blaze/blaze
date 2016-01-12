@@ -301,6 +301,10 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+    assert (
+        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series) ==
+        dates - (dates - delta)
+    ).all()
 
 
 def test_coerce_bool_and_sum(sql):
