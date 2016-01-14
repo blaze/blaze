@@ -10,7 +10,7 @@ import pandas as pd
 
 from datashape import dshape
 
-from blaze import spider, discover
+from blaze import data_spider, discover
 
 
 @pytest.fixture
@@ -39,8 +39,8 @@ def data_with_cycle(data):
     return data
 
 
-def test_spider(data):
-    result = spider(str(data))
+def test_data_spider(data):
+    result = data_spider(str(data))
     ss = """{
     %r: {
         'foo.csv': var * {a: int64, b: int64},
@@ -53,8 +53,8 @@ def test_spider(data):
 
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='Windows does not have symlinks')
-def test_spider_cycle(data_with_cycle):
-    result = spider(str(data_with_cycle), followlinks=True)
+def test_data_spider_cycle(data_with_cycle):
+    result = data_spider(str(data_with_cycle), followlinks=True)
     ss = """{
     %r: {
         'foo.csv': var * {a: int64, b: int64},

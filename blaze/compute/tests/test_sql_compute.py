@@ -728,6 +728,32 @@ def test_like():
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
 
+def test_like_join():
+    # Test .like() on a non-trivial SELECT query.
+    metadata = sa.MetaData()
+    t0 = sa.Table('t0', metadata,
+                   sa.Column('a', sa.String),
+                   sa.Column('y', sa.Integer))
+
+    t1 = sa.Table('t1', metadata,
+                  sa.Column('b', sa.String),
+                  sa.Column('z', sa.Integer))
+
+    # expected = t0.join(t1, t0.c.a == t1.c.b)
+    # expected = sa.select(list(unique(expected.columns, key=lambda c:
+                                  # c.name))).select_from(expected)
+    # expected = expected.where(expected.c.a.like('%a'))
+
+    t0sym = symbol('t0sym', 'var * {a: string, y: int}')
+    t1sym = symbol('t1sym', 'var * {b: string, z: int}')
+    joined = join(t0sym, t1sym, on_left='a', on_right='b')
+    liked = joined[joined.a.like('*a')]
+    result = compute(liked, {t0sym: t0, t1sym: t1})
+    assert normalize(str(result)) == normalize("""
+    SELECT t0.a, t0.y, t1.z
+    FROM t0 JOIN t1 ON t0.a = t1.b
+    WHERE t0.a LIKE :a_1""")
+
 
 def test_not_like():
     expr = t[~t.name.like('Alice*')]

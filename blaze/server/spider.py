@@ -21,7 +21,7 @@ except ImportError:
     import builtins
 
 
-__all__ = 'spider', 'from_yaml'
+__all__ = 'data_spider', 'from_yaml'
 
 
 def _spider(resource_path, ignore, followlinks, hidden, extra_kwargs):
@@ -45,8 +45,11 @@ def _spider(resource_path, ignore, followlinks, hidden, extra_kwargs):
     return resources
 
 
-def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
-           hidden=False, extra_kwargs=None):
+def data_spider(path,
+                ignore=(ValueError, NotImplementedError),
+                followlinks=True,
+                hidden=False,
+                extra_kwargs=None):
     """Traverse a directory and call ``odo.resource`` on its contents.
 
     Parameters
@@ -67,11 +70,14 @@ def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     dict
         Possibly nested dictionary of containing basenames mapping to resources
     """
-    return {os.path.basename(path): _spider(path,
-                                            ignore=ignore,
-                                            followlinks=followlinks,
-                                            hidden=hidden,
-                                            extra_kwargs=extra_kwargs)}
+    # NOTE: this is named `data_spider` rather than just `spider` to
+    # disambiguate this function from the `blaze.server.spider` module.
+    return {
+        os.path.basename(path): _spider(path, ignore=ignore,
+                                        followlinks=followlinks,
+                                        hidden=hidden,
+                                        extra_kwargs=extra_kwargs)
+    }
 
 
 def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
@@ -96,7 +102,7 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
 
     See Also
     --------
-    spider : Traverse a directory tree for resources
+    data_spider : Traverse a directory tree for resources
     """
     resources = {}
     for name, info in yaml.load(path.read()).items():
@@ -108,11 +114,11 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
         source = info['source']
         if os.path.isdir(source) and info.get('recurse', False):
             extra_kwargs = toolz.dissoc(info, 'source', 'recurse')
-            resources[name] = spider(os.path.expanduser(source),
-                                     ignore=ignore,
-                                     followlinks=followlinks,
-                                     hidden=hidden,
-                                     extra_kwargs=extra_kwargs)
+            resources[name] = data_spider(os.path.expanduser(source),
+                                          ignore=ignore,
+                                          followlinks=followlinks,
+                                          hidden=hidden,
+                                          extra_kwargs=extra_kwargs)
         else:
             extra_kwargs = toolz.dissoc(info, 'source')
             resources[name] = resource(source, **extra_kwargs)
