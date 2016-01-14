@@ -75,9 +75,9 @@ The structure of the specification file is as follows:
      name1:
        source: path or uri
        dshape: optional datashape
-     directory2:
+     name2:
        source: path or uri
-       recurse: True
+       dshape: optional datashape
      ...
      nameN:
        source: path or uri
@@ -85,7 +85,8 @@ The structure of the specification file is as follows:
 
 .. note::
 
-   When ``source`` is a directory, and there is a `recurse: True` flag to mark it as such,  Blaze will recurse into the directory tree and call ``odo.resource`` on the leaves of the tree.
+  When ``source`` is a directory, Blaze will recurse into the directory tree
+  and call ``odo.resource`` on the leaves of the tree.
 
 Here's an example specification file:
 
@@ -117,9 +118,18 @@ The only required key for each named data source is the ``source`` key, which
 is passed to ``odo.resource``. You can optionally specify a ``dshape``
 parameter, which is passed into ``odo.resource`` along with the ``source`` key.
 
+Advanced YAML usage
+-------------------
+
 If ``odo.resource`` requires extra keyword arguments for a particular resource
 type and they are provided in the YAML file, these will be forwarded on to the
-``resource`` call:
+``resource`` call.  
+
+If there is an ``imports`` entry for a resource whose value is a list of module
+or package names, Blaze server will ``import`` each of these modules or
+packages before calling ``resource``.
+
+For example:
 
   .. code-block:: yaml
 
@@ -128,6 +138,16 @@ type and they are provided in the YAML file, these will be forwarded on to the
          dshape: optional datashape
          kwarg1: extra kwarg
          kwarg2: etc.
+     name2:
+         source: path or uri
+         imports: ['mod1', 'pkg2']
+
+For this YAML file, Blaze server will pass on ``kwarg1=...`` and ``kwarg2=...``
+to the ``resource()`` call for ``name1`` in addition to the ``dshape=...``
+keyword argument.
+
+Also, before calling ``resource`` on the ``source`` of ``name2``, Blaze server
+will first execute an ``import mod1`` and ``import pkg2`` statement.
 
 Command Line Interface
 ----------------------

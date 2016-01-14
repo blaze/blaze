@@ -106,22 +106,21 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     """
     resources = {}
     for name, info in yaml.load(path.read()).items():
-        if 'source' not in info:
+        try:
+            source = info.pop('source')
+        except KeyError:
             raise ValueError('source key not found for data source named %r' %
                              name)
         for mod in info.pop('imports', []):
             importlib.import_module(mod)
-        source = info['source']
-        if os.path.isdir(source) and info.get('recurse', False):
-            extra_kwargs = toolz.dissoc(info, 'source', 'recurse')
+        if os.path.isdir(source):
             resources[name] = data_spider(os.path.expanduser(source),
                                           ignore=ignore,
                                           followlinks=followlinks,
                                           hidden=hidden,
-                                          extra_kwargs=extra_kwargs)
+                                          extra_kwargs=info)
         else:
-            extra_kwargs = toolz.dissoc(info, 'source')
-            resources[name] = resource(source, **extra_kwargs)
+            resources[name] = resource(source, **info)
     return resources
 
 
