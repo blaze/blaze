@@ -33,6 +33,10 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
+* Fixed a ``blaze-server`` entry point bug regarding an ambiguity between the
+  :func:`~blaze.server.spider.spider` function and the
+  :module:`~blaze.server.spider` module (:issue:`1385`).
+
 Miscellaneous
 ~~~~~~~~~~~~~
 

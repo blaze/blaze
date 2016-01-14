@@ -19,7 +19,7 @@ except ImportError:
     import builtins
 
 
-__all__ = 'spider', 'from_yaml'
+__all__ = 'data_spider', 'from_yaml'
 
 
 def _spider(resource_path, ignore, followlinks, hidden):
@@ -41,9 +41,11 @@ def _spider(resource_path, ignore, followlinks, hidden):
     return resources
 
 
-def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
-           hidden=False):
-    """Traverse a directory and call ``odo.resource`` on its contentso
+def data_spider(path,
+                ignore=(ValueError, NotImplementedError),
+                followlinks=True,
+                hidden=False):
+    """Traverse a directory and call ``odo.resource`` on its contents.
 
     Parameters
     ----------
@@ -61,6 +63,8 @@ def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     dict
         Possibly nested dictionary of containing basenames mapping to resources
     """
+    # NOTE: this is named `data_spider` rather than just `spider` to
+    # disambiguate this function from the `blaze.server.spider` module.
     return {
         os.path.basename(path): _spider(path, ignore=ignore,
                                         followlinks=followlinks,
@@ -90,7 +94,7 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
 
     See Also
     --------
-    spider : Traverse a directory tree for resources
+    data_spider : Traverse a directory tree for resources
     """
     resources = {}
     for name, info in yaml.load(path.read()).items():
@@ -99,10 +103,10 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
                              name)
         source = info['source']
         if os.path.isdir(source):
-            resources[name] = spider(os.path.expanduser(source),
-                                     ignore=ignore,
-                                     followlinks=followlinks,
-                                     hidden=hidden)
+            resources[name] = data_spider(os.path.expanduser(source),
+                                          ignore=ignore,
+                                          followlinks=followlinks,
+                                          hidden=hidden)
         else:
             resources[name] = resource(source, dshape=info.get('dshape'))
     return resources
