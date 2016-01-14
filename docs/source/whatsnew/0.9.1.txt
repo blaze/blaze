@@ -38,6 +38,10 @@ Bug Fixes
   :module:`~blaze.server.spider` module (:issue:`1385`).
 * Fixed :func:`blaze.expr.datetime.truncate` handling for the sql backend
   (:issue:`1393`).
+* Fix :func:`blaze.expr.core.isidentical` to check the ``_hashargs`` instead of
+  the ``_args``. This fixes a case that caused objects that hashed the same to
+  not compare equal when somewhere in the tree of ``_args`` was a non hashable
+  structure (:issue:`1387`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

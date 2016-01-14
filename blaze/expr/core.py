@@ -19,7 +19,6 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
 base = (numbers.Number,) + _strtypes
-arrtypes = np.ndarray, pd.core.generic.NDFrame
 
 
 def isidentical(a, b):
@@ -49,12 +48,10 @@ def isidentical(a, b):
     """
     if isinstance(a, base) and isinstance(b, base):
         return a == b
-    if isinstance(a, arrtypes) and isinstance(b, arrtypes):
-        return np.array_equal(a, b)
     if type(a) != type(b):
         return False
     if isinstance(a, Node):
-        return all(map(isidentical, a._args, b._args))
+        return all(map(isidentical, a._hashargs, b._hashargs))
     if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
         return len(a) == len(b) and all(map(isidentical, a, b))
     return a == b
