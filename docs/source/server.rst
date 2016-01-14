@@ -75,9 +75,9 @@ The structure of the specification file is as follows:
      name1:
        source: path or uri
        dshape: optional datashape
-     name2:
+     directory2:
        source: path or uri
-       dshape: optional datashape
+       recurse: True
      ...
      nameN:
        source: path or uri
@@ -85,7 +85,7 @@ The structure of the specification file is as follows:
 
 .. note::
 
-   When ``source`` is a directory, Blaze will recurse into the directory tree and call ``odo.resource`` on the leaves of the tree.
+   When ``source`` is a directory, and there is a `recurse: True` flag to mark it as such,  Blaze will recurse into the directory tree and call ``odo.resource`` on the leaves of the tree.
 
 Here's an example specification file:
 
@@ -116,6 +116,18 @@ The previous YAML specification will serve the following dictionary:
 The only required key for each named data source is the ``source`` key, which
 is passed to ``odo.resource``. You can optionally specify a ``dshape``
 parameter, which is passed into ``odo.resource`` along with the ``source`` key.
+
+If ``odo.resource`` requires extra keyword arguments for a particular resource
+type and they are provided in the YAML file, these will be forwarded on to the
+``resource`` call:
+
+  .. code-block:: yaml
+
+     name1:
+         source: path or uri
+         dshape: optional datashape
+         kwarg1: extra kwarg
+         kwarg2: etc.
 
 Command Line Interface
 ----------------------
@@ -169,9 +181,9 @@ The highest level of abstraction and the level that most will probably want to
 work at is interactively sending computations to a Blaze server process from a
 client.
 
-We can use Blaze server to have one Blaze process control another.
-Given our iris web server we can use Blaze on the client to drive the server to
-do work for us
+We can use Blaze server to have one Blaze process control another.  Given our
+iris web server we can use Blaze on the client to drive the server to do work
+for us
 
 .. code-block:: python
 
