@@ -36,3 +36,4 @@ Bug Fixes
 Miscellaneous
 ~~~~~~~~~~~~~
 
+* Removed support for Spark 1.3 (:issue:`1386`) based on community consensus.
