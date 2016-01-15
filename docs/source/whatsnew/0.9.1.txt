@@ -21,8 +21,8 @@ New Backends
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
-* Blaze Server no longer depends on `Bokeh` for CORS handling, and now uses the
-  `flask-cors` third-party package (:issue:`1378`).
+* Blaze Server no longer depends on ``Bokeh`` for CORS handling, and now uses
+  the ``flask-cors`` third-party package (:issue:`1378`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
@@ -36,6 +36,8 @@ Bug Fixes
 * Fixed a ``blaze-server`` entry point bug regarding an ambiguity between the
   :func:`~blaze.server.spider.spider` function and the
   :module:`~blaze.server.spider` module (:issue:`1385`).
+* Fixed :func:`~blaze.expr.datetime.time` handling for the sql backend
+  (:issue:`1381`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
