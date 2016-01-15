@@ -228,20 +228,10 @@ def concrete_head(expr, n=10):
         return odo(head, object)
     elif isrecord(expr.dshape.measure):
         return odo(head, DataFrame)
-    else:
-        df = odo(head, DataFrame)
-        df.columns = [expr._name]
-        return df
-    result = compute(head)
 
-    if len(result) == 0:
-        return DataFrame(columns=expr.fields)
-    if isrecord(expr.dshape.measure):
-        return odo(result, DataFrame, dshape=expr.dshape)
-    else:
-        df = odo(result, DataFrame, dshape=expr.dshape)
-        df.columns = [expr._name]
-        return df
+    df = odo(head, DataFrame)
+    df.columns = [expr._name]
+    return df
 
 
 def _peek_tables(expr, n=10):

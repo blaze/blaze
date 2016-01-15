@@ -210,7 +210,9 @@ def test_method_before_name():
 def test_pickle_roundtrip():
     t = symbol('t', 'var * int64')
     expr = (t + 1).mean()  # some expression with more than one node.
-    assert expr.isidentical(pickle.loads(pickle.dumps(expr)))
+    assert expr is pickle.loads(
+        pickle.dumps(expr, protocol=pickle.HIGHEST_PROTOCOL),
+    )
 
 
 def test_coalesce():
@@ -336,4 +338,3 @@ def test_cast():
     assert_dshape_equal(
         s.cast(dshape('var * int64')).dshape,
         dshape('var * int64'),
-    )

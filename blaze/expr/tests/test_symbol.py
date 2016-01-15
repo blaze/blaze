@@ -692,13 +692,13 @@ def test_improper_selection():
 def test_serializable():
     t = symbol('t', 'var * {id: int, name: string, amount: int}')
     import pickle
-    t2 = pickle.loads(pickle.dumps(t))
+    t2 = pickle.loads(pickle.dumps(t, protocol=pickle.HIGHEST_PROTOCOL))
 
     assert t is t2
 
     s = symbol('t', 'var * {id: int, city: string}')
     expr = join(t[t.amount < 0], s).sort('id').city.head()
-    expr2 = pickle.loads(pickle.dumps(expr))
+    expr2 = pickle.loads(pickle.dumps(expr, protocol=pickle.HIGHEST_PROTOCOL))
 
     assert expr is expr2
 

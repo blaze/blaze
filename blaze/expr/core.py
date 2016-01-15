@@ -193,8 +193,13 @@ class Node(object):
     def __contains__(self, other):
         return other in set(self._subterms())
 
-    def __getnewargs__(self):
-        return tuple(self._args)
+    def __reduce_ex__(self, protocol):
+        if protocol < 2:
+            raise ValueError(
+                'blaze expressions may only be pickled with protocol'
+                ' 2 or greater',
+            )
+        return type(self), self._args
 
     def __eq__(self, other):
         try:

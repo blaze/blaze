@@ -1,4 +1,5 @@
 import datetime
+import pickle
 import sys
 from types import MethodType
 
@@ -184,8 +185,7 @@ def test_into():
 
 
 def test_serialization():
-    import pickle
-    t2 = pickle.loads(pickle.dumps(t))
+    t2 = pickle.loads(pickle.dumps(t, protocol=pickle.HIGHEST_PROTOCOL))
 
     assert t.schema == t2.schema
     assert t._name == t2._name
@@ -481,10 +481,14 @@ def test_csv_with_trailing_commas():
 
 def test_pickle_roundtrip():
     ds = data(1)
-    assert ds.isidentical(pickle.loads(pickle.dumps(ds)))
-    assert (ds + 1).isidentical(pickle.loads(pickle.dumps(ds + 1)))
+    assert ds.isidentical(
+        pickle.loads(pickle.dumps(ds, protocol=pickle.HIGHEST_PROTOCOL)),
+    )
+    assert (ds + 1).isidentical(
+        pickle.loads(pickle.dumps(ds + 1, protocol=pickle.HIGHEST_PROTOCOL)),
+    )
     es = data(np.array([1, 2, 3]))
-    rs = pickle.loads(pickle.dumps(es))
+    rs = pickle.loads(pickle.dumps(es, protocol=pickle.HIGHEST_PROTOCOL))
     assert (es.data == rs.data).all()
     assert_dshape_equal(es.dshape, rs.dshape)
 
