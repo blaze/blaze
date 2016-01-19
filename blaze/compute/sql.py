@@ -58,7 +58,7 @@ from ..expr import (
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
     Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow,
+    notnull, Shift, BinaryMath, Pow, DateTimeTruncate,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -1069,6 +1069,11 @@ def compute_up(expr, data, **kwargs):
         return sa.func.date(data).label(expr._name)
 
     return sa.extract(expr.attr, data).label(expr._name)
+
+
+@dispatch(DateTimeTruncate, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.func.date_trunc(expr.unit, data).label(expr._name)
 
 
 @compiles(sa.sql.elements.Extract, 'hive')

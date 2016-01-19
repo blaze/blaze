@@ -18,12 +18,12 @@ from pandas import DataFrame
 from toolz import unique
 
 from odo import odo, drop
+from blaze.compatibility import xfail
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     symbol, transform, summary, by, sin, join,
-    floor, cos, merge, nunique, mean, sum, count, exp
+    floor, cos, merge, nunique, mean, sum, count, exp, datetime as bz_datetime
 )
-from blaze.compatibility import xfail
 from blaze.utils import tmpfile, example, normalize
 
 
@@ -1980,3 +1980,25 @@ def test_selection_inner_inputs():
     select {a}.name, {a}.amount, {a}.id from {a}, {b} where {a}.id = {b}.id
     """).format(a=s.name, b=sdate.name)
     assert result == expected
+
+
+@pytest.mark.parametrize('unit', bz_datetime.units)
+def test_datetime_trunc(unit):
+    ds = 'var * {a: datetime}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+
+    assert normalize(compute(s.a.truncate(**{unit: 1}), db)) == normalize(
+        'select date_trunc(%r, s.a) as a from s' % unit,
+    )
+
+
+@pytest.mark.parametrize('alias,unit', bz_datetime.unit_aliases.items())
+def test_datetime_trunc_aliases(alias, unit):
+    ds = 'var * {a: datetime}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+
+    assert normalize(compute(s.a.truncate(**{alias: 1}), db)) == normalize(
+        'select date_trunc(%r, s.a) as a from s' % unit,
+    )
