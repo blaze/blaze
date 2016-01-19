@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-import os
 import datetime
+from collections import Iterator
+from itertools import islice
+import os
 import re
 from weakref import WeakKeyDictionary
 
@@ -10,21 +12,16 @@ try:
 except ImportError:
     from toolz import nth, memoize, unique, concat, first, drop
 
-from toolz.curried.operator import setitem
-
-from itertools import islice
-from collections import Iterator
-
+import numpy as np
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
-
 import pandas as pd
 import psutil
-import numpy as np
+import sqlalchemy as sa
+from toolz.curried.operator import setitem
 
 # Imports that replace older utils.
 from .compatibility import map, zip
-
 from .dispatch import dispatch
 
 
@@ -233,9 +230,41 @@ def _read_timedelta(ds):
 
 
 def normalize(s):
+    """Normalize a sql expression for comparison in tests.
+
+    Parameters
+    ----------
+    s : str or Selectable
+        The expression to normalize. If this is a selectable, it will be
+        compiled with literals inlined.
+
+    Returns
+    -------
+    cs : Any
+        An object that can be compared against another normalized sql
+        expression.
+    """
+    if isinstance(s, sa.sql.Selectable):
+        s = literal_compile(s)
     s = ' '.join(s.strip().split()).lower()
     s = re.sub(r'(alias)_?\d*', r'\1', s)
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
+
+
+def literal_compile(s):
+    """Compile a sql expression with bind params inlined as literals.
+
+    Parameters
+    ----------
+    s : Selectable
+        The expression to compile.
+
+    Returns
+    -------
+    cs : str
+        An equivalent sql string.
+    """
+    return str(s.compile(compile_kwargs={'literal_binds': True}))
 
 
 def weakmemoize(f):
