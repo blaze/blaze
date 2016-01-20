@@ -119,7 +119,7 @@ def utcfromtimestamp(expr):
     return UTCFromTimestamp(expr)
 
 
-units = [
+units = (
     'year',
     'month',
     'week',
@@ -129,11 +129,11 @@ units = [
     'second',
     'millisecond',
     'microsecond',
-    'nanosecond'
-]
+    'nanosecond',
+)
 
 
-_unit_aliases = {
+unit_aliases = {
     'y': 'year',
     'w': 'week',
     'd': 'day',
@@ -160,8 +160,8 @@ def normalize_time_unit(s):
     s = s.lower().strip()
     if s in units:
         return s
-    if s in _unit_aliases:
-        return _unit_aliases[s]
+    if s in unit_aliases:
+        return unit_aliases[s]
     if s[-1] == 's':
         return normalize_time_unit(s.rstrip('s'))
 

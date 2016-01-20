@@ -36,8 +36,14 @@ Bug Fixes
 * Fixed a ``blaze-server`` entry point bug regarding an ambiguity between the
   :func:`~blaze.server.spider.spider` function and the
   :module:`~blaze.server.spider` module (:issue:`1385`).
+* Fixed :func:`blaze.expr.datetime.truncate` handling for the sql backend
+  (:issue:`1393`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
 * Removed support for Spark 1.3 (:issue:`1386`) based on community consensus.
+* Added :func:`blaze.utils.literal_compile` for converting sqlalchemy
+  expressions into sql strings with bind parameters inlined as sql
+  literals. :func:`blaze.utils.normalize` now accepts a sqlalchemy selectable
+  and uses ``literal_compile`` to convert into a string first (:issue:`1386`).
