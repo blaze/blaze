@@ -2,19 +2,23 @@ import pytest
 
 pytest.importorskip('sqlalchemy')
 
+from functools import partial
+
 from toolz import first
 from sqlalchemy.exc import OperationalError
 from odo import into, drop
 
 from blaze import create_index, resource
-from blaze.sql import create_index
 from blaze import Data
 
 
 @pytest.fixture
 def sql():
     data = [(1, 2), (10, 20), (100, 200)]
-    sql = resource('sqlite:///:memory:', 'foo', dshape='var * {x: int, y: int}')
+    sql = resource(
+        'sqlite:///:memory:', 'foo',
+        dshape='var * {x: int, y: int}',
+    )
     into(sql, data)
     return sql
 
@@ -35,37 +39,60 @@ def test_drop(sql):
     assert not sql.exists(sql.bind)
 
 
-class TestCreateIndex(object):
+@pytest.mark.parametrize('cols', (
+    'x', ['x'], ['y'], ['x', 'y'], ('x',), ('y',), ('x', 'y'),
+))
+def test_create_index(sql, cols):
+    create_index(sql, cols, name='idx')
+    with pytest.raises(OperationalError):
+        create_index(sql, cols, name='idx')
 
-    def test_create_index(self, sql):
-        create_index(sql, 'x', name='idx')
-        with pytest.raises(OperationalError):
-            create_index(sql, 'x', name='idx')
 
-    def test_create_index_fails(self, sql):
-        with pytest.raises(KeyError):
-            create_index(sql, 'z', name='zidx')
-        with pytest.raises(ValueError):
-            create_index(sql, 'x')
-        with pytest.raises(ValueError):
-            create_index(sql, 'z')
+def test_create_index_fails(sql):
+    with pytest.raises(KeyError):
+        create_index(sql, 'z', name='zidx')
+    with pytest.raises(ValueError):
+        create_index(sql, 'x')
+    with pytest.raises(ValueError):
+        create_index(sql, 'z')
 
-    def test_create_index_unique(self, sql):
-        create_index(sql, 'y', name='y_idx', unique=True)
-        assert len(sql.indexes) == 1
-        idx = first(sql.indexes)
-        assert idx.unique
-        assert idx.columns.y == sql.c.y
 
-    def test_composite_index(self, sql):
+def test_create_index_unique(sql):
+    create_index(sql, 'y', name='y_idx', unique=True)
+    assert len(sql.indexes) == 1
+    idx = first(sql.indexes)
+    assert idx.unique
+    assert idx.columns.y == sql.c.y
+
+
+def test_composite_index(sql):
+    create_index(sql, ['x', 'y'], name='idx_xy')
+    with pytest.raises(OperationalError):
         create_index(sql, ['x', 'y'], name='idx_xy')
-        with pytest.raises(OperationalError):
-            create_index(sql, ['x', 'y'], name='idx_xy')
 
-    def test_composite_index_fails(self, sql):
-        with pytest.raises(KeyError):
-            create_index(sql, ['z', 'bizz'], name='idx_name')
 
-    def test_composite_index_fails_with_existing_columns(self, sql):
-        with pytest.raises(KeyError):
-            create_index(sql, ['x', 'z', 'bizz'], name='idx_name')
+def test_composite_index_fails(sql):
+    with pytest.raises(KeyError):
+        create_index(sql, ['z', 'bizz'], name='idx_name')
+
+
+def test_composite_index_fails_with_existing_columns(sql):
+    with pytest.raises(KeyError):
+        create_index(sql, ['x', 'z', 'bizz'], name='idx_name')
+
+
+@pytest.mark.parametrize('cols', ('x', ['x', 'y']))
+def test_ignore_existing(sql, cols):
+    create_call = partial(
+        create_index,
+        sql,
+        cols,
+        name='idx_name',
+    )
+
+    create_call()
+    with pytest.raises(OperationalError):
+        create_call(ignore_existing=False)
+
+    # Shouldn't error
+    create_call(ignore_existing=True)
