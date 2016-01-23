@@ -981,7 +981,6 @@ def compute_up(expr, data, **kwargs):
 
     # we need these getattrs if data is a ColumnClause or Table
     from_obj = get_all_froms(data)
-    assert len(from_obj) == 1, 'only a single FROM clause supported'
     return reconstruct_select(columns, data, from_obj=from_obj)
 
 

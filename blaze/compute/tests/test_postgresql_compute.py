@@ -45,20 +45,18 @@ def sql(url):
 
 @pytest.yield_fixture(scope='module')
 def nyc():
-    with open(example('nyc.csv'), 'rb') as f:
-        raw = f.read()
-        with tmpfile('.csv') as name:
-            with open(name, 'wb') as g:
-                g.write(raw)
-            try:
-                t = odo(name, 'postgresql://postgres@localhost/test::nyc')
-            except sa.exc.OperationalError as e:
-                pytest.skip(str(e))
-            else:
-                try:
-                    yield t
-                finally:
-                    drop(t)
+    try:
+        t = odo(
+            example('nyc.csv'),
+            'postgresql://postgres@localhost/test::nyc',
+        )
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
 
 
 @pytest.yield_fixture
@@ -493,7 +491,7 @@ def test_dist(nyc):
     transformed = transform(filtered, dist=dist)
     assert (
         odo(compute(transformed.dist.max(), nyc), float) ==
-        odo(compute(transformed.dist, nyc), pd.Series).max().item()
+        odo(compute(transformed.dist, nyc), pd.Series).max()
     )
 
 
