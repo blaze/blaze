@@ -50,7 +50,7 @@ def test_bottom_up_until_type_break():
 
     e = (s.amount + 1).distinct()
     expr, scope = bottom_up_until_type_break(e, {s: data})
-    amount = symbol('amount', 'var * int64', token=1)
+    amount = symbol('amount', 'var * int64', token=expr._token)
     assert expr.isidentical(amount)
     assert len(scope) == 1
     assert amount in scope
@@ -61,7 +61,7 @@ def test_bottom_up_until_type_break():
 
     e = s.amount.sum() + 1
     expr, scope = bottom_up_until_type_break(e, {s: data})
-    amount_sum = symbol('amount_sum', 'int64')
+    amount_sum = symbol('amount_sum', 'int64', token=expr.lhs._token)
     assert expr.isidentical(amount_sum + 1)
     assert len(scope) == 1
     assert amount_sum in scope
