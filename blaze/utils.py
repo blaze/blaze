@@ -8,10 +8,11 @@ import re
 from weakref import WeakKeyDictionary
 
 try:
-    from cytoolz import nth, memoize, unique, concat, first, drop
+    from cytoolz import nth, unique, concat, first, drop
 except ImportError:
-    from toolz import nth, memoize, unique, concat, first, drop
+    from toolz import nth, unique, concat, first, drop
 
+from toolz import memoize
 import numpy as np
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
