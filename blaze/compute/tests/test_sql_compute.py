@@ -2002,3 +2002,26 @@ def test_datetime_trunc_aliases(alias, unit):
     assert normalize(compute(s.a.truncate(**{alias: 1}), db)) == normalize(
         'select date_trunc(%r, s.a) as a from s' % unit,
     )
+
+
+def test_inner_select_with_filter():
+    ds = 'var * {a: float32}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+
+    assert normalize(compute(s[s.a == s.a[s.a == 1]].a, db)) == normalize(
+        """\
+        select
+            s.a
+        from s, (
+            select
+                s.a as a
+            from
+                s
+            where
+                s.a = 1
+        ) as anon_1
+        where
+            s.a = anon_1.a
+        """,
+    )

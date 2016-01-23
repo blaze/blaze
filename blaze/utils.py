@@ -246,8 +246,9 @@ def normalize(s):
     """
     if isinstance(s, sa.sql.Selectable):
         s = literal_compile(s)
-    s = ' '.join(s.strip().split()).lower()
-    s = re.sub(r'(alias)_?\d*', r'\1', s)
+    s = re.sub(r'(\(|\))', r' \1 ', s)       # normalize spaces around parens
+    s = ' '.join(s.strip().split()).lower()  # normalize whitespace and case
+    s = re.sub(r'(alias)_?\d*', r'\1', s)    # normalize aliases
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
