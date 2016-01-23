@@ -46,6 +46,8 @@ def isidentical(a, b):
     >>> isidentical((x, x + 1), (x, x + 2))
     False
     """
+    if a is b:
+        return True
     if isinstance(a, base) and isinstance(b, base):
         return a == b
     if type(a) != type(b):
