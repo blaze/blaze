@@ -40,7 +40,7 @@ def create_index(t, column, name=None, **kwargs):
     create_index(getattr(t.cols, column), **kwargs)
 
 
-@dispatch(tb.Table, list)
+@dispatch(tb.Table, (list, tuple))
 def create_index(t, columns, name=None, **kwargs):
     if not all(map(partial(hasattr, t.cols), columns)):
         raise ValueError('table %s does not have all passed in columns %s' %
