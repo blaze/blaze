@@ -146,21 +146,27 @@ def test_to_from_json():
 def test_to_tree():
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
-    expected = {'op': 'sum',
-                'args': [{'op': 'Field',
-                          'args':
-                            [
-                              {'op': 'Symbol',
-                               'args': [
-                                    't',
-                                    'var * {name: string, amount: int32}',
-                                    None
-                                    ]
-                               },
-                              'amount'
-                            ]
-                        }, [0], False]
-                }
+    expected = {
+        'op': 'sum',
+        'args': [
+            {
+                'op': 'Field',
+                'args': [
+                    {
+                        'op': 'Symbol',
+                        'args': [
+                            't',
+                            'var * {name: string, amount: int32}',
+                            0,
+                        ]
+                    },
+                    'amount'
+                ]
+            },
+            [0],
+            False,
+        ],
+    }
     assert to_tree(expr) == expected
 
 

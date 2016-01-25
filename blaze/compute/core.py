@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-import numbers
+from collections import defaultdict, Iterator
 from datetime import date, datetime
+import itertools
+import numbers
+
 import toolz
 from toolz import first, unique, assoc
-import itertools
-from collections import Iterator
 import pandas as pd
 from odo import odo
 
@@ -199,8 +200,8 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
 
 _names = ('leaf_%d' % i for i in itertools.count(1))
 
-_leaf_cache = dict()
-_used_tokens = set()
+_leaf_cache = {}
+_used_tokens = defaultdict(set)
 
 
 def _reset_leaves():
@@ -234,18 +235,18 @@ def makeleaf(expr):
     True
     """
     name = expr._name or '_'
-    token = None
     if expr in _leaf_cache:
         return _leaf_cache[expr]
     if isinstance(expr, Symbol):  # Idempotent on symbols
-        _used_tokens.add((name, expr._token))
+        _used_tokens[name].add(expr._token)
+        _leaf_cache[expr] = expr
         return expr
-    if (name, token) in _used_tokens:
-        for token in itertools.count():
-            if (name, token) not in _used_tokens:
-                break
+    used_for_name = _used_tokens[name]
+    for token in itertools.count():
+        if token not in used_for_name:
+            break
     result = symbol(name, expr.dshape, token)
-    _used_tokens.add((name, token))
+    used_for_name.add(token)
     _leaf_cache[expr] = result
     return result
 
@@ -310,8 +311,9 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
 
     # 2. Form new (much shallower) expression and new (more computed) scope
     new_scope = toolz.merge(new_scopes)
-    new_expr = expr._subs(dict((i, e) for i, e in zip(inputs, exprs)
-                               if not i.isidentical(e)))
+    new_expr = expr._subs({
+        i: e for i, e in zip(inputs, exprs) if not i.isidentical(e)
+    })
 
     old_expr_leaves = expr._leaves()
     old_data_leaves = [scope.get(leaf) for leaf in old_expr_leaves]

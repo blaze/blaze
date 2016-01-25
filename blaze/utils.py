@@ -8,10 +8,11 @@ import re
 from weakref import WeakKeyDictionary
 
 try:
-    from cytoolz import nth, memoize, unique, concat, first, drop
+    from cytoolz import nth, unique, concat, first, drop
 except ImportError:
-    from toolz import nth, memoize, unique, concat, first, drop
+    from toolz import nth, unique, concat, first, drop
 
+from toolz import memoize
 import numpy as np
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
@@ -246,8 +247,9 @@ def normalize(s):
     """
     if isinstance(s, sa.sql.Selectable):
         s = literal_compile(s)
-    s = ' '.join(s.strip().split()).lower()
-    s = re.sub(r'(alias)_?\d*', r'\1', s)
+    s = re.sub(r'(\(|\))', r' \1 ', s)       # normalize spaces around parens
+    s = ' '.join(s.strip().split()).lower()  # normalize whitespace and case
+    s = re.sub(r'(alias)_?\d*', r'\1', s)    # normalize aliases
     return re.sub(r'__([A-Za-z_][A-Za-z_0-9]*)', r'\1', s)
 
 
