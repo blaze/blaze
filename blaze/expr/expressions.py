@@ -12,16 +12,12 @@ import toolz
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed
-from datashape.predicates import isscalar, iscollection, isboolean, isrecord
-
-from ..compatibility import _strtypes, builtins, boundmethod
 from ..compatibility import _strtypes, builtins, boundmethod, PY2
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices
-from ..utils import weakmemoize
+from ..utils import attribute
 
 
 __all__ = [
@@ -142,8 +138,7 @@ class Expr(Node):
     def _project(self, key):
         return projection(self, key)
 
-    @property
-    @weakmemoize
+    @attribute
     def schema(self):
         try:
             m = self._schema
@@ -152,12 +147,13 @@ class Expr(Node):
         else:
             return m()
 
-        return datashape.dshape(self.dshape.measure)
+        self.schema = schema = datashape.dshape(self.dshape.measure)
+        return schema
 
-    @property
-    @weakmemoize
+    @attribute
     def dshape(self):
-        return self._dshape()
+        self.dshape = dshape = self._dshape()
+        return dshape
 
     @property
     def fields(self):
