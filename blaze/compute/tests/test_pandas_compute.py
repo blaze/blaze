@@ -799,6 +799,20 @@ def test_timedelta_arith():
     delta = timedelta(days=1)
     assert (compute(sym + delta, series) == series + delta).all()
     assert (compute(sym - delta, series) == series - delta).all()
+    assert (
+        compute(sym - (sym - delta), series) ==
+        series - (series - delta)
+    ).all()
+
+
+@pytest.mark.parametrize('func,expected', (
+    ('var', timedelta(0, 8, 250000)),
+    ('std', timedelta(0, 2, 872281)),
+))
+def test_timedelta_stat_reduction(func, expected):
+    deltas = pd.Series([timedelta(seconds=n) for n in range(10)])
+    sym = symbol('s', discover(deltas))
+    assert compute(getattr(sym, func)(), deltas) == expected
 
 
 def test_coerce_series():

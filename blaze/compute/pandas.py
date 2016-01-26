@@ -16,6 +16,7 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
+from datetime import timedelta
 import fnmatch
 import itertools
 from distutils.version import LooseVersion
@@ -218,9 +219,22 @@ def compute_up(t, s, **kwargs):
 
 @dispatch((std, var), (Series, SeriesGroupBy))
 def compute_up(t, s, **kwargs):
+    measure = t.schema.measure
+    is_timedelta = isinstance(
+        getattr(measure, 'ty', measure),
+        datashape.TimeDelta,
+    )
+    if is_timedelta:
+        # part 1 of 2 to work around the fact that pandas does not have
+        # timedelta var or std: cast to a double
+        s = s.astype('timedelta64[s]').astype('int64')
     result = get_scalar(getattr(s, t.symbol)(ddof=t.unbiased))
     if t.keepdims:
         result = Series([result], name=s.name)
+    if is_timedelta:
+        # part 2 of 2 to work around the fact that postgres does not have
+        # timedelta var or std: cast back from seconds by creating a timedelta
+        result = timedelta(seconds=result)
     return result
 
 

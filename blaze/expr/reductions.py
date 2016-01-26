@@ -127,7 +127,11 @@ class FloatingReduction(Reduction):
         base = getattr(measure, 'ty', measure)
         return_type = Option if isinstance(measure, Option) else toolz.identity
         return DataShape(return_type(
-            base if isinstance(base, Decimal) else ct.float64
+            base
+            if isinstance(base, Decimal) else
+            base
+            if isinstance(base, TimeDelta) else
+            ct.float64,
         ))
 
 
@@ -313,7 +317,7 @@ dshape_method_list.extend([
     (iscollection, set([count, nelements])),
     (lambda ds: (iscollection(ds) and
                  (isstring(ds) or isnumeric(ds) or isboolean(ds) or
-                  isdatelike(ds) or isinstance(ds, TimeDelta))),
+                  isdatelike(ds))),
      set([min, max])),
     (lambda ds: len(ds.shape) == 1,
      set([nrows, nunique])),

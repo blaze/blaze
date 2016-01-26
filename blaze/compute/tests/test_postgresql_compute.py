@@ -102,6 +102,20 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
+def sql_with_timedeltas(url):
+    try:
+        t = resource(url % next(names), dshape='var * {N: timedelta}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(timedelta(seconds=n),) for n in range(10)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
 def sql_two_tables(url):
     dshape = 'var * {a: int32}'
     try:
@@ -301,6 +315,22 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+    assert (
+        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series) ==
+        dates - (dates - delta)
+    ).all()
+
+
+@pytest.mark.parametrize('func', ('var', 'std'))
+def test_timedelta_stat_reduction(sql_with_timedeltas, func):
+    sym = symbol('s', discover(sql_with_timedeltas))
+    expr = getattr(sym.N, func)()
+
+    deltas = pd.Series([timedelta(seconds=n) for n in range(10)])
+    expected = timedelta(
+        seconds=getattr(deltas.astype('int64') / 1e9, func)(ddof=expr.unbiased)
+    )
+    assert odo(compute(expr, sql_with_timedeltas), timedelta) == expected
 
 
 def test_coerce_bool_and_sum(sql):
