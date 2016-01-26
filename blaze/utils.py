@@ -5,14 +5,12 @@ from collections import Iterator
 from itertools import islice
 import os
 import re
-from weakref import WeakKeyDictionary
 
 try:
     from cytoolz import nth, unique, concat, first, drop
 except ImportError:
     from toolz import nth, unique, concat, first, drop
 
-from toolz import memoize
 import numpy as np
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
@@ -269,23 +267,6 @@ def literal_compile(s):
     return str(s.compile(compile_kwargs={'literal_binds': True}))
 
 
-def weakmemoize(f):
-    """Memoize ``f`` with a ``WeakKeyDictionary`` to allow the arguments
-    to be garbage collected.
-
-    Parameters
-    ----------
-    f : callable
-        The function to memoize.
-
-    Returns
-    -------
-    g : callable
-        ``f`` with weak memoiza
-    """
-    return memoize(f, cache=WeakKeyDictionary())
-
-
 def ordered_intersect(*sets):
     """Set intersection of two sequences that preserves order.
 
@@ -310,3 +291,22 @@ def ordered_intersect(*sets):
     """
     common = frozenset.intersection(*map(frozenset, sets))
     return (x for x in unique(concat(sets)) if x in common)
+
+
+class attribute(object):
+    """An attribute that can be overridden by instances.
+    This is like a non data descriptor property.
+
+    Parameters
+    ----------
+    f : callable
+        The function to execute.
+    """
+    def __init__(self, f):
+        self._f = f
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        return self._f(instance)
