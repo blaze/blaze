@@ -81,29 +81,6 @@ def inner_columns(s):
         return s.columns
 
 
-_inner_clauses = frozenset({
-    '_group_by_clause',
-    '_limit_clause',
-    '_offset_clause',
-    '_order_by_clause',
-    '_whereclause',  # consistency
-})
-
-
-def extract_single_column(s):
-    if len(s.c) != 1:
-        raise ValueError('more than one column to extract: %r' % s.c)
-
-    for clause in _inner_clauses:
-        if getattr(s, clause) is not None:
-            # This indicates that we can not substitute this column with the
-            # inner_column because we are applying some extra filtering over
-            # the parent selectable.
-            return first(s.alias().c)
-
-    return first(s.inner_columns)
-
-
 @dispatch(Projection, Select)
 def compute_up(expr, data, **kwargs):
     d = dict((c.name, c) for c in getattr(data, 'inner_columns', data.c))
@@ -240,9 +217,17 @@ def compute_up(t, data, **kwargs):
 @compute_up.register(BinOp, (Select, ColumnElement), base)
 def binop_sql(t, lhs, rhs, **kwargs):
     if isinstance(lhs, Select):
-        lhs = extract_single_column(lhs)
+        assert len(lhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %r' % lhs
+        )
+        lhs = first(lhs.inner_columns)
     if isinstance(rhs, Select):
-        rhs = extract_single_column(rhs)
+        assert len(rhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %r' % rhs
+        )
+        rhs = first(rhs.inner_columns)
 
     return t.op(lhs, rhs)
 
@@ -257,7 +242,11 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(Pow, Select)
 def compute_up(t, data, **kwargs):
-    column = extract_single_column(data)
+    assert len(data.c) == 1, (
+        'Select cannot have more than a single column when doing'
+        ' arithmetic, got %r' % data
+    )
+    column = first(data.inner_columns)
     if isinstance(t.lhs, Expr):
         return sa.func.pow(column, t.rhs)
     else:
@@ -281,7 +270,11 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(BinaryMath, Select)
 def compute_up(t, data, **kwargs):
-    column = extract_single_column(data)
+    assert len(data.c) == 1, (
+        'Select cannot have more than a single column when doing'
+        ' arithmetic, got %r' % data
+    )
+    column = first(data.inner_columns)
     op = getattr(sa.func, type(t).__name__)
     if isinstance(t.lhs, Expr):
         return op(column, t.rhs)
