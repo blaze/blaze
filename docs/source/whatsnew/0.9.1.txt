@@ -58,6 +58,8 @@ Bug Fixes
 * Fixed reductions over ``timedelta`` returning ``float`` (:issue:`1382`).
 * Fixed interactive repr for ``timedelta`` not coercing to ``timedelta``
   objects (:issue:`1382`).
+* Fixed weakkeydict cache failures that were causing ``.dshape`` lookups to fail
+  sometimes (:issue:`1399`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
