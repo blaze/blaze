@@ -2004,6 +2004,10 @@ def test_datetime_trunc_aliases(alias, unit):
     )
 
 
+@pytest.mark.xfail(
+    raises=AssertionError,
+    reason="We don't currently handle the inner select",
+)
 def test_inner_select_with_filter():
     ds = 'var * {a: float32}'
     db = resource('sqlite:///:memory:::s', dshape=ds)

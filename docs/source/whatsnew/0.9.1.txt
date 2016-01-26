@@ -50,15 +50,9 @@ Bug Fixes
   the ``_args``. This fixes a case that caused objects that hashed the same to
   not compare equal when somewhere in the tree of ``_args`` was a non hashable
   structure (:issue:`1387`).
-* Fix :class:`~blaze.expr.BinOp`, :class:`~blaze.expr.Pow`, and
-  :class:`~blaze.expr.BinaryMath` handling for selects with a single column and
-  some extra information like a filter or limit. This fixes a bug where things
-  like ``s[s.a == s.a[s.a == 1]].a`` would turn into ``s[s.a == s.a].a`` because
-  we would pull the inner column out of the ``s[s.a == 1]`` and lose the filter
-  (:issue:`1396`).
 * Fixed a type issue where ``datetime - datetime :: datetime`` instead of
   ``timedelta`` (:issue:`1382`).
-* Fixed a bug that prevented :func:`~blaze.expr.expressions.coerce` to fail when
+* Fixed a bug that caused :func:`~blaze.expr.expressions.coerce` to fail when
   computing against ``ColumnElement``\s. This would break ``coerce`` for many
   sql operations (:issue:`1382`).
 * Fixed reductions over ``timedelta`` returning ``float`` (:issue:`1382`).
