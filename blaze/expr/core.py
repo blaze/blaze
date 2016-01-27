@@ -24,11 +24,68 @@ base = (numbers.Number,) + _strtypes + (datetime.datetime, datetime.timedelta)
 
 
 def _resolve_args(cls, *args, **kwargs):
+    """Resolve the arguments from a node class into an ordereddict.
+    All arguments are assumed to have a default of None.
+
+    This is sort of like getargspec but uses the `Node` specific machinery.
+
+    Parameters
+    ----------
+    cls : subclass of Node
+        The class to resolve the arguments for.
+    *args, **kwargs
+        The arguments that were passed.
+
+    Returns
+    -------
+    args : OrderedDict
+        A dictionary mapping argument names to their value in the order
+        they appear in the `_arguments` tuple.
+
+    Examples
+    --------
+    >>> class MyNode(Node):
+    ...     _arguments = 'a', 'b', 'c'
+    ...
+
+    good cases
+    >>> _resolve_args(MyNode, 1, 2, 3)
+    OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    >>> _resolve_args(MyNode, 1, 2, c=3)
+    OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    >>> _resolve_args(MyNode, a=1, b=2, c=3)
+    OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+
+    error cases
+    >>> _resolve_args(MyNode, 1, 2, 3, a=4)
+    Traceback (most recent call last):
+       ...
+    TypeError: MyNode got multiple values for argument 'a'
+    >>> _resolve_args(MyNode, 1, 2, 3, 4)
+    Traceback (most recent call last):
+       ...
+    TypeError: MyNode takes 3 positional arguments but 4 were given
+    >>> _resolve_args(MyNode, 1, 2, 3, d=4)
+    Traceback (most recent call last):
+       ...
+    TypeError: MyNode got unknown keywords: d
+    """
     attrs = cls._arguments
     attrset = set(attrs)
     if not set(kwargs) <= attrset:
         raise TypeError(
-            'unknown keywords: %s' % ', '.join(set(kwargs) - attrset)
+            '%s got unknown keywords: %s' % (
+                cls.__name__,
+                ', '.join(set(kwargs) - attrset),
+            ),
+        )
+
+    if len(args) > len(attrs):
+        raise TypeError(
+            '%s takes 3 positional arguments but %d were given' % (
+                cls.__name__,
+                len(args),
+            ),
         )
 
     attributes = OrderedDict(zip(attrs, repeat(None)))
