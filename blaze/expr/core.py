@@ -8,7 +8,6 @@ from itertools import repeat
 import numbers
 
 from pprint import pformat
-import warnings
 from weakref import WeakValueDictionary
 
 import toolz
@@ -135,15 +134,8 @@ class Node(object):
                                       isinstance(i, Node))))
 
     def isidentical(self, other):
-        """Identity check.
-
-        a.isidentical(b) -> a is b
+        """Identity check for blaze expressions.
         """
-        warnings.warn(
-            'isidentical is deprecated, please use identity checking instead\n'
-            'a.isidentical(b) -> a is b',
-            DeprecationWarning,
-        )
         return self is other
 
     def __hash__(self):
