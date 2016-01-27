@@ -215,11 +215,12 @@ class Node(object):
     def _traverse(self):
         """ Traverse over tree, yielding all subtrees and leaves """
         yield self
-        traversals = (arg._traverse() if isinstance(arg, Node) else [arg]
-                      for arg in self._args)
-        for trav in traversals:
-            for item in trav:
-                yield item
+        traversals = (
+            arg._traverse() if isinstance(arg, Node) else [arg]
+            for arg in self._args
+        )
+        for item in concat(traversals):
+            yield item
 
     def _subs(self, d):
         """ Substitute terms in the tree

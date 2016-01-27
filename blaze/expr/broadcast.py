@@ -2,11 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 
-from toolz import curry
-
 from datashape import DataShape, iscollection
+from toolz import curry, concat
 
 from .collections import Shift
+from .core import Node
 from .expressions import Field, Map, ElemWise, symbol, shape, Coerce
 from .arithmetic import maxshape, UnaryOp, BinOp
 from .strings import Like, StrCat
@@ -70,10 +70,13 @@ class Broadcast(ElemWise):
             dict(zip(self._scalars, self._children))
         )
 
-    @property
-    def _args(self):
-        # XXX: is this a hack?
-        return super(Broadcast, self)._args + self._full_expr._args
+    def _traverse(self):
+        for item in super(Broadcast, self)._traverse():
+            yield item
+        # also yield all the items in the traversal of our full expression
+        # without yielding the full expression itself.
+        for item in itertools.islice(self._full_expr._traverse(), 1, None):
+            yield item
 
 
 def scalar_symbols(exprs):
