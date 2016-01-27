@@ -312,7 +312,7 @@ def _subs(o, d):
     """ Subs symbols using symbol function
 
     Supports caching"""
-    newargs = [subs(arg, d) for arg in o._args]
+    newargs = (subs(arg, d) for arg in o._args)
     return symbol(*newargs)
 
 

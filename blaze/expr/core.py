@@ -363,7 +363,7 @@ def subs(o, d):
     >>> subs([1, 2, 3], {2: 'Hello'})
     [1, 'Hello', 3]
     """
-    d = dict((k, v) for k, v in d.items() if k is not v)
+    d = {k: v for k, v in d.items() if k is not v}
     if not d:
         return o
     try:
@@ -377,7 +377,7 @@ def subs(o, d):
 
 @dispatch((tuple, list), Mapping)
 def _subs(o, d):
-    return type(o)([subs(arg, d) for arg in o])
+    return type(o)(subs(arg, d) for arg in o)
 
 
 @dispatch(Node, Mapping)
@@ -389,7 +389,7 @@ def _subs(o, d):
     >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
-    newargs = [subs(arg, d) for arg in o._args]
+    newargs = (subs(arg, d) for arg in o._args)
     return type(o)(*newargs)
 
 
