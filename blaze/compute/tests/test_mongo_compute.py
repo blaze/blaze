@@ -16,11 +16,17 @@ from blaze.compute.mongo import MongoQuery
 from blaze.expr import symbol, by, floor, ceil
 from blaze.compatibility import xfail
 
+@pytest.fixture(scope='module')
+def mongo_host_port():
+    import os
+    return (os.environ.get('MONGO_IP', 'localhost'),
+            os.environ.get('MONGO_PORT', 27017))
 
 @pytest.fixture(scope='module')
-def conn():
+def conn(mongo_host_port):
+    host, port = mongo_host_port
     try:
-        return pymongo.MongoClient()
+        return pymongo.MongoClient(host=host, port=port)
     except pymongo.errors.ConnectionFailure:
         pytest.skip('No mongo server running')
 
@@ -365,15 +371,15 @@ def test_floor_ceil(bank):
     assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])
 
 
-def test_Data_construct(bank, points):
-    d = Data('mongodb://localhost/test_db')
+def test_Data_construct(bank, points, mongo_host_port):
+    d = Data('mongodb://{}:{}/test_db'.format(*mongo_host_port))
     assert 'bank' in d.fields
     assert 'points' in d.fields
     assert isinstance(d.dshape.measure, Record)
 
 
-def test_Data_construct_with_table(bank):
-    d = Data('mongodb://localhost/test_db::bank')
+def test_Data_construct_with_table(bank, mongo_host_port):
+    d = Data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port))
     assert set(d.fields) == set(('name', 'amount'))
     assert int(d.count()) == 5
 
@@ -385,9 +391,9 @@ def test_and_same_key(bank):
     assert result == expected
 
 
-def test_interactive_dshape_works():
+def test_interactive_dshape_works(mongo_host_port):
     try:
-        d = Data('mongodb://localhost:27017/test_db::bank',
+        d = Data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port),
                  dshape='var * {name: string, amount: int64}')
     except pymongo.errors.ConnectionFailure:
         pytest.skip('No mongo server running')
