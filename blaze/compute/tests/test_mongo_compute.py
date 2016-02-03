@@ -2,8 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 import platform
-pytestmark = pytest.mark.skipif('windows' in platform.platform().lower(),
-                                reason='No Mongo support on Windows.')
 pymongo = pytest.importorskip('pymongo')
 
 from datetime import datetime
