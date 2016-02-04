@@ -8,6 +8,7 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('psycopg2')
 
+import os
 import numpy as np
 import pandas as pd
 
@@ -23,10 +24,13 @@ from blaze.utils import example, normalize
 
 names = ('tbl%d' % i for i in itertools.count())
 
+@pytest.fixture(scope='module')
+def pg_ip():
+    return os.environ.get('POSTGRES_IP', 'localhost')
 
 @pytest.fixture
-def url():
-    return 'postgresql://postgres@localhost/test::%s'
+def url(pg_ip):
+    return 'postgresql://postgres@{}/test::%s'.format(pg_ip)
 
 
 @pytest.yield_fixture
@@ -44,11 +48,11 @@ def sql(url):
 
 
 @pytest.yield_fixture(scope='module')
-def nyc():
+def nyc(pg_ip):
     try:
         t = odo(
             example('nyc.csv'),
-            'postgresql://postgres@localhost/test::nyc',
+            'postgresql://postgres@{}/test::nyc'.format(pg_ip),
         )
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
