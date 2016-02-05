@@ -78,7 +78,7 @@ Additional Server Utilities
 
 .. autosummary::
 
-   spider
+   data_spider
    from_yaml
 
 Definitions

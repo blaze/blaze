@@ -8,6 +8,7 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('psycopg2')
 
+import os
 import numpy as np
 import pandas as pd
 
@@ -23,10 +24,13 @@ from blaze.utils import example, normalize
 
 names = ('tbl%d' % i for i in itertools.count())
 
+@pytest.fixture(scope='module')
+def pg_ip():
+    return os.environ.get('POSTGRES_IP', 'localhost')
 
 @pytest.fixture
-def url():
-    return 'postgresql://postgres@localhost/test::%s'
+def url(pg_ip):
+    return 'postgresql://postgres@{}/test::%s'.format(pg_ip)
 
 
 @pytest.yield_fixture
@@ -44,21 +48,19 @@ def sql(url):
 
 
 @pytest.yield_fixture(scope='module')
-def nyc():
-    with open(example('nyc.csv'), 'rb') as f:
-        raw = f.read()
-        with tmpfile('.csv') as name:
-            with open(name, 'wb') as g:
-                g.write(raw)
-            try:
-                t = odo(name, 'postgresql://postgres@localhost/test::nyc')
-            except sa.exc.OperationalError as e:
-                pytest.skip(str(e))
-            else:
-                try:
-                    yield t
-                finally:
-                    drop(t)
+def nyc(pg_ip):
+    try:
+        t = odo(
+            example('nyc.csv'),
+            'postgresql://postgres@{}/test::nyc'.format(pg_ip),
+        )
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
 
 
 @pytest.yield_fixture
@@ -97,6 +99,20 @@ def sql_with_dts(url):
         pytest.skip(str(e))
     else:
         t = odo([(d,) for d in pd.date_range('2014-01-01', '2014-02-01')], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
+def sql_with_timedeltas(url):
+    try:
+        t = resource(url % next(names), dshape='var * {N: timedelta}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(timedelta(seconds=n),) for n in range(10)], t)
         try:
             yield t
         finally:
@@ -303,6 +319,22 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+    assert (
+        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series) ==
+        dates - (dates - delta)
+    ).all()
+
+
+@pytest.mark.parametrize('func', ('var', 'std'))
+def test_timedelta_stat_reduction(sql_with_timedeltas, func):
+    sym = symbol('s', discover(sql_with_timedeltas))
+    expr = getattr(sym.N, func)()
+
+    deltas = pd.Series([timedelta(seconds=n) for n in range(10)])
+    expected = timedelta(
+        seconds=getattr(deltas.astype('int64') / 1e9, func)(ddof=expr.unbiased)
+    )
+    assert odo(compute(expr, sql_with_timedeltas), timedelta) == expected
 
 
 def test_coerce_bool_and_sum(sql):
@@ -493,7 +525,7 @@ def test_dist(nyc):
     transformed = transform(filtered, dist=dist)
     assert (
         odo(compute(transformed.dist.max(), nyc), float) ==
-        odo(compute(transformed.dist, nyc), pd.Series).max().item()
+        odo(compute(transformed.dist, nyc), pd.Series).max()
     )
 
 

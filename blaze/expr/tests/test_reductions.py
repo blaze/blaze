@@ -105,3 +105,10 @@ def test_decimal_reduction(func):
     t = symbol('t', 'var * decimal[11, 2]')
     method = getattr(t, func)
     assert_dshape_equal(method().dshape, dshape("decimal[11, 2]"))
+
+
+@pytest.mark.parametrize('func', ['sum', 'mean', 'std', 'var'])
+def test_timedelta_reduction(func):
+    t = symbol('t', 'var * timedelta')
+    method = getattr(t, func)
+    assert_dshape_equal(method().dshape, dshape("timedelta"))

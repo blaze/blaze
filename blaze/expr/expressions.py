@@ -12,16 +12,12 @@ import toolz
 from toolz import concat, memoize, partial, first
 from toolz.curried import map, filter
 
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed
-from datashape.predicates import isscalar, iscollection, isboolean, isrecord
-
-from ..compatibility import _strtypes, builtins, boundmethod
 from ..compatibility import _strtypes, builtins, boundmethod, PY2
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices
-from ..utils import weakmemoize
+from ..utils import attribute
 
 
 __all__ = [
@@ -142,8 +138,7 @@ class Expr(Node):
     def _project(self, key):
         return projection(self, key)
 
-    @property
-    @weakmemoize
+    @attribute
     def schema(self):
         try:
             m = self._schema
@@ -152,12 +147,13 @@ class Expr(Node):
         else:
             return m()
 
-        return datashape.dshape(self.dshape.measure)
+        self.schema = schema = datashape.dshape(self.dshape.measure)
+        return schema
 
-    @property
-    @weakmemoize
+    @attribute
     def dshape(self):
-        return self._dshape()
+        self.dshape = dshape = self._dshape()
+        return dshape
 
     @property
     def fields(self):
@@ -265,12 +261,13 @@ def _symbol_key(args, kwargs):
     if len(args) == 1:
         name, = args
         ds = None
-        token = None
+        token = 0
     if len(args) == 2:
         name, ds = args
-        token = None
+        token = 0
     elif len(args) == 3:
         name, ds, token = args
+        token = token or 0
     ds = kwargs.get('dshape', ds)
     token = kwargs.get('token', token)
     ds = dshape(ds)
@@ -292,7 +289,7 @@ class Symbol(Expr):
     __slots__ = '_hash', '_name', 'dshape', '_token'
     __inputs__ = ()
 
-    def __init__(self, name, dshape, token=None):
+    def __init__(self, name, dshape, token=0):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
@@ -312,7 +309,7 @@ class Symbol(Expr):
 @memoize(cache=_symbol_cache, key=_symbol_key)
 @copydoc(Symbol)
 def symbol(name, dshape, token=None):
-    return Symbol(name, dshape, token=token)
+    return Symbol(name, dshape, token=token or 0)
 
 
 @dispatch(Symbol, dict)

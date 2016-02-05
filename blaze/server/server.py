@@ -8,17 +8,7 @@ import collections
 
 import flask
 from flask import Blueprint, Flask, request, Response
-
-try:
-    from bokeh.server.crossdomain import crossdomain
-except ImportError:
-    def crossdomain(*args, **kwargs):
-        def wrapper(f):
-            @functools.wraps(f)
-            def wrapped(*a, **k):
-                return f(*a, **k)
-            return wrapped
-        return wrapper
+from flask.ext.cors import cross_origin
 
 from toolz import assoc, valmap
 
@@ -219,7 +209,7 @@ class Server(object):
 
 
 @api.route('/datashape', methods=['GET'])
-@crossdomain(origin='*', methods=['GET'])
+@cross_origin(origins='*', methods=['GET'])
 @authorization
 def shape():
     return pprint(discover(_get_data()), width=0)
@@ -399,7 +389,7 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
-@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
 def compserver(payload, serial):
@@ -437,7 +427,7 @@ def compserver(payload, serial):
     })
 
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
-@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
 def addserver(payload, serial):

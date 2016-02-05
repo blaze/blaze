@@ -5,7 +5,9 @@ from __future__ import absolute_import
 import os
 import sys
 import argparse
+import importlib
 
+import toolz
 import yaml
 
 from odo import resource
@@ -19,10 +21,10 @@ except ImportError:
     import builtins
 
 
-__all__ = 'spider', 'from_yaml'
+__all__ = 'data_spider', 'from_yaml'
 
 
-def _spider(resource_path, ignore, followlinks, hidden):
+def _spider(resource_path, ignore, followlinks, hidden, extra_kwargs):
     resources = {}
     for filename in (os.path.join(resource_path, x)
                      for x in os.listdir(resource_path)):
@@ -32,18 +34,23 @@ def _spider(resource_path, ignore, followlinks, hidden):
             continue
         if os.path.isdir(filename):
             new_resources = _spider(filename, ignore=ignore,
-                                    followlinks=followlinks, hidden=hidden)
+                                    followlinks=followlinks,
+                                    hidden=hidden,
+                                    extra_kwargs=extra_kwargs)
             if new_resources:
                 resources[basename] = new_resources
         else:
             with ignoring(*ignore):
-                resources[basename] = resource(filename)
+                resources[basename] = resource(filename, **(extra_kwargs or {}))
     return resources
 
 
-def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
-           hidden=False):
-    """Traverse a directory and call ``odo.resource`` on its contentso
+def data_spider(path,
+                ignore=(ValueError, NotImplementedError),
+                followlinks=True,
+                hidden=False,
+                extra_kwargs=None):
+    """Traverse a directory and call ``odo.resource`` on its contents.
 
     Parameters
     ----------
@@ -55,16 +62,21 @@ def spider(path, ignore=(ValueError, NotImplementedError), followlinks=True,
         Follow symbolic links
     hidden : bool, optional
         Load hidden files
+    extra_kwargs: dict, optional
+        extra kwargs to forward on to ``odo.resource``.
 
     Returns
     -------
     dict
         Possibly nested dictionary of containing basenames mapping to resources
     """
+    # NOTE: this is named `data_spider` rather than just `spider` to
+    # disambiguate this function from the `blaze.server.spider` module.
     return {
         os.path.basename(path): _spider(path, ignore=ignore,
                                         followlinks=followlinks,
-                                        hidden=hidden)
+                                        hidden=hidden,
+                                        extra_kwargs=extra_kwargs)
     }
 
 
@@ -90,21 +102,25 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
 
     See Also
     --------
-    spider : Traverse a directory tree for resources
+    data_spider : Traverse a directory tree for resources
     """
     resources = {}
     for name, info in yaml.load(path.read()).items():
-        if 'source' not in info:
+        try:
+            source = info.pop('source')
+        except KeyError:
             raise ValueError('source key not found for data source named %r' %
                              name)
-        source = info['source']
+        for mod in info.pop('imports', []):
+            importlib.import_module(mod)
         if os.path.isdir(source):
-            resources[name] = spider(os.path.expanduser(source),
-                                     ignore=ignore,
-                                     followlinks=followlinks,
-                                     hidden=hidden)
+            resources[name] = data_spider(os.path.expanduser(source),
+                                          ignore=ignore,
+                                          followlinks=followlinks,
+                                          hidden=hidden,
+                                          extra_kwargs=info)
         else:
-            resources[name] = resource(source, dshape=info.get('dshape'))
+            resources[name] = resource(source, **info)
     return resources
 
 

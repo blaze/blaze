@@ -6,8 +6,6 @@ matrix:
   fast_finish: true
   include:
     - python: 2.7
-      env: SPARK_VERSION=1.3
-    - python: 2.7
       env: SPARK_VERSION=1.4
     - python: 2.7
       env: SPARK_VERSION=1.5
@@ -49,6 +47,9 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive -c blaze; fi
 
   - pip install psycopg2
+
+  # Install flask-cors
+  - pip install flask-cors
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape

@@ -3,6 +3,7 @@ import sys
 from types import MethodType
 
 from datashape import dshape
+from datashape.util.testing import assert_dshape_equal
 import pandas as pd
 import pandas.util.testing as tm
 import pytest
@@ -379,6 +380,13 @@ def test_coerce_date_and_datetime():
     assert repr(d) == repr(pd.NaT)
 
 
+def test_coerce_timedelta():
+    x = datetime.timedelta(days=1, hours=2, minutes=3)
+    d = Data(x)
+
+    assert repr(d) == repr(x)
+
+
 def test_highly_nested_repr():
     data = [[0, [[1, 2], [3]], 'abc']]
     d = Data(data)
@@ -452,8 +460,9 @@ def test_pickle_roundtrip():
     assert ds.isidentical(pickle.loads(pickle.dumps(ds)))
     assert (ds + 1).isidentical(pickle.loads(pickle.dumps(ds + 1)))
     es = Data(np.array([1, 2, 3]))
-    assert es.isidentical(pickle.loads(pickle.dumps(es)))
-    assert (es + 1).isidentical(pickle.loads(pickle.dumps(es + 1)))
+    rs = pickle.loads(pickle.dumps(es))
+    assert (es.data == rs.data).all()
+    assert_dshape_equal(es.dshape, rs.dshape)
 
 
 def test_nameless_data():
@@ -472,3 +481,10 @@ def test_partially_bound_expr():
     a = symbol('a', 'int')
     expr = data.name[data.balance > a]
     assert repr(expr) == 'data[data.balance > a].name'
+
+
+def test_isidentical_regr():
+    # regression test for #1387
+    data = np.array([(np.nan,), (np.nan,)], dtype=[('a', 'float64')])
+    ds = Data(data)
+    assert ds.a.isidentical(ds.a)

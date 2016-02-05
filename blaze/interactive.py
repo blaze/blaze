@@ -8,9 +8,6 @@ import itertools
 import operator
 import warnings
 
-from collections import Iterator
-from functools import reduce
-
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
@@ -249,6 +246,8 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
         return coerce_(Timestamp)
     elif 'date' in dshape:
         return coerce_(datetime.date)
+    elif 'timedelta' in dshape:
+        return coerce_(datetime.timedelta)
     else:
         return result
 

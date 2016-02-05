@@ -133,9 +133,9 @@ Some convenience functions for common traversals already exist:
     x,
     'x',
     dshape("int64"),
-    None,
+    0,
     1,
     y,
     'y',
     dshape("float32"),
-    None]
+    0]

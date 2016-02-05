@@ -109,10 +109,6 @@ def test_count_isnan():
     assert compute(to.a[~to.b.isnan()].count(), bo) == 2
 
 
-def test_count_isnan_object():
-    assert compute(to.a[~to.b.isnan()].count(), bo) == 2
-
-
 def test_count_isnan_struct():
     assert compute(t[~t.b.isnan()].count(), b) == 3
 

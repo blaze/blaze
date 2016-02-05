@@ -16,6 +16,7 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import itertools
 from itertools import chain
 
@@ -46,6 +47,7 @@ from multipledispatch import MDNotImplementedError
 
 from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
+from datashape import TimeDelta
 from datashape.predicates import iscollection, isscalar, isrecord
 
 from ..dispatch import dispatch
@@ -58,7 +60,7 @@ from ..expr import (
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
     strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
     Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow,
+    notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -76,8 +78,7 @@ def inner_columns(s):
     try:
         return s.inner_columns
     except AttributeError:
-        return s.c
-    raise TypeError()
+        return s.columns
 
 
 @dispatch(Projection, Select)
@@ -185,7 +186,7 @@ def compute_up(t, lhs, rhs, **kwargs):
     return select(lhs).union_all(select(rhs)).alias()
 
 
-@dispatch(Broadcast, sa.Column)
+@dispatch(Broadcast, ColumnElement)
 def compute_up(t, s, **kwargs):
     expr = t._scalar_expr
     return compute(expr, s, post_compute=False).label(expr._name)
@@ -218,13 +219,13 @@ def binop_sql(t, lhs, rhs, **kwargs):
     if isinstance(lhs, Select):
         assert len(lhs.c) == 1, (
             'Select cannot have more than a single column when doing'
-            ' arithmetic, got %s' % lhs
+            ' arithmetic, got %r' % lhs
         )
         lhs = first(lhs.inner_columns)
     if isinstance(rhs, Select):
         assert len(rhs.c) == 1, (
             'Select cannot have more than a single column when doing'
-            ' arithmetic, got %s' % rhs
+            ' arithmetic, got %r' % rhs
         )
         rhs = first(rhs.inner_columns)
 
@@ -241,8 +242,10 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(Pow, Select)
 def compute_up(t, data, **kwargs):
-    assert len(data.c) == 1, \
-        'Select cannot have more than a single column when doing arithmetic'
+    assert len(data.c) == 1, (
+        'Select cannot have more than a single column when doing'
+        ' arithmetic, got %r' % data
+    )
     column = first(data.inner_columns)
     if isinstance(t.lhs, Expr):
         return sa.func.pow(column, t.rhs)
@@ -267,8 +270,10 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(BinaryMath, Select)
 def compute_up(t, data, **kwargs):
-    assert len(data.c) == 1, \
-        'Select cannot have more than a single column when doing arithmetic'
+    assert len(data.c) == 1, (
+        'Select cannot have more than a single column when doing'
+        ' arithmetic, got %r' % data
+    )
     column = first(data.inner_columns)
     op = getattr(sa.func, type(t).__name__)
     if isinstance(t.lhs, Expr):
@@ -596,11 +601,23 @@ prefixes = {
 
 @dispatch((std, var), sql.elements.ColumnElement)
 def compute_up(t, s, **kwargs):
+    measure = t.schema.measure
+    is_timedelta = isinstance(getattr(measure, 'ty', measure), TimeDelta)
+    if is_timedelta:
+        # part 1 of 2 to work around the fact that postgres does not have
+        # timedelta var or std: cast to a double which is seconds
+        s = sa.extract('epoch', s)
     if t.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     funcname = 'samp' if t.unbiased else 'pop'
     full_funcname = '%s_%s' % (prefixes[type(t)], funcname)
-    return getattr(sa.func, full_funcname)(s).label(t._name)
+    ret = getattr(sa.func, full_funcname)(s)
+    if is_timedelta:
+        # part 2 of 2 to work around the fact that postgres does not have
+        # timedelta var or std: cast back from seconds by
+        # multiplying by a 1 second timedelta
+        ret = ret * datetime.timedelta(seconds=1)
+    return ret.label(t._name)
 
 
 @dispatch(count, Selectable)
@@ -971,7 +988,6 @@ def compute_up(expr, data, **kwargs):
 
     # we need these getattrs if data is a ColumnClause or Table
     from_obj = get_all_froms(data)
-    assert len(from_obj) == 1, 'only a single FROM clause supported'
     return reconstruct_select(columns, data, from_obj=from_obj)
 
 
@@ -997,6 +1013,13 @@ def compute_up(t, s, **kwargs):
         compute(value, scope, post_compute=None).label(name)
         for value, name in zip(t.values, t.fields)
     )
+
+
+@dispatch(Like, Select)
+def compute_up(t, s, **kwargs):
+    assert len(s.c) == 1, \
+            'Select cannot have more than a single column when filtering with `like`'
+    return compute_up(t, first(s.inner_columns), **kwargs)
 
 
 @dispatch(Like, ColumnElement)
@@ -1064,6 +1087,11 @@ def compute_up(expr, data, **kwargs):
     return sa.extract(expr.attr, data).label(expr._name)
 
 
+@dispatch(DateTimeTruncate, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    return sa.func.date_trunc(expr.unit, data).label(expr._name)
+
+
 @compiles(sa.sql.elements.Extract, 'hive')
 def hive_extract_to_date_function(element, compiler, **kwargs):
     func = getattr(sa.func, element.field)(element.expr)
@@ -1087,9 +1115,28 @@ def engine_of(x):
     raise NotImplementedError("Can't deterimine engine of %s" % x)
 
 
-@dispatch(Expr)
+@dispatch(object)
 def _subexpr_optimize(expr):
     return expr
+
+
+@dispatch(Expr)
+def _subexpr_optimize(expr):
+    return type(expr)(*map(_subexpr_optimize, expr._args))
+
+
+timedelta_ns = TimeDelta(unit='ns')
+
+
+@dispatch(Sub)
+def _subexpr_optimize(expr):
+    new_expr = type(expr)(*map(_subexpr_optimize, expr._args))
+    schema = expr.schema
+    # we have a timedelta shaped expression; sql timedeltas are in `ns` units
+    # so we should coerce this exprssion over
+    if isinstance(schema, TimeDelta) and schema.unit != 'ns':
+        new_expr = new_expr.coerce(timedelta_ns)
+    return new_expr
 
 
 @dispatch(Tail)

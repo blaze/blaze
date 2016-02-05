@@ -18,12 +18,12 @@ from pandas import DataFrame
 from toolz import unique
 
 from odo import odo, drop
+from blaze.compatibility import xfail
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     symbol, transform, summary, by, sin, join,
-    floor, cos, merge, nunique, mean, sum, count, exp
+    floor, cos, merge, nunique, mean, sum, count, exp, datetime as bz_datetime
 )
-from blaze.compatibility import xfail
 from blaze.utils import tmpfile, example, normalize
 
 
@@ -727,6 +727,32 @@ def test_like():
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
+
+def test_like_join():
+    # Test .like() on a non-trivial SELECT query.
+    metadata = sa.MetaData()
+    t0 = sa.Table('t0', metadata,
+                   sa.Column('a', sa.String),
+                   sa.Column('y', sa.Integer))
+
+    t1 = sa.Table('t1', metadata,
+                  sa.Column('b', sa.String),
+                  sa.Column('z', sa.Integer))
+
+    # expected = t0.join(t1, t0.c.a == t1.c.b)
+    # expected = sa.select(list(unique(expected.columns, key=lambda c:
+                                  # c.name))).select_from(expected)
+    # expected = expected.where(expected.c.a.like('%a'))
+
+    t0sym = symbol('t0sym', 'var * {a: string, y: int}')
+    t1sym = symbol('t1sym', 'var * {b: string, z: int}')
+    joined = join(t0sym, t1sym, on_left='a', on_right='b')
+    liked = joined[joined.a.like('*a')]
+    result = compute(liked, {t0sym: t0, t1sym: t1})
+    assert normalize(str(result)) == normalize("""
+    SELECT t0.a, t0.y, t1.z
+    FROM t0 JOIN t1 ON t0.a = t1.b
+    WHERE t0.a LIKE :a_1""")
 
 
 def test_not_like():
@@ -1954,3 +1980,52 @@ def test_selection_inner_inputs():
     select {a}.name, {a}.amount, {a}.id from {a}, {b} where {a}.id = {b}.id
     """).format(a=s.name, b=sdate.name)
     assert result == expected
+
+
+@pytest.mark.parametrize('unit', bz_datetime.units)
+def test_datetime_trunc(unit):
+    ds = 'var * {a: datetime}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+
+    assert normalize(compute(s.a.truncate(**{unit: 1}), db)) == normalize(
+        'select date_trunc(%r, s.a) as a from s' % unit,
+    )
+
+
+@pytest.mark.parametrize('alias,unit', bz_datetime.unit_aliases.items())
+def test_datetime_trunc_aliases(alias, unit):
+    ds = 'var * {a: datetime}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+
+    assert normalize(compute(s.a.truncate(**{alias: 1}), db)) == normalize(
+        'select date_trunc(%r, s.a) as a from s' % unit,
+    )
+
+
+@pytest.mark.xfail(
+    raises=AssertionError,
+    reason="We don't currently handle the inner select",
+)
+def test_inner_select_with_filter():
+    ds = 'var * {a: float32}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+
+    assert normalize(compute(s[s.a == s.a[s.a == 1]].a, db)) == normalize(
+        """\
+        select
+            s.a
+        from s, (
+            select
+                s.a as a
+            from
+                s
+            where
+                s.a = 1
+        ) as anon_1
+        where
+            s.a = anon_1.a
+        """,
+    )
