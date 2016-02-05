@@ -66,7 +66,7 @@ script:
   - echo '[pytest]' > pytest.ini
   - echo 'addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
-  - coverage run --include='blaze/*' $(which py.test)
+  - coverage run --include='blaze/*' --omit='blaze/_version.py' $(which py.test)
   - coverage report --show-missing
 
 after_success:
