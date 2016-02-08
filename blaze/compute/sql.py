@@ -58,9 +58,9 @@ from .core import compute_up, compute, base
 from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
-    Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Sample,
+    Label, Concat, ReLabel, Merge, common_subexpression, Summary, Like,
+    nelements, notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
 )
 
 from ..expr.broadcast import broadcast_collect

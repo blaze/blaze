@@ -6,14 +6,11 @@ from functools import partial
 from itertools import chain
 
 import datashape
-from datashape import (
-    DataShape, Option, Record, Unit, dshape, var, Fixed, Var, promote, object_,
-)
+from datashape import (DataShape, Option, Record, Unit, dshape, var, Fixed,
+                       Var, promote, object_)
 from datashape.predicates import isscalar, iscollection, isrecord
-from toolz import (
-    isdistinct, frequencies, concat as tconcat, unique, get, first, compose,
-    keymap
-)
+from toolz import (isdistinct, frequencies, concat as tconcat, unique, get,
+                   first, compose, keymap)
 import toolz.curried.operator as op
 from odo.utils import copydoc
 
@@ -24,9 +21,27 @@ from ..compatibility import zip_longest, _strtypes
 from ..utils import listpack
 
 
-__all__ = ['Sort', 'Distinct', 'Head', 'Merge', 'IsIn', 'isin', 'distinct',
-           'merge', 'head', 'sort', 'Join', 'join', 'transform', 'Concat',
-           'concat', 'Tail', 'tail', 'Shift', 'shift']
+__all__ = ['Concat',
+           'concat',
+           'Distinct',
+           'distinct',
+           'Head',
+           'head',
+           'IsIn',
+           'isin',
+           'Join',
+           'join',
+           'Merge',
+           'merge',
+           'Sample',
+           'sample',
+           'Shift',
+           'shift',
+           'Sort',
+           'sort',
+           'Tail',
+           'tail',
+           'transform']
 
 
 class Sort(Expr):
@@ -233,6 +248,45 @@ class Tail(_HeadOrTail):
 @copydoc(Tail)
 def tail(child, n=10):
     return Tail(child, n)
+
+
+class Sample(Expr):
+    """Random row-wise sample.  Can specify `n` or `frac` for an absolute or
+    fractional number of rows, respectively.
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts.sample(n=2).dshape
+    dshape("2 * {name: string, amount: int32}")
+    >>> accounts.sample(frac=0.1).dshape
+    dshape("var * {name: string, amount: int32}")
+    """
+    __slots__ = '_hash', '_child', 'n', 'frac'
+
+    def _dshape(self):
+        return self._child.dshape
+
+    def __str__(self):
+        arg = 'n={}'.format(self.n) if self.n is not None else 'frac={}'.format(self.frac)
+        return '%s.sample(%s)' % (self._child, arg)
+
+
+@copydoc(Sample)
+def sample(child, n=None, frac=None):
+    if n is not None and frac is not None:
+        raise ValueError("n ({}) and frac ({}) cannot both be specified.".format(n, frac))
+    if n is not None:
+        n = int(n)
+        if n < 1:
+            raise ValueError("n must be positive, given {}".format(n))
+    if frac is not None:
+        frac = float(frac)
+        if frac < 0.0 or frac > 1.0:
+            raise ValueError("0 < frac < 1.0, given {}".format(frac))
+    return Sample(child, n, frac)
+
 
 
 def transform(t, replace=True, **kwargs):
@@ -738,10 +792,8 @@ def shift(expr, n):
     return Shift(expr, n)
 
 
-dshape_method_list.extend([
-    (iscollection, set([sort, head, tail])),
-    (lambda ds: len(ds.shape) == 1, set([distinct, shift])),
-    (lambda ds: (len(ds.shape) == 1 and
-                 isscalar(getattr(ds.measure, 'key', ds.measure))), set([isin])),
-    (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin])),
-])
+dshape_method_list.extend([(iscollection, set([sort, head, tail, sample])),
+                           (lambda ds: len(ds.shape) == 1, set([distinct, shift])),
+                           (lambda ds: (len(ds.shape) == 1 and
+                                        isscalar(getattr(ds.measure, 'key', ds.measure))), set([isin])),
+                           (lambda ds: len(ds.shape) == 1 and isscalar(ds.measure), set([isin]))])
