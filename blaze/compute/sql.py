@@ -842,6 +842,24 @@ def compute_up(t, s, **kwargs):
     return s.order_by(*cols)
 
 
+@dispatch(Sample, sa.Table)
+def compute_up(t, s, **kwargs):
+    n = t.n if t.n is not None else int(t.frac * s.count().scalar())
+    return select(s).order_by(safuncs.random()).limit(n)
+
+
+@dispatch(Sample, ColumnElement)
+def compute_up(t, s, **kwargs):
+    n = t.n if t.n is not None else int(t.frac * s.count().scalar())
+    return sa.select([s]).order_by(safuncs.random()).limit(n)
+
+
+@dispatch(Sample, FromClause)
+def compute_up(t, s, **kwargs):
+    n = t.n if t.n is not None else int(t.frac * s.count().scalar())
+    return s.order_by(safuncs.random()).limit(n)
+
+
 @dispatch(Head, FromClause)
 def compute_up(t, s, **kwargs):
     if s._limit is not None and s._limit <= t.n:

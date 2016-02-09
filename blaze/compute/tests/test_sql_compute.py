@@ -517,6 +517,10 @@ def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
 
 
+def test_sample():
+    assert str(compute(t.sample(n=5), s)) == str(select(s).order_by(sa.func.random()).limit(5))
+
+
 def test_label():
     assert (str(compute((t['amount'] * 10).label('foo'),
                         s, post_compute=False)) ==
