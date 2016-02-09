@@ -4,11 +4,12 @@ import types
 
 import datashape
 from datashape import dshape, var, datetime_, float32, int64, bool_
+from datashape.util.testing import assert_dshape_equal
 import pandas as pd
 import pytest
 
 from blaze.compatibility import pickle
-from blaze.expr import symbol, label, Field, Expr, Node
+from blaze.expr import symbol, label, Field, Expr, Node, coalesce
 
 
 def test_slots():
@@ -203,3 +204,69 @@ def test_pickle_roundtrip():
     t = symbol('t', 'var * int64')
     expr = (t + 1).mean()  # some expression with more than one node.
     assert expr.isidentical(pickle.loads(pickle.dumps(expr)))
+
+
+def test_coalesce():
+    # check case where lhs is not optional
+    s = symbol('s', 'int32')
+    t = symbol('t', 'int32')
+    expr = coalesce(s, t)
+    assert expr.isidentical(s)
+
+    # check case where lhs is null dshape
+    u = symbol('u', 'null')
+    expr = coalesce(u, s)
+    assert expr.isidentical(s)
+
+    # check optional lhs non-optional rhs
+    v = symbol('v', '?int32')
+    expr = coalesce(v, s)
+    # rhs is not optional so the expression cannot be null
+    assert_dshape_equal(expr.dshape, dshape('int32'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(s)
+
+    # check optional lhs non-optional rhs with promotion
+    w = symbol('w', 'int64')
+    expr = coalesce(v, w)
+    # rhs is not optional so the expression cannot be null
+    # there are no either types in datashape so we are a type large enough
+    # to hold either result
+    assert_dshape_equal(expr.dshape, dshape('int64'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(w)
+
+    # check optional lhs and rhs
+    x = symbol('x', '?int32')
+    expr = coalesce(v, x)
+    # rhs and lhs are optional so this might be null
+    assert_dshape_equal(expr.dshape, dshape('?int32'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(x)
+
+    # check optional lhs and rhs with promotion
+    y = symbol('y', '?int64')
+    expr = coalesce(v, y)
+    # rhs and lhs are optional so this might be null
+    # there are no either types in datashape so we are a type large enough
+    # to hold either result
+    assert_dshape_equal(expr.dshape, dshape('?int64'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(y)
+
+
+def test_cast():
+    s = symbol('s', 'int32')
+
+    assert_dshape_equal(s.cast('int64').dshape, dshape('int64'))
+    assert_dshape_equal(s.cast(dshape('int64')).dshape, dshape('int64'))
+    assert_dshape_equal(s.cast('var * int32').dshape, dshape('var * int32'))
+    assert_dshape_equal(
+        s.cast(dshape('var * int64')).dshape,
+        dshape('var * int64'),
+    )
+    assert_dshape_equal(s.cast('var * int64').dshape, dshape('var * int64'))
+    assert_dshape_equal(
+        s.cast(dshape('var * int64')).dshape,
+        dshape('var * int64'),
+    )

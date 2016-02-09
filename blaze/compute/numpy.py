@@ -14,11 +14,12 @@ from ..expr import (
     BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
     UTCFromTimestamp, DateTimeTruncate,
     Transpose, TensorDot, Coerce, isnan,
-    greatest, least, BinaryMath, atan2,
+    greatest, least, BinaryMath, atan2, Coalesce, Cast
 )
 from ..utils import keywords
 
 from .core import base, compute
+from .pandas import array_coalesce
 from ..dispatch import dispatch
 from odo import into
 import pandas as pd
@@ -328,6 +329,12 @@ def compute_up(expr, x, **kwargs):
     return x[expr.index]
 
 
+@dispatch(Cast, np.ndarray)
+def compute_up(t, x, **kwargs):
+    # resolve ambiguity
+    return x
+
+
 @dispatch(Expr, np.ndarray)
 def compute_up(t, x, **kwargs):
     ds = t._child.dshape
@@ -445,3 +452,19 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Concat, np.ndarray, np.ndarray)
 def compute_up(expr, lhs, rhs, _concat=np.concatenate, **kwargs):
     return _concat((lhs, rhs), axis=expr.axis)
+
+
+compute_up.register(Coalesce, np.ndarray, (np.ndarray, base))(array_coalesce)
+compute_up.register(Coalesce, base, np.ndarray)(array_coalesce)
+
+
+@dispatch(Coalesce, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        lhs = data
+        rhs = t.rhs
+    else:
+        lhs = t.lhs
+        rhs = data
+
+    return array_coalesce(t, lhs, rhs)

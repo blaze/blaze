@@ -11,7 +11,7 @@ from datetime import datetime, date
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
-from blaze.expr import greatest, least
+from blaze.expr import greatest, least, coalesce
 from blaze import sin
 import blaze
 from odo import into
@@ -663,3 +663,38 @@ def test_selection_inner_inputs():
         compute(s[s.a == t.a], {s: s_data, t: t_data}) ==
         s_data
     ).all()
+
+
+def test_coalesce():
+    data = np.array([0, None, 1, None, 2, None])
+
+    s = symbol('s', 'var * ?int')
+    t = symbol('t', 'int')
+    u = symbol('u', '?int')
+    v = symbol('v', 'var * int')
+    w = symbol('w', 'var * ?int')
+
+    # array to scalar
+    np.testing.assert_array_equal(
+        compute(coalesce(s, t), {s: data, t: -1}),
+        np.array([0, -1, 1, -1, 2, -1]),
+    )
+    # array to scalar with NULL
+    np.testing.assert_array_equal(
+        compute(coalesce(s, u), {s: data, u: None}),
+        np.array([0, None, 1, None, 2, None], dtype=object)
+    )
+    # array to array
+    np.testing.assert_array_equal(
+        compute(coalesce(s, v), {
+            s: data, v: np.array([-1, -2, -3, -4, -5, -6]),
+        }),
+        np.array([0, -2, 1, -4, 2, -6])
+    )
+    # array to array with NULL
+    np.testing.assert_array_equal(
+        compute(coalesce(s, w), {
+            s: data, w: np.array([-1, None, -3, -4, -5, -6]),
+        }),
+        np.array([0, None, 1, -4, 2, -6]),
+    )

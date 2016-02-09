@@ -17,47 +17,40 @@ WHERE accounts.amount < :amount_1
 
 from __future__ import absolute_import, division, print_function
 
+from copy import copy
 import datetime
 import itertools
 from itertools import chain
-
 from operator import and_, eq, attrgetter
-from copy import copy
+import warnings
 
+from datashape import TimeDelta
+from datashape.predicates import iscollection, isscalar, isrecord
+import numpy as np
+import numbers
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
+from multipledispatch import MDNotImplementedError
 import sqlalchemy as sa
-
 from sqlalchemy import sql, Table, MetaData
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
-from sqlalchemy.engine import Engine
-
 import toolz
-
 from toolz import unique, concat, pipe, first
 from toolz.compatibility import zip
 from toolz.curried import map
 
-import numpy as np
-import numbers
-
-import warnings
-
-from multipledispatch import MDNotImplementedError
-
-from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
-
-from datashape import TimeDelta
-from datashape.predicates import iscollection, isscalar, isrecord
-
 from .core import compute_up, compute, base
+from ..compatibility import reduce
 from ..dispatch import dispatch
 from ..expr import (
     BinOp,
     BinaryMath,
     Broadcast,
     By,
+    Coalesce,
     Coerce,
     Concat,
     DateTime,
@@ -98,12 +91,8 @@ from ..expr import (
     strlen,
     var,
 )
-
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
-
-from ..compatibility import reduce
-
 from ..utils import listpack
 
 
@@ -1403,3 +1392,34 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Shift, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.func.lag(data, expr.n).over().label(expr._name)
+
+
+@compute_up.register(Coalesce, (ColumnElement, base), ColumnElement)
+@compute_up.register(Coalesce, ColumnElement, base)
+def coalesce_sql(t, lhs, rhs, **kwargs):
+    return sa.sql.functions.coalesce(lhs, rhs).label(t._name)
+
+
+@compute_up.register(Coalesce, Select, base)
+@compute_up.register(Coalesce, base, Select)
+def coalesce_sql_select(expr, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        orig = lhs
+        lhs = first(lhs.inner_columns)
+    else:
+        orig = rhs
+        rhs = first(rhs.inner_columns)
+    result = sa.sql.functions.coalesce(lhs, rhs).label(expr._name)
+    return reconstruct_select([result], orig)
+
+
+@dispatch(Coalesce, (Select, ColumnElement))
+def compute_up(expr, data, **kwargs):
+    if isinstance(expr.lhs, Expr):
+        lhs = data
+        rhs = expr.rhs
+    else:
+        lhs = expr.lhs
+        rhs = expr.data
+
+    return compute_up(expr, lhs, rhs, **kwargs)
