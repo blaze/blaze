@@ -49,21 +49,56 @@ except ImportError:
     DaskDataFrame = pd.DataFrame
     DaskSeries = pd.Series
 
-from ..dispatch import dispatch
-
 from .core import compute, compute_up, base
-
-from ..expr import (Projection, Field, Sort, Head, Tail, Sample, Broadcast,
-                    Selection, Reduction, Distinct, Join, By, Summary, Label,
-                    ReLabel, Map, Apply, Merge, std, var, Like, Slice, summary,
-                    ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
-                    UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Coerce, Concat, isnan,
-                    notnull, Shift)
-from ..expr import UnaryOp, BinOp, Interp
-from ..expr import symbol, common_subexpression
-
 from ..compatibility import _inttypes
+from ..dispatch import dispatch
+from ..expr import (
+    Apply,
+    BinOp,
+    Broadcast,
+    By,
+    Coalesce,
+    Coerce,
+    Concat,
+    DateTime,
+    DateTimeTruncate,
+    Distinct,
+    ElemWise,
+    Expr,
+    Field,
+    Head,
+    Interp,
+    IsIn,
+    Join,
+    Label,
+    Like,
+    Map,
+    Merge,
+    Millisecond,
+    Projection,
+    ReLabel,
+    Reduction,
+    Sample,
+    Selection,
+    Shift,
+    Slice,
+    Sort,
+    Summary,
+    Tail,
+    UTCFromTimestamp,
+    UnaryOp,
+    UnaryStringFunction,
+    common_subexpression,
+    count,
+    isnan,
+    nelements,
+    notnull,
+    nunique,
+    std,
+    summary,
+    symbol,
+    var,
+)
 
 __all__ = []
 
@@ -121,14 +156,9 @@ def compute_up(t, data, **kwargs):
     else:
         return t.op(t.lhs, data)
 
-
-@dispatch(BinOp, (Series, DaskSeries), (Series, base, DaskSeries))
-def compute_up(t, lhs, rhs, **kwargs):
-    return t.op(lhs, rhs)
-
-
-@dispatch(BinOp, (Series, base, DaskSeries), (Series, DaskSeries))
-def compute_up(t, lhs, rhs, **kwargs):
+@compute_up.register(BinOp, (Series, DaskSeries), (Series, base, DaskSeries))
+@compute_up.register(BinOp, (Series, base, DaskSeries), (Series, DaskSeries))
+def compute_up_binop(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
@@ -699,3 +729,36 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Shift, Series)
 def compute_up(expr, data, **kwargs):
     return data.shift(expr.n)
+
+
+def array_coalesce(expr, lhs, rhs, wrap=None, **kwargs):
+    res = np.where(pd.isnull(lhs), rhs, lhs)
+    if not expr.dshape.shape:
+        res = res.item()
+    elif wrap:
+        res = wrap(res)
+    return res
+
+
+@compute_up.register(
+    Coalesce, (Series, DaskSeries), (np.ndarray, Series, base, DaskSeries)
+)
+@compute_up.register(
+    Coalesce,
+    (Series, base, DaskSeries), (np.ndarray, Series, DaskSeries)
+)
+def compute_up_coalesce(expr, lhs, rhs, **kwargs):
+    return array_coalesce(expr, lhs, rhs, type(lhs))
+
+
+
+@dispatch(Coalesce, (Series, DaskSeries, base))
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        lhs = data
+        rhs = t.rhs
+    else:
+        lhs = t.lhs
+        rhs = data
+
+    return compute_up_coalesce(t, lhs, rhs)

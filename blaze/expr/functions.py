@@ -23,6 +23,7 @@ from __future__ import absolute_import, division, print_function
 import math as pymath
 from numbers import Number
 import numpy as np
+import pandas as pd
 
 from multipledispatch import Dispatcher
 from ..dispatch import namespace
@@ -30,7 +31,7 @@ from ..compatibility import builtins
 from . import reductions
 from . import math as blazemath
 from .core import base
-from .expressions import Expr
+from .expressions import Expr, coalesce
 
 
 """
@@ -67,18 +68,20 @@ def sqrt(o):
 math_names = '''abs sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan'''.split()
 
-binary_math_names = "atan2 copysign fmod hypot ldexp greatest least".split()
+binary_math_names = "atan2 copysign fmod hypot ldexp greatest least coalesce".split()
 
 reduction_names = '''any all sum min max mean var std'''.split()
 
 __all__ = math_names + binary_math_names + reduction_names
 
 
-types = {builtins: object,
-         np: (np.ndarray, np.number),
-         pymath: Number,
-         blazemath: Expr,
-         reductions: Expr}
+types = {
+    builtins: object,
+    np: (np.ndarray, np.number),
+    pymath: Number,
+    blazemath: Expr,
+    reductions: Expr,
+}
 
 binary_types = {
     builtins: [(object, object)],
@@ -86,6 +89,15 @@ binary_types = {
     pymath: [(Number, Number)],
     blazemath: [(Expr, (Expr, base)), (base, Expr)]
 }
+
+
+def _coalesce_objects(lhs, rhs):
+    # use pd.isnull for None, NaT, and others
+    return lhs if not pd.isnull(lhs) else rhs
+
+
+def _coalesce_arrays(lhs, rhs):
+    np.where(pd.isnull(lhs), rhs, lhs)
 
 
 fallback_binary_mappings = {
@@ -98,7 +110,13 @@ fallback_binary_mappings = {
         builtins: min,
         np: np.minimum,
         pymath: min,
-    }
+    },
+    'coalesce': {
+        builtins: _coalesce_objects,
+        np: _coalesce_arrays,
+        pymath: _coalesce_objects,
+        blazemath: coalesce,
+    },
 }
 
 

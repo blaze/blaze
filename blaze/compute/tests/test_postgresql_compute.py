@@ -13,8 +13,26 @@ import pandas as pd
 
 import pandas.util.testing as tm
 
-from blaze import (atan2, by, compute, concat, cos, data, greatest, join,
-                   least, radians, sin, sqrt, symbol, transform)
+from datashape import dshape
+from odo import odo, drop, discover
+from odo.utils import tmpfile
+from blaze import (
+    data,
+    atan2,
+    by,
+    coalesce,
+    compute,
+    concat,
+    cos,
+    greatest,
+    join,
+    least,
+    radians,
+    sin,
+    sqrt,
+    symbol,
+    transform,
+)
 from blaze.interactive import iscorescalar
 from blaze.utils import example, normalize
 
@@ -593,7 +611,6 @@ def test_sample(sql):
     s2 = odo(result2, pd.DataFrame)
     assert len(s) == len(s2)
 
-
 @pytest.fixture
 def gl_data(sql_two_tables):
     u_data, t_data = sql_two_tables
@@ -609,3 +626,15 @@ def test_greatest(gl_data):
 def test_least(gl_data):
     u, t = gl_data
     assert odo(least(u.a.max(), t.a.max()), int) == 1
+
+
+def test_coalesce(sqla):
+    t = symbol('t', discover(sqla))
+    assert (
+        odo(compute(coalesce(t.B, -1), {t: sqla}), list) ==
+        [(1,), (1,), (-1,)]
+    )
+    assert (
+        odo(compute(coalesce(t.A, 'z'), {t: sqla}), list) ==
+        [('a',), ('z',), ('c',)]
+    )

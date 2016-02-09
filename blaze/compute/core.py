@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import itertools
 import numbers
 import warnings
@@ -13,14 +13,14 @@ import pandas as pd
 from odo import odo
 
 from ..compatibility import basestring
-from ..expr import Expr, Field, Symbol, symbol, Join
+from ..expr import Expr, Field, Symbol, symbol, Join, Cast
 from ..dispatch import dispatch
 from ..interactive import coerce_core, into
 
 
 __all__ = ['compute', 'compute_up']
 
-base = numbers.Number, basestring, date, datetime
+base = numbers.Number, basestring, date, datetime, timedelta, type(None)
 
 
 @dispatch(Expr, object)
@@ -46,6 +46,13 @@ def compute_up(a, b, **kwargs):
     raise NotImplementedError("Blaze does not know how to compute "
                               "expression of type `%s` on data of type `%s`"
                               % (type(a).__name__, type(b).__name__))
+
+
+@dispatch(Cast, object)
+def compute_up(c, b, **kwargs):
+    # cast only works on the expression system and does not affect the
+    # computation
+    return b
 
 
 @dispatch(base)
@@ -196,8 +203,9 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     # 4. Repeat
     if expr.isidentical(expr3):
         raise NotImplementedError("Don't know how to compute:\n"
+                                  "type(expr): %s\n"
                                   "expr: %s\n"
-                                  "data: %s" % (expr3, scope4))
+                                  "data: %s" % (type(expr3), expr3, scope4))
     else:
         return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 

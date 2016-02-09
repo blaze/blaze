@@ -17,12 +17,13 @@ import pandas.util.testing as tm
 from pandas import DataFrame
 from toolz import unique
 
-from odo import odo, drop
+from odo import odo, drop, resource
 from blaze import data as bz_data
 from blaze.compatibility import xfail
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     by,
+    coalesce,
     cos,
     count,
     datetime as bz_datetime,
@@ -2064,4 +2065,26 @@ def test_greatest(op):
 
     assert normalize(compute(op(s.a, s.b), db)) == normalize(
         'select {op}(s.a, s.b) as {op}_1 from s'.format(op=op.__name__),
+    )
+
+
+def test_coalesce():
+    ds = 'var * {a: ?int32}'
+    db = resource('sqlite:///m:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+    t = symbol('s', 'int32')
+
+    assert normalize(compute(coalesce(s.a, t), {s: db, t: 1})) == normalize(
+        """\
+        select
+            coalesce(s.a, 1) as coalesce_1
+        from s
+        """,
+    )
+    assert normalize(compute(coalesce(s.a, 1), {s: db})) == normalize(
+        """\
+        select
+            coalesce(s.a, 1) as a
+        from s
+        """,
     )

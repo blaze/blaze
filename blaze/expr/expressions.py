@@ -4,7 +4,17 @@ from keyword import iskeyword
 import re
 
 import datashape
-from datashape import dshape, DataShape, Record, Var, Mono, Fixed
+from datashape import (
+    dshape,
+    DataShape,
+    Record,
+    Var,
+    Mono,
+    Fixed,
+    promote,
+    Option,
+    Null,
+)
 from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 import numpy as np
 from odo.utils import copydoc
@@ -16,12 +26,14 @@ from ..compatibility import _strtypes, builtins, boundmethod, PY2
 from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
-from .utils import hashable_index, replace_slices
+from .utils import hashable_index, replace_slices, maxshape
 from ..utils import attribute
 
 
 __all__ = [
     'Apply',
+    'Cast',
+    'Coalesce',
     'Coerce',
     'ElemWise',
     'Expr',
@@ -35,6 +47,8 @@ __all__ = [
     'Slice',
     'Symbol',
     'apply',
+    'cast',
+    'coalesce',
     'coerce',
     'discover',
     'label',
@@ -790,6 +804,92 @@ def coerce(expr, to):
     return Coerce(expr, dshape(to) if isinstance(to, _strtypes) else to)
 
 
+class Cast(Expr):
+    """Cast an expression to a different type.
+
+    This is only an expression time operation.
+    """
+    __slots__ = '_hash', '_child', 'to'
+
+    def _dshape(self):
+        return self.to
+
+    def __str__(self):
+        return 'cast(%s, to=%r)' % (self._child, str(self.to))
+
+
+@copydoc(Cast)
+def cast(expr, to):
+    return Cast(expr, dshape(to) if isinstance(to, _strtypes) else to)
+
+
+Expr.cast = cast  # method of all exprs
+
+
+def binop_name(expr):
+    if not isscalar(expr.dshape.measure):
+        return None
+    l = getattr(expr.lhs, '_name', None)
+    r = getattr(expr.rhs, '_name', None)
+    if bool(l) ^ bool(r):
+        return l or r
+    elif l == r:
+        return l
+
+    return None
+
+
+def binop_inputs(expr):
+    if isinstance(expr.lhs, Expr):
+        yield expr.lhs
+    if isinstance(expr.rhs, Expr):
+        yield expr.rhs
+
+
+class Coalesce(Expr):
+    """SQL like coalesce.
+
+    coalesce(a, b) = {
+        a if a is not NULL
+        b otherwise
+    }
+    """
+    __slots__ = '_hash', 'lhs', 'rhs', 'dshape'
+    __inputs__ = 'lhs', 'rhs'
+
+    def __str__(self):
+        return 'coalesce(%s, %s)' % (self.lhs, self.rhs)
+
+    _name = property(binop_name)
+
+    @property
+    def _inputs(self):
+        return tuple(binop_inputs(self))
+
+
+@copydoc(Coalesce)
+def coalesce(a, b):
+    a_dshape = discover(a)
+    a_measure = a_dshape.measure
+    isoption = isinstance(a_measure, Option)
+    if isoption:
+        a_measure = a_measure.ty
+    isnull = isinstance(a_measure, Null)
+    if isnull:
+        # a is always null, this is just b
+        return b
+
+    if not isoption:
+        # a is not an option, this is just a
+        return a
+
+    b_dshape = discover(b)
+    return Coalesce(a, b, DataShape(*(
+        maxshape((a_dshape.shape, b_dshape.shape)) +
+        (promote(a_measure, b_dshape.measure),)
+    )))
+
+
 dshape_method_list = list()
 schema_method_list = list()
 method_properties = set()
@@ -845,6 +945,7 @@ dshape_method_list.extend([
 schema_method_list.extend([
     (isscalar, set([label, relabel, coerce])),
     (isrecord, set([relabel])),
+    (lambda ds: isinstance(ds, Option), {coalesce}),
 ])
 
 method_properties.update([shape, ndim])

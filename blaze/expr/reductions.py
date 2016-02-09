@@ -9,9 +9,8 @@ from odo.utils import copydoc
 import toolz
 
 from .core import common_subexpression
-from .expressions import Expr, ndim
+from .expressions import Expr, ndim, dshape_method_list, method_properties
 from .strings import isstring
-from .expressions import dshape_method_list, method_properties
 
 
 class Reduction(Expr):
