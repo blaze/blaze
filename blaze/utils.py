@@ -7,9 +7,9 @@ import os
 import re
 
 try:
-    from cytoolz import nth, unique, concat, first, drop
+    from cytoolz import nth, unique, concat, first, drop, curry
 except ImportError:
-    from toolz import nth, unique, concat, first, drop
+    from toolz import nth, unique, concat, first, drop, curry
 
 import numpy as np
 # these are used throughout blaze, don't remove them
@@ -17,10 +17,10 @@ from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 import pandas as pd
 import psutil
 import sqlalchemy as sa
-from toolz.curried.operator import setitem
+import toolz.curried.operator as op
 
 # Imports that replace older utils.
-from .compatibility import map, zip
+from .compatibility import map, zip, PY2
 from .dispatch import dispatch
 
 
@@ -177,11 +177,29 @@ def json_dumps(ds):
     return {'__!timedelta': ds.total_seconds()}
 
 
-def object_hook(obj):
+# dict of converters. This is stored as a default arg to object hook for
+# performance because this function is really really slow when unpacking data.
+# This is a mutable default but it is not a bug!
+_converters = {}
+
+
+if PY2:
+    _keys = dict.keys
+else:
+    def _keys(d, _dkeys=dict.keys, _list=list):
+        return _list(_dkeys(d))
+
+
+def object_hook(obj,
+                # Cached for performance. Forget these exist.
+                _len=len,
+                _keys=_keys,
+                _first_three_chars=np.s_[:3],
+                _converters=_converters):
     """Convert a json object dict back into a python object.
 
-    This looks for our objects that have encoded richer representations with
-    a ``__!{type}`` key.
+    This looks for our objects that have encoded richer representations
+    with a ``__!{type}`` key.
 
     Parameters
     ----------
@@ -207,16 +225,26 @@ def object_hook(obj):
     Register can also be called as a function like:
     >>> object_hook.register('frozenset', frozenset)
     """
-    if len(obj) != 1:
+    if _len(obj) != 1:
         return obj
 
-    key, = obj.keys()
-    if not key.startswith('__!'):
+    key = _keys(obj)[0]
+    if key[_first_three_chars] != '__!':
         return obj
 
-    return object_hook._converters[key[len('__!'):]](obj[key])
-object_hook._converters = {}
-object_hook.register = setitem(object_hook._converters)
+    return _converters[key](obj[key])
+
+
+@curry
+def register(typename, converter, converters=_converters):
+    converters['__!' + typename] = converter
+    return converter
+object_hook.register = register
+del register
+
+object_hook._converters = _converters  # make this accesible for debugging
+del _converters
+del _keys  # captured by default args
 
 
 object_hook.register('datetime', pd.Timestamp)
