@@ -275,6 +275,8 @@ class Sample(Expr):
 
 @copydoc(Sample)
 def sample(child, n=None, frac=None):
+    if n is frac is None:
+        raise TypeError("sample() missing 1 required argument, 'n' or 'frac'.")
     if n is not None and frac is not None:
         raise ValueError("n ({}) and frac ({}) cannot both be specified.".format(n, frac))
     if n is not None:

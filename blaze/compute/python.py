@@ -666,6 +666,7 @@ def compute_up(t, seq, **kwargs):
     else:
         return take(t.n, seq)
 
+
 @dispatch(Sample, Sequence)
 def compute_up(t, seq, **kwargs):
     nsamp = t.n if t.n is not None else int(t.frac * len(seq))
