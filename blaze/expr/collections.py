@@ -259,7 +259,7 @@ class Sample(Expr):
     >>> from blaze import symbol
     >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
     >>> accounts.sample(n=2).dshape
-    dshape("2 * {name: string, amount: int32}")
+    dshape("var * {name: string, amount: int32}")
     >>> accounts.sample(frac=0.1).dshape
     dshape("var * {name: string, amount: int32}")
     """
