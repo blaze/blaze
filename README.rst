@@ -141,7 +141,7 @@ follows
 
 ::
 
-    conda install blaze spark dynd-python -c libdynd -c blaze -c anaconda-cluster -y
+    conda install blaze spark -c blaze -c anaconda-cluster -y
     conda remove odo blaze blaze-core datashape -y
 
 After running these commands, clone ``odo``, ``blaze``, and ``datashape`` from
