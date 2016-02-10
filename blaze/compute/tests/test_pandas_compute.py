@@ -369,6 +369,13 @@ def test_tail():
     tm.assert_frame_equal(compute(t.tail(1), df), df.tail(1))
 
 
+def test_sample():
+    samp = compute(t.sample(n=2), df)
+    assert len(samp) == 2
+    samp = compute(t.sample(frac=0.5), df)
+    assert len(samp) == int(np.ceil(len(df) * 0.5))
+
+
 def test_label():
     expected = df['amount'] * 10
     expected.name = 'foo'
