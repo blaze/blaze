@@ -79,7 +79,6 @@ Blaze can help you use a variety of other libraries like ``sqlalchemy`` or
 ``h5py``.  If these are installed then Blaze will use them.  Some of these are
 non-trivial to install.  We recommend installation throgh ``conda``.
 
-* dynd-python_ >= 0.6.5
 * sqlalchemy_
 * h5py_
 * spark_ >= 1.1.0
@@ -94,7 +93,6 @@ non-trivial to install.  We recommend installation throgh ``conda``.
 .. _odo: https://github.com/blaze/odo
 .. _h5py: http://docs.h5py.org/en/latest/
 .. _pytest: http://pytest.org/latest/
-.. _dynd-python: https://github.com/blaze/dynd-python
 .. _datashape: https://github.com/blaze/datashape
 .. _pandas: http://pandas.pydata.org/
 .. _cytoolz: https://github.com/pytoolz/cytoolz/
