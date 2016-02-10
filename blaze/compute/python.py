@@ -56,7 +56,7 @@ from math import *
 
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
-Sequence = (tuple, list, Iterator, type(dict().items()), range)
+Sequence = (tuple, list, Iterator, type(dict().items()))
 
 
 @dispatch(Expr, Sequence)
