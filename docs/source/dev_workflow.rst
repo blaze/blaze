@@ -20,7 +20,6 @@ on github.com/blaze/project-name
 *  DataShape_
 *  Odo_
 *  Dask_
-*  DyND_
 
 Bleeding edge binaries are kept up-to-date on the ``blaze`` conda channel.
 New developers likely only need to interact with one or two of these libraries so we recommend downloading everything by the conda channel and then only cloning those git repositories that you actively need::
@@ -29,7 +28,6 @@ New developers likely only need to interact with one or two of these libraries s
     git clone git://github.com/blaze/blaze.git  # only clone blaze and odo
     git clone git://github.com/blaze/odo.git  # only clone blaze and odo
 
-.. _DyND: https://github.com/blaze/dynd-python
 .. _Odo: https://github.com/blaze/odo
 .. _Dask: https://github.com/blaze/dask
 .. _Blaze: https://github.com/blaze/blaze

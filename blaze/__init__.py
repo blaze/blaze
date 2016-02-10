@@ -48,9 +48,6 @@ with ignoring(ImportError, AttributeError):
 with ignoring(ImportError, TypeError):
     from .compute.sparksql import *
 with ignoring(ImportError):
-    from dynd import nd
-    from .compute.dynd import *
-with ignoring(ImportError):
     from .compute.h5py import *
 with ignoring(ImportError):
     from .compute.hdfstore import *
