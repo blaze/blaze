@@ -48,7 +48,7 @@ from multipledispatch import MDNotImplementedError
 from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
 from datashape import TimeDelta
-from datashape.predicates import iscollection, isscalar, isrecord
+from datashape.predicates import iscollection, isscalar, isrecord, istabular
 
 from ..dispatch import dispatch
 
@@ -1181,7 +1181,11 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(Expr, ClauseElement)
-def post_compute(_, s, **kwargs):
+def post_compute(expr, s, **kwargs):
+    if isscalar(expr.dshape):
+        return select(s).scalar()
+    elif iscollection(expr.dshape) or istabular(expr.dshape):
+        return select(s).execute().fetchall()
     return select(s)
 
 
