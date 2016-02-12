@@ -275,7 +275,9 @@ def _read_timedelta(ds):
 
 @object_hook.register('bytes')
 def _read_bytes(bs):
-    return bs.encode('latin1')
+    if not isinstance(bs, bytes):
+        bs = bs.encode('latin1')
+    return bs
 
 
 def normalize(s):
