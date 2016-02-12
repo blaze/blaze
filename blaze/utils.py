@@ -11,13 +11,13 @@ try:
 except ImportError:
     from toolz import nth, unique, concat, first, drop, curry
 
+from datashape import dshape, Mono, DataShape
 import numpy as np
 # these are used throughout blaze, don't remove them
 from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 import pandas as pd
 import psutil
 import sqlalchemy as sa
-import toolz.curried.operator as op
 
 # Imports that replace older utils.
 from .compatibility import map, zip, PY2
@@ -177,6 +177,16 @@ def json_dumps(ds):
     return {'__!timedelta': ds.total_seconds()}
 
 
+@dispatch(Mono)
+def json_dumps(m):
+    return {'__!mono': str(m)}
+
+
+@dispatch(DataShape)
+def json_dumps(ds):
+    return {'__!datashape': str(ds)}
+
+
 # dict of converters. This is stored as a default arg to object hook for
 # performance because this function is really really slow when unpacking data.
 # This is a mutable default but it is not a bug!
@@ -190,7 +200,7 @@ else:
         return _list(_dkeys(d))
 
 
-def object_hook(obj,
+def object_hook(ob,
                 # Cached for performance. Forget these exist.
                 _len=len,
                 _keys=_keys,
@@ -203,7 +213,7 @@ def object_hook(obj,
 
     Parameters
     ----------
-    obj : dict
+    ob : dict
         The raw json parsed dictionary.
 
     Returns
@@ -219,20 +229,20 @@ def object_hook(obj,
     >>> class MyList(list):
     ...     pass
     >>> @object_hook.register('MyList')
-    ... def _parse_my_list(obj):
-    ...     return MyList(obj)
+    ... def _parse_my_list(ob):
+    ...     return MyList(ob)
 
     Register can also be called as a function like:
     >>> object_hook.register('frozenset', frozenset)
     """
-    if _len(obj) != 1:
-        return obj
+    if _len(ob) != 1:
+        return ob
 
-    key = _keys(obj)[0]
+    key = _keys(ob)[0]
     if key[_first_three_chars] != '__!':
-        return obj
+        return ob
 
-    return _converters[key](obj[key])
+    return _converters[key](ob[key])
 
 
 @curry
@@ -249,11 +259,22 @@ del _keys  # captured by default args
 
 object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
+object_hook.register('datashape', dshape)
+
+
+@object_hook.register('mono')
+def _read_mono(m):
+    return dshape(m).measure
 
 
 @object_hook.register('timedelta')
 def _read_timedelta(ds):
     return datetime.timedelta(seconds=ds)
+
+
+@object_hook.register('bytes')
+def _read_bytes(bs):
+    return bs.encode('latin1')
 
 
 def normalize(s):

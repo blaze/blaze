@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 from odo import resource
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from toolz import assoc
 
 from ..expr import Expr
 from ..dispatch import dispatch
@@ -143,26 +144,27 @@ def mimetype(serial):
 
 
 @dispatch(Expr, Client)
-def compute_down(expr, ec, compute_kwargs=None, odo_kwargs=None, **kwargs):
+def compute_down(expr, ec, profiler_output=None, **kwargs):
     from .server import to_tree
-    tree = to_tree(expr)
 
+    tree = to_tree(expr)
     serial = ec.serial
+    if profiler_output is not None:
+        kwargs['profiler_output'] = ':response'
     r = post(
         ec,
         '/compute',
-        data=serial.dumps({
-            'expr': tree,
-            'compute_kwargs': compute_kwargs,
-            'odo_kwargs': odo_kwargs,
-        }),
+        data=serial.dumps(assoc(kwargs, 'expr', tree)),
         auth=ec.auth,
         headers=mimetype(serial),
     )
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
-    return serial.loads(content(r))['data']
+    response = serial.loads(content(r))
+    if profiler_output is not None:
+        profiler_output.write(response['profiler_output'])
+    return serial.data_loads(response['data'])
 
 
 @resource.register('blaze://.+')

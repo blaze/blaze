@@ -6,9 +6,10 @@ from .client import Client
 from .serialization import (
     SerializationFormat,
     all_formats,
+    fastmsgpack as fastmsgpack_format,
     json as json_format,
-    pickle as pickle_format,
     msgpack as msgpack_format,
+    pickle as pickle_format,
 )
 
 
@@ -16,11 +17,12 @@ __all__ = [
     'Client',
     'SerializationFormat',
     'Server',
-    'data_spider',
-    'from_yaml',
     'all_formats',
     'api',
+    'data_spider',
+    'fastmsgpack_format',
     'from_tree',
+    'from_yaml',
     'json_format',
     'msgpack_format',
     'pickle_format',

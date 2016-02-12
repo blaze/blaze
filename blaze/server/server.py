@@ -1,20 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
-import socket
-import functools
-import re
-from warnings import warn
 import collections
+from datetime import datetime
+import errno
+import functools
+import os
+import re
+import socket
+from warnings import warn
 
+from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
-
-from toolz import assoc, valmap
-
-from datashape import Mono, discover, pprint
-from datashape.predicates import iscollection, isscalar
-from odo import odo
+from toolz import valmap
 
 import blaze
 from blaze import compute, resource
@@ -22,7 +21,7 @@ from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
 from .serialization import json, all_formats
-from ..interactive import InteractiveSymbol, coerce_scalar
+from ..interactive import InteractiveSymbol
 from ..expr import Expr, symbol
 
 
@@ -55,6 +54,14 @@ def _get_option(option, options, default=_no_default):
         )
 
 
+def ensure_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
 def _register_api(app, options, first_registration=False):
     """
     Register the data with the blueprint.
@@ -66,29 +73,57 @@ def _register_api(app, options, first_registration=False):
     _get_auth.cache[app] = (
         _get_option('authorization', options, None) or (lambda a: True)
     )
+    allow_profiler = _get_option('allow_profiler', options, False)
+    profiler_output = _get_option('profiler_output', options, None)
+    profile_by_default = _get_option('profile_by_default', options, False)
+    if not allow_profiler and (profiler_output or profile_by_default):
+        raise ValueError(
+            "cannot set %s%s%s when 'allow_profiler' is False" % (
+                'profiler_output' if profiler_output else '',
+                ' or ' if profiler_output and profile_by_default else '',
+                'profile_by_default' if profile_by_default else '',
+            ),
+        )
+    if allow_profiler:
+        if profiler_output is None:
+            profiler_output = 'profiler_output'
+        if profiler_output != ':response':
+            ensure_dir(profiler_output)
+
+    _get_profiler_info.cache[app] = (
+        allow_profiler, profiler_output, profile_by_default
+    )
+
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
 
 api.register = _register_api
 
 
-def _get_data():
-    """
-    Retrieve the current application's data for use in the blaze server
-    endpoints.
-    """
-    return _get_data.cache[flask.current_app]
-_get_data.cache = {}
+def per_app_accesor(name):
+    def _get():
+        return _get.cache[flask.current_app]
+    _get.cache = {}
+    _get.__name__ = '_get' + name
+    return _get
 
 
 def _get_format(name):
     return _get_format.cache[flask.current_app][name]
 _get_format.cache = {}
 
+_get_data = per_app_accesor('data')
+_get_auth = per_app_accesor('auth')
+_get_profiler_info = per_app_accesor('profiler_info')
 
-def _get_auth():
-    return _get_auth.cache[flask.current_app]
-_get_auth.cache = {}
+
+def _prof_path(profiler_output, expr):
+    dir_ = os.path.join(
+        profiler_output,
+        str(hash(expr)),
+    )
+    ensure_dir(dir_)
+    return os.path.join(dir_, str(int(datetime.utcnow().timestamp())))
 
 
 def authorization(f):
@@ -153,6 +188,21 @@ class Server(object):
         None indicating that no header was passed, or an object
         containing a username and password attribute. By default, all requests
         are allowed.
+    allow_profiler : bool, optional
+        Allow payloads to specify `"profile": true` which will run the
+        computation under cProfile.
+    profiler_output : str, optional
+        The directory to write pstats files after profile runs.
+        The files will be written in a structure like:
+
+          {profiler_output}/{hash(expr)}/{timestamp}
+
+        This defaults to a relative path of `profiler_output`.
+        This requires `allow_profiler=True`.
+    profile_by_default : bool, optional
+        Run the profiler on any computation that does not explicitly set
+        "profile": false.
+        This requires `allow_profiler=True`.
 
     Examples
     --------
@@ -167,7 +217,13 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    def __init__(self, data=None, formats=None, authorization=None):
+    def __init__(self,
+                 data=None,
+                 formats=None,
+                 authorization=None,
+                 allow_profiler=False,
+                 profiler_output=None,
+                 profile_by_default=False):
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
@@ -176,6 +232,9 @@ class Server(object):
             data=data,
             formats=formats if formats is not None else (json,),
             authorization=authorization,
+            allow_profiler=allow_profiler,
+            profiler_output=profiler_output,
+            profile_by_default=profile_by_default,
         )
         self.data = data
 
@@ -274,8 +333,6 @@ def to_tree(expr, names=None):
         return {'op': 'slice',
                 'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
-    elif isinstance(expr, Mono):
-        return str(expr)
     elif isinstance(expr, InteractiveSymbol):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
@@ -376,7 +433,7 @@ def from_tree(expr, namespace=None):
         else:
             children = [from_tree(arg, namespace) for arg in args]
         return cls(*children)
-    elif isinstance(expr, list):
+    elif isinstance(expr, (list, tuple)):
         return tuple(from_tree(arg, namespace) for arg in expr)
     if namespace and expr in namespace:
         return namespace[expr]
@@ -393,6 +450,23 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @authorization
 @check_request
 def compserver(payload, serial):
+    allow_profiler, profiler_output, profile_by_default = _get_profiler_info()
+    profiler_output = payload.get('profiler_output', profiler_output)
+    profile = payload.get('profile')
+    profiling = (
+        allow_profiler and
+        (profile or (profile_by_default and profiler_output))
+    )
+    if profile and not allow_profiler:
+        return (
+            'profiling is disabled on this server',
+            500,
+        )
+    if profiling:
+        from cProfile import Profile
+        profiler = Profile()
+        profiler.enable()
+
     ns = payload.get('namespace', dict())
     compute_kwargs = payload.get('compute_kwargs') or {}
     odo_kwargs = payload.get('odo_kwargs') or {}
@@ -404,12 +478,11 @@ def compserver(payload, serial):
     leaf = expr._leaves()[0]
 
     try:
-        result = compute(expr, {leaf: dataset}, **compute_kwargs)
-
-        if iscollection(expr.dshape):
-            result = odo(result, list, **odo_kwargs)
-        elif isscalar(expr.dshape):
-            result = coerce_scalar(result, str(expr.dshape))
+        result = serial.materialize(
+            compute(expr, {leaf: dataset}, **compute_kwargs),
+            expr.dshape,
+            odo_kwargs,
+        )
     except NotImplementedError as e:
         # 501: Not Implemented
         return ("Computation not supported:\n%s" % e, 501)
@@ -420,11 +493,29 @@ def compserver(payload, serial):
             500,
         )
 
-    return serial.dumps({
+    response = {
         'datashape': pprint(expr.dshape, width=0),
-        'data': result,
+        'data': serial.data_dumps(result),
         'names': expr.fields
-    })
+    }
+    if profiling:
+        import marshal
+        from pstats import Stats
+
+        profiler.disable()
+        if profiler_output == ':response':
+            from pandas.compat import BytesIO
+            file = BytesIO()
+        else:
+            file = open(_prof_path(profiler_output, expr), 'wb')
+
+        with file:
+            marshal.dump(Stats(profiler).stats, file)
+            if profiler_output == ':response':
+                response['profiler_output'] = file.getvalue()
+
+    return serial.dumps(response)
+
 
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
