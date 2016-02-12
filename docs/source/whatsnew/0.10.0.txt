@@ -11,6 +11,7 @@ New Expressions
   interactive data exploration (:issue:`1410`).  It is implemented for the
   Pandas, Dask, SQL, and Python backends.
 
+
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
