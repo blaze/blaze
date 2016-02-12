@@ -234,6 +234,7 @@ def object_hook(ob,
 
     Register can also be called as a function like:
     >>> object_hook.register('frozenset', frozenset)
+    <type 'frozenset'>
     """
     if _len(ob) != 1:
         return ob

@@ -54,7 +54,7 @@ class SerializationFormat(_serializationformat):
         )
 
 
-def default_materialize(dshape, data, odo_kwargs):
+def default_materialize(data, dshape, odo_kwargs):
     if iscollection(dshape):
         return odo(data, list, **odo_kwargs)
     if isscalar(dshape):
@@ -166,7 +166,7 @@ def fastmsgpack_materialize(data, dshape, odo_kwargs):
     if istabular(dshape):
         return odo(data, pd.DataFrame, **odo_kwargs)
     if iscollection(dshape):
-        return odo(data, pd.DataFrame, **odo_kwargs)
+        return odo(data, pd.Series, **odo_kwargs)
     if isscalar(dshape):
         return coerce_scalar(data, str(dshape), odo_kwargs)
     return data
