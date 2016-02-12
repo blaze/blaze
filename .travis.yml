@@ -6,8 +6,6 @@ matrix:
   fast_finish: true
   include:
     - python: 2.7
-      env: SPARK_VERSION=1.3
-    - python: 2.7
       env: SPARK_VERSION=1.4
     - python: 2.7
       env: SPARK_VERSION=1.5
@@ -50,31 +48,17 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz pymysql
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz pymysql multipledispatch dask pymongo=2.8 flask-cors psycopg2
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
 
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' || $TRAVIS_PYTHON_VERSION == '3.4' ]]; then conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive -c blaze; fi
 
-  - pip install psycopg2
-
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
   - pip install git+https://github.com/blaze/odo
   - if [ -n "$PANDAS_VERSION" ]; then pip install "$PANDAS_VERSION"; fi
-
-  # functional libs
-  - pip install git+https://github.com/mrocklin/multipledispatch
-
-  # Install dask
-  - pip install git+https://github.com/blaze/dask
-
-  # Install PyMongo
-  - pip install 'pymongo<3'
-
-  # Install dynd
-  - conda install -c mwiebe dynd-python
 
   # Install coveralls
   - pip install coveralls
@@ -92,7 +76,7 @@ script:
   - echo '[pytest]' > pytest.ini
   - echo "addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs" >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
-  - coverage run --include='blaze/*' $(which py.test)
+  - coverage run --include='blaze/*' --omit='blaze/_version.py' $(which py.test)
   - coverage report --show-missing
 
 after_success:

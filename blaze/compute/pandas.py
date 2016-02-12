@@ -16,9 +16,12 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
+from datetime import timedelta
 import fnmatch
 import itertools
 from distutils.version import LooseVersion
+import warnings
+from collections import defaultdict
 
 import numpy as np
 
@@ -29,6 +32,7 @@ from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 
 from toolz import merge as merge_dicts
+from toolz import groupby
 from toolz.curried import pipe, filter, map, concat
 
 import datashape
@@ -37,18 +41,25 @@ from datashape import to_numpy_dtype
 from datashape.predicates import isscalar
 
 from odo import into
+try:
+    import dask.dataframe as dd
+    DaskDataFrame = dd.DataFrame
+    DaskSeries = dd.Series
+except ImportError:
+    DaskDataFrame = pd.DataFrame
+    DaskSeries = pd.Series
 
 from ..dispatch import dispatch
 
 from .core import compute, compute_up, base
 
-from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
-                    Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, std, var, Like, Slice, summary,
+from ..expr import (Projection, Field, Sort, Head, Tail, Sample, Broadcast,
+                    Selection, Reduction, Distinct, Join, By, Summary, Label,
+                    ReLabel, Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Coerce, Concat,
-                    isnan, notnull, Shift)
+                    UnaryStringFunction, nunique, Coerce, Concat, isnan,
+                    notnull, Shift)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 
@@ -57,18 +68,18 @@ from ..compatibility import _inttypes
 __all__ = []
 
 
-@dispatch(Projection, DataFrame)
+@dispatch(Projection, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return df[list(t.fields)]
 
 
-@dispatch(Field, (DataFrame, DataFrameGroupBy))
+@dispatch(Field, (DataFrame, DataFrameGroupBy, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     assert len(t.fields) == 1
     return df[t.fields[0]]
 
 
-@dispatch(Field, Series)
+@dispatch(Field, (Series, DaskSeries))
 def compute_up(t, data, **kwargs):
     assert len(t.fields) == 1
     if t.fields[0] == data.name:
@@ -78,7 +89,7 @@ def compute_up(t, data, **kwargs):
                          % (t.fields[0], data.name))
 
 
-@dispatch(Broadcast, DataFrame)
+@dispatch(Broadcast, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
     return compute(t._expr, d)
@@ -104,7 +115,7 @@ def compute_up_pd_interp(t, lhs, rhs, **kwargs):
 
 
 
-@dispatch(BinOp, Series)
+@dispatch(BinOp, (Series, DaskSeries))
 def compute_up(t, data, **kwargs):
     if isinstance(t.lhs, Expr):
         return t.op(data, t.rhs)
@@ -112,12 +123,12 @@ def compute_up(t, data, **kwargs):
         return t.op(t.lhs, data)
 
 
-@dispatch(BinOp, Series, (Series, base))
+@dispatch(BinOp, (Series, DaskSeries), (Series, base, DaskSeries))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(BinOp, (Series, base), Series)
+@dispatch(BinOp, (Series, base, DaskSeries), (Series, DaskSeries))
 def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
@@ -131,7 +142,7 @@ def compute_up(t, df, **kwargs):
     return f(df)
 
 
-@dispatch(Selection, (Series, DataFrame))
+@dispatch(Selection, (Series, DataFrame, DaskSeries, DaskDataFrame))
 def compute_up(expr, df, **kwargs):
     return compute_up(
         expr,
@@ -141,7 +152,8 @@ def compute_up(expr, df, **kwargs):
     )
 
 
-@dispatch(Selection, (Series, DataFrame), Series)
+@dispatch(Selection, (Series, DataFrame, DaskSeries, DaskDataFrame),
+                     (Series, DaskSeries))
 def compute_up(expr, df, predicate, **kwargs):
     return df[predicate]
 
@@ -177,7 +189,7 @@ def compute_up(expr, data, **kwargs):
     return data.notnull()
 
 
-pandas_structure = DataFrame, Series, DataFrameGroupBy, SeriesGroupBy
+pandas_structure = DataFrame, DaskDataFrame, Series, DataFrameGroupBy, SeriesGroupBy
 
 
 @dispatch(Concat, pandas_structure, pandas_structure)
@@ -197,7 +209,7 @@ def get_scalar(result):
         return result
 
 
-@dispatch(Reduction, (Series, SeriesGroupBy))
+@dispatch(Reduction, (Series, SeriesGroupBy, DaskSeries))
 def compute_up(t, s, **kwargs):
     result = get_scalar(getattr(s, t.symbol)())
     if t.keepdims:
@@ -207,9 +219,22 @@ def compute_up(t, s, **kwargs):
 
 @dispatch((std, var), (Series, SeriesGroupBy))
 def compute_up(t, s, **kwargs):
+    measure = t.schema.measure
+    is_timedelta = isinstance(
+        getattr(measure, 'ty', measure),
+        datashape.TimeDelta,
+    )
+    if is_timedelta:
+        # part 1 of 2 to work around the fact that pandas does not have
+        # timedelta var or std: cast to a double
+        s = s.astype('timedelta64[s]').astype('int64')
     result = get_scalar(getattr(s, t.symbol)(ddof=t.unbiased))
     if t.keepdims:
         result = Series([result], name=s.name)
+    if is_timedelta:
+        # part 2 of 2 to work around the fact that postgres does not have
+        # timedelta var or std: cast back from seconds by creating a timedelta
+        result = timedelta(seconds=result)
     return result
 
 
@@ -363,13 +388,23 @@ def fancify_summary(expr):
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
     one, two, three = fancify_summary(s)  # see above
-    names = one.fields
-    preapply = DataFrame(
-        dict(
-            zip(names, [compute(v._child, {t._child: df}) for v in one.values])
+
+    names_columns = list(zip(one.fields, one.values))
+    func = lambda x: not isinstance(x[1], count)
+    is_field = defaultdict(lambda: iter([]), groupby(func, names_columns))
+
+    preapply = DataFrame(dict(
+        zip([name for name, _ in is_field[True]],
+            [compute(col._child, {t._child: df}) for _, col in is_field[True]]
+            )
         )
     )
 
+    if list(is_field[False]):
+        emptys = DataFrame([0] * len(df.index),
+                           index=df.index,
+                           columns=[name for name, _ in is_field[False]])
+        preapply = concat_nodup(preapply, emptys)
     if not df.index.equals(preapply.index):
         df = df.loc[preapply.index]
     df2 = concat_nodup(df, preapply)
@@ -392,12 +427,12 @@ def compute_by(t, s, g, df):
     return result3
 
 
-@dispatch(Expr, DataFrame)
+@dispatch(Expr, (DataFrame, DaskDataFrame))
 def post_compute_by(t, df):
     return df.reset_index(drop=True)
 
 
-@dispatch((Summary, Reduction), DataFrame)
+@dispatch((Summary, Reduction), (DataFrame, DaskDataFrame))
 def post_compute_by(t, df):
     return df.reset_index()
 
@@ -466,7 +501,7 @@ pdsort = getattr(
 )
 
 
-@dispatch(Sort, DataFrame)
+@dispatch(Sort, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return pdsort(df, t.key, ascending=t.ascending)
 
@@ -479,19 +514,25 @@ def compute_up(t, s, **kwargs):
         return s.order(ascending=t.ascending)
 
 
-@dispatch(Head, (Series, DataFrame))
+@dispatch(Sample, (Series, DataFrame, DaskDataFrame, DaskSeries))
+def compute_up(t, df, **kwargs):
+    frac = t.frac if t.frac is not None else float(t.n) / len(df)
+    return df.sample(frac=frac)
+
+
+@dispatch(Head, (Series, DataFrame, DaskDataFrame, DaskSeries))
 def compute_up(t, df, **kwargs):
     return df.head(t.n)
 
 
-@dispatch(Tail, (Series, DataFrame))
+@dispatch(Tail, (Series, DataFrame, DaskDataFrame, DaskSeries))
 def compute_up(t, df, **kwargs):
     return df.tail(t.n)
 
 
 @dispatch(Label, DataFrame)
 def compute_up(t, df, **kwargs):
-    return DataFrame(df, columns=[t.label])
+    return type(df)(df, columns=[t.label])
 
 
 @dispatch(Label, Series)
@@ -499,12 +540,12 @@ def compute_up(t, df, **kwargs):
     return Series(df, name=t.label)
 
 
-@dispatch(ReLabel, DataFrame)
+@dispatch(ReLabel, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
     return df.rename(columns=dict(t.labels))
 
 
-@dispatch(ReLabel, Series)
+@dispatch(ReLabel, (Series, DaskSeries))
 def compute_up(t, s, **kwargs):
     labels = t.labels
     if len(labels) > 1:
@@ -543,16 +584,16 @@ def compute_up(t, df, scope=None, **kwargs):
     return pd.concat(children, axis=1)
 
 
-@dispatch(Summary, DataFrame)
+@dispatch(Summary, (DataFrame, DaskDataFrame))
 def compute_up(expr, data, **kwargs):
     values = [compute(val, {expr._child: data}) for val in expr.values]
     if expr.keepdims:
-        return DataFrame([values], columns=expr.fields)
+        return type(data)([values], columns=expr.fields)
     else:
         return Series(dict(zip(expr.fields, values)))
 
 
-@dispatch(Summary, Series)
+@dispatch(Summary, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     result = tuple(compute(val, {expr._child: data}) for val in expr.values)
     if expr.keepdims:
@@ -560,11 +601,9 @@ def compute_up(expr, data, **kwargs):
     return result
 
 
-@dispatch(Like, DataFrame)
-def compute_up(expr, df, **kwargs):
-    arrs = [df[name].str.contains('^%s$' % fnmatch.translate(pattern))
-            for name, pattern in expr.patterns.items()]
-    return df[np.logical_and.reduce(arrs)]
+@dispatch(Like, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.contains(r'^%s$' % fnmatch.translate(expr.pattern))
 
 
 def get_date_attr(s, attr, name):
@@ -621,18 +660,27 @@ def compute_up(expr, df, **kwargs):
     return df.shape[0]
 
 
+@dispatch((count, nelements), (DaskDataFrame, DaskSeries))
+def compute_up(expr, df, **kwargs):
+    warnings.warn("Counting the elements of a dask object can be slow.")
+    result = len(df)
+    if expr.keepdims:
+        result = DaskSeries([result], name=expr._name)
+    return result
+
+
 @dispatch(DateTimeTruncate, Series)
 def compute_up(expr, data, **kwargs):
     return Series(compute_up(expr, into(np.ndarray, data), **kwargs),
                   name=expr._name)
 
 
-@dispatch(IsIn, Series)
+@dispatch(IsIn, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     return data.isin(expr._keys)
 
 
-@dispatch(Coerce, Series)
+@dispatch(Coerce, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
     return data.astype(to_numpy_dtype(expr.schema))
 

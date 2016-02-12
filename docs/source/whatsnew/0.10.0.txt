@@ -1,0 +1,57 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+* The ``sample`` expression allows random sampling of rows to facilitate
+  interactive data exploration (:issue:`1410`).  It is implemented for the
+  Pandas, Dask, SQL, and Python backends.
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+None
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+* Due to API instability and on the recommendation of DyND developers, we
+  removed the DyND dependency temporarily (:issue:`1379`).  When DyND achieves
+  its 1.0 release, DyND will be re-incorporated into Blaze.  The existing DyND
+  support in Blaze was rudimentary and based on an egregiously outdated and
+  buggy version of DyND.  We are aware of no actual use of DyND via Blaze in
+  practice.
+
+Bug Fixes
+~~~~~~~~~
+
+None
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None

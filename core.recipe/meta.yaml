@@ -14,41 +14,30 @@ source:
 
 requirements:
   build:
-    - python 2.7*|3.4*
+    - python
     - setuptools
-    - datashape >=0.4.6
-    - odo >=0.3.3
-    - flask
-    - multipledispatch >=0.4.7
-    - numpy >=1.7
-    - pandas >=0.15.0
+    - flask >=0.10.1
+    - flask-cors
+    - odo >=0.4.0
     - psutil
-    - requests
     - sqlalchemy >=0.8.0
     - toolz
-    - cytoolz
 
   run:
-    - python 2.7*|3.4*
-    - datashape >=0.4.6
-    - odo >=0.3.3
-    - flask
-    - multipledispatch >=0.4.7
-    - numpy >=1.7
-    - pandas >=0.15.0
+    - python
+    - cytoolz
+    - dask
+    - flask >=0.10.1
+    - flask-cors
+    - odo >=0.4.0
     - psutil
+    - pyyaml
     - requests
     - sqlalchemy >=0.8.0
-    - toolz
-    - cytoolz
 
 test:
   requires:
     - pytest >=2.7.0
-    - dask
-    - dynd-python
-    - pytables
-    - pyyaml
     - h5py
 
   commands:

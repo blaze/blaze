@@ -17,11 +17,11 @@ halt_ordering()  # Turn off multipledispatch ordering
 from datashape import dshape, discover
 from .utils import ignoring
 from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
-from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var,
-        transform)
+from .expr import (by, count, count_values, distinct, head, sample, join,
+                   label, like, mean, merge, nunique, relabel, selection, sort,
+                   summary, var, transform)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
-        second, time, year)
+                   second, time, year)
 from .expr.arrays import (tensordot, transpose)
 from .expr.functions import *
 from .index import create_index
@@ -47,9 +47,6 @@ with ignoring(ImportError, AttributeError):
     from .compute.spark import *
 with ignoring(ImportError, TypeError):
     from .compute.sparksql import *
-with ignoring(ImportError):
-    from dynd import nd
-    from .compute.dynd import *
 with ignoring(ImportError):
     from .compute.h5py import *
 with ignoring(ImportError):

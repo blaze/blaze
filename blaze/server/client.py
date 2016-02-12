@@ -143,7 +143,7 @@ def mimetype(serial):
 
 
 @dispatch(Expr, Client)
-def compute_down(expr, ec, **kwargs):
+def compute_down(expr, ec, compute_kwargs=None, odo_kwargs=None, **kwargs):
     from .server import to_tree
     tree = to_tree(expr)
 
@@ -151,7 +151,11 @@ def compute_down(expr, ec, **kwargs):
     r = post(
         ec,
         '/compute',
-        data=serial.dumps({'expr': tree}),
+        data=serial.dumps({
+            'expr': tree,
+            'compute_kwargs': compute_kwargs,
+            'odo_kwargs': odo_kwargs,
+        }),
         auth=ec.auth,
         headers=mimetype(serial),
     )

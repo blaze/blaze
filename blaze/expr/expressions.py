@@ -17,7 +17,7 @@ from .core import Node, subs, common_subexpression, path
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices
-from ..utils import weakmemoize
+from ..utils import attribute
 
 
 __all__ = [
@@ -38,7 +38,6 @@ __all__ = [
     'coerce',
     'discover',
     'label',
-    'label',
     'ndim',
     'projection',
     'relabel',
@@ -46,9 +45,6 @@ __all__ = [
     'shape',
     'symbol',
 ]
-
-
-_attr_cache = dict()
 
 
 def isvalid_identifier(s):
@@ -104,11 +100,10 @@ class Expr(Node):
     contains shared logic and syntax.  It in turn inherits from ``Node`` which
     holds all tree traversal logic
     """
-
-    __slots__ = '_hash', '__weakref__'
+    __slots__ = '_hash', '__weakref__', '__dict__'
 
     def _get_field(self, fieldname):
-        if not isinstance(self.dshape.measure, Record):
+        if not isinstance(self.dshape.measure, (Record, datashape.Map)):
             if fieldname == self._name:
                 return self
             raise ValueError(
@@ -121,8 +116,8 @@ class Expr(Node):
             return self._get_field(key)
         elif isinstance(key, Expr) and iscollection(key.dshape):
             return selection(self, key)
-        elif (isinstance(key, list)
-                and builtins.all(isinstance(k, _strtypes) for k in key)):
+        elif (isinstance(key, list) and
+              builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
                 return self._project(key)
             else:
@@ -142,8 +137,7 @@ class Expr(Node):
     def _project(self, key):
         return projection(self, key)
 
-    @property
-    @weakmemoize
+    @attribute
     def schema(self):
         try:
             m = self._schema
@@ -152,17 +146,23 @@ class Expr(Node):
         else:
             return m()
 
-        return datashape.dshape(self.dshape.measure)
+        self.schema = schema = datashape.dshape(self.dshape.measure)
+        return schema
 
-    @property
-    @weakmemoize
+    @attribute
     def dshape(self):
-        return self._dshape()
+        self.dshape = dshape = self._dshape()
+        return dshape
 
     @property
     def fields(self):
         if isinstance(self.dshape.measure, Record):
             return self.dshape.measure.names
+        elif isinstance(self.dshape.measure, datashape.Map):
+            if not isrecord(self.dshape.measure.value):
+                raise TypeError('Foreign key must reference a '
+                                'Record datashape')
+            return self.dshape.measure.value.names
         name = getattr(self, '_name', None)
         if name is not None:
             return [self._name]
@@ -187,27 +187,23 @@ class Expr(Node):
 
     def __dir__(self):
         result = dir(type(self))
-        if isrecord(self.dshape.measure) and self.fields:
-            result.extend(list(map(valid_identifier, self.fields)))
+        if (isrecord(self.dshape.measure) or
+            isinstance(self.dshape.measure, datashape.Map) and
+                self.fields):
+            result.extend(map(valid_identifier, self.fields))
 
-        d = toolz.merge(schema_methods(self.dshape.measure),
-                        dshape_methods(self.dshape))
-        result.extend(list(d))
+        result.extend(toolz.merge(schema_methods(self.dshape.measure),
+                                  dshape_methods(self.dshape)))
 
         return sorted(set(filter(isvalid_identifier, result)))
 
     def __getattr__(self, key):
         assert key != '_hash', \
-            '%s should set _hash in __init__' % type(self).__name__
-        try:
-            return _attr_cache[(self, key)]
-        except:
-            pass
+            '%s expressions should set _hash in __init__' % type(self).__name__
         try:
             result = object.__getattribute__(self, key)
         except AttributeError:
-            fields = dict(zip(map(valid_identifier, self.fields),
-                              self.fields))
+            fields = dict(zip(map(valid_identifier, self.fields), self.fields))
 
             # prefer the method if there's a field with the same name
             methods = toolz.merge(
@@ -227,15 +223,19 @@ class Expr(Node):
                     result = self[fields[key]]
             else:
                 raise
-        _attr_cache[(self, key)] = result
+
+        # cache the attribute lookup, getattr will not be invoked again.
+        setattr(self, key, result)
         return result
 
     @property
     def _name(self):
-        if (isscalar(self.dshape.measure) and
-                len(self._inputs) == 1 and
-                isscalar(self._child.dshape.measure)):
-            return self._child._name
+        measure = self.dshape.measure
+        if len(self._inputs) == 1 and isscalar(getattr(measure, 'key',
+                                                       measure)):
+            child_measure = self._child.dshape.measure
+            if isscalar(getattr(child_measure, 'key', child_measure)):
+                return self._child._name
 
     def __enter__(self):
         """ Enter context """
@@ -260,12 +260,13 @@ def _symbol_key(args, kwargs):
     if len(args) == 1:
         name, = args
         ds = None
-        token = None
+        token = 0
     if len(args) == 2:
         name, ds = args
-        token = None
+        token = 0
     elif len(args) == 3:
         name, ds, token = args
+        token = token or 0
     ds = kwargs.get('dshape', ds)
     token = kwargs.get('token', token)
     ds = dshape(ds)
@@ -287,7 +288,7 @@ class Symbol(Expr):
     __slots__ = '_hash', '_name', 'dshape', '_token'
     __inputs__ = ()
 
-    def __init__(self, name, dshape, token=None):
+    def __init__(self, name, dshape, token=0):
         self._name = name
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
@@ -307,7 +308,7 @@ class Symbol(Expr):
 @memoize(cache=_symbol_cache, key=_symbol_key)
 @copydoc(Symbol)
 def symbol(name, dshape, token=None):
-    return Symbol(name, dshape, token=token)
+    return Symbol(name, dshape, token=token or 0)
 
 
 @dispatch(Symbol, dict)
@@ -362,7 +363,10 @@ class Field(ElemWise):
 
     def _dshape(self):
         shape = self._child.dshape.shape
-        schema = self._child.dshape.measure.dict[self._name]
+        measure = self._child.dshape.measure
+
+        # TODO: is this too special-case-y?
+        schema = getattr(measure, 'value', measure).dict[self._name]
 
         shape = shape + schema.shape
         schema = (schema.measure,)
@@ -392,8 +396,9 @@ class Projection(ElemWise):
         return list(self._fields)
 
     def _schema(self):
-        d = self._child.schema[0].dict
-        return DataShape(Record([(name, d[name]) for name in self.fields]))
+        measure = self._child.schema.measure
+        d = getattr(measure, 'value', measure).dict
+        return DataShape(Record((name, d[name]) for name in self.fields))
 
     def __str__(self):
         return '%s[%s]' % (self._child, self.fields)
@@ -450,6 +455,7 @@ def sliceit(child, index):
     s = Slice(child, index3)
     hash(s)
     return s
+
 
 
 class Slice(Expr):

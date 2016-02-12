@@ -1,4 +1,5 @@
 from datetime import timedelta
+from operator import methodcaller
 import itertools
 import tempfile
 
@@ -7,24 +8,29 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('psycopg2')
 
+import os
 import numpy as np
 import pandas as pd
 
 import pandas.util.testing as tm
 
+from datashape import dshape
 from odo import odo, resource, drop, discover
+from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
 from odo.utils import tmpfile
-from blaze import symbol, compute, concat, join, sin, cos, radians, atan2
 from blaze import sqrt, transform, Data
 from blaze.utils import example, normalize
 
 
 names = ('tbl%d' % i for i in itertools.count())
 
+@pytest.fixture(scope='module')
+def pg_ip():
+    return os.environ.get('POSTGRES_IP', 'localhost')
 
 @pytest.fixture
-def url():
-    return 'postgresql://postgres@localhost/test::%s'
+def url(pg_ip):
+    return 'postgresql://postgres@{}/test::%s'.format(pg_ip)
 
 
 @pytest.yield_fixture
@@ -42,21 +48,19 @@ def sql(url):
 
 
 @pytest.yield_fixture(scope='module')
-def nyc():
-    with open(example('nyc.csv'), 'rb') as f:
-        raw = f.read()
-        with tmpfile('.csv') as name:
-            with open(name, 'wb') as g:
-                g.write(raw)
-            try:
-                t = odo(name, 'postgresql://postgres@localhost/test::nyc')
-            except sa.exc.OperationalError as e:
-                pytest.skip(str(e))
-            else:
-                try:
-                    yield t
-                finally:
-                    drop(t)
+def nyc(pg_ip):
+    try:
+        t = odo(
+            example('nyc.csv'),
+            'postgresql://postgres@{}/test::nyc'.format(pg_ip),
+        )
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
 
 
 @pytest.yield_fixture
@@ -102,6 +106,20 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
+def sql_with_timedeltas(url):
+    try:
+        t = resource(url % next(names), dshape='var * {N: timedelta}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo([(timedelta(seconds=n),) for n in range(10)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
 def sql_two_tables(url):
     dshape = 'var * {a: int32}'
     try:
@@ -115,6 +133,108 @@ def sql_two_tables(url):
         finally:
             drop(t)
             drop(u)
+
+
+@pytest.yield_fixture
+def products(url):
+    try:
+        products = resource(url % 'products',
+                            dshape="""var * {
+                                product_id: int64,
+                                color: ?string,
+                                price: float64
+                            }""", primary_key=['product_id'])
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield products
+        finally:
+            drop(products)
+
+
+@pytest.yield_fixture
+def orders(url, products):
+    try:
+        orders = resource(url % 'orders',
+                          dshape="""var * {
+                            order_id: int64,
+                            product_id: map[int64, T],
+                            quantity: int64
+                          }
+                          """,
+                          foreign_keys=dict(product_id=products.c.product_id),
+                          primary_key=['order_id'])
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield orders
+        finally:
+            drop(orders)
+
+
+# TODO: scope these as module because I think pytest is caching sa.Table, which
+# doesn't work if remove it after every run
+
+@pytest.yield_fixture
+def main(url):
+    try:
+        main = odo([(i, int(np.random.randint(10))) for i in range(13)],
+                   url % 'main',
+                   dshape=dshape('var * {id: int64, data: int64}'),
+                   primary_key=['id'])
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield main
+        finally:
+            drop(main)
+
+
+@pytest.yield_fixture
+def pkey(url, main):
+    choices = [u'AAPL', u'HPQ', u'ORCL', u'IBM', u'DOW', u'SBUX', u'AMD',
+               u'INTC', u'GOOG', u'PRU', u'MSFT', u'AIG', u'TXN', u'DELL',
+               u'PEP']
+    n = 100
+    data = list(zip(range(n),
+                    np.random.choice(choices, size=n).tolist(),
+                    np.random.uniform(10000, 20000, size=n).tolist(),
+                    np.random.randint(main.count().scalar(), size=n).tolist()))
+    try:
+        pkey = odo(data, url % 'pkey',
+                   dshape=dshape('var * {id: int64, sym: string, price: float64, main: map[int64, T]}'),
+                   foreign_keys=dict(main=main.c.id),
+                   primary_key=['id'])
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield pkey
+        finally:
+            drop(pkey)
+
+
+@pytest.yield_fixture
+def fkey(url, pkey):
+    try:
+        fkey = odo([(i,
+                     int(np.random.randint(pkey.count().scalar())),
+                     int(np.random.randint(10000)))
+                    for i in range(10)],
+                   url % 'fkey',
+                   dshape=dshape('var * {id: int64, sym_id: map[int64, T], size: int64}'),
+                   foreign_keys=dict(sym_id=pkey.c.id),
+                   primary_key=['id'])
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield fkey
+        finally:
+            drop(fkey)
 
 
 @pytest.yield_fixture
@@ -199,6 +319,22 @@ def test_timedelta_arith(sql_with_dts):
     assert (
         odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
     ).all()
+    assert (
+        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series) ==
+        dates - (dates - delta)
+    ).all()
+
+
+@pytest.mark.parametrize('func', ('var', 'std'))
+def test_timedelta_stat_reduction(sql_with_timedeltas, func):
+    sym = symbol('s', discover(sql_with_timedeltas))
+    expr = getattr(sym.N, func)()
+
+    deltas = pd.Series([timedelta(seconds=n) for n in range(10)])
+    expected = timedelta(
+        seconds=getattr(deltas.astype('int64') / 1e9, func)(ddof=expr.unbiased)
+    )
+    assert odo(compute(expr, sql_with_timedeltas), timedelta) == expected
 
 
 def test_coerce_bool_and_sum(sql):
@@ -219,6 +355,118 @@ def test_distinct_on(sql):
     FROM {tbl}) AS anon_1 ORDER BY anon_1."A" ASC
     """.format(tbl=sql.name))
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
+
+
+def test_auto_join_field(orders):
+    t = symbol('t', discover(orders))
+    expr = t.product_id.color
+    result = compute(expr, orders)
+    expected = """SELECT
+        products.color
+    FROM products, orders
+    WHERE orders.product_id = products.product_id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_auto_join_projection(orders):
+    t = symbol('t', discover(orders))
+    expr = t.product_id[['color', 'price']]
+    result = compute(expr, orders)
+    expected = """SELECT
+        products.color,
+        products.price
+    FROM products, orders
+    WHERE orders.product_id = products.product_id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize('func', ['max', 'min', 'sum'])
+def test_foreign_key_reduction(orders, products, func):
+    t = symbol('t', discover(orders))
+    expr = methodcaller(func)(t.product_id.price)
+    result = compute(expr, orders)
+    expected = """WITH alias as (select
+            products.price as price
+        from
+            products, orders
+        where orders.product_id = products.product_id)
+    select {0}(alias.price) as price_{0} from alias
+    """.format(func)
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_foreign_key_chain(fkey):
+    t = symbol('t', discover(fkey))
+    expr = t.sym_id.main.data
+    result = compute(expr, fkey)
+    expected = """SELECT
+        main.data
+    FROM main, fkey, pkey
+    WHERE fkey.sym_id = pkey.id and pkey.main = main.id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.mark.xfail(raises=AssertionError,
+                   reason='CTE mucks up generation here')
+@pytest.mark.parametrize('grouper', ['sym', ['sym']])
+def test_foreign_key_group_by(fkey, grouper):
+    t = symbol('fkey', discover(fkey))
+    expr = by(t.sym_id[grouper], avg_price=t.sym_id.price.mean())
+    result = compute(expr, fkey)
+    expected = """SELECT
+        pkey.sym,
+        avg(pkey.price) AS avg_price
+    FROM pkey, fkey
+    WHERE fkey.sym_id = pkey.id
+    GROUP BY pkey.sym
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.mark.parametrize('grouper', ['sym_id', ['sym_id']])
+def test_group_by_map(fkey, grouper):
+    t = symbol('fkey', discover(fkey))
+    expr = by(t[grouper], id_count=t.size.count())
+    result = compute(expr, fkey)
+    expected = """SELECT
+        fkey.sym_id,
+        count(fkey.size) AS id_count
+    FROM fkey
+    GROUP BY fkey.sym_id
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+def test_foreign_key_isin(fkey):
+    t = symbol('fkey', discover(fkey))
+    expr = t.sym_id.isin([1, 2])
+    result = compute(expr, fkey)
+    expected = """SELECT
+        fkey.sym_id IN (%(sym_id_1)s, %(sym_id_2)s) AS anon_1
+    FROM fkey
+    """
+    assert normalize(str(result)) == normalize(expected)
+
+
+@pytest.mark.xfail(raises=AssertionError, reason='Not yet implemented')
+def test_foreign_key_merge_expression(fkey):
+    from blaze import merge
+
+    t = symbol('fkey', discover(fkey))
+    expr = merge(t.sym_id.sym, t.sym_id.main.data)
+    expected = """
+        select pkey.sym, main.data
+        from
+            fkey, pkey, main
+        where
+            fkey.sym_id = pkey.id and pkey.main = main.id
+    """
+    result = compute(expr, fkey)
+    assert normalize(str(result)) == normalize(expected)
 
 
 def test_join_type_promotion(sqla, sqlb):
@@ -277,7 +525,7 @@ def test_dist(nyc):
     transformed = transform(filtered, dist=dist)
     assert (
         odo(compute(transformed.dist.max(), nyc), float) ==
-        odo(compute(transformed.dist, nyc), pd.Series).max().item()
+        odo(compute(transformed.dist, nyc), pd.Series).max()
     )
 
 
@@ -325,3 +573,13 @@ def test_coerce_on_select(nyc):
 def test_interactive_len(sql):
     t = Data(sql)
     assert len(t) == int(t.count())
+
+
+def test_sample(sql):
+    t = symbol('t', discover(sql))
+    result = compute(t.sample(n=1), sql)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == 1
+    result2 = compute(t.sample(frac=0.5), sql)
+    s2 = odo(result2, pd.DataFrame)
+    assert len(s) == len(s2)

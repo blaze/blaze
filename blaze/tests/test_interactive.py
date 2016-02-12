@@ -3,6 +3,7 @@ import sys
 from types import MethodType
 
 from datashape import dshape
+from datashape.util.testing import assert_dshape_equal
 import pandas as pd
 import pandas.util.testing as tm
 import pytest
@@ -182,6 +183,20 @@ def test_table_resource():
         t = Data(filename)
         assert isinstance(t.data, CSV)
         assert into(list, compute(t)) == into(list, csv)
+
+
+def test_sample_failures():
+    t = symbol('t', 'var * {x:int, y:int}')
+    with pytest.raises(ValueError):
+        t.sample(n=1, frac=0.1)
+    with pytest.raises(TypeError):
+        t.sample(n='a')
+    with pytest.raises(ValueError):
+        t.sample(frac='a')
+    with pytest.raises(TypeError):
+        t.sample(foo='a')
+    with pytest.raises(TypeError):
+        t.sample()
 
 
 def test_concretehead_failure():
@@ -379,6 +394,13 @@ def test_coerce_date_and_datetime():
     assert repr(d) == repr(pd.NaT)
 
 
+def test_coerce_timedelta():
+    x = datetime.timedelta(days=1, hours=2, minutes=3)
+    d = Data(x)
+
+    assert repr(d) == repr(x)
+
+
 def test_highly_nested_repr():
     data = [[0, [[1, 2], [3]], 'abc']]
     d = Data(data)
@@ -392,11 +414,6 @@ def test_asarray_fails_on_different_column_names():
     df = pd.DataFrame(vs)
     with pytest.raises(ValueError):
         Data(df, fields=list('abc'))
-
-
-def test_data_does_not_accept_columns_kwarg():
-    with pytest.raises(ValueError):
-        Data([(1, 2), (3, 4)], columns=list('ab'))
 
 
 def test_functions_as_bound_methods():
@@ -457,5 +474,31 @@ def test_pickle_roundtrip():
     assert ds.isidentical(pickle.loads(pickle.dumps(ds)))
     assert (ds + 1).isidentical(pickle.loads(pickle.dumps(ds + 1)))
     es = Data(np.array([1, 2, 3]))
-    assert es.isidentical(pickle.loads(pickle.dumps(es)))
-    assert (es + 1).isidentical(pickle.loads(pickle.dumps(es + 1)))
+    rs = pickle.loads(pickle.dumps(es))
+    assert (es.data == rs.data).all()
+    assert_dshape_equal(es.dshape, rs.dshape)
+
+
+def test_nameless_data():
+    data = [('a', 1)]
+    assert repr(data) in repr(Data(data))
+
+
+def test_partially_bound_expr():
+    df = pd.DataFrame([(1, 'Alice', 100),
+                       (2, 'Bob', -200),
+                       (3, 'Charlie', 300),
+                       (4, 'Denis', 400),
+                       (5, 'Edith', -500)],
+                      columns=['id', 'name', 'balance'])
+    data = Data(df, name='data')
+    a = symbol('a', 'int')
+    expr = data.name[data.balance > a]
+    assert repr(expr) == 'data[data.balance > a].name'
+
+
+def test_isidentical_regr():
+    # regression test for #1387
+    data = np.array([(np.nan,), (np.nan,)], dtype=[('a', 'float64')])
+    ds = Data(data)
+    assert ds.a.isidentical(ds.a)

@@ -369,6 +369,13 @@ def test_tail():
     tm.assert_frame_equal(compute(t.tail(1), df), df.tail(1))
 
 
+def test_sample():
+    samp = compute(t.sample(n=2), df)
+    assert len(samp) == 2
+    samp = compute(t.sample(frac=0.5), df)
+    assert len(samp) == int(np.ceil(len(df) * 0.5))
+
+
 def test_label():
     expected = df['amount'] * 10
     expected.name = 'foo'
@@ -589,8 +596,38 @@ def test_nested_transform():
     tm.assert_frame_equal(result, df)
 
 
+def test_transform_with_common_subexpression():
+    df = DataFrame(np.random.rand(5, 2), columns=list('ab'))
+    t = symbol('t', discover(df))
+    expr = transform(t, c=t.a - t.a % 3, d=t.a % 3)
+    result = compute(expr, df)
+    expected = pd.concat(
+        [df[c] for c in df.columns] + [
+            pd.Series(df.a - df.a % 3, name='c'),
+            pd.Series(df.a % 3, name='d')
+        ],
+        axis=1
+    )
+    tm.assert_frame_equal(result, expected)
+
+
+def test_merge_with_common_subexpression():
+    df = DataFrame(np.random.rand(5, 2), columns=list('ab'))
+    t = symbol('t', discover(df))
+    expr = merge((t.a - t.a % 3).label('a'), (t.a % 3).label('b'))
+    result = compute(expr, {t: df})
+    expected = pd.concat(
+        [
+            pd.Series(df.a - df.a % 3, name='a'),
+            pd.Series(df.a % 3, name='b')
+        ],
+        axis=1
+    )
+    tm.assert_frame_equal(result, expected)
+
+
 def test_like():
-    expr = t.like(name='Alice*')
+    expr = t[t.name.like('Alice*')]
     expected = DataFrame([['Alice', 100, 1],
                           ['Alice', 50, 3]],
                          columns=['name', 'amount', 'id'])
@@ -769,6 +806,20 @@ def test_timedelta_arith():
     delta = timedelta(days=1)
     assert (compute(sym + delta, series) == series + delta).all()
     assert (compute(sym - delta, series) == series - delta).all()
+    assert (
+        compute(sym - (sym - delta), series) ==
+        series - (series - delta)
+    ).all()
+
+
+@pytest.mark.parametrize('func,expected', (
+    ('var', timedelta(0, 8, 250000)),
+    ('std', timedelta(0, 2, 872281)),
+))
+def test_timedelta_stat_reduction(func, expected):
+    deltas = pd.Series([timedelta(seconds=n) for n in range(10)])
+    sym = symbol('s', discover(deltas))
+    assert compute(getattr(sym, func)(), deltas) == expected
 
 
 def test_coerce_series():
@@ -841,3 +892,8 @@ def test_selection_inner_inputs():
         compute(s[s.a == t.a], {s: s_data, t: t_data}),
         s_data
     )
+
+
+def test_by_with_reduction_on_df():
+    expr = by(tbig.name, id_sum=tbig.id.sum(), count=tbig.count())
+    compute(expr, dfbig)

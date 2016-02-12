@@ -16,7 +16,8 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> # Server code, run this once.  Leave running.
 
    >>> from blaze import *
-   >>> csv = CSV('blaze/examples/data/iris.csv')
+   >>> from blaze.utils import example
+   >>> csv = CSV(example('iris.csv'))
    >>> Data(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -84,7 +85,8 @@ The structure of the specification file is as follows:
 
 .. note::
 
-   When ``source`` is a directory, Blaze will recurse into the directory tree and call ``odo.resource`` on the leaves of the tree.
+  When ``source`` is a directory, Blaze will recurse into the directory tree
+  and call ``odo.resource`` on the leaves of the tree.
 
 Here's an example specification file:
 
@@ -115,6 +117,37 @@ The previous YAML specification will serve the following dictionary:
 The only required key for each named data source is the ``source`` key, which
 is passed to ``odo.resource``. You can optionally specify a ``dshape``
 parameter, which is passed into ``odo.resource`` along with the ``source`` key.
+
+Advanced YAML usage
+-------------------
+
+If ``odo.resource`` requires extra keyword arguments for a particular resource
+type and they are provided in the YAML file, these will be forwarded on to the
+``resource`` call.  
+
+If there is an ``imports`` entry for a resource whose value is a list of module
+or package names, Blaze server will ``import`` each of these modules or
+packages before calling ``resource``.
+
+For example:
+
+  .. code-block:: yaml
+
+     name1:
+         source: path or uri
+         dshape: optional datashape
+         kwarg1: extra kwarg
+         kwarg2: etc.
+     name2:
+         source: path or uri
+         imports: ['mod1', 'pkg2']
+
+For this YAML file, Blaze server will pass on ``kwarg1=...`` and ``kwarg2=...``
+to the ``resource()`` call for ``name1`` in addition to the ``dshape=...``
+keyword argument.
+
+Also, before calling ``resource`` on the ``source`` of ``name2``, Blaze server
+will first execute an ``import mod1`` and ``import pkg2`` statement.
 
 Command Line Interface
 ----------------------
@@ -168,9 +201,9 @@ The highest level of abstraction and the level that most will probably want to
 work at is interactively sending computations to a Blaze server process from a
 client.
 
-We can use Blaze server to have one Blaze process control another.
-Given our iris web server we can use Blaze on the client to drive the server to
-do work for us
+We can use Blaze server to have one Blaze process control another.  Given our
+iris web server we can use Blaze on the client to drive the server to do work
+for us
 
 .. code-block:: python
 
@@ -245,7 +278,7 @@ serer using the ``requests`` library.
    ...                             'args': [':leaf', 'petal_length']}]}}
    >>> r = requests.get('http://localhost:6363/compute.json',
    ...                  data=json.dumps(query),
-   ...                  headers={'Content-Type': 'application/json'})  # doctest: +SKIP
+   ...                  headers={'Content-Type': 'application/vnd.blaze+json'})  # doctest: +SKIP
    >>> json.loads(r.content)  # doctest: +SKIP
    {u'data': 563.8000000000004,
     u'names': ['petal_length_sum'],
@@ -295,7 +328,7 @@ We can use standard command line tools such as ``curl`` to interact with the
 server::
 
    $ curl \
-       -H "Content-Type: application/json" \
+       -H "Content-Type: application/vnd.blaze+json" \
        -d '{"expr": {"op": "Field", "args": [":leaf", "species"]}}' \
        localhost:6363/compute.json
 
@@ -309,7 +342,7 @@ server::
    }
 
    $ curl \
-       -H "Content-Type: application/json" \
+       -H "Content-Type: application/vnd.blaze+json" \
        -d  '{"expr": {"op": "sum", \
                       "args": [{"op": "Field", \
                                 "args": [":leaf", "petal_Length"]}]}}' \
@@ -323,6 +356,22 @@ server::
 These queries deconstruct the Blaze expression as nested JSON.  The ``":leaf"``
 string is a special case pointing to the base data.  Constructing these queries
 can be difficult to do by hand, fortunately Blaze can help you to build them.
+
+Adding Data to the Server
+-------------------------
+
+Data resources can be added to the server from the client by sending a resource
+URI to the server. The data initially on the server must have a dictionary-like
+interface to be updated.
+
+.. code-block:: python
+
+   >>> from blaze.utils import example
+   >>> query = {'accounts': example('accounts.csv')}
+   >>> r = requests.get('http://localhost:6363/add',
+   ...                  data=json.dumps(query),
+   ...                  headers={'Content-Type': 'application/vnd.blaze+json'})  # doctest: +SKIP
+
 
 Advanced Use
 ------------

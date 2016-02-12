@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from datashape import Record, DataShape, dshape, TimeDelta
+from datashape import Record, DataShape, dshape, TimeDelta, Decimal, Option
 from datashape import coretypes as ct
 from datashape.predicates import iscollection, isboolean, isnumeric, isdatelike
 from numpy import inf
@@ -121,11 +121,25 @@ class min(Reduction):
     pass
 
 
-class mean(Reduction):
-    schema = dshape(ct.real)
+class FloatingReduction(Reduction):
+    def _schema(self):
+        measure = self._child.schema.measure
+        base = getattr(measure, 'ty', measure)
+        return_type = Option if isinstance(measure, Option) else toolz.identity
+        return DataShape(return_type(
+            base
+            if isinstance(base, Decimal) else
+            base
+            if isinstance(base, TimeDelta) else
+            ct.float64,
+        ))
 
 
-class var(Reduction):
+class mean(FloatingReduction):
+    pass
+
+
+class var(FloatingReduction):
 
     """Variance
 
@@ -140,14 +154,12 @@ class var(Reduction):
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
 
-    schema = dshape(ct.real)
-
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
         super(var, self).__init__(child, *args, **kwargs)
 
 
-class std(Reduction):
+class std(FloatingReduction):
 
     """Standard Deviation
 
@@ -169,8 +181,6 @@ class std(Reduction):
     var
     """
     __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
-
-    schema = dshape(ct.real)
 
     def __init__(self, child, unbiased=False, *args, **kwargs):
         self.unbiased = unbiased
@@ -307,7 +317,7 @@ dshape_method_list.extend([
     (iscollection, set([count, nelements])),
     (lambda ds: (iscollection(ds) and
                  (isstring(ds) or isnumeric(ds) or isboolean(ds) or
-                  isdatelike(ds) or isinstance(ds, TimeDelta))),
+                  isdatelike(ds))),
      set([min, max])),
     (lambda ds: len(ds.shape) == 1,
      set([nrows, nunique])),

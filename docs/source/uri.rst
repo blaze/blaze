@@ -12,7 +12,8 @@ Interact with a set of CSV files or a SQL database
 .. code-block:: python
 
    >>> from blaze import *
-   >>> t = Data('blaze/examples/data/accounts_*.csv')
+   >>> from blaze.utils import example
+   >>> t = Data(example('accounts_*.csv'))
    >>> t
       id      name  amount
    0   1     Alice     100
@@ -21,7 +22,7 @@ Interact with a set of CSV files or a SQL database
    3   4       Dan     400
    4   5     Edith     500
 
-   >>> t = Data('sqlite:///blaze/examples/data/iris.db::iris')
+   >>> t = Data('sqlite:///%s::iris' % example('iris.db'))
    >>> t
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -42,7 +43,7 @@ Migrate CSV files into a SQL database
 .. code-block:: python
 
    >>> from odo import odo
-   >>> odo('blaze/examples/data/iris.csv', 'sqlite:///myfile.db::iris') # doctest: +SKIP
+   >>> odo(example('iris.csv'), 'sqlite:///myfile.db::iris') # doctest: +SKIP
    Table('iris', MetaData(bind=Engine(sqlite:///myfile.db)), ...)
 
 What sorts of URIs does Blaze support?

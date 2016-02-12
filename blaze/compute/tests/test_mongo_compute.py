@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
+import platform
 pymongo = pytest.importorskip('pymongo')
 
 from datetime import datetime
@@ -13,11 +14,17 @@ from blaze.compute.mongo import MongoQuery
 from blaze.expr import symbol, by, floor, ceil
 from blaze.compatibility import xfail
 
+@pytest.fixture(scope='module')
+def mongo_host_port():
+    import os
+    return (os.environ.get('MONGO_IP', 'localhost'),
+            os.environ.get('MONGO_PORT', 27017))
 
 @pytest.fixture(scope='module')
-def conn():
+def conn(mongo_host_port):
+    host, port = mongo_host_port
     try:
-        return pymongo.MongoClient()
+        return pymongo.MongoClient(host=host, port=port)
     except pymongo.errors.ConnectionFailure:
         pytest.skip('No mongo server running')
 
@@ -308,23 +315,23 @@ def test_summary_complex_arith_multiple(bank):
 
 def test_like(bank):
     bank.create_index([('name', pymongo.TEXT)])
-    expr = t.like(name='*Alice*')
+    expr = t[t.name.like('*Alice*')]
     result = compute(expr, bank)
     assert set(result) == set((('Alice', 100), ('Alice', 200)))
 
 
 def test_like_multiple(big_bank):
-    expr = bigt.like(name='*Bob*', city='*York*')
+    expr = bigt[bigt.name.like('*Bob*') & bigt.city.like('*York*')]
     result = compute(expr, big_bank)
-    assert set(result) == set((('Bob', 100, 'New York City'),
-                               ('Bob', 200, 'New York City')))
+    assert set(result) == set(
+        (('Bob', 100, 'New York City'), ('Bob', 200, 'New York City'))
+    )
 
 
 def test_like_mulitple_no_match(big_bank):
     # make sure we aren't OR-ing the matches
-    expr = bigt.like(name='*York*', city='*Bob*')
-    result = compute(expr, big_bank)
-    assert not set(result)
+    expr = bigt[bigt.name.like('*York*') & bigt.city.like('*Bob*')]
+    assert not set(compute(expr, big_bank))
 
 
 def test_missing_values(missing_vals):
@@ -362,15 +369,15 @@ def test_floor_ceil(bank):
     assert set(compute(200 * ceil(t.amount / 200), bank)) == set([200, 400])
 
 
-def test_Data_construct(bank, points):
-    d = Data('mongodb://localhost/test_db')
+def test_Data_construct(bank, points, mongo_host_port):
+    d = Data('mongodb://{}:{}/test_db'.format(*mongo_host_port))
     assert 'bank' in d.fields
     assert 'points' in d.fields
     assert isinstance(d.dshape.measure, Record)
 
 
-def test_Data_construct_with_table(bank):
-    d = Data('mongodb://localhost/test_db::bank')
+def test_Data_construct_with_table(bank, mongo_host_port):
+    d = Data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port))
     assert set(d.fields) == set(('name', 'amount'))
     assert int(d.count()) == 5
 
@@ -382,9 +389,9 @@ def test_and_same_key(bank):
     assert result == expected
 
 
-def test_interactive_dshape_works():
+def test_interactive_dshape_works(mongo_host_port):
     try:
-        d = Data('mongodb://localhost:27017/test_db::bank',
+        d = Data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port),
                  dshape='var * {name: string, amount: int64}')
     except pymongo.errors.ConnectionFailure:
         pytest.skip('No mongo server running')

@@ -241,9 +241,9 @@ def test_embarassing_selection():
 
 
 def test_embarassing_like():
-    (chunk, chunk_expr), (agg, agg_expr) = split(t, t.like(name='Alice*'))
+    (chunk, chunk_expr), (agg, agg_expr) = split(t, t[t.name.like('Alice*')])
 
-    assert chunk_expr.isidentical(chunk.like(name='Alice*'))
+    assert chunk_expr.isidentical(chunk[chunk.name.like('Alice*')])
     assert agg_expr.isidentical(agg)
 
 

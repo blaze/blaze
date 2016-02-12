@@ -2,12 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
+import itertools
+
 import numpy as np
 import pandas as pd
 
 from datetime import datetime, date
-
-import numba
 
 from blaze.compute.core import compute, compute_up
 from blaze.expr import symbol, by, exp, summary, Broadcast, join, concat
@@ -526,6 +526,10 @@ def test_timedelta_arith():
     sym = symbol('s', discover(dates))
     assert (compute(sym + delta, dates) == dates + delta).all()
     assert (compute(sym - delta, dates) == dates - delta).all()
+    assert (
+        compute(sym - (sym - delta), dates) ==
+        dates - (dates - delta)
+    ).all()
 
 
 def test_coerce():
@@ -618,19 +622,34 @@ binary_name_map = {
 }
 
 
-@pytest.mark.parametrize('funcname',
-                         ['atan2', 'copysign', 'hypot', 'ldexp',
-                          pytest.mark.xfail('fmod', raises=numba.TypingError)])
-def test_binary_math(funcname):
+@pytest.mark.parametrize(
+    ['func', 'kwargs'],
+    itertools.product(['copysign', 'ldexp'], [dict(optimize=False), dict()])
+    )
+def test_binary_math(func, kwargs):
     s_data = np.arange(15).reshape(5, 3)
     t_data = np.arange(15, 30).reshape(5, 3)
     s = symbol('s', discover(s_data))
     t = symbol('t', discover(t_data))
     scope = {s: s_data, t: t_data}
-    result = compute(getattr(blaze, funcname)(s, t), scope)
-    expected = getattr(np, binary_name_map.get(funcname, funcname))(s_data,
-                                                                    t_data)
-    assert np.all(result == expected)
+    result = compute(getattr(blaze, func)(s, t), scope, **kwargs)
+    expected = getattr(np, binary_name_map.get(func, func))(s_data, t_data)
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    ['func', 'kwargs'],
+    itertools.product(['atan2', 'hypot'], [dict(optimize=False), dict()])
+)
+def test_floating_binary_math(func, kwargs):
+    s_data = np.arange(15).reshape(5, 3)
+    t_data = np.arange(15, 30).reshape(5, 3)
+    s = symbol('s', discover(s_data))
+    t = symbol('t', discover(t_data))
+    scope = {s: s_data, t: t_data}
+    result = compute(getattr(blaze, func)(s, t), scope, **kwargs)
+    expected = getattr(np, binary_name_map.get(func, func))(s_data, t_data)
+    np.testing.assert_allclose(result, expected)
 
 
 def test_selection_inner_inputs():

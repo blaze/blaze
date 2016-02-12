@@ -3,29 +3,21 @@ from __future__ import absolute_import, division, print_function
 import socket
 import functools
 import re
+from warnings import warn
+import collections
 
 import flask
 from flask import Blueprint, Flask, request, Response
+from flask.ext.cors import cross_origin
 
-try:
-    from bokeh.server.crossdomain import crossdomain
-except ImportError:
-    def crossdomain(*args, **kwargs):
-        def wrapper(f):
-            @functools.wraps(f)
-            def wrapped(*a, **k):
-                return f(*a, **k)
-            return wrapped
-        return wrapper
+from toolz import assoc, valmap
 
-from toolz import assoc
-
-from datashape import Mono, discover
+from datashape import Mono, discover, pprint
 from datashape.predicates import iscollection, isscalar
 from odo import odo
 
 import blaze
-from blaze import compute
+from blaze import compute, resource
 from blaze.expr import utils as expr_utils
 from blaze.compute import compute_up
 
@@ -113,6 +105,32 @@ def authorization(f):
     return authorized
 
 
+def check_request(f):
+    @functools.wraps(f)
+    def check():
+        content_type = request.headers['content-type']
+        matched = mimetype_regex.match(content_type)
+
+        if matched is None:
+            return 'Unsupported serialization format %s' % content_type, 415
+
+        try:
+            serial = _get_format(matched.groups()[0])
+        except KeyError:
+            return (
+                "Unsupported serialization format '%s'" % matched.groups()[0],
+                415,
+            )
+
+        try:
+            payload = serial.loads(request.data)
+        except ValueError:
+            return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+
+        return f(payload, serial)
+    return check
+
+
 class Server(object):
 
     """ Blaze Data Server
@@ -149,8 +167,6 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    __slots__ = 'app', 'data', 'port'
-
     def __init__(self, data=None, formats=None, authorization=None):
         app = self.app = Flask('blaze.server.server')
         if data is None:
@@ -163,24 +179,40 @@ class Server(object):
         )
         self.data = data
 
-    def run(self, *args, **kwargs):
-        """Run the server"""
-        port = kwargs.pop('port', DEFAULT_PORT)
+    def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
+        """Run the server.
+
+        Parameters
+        ----------
+        port : int, optional
+            The port to bind to.
+        retry : bool, optional
+            If the port is busy, should we retry with the next available port?
+        **kwargs
+            Forwarded to the underlying flask app's ``run`` method.
+
+        Notes
+        -----
+        This function blocks forever when successful.
+        """
         self.port = port
         try:
-            self.app.run(*args, port=port, **kwargs)
+            # Blocks until the server is shut down.
+            self.app.run(port=port, **kwargs)
         except socket.error:
-            print("\tOops, couldn't connect on port %d.  Is it busy?" % port)
-            if kwargs.get('retry', True):
-                # Attempt to start the server on a new port.
-                self.run(*args, **assoc(kwargs, 'port', port + 1))
+            if not retry:
+                raise
+
+            warn("Oops, couldn't connect on port %d.  Is it busy?" % port)
+            # Attempt to start the server on a new port.
+            self.run(port=port + 1, retry=retry, **kwargs)
 
 
 @api.route('/datashape', methods=['GET'])
-@crossdomain(origin='*', methods=['GET'])
+@cross_origin(origins='*', methods=['GET'])
 @authorization
 def shape():
-    return str(discover(_get_data()))
+    return pprint(discover(_get_data()), width=0)
 
 
 def to_tree(expr, names=None):
@@ -357,29 +389,13 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
-@crossdomain(origin='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
-def compserver():
-    content_type = request.headers['content-type']
-    matched = mimetype_regex.match(content_type)
-
-    if matched is None:
-        return 'Unsupported serialization format %s' % content_type, 415
-
-    try:
-        serial = _get_format(matched.groups()[0])
-    except KeyError:
-        return (
-            "Unsupported serialization format '%s'" % matched.groups()[0],
-            415,
-        )
-
-    try:
-        payload = serial.loads(request.data)
-    except ValueError:
-        return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
-
+@check_request
+def compserver(payload, serial):
     ns = payload.get('namespace', dict())
+    compute_kwargs = payload.get('compute_kwargs') or {}
+    odo_kwargs = payload.get('odo_kwargs') or {}
     dataset = _get_data()
     ns[':leaf'] = symbol('leaf', discover(dataset))
 
@@ -388,10 +404,10 @@ def compserver():
     leaf = expr._leaves()[0]
 
     try:
-        result = compute(expr, {leaf: dataset})
+        result = compute(expr, {leaf: dataset}, **compute_kwargs)
 
         if iscollection(expr.dshape):
-            result = odo(result, list)
+            result = odo(result, list, **odo_kwargs)
         elif isscalar(expr.dshape):
             result = coerce_scalar(result, str(expr.dshape))
     except NotImplementedError as e:
@@ -399,10 +415,39 @@ def compserver():
         return ("Computation not supported:\n%s" % e, 501)
     except Exception as e:
         # 500: Internal Server Error
-        return ("Computation failed with message:\n%s" % e, 500)
+        return (
+            "Computation failed with message:\n%s: %s" % (type(e).__name__, e),
+            500,
+        )
 
     return serial.dumps({
-        'datashape': str(expr.dshape),
+        'datashape': pprint(expr.dshape, width=0),
         'data': result,
         'names': expr.fields
     })
+
+@api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
+@cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
+@authorization
+@check_request
+def addserver(payload, serial):
+    """Add a data resource to the server.
+
+    The reuest should contain serialized MutableMapping (dictionary) like
+    object, and the server should already be hosting a MutableMapping
+    resource.
+    """
+    data = _get_data.cache[flask.current_app]
+
+    data_not_mm_msg = ("Cannot update blaze server data since its current data"
+                       " is a %s and not a mutable mapping (dictionary like).")
+    if not isinstance(data, collections.MutableMapping):
+        return (data_not_mm_msg % type(data), 422)
+
+    payload_not_mm_msg = ("Cannot update blaze server with a %s payload, since"
+                          " it is not a mutable mapping (dictionary like).")
+    if not isinstance(payload, collections.MutableMapping):
+        return (payload_not_mm_msg % type(payload), 422)
+
+    data.update(valmap(resource, payload))
+    return 'OK'

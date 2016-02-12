@@ -17,13 +17,13 @@ import fnmatch
 import operator
 import datetime
 import math
-import re
+import random
 
 from collections import Iterator
 from functools import partial
 
 import toolz
-from toolz import map, filter, compose, juxt, identity, tail, flip
+from toolz import map, filter, compose, juxt, identity, tail
 
 try:
     from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
@@ -35,7 +35,7 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Summary, Like, IsIn,
+                    By, Sort, Head, Sample, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp, notnull, UnaryMath, greatest, least)
@@ -667,6 +667,12 @@ def compute_up(t, seq, **kwargs):
         return take(t.n, seq)
 
 
+@dispatch(Sample, Sequence)
+def compute_up(t, seq, **kwargs):
+    nsamp = t.n if t.n is not None else int(t.frac * len(seq))
+    return random.sample(seq, min(nsamp, len(seq)))
+
+
 @dispatch((Label, ReLabel), Sequence)
 def compute_up(t, seq, **kwargs):
     return seq
@@ -695,24 +701,11 @@ def compute_up(expr, data, **kwargs):
         return result
 
 
-def like_regex_predicate(expr):
-    regexes = dict((name, re.compile('^' + fnmatch.translate(pattern) + '$'))
-                   for name, pattern in expr.patterns.items())
-    regex_tup = [regexes.get(name, None) for name in expr.fields]
-
-    def predicate(tup):
-        for item, regex in zip(tup, regex_tup):
-            if regex and not regex.match(item):
-                return False
-        return True
-
-    return predicate
-
-
 @dispatch(Like, Sequence)
 def compute_up(expr, seq, **kwargs):
-    predicate = like_regex_predicate(expr)
-    return filter(predicate, seq)
+    def func(x, pattern=expr.pattern):
+        return fnmatch.fnmatch(x, pattern)
+    return map(func, seq)
 
 
 @dispatch(Slice, Sequence)

@@ -13,10 +13,8 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape, symbol, discover
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (
-    by, merge, join, distinct, sum, min, max, any, summary, count, std, head,
-    transform, greatest, least
-)
+from blaze.expr import (by, merge, join, distinct, sum, min, max, any, summary,
+                        count, std, head, sample, transform, greatest, least)
 import numpy as np
 
 from blaze import cos, sin
@@ -333,6 +331,15 @@ def test_head():
     assert len(list(compute(e, p))) == 101
 
 
+def test_sample():
+    NN = len(databig)
+    for n in range(1, NN+1):
+        assert (len(compute(tbig.sample(n=n), databig)) ==
+                len(compute(tbig.sample(frac=float(n)/NN), databig)) ==
+                n)
+    assert len(compute(tbig.sample(n=NN*2), databig)) == NN
+
+
 def test_graph_double_join():
     idx = [['A', 1],
            ['B', 2],
@@ -628,14 +635,18 @@ def test_scalar_arithmetic():
 
 def test_like():
     t = symbol('t', 'var * {name: string, city: string}')
-    data = [('Alice Smith', 'New York'),
-            ('Bob Smith', 'Chicago'),
-            ('Alice Walker', 'LA')]
+    data = [
+        ('Alice Smith', 'New York'),
+        ('Bob Smith', 'Chicago'),
+        ('Alice Walker', 'LA')
+    ]
 
-    assert list(compute(t.like(name='Alice*'), data)) == [data[0], data[2]]
-    assert list(compute(t.like(name='lice*'), data)) == []
-    assert list(compute(t.like(name='*Smith*'), data)) == [data[0], data[1]]
-    assert list(compute(t.like(name='*Smith*', city='New York'), data)) == [data[0]]
+    assert list(compute(t[t.name.like('Alice*')], data)) == [data[0], data[2]]
+    assert list(compute(t[t.name.like('lice*')], data)) == []
+    assert list(compute(t[t.name.like('*Smith*')], data)) == [data[0], data[1]]
+    assert list(
+        compute(t[t.name.like('*Smith*') & t.city.like('New York')], data)
+    ) == [data[0]]
 
 
 def test_datetime_comparison():

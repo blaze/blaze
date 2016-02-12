@@ -1,14 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterator
+import decimal
 import datetime
-from functools import reduce
+from functools import reduce, partial
 import itertools
 import operator
 import warnings
 
 import datashape
-from datashape import discover, Tuple, Record, DataShape, var
+from datashape import discover, Tuple, Record, DataShape, var, Map
 from datashape.predicates import iscollection, isscalar, isrecord, istabular
 import numpy as np
 from odo import resource, odo
@@ -97,20 +98,16 @@ class InteractiveSymbol(Symbol):
 
 
 @copydoc(InteractiveSymbol)
-def Data(data, dshape=None, name=None, fields=None, columns=None, schema=None,
-         **kwargs):
-    if columns:
-        raise ValueError("columns argument deprecated, use fields instead")
+def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
     if isinstance(data, InteractiveSymbol):
-        return Data(data.data, dshape, name, fields, columns, schema, **kwargs)
+        return Data(data.data, dshape, name, fields, schema, **kwargs)
 
     if isinstance(data, _strtypes):
-        data = resource(data, schema=schema, dshape=dshape, columns=columns,
-                        **kwargs)
+        data = resource(data, schema=schema, dshape=dshape, **kwargs)
     if (isinstance(data, Iterator) and
             not isinstance(data, tuple(not_an_iterator))):
         data = tuple(data)
@@ -228,31 +225,36 @@ def short_dshape(ds, nlines=5):
     return s
 
 
-def coerce_to(typ, x):
+def coerce_to(typ, x, odo_kwargs=None):
     try:
         return typ(x)
     except TypeError:
-        return odo(x, typ)
+        return odo(x, typ, **(odo_kwargs or {}))
 
 
-def coerce_scalar(result, dshape):
+def coerce_scalar(result, dshape, odo_kwargs=None):
+    coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
     if 'float' in dshape:
-        return coerce_to(float, result)
+        return coerce_(float)
+    if 'decimal' in dshape:
+        return coerce_(decimal.Decimal)
     elif 'int' in dshape:
-        return coerce_to(int, result)
+        return coerce_(int)
     elif 'bool' in dshape:
-        return coerce_to(bool, result)
+        return coerce_(bool)
     elif 'datetime' in dshape:
-        return coerce_to(Timestamp, result)
+        return coerce_(Timestamp)
     elif 'date' in dshape:
-        return coerce_to(datetime.date, result)
+        return coerce_(datetime.date)
+    elif 'timedelta' in dshape:
+        return coerce_(datetime.timedelta)
     else:
         return result
 
 
 def expr_repr(expr, n=10):
     # Pure Expressions, not interactive
-    if not expr._resources():
+    if not set(expr._resources().keys()).issuperset(expr._leaves()):
         return str(expr)
 
     # Scalars
@@ -261,7 +263,8 @@ def expr_repr(expr, n=10):
 
     # Tables
     if (ndim(expr) == 1 and (istabular(expr.dshape) or
-                             isscalar(expr.dshape.measure))):
+                             isscalar(expr.dshape.measure) or
+                             isinstance(expr.dshape.measure, Map))):
         return repr_tables(expr, 10)
 
     # Smallish arrays

@@ -17,6 +17,12 @@ cs = symbol('cs', 'string')
 d = symbol('d', '5*3*?int32')
 e = symbol('e', '?int32')
 f = symbol('f', '?bool')
+g = symbol('g', 'datetime')
+h = symbol('h', 'datetime')
+i = symbol('i', '?datetime')
+j = symbol('j', '?datetime')
+k = symbol('k', 'timedelta')
+l = symbol('l', '?timedelta')
 optionals = {d, e, f}
 
 
@@ -105,3 +111,20 @@ def test_str_arith():
 
     with pytest.raises(Exception):
         cs // 1
+
+
+def test_datetime_sub():
+    assert (g - h).dshape == dshape('timedelta')
+    assert (g - i).dshape == dshape('?timedelta')
+    assert (i - j).dshape == dshape('?timedelta')
+    assert (g - k).dshape == dshape('datetime')
+    assert (g - l).dshape == dshape('?datetime')
+    assert (i - k).dshape == dshape('?datetime')
+    assert (i - l).dshape == dshape('?datetime')
+
+
+def test_datetime_add():
+    assert (g + k).dshape == dshape('datetime')
+    assert (g + l).dshape == dshape('?datetime')
+    assert (i + k).dshape == dshape('?datetime')
+    assert (i + l).dshape == dshape('?datetime')
