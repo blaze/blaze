@@ -841,23 +841,26 @@ def compute_up(t, s, **kwargs):
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
+def _samp_compute_up(t, s, **kwargs):
+    if t.n is not None:
+        limit = t.n
+    else:
+        limit = select([safuncs.count() * t.frac]).as_scalar()
+    return s.order_by(safuncs.random()).limit(limit)
 
 @dispatch(Sample, sa.Table)
 def compute_up(t, s, **kwargs):
-    n = t.n if t.n is not None else int(t.frac * s.count().scalar())
-    return select(s).order_by(safuncs.random()).limit(n)
+    return _samp_compute_up(t, select(s), **kwargs)
 
 
 @dispatch(Sample, ColumnElement)
 def compute_up(t, s, **kwargs):
-    n = t.n if t.n is not None else int(t.frac * s.count().scalar())
-    return sa.select([s]).order_by(safuncs.random()).limit(n)
+    return _samp_compute_up(t, sa.select([s]), **kwargs)
 
 
 @dispatch(Sample, FromClause)
 def compute_up(t, s, **kwargs):
-    n = t.n if t.n is not None else int(t.frac * s.count().scalar())
-    return s.order_by(safuncs.random()).limit(n)
+    return _samp_compute_up(t, s, **kwargs)
 
 
 @dispatch(Head, FromClause)
