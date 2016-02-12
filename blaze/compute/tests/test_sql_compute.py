@@ -518,7 +518,10 @@ def test_head():
 
 
 def test_sample():
-    assert str(compute(t.sample(n=5), s)) == str(select(s).order_by(sa.func.random()).limit(5))
+    order_by = select(s).order_by(sa.func.random())
+    assert str(compute(t.sample(n=5), s)) == str(order_by.limit(5))
+    limit_frac = select([sa.func.count() * 0.5]).as_scalar()
+    assert str(compute(t.sample(frac=0.5), s)) == str(order_by.limit(limit_frac))
 
 
 def test_label():
