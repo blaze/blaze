@@ -233,8 +233,9 @@ def object_hook(ob,
     ...     return MyList(ob)
 
     Register can also be called as a function like:
-    >>> object_hook.register('frozenset', frozenset)
-    <type 'frozenset'>
+    >>> a = object_hook.register('frozenset', frozenset)
+    >>> a is frozenset
+    True
     """
     if _len(ob) != 1:
         return ob
