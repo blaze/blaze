@@ -222,7 +222,7 @@ def test_str():
 
     assert eval(str(expr)) == expr
 
-    assert '*' in repr(expr)
+    assert '*' in str(expr)
 
 
 def test_join():

@@ -206,7 +206,7 @@ def repr_tables(expr, n=10):
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
-        return repr(result)  # pragma: no cover
+        return result.peek()  # pragma: no cover
 
 
 def numel(shape):
@@ -293,7 +293,7 @@ def to_html(df):
 def to_html(expr):
     # Tables
     if not expr._resources() or ndim(expr) != 1:
-        return to_html(repr(expr))
+        return to_html(expr_repr(expr))
     return to_html(concrete_head(expr))
 
 
@@ -320,8 +320,21 @@ def table_length(expr):
     except ValueError:
         return int(expr.count())
 
+_warning_msg = """
+In version 0.11, Blaze's expresssion repr will return a standard 
+representation and will no longer implicitly compute.  Use the `peek()`
+method to see a preview of the expression's results.\
+"""
 
-Expr.__repr__ = expr_repr
+def _warning_repr(self):
+    # DeprecationWarnings are ignored by default, so we use a UserWarning here
+    # instead to ensure users are aware of this significant API change.
+    warnings.warn(_warning_msg)
+    return expr_repr(self)
+
+
+Expr.__repr__ = _warning_repr
+Expr.peek = lambda x: print(expr_repr(x))
 Expr._repr_html_ = lambda x: to_html(x)
 Expr.__len__ = table_length
 

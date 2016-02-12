@@ -67,7 +67,7 @@ def test_meaningless_relabel_doesnt_change_input():
 
 def test_relabel_with_invalid_identifiers_reprs_as_dict():
     s = symbol('s', '{"0": int64}')
-    assert repr(s.relabel({'0': 'foo'})) == "s.relabel({'0': 'foo'})"
+    assert str(s.relabel({'0': 'foo'})) == "s.relabel({'0': 'foo'})"
 
 
 def test_dir():

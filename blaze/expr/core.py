@@ -148,9 +148,6 @@ class Node(object):
         ]
         return '%s(%s)' % (type(self).__name__, ', '.join(rep))
 
-    def __repr__(self):
-        return str(self)
-
     def _traverse(self):
         """ Traverse over tree, yielding all subtrees and leaves """
         yield self
