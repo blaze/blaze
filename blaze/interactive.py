@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
 from collections import Iterator
 import decimal
 import datetime
@@ -326,16 +327,36 @@ representation and will no longer implicitly compute.  Use the `peek()`
 method to see a preview of the expression's results.\
 """
 
-def _warning_repr(self):
-    # DeprecationWarnings are ignored by default, so we use a UserWarning here
-    # instead to ensure users are aware of this significant API change.
-    warnings.warn(_warning_msg)
-    return expr_repr(self)
+use_new_repr = False
+def _choose_repr(self):
+    if use_new_repr:
+        return new_repr(self)
+    else:
+        # DeprecationWarnings are ignored by default, so we use a UserWarning here
+        # instead to ensure users are aware of this significant API change.
+        warnings.warn(_warning_msg, UserWarning, stacklevel=2)
+        return expr_repr(self)
 
 
-Expr.__repr__ = _warning_repr
-Expr.peek = lambda x: print(expr_repr(x))
-Expr._repr_html_ = lambda x: to_html(x)
+def _warning_repr_html(self):
+    if use_new_repr:
+        return new_repr(self)
+    else:
+        warnings.warn(_warning_msg, UserWarning, stacklevel=2)
+        return to_html(self)
+
+
+def new_repr(self):
+    width = 50
+    pretty_dshape = datashape.pprint(self.dshape, width=width)
+    if len(pretty_dshape) > width:
+        pretty_dshape = "{}...".format(pretty_dshape[:width])
+    return "<{} at 0x{:x}; dshape: {}>".format(type(self).__name__, pretty_dshape)
+
+
+Expr.__repr__ = _choose_repr
+Expr.peek = lambda x, file=sys.stdout: print(expr_repr(x), file=file)
+Expr._repr_html_ = _warning_repr_html
 Expr.__len__ = table_length
 
 
