@@ -573,3 +573,13 @@ def test_coerce_on_select(nyc):
 def test_interactive_len(sql):
     t = Data(sql)
     assert len(t) == int(t.count())
+
+
+def test_sample(sql):
+    t = symbol('t', discover(sql))
+    result = compute(t.sample(n=1), sql)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == 1
+    result2 = compute(t.sample(frac=0.5), sql)
+    s2 = odo(result2, pd.DataFrame)
+    assert len(s) == len(s2)
