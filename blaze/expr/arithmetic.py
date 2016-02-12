@@ -4,21 +4,10 @@ import operator
 from toolz import first
 import numpy as np
 import pandas as pd
-from datashape import (
-    DataShape,
-    DateTime,
-    Option,
-    TimeDelta,
-    coretypes as ct,
-    datetime_,
-    discover,
-    dshape,
-    optionify,
-    promote,
-    timedelta_,
-    unsigned,
-    var,
-)
+from datashape import (DataShape, DateTime, Option, TimeDelta,
+                       coretypes as ct, datetime_, discover, dshape, optionify,
+                       promote, timedelta_, unsigned, var)
+from datashape.discovery import is_zero_time
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
 from dateutil.parser import parse as dt_parse
 
@@ -300,7 +289,7 @@ def scalar_coerce(_, val):
     if val == '':
         raise TypeError('%r is not a valid date' % val)
     dt = dt_parse(val)
-    if dt.time():  # TODO: doesn't work with python 3.5
+    if not is_zero_time(dt.time()):
         raise TypeError(
             "Can not coerce %r to type Date, contains time information" % val
         )
