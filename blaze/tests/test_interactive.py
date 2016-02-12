@@ -189,7 +189,7 @@ def test_sample_failures():
     t = symbol('t', 'var * {x:int, y:int}')
     with pytest.raises(ValueError):
         t.sample(n=1, frac=0.1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         t.sample(n='a')
     with pytest.raises(ValueError):
         t.sample(frac='a')

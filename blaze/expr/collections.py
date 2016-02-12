@@ -280,13 +280,13 @@ def sample(child, n=None, frac=None):
     if n is not None and frac is not None:
         raise ValueError("n ({}) and frac ({}) cannot both be specified.".format(n, frac))
     if n is not None:
-        n = int(n)
+        n = op.index(n)
         if n < 1:
             raise ValueError("n must be positive, given {}".format(n))
     if frac is not None:
         frac = float(frac)
-        if frac < 0.0 or frac > 1.0:
-            raise ValueError("0 < frac < 1.0, given {}".format(frac))
+        if not 0.0 <= frac <= 1.0:
+            raise ValueError("sample requires 0 <= frac <= 1.0, given {}".format(frac))
     return Sample(child, n, frac)
 
 
