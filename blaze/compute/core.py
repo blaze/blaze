@@ -367,7 +367,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, **kwargs):
+def compute(expr, d, return_type='core', **kwargs):
     """ Compute expression against data sources
 
     >>> t = symbol('t', 'var * {name: string, balance: int}')
@@ -406,6 +406,29 @@ def compute(expr, d, **kwargs):
     result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)
+
+    if return_type == 'native':
+        # NOP, but we check for this case anyway.
+        result = result
+    elif return_type == 'core':
+        from datashape.predicates import isscalar, iscollection, istabular
+        if isscalar(expr.dshape):
+            # TODO: refactor coerce_scalar() to a common place
+            from blaze.interactive import coerce_scalar 
+            result = coerce_scalar(result, expr.dshape)
+        elif iscollection(expr.dshape):
+            from blaze import into
+            result = into(list, result, dshape=expr.dshape)
+        elif istabular(expr.dshape):
+            from blaze import into
+            result = into(pd.DataFrame, result, dshape=expr.dshape)
+            # TODO: detect single-column case, and odo into a pd.Series.
+    elif isinstance(return_type, type):
+        from blaze import into
+        result = into(return_type, result, dshape=expr.dshape)
+    else:
+        msg ="return_type must be one of 'core', 'native', or a type, got {}"
+        raise ValueError(msg.format(return_type))
 
     return result
 

@@ -1184,20 +1184,8 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(Expr, ClauseElement)
-def post_compute(expr, s, **kwargs):
-    return post_compute(expr, select(s), **kwargs)
-
-
-@dispatch(Expr, (Select, Selectable))
-def post_compute(expr, s, **kwargs):
-    if isscalar(expr.dshape):
-        return s.scalar()
-    elif iscollection(expr.dshape) or istabular(expr.dshape):
-        if len(s.columns) == 1:
-            return odo.into(pd.Series, s)
-        else:
-            return odo.into(pd.DataFrame, s)
-    raise ValueError("dshape for sql selection must be scalar or collection/tabular")
+def post_compute(_, s, **kwargs):
+    return select(s)
 
 
 @dispatch(IsIn, ColumnElement)
