@@ -1,4 +1,3 @@
-from collections import namedtuple
 from functools import partial
 import json as json_module
 
@@ -19,39 +18,49 @@ from ..interactive import coerce_scalar
 from ..utils import json_dumps, object_hook
 
 
-_serializationformat = namedtuple(
-    'SerializationFormat', (
-        'name',
-        'loads',
-        'dumps',
-        'data_loads',
-        'data_dumps',
-        'materialize',
-    ),
-)
+class SerializationFormat(object):
+    """A serialization format for the blaze server and blaze client.
 
-
-class SerializationFormat(_serializationformat):
-    def __new__(cls,
-                name,
-                loads,
-                dumps,
-                data_loads=None,
-                data_dumps=None,
-                materialize=None):
-        return super(SerializationFormat, cls).__new__(
-            cls,
-            name,
-            loads,
-            dumps,
-            data_loads=identity if data_loads is None else data_loads,
-            data_dumps=identity if data_dumps is None else data_dumps,
-            materialize=(
-                default_materialize
-                if materialize is None else
-                materialize
-            ),
+    Parameters
+    ----------
+    name : str
+        The name of the format. This is used on the mediatype to select
+        the proper format.
+    loads : callable[bytes -> any]
+        The function that loads python objects out of the serialized data.
+    dumps : callable[any -> bytes]
+        The function that serializes python objects to some other format.
+    data_loads : callable[any -> any], optional
+    data_dumps : callble[any -> any], optional
+        Specialized functions for loading and writing only the 'data' field of
+        blaze server responses. This allows us to define a more efficient
+        serialzation format for moving large amounts of data while still
+        having a rich representation for the rest of the metadata.
+    materialize : callble[(any, DataShape, **kwargs) -> any], optional
+        The function used to materialze the result of compute into a form
+        suitable for serialization.
+    """
+    def __init__(self,
+                 name,
+                 loads,
+                 dumps,
+                 data_loads=None,
+                 data_dumps=None,
+                 materialize=None):
+        self.name = name
+        self.loads = loads
+        self.dumps = dumps
+        self.data_loads = identity if data_loads is None else data_loads
+        self.data_dumps = identity if data_dumps is None else data_dumps
+        self.materialize = (
+            default_materialize
+            if materialize is None else
+            materialize
         )
+
+    def __repr__(self):
+        return '<%s: %r>' % (type(self).__name__, self.name)
+    __str__ = __repr__
 
 
 def default_materialize(data, dshape, odo_kwargs):
