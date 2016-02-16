@@ -11,7 +11,7 @@ import numpy as np
 from odo import into, append
 from odo.backends.csv import CSV
 
-from blaze import discover, transform
+from blaze import discover, transform, merge
 from blaze.compatibility import pickle
 from blaze.expr import symbol
 from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
@@ -204,6 +204,25 @@ def test_concretehead_failure():
     d = t[t['x'] > 100]
     with pytest.raises(ValueError):
         concrete_head(d)
+
+
+def test_distinct_failures():
+    t = symbol('t', 'var * {x:int}')
+    with pytest.raises(ValueError):
+        t.distinct('a')
+
+    with pytest.raises(TypeError):
+        t.distinct(10)
+
+    with pytest.raises(ValueError):
+        s = symbol('s', 'var * {y:int}')
+        t.distinct(s.y)
+
+
+def test_merge_failure():
+    t = symbol('t', 'var * {x:int}')
+    with pytest.raises(ValueError):
+        merge(t, x=2*t.x)
 
 
 def test_into_np_ndarray_column():

@@ -108,12 +108,20 @@ def test_join_option_types():
     assert join(b, a, 'x').dshape == dshape('var * {x: int}')
 
 
-def test_join_mismatched_schema():
+def test_join_exceptions():
+    'mismatched schema; no shared fields'
     a = symbol('a', 'var * {x: int}')
-    b = symbol('b', 'var * {x: string}')
-
     with pytest.raises(TypeError):
+        b = symbol('b', 'var * {x: string}')
         join(a, b, 'x')
+
+    with pytest.raises(ValueError):
+        b = symbol('b', 'var * {z: int}')
+        join(a, b)
+
+    with pytest.raises(ValueError):
+        b = symbol('b', 'var * {x: int}')
+        join(a, b, how='inner_')
 
 
 def test_join_type_promotion():
@@ -214,3 +222,9 @@ def test_shift():
     assert repr(t.shift(1)) == 'shift(t, n=1)'
     assert repr(t.shift(0)) == 'shift(t, n=0)'
     assert repr(t.shift(-1)) == 'shift(t, n=-1)'
+
+
+def test_shift_not_int():
+    a = symbol('a', '3 * {x: int32, y: int32}')
+    with pytest.raises(TypeError):
+        a.x.shift(1.3)
