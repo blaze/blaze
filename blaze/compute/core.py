@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator
+from datashape.predicates import isscalar, iscollection, istabular, _dimensions
 from datetime import date, datetime
 import itertools
 import numbers
@@ -13,6 +14,7 @@ from odo import odo
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
+from ..interactive import coerce_scalar, into
 
 __all__ = ['compute', 'compute_up']
 
@@ -367,8 +369,14 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, **kwargs):
-    """ Compute expression against data sources
+def compute(expr, d, return_type='core', **kwargs):
+    """ Compute expression against data sources.
+
+    Args:
+        expr: blaze expression
+        d: data source to compute expression on
+        return_type (optional): type to return data as. Defaults to 'core' which
+                                returns as scalar, list, series, or dataframe as appropriate.
 
     >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
@@ -406,6 +414,28 @@ def compute(expr, d, **kwargs):
     result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)
+
+    if return_type == 'native':
+        pass
+    elif return_type == 'core':
+        if isscalar(expr.dshape):
+            result = coerce_scalar(result, expr.dshape)
+        elif iscollection(expr.dshape):
+            result = into(list, result, dshape=expr.dshape)
+        elif istabular(expr.dshape):
+            dim = _dimensions(expr.dshape)
+            if dim == 1:
+                result = into(pd.Series, result)
+            elif dim > 1:
+                result = into(pd.DataFrame, result)
+            else:
+                raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+        else:
+            raise ValueError("Expr does not evaluate to a core return type")
+    elif isinstance(return_type, type):
+        result = into(return_type, result)
+    else:
+        raise ValueError("Invalid return_type passed to compute: {}".format(str(return_type)))
 
     return result
 

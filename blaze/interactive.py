@@ -233,6 +233,7 @@ def coerce_to(typ, x, odo_kwargs=None):
 
 
 def coerce_scalar(result, dshape, odo_kwargs=None):
+    dshape = str(dshape)
     coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
     if 'float' in dshape:
         return coerce_(float)
@@ -309,7 +310,7 @@ def to_html(o):
 
 @dispatch((object, type, str, unicode), Expr)
 def into(a, b, **kwargs):
-    result = compute(b, **kwargs)
+    result = compute(b, return_type='native', **kwargs)
     kwargs['dshape'] = b.dshape
     return into(a, result, **kwargs)
 
