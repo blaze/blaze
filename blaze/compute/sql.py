@@ -45,13 +45,10 @@ import warnings
 
 from multipledispatch import MDNotImplementedError
 
-import odo
 from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 
-import pandas as pd
-
 from datashape import TimeDelta
-from datashape.predicates import iscollection, isscalar, isrecord, istabular
+from datashape.predicates import iscollection, isscalar, isrecord
 
 from ..dispatch import dispatch
 
@@ -1184,20 +1181,8 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(Expr, ClauseElement)
-def post_compute(expr, s, **kwargs):
-    return post_compute(expr, select(s), **kwargs)
-
-
-@dispatch(Expr, (Select, Selectable))
-def post_compute(expr, s, **kwargs):
-    if isscalar(expr.dshape):
-        return s.scalar()
-    elif iscollection(expr.dshape) or istabular(expr.dshape):
-        if len(s.columns) == 1:
-            return odo.into(pd.Series, s)
-        else:
-            return odo.into(pd.DataFrame, s)
-    raise ValueError("dshape for sql selection must be scalar or collection/tabular")
+def post_compute(_, s, **kwargs):
+    return select(s)
 
 
 @dispatch(IsIn, ColumnElement)
