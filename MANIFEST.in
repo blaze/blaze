@@ -2,6 +2,7 @@ recursive-include blaze *.py
 recursive-include docs *.rst
 
 include requirements-strict.txt
+include requirements-py2.txt
 include setup.py
 include README.rst
 include LICENSE.txt

@@ -60,6 +60,7 @@ if PY2:
         return MethodType(func, instance, type(instance))
 
     from itertools import izip_longest as zip_longest
+    from contextlib2 import ExitStack
 else:
     _inttypes = (int,)
     _strtypes = (str,)
@@ -68,6 +69,7 @@ else:
     boundmethod = MethodType
 
     from itertools import zip_longest
+    from contextlib import ExitStack
 
 
 import io
