@@ -342,6 +342,12 @@ def convert_base(typ, x):
     except:
         return typ(odo(x, typ))
 
+
+CORE_TYPES = (float, decimal.Decimal, int, bool, Timestamp, datetime.date,
+              datetime.timedelta, list, dict, tuple, set, Series, DataFrame, np.ndarray)
+def iscoretype(x):
+    return isinstance(x, CORE_TYPES)
+
 Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)
 Expr.__float__ = lambda x: convert_base(float, x)

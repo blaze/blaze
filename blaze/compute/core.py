@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator
-from datashape.predicates import isscalar, iscollection, istabular, _dimensions
+from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 from datetime import date, datetime
 import itertools
 import numbers
@@ -14,7 +14,7 @@ from odo import odo
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
-from ..interactive import coerce_scalar, into
+from ..interactive import coerce_scalar, into, iscoretype
 
 __all__ = ['compute', 'compute_up']
 
@@ -415,32 +415,28 @@ def compute(expr, d, return_type='core', **kwargs):
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)
 
+    # return the backend's native response
     if return_type == 'native':
         pass
+    # return result as a core type (python type, pandas Series/DataFrame, numpy array)
     elif return_type == 'core':
-        if isscalar(expr.dshape):
+        if iscoretype(result):
+            pass
+        elif isscalar(expr.dshape):
             result = coerce_scalar(result, expr.dshape)
-        elif istabular(expr.dshape):
-            # NOTE: A list of dicts with different keys and values (ie. mongo
-            # documents) can still odo to a pandas DataFrame.  It will also fill
-            # in blanks inconsistently with NaN and None.
+        elif istabular(expr.dshape) and isrecord(expr.dshape):
+            result = into(pd.DataFrame, result)
+        elif iscollection(expr.dshape):
             dim = _dimensions(expr.dshape)
             if dim == 1:
                 result = into(pd.Series, result)
             elif dim > 1:
-                result = into(pd.DataFrame, result)
+                result = into(np.ndarray, result)
             else:
                 raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
-        elif iscollection(expr.dshape):
-            # try to squeeze into pandas Series.  Sample case is selecting one
-            # column from sql returns a list of tuples instead of a list of
-            # scalars which would benefit from being in a Series.
-            try:
-                result = into(pd.Series, result)
-            except TypeError:
-                result = into(list, result, dshape=expr.dshape)
         else:
             raise ValueError("Expr does not evaluate to a core return type")
+    # user specified type
     elif isinstance(return_type, type):
         result = into(return_type, result)
     else:
