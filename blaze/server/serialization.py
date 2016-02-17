@@ -152,7 +152,10 @@ def fastmsgpack_data_loads(data):
         BytesIO(_l1(data)),
         object_hook=fastmsgpack_object_hook,
     ))
+    # raw will always be a list, which is most likely a list containing
+    # a single dataframe or series
     if len(raw) == 1:
+        # we only serialized one structure, just return it
         return raw[0]
     return raw
 
@@ -162,7 +165,10 @@ def fastmsgpack_loads(data):
         BytesIO(_l1(data)),
         object_hook=object_hook,
     ))
+    # raw will always be a list, which is most likely a list containing
+    # a single dataframe or series
     if len(raw) == 1:
+        # we only serialized one structure, just return it
         return raw[0]
     return raw
 

@@ -510,6 +510,10 @@ def compserver(payload, serial):
             file = open(_prof_path(profiler_output, expr), 'wb')
 
         with file:
+            # Use marshal to dump the stats data to the given file.
+            # This is taken from cProfile which unfortunately does not have
+            # an api that allows us to pass the file object directly, only
+            # a file path.
             marshal.dump(Stats(profiler).stats, file)
             if profiler_output == ':response':
                 response['profiler_output'] = file.getvalue()
