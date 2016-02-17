@@ -18,8 +18,9 @@ from toolz import valmap
 
 import blaze
 from blaze import compute, resource
-from blaze.expr import utils as expr_utils
+from blaze.compatibility import ExitStack
 from blaze.compute import compute_up
+from blaze.expr import utils as expr_utils
 
 from .serialization import json, all_formats
 from ..interactive import InteractiveSymbol
@@ -237,6 +238,10 @@ class Server(object):
 
         This defaults to a relative path of `profiler_output`.
         This requires `allow_profiler=True`.
+
+        If this is the string ':response' then writing to the local filesystem
+        is disabled. Only requests that specify `profiler_output=':response'`
+        will be served. All others will return a 403.
     profile_by_default : bool, optional
         Run the profiler on any computation that does not explicitly set
         "profile": false.
@@ -488,75 +493,100 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @authorization
 @check_request
 def compserver(payload, serial):
-    allow_profiler, profiler_output, profile_by_default = _get_profiler_info()
-    profiler_output = payload.get('profiler_output', profiler_output)
+    (allow_profiler,
+     default_profiler_output,
+     profile_by_default) = _get_profiler_info()
+    requested_profiler_output = payload.get(
+        'profiler_output',
+        default_profiler_output,
+    )
     profile = payload.get('profile')
     profiling = (
         allow_profiler and
-        (profile or (profile_by_default and profiler_output))
+        (profile or (profile_by_default and requested_profiler_output))
     )
     if profile and not allow_profiler:
         return (
             'profiling is disabled on this server',
-            500,
-        )
-    if profiling:
-        from cProfile import Profile
-        profiler = Profile()
-        profiler.enable()
-
-    ns = payload.get('namespace', dict())
-    compute_kwargs = payload.get('compute_kwargs') or {}
-    odo_kwargs = payload.get('odo_kwargs') or {}
-    dataset = _get_data()
-    ns[':leaf'] = symbol('leaf', discover(dataset))
-
-    expr = from_tree(payload['expr'], namespace=ns)
-    assert len(expr._leaves()) == 1
-    leaf = expr._leaves()[0]
-
-    try:
-        result = serial.materialize(
-            compute(expr, {leaf: dataset}, **compute_kwargs),
-            expr.dshape,
-            odo_kwargs,
-        )
-    except NotImplementedError as e:
-        # 501: Not Implemented
-        return ("Computation not supported:\n%s" % e, 501)
-    except Exception as e:
-        # 500: Internal Server Error
-        return (
-            "Computation failed with message:\n%s: %s" % (type(e).__name__, e),
-            500,
+            403,
         )
 
-    response = {
-        'datashape': pprint(expr.dshape, width=0),
-        'data': serial.data_dumps(result),
-        'names': expr.fields
-    }
-    if profiling:
-        import marshal
-        from pstats import Stats
+    with ExitStack() as stack:
+        if profiling:
+            from cProfile import Profile
 
-        profiler.disable()
-        if profiler_output == ':response':
-            from pandas.compat import BytesIO
-            file = BytesIO()
-        else:
-            file = open(_prof_path(profiler_output, expr), 'wb')
+            if (default_profiler_output == ':response' and
+                requested_profiler_output != ':response'):
+                # writing to the local filesystem is disabled
+                return (
+                    "local filepaths are disabled on this server, only"
+                    " ':response' is allowed for the 'profiler_output' field",
+                    403,
+                )
 
-        with file:
-            # Use marshal to dump the stats data to the given file.
-            # This is taken from cProfile which unfortunately does not have
-            # an api that allows us to pass the file object directly, only
-            # a file path.
-            marshal.dump(Stats(profiler).stats, file)
+            profiler_output = requested_profiler_output
+            profiler = Profile()
+            profiler.enable()
+            # ensure that we stop profiling in the case of an exception
+            stack.callback(profiler.disable)
+
+        ns = payload.get('namespace', dict())
+        compute_kwargs = payload.get('compute_kwargs') or {}
+        odo_kwargs = payload.get('odo_kwargs') or {}
+        dataset = _get_data()
+        ns[':leaf'] = symbol('leaf', discover(dataset))
+
+        expr = from_tree(payload['expr'], namespace=ns)
+        assert len(expr._leaves()) == 1
+        leaf = expr._leaves()[0]
+
+        try:
+            result = serial.materialize(
+                compute(expr, {leaf: dataset}, **compute_kwargs),
+                expr.dshape,
+                odo_kwargs,
+            )
+        except NotImplementedError as e:
+            # 501: Not Implemented
+            return ("Computation not supported:\n%s" % e, 501)
+        except Exception as e:
+            # 500: Internal Server Error
+            return (
+                "Computation failed with message:\n%s: %s" % (
+                    type(e).__name__,
+                    e
+                ),
+                500,
+            )
+
+        response = {
+            'datashape': pprint(expr.dshape, width=0),
+            'data': serial.data_dumps(result),
+            'names': expr.fields
+        }
+        if profiling:
+            import marshal
+            from pstats import Stats
+
+            # remove our callback because we are going to exit now
+            stack.pop_all()
+            profiler.disable()
             if profiler_output == ':response':
-                response['profiler_output'] = file.getvalue()
+                from pandas.compat import BytesIO
+                file = BytesIO()
+            else:
+                file = open(_prof_path(profiler_output, expr), 'wb')
 
-    return serial.dumps(response)
+            with file:
+                # Use marshal to dump the stats data to the given file.
+                # This is taken from cProfile which unfortunately does not have
+                # an api that allows us to pass the file object directly, only
+                # a file path.
+                marshal.dump(Stats(profiler).stats, file)
+                if profiler_output == ':response':
+                    response['profiler_output'] = file.getvalue()
+
+        return serial.dumps(response)
 
 
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
