@@ -53,7 +53,12 @@ with open('README.rst') as f:
     longdesc = f.read()
 
 with open('requirements-strict.txt') as f:
-    install_requires = f.read().strip().split('\n')
+    install_requires = f.read().strip().splitlines()
+
+
+if sys.version_info[0] == 2:
+    with open('requirements-py2.txt') as f:
+        install_requires.extend(f.read().strip().splitlines())
 
 
 setup(

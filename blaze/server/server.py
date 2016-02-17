@@ -1,32 +1,33 @@
 from __future__ import absolute_import, division, print_function
 
-import socket
-import functools
-import re
-from warnings import warn
 import collections
+from datetime import datetime
+import errno
+import functools
+from hashlib import md5
+import os
+import re
+import socket
+from warnings import warn
 
+from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
-
-from toolz import assoc, valmap
-
-from datashape import Mono, discover, pprint
-from datashape.predicates import iscollection, isscalar
-from odo import odo
+from toolz import valmap
 
 import blaze
 from blaze import compute, resource
-from blaze.expr import utils as expr_utils
+from blaze.compatibility import ExitStack
 from blaze.compute import compute_up
+from blaze.expr import utils as expr_utils
 
 from .serialization import json, all_formats
-from ..interactive import InteractiveSymbol, coerce_scalar
+from ..interactive import InteractiveSymbol
 from ..expr import Expr, symbol
 
 
-__all__ = 'Server', 'to_tree', 'from_tree'
+__all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
 
 # http://www.speedguide.net/port.php?port=6363
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
@@ -55,6 +56,14 @@ def _get_option(option, options, default=_no_default):
         )
 
 
+def ensure_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
 def _register_api(app, options, first_registration=False):
     """
     Register the data with the blueprint.
@@ -66,29 +75,94 @@ def _register_api(app, options, first_registration=False):
     _get_auth.cache[app] = (
         _get_option('authorization', options, None) or (lambda a: True)
     )
+    allow_profiler = _get_option('allow_profiler', options, False)
+    profiler_output = _get_option('profiler_output', options, None)
+    profile_by_default = _get_option('profile_by_default', options, False)
+    if not allow_profiler and (profiler_output or profile_by_default):
+        raise ValueError(
+            "cannot set %s%s%s when 'allow_profiler' is False" % (
+                'profiler_output' if profiler_output else '',
+                ' or ' if profiler_output and profile_by_default else '',
+                'profile_by_default' if profile_by_default else '',
+            ),
+        )
+    if allow_profiler:
+        if profiler_output is None:
+            profiler_output = 'profiler_output'
+        if profiler_output != ':response':
+            ensure_dir(profiler_output)
+
+    _get_profiler_info.cache[app] = (
+        allow_profiler, profiler_output, profile_by_default
+    )
+
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
 
 api.register = _register_api
 
 
-def _get_data():
-    """
-    Retrieve the current application's data for use in the blaze server
-    endpoints.
-    """
-    return _get_data.cache[flask.current_app]
-_get_data.cache = {}
+def per_app_accesor(name):
+    def _get():
+        return _get.cache[flask.current_app]
+    _get.cache = {}
+    _get.__name__ = '_get' + name
+    return _get
 
 
 def _get_format(name):
     return _get_format.cache[flask.current_app][name]
 _get_format.cache = {}
 
+_get_data = per_app_accesor('data')
+_get_auth = per_app_accesor('auth')
+_get_profiler_info = per_app_accesor('profiler_info')
 
-def _get_auth():
-    return _get_auth.cache[flask.current_app]
-_get_auth.cache = {}
+
+def expr_md5(expr):
+    """Returns the md5 hash of the str of the expression.
+
+    Parameters
+    ----------
+    expr : Expr
+        The expression to hash.
+
+    Returns
+    -------
+    hexdigest : str
+        The hexdigest of the md5 of the str of ``expr``.
+    """
+    exprstr = str(expr)
+    if not isinstance(exprstr, bytes):
+        exprstr = exprstr.encode('utf-8')
+    return md5(exprstr).hexdigest()
+
+
+def _prof_path(profiler_output, expr):
+    """Get the path to write the data for a profile run of ``expr``.
+
+    Parameters
+    ----------
+    profiler_output : str
+        The director to write into.
+    expr : Expr
+        The expression that was run.
+
+    Returns
+    -------
+    prof_path : str
+        The filepath to write the new profiler data.
+
+    Notes
+    -----
+    This function ensures that the dirname of the returned path exists.
+    """
+    dir_ = os.path.join(
+        profiler_output,
+        expr_md5(expr),  # use the md5 so the client knows where to look
+    )
+    ensure_dir(dir_)
+    return os.path.join(dir_, str(int(datetime.utcnow().timestamp())))
 
 
 def authorization(f):
@@ -153,6 +227,25 @@ class Server(object):
         None indicating that no header was passed, or an object
         containing a username and password attribute. By default, all requests
         are allowed.
+    allow_profiler : bool, optional
+        Allow payloads to specify `"profile": true` which will run the
+        computation under cProfile.
+    profiler_output : str, optional
+        The directory to write pstats files after profile runs.
+        The files will be written in a structure like:
+
+          {profiler_output}/{hash(expr)}/{timestamp}
+
+        This defaults to a relative path of `profiler_output`.
+        This requires `allow_profiler=True`.
+
+        If this is the string ':response' then writing to the local filesystem
+        is disabled. Only requests that specify `profiler_output=':response'`
+        will be served. All others will return a 403.
+    profile_by_default : bool, optional
+        Run the profiler on any computation that does not explicitly set
+        "profile": false.
+        This requires `allow_profiler=True`.
 
     Examples
     --------
@@ -167,7 +260,13 @@ class Server(object):
     >>> server = Server({'accounts': df})
     >>> server.run() # doctest: +SKIP
     """
-    def __init__(self, data=None, formats=None, authorization=None):
+    def __init__(self,
+                 data=None,
+                 formats=None,
+                 authorization=None,
+                 allow_profiler=False,
+                 profiler_output=None,
+                 profile_by_default=False):
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
@@ -176,6 +275,9 @@ class Server(object):
             data=data,
             formats=formats if formats is not None else (json,),
             authorization=authorization,
+            allow_profiler=allow_profiler,
+            profiler_output=profiler_output,
+            profile_by_default=profile_by_default,
         )
         self.data = data
 
@@ -274,8 +376,6 @@ def to_tree(expr, names=None):
         return {'op': 'slice',
                 'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
-    elif isinstance(expr, Mono):
-        return str(expr)
     elif isinstance(expr, InteractiveSymbol):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
@@ -376,7 +476,7 @@ def from_tree(expr, namespace=None):
         else:
             children = [from_tree(arg, namespace) for arg in args]
         return cls(*children)
-    elif isinstance(expr, list):
+    elif isinstance(expr, (list, tuple)):
         return tuple(from_tree(arg, namespace) for arg in expr)
     if namespace and expr in namespace:
         return namespace[expr]
@@ -393,38 +493,99 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @authorization
 @check_request
 def compserver(payload, serial):
-    ns = payload.get('namespace', dict())
-    compute_kwargs = payload.get('compute_kwargs') or {}
-    odo_kwargs = payload.get('odo_kwargs') or {}
-    dataset = _get_data()
-    ns[':leaf'] = symbol('leaf', discover(dataset))
-
-    expr = from_tree(payload['expr'], namespace=ns)
-    assert len(expr._leaves()) == 1
-    leaf = expr._leaves()[0]
-
-    try:
-        result = compute(expr, {leaf: dataset}, **compute_kwargs)
-
-        if iscollection(expr.dshape):
-            result = odo(result, list, **odo_kwargs)
-        elif isscalar(expr.dshape):
-            result = coerce_scalar(result, str(expr.dshape))
-    except NotImplementedError as e:
-        # 501: Not Implemented
-        return ("Computation not supported:\n%s" % e, 501)
-    except Exception as e:
-        # 500: Internal Server Error
+    (allow_profiler,
+     default_profiler_output,
+     profile_by_default) = _get_profiler_info()
+    requested_profiler_output = payload.get(
+        'profiler_output',
+        default_profiler_output,
+    )
+    profile = payload.get('profile')
+    profiling = (
+        allow_profiler and
+        (profile or (profile_by_default and requested_profiler_output))
+    )
+    if profile and not allow_profiler:
         return (
-            "Computation failed with message:\n%s: %s" % (type(e).__name__, e),
-            500,
+            'profiling is disabled on this server',
+            403,
         )
 
-    return serial.dumps({
-        'datashape': pprint(expr.dshape, width=0),
-        'data': result,
-        'names': expr.fields
-    })
+    with ExitStack() as response_construction_context_stack:
+        if profiling:
+            from cProfile import Profile
+
+            if (default_profiler_output == ':response' and
+                requested_profiler_output != ':response'):
+                # writing to the local filesystem is disabled
+                return (
+                    "local filepaths are disabled on this server, only"
+                    " ':response' is allowed for the 'profiler_output' field",
+                    403,
+                )
+
+            profiler_output = requested_profiler_output
+            profiler = Profile()
+            profiler.enable()
+            # ensure that we stop profiling in the case of an exception
+            response_construction_context_stack.callback(profiler.disable)
+
+        ns = payload.get('namespace', {})
+        compute_kwargs = payload.get('compute_kwargs') or {}
+        odo_kwargs = payload.get('odo_kwargs') or {}
+        dataset = _get_data()
+        ns[':leaf'] = symbol('leaf', discover(dataset))
+
+        expr = from_tree(payload['expr'], namespace=ns)
+        assert len(expr._leaves()) == 1
+        leaf = expr._leaves()[0]
+
+        try:
+            result = serial.materialize(
+                compute(expr, {leaf: dataset}, **compute_kwargs),
+                expr.dshape,
+                odo_kwargs,
+            )
+        except NotImplementedError as e:
+            # 501: Not Implemented
+            return ("Computation not supported:\n%s" % e, 501)
+        except Exception as e:
+            # 500: Internal Server Error
+            return (
+                "Computation failed with message:\n%s: %s" % (
+                    type(e).__name__,
+                    e
+                ),
+                500,
+            )
+
+        response = serial.dumps({
+            'datashape': pprint(expr.dshape, width=0),
+            'data': serial.data_dumps(result),
+            'names': expr.fields
+        })
+
+    if profiling:
+        import marshal
+        from pstats import Stats
+
+        if profiler_output == ':response':
+            from pandas.compat import BytesIO
+            file = BytesIO()
+        else:
+            file = open(_prof_path(profiler_output, expr), 'wb')
+
+        with file:
+            # Use marshal to dump the stats data to the given file.
+            # This is taken from cProfile which unfortunately does not have
+            # an api that allows us to pass the file object directly, only
+            # a file path.
+            marshal.dump(Stats(profiler).stats, file)
+            if profiler_output == ':response':
+                response['profiler_output'] = file.getvalue()
+
+    return response
+
 
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
