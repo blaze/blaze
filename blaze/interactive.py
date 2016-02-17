@@ -10,7 +10,7 @@ import warnings
 
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
-from datashape.predicates import iscollection, isscalar, isrecord, istabular
+from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 import numpy as np
 from odo import resource, odo
 from odo.utils import ignoring, copydoc
@@ -253,6 +253,28 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
         return result
 
 
+def coerce_core(result, dshape, odo_kwargs=None):
+    """Coerce data to a core data type."""
+    if iscoretype(result):
+        pass
+    elif isscalar(dshape):
+        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
+    elif istabular(dshape) and isrecord(dshape.measure):
+        result = into(DataFrame, result, **(odo_kwargs or {}))
+    elif iscollection(dshape):
+        dim = _dimensions(dshape)
+        if dim == 1:
+            result = into(Series, result, **(odo_kwargs or {}))
+        elif dim > 1:
+            result = into(np.ndarray, result, **(odo_kwargs or {}))
+        else:
+            raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+    else:
+        raise ValueError("Expr does not evaluate to a core return type")
+
+    return result
+
+
 def expr_repr(expr, n=10):
     # Pure Expressions, not interactive
     if not set(expr._resources().keys()).issuperset(expr._leaves()):
@@ -343,7 +365,7 @@ def convert_base(typ, x):
         return typ(odo(x, typ))
 
 
-CORE_TYPES = (float, decimal.Decimal, int, bool, Timestamp, datetime.date,
+CORE_TYPES = (float, decimal.Decimal, int, bool, Timestamp, datetime.date, str,
               datetime.timedelta, list, dict, tuple, set, Series, DataFrame, np.ndarray)
 def iscoretype(x):
     return isinstance(x, CORE_TYPES)

@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator
-from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 from datetime import date, datetime
 import itertools
 import numbers
@@ -9,13 +8,14 @@ import warnings
 
 import toolz
 from toolz import first, unique, assoc
+import numpy as np
 import pandas as pd
 from odo import odo
 
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
-from ..interactive import coerce_scalar, into, iscoretype
+from ..interactive import coerce_scalar, coerce_core, into, iscoretype
 from ..utils import BlazePendingDeprecationWarning
 
 __all__ = ['compute', 'compute_up']
@@ -422,22 +422,7 @@ def compute(expr, d, return_type='native', **kwargs):
         warnings.warn("compute's `return_type` parameter will default to 'core' in blaze version >= 0.11.", BlazePendingDeprecationWarning)
     # return result as a core type (python type, pandas Series/DataFrame, numpy array)
     elif return_type == 'core':
-        if iscoretype(result):
-            pass
-        elif isscalar(expr.dshape):
-            result = coerce_scalar(result, expr.dshape)
-        elif istabular(expr.dshape) and isrecord(expr.dshape):
-            result = into(pd.DataFrame, result)
-        elif iscollection(expr.dshape):
-            dim = _dimensions(expr.dshape)
-            if dim == 1:
-                result = into(pd.Series, result)
-            elif dim > 1:
-                result = into(np.ndarray, result)
-            else:
-                raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
-        else:
-            raise ValueError("Expr does not evaluate to a core return type")
+        result = coerce_core(result, expr.dshape)
     # user specified type
     elif isinstance(return_type, type):
         result = into(return_type, result)
