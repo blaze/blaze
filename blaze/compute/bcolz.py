@@ -64,7 +64,7 @@ def box(type_):
                 )
             self.value = value
 
-    c.__name__ = 'Boxed%s' + type_.__name__
+    c.__name__ = 'box(%s)' % type_.__name__
     return c
 
 
