@@ -214,8 +214,8 @@ def test_distinct_failures():
     with pytest.raises(TypeError):
         t.distinct(10)
 
+    s = symbol('s', 'var * {y:int}')
     with pytest.raises(ValueError):
-        s = symbol('s', 'var * {y:int}')
         t.distinct(s.y)
 
 

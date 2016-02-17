@@ -111,16 +111,16 @@ def test_join_option_types():
 def test_join_exceptions():
     'mismatched schema; no shared fields'
     a = symbol('a', 'var * {x: int}')
+    b = symbol('b', 'var * {x: string}')
     with pytest.raises(TypeError):
-        b = symbol('b', 'var * {x: string}')
         join(a, b, 'x')
 
+    b = symbol('b', 'var * {z: int}')
     with pytest.raises(ValueError):
-        b = symbol('b', 'var * {z: int}')
         join(a, b)
 
+    b = symbol('b', 'var * {x: int}')
     with pytest.raises(ValueError):
-        b = symbol('b', 'var * {x: int}')
         join(a, b, how='inner_')
 
 
