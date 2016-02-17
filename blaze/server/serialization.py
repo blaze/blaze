@@ -32,13 +32,13 @@ class SerializationFormat(object):
     dumps : callable[any -> bytes]
         The function that serializes python objects to some other format.
     data_loads : callable[any -> any], optional
-    data_dumps : callble[any -> any], optional
+    data_dumps : callable[any -> any], optional
         Specialized functions for loading and writing only the 'data' field of
         blaze server responses. This allows us to define a more efficient
-        serialzation format for moving large amounts of data while still
+        serialization format for moving large amounts of data while still
         having a rich representation for the rest of the metadata.
-    materialize : callble[(any, DataShape, **kwargs) -> any], optional
-        The function used to materialze the result of compute into a form
+    materialize : callable[(any, DataShape, **kwargs) -> any], optional
+        The function used to materialize the result of compute into a form
         suitable for serialization.
     """
     def __init__(self,
