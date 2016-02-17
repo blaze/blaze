@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from .server import Server, to_tree, from_tree, api
+from .server import Server, to_tree, from_tree, api, expr_md5
 from .spider import data_spider, from_yaml
 from .client import Client
 from .serialization import (
@@ -20,6 +20,7 @@ __all__ = [
     'all_formats',
     'api',
     'data_spider',
+    'expr_md5',
     'fastmsgpack_format',
     'from_tree',
     'from_yaml',

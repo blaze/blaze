@@ -27,7 +27,7 @@ from ..interactive import InteractiveSymbol
 from ..expr import Expr, symbol
 
 
-__all__ = 'Server', 'to_tree', 'from_tree'
+__all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
 
 # http://www.speedguide.net/port.php?port=6363
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
@@ -511,7 +511,7 @@ def compserver(payload, serial):
             403,
         )
 
-    with ExitStack() as stack:
+    with ExitStack() as response_construction_context_stack:
         if profiling:
             from cProfile import Profile
 
@@ -528,9 +528,9 @@ def compserver(payload, serial):
             profiler = Profile()
             profiler.enable()
             # ensure that we stop profiling in the case of an exception
-            stack.callback(profiler.disable)
+            response_construction_context_stack.callback(profiler.disable)
 
-        ns = payload.get('namespace', dict())
+        ns = payload.get('namespace', {})
         compute_kwargs = payload.get('compute_kwargs') or {}
         odo_kwargs = payload.get('odo_kwargs') or {}
         dataset = _get_data()
@@ -559,34 +559,32 @@ def compserver(payload, serial):
                 500,
             )
 
-        response = {
+        response = serial.dumps({
             'datashape': pprint(expr.dshape, width=0),
             'data': serial.data_dumps(result),
             'names': expr.fields
-        }
-        if profiling:
-            import marshal
-            from pstats import Stats
+        })
 
-            # remove our callback because we are going to exit now
-            stack.pop_all()
-            profiler.disable()
+    if profiling:
+        import marshal
+        from pstats import Stats
+
+        if profiler_output == ':response':
+            from pandas.compat import BytesIO
+            file = BytesIO()
+        else:
+            file = open(_prof_path(profiler_output, expr), 'wb')
+
+        with file:
+            # Use marshal to dump the stats data to the given file.
+            # This is taken from cProfile which unfortunately does not have
+            # an api that allows us to pass the file object directly, only
+            # a file path.
+            marshal.dump(Stats(profiler).stats, file)
             if profiler_output == ':response':
-                from pandas.compat import BytesIO
-                file = BytesIO()
-            else:
-                file = open(_prof_path(profiler_output, expr), 'wb')
+                response['profiler_output'] = file.getvalue()
 
-            with file:
-                # Use marshal to dump the stats data to the given file.
-                # This is taken from cProfile which unfortunately does not have
-                # an api that allows us to pass the file object directly, only
-                # a file path.
-                marshal.dump(Stats(profiler).stats, file)
-                if profiler_output == ':response':
-                    response['profiler_output'] = file.getvalue()
-
-        return serial.dumps(response)
+    return response
 
 
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
