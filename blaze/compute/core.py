@@ -420,9 +420,10 @@ def compute(expr, d, return_type='core', **kwargs):
     elif return_type == 'core':
         if isscalar(expr.dshape):
             result = coerce_scalar(result, expr.dshape)
-        elif iscollection(expr.dshape):
-            result = into(list, result, dshape=expr.dshape)
         elif istabular(expr.dshape):
+            # NOTE: A list of dicts with different keys and values (ie. mongo
+            # documents) can still odo to a pandas DataFrame.  It will also fill
+            # in blanks inconsistently with NaN and None.
             dim = _dimensions(expr.dshape)
             if dim == 1:
                 result = into(pd.Series, result)
@@ -430,6 +431,14 @@ def compute(expr, d, return_type='core', **kwargs):
                 result = into(pd.DataFrame, result)
             else:
                 raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+        elif iscollection(expr.dshape):
+            # try to squeeze into pandas Series.  Sample case is selecting one
+            # column from sql returns a list of tuples instead of a list of
+            # scalars which would benefit from being in a Series.
+            try:
+                result = into(pd.Series, result)
+            except TypeError:
+                result = into(list, result, dshape=expr.dshape)
         else:
             raise ValueError("Expr does not evaluate to a core return type")
     elif isinstance(return_type, type):
