@@ -290,7 +290,6 @@ def sample(child, n=None, frac=None):
     return Sample(child, n, frac)
 
 
-
 def transform(t, replace=True, **kwargs):
     """ Add named columns to table
 

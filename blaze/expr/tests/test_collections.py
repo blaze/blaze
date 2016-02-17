@@ -109,19 +109,29 @@ def test_join_option_types():
 
 
 def test_join_exceptions():
-    'mismatched schema; no shared fields'
+    """
+    exception raised for mismatched schema;
+    exception raised for no shared fields
+    """
     a = symbol('a', 'var * {x: int}')
     b = symbol('b', 'var * {x: string}')
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         join(a, b, 'x')
 
+    assert "Schemata of joining columns do not match," in str(excinfo.value)
+    assert "x=int32 and x=string" in str(excinfo.value)
+
     b = symbol('b', 'var * {z: int}')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         join(a, b)
 
+    assert "No shared columns between a and b" in str(excinfo.value)
+
     b = symbol('b', 'var * {x: int}')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         join(a, b, how='inner_')
+
+    assert "Got: inner_" in str(excinfo.value)
 
 
 def test_join_type_promotion():
@@ -186,32 +196,48 @@ def test_concat_different_measure():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 5 * float64')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         concat(a, b)
+
+    msg = 'Mismatched measures: {l} != {r}'.format(l=a.dshape.measure,
+                                                   r=b.dshape.measure)
+    assert msg == str(excinfo.value)
 
 
 def test_concat_different_along_concat_axis():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 6 * int32')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         concat(a, b, axis=0)
+
+    assert "not equal along axis 1: 5 != 6" in str(excinfo.value)
+
+    b = symbol('b', '4 * 6 * int32')
+    with pytest.raises(TypeError) as excinfo:
+        concat(a, b, axis=1)
+
+    assert "not equal along axis 0: 3 != 4" in str(excinfo.value)
 
 
 def test_concat_negative_axis():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 5 * int32')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         concat(a, b, axis=-1)
+
+    assert "must be in range: [0, 2)" in str(excinfo.value)
 
 
 def test_concat_axis_too_great():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 5 * int32')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         concat(a, b, axis=2)
+
+    assert "must be in range: [0, 2)" in str(excinfo.value)
 
 
 def test_shift():

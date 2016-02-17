@@ -32,9 +32,11 @@ x = np.ones((2, 2))
 
 
 def test_table_raises_on_inconsistent_inputs():
-    with pytest.raises(ValueError):
-        t = Data(data, schema='{name: string, amount: float32}',
-                 dshape=dshape("{name: string, amount: float32}"))
+    with pytest.raises(ValueError) as excinfo:
+        Data(data, schema='{name: string, amount: float32}',
+             dshape=dshape("{name: string, amount: float32}"))
+
+    assert "specify one of schema= or dshape= keyword" in str(excinfo.value)
 
 
 def test_resources():
@@ -208,21 +210,29 @@ def test_concretehead_failure():
 
 def test_distinct_failures():
     t = symbol('t', 'var * {x:int}')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         t.distinct('a')
 
-    with pytest.raises(TypeError):
+    assert "a is not a field of t" == str(excinfo.value)
+
+    with pytest.raises(TypeError) as excinfo:
         t.distinct(10)
 
+    assert "on must be a name or field, not: 10" == str(excinfo.value)
+
     s = symbol('s', 'var * {y:int}')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         t.distinct(s.y)
+
+    assert "s.y is not a field of t" == str(excinfo.value)
 
 
 def test_merge_failure():
     t = symbol('t', 'var * {x:int}')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         merge(t, x=2*t.x)
+
+    assert "Repeated columns" in str(excinfo.value)
 
 
 def test_into_np_ndarray_column():
@@ -431,8 +441,11 @@ def test_asarray_fails_on_different_column_names():
           'second': [4., 1., 4.],
           'third': [6., 4., 3.]}
     df = pd.DataFrame(vs)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         Data(df, fields=list('abc'))
+
+    inmsg = "Data(data).relabel(first='a', second='b', third='c') to rename"
+    assert inmsg in str(excinfo.value)
 
 
 def test_functions_as_bound_methods():
