@@ -310,3 +310,13 @@ class attribute(object):
             return self
 
         return self._f(instance)
+
+
+class BlazeDeprecationWarning(DeprecationWarning):
+    """Blaze specific deprecation warning."""
+    pass
+
+
+class BlazePendingDeprecationWarning(PendingDeprecationWarning):
+    """Blaze specific pending deprecation warning."""
+    pass

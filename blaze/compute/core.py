@@ -5,6 +5,7 @@ from datashape.predicates import isscalar, iscollection, isrecord, istabular, _d
 from datetime import date, datetime
 import itertools
 import numbers
+import warnings
 
 import toolz
 from toolz import first, unique, assoc
@@ -15,6 +16,7 @@ from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
 from ..interactive import coerce_scalar, into, iscoretype
+from ..utils import BlazePendingDeprecationWarning
 
 __all__ = ['compute', 'compute_up']
 
@@ -369,7 +371,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, return_type='core', **kwargs):
+def compute(expr, d, return_type='native', **kwargs):
     """ Compute expression against data sources.
 
     Args:
@@ -417,7 +419,7 @@ def compute(expr, d, return_type='core', **kwargs):
 
     # return the backend's native response
     if return_type == 'native':
-        pass
+        warnings.warn("compute's `return_type` parameter will default to 'core' in blaze version >= 0.11.", BlazePendingDeprecationWarning)
     # return result as a core type (python type, pandas Series/DataFrame, numpy array)
     elif return_type == 'core':
         if iscoretype(result):
