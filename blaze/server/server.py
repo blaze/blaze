@@ -4,6 +4,7 @@ import collections
 from datetime import datetime
 import errno
 import functools
+from hashlib import md5
 import os
 import re
 import socket
@@ -117,10 +118,47 @@ _get_auth = per_app_accesor('auth')
 _get_profiler_info = per_app_accesor('profiler_info')
 
 
+def expr_md5(expr):
+    """Returns the md5 hash of the str of the expression.
+
+    Parameters
+    ----------
+    expr : Expr
+        The expression to hash.
+
+    Returns
+    -------
+    hexdigest : str
+        The hexdigest of the md5 of the str of ``expr``.
+    """
+    exprstr = str(expr)
+    if not isinstance(exprstr, bytes):
+        exprstr = exprstr.encode('utf-8')
+    return md5(exprstr).hexdigest()
+
+
 def _prof_path(profiler_output, expr):
+    """Get the path to write the data for a profile run of ``expr``.
+
+    Parameters
+    ----------
+    profiler_output : str
+        The director to write into.
+    expr : Expr
+        The expression that was run.
+
+    Returns
+    -------
+    prof_path : str
+        The filepath to write the new profiler data.
+
+    Notes
+    -----
+    This function ensures that the dirname of the returned path exists.
+    """
     dir_ = os.path.join(
         profiler_output,
-        str(hash(expr)),
+        expr_md5(expr),  # use the md5 so the client knows where to look
     )
     ensure_dir(dir_)
     return os.path.join(dir_, str(int(datetime.utcnow().timestamp())))
