@@ -24,7 +24,7 @@ from blaze import (discover, symbol, by, CSV, compute, join, into, resource,
                    Data)
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree
-from blaze.server.serialization import all_formats
+from blaze.server.serialization import all_formats, fastmsgpack
 
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -753,3 +753,19 @@ def test_compute_kwargs(test, serial):
         odo(serial.data_loads(data['data']), DataFrame, dshape=dshape),
         DumbResource.df,
     )
+
+
+def test_fastmsgmpack_mutable_dataframe(test):
+    expr = t.events  # just get back the dataframe
+    query = {'expr': to_tree(expr)}
+    result = test.post(
+        '/compute',
+        headers=mimetype(fastmsgpack),
+        data=fastmsgpack.dumps(query)
+    )
+    assert result.status_code == 200
+    data = fastmsgpack.data_loads(fastmsgpack.loads(result.data)['data'])
+
+    for block in data._data.blocks:
+        # make sure all the blocks are mutable
+        assert block.values.flags.writeable
