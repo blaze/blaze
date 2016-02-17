@@ -145,6 +145,30 @@ def mimetype(serial):
 
 @dispatch(Expr, Client)
 def compute_down(expr, ec, profiler_output=None, **kwargs):
+    """Compute down for blaze clients.
+
+    Parameters
+    ----------
+    expr : Expr
+        The expression to send to the server.
+    ec : Client
+        The blaze client to compute against.
+    namespace : dict[Symbol -> any], optional
+        The namespace to compute the expression in. This will be amended to
+        include that data for the server. By default this will just be the
+        client mapping to the server's data.
+    compute_kwargs : dict, optional
+        Extra kwargs to pass to compute on the server.
+    odo_kwargs : dict, optional
+        Extra kwargs to pass to odo on the server.
+    profile : bool, optional
+        Should blaze server run cProfile over the computation of the expression
+        and the serialization of the response.
+    profiler_output : file-like object, optional
+        A file like object to hold the profiling output from the server.
+        If this is not passed then the server will write the data to the
+        server's filesystem
+    """
     from .server import to_tree
 
     tree = to_tree(expr)
