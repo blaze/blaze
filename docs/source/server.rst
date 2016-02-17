@@ -54,12 +54,13 @@ as a service from a variety of applications.
 Serving Data from the Command Line
 ==================================
 
-Blaze ships with a command line tool called ``blaze-server`` to serve up data specified in a YAML file.
+Blaze ships with a command line tool called ``blaze-server`` to serve up data
+specified in a YAML file.
 
 .. note::
 
    To use the YAML specification feature of Blaze server please install
-   the ``pyyaml`` library. This can be done easily with ``conda``:
+   the :mod:`pyyaml` library. This can be done easily with ``conda``:
 
    .. code-block:: sh
 
@@ -123,7 +124,7 @@ Advanced YAML usage
 
 If ``odo.resource`` requires extra keyword arguments for a particular resource
 type and they are provided in the YAML file, these will be forwarded on to the
-``resource`` call.  
+``resource`` call.
 
 If there is an ``imports`` entry for a resource whose value is a list of module
 or package names, Blaze server will ``import`` each of these modules or
@@ -238,7 +239,7 @@ this object cause communications through the web API, resulting in seemlessly
 interactive remote computation.
 
 The blaze server and client can be configured to support various serialization
-formats. These formats are exposed in the ``blaze.server`` module. The server
+formats. These formats are exposed in the :mod:`blaze.server` module. The server
 and client must both be told to use the same serialization format.
 For example:
 
@@ -426,7 +427,7 @@ dataset holds a normal dataset and a ``dict`` like object.
    >>> cached = CachedDataset(dset, cache=dict())  # doctest: +SKIP
 
 Queries and results executed against a cached dataset are stored in the cache
-(here a normal Python ``dict``) for fast future access.
+(here a normal Python :class:`dict`) for fast future access.
 
 If accumulated results are likely to fill up memory then other, on-disk
 ``dict``-like structures can be used like Shove_ or Chest_.
@@ -468,6 +469,65 @@ serve.
 You must also pass an iterable of serialization format objects that the server
 will respond to.
 
+
+Profiling
+---------
+
+The blaze server allows users and server administrators to profile computations
+run on the server. This allows developers to better understand the performance
+profile of their computations to better tune their queries or the backend code
+that is executing the query. This profiling will also track the time spent in
+serializing the data.
+
+By default, blaze servers will not allow profiling. To enable profiling on the
+blaze server, pass ``allow_profiler=True`` to the
+:class:`~blaze.server.server.Server` object. Now when we try to compute against
+this server, we may pass ``profile=True`` to ``compute``. For example:
+
+
+.. code-block:: python
+
+   >>> client = Client(...)  # doctest: +SKIP
+   >>> compute(expr, client, profile=True)  # doctest: +SKIP
+
+
+After running the above code, the server will have written a new pstats file
+containing the results of the run. This fill will be found at:
+``profiler_output/<md5>/<timestamp>``. We use the md5 hash of the str of the
+expression so that users can more easily track down their stats
+information. Users can find the hash of their expression with
+:func:`~blaze.server.server.expr_md5`.
+
+The profiler output directory may be configured with the ``profiler_output``
+argument to the :class:`~blaze.server.server.Server`.
+
+Clients may also request that the profiling data be sent back in the response so
+that analysis may happen on the client. To do this, we change our call to
+compute to look like:
+
+.. code-block:: python
+
+   >>> from io import BytesIO  # doctest: +SKIP
+   >>> buf = BytesIO()  # doctest: +SKIP
+   >>> compute(expr, client, profile=True, profiler_output=buf)  # doctest: +SKIP
+
+After that computation, ``buf`` will have the the marshalled stats data suitable
+for reading with :mod:`pstats`. This feature is useful when blaze servers are
+being run behind a load balancer and we do not want to search all of the servers
+to find the output.
+
+.. note::
+
+   Because the data is serialized with :mod:`marshal` it must be read by the
+   same version of python as the server. This means that a python 2 client
+   cannot unmarshal the data written by a python 3 server. This is to conform
+   with the file format expected by :mod:`pstats`, the standard profiling output
+   inspection library.
+
+System administrators may also configure all computations to be profiled by
+default. This is useful if the client code cannot be easily changed or threading
+arguments to compute is hard in an application setting. This may be set with
+``profile_by_default=True`` when constructing the server.
 
 
 Conclusion

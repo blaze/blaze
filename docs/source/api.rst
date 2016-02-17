@@ -71,6 +71,7 @@ Additional Server Utilities
 
 .. autosummary::
 
+   expr_md5
    to_tree
    from_tree
 
