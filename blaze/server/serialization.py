@@ -1,3 +1,4 @@
+import sys
 from functools import partial
 import json as json_module
 
@@ -104,12 +105,35 @@ except ImportError:
     compress = None
 
 
+def _final_base(values):
+    base = values.base
+    while True:
+        try:
+            base = base.base
+        except AttributeError:
+            return base
+
+
 def fastmsgpack_object_hook(ob):
     typ = ob.get('typ')
     if typ is None:
         return ob
     if typ == 'nat':
         return pd.NaT
+    if typ == 'block_manager':
+        df = pd_msgpack_object_hook(ob)
+        for block in df._data.blocks:
+            values = block.values
+            if (not values.flags.writeable and
+                sys.getrefcount(_final_base(values)) == 2):
+                # Compatibility shim until this is fixed in pandas
+                # See: https://github.com/pydata/pandas/pull/12359
+                # Mark that we own the memory for this block.
+                # We know that we own it because the only 2 references
+                # for the base object are the values of this block and
+                # TOS because we are passing this object to a function.
+                values.flags.writeable = True
+        return df
     return pd_msgpack_object_hook(ob)
 
 
@@ -144,6 +168,8 @@ def fastmsgpack_loads(data):
 
 
 def fastmsgpack_default(ob):
+    # Compatibility shim until this is fixed in pandas
+    # See: https://github.com/pydata/pandas/pull/12307
     if ob is pd.NaT:
         return {'typ': 'nat'}
     return pd_msgpack_default(ob)
