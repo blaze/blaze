@@ -266,7 +266,7 @@ def test_insert_from_subselect(sql_with_float):
     data = pd.DataFrame([{'c': 2.0}, {'c': 1.0}])
     tbl = odo(data, sql_with_float)
     s = symbol('s', discover(data))
-    compute(s[s.c.isin((1.0, 2.0))].sort(), tbl, return_type=sql_with_float),
+    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl, return_type='native'), sql_with_float),
     tm.assert_frame_equal(
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
