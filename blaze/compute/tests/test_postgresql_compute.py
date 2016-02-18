@@ -258,14 +258,14 @@ def test_postgres_isnan(sql_with_float):
     data = (1.0,), (float('nan'),)
     table = odo(data, sql_with_float)
     sym = symbol('s', discover(data))
-    assert odo(compute(sym.isnan(), table), list) == [(False,), (True,)]
+    assert odo(compute(sym.isnan(), table, return_type='native'), list) == [(False,), (True,)]
 
 
 def test_insert_from_subselect(sql_with_float):
     data = pd.DataFrame([{'c': 2.0}, {'c': 1.0}])
     tbl = odo(data, sql_with_float)
     s = symbol('s', discover(data))
-    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl), sql_with_float),
+    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl, return_type='native'), sql_with_float),
     tm.assert_frame_equal(
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
@@ -283,7 +283,7 @@ def test_concat(sql_two_tables):
     u = symbol('u', discover(u_data))
     tm.assert_frame_equal(
         odo(
-            compute(concat(t, u).sort('a'), {t: t_table, u: u_table}),
+            compute(concat(t, u).sort('a'), {t: t_table, u: u_table}, return_type='native'),
             pd.DataFrame,
         ),
         pd.DataFrame(np.arange(10), columns=['a']),
@@ -303,7 +303,7 @@ def test_concat_invalid_axis(sql_two_tables):
     u = symbol('u', '5 * 1 * int32')
 
     with pytest.raises(ValueError) as e:
-        compute(concat(t, u, axis=1), {t: t_table, u: u_table})
+        compute(concat(t, u, axis=1), {t: t_table, u: u_table}, return_type='native')
 
     # Preserve the suggestion to use merge.
     assert "'merge'" in str(e.value)
@@ -314,13 +314,13 @@ def test_timedelta_arith(sql_with_dts):
     dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
     sym = symbol('s', discover(dates))
     assert (
-        odo(compute(sym + delta, sql_with_dts), pd.Series) == dates + delta
+        odo(compute(sym + delta, sql_with_dts), pd.Series, return_type='native') == dates + delta
     ).all()
     assert (
-        odo(compute(sym - delta, sql_with_dts), pd.Series) == dates - delta
+        odo(compute(sym - delta, sql_with_dts), pd.Series, return_type='native') == dates - delta
     ).all()
     assert (
-        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series) ==
+        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series, return_type='native') ==
         dates - (dates - delta)
     ).all()
 
@@ -334,7 +334,7 @@ def test_timedelta_stat_reduction(sql_with_timedeltas, func):
     expected = timedelta(
         seconds=getattr(deltas.astype('int64') / 1e9, func)(ddof=expr.unbiased)
     )
-    assert odo(compute(expr, sql_with_timedeltas), timedelta) == expected
+    assert odo(compute(expr, sql_with_timedeltas), timedelta, return_type='native') == expected
 
 
 def test_coerce_bool_and_sum(sql):
@@ -342,13 +342,13 @@ def test_coerce_bool_and_sum(sql):
     t = symbol(n, discover(sql))
     expr = (t.B > 1.0).coerce(to='int32').sum()
     result = compute(expr, sql).scalar()
-    expected = odo(compute(t.B, sql), pd.Series).gt(1).sum()
+    expected = odo(compute(t.B, sql), pd.Series, return_type='native').gt(1).sum()
     assert result == expected
 
 
 def test_distinct_on(sql):
     t = symbol('t', discover(sql))
-    computation = compute(t[['A', 'B']].sort('A').distinct('A'), sql)
+    computation = compute(t[['A', 'B']].sort('A').distinct('A'), sql, return_type='native')
     assert normalize(str(computation)) == normalize("""
     SELECT DISTINCT ON (anon_1."A") anon_1."A", anon_1."B"
     FROM (SELECT {tbl}."A" AS "A", {tbl}."B" AS "B"
@@ -360,7 +360,7 @@ def test_distinct_on(sql):
 def test_auto_join_field(orders):
     t = symbol('t', discover(orders))
     expr = t.product_id.color
-    result = compute(expr, orders)
+    result = compute(expr, orders, return_type='native')
     expected = """SELECT
         products.color
     FROM products, orders
@@ -372,7 +372,7 @@ def test_auto_join_field(orders):
 def test_auto_join_projection(orders):
     t = symbol('t', discover(orders))
     expr = t.product_id[['color', 'price']]
-    result = compute(expr, orders)
+    result = compute(expr, orders, return_type='native')
     expected = """SELECT
         products.color,
         products.price
@@ -387,7 +387,7 @@ def test_auto_join_projection(orders):
 def test_foreign_key_reduction(orders, products, func):
     t = symbol('t', discover(orders))
     expr = methodcaller(func)(t.product_id.price)
-    result = compute(expr, orders)
+    result = compute(expr, orders, return_type='native')
     expected = """WITH alias as (select
             products.price as price
         from
@@ -401,7 +401,7 @@ def test_foreign_key_reduction(orders, products, func):
 def test_foreign_key_chain(fkey):
     t = symbol('t', discover(fkey))
     expr = t.sym_id.main.data
-    result = compute(expr, fkey)
+    result = compute(expr, fkey, return_type='native')
     expected = """SELECT
         main.data
     FROM main, fkey, pkey
@@ -416,7 +416,7 @@ def test_foreign_key_chain(fkey):
 def test_foreign_key_group_by(fkey, grouper):
     t = symbol('fkey', discover(fkey))
     expr = by(t.sym_id[grouper], avg_price=t.sym_id.price.mean())
-    result = compute(expr, fkey)
+    result = compute(expr, fkey, return_type='native')
     expected = """SELECT
         pkey.sym,
         avg(pkey.price) AS avg_price
@@ -431,7 +431,7 @@ def test_foreign_key_group_by(fkey, grouper):
 def test_group_by_map(fkey, grouper):
     t = symbol('fkey', discover(fkey))
     expr = by(t[grouper], id_count=t.size.count())
-    result = compute(expr, fkey)
+    result = compute(expr, fkey, return_type='native')
     expected = """SELECT
         fkey.sym_id,
         count(fkey.size) AS id_count
@@ -444,7 +444,7 @@ def test_group_by_map(fkey, grouper):
 def test_foreign_key_isin(fkey):
     t = symbol('fkey', discover(fkey))
     expr = t.sym_id.isin([1, 2])
-    result = compute(expr, fkey)
+    result = compute(expr, fkey, return_type='native')
     expected = """SELECT
         fkey.sym_id IN (%(sym_id_1)s, %(sym_id_2)s) AS anon_1
     FROM fkey
@@ -465,14 +465,14 @@ def test_foreign_key_merge_expression(fkey):
         where
             fkey.sym_id = pkey.id and pkey.main = main.id
     """
-    result = compute(expr, fkey)
+    result = compute(expr, fkey, return_type='native')
     assert normalize(str(result)) == normalize(expected)
 
 
 def test_join_type_promotion(sqla, sqlb):
     t, s = symbol(sqla.name, discover(sqla)), symbol(sqlb.name, discover(sqlb))
     expr = join(t, s, 'B', how='inner')
-    result = set(map(tuple, compute(expr, {t: sqla, s: sqlb}).execute().fetchall()))
+    result = set(map(tuple, compute(expr, {t: sqla, s: sqlb}, return_type='native').execute().fetchall()))
     expected = set([(1, 'a', 'a'), (1, None, 'a')])
     assert result == expected
 
@@ -484,7 +484,7 @@ def test_join_type_promotion(sqla, sqlb):
 def test_shift_on_column(n, column, sql):
     t = symbol('t', discover(sql))
     expr = t[column].shift(n)
-    result = odo(compute(expr, sql), pd.Series)
+    result = odo(compute(expr, sql), pd.Series, return_type='native')
     expected = odo(sql, pd.DataFrame)[column].shift(n)
     tm.assert_series_equal(result, expected)
 
@@ -493,7 +493,7 @@ def test_shift_on_column(n, column, sql):
 def test_shift_arithmetic(sql, n):
     t = symbol('t', discover(sql))
     expr = t.B - t.B.shift(n)
-    result = odo(compute(expr, sql), pd.Series)
+    result = odo(compute(expr, sql), pd.Series, return_type='native')
     df = odo(sql, pd.DataFrame)
     expected = df.B - df.B.shift(n)
     tm.assert_series_equal(result, expected)
@@ -524,8 +524,8 @@ def test_dist(nyc):
                     filtered.dropoff_latitude, filtered.dropoff_longitude)
     transformed = transform(filtered, dist=dist)
     assert (
-        odo(compute(transformed.dist.max(), nyc), float) ==
-        odo(compute(transformed.dist, nyc), pd.Series).max()
+        odo(compute(transformed.dist.max(), nyc, return_type='native'), float) ==
+        odo(compute(transformed.dist, nyc), pd.Series, return_type='native').max()
     )
 
 
@@ -545,7 +545,7 @@ def test_multiple_columns_in_transform(nyc):
     hours = t.trip_time_in_secs.coerce('float64') / 3600.0
     avg_speed_in_mph = t.trip_distance / hours
     d = transform(t, avg_speed_in_mph=avg_speed_in_mph, mycol=avg_speed_in_mph + 1)
-    df = odo(compute(d[d.avg_speed_in_mph <= 200], nyc), pd.DataFrame)
+    df = odo(compute(d[d.avg_speed_in_mph <= 200], nyc, return_type='native'), pd.DataFrame)
     assert not df.empty
 
 
@@ -563,9 +563,9 @@ def test_coerce_on_select(nyc):
         (t.passenger_count < 6)
     ]
     t = transform(t, pass_count=t.passenger_count + 1)
-    result = compute(t.pass_count.coerce('float64'), nyc)
+    result = compute(t.pass_count.coerce('float64'), nyc, return_type='native')
     s = odo(result, pd.Series)
-    expected = odo(compute(t, nyc),
+    expected = odo(compute(t, nyc, return_type='native'),
                    pd.DataFrame).passenger_count.astype('float64') + 1.0
     assert list(s) == list(expected)
 

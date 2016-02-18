@@ -138,20 +138,20 @@ def db(ctx):
 
 def test_projection(db, ctx):
     expr = db.t[['id', 'name']]
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result) == into(set, expected)
 
 
 def test_symbol_compute(db, ctx):
-    assert isinstance(compute(db.t, ctx), SparkDataFrame)
+    assert isinstance(compute(db.t, ctx, return_type='native'), SparkDataFrame)
 
 
 def test_field_access(db, ctx):
     for field in db.t.fields:
         expr = getattr(db.t, field)
-        result = into(pd.Series, compute(expr, ctx))
-        expected = compute(expr, {db: {'t': df}})
+        result = into(pd.Series, compute(expr, ctx, return_type='native'))
+        expected = compute(expr, {db: {'t': df}}, return_type='native')
         assert result.name == expected.name
         np.testing.assert_array_equal(result.values,
                                       expected.values)
@@ -159,15 +159,15 @@ def test_field_access(db, ctx):
 
 def test_head(db, ctx):
     expr = db.t[['name', 'amount']].head(2)
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(list, result) == into(list, expected)
 
 
 def test_literals(db, ctx):
     expr = db.t[db.t.amount >= 100]
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert list(map(set, into(list, result))) == list(
         map(set, into(list, expected))
     )
@@ -176,15 +176,15 @@ def test_literals(db, ctx):
 def test_by_summary(db, ctx):
     t = db.t
     expr = by(t.name, mymin=t.amount.min(), mymax=t.amount.max())
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result) == into(set, expected)
 
 
 def test_join(db, ctx):
     expr = join(db.t, db.s)
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df, 's': cities_df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df, 's': cities_df}}, return_type='native')
 
     assert isinstance(result, SparkDataFrame)
     assert into(set, result) == into(set, expected)
@@ -196,8 +196,8 @@ def test_join_diff_contexts(db, ctx, cities):
     people = ctx.table('t')
     cities = into(ctx, cities, dshape=discover(ctx.table('s')))
     scope = {db: {'t': people, 's': cities}}
-    result = compute(expr, scope)
-    expected = compute(expr, {db: {'t': df, 's': cities_df}})
+    result = compute(expr, scope, return_type='native')
+    expected = compute(expr, {db: {'t': df, 's': cities_df}}, return_type='native')
     assert set(map(frozenset, odo(result, set))) == set(
         map(frozenset, odo(expected, set))
     )
@@ -205,22 +205,22 @@ def test_join_diff_contexts(db, ctx, cities):
 
 def test_field_distinct(ctx, db):
     expr = db.t.name.distinct()
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
 def test_boolean(ctx, db):
     expr = db.t.amount > 50
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
 def test_selection(ctx, db):
     expr = db.t[db.t.amount > 50]
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert list(map(set, into(list, result))) == list(
         map(set, into(list, expected))
     )
@@ -228,8 +228,8 @@ def test_selection(ctx, db):
 
 def test_selection_field(ctx, db):
     expr = db.t[db.t.amount > 50].name
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
@@ -242,23 +242,23 @@ def test_selection_field(ctx, db):
 )
 def test_reductions(ctx, db, field, reduction):
     expr = getattr(db.t[field], reduction)()
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(list, result)[0][0] == expected
 
 
 def test_column_arithmetic(ctx, db):
     expr = db.t.amount + 1
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
 @pytest.mark.parametrize('func', [sin, cos, tan, exp])
 def test_math(ctx, db, func):
     expr = func(db.t.amount)
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     np.testing.assert_allclose(
         np.sort(odo(result, np.ndarray, dshape=expr.dshape)),
         np.sort(odo(expected, np.ndarray))
@@ -270,8 +270,8 @@ def test_math(ctx, db, func):
                                            [True, False]))
 def test_sort(ctx, db, field, ascending):
     expr = db.t.sort(field, ascending=ascending)
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert list(map(set, into(list, result))) == list(
         map(set, into(list, expected))
     )
@@ -280,8 +280,8 @@ def test_sort(ctx, db, field, ascending):
 @pytest.mark.xfail
 def test_map(ctx, db):
     expr = db.t.id.map(lambda x: x + 1, 'int')
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert into(set, result, dshape=expr.dshape) == into(set, expected)
 
 
@@ -299,8 +299,8 @@ def test_map(ctx, db):
 def test_by(ctx, db, grouper, reducer, reduction):
     t = db.t
     expr = by(t[grouper], total=getattr(t[reducer], reduction)())
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert set(map(frozenset, into(list, result))) == set(
         map(frozenset, into(list, expected))
     )
@@ -313,30 +313,30 @@ def test_by(ctx, db, grouper, reducer, reduction):
 def test_multikey_by(ctx, db, reducer, reduction):
     t = db.t
     expr = by(t[['id', 'amount']], total=getattr(t[reducer], reduction)())
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert (set(map(frozenset, into(list, result))) ==
             set(map(frozenset, into(list, expected))))
 
 
 def test_grouper_with_arith(ctx, db):
     expr = by(db.t[['id', 'amount']], total=(db.t.amount + 1).sum())
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert list(map(set, into(list, result))) == list(map(set, into(list, expected)))
 
 
 def test_by_non_native_ops(ctx, db):
     expr = by(db.t.id, total=db.t.id.nunique())
-    result = compute(expr, ctx)
-    expected = compute(expr, {db: {'t': df}})
+    result = compute(expr, ctx, return_type='native')
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert list(map(set, into(list, result))) == list(map(set, into(list, expected)))
 
 
 def test_strlen(ctx, db):
     expr = db.t.name.strlen()
-    result = odo(compute(expr, ctx), pd.Series)
-    expected = compute(expr, {db: {'t': df}})
+    result = odo(compute(expr, ctx, return_type='native'), pd.Series)
+    expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert result.name == 'name'
     assert expected.name == 'name'
     assert odo(result, set) == odo(expected, set)
@@ -360,11 +360,12 @@ def test_by_with_date(ctx, db, attr):
     #       DataFrame
     expr = by(getattr(db.dates.ds, attr), mean=db.dates.amount.mean())
     result = odo(
-        compute(expr, ctx), pd.DataFrame
+        compute(expr, ctx, return_type='native'), pd.DataFrame
     ).sort('mean').reset_index(drop=True)
     expected = compute(
         expr,
-        {db: {'dates': date_df}}
+        {db: {'dates': date_df}},
+        return_type='native'
     ).sort('mean').reset_index(drop=True)
     tm.assert_frame_equal(result, expected, check_dtype=False)
 
@@ -372,13 +373,13 @@ def test_by_with_date(ctx, db, attr):
 @pytest.mark.parametrize('keys', [[1], [1, 2]])
 def test_isin(ctx, db, keys):
     expr = db.t[db.t.id.isin(keys)]
-    result = odo(compute(expr, ctx), set)
-    expected = odo(compute(expr, {db: {'t': df}}), set)
+    result = odo(compute(expr, ctx, return_type='native'), set)
+    expected = odo(compute(expr, {db: {'t': df}}, return_type='native'), set)
     assert (set(map(frozenset, odo(result, list))) ==
             set(map(frozenset, odo(expected, list))))
 
 
 def test_nunique_spark_dataframe(ctx, db):
-    result = odo(compute(db.t.nunique(), ctx), int)
+    result = odo(compute(db.t.nunique(), ctx, return_type='native'), int)
     expected = ctx.table('t').distinct().count()
     assert result == expected
