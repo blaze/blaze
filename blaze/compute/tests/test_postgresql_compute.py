@@ -259,14 +259,14 @@ def test_postgres_isnan(sql_with_float):
     data = (1.0,), (float('nan'),)
     table = odo(data, sql_with_float)
     sym = symbol('s', discover(data))
-    assert odo(compute(sym.isnan(), table, return_type='native'), list) == [(False,), (True,)]
+    assert compute(sym.isnan(), table, return_type=list) == [(False,), (True,)]
 
 
 def test_insert_from_subselect(sql_with_float):
     data = pd.DataFrame([{'c': 2.0}, {'c': 1.0}])
     tbl = odo(data, sql_with_float)
     s = symbol('s', discover(data))
-    odo(compute(s[s.c.isin((1.0, 2.0))].sort(), tbl, return_type='native'), sql_with_float),
+    compute(s[s.c.isin((1.0, 2.0))].sort(), tbl, return_type=sql_with_float),
     tm.assert_frame_equal(
         odo(sql_with_float, pd.DataFrame).iloc[2:].reset_index(drop=True),
         pd.DataFrame([{'c': 1.0}, {'c': 2.0}]),
@@ -283,10 +283,7 @@ def test_concat(sql_two_tables):
     t = symbol('t', discover(t_data))
     u = symbol('u', discover(u_data))
     tm.assert_frame_equal(
-        odo(
-            compute(concat(t, u).sort('a'), {t: t_table, u: u_table}, return_type='native'),
-            pd.DataFrame,
-        ),
+        compute(concat(t, u).sort('a'), {t: t_table, u: u_table}, return_type=pd.DataFrame),
         pd.DataFrame(np.arange(10), columns=['a']),
     )
 
@@ -315,13 +312,13 @@ def test_timedelta_arith(sql_with_dts):
     dates = pd.Series(pd.date_range('2014-01-01', '2014-02-01'))
     sym = symbol('s', discover(dates))
     assert (
-        odo(compute(sym + delta, sql_with_dts), pd.Series, return_type='native') == dates + delta
+        compute(sym + delta, sql_with_dts, return_type=pd.Series) == dates + delta
     ).all()
     assert (
-        odo(compute(sym - delta, sql_with_dts), pd.Series, return_type='native') == dates - delta
+        compute(sym - delta, sql_with_dts, return_type=pd.Series) == dates - delta
     ).all()
     assert (
-        odo(compute(sym - (sym - delta), sql_with_dts), pd.Series, return_type='native') ==
+        compute(sym - (sym - delta), sql_with_dts, return_type=pd.Series) ==
         dates - (dates - delta)
     ).all()
 
@@ -335,7 +332,7 @@ def test_timedelta_stat_reduction(sql_with_timedeltas, func):
     expected = timedelta(
         seconds=getattr(deltas.astype('int64') / 1e9, func)(ddof=expr.unbiased)
     )
-    assert odo(compute(expr, sql_with_timedeltas), timedelta, return_type='native') == expected
+    assert compute(expr, sql_with_timedeltas, return_type=timedelta) == expected
 
 
 def test_coerce_bool_and_sum(sql):
@@ -343,7 +340,7 @@ def test_coerce_bool_and_sum(sql):
     t = symbol(n, discover(sql))
     expr = (t.B > 1.0).coerce(to='int32').sum()
     result = compute(expr, sql).scalar()
-    expected = odo(compute(t.B, sql), pd.Series, return_type='native').gt(1).sum()
+    expected = compute(t.B, sql, return_type=pd.Series).gt(1).sum()
     assert result == expected
 
 
@@ -485,7 +482,7 @@ def test_join_type_promotion(sqla, sqlb):
 def test_shift_on_column(n, column, sql):
     t = symbol('t', discover(sql))
     expr = t[column].shift(n)
-    result = odo(compute(expr, sql), pd.Series, return_type='native')
+    result = compute(expr, sql, return_type=pd.Series)
     expected = odo(sql, pd.DataFrame)[column].shift(n)
     tm.assert_series_equal(result, expected)
 
@@ -494,7 +491,7 @@ def test_shift_on_column(n, column, sql):
 def test_shift_arithmetic(sql, n):
     t = symbol('t', discover(sql))
     expr = t.B - t.B.shift(n)
-    result = odo(compute(expr, sql), pd.Series, return_type='native')
+    result = compute(expr, sql, return_type=pd.Series)
     df = odo(sql, pd.DataFrame)
     expected = df.B - df.B.shift(n)
     tm.assert_series_equal(result, expected)
@@ -525,8 +522,8 @@ def test_dist(nyc):
                     filtered.dropoff_latitude, filtered.dropoff_longitude)
     transformed = transform(filtered, dist=dist)
     assert (
-        odo(compute(transformed.dist.max(), nyc, return_type='native'), float) ==
-        odo(compute(transformed.dist, nyc), pd.Series, return_type='native').max()
+        compute(transformed.dist.max(), nyc, return_type=float) ==
+        compute(transformed.dist, nyc, return_type=pd.Series).max()
     )
 
 
@@ -546,7 +543,7 @@ def test_multiple_columns_in_transform(nyc):
     hours = t.trip_time_in_secs.coerce('float64') / 3600.0
     avg_speed_in_mph = t.trip_distance / hours
     d = transform(t, avg_speed_in_mph=avg_speed_in_mph, mycol=avg_speed_in_mph + 1)
-    df = odo(compute(d[d.avg_speed_in_mph <= 200], nyc, return_type='native'), pd.DataFrame)
+    df = compute(d[d.avg_speed_in_mph <= 200], nyc, return_type=pd.DataFrame)
     assert not df.empty
 
 
@@ -566,8 +563,8 @@ def test_coerce_on_select(nyc):
     t = transform(t, pass_count=t.passenger_count + 1)
     result = compute(t.pass_count.coerce('float64'), nyc, return_type='native')
     s = odo(result, pd.Series)
-    expected = odo(compute(t, nyc, return_type='native'),
-                   pd.DataFrame).passenger_count.astype('float64') + 1.0
+    expected = compute(t, nyc, return_type=pd.DataFrame) \
+                      .passenger_count.astype('float64') + 1.0
     assert list(s) == list(expected)
 
 
