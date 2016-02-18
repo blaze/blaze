@@ -8,7 +8,7 @@ from datetime import datetime
 from toolz import pluck, reduceby, groupby
 
 from datashape import Record
-from blaze import into, compute, compute_up, discover, dshape, Data
+from blaze import into, compute, compute_up, discover, dshape, data
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import symbol, by, floor, ceil
@@ -370,14 +370,14 @@ def test_floor_ceil(bank):
 
 
 def test_Data_construct(bank, points, mongo_host_port):
-    d = Data('mongodb://{}:{}/test_db'.format(*mongo_host_port))
+    d = data('mongodb://{}:{}/test_db'.format(*mongo_host_port))
     assert 'bank' in d.fields
     assert 'points' in d.fields
     assert isinstance(d.dshape.measure, Record)
 
 
 def test_Data_construct_with_table(bank, mongo_host_port):
-    d = Data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port))
+    d = data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port))
     assert set(d.fields) == set(('name', 'amount'))
     assert int(d.count()) == 5
 
@@ -391,7 +391,7 @@ def test_and_same_key(bank):
 
 def test_interactive_dshape_works(mongo_host_port):
     try:
-        d = Data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port),
+        d = data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port),
                  dshape='var * {name: string, amount: int64}')
     except pymongo.errors.ConnectionFailure:
         pytest.skip('No mongo server running')

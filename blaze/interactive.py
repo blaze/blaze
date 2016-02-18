@@ -24,7 +24,7 @@ from .compatibility import _strtypes
 from .utils import BlazeDeprecationWarning
 
 
-__all__ = ['Data', 'Table', 'into', 'to_html']
+__all__ = ['Data', 'Table', 'into', 'to_html', 'data']
 
 
 names = ('_%d' % i for i in itertools.count(1))

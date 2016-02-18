@@ -4,7 +4,7 @@ import pytest
 pytest.importorskip('flask')
 
 from pandas import DataFrame
-from blaze import compute, Data, by, into, discover
+from blaze import compute, data, by, into, discover
 from blaze.expr import Expr, symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
@@ -17,9 +17,9 @@ df = DataFrame([['Alice', 100], ['Bob', 200]],
 df2 = DataFrame([['Charlie', 100], ['Dan', 200]],
                 columns=['name', 'amount'])
 
-data = {'accounts': df, 'accounts2': df}
+tdata = {'accounts': df, 'accounts2': df}
 
-server = Server(data)
+server = Server(tdata)
 
 test = server.app.test_client()
 
@@ -29,7 +29,7 @@ client.requests = test # OMG monkey patching
 
 def test_client():
     c = Client('localhost:6363')
-    assert str(discover(c)) == str(discover(data))
+    assert str(discover(c)) == str(discover(tdata))
 
     t = symbol('t', discover(c))
     expr = t.accounts.amount.sum()
@@ -42,7 +42,7 @@ def test_client():
 
 def test_expr_client_interactive():
     c = Client('localhost:6363')
-    t = Data(c)
+    t = data(c)
 
     assert compute(t.accounts.name) == ['Alice', 'Bob']
     assert (into(set, compute(by(t.accounts.name, min=t.accounts.amount.min(),
@@ -61,12 +61,12 @@ def test_compute_client_with_multiple_datasets():
 def test_resource():
     c = resource('blaze://localhost:6363')
     assert isinstance(c, Client)
-    assert str(discover(c)) == str(discover(data))
+    assert str(discover(c)) == str(discover(tdata))
 
 
 def test_resource_default_port():
     ec = resource('blaze://localhost')
-    assert str(discover(ec)) == str(discover(data))
+    assert str(discover(ec)) == str(discover(tdata))
 
 
 def test_resource_non_default_port():
@@ -76,7 +76,7 @@ def test_resource_non_default_port():
 
 def test_resource_all_in_one():
     ec = resource('blaze://localhost:6363')
-    assert str(discover(ec)) == str(discover(data))
+    assert str(discover(ec)) == str(discover(tdata))
 
 
 class CustomExpr(Expr):
@@ -88,8 +88,8 @@ class CustomExpr(Expr):
 
 
 @dispatch(CustomExpr, DataFrame)
-def compute_up(expr, data, **kwargs):
-    return data
+def compute_up(expr, tdata, **kwargs):
+    return tdata
 
 
 def test_custom_expressions():
@@ -101,11 +101,11 @@ def test_custom_expressions():
 
 def test_client_dataset_fails():
     with pytest.raises(ValueError):
-        Data('blaze://localhost::accounts')
+        data('blaze://localhost::accounts')
     with pytest.raises(ValueError):
         resource('blaze://localhost::accounts')
 
 
 def test_client_dataset():
-    d = Data('blaze://localhost')
+    d = data('blaze://localhost')
     assert list(map(tuple, into(list, d.accounts))) == into(list, df)

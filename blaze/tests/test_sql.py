@@ -9,7 +9,7 @@ from sqlalchemy.exc import OperationalError
 from odo import into, drop
 
 from blaze import create_index, resource
-from blaze import Data
+from blaze import data
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def sql():
 
 
 def test_column(sql):
-    t = Data(sql)
+    t = data(sql)
 
     r = list(t['x'])
     assert r == [1, 10, 100]

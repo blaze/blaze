@@ -90,8 +90,8 @@ def test_top_then_bottom_then_top_again_etc():
 
 def test_swap_resources_into_scope():
 
-    from blaze import Data
-    t = Data([1, 2, 3], dshape='3 * int', name='t')
+    from blaze import data
+    t = data([1, 2, 3], dshape='3 * int', name='t')
     expr, scope = swap_resources_into_scope(t.head(2), {t: t.data})
 
     assert t._resources()
@@ -112,7 +112,7 @@ def test_compute_up_on_dict():
 
 def test_pre_compute_on_multiple_datasets_is_selective():
     from odo import CSV
-    from blaze import Data
+    from blaze import data
     from blaze.cached import CachedDataset
 
     df = pd.DataFrame([[1, 'Alice',   100],
@@ -123,7 +123,7 @@ def test_pre_compute_on_multiple_datasets_is_selective():
     iris = CSV(example('iris.csv'))
     dset = CachedDataset({'df': df, 'iris': iris})
 
-    d = Data(dset)
+    d = data(dset)
     assert str(compute(d.df.amount)) == str(df.amount)
 
 

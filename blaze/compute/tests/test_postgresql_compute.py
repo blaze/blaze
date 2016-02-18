@@ -18,7 +18,7 @@ from datashape import dshape
 from odo import odo, resource, drop, discover
 from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
 from odo.utils import tmpfile
-from blaze import sqrt, transform, Data
+from blaze import sqrt, transform, data
 from blaze.utils import example, normalize
 
 
@@ -571,5 +571,5 @@ def test_coerce_on_select(nyc):
 
 
 def test_interactive_len(sql):
-    t = Data(sql)
+    t = data(sql)
     assert len(t) == int(t.count())
