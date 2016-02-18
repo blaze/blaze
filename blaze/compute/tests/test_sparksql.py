@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
 from blaze import compute, symbol, into, by, sin, exp, cos, tan, join
+from blaze.interactive import iscorescalar
 
 from pyspark.sql import DataFrame as SparkDataFrame
 

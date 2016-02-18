@@ -19,6 +19,7 @@ from odo import odo, resource, drop, discover
 from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
 from odo.utils import tmpfile
 from blaze import sqrt, transform, Data
+from blaze.interactive import iscorescalar
 from blaze.utils import example, normalize
 
 
