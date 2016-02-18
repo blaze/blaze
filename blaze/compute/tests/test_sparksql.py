@@ -383,3 +383,10 @@ def test_nunique_spark_dataframe(ctx, db):
     result = odo(compute(db.t.nunique(), ctx, return_type='native'), int)
     expected = ctx.table('t').distinct().count()
     assert result == expected
+
+
+def test_core_compute(ctx, db):
+    assert isinstance(compute(db.t, ctx, return_type='core'), pd.DataFrame)
+    assert isinstance(compute(db.t.amount, ctx, return_type='core'), pd.Series)
+    assert iscorescalar(compute(db.t.amount.mean(), ctx, return_type='core'))
+    assert isinstance(compute(db.t, ctx, return_type=list), list)

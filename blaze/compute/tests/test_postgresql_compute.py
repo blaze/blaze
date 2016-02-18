@@ -573,3 +573,11 @@ def test_coerce_on_select(nyc):
 def test_interactive_len(sql):
     t = Data(sql)
     assert len(t) == int(t.count())
+
+
+def test_core_compute(nyc):
+    t = symbol('t', discover(nyc))
+    assert isinstance(compute(t, nyc, return_type='core'), pd.DataFrame)
+    assert isinstance(compute(t.passenger_count, nyc, return_type='core'), pd.Series)
+    assert iscorescalar(compute(t.passenger_count.mean(), nyc, return_type='core'))
+    assert isinstance(compute(t, nyc, return_type=list), list)
