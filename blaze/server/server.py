@@ -559,11 +559,11 @@ def compserver(payload, serial):
                 500,
             )
 
-        response = serial.dumps({
+        response = {
             'datashape': pprint(expr.dshape, width=0),
             'data': serial.data_dumps(result),
             'names': expr.fields
-        })
+        }
 
     if profiling:
         import marshal
@@ -582,9 +582,9 @@ def compserver(payload, serial):
             # a file path.
             marshal.dump(Stats(profiler).stats, file)
             if profiler_output == ':response':
-                response['profiler_output'] = file.getvalue()
+                response['profiler_output'] = {'__!bytes': file.getvalue()}
 
-    return response
+    return serial.dumps(response)
 
 
 @api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
