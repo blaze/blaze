@@ -517,6 +517,13 @@ def test_head():
     assert str(compute(t.head(2), s, return_type='native')) == str(select(s).limit(2))
 
 
+def test_sample():
+    order_by = select(s).order_by(sa.func.random())
+    assert str(compute(t.sample(n=5), s)) == str(order_by.limit(5))
+    limit_frac = select([sa.func.count() * 0.5]).as_scalar()
+    assert str(compute(t.sample(frac=0.5), s)) == str(order_by.limit(limit_frac))
+
+
 def test_label():
     assert (str(compute((t['amount'] * 10).label('foo'),
                         s, post_compute=False, return_type='native')) ==

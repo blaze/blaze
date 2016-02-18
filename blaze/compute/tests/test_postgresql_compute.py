@@ -581,3 +581,13 @@ def test_core_compute(nyc):
     assert isinstance(compute(t.passenger_count, nyc, return_type='core'), pd.Series)
     assert iscorescalar(compute(t.passenger_count.mean(), nyc, return_type='core'))
     assert isinstance(compute(t, nyc, return_type=list), list)
+
+
+def test_sample(sql):
+    t = symbol('t', discover(sql))
+    result = compute(t.sample(n=1), sql)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == 1
+    result2 = compute(t.sample(frac=0.5), sql)
+    s2 = odo(result2, pd.DataFrame)
+    assert len(s) == len(s2)

@@ -58,9 +58,9 @@ from .core import compute_up, compute, base
 from ..expr import (
     Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
     Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
-    Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
+    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Sample,
+    Label, Concat, ReLabel, Merge, common_subexpression, Summary, Like,
+    nelements, notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -840,6 +840,27 @@ def compute_up(t, s, **kwargs):
     direction = sa.asc if t.ascending else sa.desc
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
+
+def _samp_compute_up(t, s, **kwargs):
+    if t.n is not None:
+        limit = t.n
+    else:
+        limit = select([safuncs.count() * t.frac]).as_scalar()
+    return s.order_by(safuncs.random()).limit(limit)
+
+@dispatch(Sample, sa.Table)
+def compute_up(t, s, **kwargs):
+    return _samp_compute_up(t, select(s), **kwargs)
+
+
+@dispatch(Sample, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return _samp_compute_up(t, sa.select([s]), **kwargs)
+
+
+@dispatch(Sample, FromClause)
+def compute_up(t, s, **kwargs):
+    return _samp_compute_up(t, s, **kwargs)
 
 
 @dispatch(Head, FromClause)

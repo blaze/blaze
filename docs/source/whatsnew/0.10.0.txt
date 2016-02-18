@@ -2,22 +2,39 @@ Release |version|
 -----------------
 
 :Release: |version|
-:Date: December 17th, 2015
+:Date: TBD
 
 New Expressions
 ~~~~~~~~~~~~~~~
 
+* The ``sample`` expression allows random sampling of rows to facilitate
+  interactive data exploration (:issue:`1410`).  It is implemented for the
+  Pandas, Dask, SQL, and Python backends.
+
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
+
+None
 
 New Backends
 ~~~~~~~~~~~~
 
+None
+
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
+None
+
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
 
 API Changes
 ~~~~~~~~~~~
@@ -32,7 +49,9 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
+None
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
+None

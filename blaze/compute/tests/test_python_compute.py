@@ -13,10 +13,8 @@ from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape, symbol, discover
 from blaze.compute.core import compute, compute_up, pre_compute
-from blaze.expr import (
-    by, merge, join, distinct, sum, min, max, any, summary, count, std, head,
-    transform, greatest, least
-)
+from blaze.expr import (by, merge, join, distinct, sum, min, max, any, summary,
+                        count, std, head, sample, transform, greatest, least)
 import numpy as np
 
 from blaze import cos, sin
@@ -331,6 +329,15 @@ def test_head():
     e = head(t, 101)
     p = list(range(1000))
     assert len(list(compute(e, p))) == 101
+
+
+def test_sample():
+    NN = len(databig)
+    for n in range(1, NN+1):
+        assert (len(compute(tbig.sample(n=n), databig)) ==
+                len(compute(tbig.sample(frac=float(n)/NN), databig)) ==
+                n)
+    assert len(compute(tbig.sample(n=NN*2), databig)) == NN
 
 
 def test_graph_double_join():
