@@ -256,7 +256,7 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
 def coerce_core(result, dshape, odo_kwargs=None):
     """Coerce data to a core data type."""
     if iscoretype(result):
-        pass
+        return result
     elif isscalar(dshape):
         result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
     elif istabular(dshape) and isrecord(dshape.measure):
