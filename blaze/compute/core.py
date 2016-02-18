@@ -4,15 +4,19 @@ from collections import defaultdict, Iterator
 from datetime import date, datetime
 import itertools
 import numbers
+import warnings
 
 import toolz
 from toolz import first, unique, assoc
+import numpy as np
 import pandas as pd
 from odo import odo
 
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
+from ..interactive import coerce_scalar, coerce_core, into, iscoretype
+from ..utils import BlazePendingDeprecationWarning
 
 __all__ = ['compute', 'compute_up']
 
@@ -367,8 +371,14 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, **kwargs):
-    """ Compute expression against data sources
+def compute(expr, d, return_type='native', **kwargs):
+    """ Compute expression against data sources.
+
+    Args:
+        expr: blaze expression
+        d: data source to compute expression on
+        return_type (optional): type to return data as. Defaults to 'core' which
+                                returns as scalar, list, series, or dataframe as appropriate.
 
     >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
@@ -406,6 +416,18 @@ def compute(expr, d, **kwargs):
     result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)
+
+    # return the backend's native response
+    if return_type == 'native':
+        warnings.warn("compute's `return_type` parameter will default to 'core' in blaze version >= 0.11.", BlazePendingDeprecationWarning)
+    # return result as a core type (python type, pandas Series/DataFrame, numpy array)
+    elif return_type == 'core':
+        result = coerce_core(result, expr.dshape)
+    # user specified type
+    elif isinstance(return_type, type):
+        result = into(return_type, result)
+    else:
+        raise ValueError("Invalid return_type passed to compute: {}".format(str(return_type)))
 
     return result
 

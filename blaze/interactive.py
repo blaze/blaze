@@ -10,7 +10,7 @@ import warnings
 
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
-from datashape.predicates import iscollection, isscalar, isrecord, istabular
+from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 import numpy as np
 from odo import resource, odo
 from odo.utils import ignoring, copydoc
@@ -21,6 +21,7 @@ from pandas import DataFrame, Series, Timestamp
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
 from .compatibility import _strtypes
+from .utils import BlazeDeprecationWarning
 
 
 __all__ = ['Data', 'Table', 'into', 'to_html']
@@ -97,26 +98,32 @@ class InteractiveSymbol(Symbol):
         return data, self.dshape, self._name
 
 
+def Data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
+    warnings.warn("""`Data` has been deprecated in 0.10 and will be removed in
+                   version >= 0.11. It has been renamed `data`.""", BlazeDeprecationWarning)
+    return data(data_source, dshape=dshape, name=name, fields=fields, schema=schema, **kwargs)
+
+
 @copydoc(InteractiveSymbol)
-def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
+def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
-    if isinstance(data, InteractiveSymbol):
-        return Data(data.data, dshape, name, fields, schema, **kwargs)
+    if isinstance(data_source, InteractiveSymbol):
+        return Data(data_source.data, dshape, name, fields, schema, **kwargs)
 
-    if isinstance(data, _strtypes):
-        data = resource(data, schema=schema, dshape=dshape, **kwargs)
-    if (isinstance(data, Iterator) and
-            not isinstance(data, tuple(not_an_iterator))):
-        data = tuple(data)
+    if isinstance(data_source, _strtypes):
+        data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
+    if (isinstance(data_source, Iterator) and
+            not isinstance(data_source, tuple(not_an_iterator))):
+        data_source = tuple(data_source)
     if schema and not dshape:
         dshape = var * schema
     if dshape and isinstance(dshape, _strtypes):
         dshape = datashape.dshape(dshape)
     if not dshape:
-        dshape = discover(data)
+        dshape = discover(data_source)
         types = None
         if isinstance(dshape.measure, Tuple) and fields:
             types = dshape[1].dshapes
@@ -127,13 +134,13 @@ def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
             schema = Record(list(zip(fields, types)))
             dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
         elif isrecord(dshape.measure) and fields:
-            ds = discover(data)
+            ds = discover(data_source)
             assert isrecord(ds.measure)
             names = ds.measure.names
             if names != fields:
                 raise ValueError('data column names %s\n'
                                  '\tnot equal to fields parameter %s,\n'
-                                 '\tuse Data(data).relabel(%s) to rename '
+                                 '\tuse data(data_source).relabel(%s) to rename '
                                  'fields' % (names,
                                              fields,
                                              ', '.join('%s=%r' % (k, v)
@@ -144,7 +151,7 @@ def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-    return InteractiveSymbol(data, ds, name)
+    return InteractiveSymbol(data_source, ds, name)
 
 
 def Table(*args, **kwargs):
@@ -233,6 +240,7 @@ def coerce_to(typ, x, odo_kwargs=None):
 
 
 def coerce_scalar(result, dshape, odo_kwargs=None):
+    dshape = str(dshape)
     coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
     if 'float' in dshape:
         return coerce_(float)
@@ -250,6 +258,28 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
         return coerce_(datetime.timedelta)
     else:
         return result
+
+
+def coerce_core(result, dshape, odo_kwargs=None):
+    """Coerce data to a core data type."""
+    if iscoretype(result):
+        pass
+    elif isscalar(dshape):
+        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
+    elif istabular(dshape) and isrecord(dshape.measure):
+        result = into(DataFrame, result, **(odo_kwargs or {}))
+    elif iscollection(dshape):
+        dim = _dimensions(dshape)
+        if dim == 1:
+            result = into(Series, result, **(odo_kwargs or {}))
+        elif dim > 1:
+            result = into(np.ndarray, result, **(odo_kwargs or {}))
+        else:
+            raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+    else:
+        raise ValueError("Expr does not evaluate to a core return type")
+
+    return result
 
 
 def expr_repr(expr, n=10):
@@ -309,7 +339,7 @@ def to_html(o):
 
 @dispatch((object, type, str, unicode), Expr)
 def into(a, b, **kwargs):
-    result = compute(b, **kwargs)
+    result = compute(b, return_type='native', **kwargs)
     kwargs['dshape'] = b.dshape
     return into(a, result, **kwargs)
 
@@ -340,6 +370,12 @@ def convert_base(typ, x):
         return typ(x)
     except:
         return typ(odo(x, typ))
+
+
+CORE_TYPES = (float, decimal.Decimal, int, bool, Timestamp, datetime.date, str,
+              datetime.timedelta, list, dict, tuple, set, Series, DataFrame, np.ndarray)
+def iscoretype(x):
+    return isinstance(x, CORE_TYPES)
 
 Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)
