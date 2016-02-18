@@ -11,7 +11,7 @@ import numpy as np
 from odo import into, append
 from odo.backends.csv import CSV
 
-from blaze import discover, transform, merge
+from blaze import discover, transform
 from blaze.compatibility import pickle
 from blaze.expr import symbol
 from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
@@ -187,52 +187,11 @@ def test_table_resource():
         assert into(list, compute(t)) == into(list, csv)
 
 
-def test_sample_failures():
-    t = symbol('t', 'var * {x:int, y:int}')
-    with pytest.raises(ValueError):
-        t.sample(n=1, frac=0.1)
-    with pytest.raises(TypeError):
-        t.sample(n='a')
-    with pytest.raises(ValueError):
-        t.sample(frac='a')
-    with pytest.raises(TypeError):
-        t.sample(foo='a')
-    with pytest.raises(TypeError):
-        t.sample()
-
-
 def test_concretehead_failure():
     t = symbol('t', 'var * {x:int, y:int}')
     d = t[t['x'] > 100]
     with pytest.raises(ValueError):
         concrete_head(d)
-
-
-def test_distinct_failures():
-    t = symbol('t', 'var * {x:int}')
-    with pytest.raises(ValueError) as excinfo:
-        t.distinct('a')
-
-    assert "a is not a field of t" == str(excinfo.value)
-
-    with pytest.raises(TypeError) as excinfo:
-        t.distinct(10)
-
-    assert "on must be a name or field, not: 10" == str(excinfo.value)
-
-    s = symbol('s', 'var * {y:int}')
-    with pytest.raises(ValueError) as excinfo:
-        t.distinct(s.y)
-
-    assert "s.y is not a field of t" == str(excinfo.value)
-
-
-def test_merge_failure():
-    t = symbol('t', 'var * {x:int}')
-    with pytest.raises(ValueError) as excinfo:
-        merge(t, x=2*t.x)
-
-    assert "Repeated columns" in str(excinfo.value)
 
 
 def test_into_np_ndarray_column():

@@ -41,6 +41,14 @@ def test_merge_common_subexpression():
     assert result.isidentical(t.a)
 
 
+def test_merge_exceptions():
+    t = symbol('t', 'var * {x:int}')
+    with pytest.raises(ValueError) as excinfo:
+        merge(t, x=2*t.x)
+
+    assert "Repeated columns" in str(excinfo.value)
+
+
 def test_transform():
     t = symbol('t', '5 * {x: int, y: int}')
     expr = transform(t, z=t.x + t.y)
@@ -52,6 +60,39 @@ def test_transform():
 
 def test_distinct():
     assert '5' not in str(t.distinct().dshape)
+
+
+def test_distinct_exceptions():
+    t = symbol('t', 'var * {x:int}')
+    with pytest.raises(ValueError) as excinfo:
+        t.distinct('a')
+
+    assert "a is not a field of t" == str(excinfo.value)
+
+    with pytest.raises(TypeError) as excinfo:
+        t.distinct(10)
+
+    assert "on must be a name or field, not: 10" == str(excinfo.value)
+
+    s = symbol('s', 'var * {y:int}')
+    with pytest.raises(ValueError) as excinfo:
+        t.distinct(s.y)
+
+    assert "s.y is not a field of t" == str(excinfo.value)
+
+
+def test_sample_exceptions():
+    t = symbol('t', 'var * {x:int, y:int}')
+    with pytest.raises(ValueError):
+        t.sample(n=1, frac=0.1)
+    with pytest.raises(TypeError):
+        t.sample(n='a')
+    with pytest.raises(ValueError):
+        t.sample(frac='a')
+    with pytest.raises(TypeError):
+        t.sample(foo='a')
+    with pytest.raises(TypeError):
+        t.sample()
 
 
 def test_join_on_same_columns():
