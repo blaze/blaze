@@ -19,11 +19,10 @@ from toolz import unique
 
 from odo import odo, drop
 from blaze.compatibility import xfail
-from blaze.compute.sql import compute, select, lower_column, compute_up
-from blaze.expr import (
-    symbol, transform, summary, by, sin, join,
-    floor, cos, merge, nunique, mean, sum, count, exp, datetime as bz_datetime
-)
+from blaze.compute.sql import (compute, select, lower_column, compute_up,
+                               get_all_froms)
+from blaze.expr import (symbol, transform, summary, by, sin, join, floor, cos,
+                        merge, nunique, mean, sum, count, exp, datetime as bz_datetime)
 from blaze.utils import tmpfile, example, normalize
 
 
@@ -520,7 +519,7 @@ def test_head():
 def test_sample():
     order_by = select(s).order_by(sa.func.random())
     assert str(compute(t.sample(n=5), s)) == str(order_by.limit(5))
-    limit_frac = select([sa.func.count() * 0.5]).as_scalar()
+    limit_frac = sa.select([sa.func.count() * 0.5], from_obj=get_all_froms(s)).as_scalar()
     assert str(compute(t.sample(frac=0.5), s)) == str(order_by.limit(limit_frac))
 
 

@@ -47,6 +47,20 @@ def sql(url):
             drop(t)
 
 
+@pytest.yield_fixture
+def big_sql(url):
+    try:
+        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo(zip(list('a'*100), list(range(100))), t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
 @pytest.yield_fixture(scope='module')
 def nyc(pg_ip):
     try:
@@ -575,11 +589,12 @@ def test_interactive_len(sql):
     assert len(t) == int(t.count())
 
 
-def test_sample(sql):
-    t = symbol('t', discover(sql))
-    result = compute(t.sample(n=1), sql)
+def test_sample(big_sql):
+    nn = symbol('nn', discover(big_sql))
+    nrows = odo(compute(nn.nrows, big_sql), int)
+    result = compute(nn.sample(n=nrows // 2), big_sql)
     s = odo(result, pd.DataFrame)
-    assert len(s) == 1
-    result2 = compute(t.sample(frac=0.5), sql)
+    assert len(s) == nrows // 2
+    result2 = compute(nn.sample(frac=0.5), big_sql)
     s2 = odo(result2, pd.DataFrame)
     assert len(s) == len(s2)

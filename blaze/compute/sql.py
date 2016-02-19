@@ -845,7 +845,8 @@ def _samp_compute_up(t, s, **kwargs):
     if t.n is not None:
         limit = t.n
     else:
-        limit = select([safuncs.count() * t.frac]).as_scalar()
+        limit = sa.select([safuncs.count() * t.frac],
+                          from_obj=get_all_froms(s)).as_scalar()
     return s.order_by(safuncs.random()).limit(limit)
 
 @dispatch(Sample, sa.Table)
