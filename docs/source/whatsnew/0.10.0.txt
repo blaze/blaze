@@ -14,7 +14,8 @@ New Expressions
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
-None
+* The test suite was expanded to validate proper expression input error handling
+  (:issue:`1420`).
 
 New Backends
 ~~~~~~~~~~~~
