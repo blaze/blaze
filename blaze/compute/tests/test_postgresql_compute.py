@@ -575,11 +575,21 @@ def test_interactive_len(sql):
     assert len(t) == int(t.count())
 
 
-def test_sample(sql):
-    t = symbol('t', discover(sql))
-    result = compute(t.sample(n=1), sql)
+def test_sample_n(nyc):
+    t = symbol('t', discover(nyc))
+    result = compute(t.sample(n=14), nyc)
     s = odo(result, pd.DataFrame)
-    assert len(s) == 1
-    result2 = compute(t.sample(frac=0.5), sql)
+    assert len(s) == 14
+
+
+@pytest.mark.xfail(raises=AssertionError,
+                   reason='Test for GH Issue # 1423')
+def test_sample_frac(nyc):
+    """
+    sample(frac=x) always returns 1 row.
+    """
+    t = symbol('t', discover(nyc))
+    result2 = compute(t.sample(frac=0.5), nyc)
+    num_rows = odo(compute(t.nrows, nyc), int)
     s2 = odo(result2, pd.DataFrame)
-    assert len(s) == len(s2)
+    assert len(s2) == int(num_rows * 0.5)
