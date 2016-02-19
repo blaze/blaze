@@ -10,7 +10,7 @@ import warnings
 
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
-from datashape.predicates import iscollection, isscalar, isrecord, istabular
+from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 import numpy as np
 from odo import resource, odo
 from odo.utils import ignoring, copydoc
@@ -233,6 +233,7 @@ def coerce_to(typ, x, odo_kwargs=None):
 
 
 def coerce_scalar(result, dshape, odo_kwargs=None):
+    dshape = str(dshape)
     coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
     if 'float' in dshape:
         return coerce_(float)
@@ -250,6 +251,28 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
         return coerce_(datetime.timedelta)
     else:
         return result
+
+
+def coerce_core(result, dshape, odo_kwargs=None):
+    """Coerce data to a core data type."""
+    if iscoretype(result):
+        return result
+    elif isscalar(dshape):
+        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
+    elif istabular(dshape) and isrecord(dshape.measure):
+        result = into(DataFrame, result, **(odo_kwargs or {}))
+    elif iscollection(dshape):
+        dim = _dimensions(dshape)
+        if dim == 1:
+            result = into(Series, result, **(odo_kwargs or {}))
+        elif dim > 1:
+            result = into(np.ndarray, result, **(odo_kwargs or {}))
+        else:
+            raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+    else:
+        raise ValueError("Expr does not evaluate to a core return type")
+
+    return result
 
 
 def expr_repr(expr, n=10):
@@ -309,7 +332,7 @@ def to_html(o):
 
 @dispatch((object, type, str, unicode), Expr)
 def into(a, b, **kwargs):
-    result = compute(b, **kwargs)
+    result = compute(b, return_type='native', **kwargs)
     kwargs['dshape'] = b.dshape
     return into(a, result, **kwargs)
 
@@ -340,6 +363,25 @@ def convert_base(typ, x):
         return typ(x)
     except:
         return typ(odo(x, typ))
+
+
+CORE_SCALAR_TYPES = (float, decimal.Decimal, int, bool, str, Timestamp,
+                     datetime.date, datetime.timedelta)
+CORE_SEQUENCE_TYPES = (list, dict, tuple, set, Series, DataFrame, np.ndarray)
+CORE_TYPES = CORE_SCALAR_TYPES + CORE_SEQUENCE_TYPES
+
+
+def iscorescalar(x):
+    return isinstance(x, CORE_SCALAR_TYPES)
+
+
+def iscoresequence(x):
+    return isinstance(x, CORE_SEQUENCE_TYPES)
+
+
+def iscoretype(x):
+    return isinstance(x, CORE_TYPES)
+
 
 Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)

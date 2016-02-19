@@ -8,13 +8,16 @@ import pandas as pd
 import pandas.util.testing as tm
 import pytest
 import numpy as np
+import dask.array as da
 from odo import into, append
 from odo.backends.csv import CSV
 
 from blaze import discover, transform
 from blaze.compatibility import pickle
 from blaze.expr import symbol
-from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html
+from blaze.interactive import (Data, compute, concrete_head, expr_repr, to_html,
+                               iscorescalar, iscoresequence, iscoretype, into,
+                               coerce_core)
 from blaze.utils import tmpfile, example
 
 data = (('Alice', 100),
@@ -493,3 +496,53 @@ def test_isidentical_regr():
     data = np.array([(np.nan,), (np.nan,)], dtype=[('a', 'float64')])
     ds = Data(data)
     assert ds.a.isidentical(ds.a)
+
+
+@pytest.mark.parametrize('data,dshape,exp_type', [
+    (1, symbol('x', 'int').dshape, int),
+    (into(da.core.Array, [1, 2], chunks=(10,)), symbol('x', '2 * int').dshape, pd.Series),  # test 1-d to series
+    (into(da.core.Array, [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], chunks=(10,10)), symbol('x', '2 * {a: int, b: int}').dshape, pd.DataFrame),  # test 2-d tabular to dataframe
+    (into(da.core.Array, [[1, 2], [3, 4]], chunks=(10, 10)), symbol('x', '2 *  2 * int').dshape, np.ndarray),  # test 2-d non tabular to ndarray
+])
+def test_coerce_core(data, dshape, exp_type):
+    assert isinstance(coerce_core(data, dshape), exp_type)
+
+
+@pytest.mark.parametrize('data,res', [
+    (1, True),
+    (1.1, True),
+    ("foo", True),
+    ([1, 2], False),
+    ((1, 2), False),
+    (pd.Series([1, 2]), False),
+])
+def test_iscorescalar(data, res):
+    assert iscorescalar(data) == res
+
+
+@pytest.mark.parametrize('data,res', [
+    (1, False),
+    ("foo", False),
+    ([1, 2], True),
+    ((1, 2), True),
+    (pd.Series([1, 2]), True),
+    (pd.DataFrame([[1, 2], [3, 4]]), True),
+    (np.ndarray([1, 2]), True),
+    (into(da.core.Array, [1, 2], chunks=(10,)), False)
+])
+def test_iscoresequence(data, res):
+    assert iscoresequence(data) == res
+
+
+@pytest.mark.parametrize('data,res', [
+    (1, True),
+    ("foo", True),
+    ([1, 2], True),
+    ((1, 2), True),
+    (pd.Series([1, 2]), True),
+    (pd.DataFrame([[1, 2], [3, 4]]), True),
+    (np.ndarray([1, 2]), True),
+    (into(da.core.Array, [1, 2], chunks=(10,)), False)
+])
+def test_iscoretype(data, res):
+    assert iscoretype(data) == res
