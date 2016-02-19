@@ -32,9 +32,11 @@ x = np.ones((2, 2))
 
 
 def test_table_raises_on_inconsistent_inputs():
-    with pytest.raises(ValueError):
-        t = Data(data, schema='{name: string, amount: float32}',
-                 dshape=dshape("{name: string, amount: float32}"))
+    with pytest.raises(ValueError) as excinfo:
+        Data(data, schema='{name: string, amount: float32}',
+             dshape=dshape("{name: string, amount: float32}"))
+
+    assert "specify one of schema= or dshape= keyword" in str(excinfo.value)
 
 
 def test_resources():
@@ -183,20 +185,6 @@ def test_table_resource():
         t = Data(filename)
         assert isinstance(t.data, CSV)
         assert into(list, compute(t)) == into(list, csv)
-
-
-def test_sample_failures():
-    t = symbol('t', 'var * {x:int, y:int}')
-    with pytest.raises(ValueError):
-        t.sample(n=1, frac=0.1)
-    with pytest.raises(TypeError):
-        t.sample(n='a')
-    with pytest.raises(ValueError):
-        t.sample(frac='a')
-    with pytest.raises(TypeError):
-        t.sample(foo='a')
-    with pytest.raises(TypeError):
-        t.sample()
 
 
 def test_concretehead_failure():
@@ -412,8 +400,11 @@ def test_asarray_fails_on_different_column_names():
           'second': [4., 1., 4.],
           'third': [6., 4., 3.]}
     df = pd.DataFrame(vs)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         Data(df, fields=list('abc'))
+
+    inmsg = "Data(data).relabel(first='a', second='b', third='c') to rename"
+    assert inmsg in str(excinfo.value)
 
 
 def test_functions_as_bound_methods():
