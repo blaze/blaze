@@ -7,7 +7,6 @@ import sys
 import argparse
 import importlib
 
-import toolz
 import yaml
 
 from odo import resource
@@ -105,9 +104,17 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     data_spider : Traverse a directory tree for resources
     """
     resources = {}
+    yaml_dir = os.path.split(os.path.abspath(path.name))[0]
     for name, info in yaml.load(path.read()).items():
         try:
             source = info.pop('source')
+
+            # convert relative pathes to absolute relative to yaml file
+            if (not os.path.isabs(source) and
+               not source.startswith('http') and
+               '~' not in source):
+                source = os.path.join(yaml_dir, source)
+
         except KeyError:
             raise ValueError('source key not found for data source named %r' %
                              name)
