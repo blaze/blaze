@@ -24,7 +24,8 @@ None
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
-None
+* Adds :class:`~blaze.expr.math.greatest` and :class:`~blaze.expr.math.least`
+  support to the sql backend (:issue:`1428`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
