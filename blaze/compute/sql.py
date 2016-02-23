@@ -50,17 +50,52 @@ from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
 from datashape import TimeDelta
 from datashape.predicates import iscollection, isscalar, isrecord
 
-from ..dispatch import dispatch
-
 from .core import compute_up, compute, base
-
-
+from ..dispatch import dispatch
 from ..expr import (
-    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
-    Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Label,
-    Concat, ReLabel, Merge, common_subexpression, Summary, Like, nelements,
-    notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
+    BinOp,
+    BinaryMath,
+    Broadcast,
+    By,
+    Coerce,
+    Concat,
+    DateTime,
+    DateTimeTruncate,
+    Distinct,
+    Expr,
+    Field,
+    FloorDiv,
+    Head,
+    IsIn,
+    Join,
+    Label,
+    Like,
+    Merge,
+    Pow,
+    Projection,
+    ReLabel,
+    Reduction,
+    Sample,
+    Selection,
+    Shift,
+    Slice,
+    Sort,
+    Sub,
+    Summary,
+    Tail,
+    UnaryOp,
+    UnaryStringFunction,
+    common_subexpression,
+    count,
+    greatest,
+    least,
+    mean,
+    nelements,
+    notnull,
+    nunique,
+    std,
+    strlen,
+    var,
 )
 
 from ..expr.broadcast import broadcast_collect
@@ -192,44 +227,52 @@ def compute_up(t, s, **kwargs):
     return compute(expr, s, post_compute=False).label(expr._name)
 
 
-@dispatch(BinOp, ColumnElement)
-def compute_up(t, data, **kwargs):
-    if isinstance(t.lhs, Expr):
-        return t.op(data, t.rhs)
-    else:
-        return t.op(t.lhs, data)
+def _binop(type_, f):
+    @dispatch(type_, ColumnElement)
+    def compute_up(t, data, **kwargs):
+        if isinstance(t.lhs, Expr):
+            return t.op(data, t.rhs)
+        else:
+            return f(t, t.lhs, data)
+
+    @dispatch(type_, Select)
+    def compute_up(t, data, **kwargs):
+        assert len(data.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic'
+        )
+        column = first(data.inner_columns)
+        if isinstance(t.lhs, Expr):
+            return f(t, column, t.rhs)
+        else:
+            return f(t, t.lhs, column)
+
+    @compute_up.register(
+        type_, (Select, ColumnElement, base), (Select, ColumnElement),
+    )
+    @compute_up.register(type_, (Select, ColumnElement), base)
+    def binop_sql(t, lhs, rhs, **kwargs):
+        if isinstance(lhs, Select):
+            assert len(lhs.c) == 1, (
+                'Select cannot have more than a single column when doing'
+                ' arithmetic, got %r' % lhs
+            )
+            lhs = first(lhs.inner_columns)
+        if isinstance(rhs, Select):
+            assert len(rhs.c) == 1, (
+                'Select cannot have more than a single column when doing'
+                ' arithmetic, got %r' % rhs
+            )
+            rhs = first(rhs.inner_columns)
+
+        return f(t, lhs, rhs)
 
 
-@dispatch(BinOp, Select)
-def compute_up(t, data, **kwargs):
-    assert len(data.c) == 1, \
-        'Select cannot have more than a single column when doing arithmetic'
-    column = first(data.inner_columns)
-    if isinstance(t.lhs, Expr):
-        return t.op(column, t.rhs)
-    else:
-        return t.op(t.lhs, column)
-
-
-@compute_up.register(
-    BinOp, (Select, ColumnElement, base), (Select, ColumnElement),
+_binop(BinOp, lambda expr, lhs, rhs: expr.op(lhs, rhs))
+_binop(
+    (greatest, least),
+    lambda expr, lhs, rhs: getattr(sa.func, type(expr).__name__)(lhs, rhs),
 )
-@compute_up.register(BinOp, (Select, ColumnElement), base)
-def binop_sql(t, lhs, rhs, **kwargs):
-    if isinstance(lhs, Select):
-        assert len(lhs.c) == 1, (
-            'Select cannot have more than a single column when doing'
-            ' arithmetic, got %r' % lhs
-        )
-        lhs = first(lhs.inner_columns)
-    if isinstance(rhs, Select):
-        assert len(rhs.c) == 1, (
-            'Select cannot have more than a single column when doing'
-            ' arithmetic, got %r' % rhs
-        )
-        rhs = first(rhs.inner_columns)
-
-    return t.op(lhs, rhs)
 
 
 @dispatch(Pow, ColumnElement)
@@ -840,6 +883,27 @@ def compute_up(t, s, **kwargs):
     direction = sa.asc if t.ascending else sa.desc
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
+
+def _samp_compute_up(t, s, **kwargs):
+    if t.n is not None:
+        limit = t.n
+    else:
+        limit = select([safuncs.count() * t.frac]).as_scalar()
+    return s.order_by(safuncs.random()).limit(limit)
+
+@dispatch(Sample, sa.Table)
+def compute_up(t, s, **kwargs):
+    return _samp_compute_up(t, select(s), **kwargs)
+
+
+@dispatch(Sample, ColumnElement)
+def compute_up(t, s, **kwargs):
+    return _samp_compute_up(t, sa.select([s]), **kwargs)
+
+
+@dispatch(Sample, FromClause)
+def compute_up(t, s, **kwargs):
+    return _samp_compute_up(t, s, **kwargs)
 
 
 @dispatch(Head, FromClause)

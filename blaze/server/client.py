@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 from odo import resource
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from toolz import assoc
 
 from ..expr import Expr
 from ..dispatch import dispatch
@@ -143,26 +144,51 @@ def mimetype(serial):
 
 
 @dispatch(Expr, Client)
-def compute_down(expr, ec, compute_kwargs=None, odo_kwargs=None, **kwargs):
-    from .server import to_tree
-    tree = to_tree(expr)
+def compute_down(expr, ec, profiler_output=None, **kwargs):
+    """Compute down for blaze clients.
 
+    Parameters
+    ----------
+    expr : Expr
+        The expression to send to the server.
+    ec : Client
+        The blaze client to compute against.
+    namespace : dict[Symbol -> any], optional
+        The namespace to compute the expression in. This will be amended to
+        include that data for the server. By default this will just be the
+        client mapping to the server's data.
+    compute_kwargs : dict, optional
+        Extra kwargs to pass to compute on the server.
+    odo_kwargs : dict, optional
+        Extra kwargs to pass to odo on the server.
+    profile : bool, optional
+        Should blaze server run cProfile over the computation of the expression
+        and the serialization of the response.
+    profiler_output : file-like object, optional
+        A file like object to hold the profiling output from the server.
+        If this is not passed then the server will write the data to the
+        server's filesystem
+    """
+    from .server import to_tree
+
+    tree = to_tree(expr)
     serial = ec.serial
+    if profiler_output is not None:
+        kwargs['profiler_output'] = ':response'
     r = post(
         ec,
         '/compute',
-        data=serial.dumps({
-            'expr': tree,
-            'compute_kwargs': compute_kwargs,
-            'odo_kwargs': odo_kwargs,
-        }),
+        data=serial.dumps(assoc(kwargs, 'expr', tree)),
         auth=ec.auth,
         headers=mimetype(serial),
     )
 
     if not ok(r):
         raise ValueError("Bad response: %s" % reason(r))
-    return serial.loads(content(r))['data']
+    response = serial.loads(content(r))
+    if profiler_output is not None:
+        profiler_output.write(response['profiler_output'])
+    return serial.data_loads(response['data'])
 
 
 @resource.register('blaze://.+')

@@ -1,7 +1,6 @@
 from datetime import timedelta
 from operator import methodcaller
 import itertools
-import tempfile
 
 import pytest
 
@@ -16,9 +15,22 @@ import pandas.util.testing as tm
 
 from datashape import dshape
 from odo import odo, resource, drop, discover
-from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
-from odo.utils import tmpfile
-from blaze import sqrt, transform, Data
+from blaze import (
+    Data,
+    atan2,
+    by,
+    compute,
+    concat,
+    cos,
+    greatest,
+    join,
+    least,
+    radians,
+    sin,
+    sqrt,
+    symbol,
+    transform,
+)
 from blaze.utils import example, normalize
 
 
@@ -573,3 +585,30 @@ def test_coerce_on_select(nyc):
 def test_interactive_len(sql):
     t = Data(sql)
     assert len(t) == int(t.count())
+
+
+def test_sample(sql):
+    t = symbol('t', discover(sql))
+    result = compute(t.sample(n=1), sql)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == 1
+    result2 = compute(t.sample(frac=0.5), sql)
+    s2 = odo(result2, pd.DataFrame)
+    assert len(s) == len(s2)
+
+
+@pytest.fixture
+def gl_data(sql_two_tables):
+    u_data, t_data = sql_two_tables
+    # populate the tables with some data and return it
+    return Data(odo([(1,)], u_data)), Data(odo([(2,)], t_data))
+
+
+def test_greatest(gl_data):
+    u, t = gl_data
+    assert odo(greatest(u.a.max(), t.a.max()), int) == 2
+
+
+def test_least(gl_data):
+    u, t = gl_data
+    assert odo(least(u.a.max(), t.a.max()), int) == 1

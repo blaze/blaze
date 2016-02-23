@@ -24,7 +24,7 @@ from blaze import (discover, symbol, by, CSV, compute, join, into, resource,
                    Data)
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree
-from blaze.server.serialization import all_formats
+from blaze.server.serialization import all_formats, fastmsgpack
 
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -156,7 +156,9 @@ def test_to_tree():
                         'op': 'Symbol',
                         'args': [
                             't',
-                            'var * {name: string, amount: int32}',
+                            datashape.dshape(
+                                'var * {name: string, amount: int32}',
+                            ),
                             0,
                         ]
                     },
@@ -215,8 +217,8 @@ def test_compute(test, serial):
 
     assert 'OK' in response.status
     data = serial.loads(response.data)
-    assert data['data'] == expected
-    assert data['names'] == ['amount_sum']
+    assert serial.data_loads(data['data']) == expected
+    assert list(data['names']) == ['amount_sum']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -233,9 +235,9 @@ def test_get_datetimes(test, serial):
     assert 'OK' in response.status
     data = serial.loads(response.data)
     ds = datashape.dshape(data['datashape'])
-    result = into(np.ndarray, data['data'], dshape=ds)
+    result = into(np.ndarray, serial.data_loads(data['data']), dshape=ds)
     assert into(list, result) == into(list, events)
-    assert data['names'] == events.columns.tolist()
+    assert list(data['names']) == events.columns.tolist()
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -252,7 +254,7 @@ def dont_test_compute_with_namespace(test, serial):
 
     assert 'OK' in response.status
     data = serial.loads(response.data)
-    assert data['data'] == expected
+    assert serial.data_loads(data['data']) == expected
     assert data['names'] == ['name']
 
 
@@ -276,10 +278,10 @@ def test_compute_with_variable_in_namespace(iris_server, serial):
 
     assert 'OK' in resp.status
     data = serial.loads(resp.data)
-    result = data['data']
+    result = serial.data_loads(data['data'])
     expected = list(compute(expr._subs({pl: 5}), {t: iris}))
-    assert result == expected
-    assert data['names'] == ['species']
+    assert odo(result, list) == expected
+    assert list(data['names']) == ['species']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -300,11 +302,11 @@ def test_compute_by_with_summary(iris_server, serial):
     )
     assert 'OK' in resp.status
     data = serial.loads(resp.data)
-    result = DataFrame(data['data']).values
+    result = DataFrame(serial.data_loads(data['data'])).values
     expected = compute(expr, iris).values
     np.testing.assert_array_equal(result[:, 0], expected[:, 0])
     np.testing.assert_array_almost_equal(result[:, 1:], expected[:, 1:])
-    assert data['names'] == ['species', 'max', 'sum']
+    assert list(data['names']) == ['species', 'max', 'sum']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -324,10 +326,10 @@ def test_compute_column_wise(iris_server, serial):
 
     assert 'OK' in resp.status
     data = serial.loads(resp.data)
-    result = data['data']
+    result = serial.data_loads(data['data'])
     expected = compute(expr, iris)
-    assert list(map(tuple, result)) == into(list, expected)
-    assert data['names'] == t.fields
+    assert list(map(tuple, odo(result, list))) == into(list, expected)
+    assert list(data['names']) == t.fields
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -344,11 +346,11 @@ def test_multi_expression_compute(test, serial):
 
     assert 'OK' in resp.status
     respdata = serial.loads(resp.data)
-    result = respdata['data']
+    result = serial.data_loads(respdata['data'])
     expected = compute(expr, {s: data})
 
-    assert list(map(tuple, result)) == into(list, expected)
-    assert respdata['names'] == expr.fields
+    assert list(map(tuple, odo(result, list))) == into(list, expected)
+    assert list(respdata['names']) == expr.fields
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -361,11 +363,11 @@ def test_leaf_symbol(test, serial):
     )
 
     data = serial.loads(resp.data)
-    a = data['data']
+    a = serial.data_loads(data['data'])
     b = into(list, cities)
 
-    assert list(map(tuple, a)) == b
-    assert data['names'] == cities.columns.tolist()
+    assert list(map(tuple, odo(a, list))) == b
+    assert list(data['names']) == cities.columns.tolist()
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -381,9 +383,28 @@ def test_sqlalchemy_result(test, serial):
 
     assert 'OK' in response.status
     data = serial.loads(response.data)
-    result = data['data']
-    assert all(isinstance(item, (tuple, list)) for item in result)
-    assert data['names'] == t.db.iris.fields
+    result = serial.data_loads(data['data'])
+    if isinstance(result, list):
+        assert all(isinstance(item, (tuple, list)) for item in result)
+    elif isinstance(result, DataFrame):
+        assert_frame_equal(
+            result,
+            DataFrame(
+                [[5.1,   3.5,   1.4,   0.2,   'Iris-setosa'],
+                 [4.9,   3.0,   1.4,   0.2,   'Iris-setosa'],
+                 [4.7,   3.2,   1.3,   0.2,   'Iris-setosa'],
+                 [4.6,   3.1,   1.5,   0.2,   'Iris-setosa'],
+                 [5.0,   3.6,   1.4,   0.2,   'Iris-setosa']],
+                columns=[
+                    'sepal_length',
+                    'sepal_width',
+                    'petal_length',
+                    'petal_width',
+                    'species',
+                ],
+            ),
+        )
+    assert list(data['names']) == t.db.iris.fields
 
 
 def test_server_accepts_non_nonzero_ables():
@@ -402,9 +423,9 @@ def test_server_can_compute_sqlalchemy_reductions(test, serial):
 
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
-    result = respdata['data']
+    result = serial.data_loads(respdata['data'])
     assert result == odo(compute(expr, {t: data}), int)
-    assert respdata['names'] == ['petal_length_sum']
+    assert list(respdata['names']) == ['petal_length_sum']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -419,9 +440,9 @@ def test_serialization_endpoints(test, serial):
 
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
-    result = respdata['data']
+    result = serial.data_loads(respdata['data'])
     assert result == odo(compute(expr, {t: data}), int)
-    assert respdata['names'] == ['petal_length_sum']
+    assert list(respdata['names']) == ['petal_length_sum']
 
 
 def test_cors_compute(test):
@@ -535,7 +556,10 @@ def test_minute_query(test, serial):
         'datashape': '2 * int64'
     }
     assert result.status_code == 200
-    assert expected == serial.loads(result.data)
+    resp = serial.loads(result.data)
+    assert list(serial.data_loads(resp['data'])) == expected['data']
+    assert list(resp['names']) == expected['names']
+    assert resp['datashape'] == expected['datashape']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -553,7 +577,10 @@ def test_isin(test, serial):
         'datashape': '2 * bool',
     }
     assert result.status_code == 200
-    assert expected == serial.loads(result.data)
+    resp = serial.loads(result.data)
+    assert list(serial.data_loads(resp['data'])) == expected['data']
+    assert list(resp['names']) == expected['names']
+    assert resp['datashape'] == expected['datashape']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -585,7 +612,7 @@ def test_add_data_to_empty_server(empty_server, serial):
             headers=mimetype(serial)
         )
 
-        result3 = serial.loads(response3.data)['data']
+        result3 = serial.data_loads(serial.loads(response3.data)['data'])
         expected3 = compute(expr, {'iris': resource(iris_path)})
         assert result3 == expected3
 
@@ -624,7 +651,7 @@ def test_add_data_to_server(serial):
             headers=mimetype(serial)
         )
 
-        result3 = serial.loads(response3.data)['data']
+        result3 = serial.data_loads(serial.loads(response3.data)['data'])
         expected3 = compute(expr, {'iris': resource(iris_path)})
         assert result3 == expected3
 
@@ -686,7 +713,7 @@ def test_odo_kwargs(test, serial):
         dshape,
     )
     assert_frame_equal(
-        odo(data['data'], DataFrame, dshape=dshape),
+        odo(serial.data_loads(data['data']), DataFrame, dshape=dshape),
         DumbResource.df,
     )
 
@@ -723,6 +750,22 @@ def test_compute_kwargs(test, serial):
         dshape,
     )
     assert_frame_equal(
-        odo(data['data'], DataFrame, dshape=dshape),
+        odo(serial.data_loads(data['data']), DataFrame, dshape=dshape),
         DumbResource.df,
     )
+
+
+def test_fastmsgmpack_mutable_dataframe(test):
+    expr = t.events  # just get back the dataframe
+    query = {'expr': to_tree(expr)}
+    result = test.post(
+        '/compute',
+        headers=mimetype(fastmsgpack),
+        data=fastmsgpack.dumps(query)
+    )
+    assert result.status_code == 200
+    data = fastmsgpack.data_loads(fastmsgpack.loads(result.data)['data'])
+
+    for block in data._data.blocks:
+        # make sure all the blocks are mutable
+        assert block.values.flags.writeable

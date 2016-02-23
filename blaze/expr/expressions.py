@@ -38,7 +38,6 @@ __all__ = [
     'coerce',
     'discover',
     'label',
-    'label',
     'ndim',
     'projection',
     'relabel',
@@ -456,6 +455,7 @@ def sliceit(child, index):
     s = Slice(child, index3)
     hash(s)
     return s
+
 
 
 class Slice(Expr):

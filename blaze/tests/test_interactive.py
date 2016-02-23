@@ -33,9 +33,11 @@ x = np.ones((2, 2))
 
 
 def test_table_raises_on_inconsistent_inputs():
-    with pytest.raises(ValueError):
-        t = Data(data, schema='{name: string, amount: float32}',
-                 dshape=dshape("{name: string, amount: float32}"))
+    with pytest.raises(ValueError) as excinfo:
+        Data(data, schema='{name: string, amount: float32}',
+             dshape=dshape("{name: string, amount: float32}"))
+
+    assert "specify one of schema= or dshape= keyword" in str(excinfo.value)
 
 
 def test_resources():
@@ -399,8 +401,11 @@ def test_asarray_fails_on_different_column_names():
           'second': [4., 1., 4.],
           'third': [6., 4., 3.]}
     df = pd.DataFrame(vs)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         Data(df, fields=list('abc'))
+
+    inmsg = "Data(data).relabel(first='a', second='b', third='c') to rename"
+    assert inmsg in str(excinfo.value)
 
 
 def test_functions_as_bound_methods():
