@@ -16,7 +16,6 @@ from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
 from ..interactive import coerce_scalar, coerce_core, into, iscoretype
-from ..utils import BlazePendingDeprecationWarning
 
 __all__ = ['compute', 'compute_up']
 
@@ -419,7 +418,8 @@ def compute(expr, d, return_type='native', **kwargs):
 
     # return the backend's native response
     if return_type == 'native':
-        warnings.warn("compute's `return_type` parameter will default to 'core' in blaze version >= 0.11.", BlazePendingDeprecationWarning)
+        msg = "compute's `return_type` parameter will default to 'core' in blaze version >= 0.11."
+        warnings.warn(msg, DeprecationWarning)
     # return result as a core type (python type, pandas Series/DataFrame, numpy array)
     elif return_type == 'core':
         result = coerce_core(result, expr.dshape)
