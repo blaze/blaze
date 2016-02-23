@@ -256,7 +256,7 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
 def coerce_core(result, dshape, odo_kwargs=None):
     """Coerce data to a core data type."""
     if iscoretype(result):
-        pass
+        return result
     elif isscalar(dshape):
         result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
     elif istabular(dshape) and isrecord(dshape.measure):
@@ -367,10 +367,23 @@ def convert_base(typ, x):
         return typ(odo(x, typ))
 
 
-CORE_TYPES = (float, decimal.Decimal, int, bool, Timestamp, datetime.date, str,
-              datetime.timedelta, list, dict, tuple, set, Series, DataFrame, np.ndarray)
+CORE_SCALAR_TYPES = (float, decimal.Decimal, int, bool, str, Timestamp,
+                     datetime.date, datetime.timedelta)
+CORE_SEQUENCE_TYPES = (list, dict, tuple, set, Series, DataFrame, np.ndarray)
+CORE_TYPES = CORE_SCALAR_TYPES + CORE_SEQUENCE_TYPES
+
+
+def iscorescalar(x):
+    return isinstance(x, CORE_SCALAR_TYPES)
+
+
+def iscoresequence(x):
+    return isinstance(x, CORE_SEQUENCE_TYPES)
+
+
 def iscoretype(x):
     return isinstance(x, CORE_TYPES)
+
 
 Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)

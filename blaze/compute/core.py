@@ -17,6 +17,7 @@ from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
 from ..interactive import coerce_scalar, coerce_core, into, iscoretype
 
+
 __all__ = ['compute', 'compute_up']
 
 base = numbers.Number, basestring, date, datetime
@@ -371,13 +372,19 @@ def swap_resources_into_scope(expr, scope):
 
 @dispatch(Expr, dict)
 def compute(expr, d, return_type='native', **kwargs):
-    """ Compute expression against data sources.
+    """Compute expression against data sources.
 
-    Args:
-        expr: blaze expression
-        d: data source to compute expression on
-        return_type (optional): type to return data as. Defaults to 'core' which
-                                returns as scalar, list, series, or dataframe as appropriate.
+    Parameters
+    ----------
+    expr : str
+        blaze expression
+    d: resource
+        data source to compute expression on
+    return_type : {'native', 'core', type}, optional
+        Type to return data as. Defaults to 'native' but will be changed
+        to 'core' in version 0.11.  'core' forces the computation into a core type.
+        'native' returns the result as is from the respective backend's `post_compute`.
+        If a type is passed, it will odo the result into the type before returning.
 
     >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
@@ -418,7 +425,8 @@ def compute(expr, d, return_type='native', **kwargs):
 
     # return the backend's native response
     if return_type == 'native':
-        msg = "compute's `return_type` parameter will default to 'core' in blaze version >= 0.11."
+        msg = ("The default behavior of compute will change in version >= 0.11 "
+               "where the `return_type` parameter will default to 'core'.")
         warnings.warn(msg, DeprecationWarning)
     # return result as a core type (python type, pandas Series/DataFrame, numpy array)
     elif return_type == 'core':

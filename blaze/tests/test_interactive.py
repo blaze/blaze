@@ -15,8 +15,9 @@ from odo.backends.csv import CSV
 from blaze import discover, transform
 from blaze.compatibility import pickle
 from blaze.expr import symbol
-from blaze.interactive import (Data, compute, concrete_head, expr_repr,
-                               to_html, iscoretype, into, coerce_core)
+from blaze.interactive import (Data, compute, concrete_head, expr_repr, to_html,
+                               iscorescalar, iscoresequence, iscoretype, into,
+                               coerce_core)
 from blaze.utils import tmpfile, example
 
 data = (('Alice', 100),
@@ -515,6 +516,30 @@ def test_isidentical_regr():
                            np.ndarray)])
 def test_coerce_core(data, dshape, exp_type):
     assert isinstance(coerce_core(data, dshape), exp_type)
+
+
+@pytest.mark.parametrize('data,res',
+                         [(1, True),
+                          (1.1, True),
+                          ("foo", True),
+                          ([1, 2], False),
+                          ((1, 2), False),
+                          (pd.Series([1, 2]), False)])
+def test_iscorescalar(data, res):
+    assert iscorescalar(data) == res
+
+
+@pytest.mark.parametrize('data,res',
+                         [(1, False),
+                          ("foo", False),
+                          ([1, 2], True),
+                          ((1, 2), True),
+                          (pd.Series([1, 2]), True),
+                          (pd.DataFrame([[1, 2], [3, 4]]), True),
+                          (np.ndarray([1, 2]), True),
+                          (into(da.core.Array, [1, 2], chunks=(10,)), False)])
+def test_iscoresequence(data, res):
+    assert iscoresequence(data) == res
 
 
 @pytest.mark.parametrize('data,res',
