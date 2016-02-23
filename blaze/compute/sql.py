@@ -841,13 +841,15 @@ def compute_up(t, s, **kwargs):
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
+
 def _samp_compute_up(t, s, **kwargs):
     if t.n is not None:
         limit = t.n
     else:
         limit = sa.select([safuncs.count() * t.frac],
-                          from_obj=get_all_froms(s)).as_scalar()
+                          from_obj=s).as_scalar()
     return s.order_by(safuncs.random()).limit(limit)
+
 
 @dispatch(Sample, sa.Table)
 def compute_up(t, s, **kwargs):
