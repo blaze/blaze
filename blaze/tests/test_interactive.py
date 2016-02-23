@@ -15,7 +15,8 @@ from odo.backends.csv import CSV
 from blaze import discover, transform
 from blaze.compatibility import pickle
 from blaze.expr import symbol
-from blaze.interactive import Data, compute, concrete_head, expr_repr, to_html, iscoretype, into, coerce_core
+from blaze.interactive import (Data, compute, concrete_head, expr_repr,
+                               to_html, iscoretype, into, coerce_core)
 from blaze.utils import tmpfile, example
 
 data = (('Alice', 100),
@@ -496,25 +497,34 @@ def test_isidentical_regr():
     assert ds.a.isidentical(ds.a)
 
 
-@pytest.mark.parametrize('data,dshape,exp_type', [
-    (1, symbol('x', 'int').dshape, int),
-    (into(da.core.Array, [1, 2], chunks=(10,)), symbol('x', '2 * int').dshape, pd.Series),  # test 1-d to series
-    (into(da.core.Array, [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], chunks=(10,10)), symbol('x', '2 * {a: int, b: int}').dshape, pd.DataFrame),  # test 2-d tabular to dataframe
-    (into(da.core.Array, [[1, 2], [3, 4]], chunks=(10, 10)), symbol('x', '2 *  2 * int').dshape, np.ndarray),  # test 2-d non tabular to ndarray
-])
+@pytest.mark.parametrize('data,dshape,exp_type',
+                         [(1, symbol('x', 'int').dshape, int),
+                          # test 1-d to series
+                          (into(da.core.Array, [1, 2], chunks=(10,)),
+                           dshape('2 * int'),
+                           pd.Series),
+                          # test 2-d tabular to dataframe
+                          (into(da.core.Array,
+                                [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
+                                chunks=(10,10)),
+                           dshape('2 * {a: int, b: int}'),
+                           pd.DataFrame),
+                          # test 2-d non tabular to ndarray
+                          (into(da.core.Array, [[1, 2], [3, 4]], chunks=(10, 10)),
+                           dshape('2 *  2 * int'),
+                           np.ndarray)])
 def test_coerce_core(data, dshape, exp_type):
     assert isinstance(coerce_core(data, dshape), exp_type)
 
 
-@pytest.mark.parametrize('data,res', [
-    (1, True),
-    ("foo", True),
-    ([1, 2], True),
-    ((1, 2), True),
-    (pd.Series([1, 2]), True),
-    (pd.DataFrame([[1, 2], [3, 4]]), True),
-    (np.ndarray([1, 2]), True),
-    (into(da.core.Array, [1, 2], chunks=(10,)), False)
-])
+@pytest.mark.parametrize('data,res',
+                         [(1, True),
+                          ("foo", True),
+                          ([1, 2], True),
+                          ((1, 2), True),
+                          (pd.Series([1, 2]), True),
+                          (pd.DataFrame([[1, 2], [3, 4]]), True),
+                          (np.ndarray([1, 2]), True),
+                          (into(da.core.Array, [1, 2], chunks=(10,)), False)])
 def test_iscoretype(data, res):
     assert iscoretype(data) == res

@@ -268,9 +268,11 @@ def coerce_core(result, dshape, odo_kwargs=None):
         elif dim > 1:
             result = into(np.ndarray, result, **(odo_kwargs or {}))
         else:
-            raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+            msg = "Expr with dshape dimensions < 1 should have been handled earlier: dim={}"
+            raise ValueError(msg.format(str(dim)))
     else:
-        raise ValueError("Expr does not evaluate to a core return type")
+        msg = "Expr does not evaluate to a core return type"
+        raise ValueError(msg)
 
     return result
 
