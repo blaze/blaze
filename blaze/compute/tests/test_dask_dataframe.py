@@ -46,6 +46,11 @@ def test_symbol():
     eq(compute(t, ddf), df)
 
 
+def test_sample():
+    assert len(compute(t.sample(n=2), ddf)) == len(df.sample(n=2))
+    assert len(compute(t.sample(frac=0.4), ddf)) == len(df.sample(frac=0.4))
+
+
 def test_head():
     eq(compute(t.head(1), ddf), df.head(1))
 

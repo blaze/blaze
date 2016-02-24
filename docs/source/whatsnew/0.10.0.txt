@@ -2,22 +2,46 @@ Release |version|
 -----------------
 
 :Release: |version|
-:Date: December 17th, 2015
+:Date: TBD
 
 New Expressions
 ~~~~~~~~~~~~~~~
 
+* The ``sample`` expression allows random sampling of rows to facilitate
+  interactive data exploration (:issue:`1410`).  It is implemented for the
+  Pandas, Dask, SQL, and Python backends.
+
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
+
+* The test suite was expanded to validate proper expression input error handling
+  (:issue:`1420`).
 
 New Backends
 ~~~~~~~~~~~~
 
+None
+
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
+* Adds :class:`~blaze.expr.math.greatest` and :class:`~blaze.expr.math.least`
+  support to the sql backend (:issue:`1428`).
+
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+* :func:`~blaze.compute.core.compute` has a new keyword argument
+  ``return_type`` which defaults to ``'native'`` (:issue:`1401`, :issue:`1411`,
+  :issue:`1417`), which preserves existing behavior.  In the 0.11 release,
+  ``return_type`` will be changed to default to ``'core'``, which will
+  ``odo`` non-core backends into core backends as the final step in a call to
+  ``compute``.
 
 API Changes
 ~~~~~~~~~~~
@@ -32,7 +56,9 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
+None
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
+None

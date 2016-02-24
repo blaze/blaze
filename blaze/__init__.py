@@ -15,16 +15,14 @@ from multipledispatch import halt_ordering, restart_ordering
 halt_ordering()  # Turn off multipledispatch ordering
 
 from datashape import dshape, discover
-from .utils import ignoring, BlazeDeprecationWarning, BlazePendingDeprecationWarning
+from .utils import ignoring
 import warnings
-warnings.simplefilter('once', BlazeDeprecationWarning)
-warnings.simplefilter('once', BlazePendingDeprecationWarning)
 from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
-        mean, merge, nunique, relabel, selection, sort, summary, var,
-        transform)
+                   mean, merge, nunique, relabel, sample, selection, sort,
+                   summary, transform, var)
 from .expr import (date, datetime, day, hour, microsecond, millisecond, month,
-        second, time, year)
+                   second, time, year)
 from .expr.arrays import (tensordot, transpose)
 from .expr.functions import *
 from .index import create_index

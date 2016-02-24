@@ -53,13 +53,13 @@ from ..dispatch import dispatch
 
 from .core import compute, compute_up, base
 
-from ..expr import (Projection, Field, Sort, Head, Tail, Broadcast, Selection,
-                    Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, std, var, Like, Slice, summary,
+from ..expr import (Projection, Field, Sort, Head, Tail, Sample, Broadcast,
+                    Selection, Reduction, Distinct, Join, By, Summary, Label,
+                    ReLabel, Map, Apply, Merge, std, var, Like, Slice, summary,
                     ElemWise, DateTime, Millisecond, Expr, Symbol, IsIn,
                     UTCFromTimestamp, nelements, DateTimeTruncate, count,
-                    UnaryStringFunction, nunique, Coerce, Concat,
-                    isnan, notnull, Shift)
+                    UnaryStringFunction, nunique, Coerce, Concat, isnan,
+                    notnull, Shift)
 from ..expr import UnaryOp, BinOp, Interp
 from ..expr import symbol, common_subexpression
 
@@ -512,6 +512,12 @@ def compute_up(t, s, **kwargs):
         return s.sort_values(ascending=t.ascending)
     except AttributeError:
         return s.order(ascending=t.ascending)
+
+
+@dispatch(Sample, (Series, DataFrame, DaskDataFrame, DaskSeries))
+def compute_up(t, df, **kwargs):
+    frac = t.frac if t.frac is not None else float(t.n) / len(df)
+    return df.sample(frac=frac)
 
 
 @dispatch(Head, (Series, DataFrame, DaskDataFrame, DaskSeries))

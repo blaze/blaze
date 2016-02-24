@@ -21,7 +21,6 @@ from pandas import DataFrame, Series, Timestamp
 from .expr import Expr, Symbol, ndim
 from .dispatch import dispatch
 from .compatibility import _strtypes
-from .utils import BlazeDeprecationWarning
 
 
 __all__ = ['Data', 'Table', 'into', 'to_html', 'data']
@@ -100,7 +99,7 @@ class InteractiveSymbol(Symbol):
 
 def Data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
     warnings.warn("""`Data` has been deprecated in 0.10 and will be removed in
-                   version >= 0.11. It has been renamed `data`.""", BlazeDeprecationWarning)
+                   version >= 0.11. It has been renamed `data`.""", DeprecationWarning)
     return data(data_source, dshape=dshape, name=name, fields=fields, schema=schema, **kwargs)
 
 
@@ -263,7 +262,7 @@ def coerce_scalar(result, dshape, odo_kwargs=None):
 def coerce_core(result, dshape, odo_kwargs=None):
     """Coerce data to a core data type."""
     if iscoretype(result):
-        pass
+        return result
     elif isscalar(dshape):
         result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
     elif istabular(dshape) and isrecord(dshape.measure):
@@ -275,9 +274,11 @@ def coerce_core(result, dshape, odo_kwargs=None):
         elif dim > 1:
             result = into(np.ndarray, result, **(odo_kwargs or {}))
         else:
-            raise ValueError("Expr with dshape dimensions < 1 should have been handled earlier: dim={}".format(str(dim)))
+            msg = "Expr with dshape dimensions < 1 should have been handled earlier: dim={}"
+            raise ValueError(msg.format(str(dim)))
     else:
-        raise ValueError("Expr does not evaluate to a core return type")
+        msg = "Expr does not evaluate to a core return type"
+        raise ValueError(msg)
 
     return result
 
@@ -372,10 +373,23 @@ def convert_base(typ, x):
         return typ(odo(x, typ))
 
 
-CORE_TYPES = (float, decimal.Decimal, int, bool, Timestamp, datetime.date, str,
-              datetime.timedelta, list, dict, tuple, set, Series, DataFrame, np.ndarray)
+CORE_SCALAR_TYPES = (float, decimal.Decimal, int, bool, str, Timestamp,
+                     datetime.date, datetime.timedelta)
+CORE_SEQUENCE_TYPES = (list, dict, tuple, set, Series, DataFrame, np.ndarray)
+CORE_TYPES = CORE_SCALAR_TYPES + CORE_SEQUENCE_TYPES
+
+
+def iscorescalar(x):
+    return isinstance(x, CORE_SCALAR_TYPES)
+
+
+def iscoresequence(x):
+    return isinstance(x, CORE_SEQUENCE_TYPES)
+
+
 def iscoretype(x):
     return isinstance(x, CORE_TYPES)
+
 
 Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)

@@ -17,6 +17,7 @@ import fnmatch
 import operator
 import datetime
 import math
+import random
 
 from collections import Iterator
 from functools import partial
@@ -34,7 +35,7 @@ from datashape.predicates import isscalar, iscollection
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
-                    By, Sort, Head, Apply, Summary, Like, IsIn,
+                    By, Sort, Head, Sample, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
                     UTCFromTimestamp, notnull, UnaryMath, greatest, least)
@@ -664,6 +665,12 @@ def compute_up(t, seq, **kwargs):
         return tuple(take(t.n, seq))
     else:
         return take(t.n, seq)
+
+
+@dispatch(Sample, Sequence)
+def compute_up(t, seq, **kwargs):
+    nsamp = t.n if t.n is not None else int(t.frac * len(seq))
+    return random.sample(seq, min(nsamp, len(seq)))
 
 
 @dispatch((Label, ReLabel), Sequence)
