@@ -34,6 +34,10 @@ t = data(tdata, fields=['name', 'amount'])
 x = np.ones((2, 2))
 
 
+def test_discover_on_data():
+    assert discover(t) == dshape("2 * {name: string, amount: int64}")
+
+
 def test_table_raises_on_inconsistent_inputs():
     with pytest.raises(ValueError) as excinfo:
         t = data(tdata, schema='{name: string, amount: float32}',
@@ -411,7 +415,7 @@ def test_asarray_fails_on_different_column_names():
 
 def test_functions_as_bound_methods():
     """
-    Test that all functions on an InteractiveSymbol are instance methods
+    Test that all functions on a _Data object are instance methods
     of that object.
     """
     # Filter out __class__ and friends that are special, these can be
