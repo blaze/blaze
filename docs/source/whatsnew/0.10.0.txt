@@ -43,7 +43,7 @@ API Changes
   the 0.10 release.  In the 0.11 release, :class:`~blaze.interactive._Data`
   will be renamed to ``Data``, calls to :func:`~blaze.interactive.data` will
   create ``Data`` instances, and :class:`~blaze.interactive.InteractiveSymbol`
-  will be removed.
+  will be removed (:issue:`1431` and :issue:`1421`).
 * :func:`~blaze.compute.core.compute` has a new keyword argument
   ``return_type`` which defaults to ``'native'`` (:issue:`1401`, :issue:`1411`,
   :issue:`1417`), which preserves existing behavior.  In the 0.11 release,
