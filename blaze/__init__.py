@@ -6,7 +6,7 @@ except ImportError:
     pass
 
 from pandas import DataFrame
-from odo import odo, convert, append, resource, drop
+from odo import odo, convert, append, drop, resource
 from odo.backends.csv import CSV
 from odo.backends.json import JSON, JSONLines
 

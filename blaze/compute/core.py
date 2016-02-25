@@ -15,7 +15,7 @@ from odo import odo
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
-from ..interactive import coerce_scalar, coerce_core, into, iscoretype
+from ..interactive import coerce_scalar, coerce_core, into, iscoretype, _Data
 
 
 __all__ = ['compute', 'compute_up']

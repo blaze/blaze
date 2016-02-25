@@ -1,4 +1,4 @@
-from blaze import compute, resource, symbol, discover
+from blaze import compute, data, symbol, discover
 from blaze.utils import example
 
 
@@ -9,8 +9,8 @@ def mymap(func, *args):
     return map(func, *args)
 
 
-def test_map_called_on_resource_star():
-    r = resource(example('accounts_*.csv'))
+def test_map_called_on_data_star():
+    r = data(example('accounts_*.csv'))
     s = symbol('s', discover(r))
     flag[0] = False
     a = compute(s.count(), r)

@@ -12,7 +12,7 @@ import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
 from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 import numpy as np
-from odo import resource, odo
+from odo import resource, odo, append, drop
 from odo.utils import ignoring, copydoc
 from odo.compatibility import unicode
 from pandas import DataFrame, Series, Timestamp
@@ -129,10 +129,12 @@ def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs
                          " arguments")
 
     if isinstance(data_source, _Data):
-        return _Data(data_source.data, dshape, name, fields, schema, **kwargs)
+        return data(data_source.data, dshape, name, fields, schema, **kwargs)
 
     if isinstance(data_source, _strtypes):
         data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
+        return _Data(data_source, discover(data_source), name)
+
     if (isinstance(data_source, Iterator) and
             not isinstance(data_source, tuple(not_an_iterator))):
         data_source = tuple(data_source)
@@ -191,6 +193,16 @@ def compute(expr, **kwargs):
         raise ValueError("No data resources found")
     else:
         return compute(expr, resources, **kwargs)
+
+
+@dispatch(Expr, _Data)
+def compute_down(expr, dta, **kwargs):
+    return compute(expr, dta.data, **kwargs)
+
+
+@dispatch(Expr, _Data)
+def pre_compute(expr, dta, **kwargs):
+    return pre_compute(expr, dta.data, **kwargs)
 
 
 def concrete_head(expr, n=10):
@@ -362,6 +374,21 @@ def into(a, b, **kwargs):
     result = compute(b, return_type='native', **kwargs)
     kwargs['dshape'] = b.dshape
     return into(a, result, **kwargs)
+
+
+@dispatch((object, type, str, unicode), _Data)
+def into(a, b, **kwargs):
+    return into(a, b.data, **kwargs)
+
+
+@dispatch(_Data, object)
+def append(a, b, **kwargs):
+    return append(a.data, b, **kwargs)
+
+
+@dispatch(_Data)
+def drop(d):
+    return drop(d.data)
 
 
 def table_length(expr):

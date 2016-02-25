@@ -19,7 +19,7 @@ from blaze.interactive import iscorescalar
 from blaze.utils import example, normalize
 
 from datashape import dshape
-from odo import odo, resource, drop, discover
+from odo import odo, drop, discover
 from odo.utils import tmpfile
 
 
@@ -36,12 +36,14 @@ def url(pg_ip):
 
 @pytest.yield_fixture
 def sql(url):
+    ds = dshape('var * {A: string, B: int64}')
     try:
-        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
+        t = data(url % next(names), dshape=ds)
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
-        t = odo([('a', 1), ('b', 2)], t)
+        assert t.dshape == ds
+        t = data(odo([('a', 1), ('b', 2)], t))
         try:
             yield t
         finally:
@@ -67,7 +69,7 @@ def nyc(pg_ip):
 @pytest.yield_fixture
 def sqla(url):
     try:
-        t = resource(url % next(names), dshape='var * {A: ?string, B: ?int32}')
+        t = data(url % next(names), dshape='var * {A: ?string, B: ?int32}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -81,7 +83,7 @@ def sqla(url):
 @pytest.yield_fixture
 def sqlb(url):
     try:
-        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
+        t = data(url % next(names), dshape='var * {A: string, B: int64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -95,7 +97,7 @@ def sqlb(url):
 @pytest.yield_fixture
 def sql_with_dts(url):
     try:
-        t = resource(url % next(names), dshape='var * {A: datetime}')
+        t = data(url % next(names), dshape='var * {A: datetime}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -109,7 +111,7 @@ def sql_with_dts(url):
 @pytest.yield_fixture
 def sql_with_timedeltas(url):
     try:
-        t = resource(url % next(names), dshape='var * {N: timedelta}')
+        t = data(url % next(names), dshape='var * {N: timedelta}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -124,8 +126,8 @@ def sql_with_timedeltas(url):
 def sql_two_tables(url):
     dshape = 'var * {a: int32}'
     try:
-        t = resource(url % next(names), dshape=dshape)
-        u = resource(url % next(names), dshape=dshape)
+        t = data(url % next(names), dshape=dshape)
+        u = data(url % next(names), dshape=dshape)
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -139,12 +141,12 @@ def sql_two_tables(url):
 @pytest.yield_fixture
 def products(url):
     try:
-        products = resource(url % 'products',
-                            dshape="""var * {
-                                product_id: int64,
-                                color: ?string,
-                                price: float64
-                            }""", primary_key=['product_id'])
+        products = data(url % 'products',
+                        dshape="""var * {
+                            product_id: int64,
+                            color: ?string,
+                            price: float64}""",
+                        primary_key=['product_id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -157,15 +159,13 @@ def products(url):
 @pytest.yield_fixture
 def orders(url, products):
     try:
-        orders = resource(url % 'orders',
-                          dshape="""var * {
-                            order_id: int64,
-                            product_id: map[int64, T],
-                            quantity: int64
-                          }
-                          """,
-                          foreign_keys=dict(product_id=products.c.product_id),
-                          primary_key=['order_id'])
+        orders = data(url % 'orders',
+                      dshape="""var * {
+                        order_id: int64,
+                        product_id: map[int64, T],
+                        quantity: int64}""",
+                      foreign_keys=dict(product_id=products.data.c.product_id),
+                      primary_key=['order_id'])
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -241,7 +241,7 @@ def fkey(url, pkey):
 @pytest.yield_fixture
 def sql_with_float(url):
     try:
-        t = resource(url % next(names), dshape='var * {c: float64}')
+        t = data(url % next(names), dshape='var * {c: float64}')
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
@@ -256,9 +256,9 @@ def test_postgres_create(sql):
 
 
 def test_postgres_isnan(sql_with_float):
-    data = (1.0,), (float('nan'),)
-    table = odo(data, sql_with_float)
-    sym = symbol('s', discover(data))
+    dta = (1.0,), (float('nan'),)
+    table = odo(dta, sql_with_float)
+    sym = symbol('s', discover(dta))
     assert compute(sym.isnan(), table, return_type=list) == [(False,), (True,)]
 
 
@@ -336,6 +336,7 @@ def test_timedelta_stat_reduction(sql_with_timedeltas, func):
 
 
 def test_coerce_bool_and_sum(sql):
+    sql = sql.data
     n = sql.name
     t = symbol(n, discover(sql))
     expr = (t.B > 1.0).coerce(to='int32').sum()
@@ -345,6 +346,7 @@ def test_coerce_bool_and_sum(sql):
 
 
 def test_distinct_on(sql):
+    sql = sql.data
     t = symbol('t', discover(sql))
     computation = compute(t[['A', 'B']].sort('A').distinct('A'), sql, return_type='native')
     assert normalize(str(computation)) == normalize("""
@@ -480,6 +482,7 @@ def test_join_type_promotion(sqla, sqlb):
                           (1, 'B'), (-1, 'B'),
                           (0, 'A'), (0, 'B')])
 def test_shift_on_column(n, column, sql):
+    sql = sql.data
     t = symbol('t', discover(sql))
     expr = t[column].shift(n)
     result = compute(expr, sql, return_type=pd.Series)

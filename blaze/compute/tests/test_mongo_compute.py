@@ -389,13 +389,12 @@ def test_and_same_key(bank):
     assert result == expected
 
 
-def test_interactive_dshape_works(mongo_host_port):
+def test_interactive_dshape_works(bank, mongo_host_port):
     try:
-        d = data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port),
-                 dshape='var * {name: string, amount: int64}')
+        d = data('mongodb://{}:{}/test_db::bank'.format(*mongo_host_port))
     except pymongo.errors.ConnectionFailure:
         pytest.skip('No mongo server running')
-    assert d.dshape == dshape('var * {name: string, amount: int64}')
+    assert dshape(d.dshape.measure) == dshape('{amount: int64, name: string}')
 
 
 @pytest.mark.xfail(raises=TypeError, reason="IsIn not yet implemented")

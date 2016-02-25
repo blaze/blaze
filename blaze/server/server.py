@@ -267,6 +267,11 @@ class Server(object):
                  allow_profiler=False,
                  profiler_output=None,
                  profile_by_default=False):
+        if isinstance(data, collections.Mapping):
+            data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
+                          data)
+        elif isinstance(data, _Data):
+            data = data._resources()
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()

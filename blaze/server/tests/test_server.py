@@ -20,8 +20,7 @@ from toolz import pipe
 from blaze.dispatch import dispatch
 from blaze.expr import Expr
 from blaze.utils import example
-from blaze import (discover, symbol, by, CSV, compute, join, into, resource,
-                   data)
+from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree
 from blaze.server.serialization import all_formats, fastmsgpack
@@ -37,7 +36,7 @@ events = DataFrame([[1, datetime(2000, 1, 1, 12, 0, 0)],
                     [2, datetime(2000, 1, 2, 12, 0, 0)]],
                    columns=['value', 'when'])
 
-db = resource('sqlite:///' + example('iris.db'))
+db = data('sqlite:///' + example('iris.db'))
 
 
 class DumbResource(object):
@@ -599,11 +598,11 @@ def test_add_data_to_empty_server(empty_server, serial):
 
         # check for expected server datashape
         response2 = empty_server.get('/datashape')
-        expected2 = str(discover({'iris': resource(iris_path)}))
+        expected2 = str(discover({'iris': data(iris_path)}))
         assert response2.data.decode('utf-8') == expected2
 
         # compute on added data
-        t = data({'iris': resource(iris_path)})
+        t = data({'iris': data(iris_path)})
         expr = t.iris.petal_length.sum()
 
         response3 = empty_server.post(
@@ -613,7 +612,7 @@ def test_add_data_to_empty_server(empty_server, serial):
         )
 
         result3 = serial.data_loads(serial.loads(response3.data)['data'])
-        expected3 = compute(expr, {'iris': resource(iris_path)})
+        expected3 = compute(expr, {'iris': data(iris_path)})
         assert result3 == expected3
 
 
@@ -635,14 +634,14 @@ def test_add_data_to_server(serial):
         # check for expected server datashape
         new_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
         data2 = tdata.copy()
-        data2.update({'iris': resource(iris_path)})
+        data2.update({'iris': data(iris_path)})
         expected2 = datashape.dshape(discover(data2))
         from pprint import pprint as pp
         assert_dshape_equal(new_datashape, expected2)
         assert new_datashape.measure.fields != initial_datashape.measure.fields
 
         # compute on added data
-        t = data({'iris': resource(iris_path)})
+        t = data({'iris': data(iris_path)})
         expr = t.iris.petal_length.sum()
 
         response3 = test.post(
@@ -652,7 +651,7 @@ def test_add_data_to_server(serial):
         )
 
         result3 = serial.data_loads(serial.loads(response3.data)['data'])
-        expected3 = compute(expr, {'iris': resource(iris_path)})
+        expected3 = compute(expr, {'iris': data(iris_path)})
         assert result3 == expected3
 
 

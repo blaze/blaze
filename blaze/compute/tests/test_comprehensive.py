@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame
 import numpy as np
-from odo import resource, into
+from odo import into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
 from blaze.interactive import data
@@ -29,7 +29,7 @@ sources = [df, x]
 
 try:
     import sqlalchemy
-    sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
+    sql = data('sqlite:///:memory:::accounts', dshape=t.dshape)
     into(sql, L)
     sources.append(sql)
 except:
