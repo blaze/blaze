@@ -15,7 +15,7 @@ from odo import odo
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join
 from ..dispatch import dispatch
-from ..interactive import coerce_scalar, coerce_core, into, iscoretype
+from ..interactive import coerce_scalar, coerce_core, into, iscoretype, _Data
 
 
 __all__ = ['compute', 'compute_up']
@@ -350,8 +350,8 @@ def swap_resources_into_scope(expr, scope):
     Examples
     --------
 
-    >>> from blaze import Data
-    >>> t = Data([1, 2, 3], dshape='3 * int', name='t')
+    >>> from blaze import data
+    >>> t = data([1, 2, 3], dshape='3 * int', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
     (t.head(2), {t: [1, 2, 3]})
 

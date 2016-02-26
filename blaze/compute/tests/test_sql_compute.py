@@ -10,7 +10,7 @@ from distutils.version import LooseVersion
 
 
 import datashape
-from odo import into, resource, discover
+from odo import into, discover
 import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
@@ -18,6 +18,7 @@ from pandas import DataFrame
 from toolz import unique
 
 from odo import odo, drop
+from blaze import data as bz_data
 from blaze.compatibility import xfail
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
@@ -50,7 +51,7 @@ names = ('tbl%d' % i for i in itertools.count())
 
 
 @pytest.fixture(scope='module')
-def data():
+def city_data():
     # make the engine
     engine = sa.create_engine('sqlite:///:memory:')
     metadata = sa.MetaData(engine)
@@ -595,20 +596,20 @@ def test_outer_join():
 
     with tmpfile('db') as fn:
         uri = 'sqlite:///' + fn
-        engine = resource(uri)
+        engine = bz_data(uri).data
 
         _left = [(1, 'Alice', 100),
                  (2, 'Bob', 200),
                  (4, 'Dennis', 400)]
 
-        left = resource(uri, 'left', dshape=L.dshape)
+        left = bz_data(uri + '::left', dshape=L.dshape)
         into(left, _left)
 
         _right = [('NYC', 1),
                   ('Boston', 1),
                   ('LA', 3),
                   ('Moscow', 4)]
-        right = resource(uri, 'right', dshape=R.dshape)
+        right = bz_data(uri + '::right', dshape=R.dshape)
         into(right, _right)
 
         conn = engine.connect()
@@ -1053,24 +1054,24 @@ def test_join_suffixes():
     """.format(l=suffixes[0], r=suffixes[1]))
 
 
-def test_field_access_on_engines(data):
-    s, engine = data['s'], data['engine']
+def test_field_access_on_engines(city_data):
+    s, engine = city_data['s'], city_data['engine']
     result = compute_up(s.city, engine, return_type='native')
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
 
 
-def test_computation_directly_on_sqlalchemy_Tables(data):
-    name = data['name']
+def test_computation_directly_on_sqlalchemy_Tables(city_data):
+    name = city_data['name']
     s = symbol('s', discover(name))
     result = into(list, compute(s.id + 1, name, return_type='native'))
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
 
 
-def test_computation_directly_on_metadata(data):
-    metadata = data['metadata']
-    name = data['name']
+def test_computation_directly_on_metadata(city_data):
+    metadata = city_data['metadata']
+    name = city_data['name']
     s = symbol('s', discover(metadata))
     result = compute(s.name, {s: metadata}, post_compute=False, return_type='native')
     assert result == name
@@ -1280,7 +1281,7 @@ def test_distinct_count_on_projection():
 def test_join_count():
     ds = datashape.dshape(
         '{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}')
-    engine = resource('sqlite:///:memory:', dshape=ds)
+    engine = bz_data('sqlite:///:memory:', dshape=ds)
     db = symbol('db', ds)
 
     expr = join(db.t1[db.t1.x > -1], db.t2, 'x', 'a').count()
@@ -1419,7 +1420,7 @@ def test_transform_filter_by_projection():
 
 
 def test_merge_compute():
-    data = [(1, 'Alice', 100),
+    dta = [(1, 'Alice', 100),
             (2, 'Bob', 200),
             (4, 'Dennis', 400)]
     ds = datashape.dshape('var * {id: int, name: string, amount: real}')
@@ -1427,10 +1428,10 @@ def test_merge_compute():
 
     with tmpfile('db') as fn:
         uri = 'sqlite:///' + fn
-        into(uri + '::table', data, dshape=ds)
+        into(uri + '::table', dta, dshape=ds)
 
         expr = transform(s, amount10=s.amount * 10)
-        result = into(list, compute(expr, {s: data}, return_type='native'))
+        result = into(list, compute(expr, {s: dta}, return_type='native'))
 
         assert result == [(1, 'Alice', 100, 1000),
                           (2, 'Bob', 200, 2000),
@@ -1471,7 +1472,7 @@ def test_no_extraneous_join():
                                takeoff: bool,
                                datetime_nearest_close: ?string}}
         """
-    db = resource('sqlite:///:memory:', dshape=ds)
+    db = bz_data('sqlite:///:memory:', dshape=ds)
 
     d = symbol('db', dshape=ds)
 
@@ -1574,10 +1575,10 @@ def test_isin():
 def test_date_grouper_repeats_not_one_point_oh():
     columns = [sa.Column('amount', sa.REAL),
                sa.Column('ds', sa.TIMESTAMP)]
-    data = sa.Table('t', sa.MetaData(), *columns)
-    t = symbol('t', discover(data))
+    dta = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(dta))
     expr = by(t.ds.year, avg_amt=t.amount.mean())
-    result = str(compute(expr, data, return_type='native'))
+    result = str(compute(expr, dta, return_type='native'))
 
     # FYI spark sql isn't able to parse this correctly
     expected = """SELECT
@@ -1596,10 +1597,10 @@ def test_date_grouper_repeats_not_one_point_oh():
 def test_date_grouper_repeats():
     columns = [sa.Column('amount', sa.REAL),
                sa.Column('ds', sa.TIMESTAMP)]
-    data = sa.Table('t', sa.MetaData(), *columns)
-    t = symbol('t', discover(data))
+    dta = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(dta))
     expr = by(t.ds.year, avg_amt=t.amount.mean())
-    result = str(compute(expr, data, return_type='native'))
+    result = str(compute(expr, dta, return_type='native'))
 
     # FYI spark sql isn't able to parse this correctly
     expected = """SELECT
@@ -1836,12 +1837,12 @@ def test_label_projection():
 
 
 def test_baseball_nested_by():
-    data = resource('sqlite:///%s' % example('teams.db'))
-    dshape = discover(data)
+    dta = bz_data('sqlite:///%s' % example('teams.db'))
+    dshape = discover(dta)
     d = symbol('d', dshape)
     expr = by(d.teams.name,
               start_year=d.teams.yearID.min()).start_year.count_values()
-    result = compute(expr, data, post_compute=False, return_type='native')
+    result = compute(expr, dta, post_compute=False, return_type='native')
     expected = """SELECT
         anon_1.start_year,
         anon_1.count
@@ -1929,7 +1930,7 @@ def lhs():
 @pytest.yield_fixture
 def rhs():
     try:
-        t = resource(
+        t = bz_data(
             'sqlite:///:memory:::rhs',
             dshape='var * {a: int64, b: ?float64, c: ?string}'
         )
@@ -2008,7 +2009,7 @@ def test_selection_inner_inputs():
 @pytest.mark.parametrize('unit', bz_datetime.units)
 def test_datetime_trunc(unit):
     ds = 'var * {a: datetime}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
 
     assert normalize(compute(s.a.truncate(**{unit: 1}), db, return_type='native')) == normalize(
@@ -2019,7 +2020,7 @@ def test_datetime_trunc(unit):
 @pytest.mark.parametrize('alias,unit', bz_datetime.unit_aliases.items())
 def test_datetime_trunc_aliases(alias, unit):
     ds = 'var * {a: datetime}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
 
     assert normalize(compute(s.a.truncate(**{alias: 1}), db, return_type='native')) == normalize(
@@ -2033,7 +2034,7 @@ def test_datetime_trunc_aliases(alias, unit):
 )
 def test_inner_select_with_filter():
     ds = 'var * {a: float32}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
 
     assert normalize(compute(s[s.a == s.a[s.a == 1]].a, db, return_type='native')) == normalize(
@@ -2057,7 +2058,7 @@ def test_inner_select_with_filter():
 @pytest.mark.parametrize('op', (greatest, least))
 def test_greatest(op):
     ds = 'var * {a: int32, b: int32}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     odo([(1, 2)], db)
     s = symbol('s', dshape=ds)
 

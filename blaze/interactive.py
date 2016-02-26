@@ -12,7 +12,7 @@ import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
 from datashape.predicates import isscalar, iscollection, isrecord, istabular, _dimensions
 import numpy as np
-from odo import resource, odo
+from odo import resource, odo, append, drop
 from odo.utils import ignoring, copydoc
 from odo.compatibility import unicode
 from pandas import DataFrame, Series, Timestamp
@@ -23,7 +23,7 @@ from .dispatch import dispatch
 from .compatibility import _strtypes
 
 
-__all__ = ['Data', 'Table', 'into', 'to_html']
+__all__ = ['Data', 'Table', 'into', 'to_html', 'data']
 
 
 names = ('_%d' % i for i in itertools.count(1))
@@ -41,19 +41,27 @@ with ignoring(ImportError):
     not_an_iterator.append(pymongo.database.Database)
 
 
-class InteractiveSymbol(Symbol):
-    """Interactive data.
+class _Data(Symbol):
 
-    The ``Data`` object presents a familiar view onto a variety of forms of
-    data.  This user-level object provides an interactive experience to using
-    Blaze's abstract expressions.
+    # NOTE: This docstring is meant to correspond to the ``data()`` API, which
+    # is why the Parameters section doesn't match the arguments to
+    # ``_Data.__init__()``.
+
+    """Bind a data resource to a symbol, for use in expressions and
+    computation.
+
+    A ``data`` object presents a consistent view onto a variety of concrete
+    data sources.  Like ``symbol`` objects, they are meant to be used in
+    expressions.  Because they are tied to concrete data resources, ``data``
+    objects can be used with ``compute`` directly, making them convenient for
+    interactive exploration.
 
     Parameters
     ----------
-    data : object
+    data_source : object
         Any type with ``discover`` and ``compute`` implementations
     fields : list, optional
-        Field or column names, will be inferred from datasource if possible
+        Field or column names, will be inferred from data_source if possible
     dshape : str or DataShape, optional
         DataShape describing input data
     name : str, optional
@@ -61,7 +69,7 @@ class InteractiveSymbol(Symbol):
 
     Examples
     --------
-    >>> t = Data([(1, 'Alice', 100),
+    >>> t = data([(1, 'Alice', 100),
     ...           (2, 'Bob', -200),
     ...           (3, 'Charlie', 300),
     ...           (4, 'Denis', 400),
@@ -74,8 +82,8 @@ class InteractiveSymbol(Symbol):
     """
     __slots__ = '_hash', 'data', 'dshape', '_name'
 
-    def __init__(self, data, dshape, name=None):
-        self.data = data
+    def __init__(self, data_source, dshape, name=None):
+        self.data = data_source
         self.dshape = dshape
         self._name = name or (next(names)
                               if isrecord(dshape.measure)
@@ -97,26 +105,45 @@ class InteractiveSymbol(Symbol):
         return data, self.dshape, self._name
 
 
-@copydoc(InteractiveSymbol)
-def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
+class InteractiveSymbol(_Data):
+    """Deprecated and replaced by the _Data class. ``InteractiveSymbol`` will
+    be removed in version 0.10.  ``data`` is the public API for creating
+    ``Data`` objects.
+    """
+
+    def __new__(cls, *args, **kwargs):
+        warnings.warn("InteractiveSymbol has been deprecated in 0.10 and will be removed in 0.11.  Use ``data`` to create ``Data`` objects directly.", DeprecationWarning)
+        return data(*args, **kwargs)
+
+
+def Data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
+    warnings.warn("""The `Data` callable has been deprecated in 0.10 and will be removed in
+                   version >= 0.11. It has been renamed `data`.""", DeprecationWarning)
+    return data(data_source, dshape=dshape, name=name, fields=fields, schema=schema, **kwargs)
+
+
+@copydoc(_Data)
+def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
-    if isinstance(data, InteractiveSymbol):
-        return Data(data.data, dshape, name, fields, schema, **kwargs)
+    if isinstance(data_source, _Data):
+        return data(data_source.data, dshape, name, fields, schema, **kwargs)
 
-    if isinstance(data, _strtypes):
-        data = resource(data, schema=schema, dshape=dshape, **kwargs)
-    if (isinstance(data, Iterator) and
-            not isinstance(data, tuple(not_an_iterator))):
-        data = tuple(data)
+    if isinstance(data_source, _strtypes):
+        data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
+        return _Data(data_source, discover(data_source), name)
+
+    if (isinstance(data_source, Iterator) and
+            not isinstance(data_source, tuple(not_an_iterator))):
+        data_source = tuple(data_source)
     if schema and not dshape:
         dshape = var * schema
     if dshape and isinstance(dshape, _strtypes):
         dshape = datashape.dshape(dshape)
     if not dshape:
-        dshape = discover(data)
+        dshape = discover(data_source)
         types = None
         if isinstance(dshape.measure, Tuple) and fields:
             types = dshape[1].dshapes
@@ -127,13 +154,13 @@ def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
             schema = Record(list(zip(fields, types)))
             dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
         elif isrecord(dshape.measure) and fields:
-            ds = discover(data)
+            ds = discover(data_source)
             assert isrecord(ds.measure)
             names = ds.measure.names
             if names != fields:
                 raise ValueError('data column names %s\n'
                                  '\tnot equal to fields parameter %s,\n'
-                                 '\tuse Data(data).relabel(%s) to rename '
+                                 '\tuse data(data_source).relabel(%s) to rename '
                                  'fields' % (names,
                                              fields,
                                              ', '.join('%s=%r' % (k, v)
@@ -144,17 +171,17 @@ def Data(data, dshape=None, name=None, fields=None, schema=None, **kwargs):
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-    return InteractiveSymbol(data, ds, name)
+    return _Data(data_source, ds, name)
 
 
 def Table(*args, **kwargs):
     """ Deprecated, see Data instead """
-    warnings.warn("Table is deprecated, use Data instead",
+    warnings.warn("Table is deprecated, use ``data`` instead",
                   DeprecationWarning)
-    return Data(*args, **kwargs)
+    return data(*args, **kwargs)
 
 
-@dispatch(InteractiveSymbol, dict)
+@dispatch(_Data, dict)
 def _subs(o, d):
     return o
 
@@ -166,6 +193,16 @@ def compute(expr, **kwargs):
         raise ValueError("No data resources found")
     else:
         return compute(expr, resources, **kwargs)
+
+
+@dispatch(Expr, _Data)
+def compute_down(expr, dta, **kwargs):
+    return compute(expr, dta.data, **kwargs)
+
+
+@dispatch(Expr, _Data)
+def pre_compute(expr, dta, **kwargs):
+    return pre_compute(expr, dta.data, **kwargs)
 
 
 def concrete_head(expr, n=10):
@@ -337,6 +374,21 @@ def into(a, b, **kwargs):
     result = compute(b, return_type='native', **kwargs)
     kwargs['dshape'] = b.dshape
     return into(a, result, **kwargs)
+
+
+@dispatch((object, type, str, unicode), _Data)
+def into(a, b, **kwargs):
+    return into(a, b.data, **kwargs)
+
+
+@dispatch(_Data, object)
+def append(a, b, **kwargs):
+    return append(a.data, b, **kwargs)
+
+
+@dispatch(_Data)
+def drop(d):
+    return drop(d.data)
 
 
 def table_length(expr):

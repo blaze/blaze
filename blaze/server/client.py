@@ -95,9 +95,9 @@ class Client(object):
     --------
 
     >>> # This example matches with the docstring of ``Server``
-    >>> from blaze import Data
+    >>> from blaze import data
     >>> c = Client('localhost:6363')
-    >>> t = Data(c) # doctest: +SKIP
+    >>> t = data(c) # doctest: +SKIP
 
     See Also
     --------
@@ -197,7 +197,7 @@ def resource_blaze(uri, leaf=None, **kwargs):
         raise ValueError('The syntax blaze://...::{leaf} is no longer '
                          'supported as of version 0.8.1.\n'
                          'You can access {leaf!r} using this syntax:\n'
-                         'Data({uri})[{leaf!r}]'
+                         'data({uri})[{leaf!r}]'
                          .format(leaf=leaf, uri=uri))
     uri = uri[len('blaze://'):]
     sp = uri.split('/')

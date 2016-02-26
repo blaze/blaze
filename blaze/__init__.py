@@ -6,7 +6,7 @@ except ImportError:
     pass
 
 from pandas import DataFrame
-from odo import odo, convert, append, resource, drop
+from odo import odo, convert, append, drop, resource
 from odo.backends.csv import CSV
 from odo.backends.json import JSON, JSONLines
 
@@ -16,6 +16,7 @@ halt_ordering()  # Turn off multipledispatch ordering
 
 from datashape import dshape, discover
 from .utils import ignoring
+import warnings
 from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
                    mean, merge, nunique, relabel, sample, selection, sort,

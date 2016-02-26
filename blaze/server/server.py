@@ -23,7 +23,7 @@ from blaze.compute import compute_up
 from blaze.expr import utils as expr_utils
 
 from .serialization import json, all_formats
-from ..interactive import InteractiveSymbol
+from ..interactive import _Data
 from ..expr import Expr, symbol
 
 
@@ -267,6 +267,11 @@ class Server(object):
                  allow_profiler=False,
                  profiler_output=None,
                  profile_by_default=False):
+        if isinstance(data, collections.Mapping):
+            data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
+                          data)
+        elif isinstance(data, _Data):
+            data = data._resources()
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
@@ -376,7 +381,7 @@ def to_tree(expr, names=None):
         return {'op': 'slice',
                 'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
-    elif isinstance(expr, InteractiveSymbol):
+    elif isinstance(expr, _Data):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
