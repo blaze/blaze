@@ -30,7 +30,7 @@ Using MongoDB query language
 
 Using Blaze
 
->> t = Data(db.mydata)
+>> t = data(db.mydata)
 >> t[t.amount < 0].name
     name
 0    Bob

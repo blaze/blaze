@@ -2,26 +2,54 @@ Release |version|
 -----------------
 
 :Release: |version|
-:Date: December 17th, 2015
+:Date: TBD
 
 New Expressions
 ~~~~~~~~~~~~~~~
 
+* The ``sample`` expression allows random sampling of rows to facilitate
+  interactive data exploration (:issue:`1410`).  It is implemented for the
+  Pandas, Dask, SQL, and Python backends.
+
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
+
+* The test suite was expanded to validate proper expression input error handling
+  (:issue:`1420`).
 
 New Backends
 ~~~~~~~~~~~~
 
+None
+
 Improved Backends
 ~~~~~~~~~~~~~~~~~
+
+* Adds :class:`~blaze.expr.math.greatest` and :class:`~blaze.expr.math.least`
+  support to the sql backend (:issue:`1428`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
+None
+
 API Changes
 ~~~~~~~~~~~
 
+* :func:`~blaze.interactive.Data` has been deprecated in favor of
+  :func:`~blaze.interactive.data`.  :class:`~blaze.interactive.InteractiveSymbol`
+  has been deprecated and temporarily replaced by
+  :class:`~blaze.interactive._Data`.  These deprecations will be in place for
+  the 0.10 release.  In the 0.11 release, :class:`~blaze.interactive._Data`
+  will be renamed to ``Data``, calls to :func:`~blaze.interactive.data` will
+  create ``Data`` instances, and :class:`~blaze.interactive.InteractiveSymbol`
+  will be removed (:issue:`1431` and :issue:`1421`).
+* :func:`~blaze.compute.core.compute` has a new keyword argument
+  ``return_type`` which defaults to ``'native'`` (:issue:`1401`, :issue:`1411`,
+  :issue:`1417`), which preserves existing behavior.  In the 0.11 release,
+  ``return_type`` will be changed to default to ``'core'``, which will
+  ``odo`` non-core backends into core backends as the final step in a call to
+  ``compute``.
 * Due to API instability and on the recommendation of DyND developers, we
   removed the DyND dependency temporarily (:issue:`1379`).  When DyND achieves
   its 1.0 release, DyND will be re-incorporated into Blaze.  The existing DyND
@@ -33,7 +61,9 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
+None
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
+None

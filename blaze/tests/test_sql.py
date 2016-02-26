@@ -8,15 +8,15 @@ from toolz import first
 from sqlalchemy.exc import OperationalError
 from odo import into, drop
 
-from blaze import create_index, resource
-from blaze import Data
+from blaze import data as bz_data
+from blaze import create_index
 
 
 @pytest.fixture
 def sql():
     data = [(1, 2), (10, 20), (100, 200)]
-    sql = resource(
-        'sqlite:///:memory:', 'foo',
+    sql = bz_data(
+        'sqlite:///:memory:::foo',
         dshape='var * {x: int, y: int}',
     )
     into(sql, data)
@@ -24,7 +24,7 @@ def sql():
 
 
 def test_column(sql):
-    t = Data(sql)
+    t = bz_data(sql)
 
     r = list(t['x'])
     assert r == [1, 10, 100]
@@ -34,6 +34,7 @@ def test_column(sql):
 
 
 def test_drop(sql):
+    sql = sql.data
     assert sql.exists(sql.bind)
     drop(sql)
     assert not sql.exists(sql.bind)
@@ -59,10 +60,10 @@ def test_create_index_fails(sql):
 
 def test_create_index_unique(sql):
     create_index(sql, 'y', name='y_idx', unique=True)
-    assert len(sql.indexes) == 1
-    idx = first(sql.indexes)
+    assert len(sql.data.indexes) == 1
+    idx = first(sql.data.indexes)
     assert idx.unique
-    assert idx.columns.y == sql.c.y
+    assert idx.columns.y == sql.data.c.y
 
 
 def test_composite_index(sql):
