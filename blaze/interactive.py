@@ -20,6 +20,7 @@ from pandas import DataFrame, Series, Timestamp
 
 
 from .expr import Expr, Symbol, ndim
+from .expr.expressions import sanitized_dshape
 from .dispatch import dispatch
 from .compatibility import _strtypes
 
@@ -104,6 +105,10 @@ class _Data(Symbol):
         except TypeError:
             data = id(data)
         return data, self.dshape, self._name
+
+    def __repr__(self):
+        return "<{} data; dshape='{}'>".format(type(self.data).__name__,
+                                               sanitized_dshape(self.dshape))
 
 
 class InteractiveSymbol(_Data):
@@ -235,6 +240,10 @@ def concrete_head(expr, n=10):
         return df
 
 
+def _peek_tables(expr, n=10):
+    return concrete_head(expr, n).rename(columns={None: ''})
+
+
 def repr_tables(expr, n=10):
     result = concrete_head(expr, n).rename(columns={None: ''})
 
@@ -313,6 +322,32 @@ def coerce_core(result, dshape, odo_kwargs=None):
         raise ValueError(msg)
 
     return result
+
+
+def _peek(expr):
+    # Pure Expressions, not interactive
+    if not set(expr._resources().keys()).issuperset(expr._leaves()):
+        return expr
+
+    # Scalars
+    if ndim(expr) == 0 and isscalar(expr.dshape):
+        return coerce_scalar(compute(expr), str(expr.dshape))
+
+    # Tables
+    if (ndim(expr) == 1 and (istabular(expr.dshape) or
+                             isscalar(expr.dshape.measure) or
+                             isinstance(expr.dshape.measure, Map))):
+        return _peek_tables(expr, 10)
+
+    # Smallish arrays
+    if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
+        return compute(expr)
+
+    # Other
+    dat = expr._resources().values()
+    if len(dat) == 1:
+        dat = list(dat)[0]  # may be dict_values
+    return dat
 
 
 def expr_repr(expr, n=10):
@@ -424,15 +459,11 @@ def _warning_repr_html(self):
 
 
 def new_repr(self):
-    width = 50
-    pretty_dshape = datashape.pprint(self.dshape, width=width)
-    if len(pretty_dshape) > width:
-        pretty_dshape = "{}...".format(pretty_dshape[:width])
-    return "<{} at 0x{:x}; dshape: {}>".format(type(self).__name__, pretty_dshape)
+    return "<`{}` expression; dshape='{}'>".format(type(self).__name__, sanitized_dshape(self.dshape))
 
 
 Expr.__repr__ = _choose_repr
-Expr.peek = lambda x, file=sys.stdout: print(expr_repr(x), file=file)
+Expr.peek = _peek
 Expr._repr_html_ = _warning_repr_html
 Expr.__len__ = table_length
 

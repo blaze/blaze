@@ -273,6 +273,13 @@ def _symbol_key(args, kwargs):
     return (name, ds, token)
 
 
+def sanitized_dshape(dshape, width=50):
+    pretty_dshape = datashape.pprint(dshape, width=width).replace('\n', '')
+    if len(pretty_dshape) > width:
+        pretty_dshape = "{}...".format(pretty_dshape[:width])
+    return pretty_dshape
+
+
 class Symbol(Expr):
     """
     Symbolic data.  The leaf of a Blaze expression
@@ -297,6 +304,10 @@ class Symbol(Expr):
         self.dshape = dshape
         self._token = token
         self._hash = None
+
+
+    def __repr__(self):
+        return "<`{}` symbol; dshape='{}'>".format(self._name, sanitized_dshape(self.dshape))
 
     def __str__(self):
         return self._name or ''
