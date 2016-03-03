@@ -8,6 +8,7 @@ from hashlib import md5
 import os
 import re
 import socket
+from time import time
 from warnings import warn
 
 from datashape import discover, pprint
@@ -534,6 +535,13 @@ def compserver(payload, serial):
             profiler.enable()
             # ensure that we stop profiling in the case of an exception
             response_construction_context_stack.callback(profiler.disable)
+
+        @response_construction_context_stack.callback
+        def log_time(start=time()):
+            flask.current_app.logger.info(
+                'compute expr: %s\ntotal time (s): %.3f',
+                expr, time() - start,
+            )
 
         ns = payload.get('namespace', {})
         compute_kwargs = payload.get('compute_kwargs') or {}
