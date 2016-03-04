@@ -65,4 +65,5 @@ None
 Miscellaneous
 ~~~~~~~~~~~~~
 
-None
+* Adds logging to server compute endpoint.  Includes expression being computed
+  and total time to compute. (:issue:`1436`)
