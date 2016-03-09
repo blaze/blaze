@@ -2070,7 +2070,7 @@ def test_greatest(op):
 
 def test_coalesce():
     ds = 'var * {a: ?int32}'
-    db = resource('sqlite:///m:memory:::s', dshape=ds)
+    db = resource('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
     t = symbol('s', 'int32')
 
