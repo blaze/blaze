@@ -50,13 +50,13 @@ def test_series_broadcast():
     t = symbol('t', 'var * {a: int64}')
     bcast = broadcast_collect(expr=(2 * t.a - t.a**2))
     result = compute(bcast, s)
-    assert_series_equal(2 * s - s**2, result)
+    assert_series_equal(result, 2 * s - s**2)
 
 
 def test_frame_broadcast():
     bcast = broadcast_collect(expr=t.amount * t.id)
     result = compute(bcast, df)
-    assert_series_equal(df.amount * df.id, result)
+    assert_series_equal(result, df.amount * df.id)
 
 
 def test_series_columnwise():
