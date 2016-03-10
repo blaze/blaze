@@ -10,6 +10,17 @@ New Expressions
 * The ``sample`` expression allows random sampling of rows to facilitate
   interactive data exploration (:issue:`1410`).  It is implemented for the
   Pandas, Dask, SQL, and Python backends.
+* Adds :func:`~blaze.expr.expressions.coalesce` expression which takes two
+  arguments and returns the first non missing value. If both are missing then
+  the result is missing. For example: ``coalesce(1, 2) == 1``,
+  ``coalesce(None, 1)`` == 1, and ``coalesce(None, None) == None``.
+  This is inspired by the sql function of the same name (:issue:`1409`).
+* Adds :func:`~blaze.expr.expressions.cast` expression as a type level function
+  for reinterpreting an expression as another dshape. This is based on C++
+  ``reinterpret_cast``, or just normal C casts. For example:
+  ``symbol('s', 'int32').cast('uint32').dshape == dshape('uint32')``. This
+  expression is the identity function at runtime but allows users to alter the
+  types of expressions where needed (:issue:`1409`).
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
