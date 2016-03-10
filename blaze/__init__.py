@@ -17,7 +17,7 @@ halt_ordering()  # Turn off multipledispatch ordering
 from datashape import dshape, discover
 from .utils import ignoring
 import warnings
-from .expr import (Symbol, TableSymbol, symbol, ndim, shape)
+from .expr import (Symbol, symbol, ndim, shape)
 from .expr import (by, count, count_values, distinct, head, join, label, like,
                    mean, merge, nunique, relabel, sample, selection, sort,
                    summary, transform, var)
