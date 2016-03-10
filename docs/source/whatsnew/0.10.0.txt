@@ -36,6 +36,9 @@ None
 API Changes
 ~~~~~~~~~~~
 
+* :func:`~blaze.table.Table` and :func:`~blaze.table.TableSymbol` have been
+  long deprecated and were removed (:issue:`1441`).  The ``TableSymbol`` tests
+  in ``test_table.py`` were migrated to ``test_symbol.py``.
 * :func:`~blaze.interactive.Data` has been deprecated in favor of
   :func:`~blaze.interactive.data`.  :class:`~blaze.interactive.InteractiveSymbol`
   has been deprecated and temporarily replaced by
