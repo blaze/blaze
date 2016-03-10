@@ -91,8 +91,7 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(Broadcast, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
-    d = dict((t._child[c]._expr, df[c]) for c in t._child.fields)
-    return compute(t._expr, d)
+    return compute(t._full_expr, df)
 
 
 @dispatch(Broadcast, Series)

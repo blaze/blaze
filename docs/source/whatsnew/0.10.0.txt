@@ -60,7 +60,10 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
-None
+* Fixed a bug with Pandas' implementation of ``compute_up`` on
+  :class:`~blaze.expr.broadcast.Broadcast` expressions (:issue:`1442`).  Added
+  tests for Pandas frame and series and dask dataframes on ``Broadcast``
+  expressions.
 
 Miscellaneous
 ~~~~~~~~~~~~~

@@ -14,7 +14,7 @@ from string import ascii_lowercase
 
 from blaze.compute.core import compute
 from blaze.compute.pandas import pdsort
-from blaze import dshape, discover, transform
+from blaze import dshape, discover, transform, broadcast_collect
 from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat)
@@ -43,6 +43,20 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Drew', 'M', 100, 5],
                    ['Drew', 'M', 200, 5]],
                   columns=['name', 'sex', 'amount', 'id'])
+
+
+def test_series_broadcast():
+    s = Series([1, 2, 3], name='a')
+    t = symbol('t', 'var * {a: int64}')
+    bcast = broadcast_collect(expr=(2 * t.a - t.a**2))
+    result = compute(bcast, s)
+    assert_series_equal(result, 2 * s - s**2)
+
+
+def test_frame_broadcast():
+    bcast = broadcast_collect(expr=t.amount * t.id)
+    result = compute(bcast, df)
+    assert_series_equal(result, df.amount * df.id)
 
 
 def test_series_columnwise():
