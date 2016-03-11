@@ -25,7 +25,7 @@ from .dispatch import dispatch
 from .compatibility import _strtypes
 
 
-__all__ = ['Data', 'Table', 'into', 'to_html', 'data']
+__all__ = ['Data', 'into', 'to_html', 'data']
 
 
 names = ('_%d' % i for i in itertools.count(1))
@@ -178,13 +178,6 @@ def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs
 
     ds = datashape.dshape(dshape)
     return _Data(data_source, ds, name)
-
-
-def Table(*args, **kwargs):
-    """ Deprecated, see Data instead """
-    warnings.warn("Table is deprecated, use ``data`` instead",
-                  DeprecationWarning)
-    return data(*args, **kwargs)
 
 
 @dispatch(_Data, dict)

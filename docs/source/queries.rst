@@ -158,7 +158,7 @@ Match text with glob strings, specifying columns with keyword arguments.
 
 .. code-block:: python
 
-   >>> iris.like(species='*versicolor')  # doctest: +SKIP
+   >>> iris[iris.species.like('*versicolor')]  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width          species
    50           7.0          3.2           4.7          1.4  Iris-versicolor
    51           6.4          3.2           4.5          1.5  Iris-versicolor

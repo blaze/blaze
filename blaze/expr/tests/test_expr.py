@@ -150,6 +150,22 @@ def test_hash_to_different_values():
     assert hash(expr) == hash(expr2)
 
 
+def test_hash():
+    e = symbol('e', 'int')
+    assert '_hash' in e.__slots__
+    h = hash(e)
+    assert isinstance(h, int)
+    assert h == hash(e)
+
+    assert hash(symbol('e', 'int')) == hash(symbol('e', 'int'))
+
+    f = symbol('f', 'int')
+    assert hash(e) != hash(f)
+
+    assert hash(e._subs({'e': 'f'})) != hash(e)
+    assert hash(e._subs({'e': 'f'})) == hash(f)
+
+
 @pytest.mark.parametrize('dshape', [var * float32,
                                     dshape('var * float32'),
                                     'var * float32'])

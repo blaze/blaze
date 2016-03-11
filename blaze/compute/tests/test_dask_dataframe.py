@@ -6,7 +6,7 @@ import pandas.util.testing as tm
 
 dd = pytest.importorskip('dask.dataframe')
 
-from blaze import symbol, discover, compute
+from blaze import symbol, discover, compute, broadcast_collect
 from blaze.expr import mean, count, sum, min, max, var, std, summary
 
 
@@ -40,6 +40,12 @@ dfbig = pd.DataFrame([['Alice', 'F', 100, 1],
 
 ddf = dd.from_pandas(df, npartitions=2)
 ddfbig = dd.from_pandas(dfbig, npartitions=2)
+
+
+def test_broadcast():
+    bcast = broadcast_collect(expr=t.amount * t.id)
+    result = compute(bcast, ddf)
+    eq(result, df.amount * df.id)
 
 
 def test_symbol():
