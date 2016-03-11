@@ -6,9 +6,9 @@ each piece.  Consider the ``iris`` dataset:
 
 .. code-block:: python
 
-   >>> from blaze import Data, by
+   >>> from blaze import data, by
    >>> from blaze.utils import example
-   >>> d = Data('sqlite:///%s::iris' % example('iris.db'))
+   >>> d = data('sqlite:///%s::iris' % example('iris.db'))
    >>> d  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa

@@ -22,14 +22,14 @@ the cost of full generality.
 Example
 -------
 
-We create an interactive expression by calling the ``Data`` constructor on any
+We create an interactive expression by calling the ``data`` constructor on any
 object or URI with which Blaze is familiar.
 
 .. code-block:: python
 
-   >>> from blaze import Data, Symbol
+   >>> from blaze import data, Symbol
    >>> from blaze.utils import example
-   >>> db = Data('sqlite:///%s' % example('iris.db'))  # an interactive expression
+   >>> db = data('sqlite:///%s' % example('iris.db'))  # an interactive expression
    >>> db.iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
