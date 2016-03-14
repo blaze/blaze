@@ -200,7 +200,10 @@ def compute_up(t, rdd, **kwargs):
 @dispatch(Summary, RDD)
 def compute_up(t, rdd, **kwargs):
     rdd = rdd.cache()
-    return tuple(compute(value, {t._child: rdd}) for value in t.values)
+    return tuple(
+        compute(value, {t._child: rdd}, return_type='native')
+        for value in t.values
+    )
 
 
 @dispatch(Like, RDD)

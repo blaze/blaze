@@ -536,7 +536,7 @@ def compute_up(t, seq, **kwargs):
     else:
         grouper = rrowfunc(t.grouper, t._child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t._child: v}))
+        d = dict((k, compute(t.apply, {t._child: v}, return_type='native'))
                  for k, v in groups.items())
 
     if isscalar(t.grouper.dshape.measure):
@@ -689,11 +689,15 @@ def compute_up(expr, data, **kwargs):
         raise NotImplementedError('Only 1D reductions currently supported')
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        result = tuple(compute(val, {expr._child: data})
-                       for val, data in zip(expr.values, datas))
+        result = tuple(
+            compute(val, {expr._child: data}, return_type='native')
+            for val, data in zip(expr.values, datas)
+        )
     else:
-        result = tuple(compute(val, {expr._child: data})
-                       for val in expr.values)
+        result = tuple(
+            compute(val, {expr._child: data}, return_type='native')
+            for val in expr.values
+        )
 
     if expr.keepdims:
         return (result,)

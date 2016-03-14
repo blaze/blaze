@@ -91,7 +91,7 @@ def compute_up(t, data, **kwargs):
 
 @dispatch(Broadcast, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
-    return compute(t._full_expr, df)
+    return compute(t._full_expr, df, return_type='native')
 
 
 @dispatch(Broadcast, Series)
@@ -146,7 +146,7 @@ def compute_up(expr, df, **kwargs):
     return compute_up(
         expr,
         df,
-        compute(expr.predicate, {expr._child: df}),
+        compute(expr.predicate, {expr._child: df}, return_type='native'),
         **kwargs
     )
 
@@ -290,7 +290,7 @@ def get_grouper(c, grouper, df):
 
 @dispatch(By, Expr, NDFrame)
 def get_grouper(c, grouper, df):
-    g = compute(grouper, {c._child: df})
+    g = compute(grouper, {c._child: df}, return_type='native')
     if isinstance(g, Series):
         return g
     if isinstance(g, DataFrame):
@@ -305,7 +305,7 @@ def get_grouper(c, grouper, df):
 @dispatch(By, Reduction, Grouper, NDFrame)
 def compute_by(t, r, g, df):
     names = [r._name]
-    preapply = compute(r._child, {t._child: df})
+    preapply = compute(r._child, {t._child: df}, return_type='native')
 
     # Pandas and Blaze column naming schemes differ
     # Coerce DataFrame column names to match Blaze's names
@@ -319,7 +319,7 @@ def compute_by(t, r, g, df):
     gb = group_df.groupby(g)
     groups = gb[names[0] if isscalar(t.apply._child.dshape.measure) else names]
 
-    return compute_up(r, groups)  # do reduction
+    return compute_up(r, groups, return_type='native')  # do reduction
 
 
 name_dict = dict()
@@ -394,8 +394,8 @@ def compute_by(t, s, g, df):
 
     preapply = DataFrame(dict(
         zip([name for name, _ in is_field[True]],
-            [compute(col._child, {t._child: df}) for _, col in is_field[True]]
-            )
+            [compute(col._child, {t._child: df}, return_type='native')
+             for _, col in is_field[True]])
         )
     )
 
@@ -415,7 +415,10 @@ def compute_by(t, s, g, df):
     result = groups.agg(d)
 
     scope = dict((v, result[k]) for k, v in two.items())
-    cols = [compute(expr.label(name), scope) for name, expr in three.items()]
+    cols = [
+        compute(expr.label(name), scope, return_type='native')
+        for name, expr in three.items()
+    ]
 
     result2 = pd.concat(cols, axis=1)
 
@@ -579,13 +582,19 @@ def compute_up(t, df, **kwargs):
 def compute_up(t, df, scope=None, **kwargs):
     subexpression = common_subexpression(*t.children)
     scope = merge_dicts(scope or {}, {subexpression: df})
-    children = [compute(_child, scope) for _child in t.children]
+    children = [
+        compute(_child, scope, return_type='native')
+        for _child in t.children
+    ]
     return pd.concat(children, axis=1)
 
 
 @dispatch(Summary, (DataFrame, DaskDataFrame))
 def compute_up(expr, data, **kwargs):
-    values = [compute(val, {expr._child: data}) for val in expr.values]
+    values = [
+        compute(val, {expr._child: data}, return_type='native')
+        for val in expr.values
+    ]
     if expr.keepdims:
         return type(data)([values], columns=expr.fields)
     else:
@@ -594,7 +603,10 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Summary, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
-    result = tuple(compute(val, {expr._child: data}) for val in expr.values)
+    result = tuple(
+        compute(val, {expr._child: data}, return_type='native')
+        for val in expr.values
+    )
     if expr.keepdims:
         result = [result]
     return result
