@@ -104,7 +104,12 @@ def compute_down(expr, data, **kwargs):
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(expr, leaf)):
         val = data.value
-        return compute(expr, {leaf: into(Iterator, val)}, **kwargs)
+        return compute(
+            expr,
+            {leaf: into(Iterator, val)},
+            return_type='native',
+            **kwargs
+        )
     else:
         raise MDNotImplementedError()
 
@@ -126,7 +131,7 @@ def compute_up(expr, data, **kwargs):
 
 def compute_chunk(source, chunk, chunk_expr, data_index):
     part = source[data_index]
-    return compute(chunk_expr, {chunk: part})
+    return compute(chunk_expr, {chunk: part}, return_type='native')
 
 
 def get_chunksize(data):
@@ -178,7 +183,7 @@ def compute_down(expr, data, chunksize=None, map=None, **kwargs):
         raise TypeError("Don't know how to concatenate objects of type %r" %
                         type(parts[0]).__name__)
 
-    return compute(agg_expr, {agg: intermediate})
+    return compute(agg_expr, {agg: intermediate}, return_type='native')
 
 
 def _asarray(a):
@@ -193,4 +198,5 @@ def bcolz_mixed(expr, a, b, **kwargs):
     return compute(
         expr,
         dict(zip(expr._leaves(), map(_asarray, (a.value, b.value)))),
+        return_type='native',
     )
