@@ -825,7 +825,7 @@ class Cast(Expr):
     # Cast to give concrete dimension length
     >>> t = symbol('t', 'var * float32')
     >>> t.cast('10 * float32').dshape
-    >>> dshape("10 * float32")
+    dshape("10 * float32")
     """
     __slots__ = '_hash', '_child', 'to'
 
