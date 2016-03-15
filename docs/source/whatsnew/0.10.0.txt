@@ -16,6 +16,9 @@ Improved Expressions
 
 * The test suite was expanded to validate proper expression input error handling
   (:issue:`1420`).
+* The docstring for :class:`~blaze.expr.collections.Merge` was expanded to
+  include examples using :class:`~blaze.expr.expressions.Label` to control the
+  ordering of the columns in the result (:issue:`1447`).
 
 New Backends
 ~~~~~~~~~~~~
