@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import datetime
 from collections import Iterator
-from itertools import islice
+from itertools import islice, product
 import os
 import re
 
@@ -363,3 +363,36 @@ class attribute(object):
             return self
 
         return self._f(instance)
+
+
+def parameter_space(*args):
+    """Unpack a sequence of positional parameter spaces into the product of each
+    space.
+
+    Parameters
+    ----------
+    *args
+        The parameters spaces to create a product of.
+
+    Returns
+    -------
+    param_space : tuple[tuple]
+        The product of each of the spaces.
+
+    Examples
+    --------
+    # trivial case
+    >>> parameter_space(0, 1, 2)
+    ((0, 1, 2),)
+
+    # two 2-tuples
+    >>> parameter_space((0, 1), (2, 3))
+    ((0, 2), (0, 3), (1, 2), (1, 3))
+
+    Notes
+    -----
+    This is a convenience for passing to :func:`pytest.mark.parameterized`
+    """
+    return tuple(product(*(
+        arg if isinstance(arg, tuple) else (arg,) for arg in args
+    )))

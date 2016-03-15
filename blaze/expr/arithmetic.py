@@ -8,6 +8,7 @@ from datashape import (
     DataShape,
     DateTime,
     Option,
+    String,
     TimeDelta,
     coretypes as ct,
     datetime_,
@@ -19,6 +20,7 @@ from datashape import (
     unsigned,
 )
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
+from datashape.typesets import integral
 from dateutil.parser import parse as dt_parse
 
 
@@ -156,6 +158,19 @@ class Repeat(Arithmetic):
     symbol = '*'
     op = operator.mul
 
+    @property
+    def _dtype(self):
+        lmeasure = discover(self.lhs).measure
+        rmeasure = discover(self.rhs).measure
+        if not (isinstance(getattr(lmeasure, 'ty', lmeasure), String) and
+                getattr(rmeasure, 'ty', rmeasure) in integral):
+            raise TypeError(
+                'can only repeat strings by an integer amount, got: %s * %s' %
+                (lmeasure, rmeasure),
+            )
+
+        return optionify(lmeasure, rmeasure, lmeasure)
+
 
 class Sub(Arithmetic):
     symbol = '-'
@@ -218,6 +233,15 @@ class Interp(Arithmetic):
     # String interpolation
     symbol = '%'
     op = operator.mod
+
+    @property
+    def _dtype(self):
+        lmeasure = discover(self.lhs).measure
+        rmeasure = discover(self.rhs).measure
+        if not (isinstance(getattr(lmeasure, 'ty', lmeasure), String)):
+            raise TypeError('can only interp strings got: %s' % lmeasure)
+
+        return optionify(lmeasure, rmeasure, lmeasure)
 
 
 class USub(UnaryOp):

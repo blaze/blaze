@@ -102,9 +102,26 @@ def test_arith_ops_promote_dtype():
 
 
 def test_str_arith():
-    assert isinstance(cs * 1, Repeat)
-    assert isinstance(cs % cs, Interp)
-    assert isinstance(cs % 'a', Interp)
+    rep = cs * 1
+    assert isinstance(rep, Repeat)
+    assert rep.lhs.isidentical(cs)
+    assert rep.rhs == 1
+
+    with pytest.raises(TypeError):
+        cs * 1.5
+
+    with pytest.raises(TypeError):
+        cs * 'a'
+
+    interp = cs % cs
+    assert isinstance(interp, Interp)
+    assert interp.lhs.isidentical(cs)
+    assert interp.rhs.isidentical(cs)
+
+    interp_lit = cs % 'a'
+    assert isinstance(interp_lit, Interp)
+    assert interp_lit.lhs.isidentical(cs)
+    assert interp_lit.rhs == 'a'
 
     with pytest.raises(Exception):
         cs / 1
