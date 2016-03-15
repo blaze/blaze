@@ -631,10 +631,10 @@ def test_least(gl_data):
 def test_coalesce(sqla):
     t = symbol('t', discover(sqla))
     assert (
-        odo(compute(coalesce(t.B, -1), {t: sqla}), list) ==
+        compute(coalesce(t.B, -1), {t: sqla}, return_type=list) ==
         [(1,), (1,), (-1,)]
     )
     assert (
-        odo(compute(coalesce(t.A, 'z'), {t: sqla}), list) ==
+        compute(coalesce(t.A, 'z'), {t: sqla}, return_type=list) ==
         [('a',), ('z',), ('c',)]
     )
