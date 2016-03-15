@@ -15,12 +15,21 @@ New Expressions
   the result is missing. For example: ``coalesce(1, 2) == 1``,
   ``coalesce(None, 1)`` == 1, and ``coalesce(None, None) == None``.
   This is inspired by the sql function of the same name (:issue:`1409`).
-* Adds :func:`~blaze.expr.expressions.cast` expression as a type level function
-  for reinterpreting an expression as another dshape. This is based on C++
-  ``reinterpret_cast``, or just normal C casts. For example:
+* Adds :func:`~blaze.expr.expressions.cast` expression to reinterpret an
+  expression's dshape. This is based on C++ ``reinterpret_cast``, or just normal
+  C casts. For example:
   ``symbol('s', 'int32').cast('uint32').dshape == dshape('uint32')``. This
-  expression is the identity function at runtime but allows users to alter the
-  types of expressions where needed (:issue:`1409`).
+  expression has no affect on the computation, it merely tells blaze to treat
+  the result of the expression as the new dshape. The compute definition for
+  ``cast`` is simply:
+
+  .. code-block:: python
+
+     @dispatch(Cast, object)
+     def compute_up(expr, data, **kwargs):
+         return data
+
+  (:issue:`1409`).
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~

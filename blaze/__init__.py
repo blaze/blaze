@@ -19,7 +19,6 @@ from .utils import ignoring
 import warnings
 from .expr import (
     Symbol,
-    TableSymbol,
     by,
     cast,
     coalesce,

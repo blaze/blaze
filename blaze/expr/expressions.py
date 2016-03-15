@@ -808,6 +808,21 @@ class Cast(Expr):
     """Cast an expression to a different type.
 
     This is only an expression time operation.
+
+    Examples
+    --------
+    >>> s = symbol('s', '?int64')
+    >>> s.cast('?int32').dshape
+    dshape("?int32")
+
+    # Cast to correct mislabeled optionals
+    >>> s.cast('int64').dshape
+    dshape("int64")
+
+    # Cast to give concrete dimension length
+    >>> t = symbol('t', 'var * float32')
+    >>> t.cast('10 * float32').dshape
+    >>> dshape("10 * float32")
     """
     __slots__ = '_hash', '_child', 'to'
 
@@ -853,6 +868,17 @@ class Coalesce(Expr):
         a if a is not NULL
         b otherwise
     }
+
+    Examples
+    --------
+    >>> coalesce(1, 2)
+    1
+    >>> coalesce(1, None)
+    1
+    >>> coalesce(None, 2)
+    2
+    >>> coalesce(None, None) is None
+    True
     """
     __slots__ = '_hash', 'lhs', 'rhs', 'dshape'
     __inputs__ = 'lhs', 'rhs'
