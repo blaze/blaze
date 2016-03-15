@@ -329,10 +329,17 @@ class Merge(ElemWise):
 
     Examples
     --------
-    >>> from blaze import symbol
+    >>> from blaze import symbol, label
     >>> accounts = symbol('accounts', 'var * {name: string, x: int, y: real}')
     >>> merge(accounts.name, z=accounts.x + accounts.y).fields
     ['name', 'z']
+
+    To control the ordering of the fields, use ``label``:
+
+    >>> merge(label(accounts.name, 'NAME'), label(accounts.x, 'X')).dshape
+    dshape("var * {NAME: string, X: int32}")
+    >>> merge(label(accounts.x, 'X'), label(accounts.name, 'NAME')).dshape
+    dshape("var * {X: int32, NAME: string}")
     """
     __slots__ = '_hash', '_child', 'children'
 
