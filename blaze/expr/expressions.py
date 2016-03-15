@@ -170,13 +170,16 @@ class Expr(Node):
 
     @property
     def fields(self):
-        if isinstance(self.dshape.measure, Record):
-            return self.dshape.measure.names
-        elif isinstance(self.dshape.measure, datashape.Map):
+        measure = self.dshape.measure
+        if isinstance(self.dshape.measure, Option):
+            measure = measure.ty
+        if isinstance(measure, Record):
+            return measure.names
+        elif isinstance(measure, datashape.Map):
             if not isrecord(self.dshape.measure.value):
                 raise TypeError('Foreign key must reference a '
                                 'Record datashape')
-            return self.dshape.measure.value.names
+            return measure.value.names
         name = getattr(self, '_name', None)
         if name is not None:
             return [self._name]
