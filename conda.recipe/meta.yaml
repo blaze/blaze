@@ -15,6 +15,7 @@ source:
 requirements:
   build:
     - python
+    - contextlib2 [py2k]
     - setuptools
     - flask >=0.10.1
     - flask-cors
@@ -24,6 +25,7 @@ requirements:
     - toolz
   run:
     - python
+    - contextlib2 [py2k]
     - cytoolz
     - dask
     - flask >=0.10.1
