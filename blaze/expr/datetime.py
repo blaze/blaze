@@ -206,7 +206,6 @@ def truncate(expr, *args, **kwargs):
 
     Alternatively use keyword arguments to specify unit and measure
 
-    >>> # expr = s.truncate(2, 'weeks')
     >>> expr = s.truncate(weeks=2)
     """
     if not args and not kwargs:
@@ -214,11 +213,11 @@ def truncate(expr, *args, **kwargs):
                         'e.g., truncate(2, "days") or 1 keyword argument, '
                         'e.g., truncate(days=2)')
     if args:
-        assert not kwargs, ('only positional arguments allowed if any are '
-                            'passed in')
+        if kwargs:
+            raise TypeError('Cannot pass both positional and keyword '
+                            'arguments; given %s and %s.' % (args, kwargs))
         measure, unit = args
-    if kwargs:
-        assert not args, 'only keyword arguments allowed if any are passed in'
+    else:
         [(unit, measure)] = kwargs.items()
     return DateTimeTruncate(expr, measure, normalize_time_unit(unit))
 
