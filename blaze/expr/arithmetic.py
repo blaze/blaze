@@ -8,6 +8,7 @@ from datashape import (
     DataShape,
     DateTime,
     Option,
+    String,
     TimeDelta,
     coretypes as ct,
     datetime_,
@@ -17,14 +18,15 @@ from datashape import (
     promote,
     timedelta_,
     unsigned,
-    var,
 )
 from datashape.predicates import isscalar, isboolean, isnumeric, isdatelike
+from datashape.typesets import integral
 from dateutil.parser import parse as dt_parse
 
 
 from .core import parenthesize, eval_str
-from .expressions import Expr, shape, ElemWise
+from .expressions import Expr, shape, ElemWise, binop_inputs, binop_name
+from .utils import maxshape
 from ..dispatch import dispatch
 from ..compatibility import _strtypes
 
@@ -76,64 +78,12 @@ class BinOp(ElemWise):
         return DataShape(*(maxshape([shape(self.lhs), shape(self.rhs)]) +
                            (self._dtype,)))
 
-    @property
-    def _name(self):
-        if not isscalar(self.dshape.measure):
-            return None
-        l = getattr(self.lhs, '_name', None)
-        r = getattr(self.rhs, '_name', None)
-        if l is not None and r is None:
-            return l
-        elif r is not None and l is None:
-            return r
-        elif l == r:
-            return l
-        else:
-            return None
+    _name = property(binop_name)
+
 
     @property
     def _inputs(self):
-        result = []
-        if isinstance(self.lhs, Expr):
-            result.append(self.lhs)
-        if isinstance(self.rhs, Expr):
-            result.append(self.rhs)
-        return tuple(result)
-
-
-def maxvar(L):
-    """
-
-    >>> maxvar([1, 2, var])
-    Var()
-
-    >>> maxvar([1, 2, 3])
-    3
-    """
-    if var in L:
-        return var
-    else:
-        return max(L)
-
-
-def maxshape(shapes):
-    """
-
-    >>> maxshape([(10, 1), (1, 10), ()])
-    (10, 10)
-
-    >>> maxshape([(4, 5), (5,)])
-    (4, 5)
-    """
-    shapes = [shape for shape in shapes if shape]
-    if not shapes:
-        return ()
-    ndim = max(map(len, shapes))
-    shapes = [(1,) * (ndim - len(shape)) + shape for shape in shapes]
-    for dims in zip(*shapes):
-        if len(set(dims) - set([1])) >= 2:
-            raise ValueError("Shapes don't align, %s" % str(dims))
-    return tuple(map(maxvar, zip(*shapes)))
+        return tuple(binop_inputs(self))
 
 
 class UnaryOp(ElemWise):
@@ -208,6 +158,19 @@ class Repeat(Arithmetic):
     symbol = '*'
     op = operator.mul
 
+    @property
+    def _dtype(self):
+        lmeasure = discover(self.lhs).measure
+        rmeasure = discover(self.rhs).measure
+        if not (isinstance(getattr(lmeasure, 'ty', lmeasure), String) and
+                getattr(rmeasure, 'ty', rmeasure) in integral):
+            raise TypeError(
+                'can only repeat strings by an integer amount, got: %s * %s' %
+                (lmeasure, rmeasure),
+            )
+
+        return optionify(lmeasure, rmeasure, lmeasure)
+
 
 class Sub(Arithmetic):
     symbol = '-'
@@ -270,6 +233,15 @@ class Interp(Arithmetic):
     # String interpolation
     symbol = '%'
     op = operator.mod
+
+    @property
+    def _dtype(self):
+        lmeasure = discover(self.lhs).measure
+        rmeasure = discover(self.rhs).measure
+        if not (isinstance(getattr(lmeasure, 'ty', lmeasure), String)):
+            raise TypeError('can only interp strings got: %s' % lmeasure)
+
+        return optionify(lmeasure, rmeasure, lmeasure)
 
 
 class USub(UnaryOp):

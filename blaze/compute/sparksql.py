@@ -86,7 +86,7 @@ def compute_down(expr, data, **kwargs):
 
     # compute using sqlalchemy
     scope = dict(zip(new_leaves, map(make_sqlalchemy_table, tables)))
-    query = compute(expr, scope)
+    query = compute(expr, scope, return_type='native')
 
     # interpolate params
     compiled = literalquery(query, dialect=HiveDialect())

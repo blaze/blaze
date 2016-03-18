@@ -64,7 +64,7 @@ def create_index(s,
             name,
             *(s.c[c] for c in columns),
             unique=unique,
-            **{'postgres_concurrently': concurrently} if concurrently else {}
+            **{'postgresql_concurrently': concurrently} if concurrently else {}
         ).create(s.bind)
     except (sa.exc.ProgrammingError, sa.exc.OperationalError):
         # sqlite raises OperationalError but postgres raises ProgrammingError

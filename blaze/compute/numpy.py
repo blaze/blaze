@@ -14,11 +14,12 @@ from ..expr import (
     BinOp, UnaryOp, USub, Not, nelements, Repeat, Concat, Interp,
     UTCFromTimestamp, DateTimeTruncate,
     Transpose, TensorDot, Coerce, isnan,
-    greatest, least, BinaryMath, atan2,
+    greatest, least, BinaryMath, atan2, Coalesce, Cast
 )
 from ..utils import keywords
 
 from .core import base, compute
+from .pandas import array_coalesce
 from ..dispatch import dispatch
 from odo import into
 import pandas as pd
@@ -50,7 +51,7 @@ except ImportError:
     def broadcast_ndarray(t, *data, **kwargs):
         del kwargs['scope']
         d = dict(zip(t._scalar_expr._leaves(), data))
-        return compute(t._scalar_expr, d, **kwargs)
+        return compute(t._scalar_expr, d, return_type='native', **kwargs)
 
 
 compute_up.register(Broadcast, np.ndarray)(broadcast_ndarray)
@@ -228,10 +229,17 @@ def compute_up(expr, data, **kwargs):
     if shape:
         result = np.empty(shape=shape, dtype=dtype)
         for n, v in zip(expr.names, expr.values):
-            result[n] = compute(axify(v, expr.axis, expr.keepdims), data)
+            result[n] = compute(
+                axify(v, expr.axis, expr.keepdims),
+                data,
+                return_type='native',
+            )
         return result
     else:
-        return tuple(compute(axify(v, expr.axis), data) for v in expr.values)
+        return tuple(
+            compute(axify(v, expr.axis), data, return_type='native')
+            for v in expr.values
+        )
 
 
 @dispatch((std, var), np.ndarray)
@@ -296,7 +304,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Selection, np.ndarray)
 def compute_up(sel, x, **kwargs):
-    predicate = compute(sel.predicate, {sel._child: x})
+    predicate = compute(sel.predicate, {sel._child: x}, return_type='native')
     cond = getattr(predicate, 'values', predicate)
     return x[cond]
 
@@ -319,6 +327,12 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Slice, np.ndarray)
 def compute_up(expr, x, **kwargs):
     return x[expr.index]
+
+
+@dispatch(Cast, np.ndarray)
+def compute_up(t, x, **kwargs):
+    # resolve ambiguity
+    return x
 
 
 @dispatch(Expr, np.ndarray)
@@ -438,3 +452,19 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Concat, np.ndarray, np.ndarray)
 def compute_up(expr, lhs, rhs, _concat=np.concatenate, **kwargs):
     return _concat((lhs, rhs), axis=expr.axis)
+
+
+compute_up.register(Coalesce, np.ndarray, (np.ndarray, base))(array_coalesce)
+compute_up.register(Coalesce, base, np.ndarray)(array_coalesce)
+
+
+@dispatch(Coalesce, np.ndarray)
+def compute_up(t, data, **kwargs):
+    if isinstance(t.lhs, Expr):
+        lhs = data
+        rhs = t.rhs
+    else:
+        lhs = t.lhs
+        rhs = data
+
+    return array_coalesce(t, lhs, rhs)

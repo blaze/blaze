@@ -4,11 +4,20 @@ import types
 
 import datashape
 from datashape import dshape, var, datetime_, float32, int64, bool_
+from datashape.util.testing import assert_dshape_equal
 import pandas as pd
 import pytest
 
 from blaze.compatibility import pickle
-from blaze.expr import symbol, label, Field, Expr, Node
+from blaze.expr import (
+    Expr,
+    Field,
+    Node,
+    coalesce,
+    label,
+    symbol,
+    transform,
+)
 
 
 def test_slots():
@@ -203,3 +212,129 @@ def test_pickle_roundtrip():
     t = symbol('t', 'var * int64')
     expr = (t + 1).mean()  # some expression with more than one node.
     assert expr.isidentical(pickle.loads(pickle.dumps(expr)))
+
+
+def test_coalesce():
+    # check case where lhs is not optional
+    s = symbol('s', 'int32')
+    t = symbol('t', 'int32')
+    expr = coalesce(s, t)
+    assert expr.isidentical(s)
+
+    s_expr = s + s
+    t_expr = t * 3
+    expr = coalesce(s_expr, t_expr)
+    assert expr.isidentical(s_expr)
+
+    a = symbol('a', 'string')
+    b = symbol('b', 'string')
+    expr = coalesce(a, b)
+    assert expr.isidentical(a)
+
+    a_expr = a + a
+    b_expr = b * 3
+    expr = coalesce(a_expr, b_expr)
+    assert expr.isidentical(a_expr)
+
+    c = symbol('c', '{a: int32, b: int32}')
+    d = symbol('d', '{a: int32, b: int32}')
+    expr = coalesce(c, d)
+    assert expr.isidentical(c)
+
+    c_expr = transform(c, a=c.a + 1)
+    d_expr = transform(d, a=d.a * 3)
+    expr = coalesce(c_expr, d_expr)
+    assert expr.isidentical(c_expr)
+
+    # check case where lhs is null dshape
+    u = symbol('u', 'null')
+    expr = coalesce(u, s)
+    assert expr.isidentical(s)
+
+    expr = coalesce(u, a)
+    assert expr.isidentical(a)
+
+    expr = coalesce(u, c)
+    assert expr.isidentical(c)
+
+    # check optional lhs non-optional rhs
+    v = symbol('v', '?int32')
+    expr = coalesce(v, s)
+    # rhs is not optional so the expression cannot be null
+    assert_dshape_equal(expr.dshape, dshape('int32'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(s)
+
+    e = symbol('e', '?string')
+    expr = coalesce(e, a)
+    assert_dshape_equal(expr.dshape, dshape('string'))
+    assert expr.lhs.isidentical(e)
+    assert expr.rhs.isidentical(a)
+
+    f = symbol('f', '?{a: int32, b: int32}')
+    expr = coalesce(f, c)
+    assert_dshape_equal(expr.dshape, dshape('{a: int32, b: int32}'))
+    assert expr.lhs.isidentical(f)
+    assert expr.rhs.isidentical(c)
+
+    # check optional lhs non-optional rhs with promotion
+    w = symbol('w', 'int64')
+    expr = coalesce(v, w)
+    # rhs is not optional so the expression cannot be null
+    # there are no either types in datashape so we are a type large enough
+    # to hold either result
+    assert_dshape_equal(expr.dshape, dshape('int64'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(w)
+
+    # check optional lhs and rhs
+    x = symbol('x', '?int32')
+    expr = coalesce(v, x)
+    # rhs and lhs are optional so this might be null
+    assert_dshape_equal(expr.dshape, dshape('?int32'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(x)
+
+    # check optional lhs and rhs with promotion
+    y = symbol('y', '?int64')
+    expr = coalesce(v, y)
+    # rhs and lhs are optional so this might be null
+    # there are no either types in datashape so we are a type large enough
+    # to hold either result
+    assert_dshape_equal(expr.dshape, dshape('?int64'))
+    assert expr.lhs.isidentical(v)
+    assert expr.rhs.isidentical(y)
+
+
+@pytest.mark.xfail(TypeError, reason='currently invalid type promotion')
+@pytest.mark.parametrize('lhs,rhs,expected', (
+    ('?{a: int32}', '{a: int64}', '{a: int64}'),
+    ('?{a: int32}', '?{a: int64}', '?{a: int64}'),
+))
+def test_coalesce_invalid_promotion(lhs, rhs, expected):
+    # Joe 2016-03-16: imho promote(record, record) should check that the keys
+    # are the same and then create a new record from:
+    # zip(keys, map(promote, lhs, rhs))
+    f = symbol('e', lhs)
+    g = symbol('g', rhs)
+    expr = coalesce(f, g)
+    assert_dshape_equal(expr.dshape, dshape(expected))
+    assert expr.lhs.isidentical(f)
+    assert expr.rhs.isidentical(g)
+
+
+def test_cast():
+    s = symbol('s', 'int32')
+
+    assert_dshape_equal(s.cast('int64').dshape, dshape('int64'))
+    assert_dshape_equal(s.cast(dshape('int64')).dshape, dshape('int64'))
+    assert_dshape_equal(s.cast('var * int32').dshape, dshape('var * int32'))
+    assert_dshape_equal(
+        s.cast(dshape('var * int64')).dshape,
+        dshape('var * int64'),
+    )
+    assert_dshape_equal(s.cast('var * int64').dshape, dshape('var * int64'))
+    assert_dshape_equal(
+        s.cast(dshape('var * int64')).dshape,
+        dshape('var * int64'),
+    )

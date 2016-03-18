@@ -1,5 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
+from datashape import var
+
+
 class _slice(object):
     """ A hashable slice object
 
@@ -80,3 +83,38 @@ def replace_slices(index):
     elif isinstance(index, tuple):
         return tuple(map(replace_slices, index))
     return index
+
+
+def maxvar(L):
+    """
+
+    >>> maxvar([1, 2, var])
+    Var()
+
+    >>> maxvar([1, 2, 3])
+    3
+    """
+    if var in L:
+        return var
+    else:
+        return max(L)
+
+
+def maxshape(shapes):
+    """
+
+    >>> maxshape([(10, 1), (1, 10), ()])
+    (10, 10)
+
+    >>> maxshape([(4, 5), (5,)])
+    (4, 5)
+    """
+    shapes = [shape for shape in shapes if shape]
+    if not shapes:
+        return ()
+    ndim = max(map(len, shapes))
+    shapes = [(1,) * (ndim - len(shape)) + shape for shape in shapes]
+    for dims in zip(*shapes):
+        if len(set(dims) - set([1])) >= 2:
+            raise ValueError("Shapes don't align, %s" % str(dims))
+    return tuple(map(maxvar, zip(*shapes)))
