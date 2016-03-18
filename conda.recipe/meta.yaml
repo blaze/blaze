@@ -55,4 +55,3 @@ test:
 about:
   home: http://blaze.pydata.org
   license: BSD
-  summary: Blaze is the next generation of NumPy
