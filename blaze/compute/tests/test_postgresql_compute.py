@@ -59,6 +59,23 @@ def sql(url):
             drop(t)
 
 
+@pytest.yield_fixture(scope='module')
+def nyc_mem(pg_ip):
+    # odoing csv -> pandas -> postgres is more robust, as it doesn't require
+    # the postgres server to be on the same filesystem as the csv file.
+    nyc_pd = odo(example('nyc.csv'), pd.DataFrame)
+    try:
+        t = odo(nyc_pd,
+                'postgresql://postgres@{}/test::nyc'.format(pg_ip))
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
 @pytest.yield_fixture
 def big_sql(url):
     try:
@@ -608,17 +625,12 @@ def test_sample_n(nyc):
     assert len(s) == 14
 
 
-@pytest.mark.xfail(raises=AssertionError,
-                   reason='Test for GH Issue # 1423')
-def test_sample_frac(nyc):
-    """
-    sample(frac=x) always returns 1 row.
-    """
-    t = symbol('t', discover(nyc))
-    result2 = compute(t.sample(frac=0.5), nyc)
-    num_rows = odo(compute(t.nrows, nyc), int)
+def test_sample_frac(nyc_mem):
+    t = symbol('t', discover(nyc_mem))
+    result2 = compute(t.sample(frac=0.6), nyc_mem)
+    num_rows = odo(compute(t.nrows, nyc_mem), int)
     s2 = odo(result2, pd.DataFrame)
-    assert len(s2) == int(num_rows * 0.5)
+    assert len(s2) == round(num_rows * 0.6)
 
 
 def test_sample(big_sql):
