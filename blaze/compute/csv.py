@@ -72,7 +72,7 @@ def pre_compute(expr, data, **kwargs):
 
 
 def compute_chunk(chunk, chunk_expr, part):
-    return compute(chunk_expr, {chunk: part})
+    return compute(chunk_expr, {chunk: part}, return_type='native')
 
 
 @dispatch(Expr, pandas.io.parsers.TextFileReader)
@@ -92,4 +92,4 @@ def compute_down(expr, data, map=None, **kwargs):
     elif isinstance(parts[0], (Iterable, Iterator)):
         intermediate = concat(parts)
 
-    return compute(agg_expr, {agg: intermediate})
+    return compute(agg_expr, {agg: intermediate}, return_type='native')

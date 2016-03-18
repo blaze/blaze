@@ -1,5 +1,5 @@
 from blaze.compute.csv import pre_compute, CSV
-from blaze import compute, discover, dshape, into, resource, join, concat
+from blaze import compute, discover, dshape, into, join, concat, data
 from blaze.utils import example, filetext, filetexts
 from blaze.expr import symbol
 from pandas import DataFrame, Series
@@ -71,15 +71,15 @@ def test_multiple_csv_files():
     d = {'mult1.csv': 'name,val\nAlice,1\nBob,2',
          'mult2.csv': 'name,val\nAlice,3\nCharlie,4'}
 
-    data = [('Alice', 1), ('Bob', 2), ('Alice', 3), ('Charlie', 4)]
+    dta = [('Alice', 1), ('Bob', 2), ('Alice', 3), ('Charlie', 4)]
     with filetexts(d) as fns:
-        r = resource('mult*.csv')
+        r = data('mult*.csv')
         s = symbol('s', discover(r))
 
         for e in [s, s.name, s.name.nunique(), s.name.count_values(),
                 s.val.mean()]:
             a = compute(e, {s: r})
-            b = compute(e, {s: data})
+            b = compute(e, {s: dta})
             if iscollection(e.dshape):
                 a, b = into(set, a), into(set, b)
             assert a == b
@@ -90,13 +90,13 @@ def test_csv_join():
          'b.csv': 'c,d,e\n2,3,4\n5,6,7'}
 
     with filetexts(d):
-        resource_a = resource('a.csv')
-        resource_b = resource('b.csv')
-        a = symbol('a', discover(resource_a))
-        b = symbol('b', discover(resource_b))
+        data_a = data('a.csv')
+        data_b = data('b.csv')
+        a = symbol('a', discover(data_a))
+        b = symbol('b', discover(data_b))
         tm.assert_frame_equal(
             odo(
-                compute(join(a, b, 'c'), {a: resource_a, b: resource_b}),
+                compute(join(a, b, 'c'), {a: data_a, b: data_b}),
                 pd.DataFrame,
             ),
 
@@ -112,8 +112,8 @@ def test_concat():
          'b.csv': 'a,b\n5,6\n7,8'}
 
     with filetexts(d):
-        a_rsc = resource('a.csv')
-        b_rsc = resource('b.csv')
+        a_rsc = data('a.csv')
+        b_rsc = data('b.csv')
 
         a = symbol('a', discover(a_rsc))
         b = symbol('b', discover(b_rsc))

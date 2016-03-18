@@ -51,7 +51,6 @@ from .math import sqrt
 from .reductions import *
 from .split_apply_combine import *
 from .collections import *
-from .table import *
 from ..dispatch import dispatch
 from ..compatibility import builtins
 

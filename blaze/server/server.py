@@ -8,6 +8,7 @@ from hashlib import md5
 import os
 import re
 import socket
+from time import time
 from warnings import warn
 
 from datashape import discover, pprint
@@ -23,7 +24,7 @@ from blaze.compute import compute_up
 from blaze.expr import utils as expr_utils
 
 from .serialization import json, all_formats
-from ..interactive import InteractiveSymbol
+from ..interactive import _Data
 from ..expr import Expr, symbol
 
 
@@ -267,6 +268,11 @@ class Server(object):
                  allow_profiler=False,
                  profiler_output=None,
                  profile_by_default=False):
+        if isinstance(data, collections.Mapping):
+            data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
+                          data)
+        elif isinstance(data, _Data):
+            data = data._resources()
         app = self.app = Flask('blaze.server.server')
         if data is None:
             data = dict()
@@ -376,7 +382,7 @@ def to_tree(expr, names=None):
         return {'op': 'slice',
                 'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
-    elif isinstance(expr, InteractiveSymbol):
+    elif isinstance(expr, _Data):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
@@ -529,6 +535,13 @@ def compserver(payload, serial):
             profiler.enable()
             # ensure that we stop profiling in the case of an exception
             response_construction_context_stack.callback(profiler.disable)
+
+        @response_construction_context_stack.callback
+        def log_time(start=time()):
+            flask.current_app.logger.info(
+                'compute expr: %s\ntotal time (s): %.3f',
+                expr, time() - start,
+            )
 
         ns = payload.get('namespace', {})
         compute_kwargs = payload.get('compute_kwargs') or {}

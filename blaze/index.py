@@ -1,6 +1,7 @@
 from .dispatch import dispatch
 from .compatibility import basestring
-from odo import resource
+from blaze.interactive import _Data
+from blaze.interactive import data as bz_data
 
 @dispatch(object, (basestring, list, tuple))
 def create_index(t, column_name_or_names, name=None):
@@ -21,8 +22,8 @@ def create_index(t, column_name_or_names, name=None):
     >>> # create a table called 'tb', in memory
     >>> sql = SQL('sqlite:///:memory:', 'tb',
     ...           schema='{id: int64, value: float64, categ: string}')
-    >>> data = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
-    >>> sql.extend(data)
+    >>> dta = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
+    >>> sql.extend(dta)
     >>> # create an index on the 'id' column (for SQL we must provide a name)
     >>> sql.table.indexes
     set()
@@ -33,10 +34,14 @@ def create_index(t, column_name_or_names, name=None):
     raise NotImplementedError("create_index not implemented for type %r" %
                               type(t).__name__)
 
+@dispatch(_Data, (basestring, list, tuple))
+def create_index(dta, column_name_or_names, name=None, **kwargs):
+    return create_index(dta.data, column_name_or_names, name=name, **kwargs)
+
 
 @dispatch(basestring, (basestring, list, tuple))
 def create_index(uri, column_name_or_names, name=None, **kwargs):
-    data = resource(uri, **kwargs)
-    create_index(data, column_name_or_names, name=name)
-    return data
+    dta = bz_data(uri, **kwargs)
+    create_index(dta, column_name_or_names, name=name)
+    return dta
 

@@ -10,12 +10,37 @@ New Expressions
 * The ``sample`` expression allows random sampling of rows to facilitate
   interactive data exploration (:issue:`1410`).  It is implemented for the
   Pandas, Dask, SQL, and Python backends.
+* Adds :func:`~blaze.expr.expressions.coalesce` expression which takes two
+  arguments and returns the first non missing value. If both are missing then
+  the result is missing. For example: ``coalesce(1, 2) == 1``,
+  ``coalesce(None, 1)`` == 1, and ``coalesce(None, None) == None``.
+  This is inspired by the sql function of the same name (:issue:`1409`).
+* Adds :func:`~blaze.expr.expressions.cast` expression to reinterpret an
+  expression's dshape. This is based on C++ ``reinterpret_cast``, or just normal
+  C casts. For example:
+  ``symbol('s', 'int32').cast('uint32').dshape == dshape('uint32')``. This
+  expression has no affect on the computation, it merely tells blaze to treat
+  the result of the expression as the new dshape. The compute definition for
+  ``cast`` is simply:
+
+  .. code-block:: python
+
+     @dispatch(Cast, object)
+     def compute_up(expr, data, **kwargs):
+         return data
+
+  (:issue:`1409`).
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
 * The test suite was expanded to validate proper expression input error handling
   (:issue:`1420`).
+* The :func:`~blaze.expr.datetime.truncate` function was refactored to raise an
+  exception for incorrect inputs, rather than using assertions (:issue:`1443`).
+* The docstring for :class:`~blaze.expr.collections.Merge` was expanded to
+  include examples using :class:`~blaze.expr.expressions.Label` to control the
+  ordering of the columns in the result (:issue:`1447`).
 
 New Backends
 ~~~~~~~~~~~~
@@ -36,11 +61,24 @@ None
 API Changes
 ~~~~~~~~~~~
 
-None
-
-API Changes
-~~~~~~~~~~~
-
+* Long deprecated :func:`~blaze.table.Table` and
+  :func:`~blaze.table.TableSymbol` were removed (:issue:`1441`).  The
+  ``TableSymbol`` tests in ``test_table.py`` were migrated to
+  ``test_symbol.py``.
+* :func:`~blaze.interactive.Data` has been deprecated in favor of
+  :func:`~blaze.interactive.data`.  :class:`~blaze.interactive.InteractiveSymbol`
+  has been deprecated and temporarily replaced by
+  :class:`~blaze.interactive._Data`.  These deprecations will be in place for
+  the 0.10 release.  In the 0.11 release, :class:`~blaze.interactive._Data`
+  will be renamed to ``Data``, calls to :func:`~blaze.interactive.data` will
+  create ``Data`` instances, and :class:`~blaze.interactive.InteractiveSymbol`
+  will be removed (:issue:`1431` and :issue:`1421`).
+* :func:`~blaze.compute.core.compute` has a new keyword argument
+  ``return_type`` which defaults to ``'native'`` (:issue:`1401`, :issue:`1411`,
+  :issue:`1417`), which preserves existing behavior.  In the 0.11 release,
+  ``return_type`` will be changed to default to ``'core'``, which will
+  ``odo`` non-core backends into core backends as the final step in a call to
+  ``compute``.
 * Due to API instability and on the recommendation of DyND developers, we
   removed the DyND dependency temporarily (:issue:`1379`).  When DyND achieves
   its 1.0 release, DyND will be re-incorporated into Blaze.  The existing DyND
@@ -51,9 +89,13 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
-None
+* Fixed a bug with Pandas' implementation of ``compute_up`` on
+  :class:`~blaze.expr.broadcast.Broadcast` expressions (:issue:`1442`).  Added
+  tests for Pandas frame and series and dask dataframes on ``Broadcast``
+  expressions.
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
-None
+* Adds logging to server compute endpoint.  Includes expression being computed
+  and total time to compute. (:issue:`1436`)

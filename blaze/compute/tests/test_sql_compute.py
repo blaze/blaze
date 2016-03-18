@@ -10,18 +10,20 @@ from distutils.version import LooseVersion
 
 
 import datashape
-from odo import into, resource, discover
+from odo import into, discover
 import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
 from pandas import DataFrame
 from toolz import unique
 
-from odo import odo, drop
+from odo import odo, drop, resource
+from blaze import data as bz_data
 from blaze.compatibility import xfail
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
     by,
+    coalesce,
     cos,
     count,
     datetime as bz_datetime,
@@ -43,14 +45,14 @@ from blaze.utils import tmpfile, example, normalize
 
 
 def computefull(t, s):
-    return select(compute(t, s))
+    return select(compute(t, s, return_type='native'))
 
 
 names = ('tbl%d' % i for i in itertools.count())
 
 
 @pytest.fixture(scope='module')
-def data():
+def city_data():
     # make the engine
     engine = sa.create_engine('sqlite:///:memory:')
     metadata = sa.MetaData(engine)
@@ -127,45 +129,45 @@ def test_table():
 
 
 def test_projection():
-    print(compute(t[['name', 'amount']], s))
-    assert str(compute(t[['name', 'amount']], s)) == \
+    print(compute(t[['name', 'amount']], s, return_type='native'))
+    assert str(compute(t[['name', 'amount']], s, return_type='native')) == \
         str(sa.select([s.c.name, s.c.amount]))
 
 
 def test_eq():
-    assert str(compute(t['amount'] == 100, s, post_compute=False)) == \
+    assert str(compute(t['amount'] == 100, s, post_compute=False, return_type='native')) == \
         str(s.c.amount == 100)
 
 
 def test_eq_unicode():
-    assert str(compute(t['name'] == u'Alice', s, post_compute=False)) == \
+    assert str(compute(t['name'] == u'Alice', s, post_compute=False, return_type='native')) == \
         str(s.c.name == u'Alice')
 
 
 def test_selection():
-    assert str(compute(t[t['amount'] == 0], s)) == \
+    assert str(compute(t[t['amount'] == 0], s, return_type='native')) == \
         str(sa.select([s]).where(s.c.amount == 0))
-    assert str(compute(t[t['amount'] > 150], s)) == \
+    assert str(compute(t[t['amount'] > 150], s, return_type='native')) == \
         str(sa.select([s]).where(s.c.amount > 150))
 
 
 def test_arithmetic():
-    assert str(compute(t['amount'] + t['id'], s)) == \
+    assert str(compute(t['amount'] + t['id'], s, return_type='native')) == \
         str(sa.select([s.c.amount + s.c.id]))
-    assert str(compute(t['amount'] + t['id'], s, post_compute=False)) == \
+    assert str(compute(t['amount'] + t['id'], s, post_compute=False, return_type='native')) == \
         str(s.c.amount + s.c.id)
-    assert str(compute(t['amount'] * t['id'], s, post_compute=False)) == \
+    assert str(compute(t['amount'] * t['id'], s, post_compute=False, return_type='native')) == \
         str(s.c.amount * s.c.id)
 
-    assert str(compute(t['amount'] * 2, s, post_compute=False)) == \
+    assert str(compute(t['amount'] * 2, s, post_compute=False, return_type='native')) == \
         str(s.c.amount * 2)
-    assert str(compute(2 * t['amount'], s, post_compute=False)) == \
+    assert str(compute(2 * t['amount'], s, post_compute=False, return_type='native')) == \
         str(2 * s.c.amount)
 
-    assert (str(compute(~(t['amount'] > 10), s, post_compute=False)) ==
+    assert (str(compute(~(t['amount'] > 10), s, post_compute=False, return_type='native')) ==
             "accounts.amount <= :amount_1")
 
-    assert str(compute(t['amount'] + t['id'] * 2, s)) == \
+    assert str(compute(t['amount'] + t['id'] * 2, s, return_type='native')) == \
         str(sa.select([s.c.amount + s.c.id * 2]))
 
 
@@ -187,7 +189,7 @@ def test_join():
     R = symbol('R', 'var * {name: string, id: int}')
     joined = join(L, R, 'name')
 
-    result = compute(joined, {L: lhs, R: rhs})
+    result = compute(joined, {L: lhs, R: rhs}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT amounts.name, amounts.amount, ids.id
@@ -200,7 +202,7 @@ def test_join():
 
     # test sort on join
 
-    result = compute(joined.sort('amount'), {L: lhs, R: rhs})
+    result = compute(joined.sort('amount'), {L: lhs, R: rhs}, return_type='native')
     assert normalize(str(result)) == normalize("""
      select
         anon_1.name,
@@ -235,7 +237,7 @@ def test_clean_complex_join():
 
     joined = join(L[L.amount > 0], R, 'name')
 
-    result = compute(joined, {L: lhs, R: rhs})
+    result = compute(joined, {L: lhs, R: rhs}, return_type='native')
 
     expected1 = """
         SELECT amounts.name, amounts.amount, ids.id
@@ -274,7 +276,7 @@ def test_multi_column_join():
     expected = select(list(unique(expected.columns, key=lambda c:
                                   c.name))).select_from(expected)
 
-    result = compute(joined, {L: lhs, R: rhs})
+    result = compute(joined, {L: lhs, R: rhs}, return_type='native')
 
     assert str(result) == str(expected)
 
@@ -287,37 +289,37 @@ def test_multi_column_join():
 
 
 def test_unary_op():
-    assert str(compute(exp(t['amount']), s, post_compute=False)) == \
+    assert str(compute(exp(t['amount']), s, post_compute=False, return_type='native')) == \
         str(sa.func.exp(s.c.amount))
 
-    assert str(compute(-t['amount'], s, post_compute=False)) == \
+    assert str(compute(-t['amount'], s, post_compute=False, return_type='native')) == \
         str(-s.c.amount)
 
 
 @pytest.mark.parametrize('unbiased', [True, False])
 def test_std(unbiased):
-    assert str(compute(t.amount.std(unbiased=unbiased), s, post_compute=False)) == \
+    assert str(compute(t.amount.std(unbiased=unbiased), s, post_compute=False, return_type='native')) == \
         str(getattr(sa.func,
                     'stddev_%s' % ('samp' if unbiased else 'pop'))(s.c.amount))
 
 
 @pytest.mark.parametrize('unbiased', [True, False])
 def test_var(unbiased):
-    assert str(compute(t.amount.var(unbiased=unbiased), s, post_compute=False)) == \
+    assert str(compute(t.amount.var(unbiased=unbiased), s, post_compute=False, return_type='native')) == \
         str(getattr(sa.func,
                     'var_%s' % ('samp' if unbiased else 'pop'))(s.c.amount))
 
 
 def test_reductions():
-    assert str(compute(sum(t['amount']), s, post_compute=False)) == \
+    assert str(compute(sum(t['amount']), s, post_compute=False, return_type='native')) == \
         str(sa.sql.functions.sum(s.c.amount))
-    assert str(compute(mean(t['amount']), s, post_compute=False)) == \
+    assert str(compute(mean(t['amount']), s, post_compute=False, return_type='native')) == \
         str(sa.sql.func.avg(s.c.amount))
-    assert str(compute(count(t['amount']), s, post_compute=False)) == \
+    assert str(compute(count(t['amount']), s, post_compute=False, return_type='native')) == \
         str(sa.sql.func.count(s.c.amount))
 
     assert 'amount_sum' == compute(
-        sum(t['amount']), s, post_compute=False).name
+        sum(t['amount']), s, post_compute=False, return_type='native').name
 
 
 def test_reduction_with_invalid_axis_argument():
@@ -332,26 +334,26 @@ def test_reduction_with_invalid_axis_argument():
 
 
 def test_nelements():
-    rhs = str(compute(t.count(), s))
-    assert str(compute(t.nelements(), s)) == rhs
-    assert str(compute(t.nelements(axis=None), s)) == rhs
-    assert str(compute(t.nelements(axis=0), s)) == rhs
-    assert str(compute(t.nelements(axis=(0,)), s)) == rhs
+    rhs = str(compute(t.count(), s, return_type='native'))
+    assert str(compute(t.nelements(), s, return_type='native')) == rhs
+    assert str(compute(t.nelements(axis=None), s, return_type='native')) == rhs
+    assert str(compute(t.nelements(axis=0), s, return_type='native')) == rhs
+    assert str(compute(t.nelements(axis=(0,)), s, return_type='native')) == rhs
 
 
 @pytest.mark.xfail(raises=Exception, reason="We don't support axis=1 for"
                    " Record datashapes")
 def test_nelements_axis_1():
-    assert compute(t.nelements(axis=1), s) == len(s.columns)
+    assert compute(t.nelements(axis=1), s, return_type='native') == len(s.columns)
 
 
 def test_count_on_table():
-    result = compute(t.count(), s)
+    result = compute(t.count(), s, return_type='native')
     assert normalize(str(result)) == normalize("""
     SELECT count(accounts.id) as count_1
     FROM accounts""")
 
-    result = compute(t[t.amount > 0].count(), s)
+    result = compute(t[t.amount > 0].count(), s, return_type='native')
     assert (
         normalize(str(result)) == normalize("""
         SELECT count(accounts.id) as t_count
@@ -368,7 +370,7 @@ def test_count_on_table():
 
 
 def test_distinct():
-    result = str(compute(t['amount'].distinct(), s, post_compute=False))
+    result = str(compute(t['amount'].distinct(), s, post_compute=False, return_type='native'))
 
     assert 'distinct' in result.lower()
     assert 'amount' in result.lower()
@@ -378,7 +380,7 @@ def test_distinct():
 
 
 def test_distinct_multiple_columns():
-    assert normalize(str(compute(t.distinct(), s))) == normalize("""
+    assert normalize(str(compute(t.distinct(), s, return_type='native'))) == normalize("""
     SELECT DISTINCT accounts.name, accounts.amount, accounts.id
     FROM accounts""")
 
@@ -402,13 +404,13 @@ FROM accounts) as alias""")
 
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
-    assert str(compute(any(t['amount'] > 150), s)) == \
+    assert str(compute(any(t['amount'] > 150), s, return_type='native')) == \
         str(sa.sql.functions.any(s.c.amount > 150))
 
 
 def test_by():
     expr = by(t['name'], total=t['amount'].sum())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = sa.select([s.c.name,
                           sa.sql.functions.sum(s.c.amount).label('total')]
                          ).group_by(s.c.name)
@@ -419,7 +421,7 @@ def test_by():
 def test_by_head():
     t2 = t.head(100)
     expr = by(t2['name'], total=t2['amount'].sum())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """
     SELECT accounts.name, sum(accounts.amount) as total
     FROM accounts
@@ -431,7 +433,7 @@ def test_by_head():
 
 def test_by_two():
     expr = by(tbig[['name', 'sex']], total=tbig['amount'].sum())
-    result = compute(expr, sbig)
+    result = compute(expr, sbig, return_type='native')
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
                            sa.sql.functions.sum(sbig.c.amount).label('total')])
@@ -443,7 +445,7 @@ def test_by_two():
 def test_by_three():
     result = compute(by(tbig[['name', 'sex']],
                         total=(tbig['id'] + tbig['amount']).sum()),
-                     sbig)
+                     sbig, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT accountsbig.name,
@@ -455,7 +457,7 @@ def test_by_three():
 
 def test_by_summary_clean():
     expr = by(t.name, min=t.amount.min(), max=t.amount.max())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
 
     expected = """
     SELECT accounts.name, max(accounts.amount) AS max, min(accounts.amount) AS min
@@ -468,7 +470,7 @@ def test_by_summary_clean():
 
 def test_by_summary_single_column():
     expr = by(t.name, n=t.name.count(), biggest=t.name.max())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
 
     expected = """
     SELECT accounts.name, max(accounts.name) AS biggest, count(accounts.name) AS n
@@ -493,7 +495,7 @@ def test_join_projection():
     R = symbol('R', 'var * {name: string, id: int}')
     want = join(L, R, 'name')[['amount', 'id']]
 
-    result = compute(want, {L: lhs, R: rhs})
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
     print(result)
     assert 'join' in str(result).lower()
     assert result.c.keys() == ['amount', 'id']
@@ -501,35 +503,35 @@ def test_join_projection():
 
 
 def test_sort():
-    assert str(compute(t.sort('amount'), s)) == \
+    assert str(compute(t.sort('amount'), s, return_type='native')) == \
         str(select(s).order_by(sa.asc(s.c.amount)))
 
-    assert str(compute(t.sort('amount', ascending=False), s)) == \
+    assert str(compute(t.sort('amount', ascending=False), s, return_type='native')) == \
         str(select(s).order_by(sa.desc(s.c.amount)))
 
 
 def test_multicolumn_sort():
-    assert str(compute(t.sort(['amount', 'id']), s)) == \
+    assert str(compute(t.sort(['amount', 'id']), s, return_type='native')) == \
         str(select(s).order_by(sa.asc(s.c.amount), sa.asc(s.c.id)))
 
-    assert str(compute(t.sort(['amount', 'id'], ascending=False), s)) == \
+    assert str(compute(t.sort(['amount', 'id'], ascending=False), s, return_type='native')) == \
         str(select(s).order_by(sa.desc(s.c.amount), sa.desc(s.c.id)))
 
 
 def test_sort_on_distinct():
-    assert normalize(str(compute(t.amount.sort(), s))) == normalize("""
+    assert normalize(str(compute(t.amount.sort(), s, return_type='native'))) == normalize("""
             SELECT accounts.amount
             FROM accounts
             ORDER BY accounts.amount ASC""")
 
-    assert normalize(str(compute(t.amount.distinct().sort(), s))) == normalize("""
+    assert normalize(str(compute(t.amount.distinct().sort(), s, return_type='native'))) == normalize("""
             SELECT DISTINCT accounts.amount as amount
             FROM accounts
             ORDER BY amount ASC""")
 
 
 def test_head():
-    assert str(compute(t.head(2), s)) == str(select(s).limit(2))
+    assert str(compute(t.head(2), s, return_type='native')) == str(select(s).limit(2))
 
 
 def test_sample():
@@ -539,12 +541,12 @@ def test_sample():
 
 def test_label():
     assert (str(compute((t['amount'] * 10).label('foo'),
-                        s, post_compute=False)) ==
+                        s, post_compute=False, return_type='native')) ==
             str((s.c.amount * 10).label('foo')))
 
 
 def test_relabel_table():
-    result = compute(t.relabel(name='NAME', id='ID'), s)
+    result = compute(t.relabel(name='NAME', id='ID'), s, return_type='native')
     expected = select([
         s.c.name.label('NAME'),
         s.c.amount,
@@ -558,6 +560,7 @@ def test_relabel_projection():
     result = compute(
         t[['name', 'id']].relabel(name='new_name', id='new_id'),
         s,
+        return_type='native'
     )
     assert normalize(str(result)) == normalize(
         """SELECT
@@ -572,7 +575,7 @@ def test_merge():
 
     expr = merge(t['name'], col)
 
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
 
     assert 'amount * ' in result
     assert 'FROM accounts' in result
@@ -581,9 +584,9 @@ def test_merge():
 
 
 def test_projection_of_selection():
-    print(compute(t[t['amount'] < 0][['name', 'amount']], s))
-    assert len(str(compute(t[t['amount'] < 0], s))) > \
-        len(str(compute(t[t['amount'] < 0][['name', 'amount']], s)))
+    print(compute(t[t['amount'] < 0][['name', 'amount']], s, return_type='native'))
+    assert len(str(compute(t[t['amount'] < 0], s, return_type='native'))) > \
+        len(str(compute(t[t['amount'] < 0][['name', 'amount']], s, return_type='native')))
 
 
 def test_outer_join():
@@ -592,27 +595,27 @@ def test_outer_join():
 
     with tmpfile('db') as fn:
         uri = 'sqlite:///' + fn
-        engine = resource(uri)
+        engine = bz_data(uri).data
 
         _left = [(1, 'Alice', 100),
                  (2, 'Bob', 200),
                  (4, 'Dennis', 400)]
 
-        left = resource(uri, 'left', dshape=L.dshape)
+        left = bz_data(uri + '::left', dshape=L.dshape)
         into(left, _left)
 
         _right = [('NYC', 1),
                   ('Boston', 1),
                   ('LA', 3),
                   ('Moscow', 4)]
-        right = resource(uri, 'right', dshape=R.dshape)
+        right = bz_data(uri + '::right', dshape=R.dshape)
         into(right, _right)
 
         conn = engine.connect()
 
         query = compute(join(L, R, how='inner'),
                         {L: left, R: right},
-                        post_compute=False)
+                        post_compute=False, return_type='native')
         result = list(map(tuple, conn.execute(query).fetchall()))
 
         assert set(result) == set(
@@ -622,7 +625,7 @@ def test_outer_join():
 
         query = compute(join(L, R, how='left'),
                         {L: left, R: right},
-                        post_compute=False)
+                        post_compute=False, return_type='native')
         result = list(map(tuple, conn.execute(query).fetchall()))
 
         assert set(result) == set(
@@ -633,7 +636,7 @@ def test_outer_join():
 
         query = compute(join(L, R, how='right'),
                         {L: left, R: right},
-                        post_compute=False)
+                        post_compute=False, return_type='native')
         print(query)
         result = list(map(tuple, conn.execute(query).fetchall()))
         print(result)
@@ -664,7 +667,7 @@ def test_outer_join():
 
 def test_summary():
     expr = summary(a=t.amount.sum(), b=t.id.count())
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
 
     assert 'sum(accounts.amount) as a' in result.lower()
     assert 'count(accounts.id) as b' in result.lower()
@@ -673,7 +676,7 @@ def test_summary():
 def test_summary_clean():
     t2 = t[t.amount > 0]
     expr = summary(a=t2.amount.sum(), b=t2.id.count())
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
 
     assert normalize(result) == normalize("""
     SELECT sum(accounts.amount) as a, count(accounts.id) as b
@@ -684,7 +687,7 @@ def test_summary_clean():
 def test_summary_by():
     expr = by(t.name, summary(a=t.amount.sum(), b=t.id.count()))
 
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
 
     assert 'sum(accounts.amount) as a' in result.lower()
     assert 'count(accounts.id) as b' in result.lower()
@@ -715,13 +718,13 @@ def test_clean_join():
     ns = {tname: name, tfriends: friends, tcity: city}
 
     expr = join(tfriends, tname, 'a', 'id')
-    assert normalize(str(compute(expr, ns))) == normalize("""
+    assert normalize(str(compute(expr, ns, return_type='native'))) == normalize("""
     SELECT friends.a, friends.b, name.name
     FROM friends JOIN name on friends.a = name.id""")
 
     expr = join(join(tfriends, tname, 'a', 'id'), tcity, 'a', 'id')
 
-    result = compute(expr, ns)
+    result = compute(expr, ns, return_type='native')
 
     expected1 = """
     SELECT friends.a, friends.b, name.name, place.city, place.country
@@ -743,7 +746,7 @@ def test_clean_join():
 
 def test_like():
     expr = t[t.name.like('Alice*')]
-    assert normalize(str(compute(expr, s))) == normalize("""
+    assert normalize(str(compute(expr, s, return_type='native'))) == normalize("""
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name LIKE :name_1""")
@@ -768,7 +771,7 @@ def test_like_join():
     t1sym = symbol('t1sym', 'var * {b: string, z: int}')
     joined = join(t0sym, t1sym, on_left='a', on_right='b')
     liked = joined[joined.a.like('*a')]
-    result = compute(liked, {t0sym: t0, t1sym: t1})
+    result = compute(liked, {t0sym: t0, t1sym: t1}, return_type='native')
     assert normalize(str(result)) == normalize("""
     SELECT t0.a, t0.y, t1.z
     FROM t0 JOIN t1 ON t0.a = t1.b
@@ -777,7 +780,7 @@ def test_like_join():
 
 def test_not_like():
     expr = t[~t.name.like('Alice*')]
-    assert normalize(str(compute(expr, s))) == normalize("""
+    assert normalize(str(compute(expr, s, return_type='native'))) == normalize("""
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
     WHERE accounts.name NOT LIKE :name_1""")
@@ -785,13 +788,13 @@ def test_not_like():
 
 def test_strlen():
     expr = t.name.strlen()
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
     expected = "SELECT char_length(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
 
 def test_columnwise_on_complex_selection():
-    result = str(select(compute(t[t.amount > 0].amount + 1, s)))
+    result = str(select(compute(t[t.amount > 0].amount + 1, s, return_type='native')))
     assert normalize(result) == \
         normalize("""
     SELECT accounts.amount + :amount_1 AS amount
@@ -802,7 +805,7 @@ def test_columnwise_on_complex_selection():
 
 def test_reductions_on_complex_selections():
     assert (
-        normalize(str(select(compute(t[t.amount > 0].id.sum(), s)))) ==
+        normalize(str(select(compute(t[t.amount > 0].id.sum(), s, return_type='native')))) ==
         normalize(
             """
             select
@@ -819,7 +822,7 @@ def test_reductions_on_complex_selections():
 def test_clean_summary_by_where():
     t2 = t[t.id == 1]
     expr = by(t2.name, sum=t2.amount.sum(), count=t2.amount.count())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT accounts.name, count(accounts.amount) AS count, sum(accounts.amount) AS sum
@@ -831,7 +834,7 @@ def test_clean_summary_by_where():
 
 def test_by_on_count():
     expr = by(t.name, count=t.count())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT accounts.name, count(accounts.id) AS count
@@ -858,7 +861,7 @@ def test_join_complex_clean():
     ns = {tname: name, tcity: city}
 
     expr = join(tname[tname.id > 0], tcity, 'id')
-    result = compute(expr, ns)
+    result = compute(expr, ns, return_type='native')
 
     expected1 = """
         SELECT name.id, name.name, place.city, place.country
@@ -894,7 +897,7 @@ def test_projection_of_join():
 
     ns = {tname: name, tcity: city}
 
-    result = compute(expr, ns)
+    result = compute(expr, ns, return_type='native')
 
     expected1 = """
         SELECT place.country, name.name
@@ -956,7 +959,7 @@ def test_selection_of_join():
 
     j = join(tname, tcity, 'id')
     expr = j[j.city == 'NYC'].name
-    result = compute(expr, ns)
+    result = compute(expr, ns, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT name.name
@@ -974,7 +977,7 @@ def test_join_on_same_table():
     t = symbol('tab', discover(T))
     expr = join(t, t, 'a')
 
-    result = compute(expr, {t: T})
+    result = compute(expr, {t: T}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT
@@ -991,7 +994,7 @@ def test_join_on_same_table():
 
     expr = join(t, t, 'a').b_left.sum()
 
-    result = compute(expr, {t: T})
+    result = compute(expr, {t: T}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     select sum(alias.b_left) as b_left_sum from
@@ -1008,7 +1011,7 @@ def test_join_on_same_table():
     expr = join(t, t, 'a')
     expr = summary(total=expr.a.sum(), smallest=expr.b_right.min())
 
-    result = compute(expr, {t: T})
+    result = compute(expr, {t: T}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT
@@ -1034,7 +1037,7 @@ def test_join_suffixes():
     suffixes = '_l', '_r'
     expr = join(t, t, 'a', suffixes=suffixes)
 
-    result = compute(expr, {t: T})
+    result = compute(expr, {t: T}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT
@@ -1050,26 +1053,26 @@ def test_join_suffixes():
     """.format(l=suffixes[0], r=suffixes[1]))
 
 
-def test_field_access_on_engines(data):
-    s, engine = data['s'], data['engine']
-    result = compute_up(s.city, engine)
+def test_field_access_on_engines(city_data):
+    s, engine = city_data['s'], city_data['engine']
+    result = compute_up(s.city, engine, return_type='native')
     assert isinstance(result, sa.Table)
     assert result.name == 'city'
 
 
-def test_computation_directly_on_sqlalchemy_Tables(data):
-    name = data['name']
+def test_computation_directly_on_sqlalchemy_Tables(city_data):
+    name = city_data['name']
     s = symbol('s', discover(name))
-    result = into(list, compute(s.id + 1, name))
+    result = into(list, compute(s.id + 1, name, return_type='native'))
     assert not isinstance(result, sa.sql.Selectable)
     assert list(result) == []
 
 
-def test_computation_directly_on_metadata(data):
-    metadata = data['metadata']
-    name = data['name']
+def test_computation_directly_on_metadata(city_data):
+    metadata = city_data['metadata']
+    name = city_data['name']
     s = symbol('s', discover(metadata))
-    result = compute(s.name, {s: metadata}, post_compute=False)
+    result = compute(s.name, {s: metadata}, post_compute=False, return_type='native')
     assert result == name
 
 
@@ -1089,7 +1092,7 @@ def test_aliased_views_with_two_group_bys():
     expr = by(bank.name, total=bank.amount.sum())
     expr2 = by(expr.total, count=expr.name.count())
 
-    result = compute(expr2, {bank: sql_bank, cities: sql_cities})
+    result = compute(expr2, {bank: sql_bank, cities: sql_cities}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT alias.total, count(alias.name) as count
@@ -1105,7 +1108,7 @@ def test_aliased_views_with_join():
     expr = by(joined.city, total=joined.amount.sum())
     expr2 = by(expr.total, count=expr.city.nunique())
 
-    result = compute(expr2, {bank: sql_bank, cities: sql_cities})
+    result = compute(expr2, {bank: sql_bank, cities: sql_cities}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT alias.total, count(DISTINCT alias.city) AS count
@@ -1130,14 +1133,14 @@ def test_select_field_on_alias():
                    reason="sqlalchemy.join seems to drop unnecessary tables")
 def test_join_on_single_column():
     expr = join(cities[['name']], bank)
-    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+    result = compute(expr, {bank: sql_bank, cities: sql_cities}, return_type='native')
 
     assert normalize(str(result)) == """
     SELECT bank.id, bank.name, bank.amount
     FROM bank join cities ON bank.name = cities.name"""
 
     expr = join(bank, cities.name)
-    result = compute(expr, {bank: sql_bank, cities: sql_cities})
+    result = compute(expr, {bank: sql_bank, cities: sql_cities}, return_type='native')
 
     assert normalize(str(result)) == """
     SELECT bank.id, bank.name, bank.amount
@@ -1162,7 +1165,7 @@ def test_aliased_views_more():
     expr = join(by(L.x, y_total=L.y.sum()),
                 R)
 
-    result = compute(expr, {L: lhs, R: rhs})
+    result = compute(expr, {L: lhs, R: rhs}, return_type='native')
 
     assert normalize(str(result)) == normalize("""
         SELECT alias.x, alias.y_total, bbb.w, bbb.y
@@ -1173,7 +1176,7 @@ def test_aliased_views_more():
 
     expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
 
-    result2 = compute(expr2, {L: lhs, R: rhs})
+    result2 = compute(expr2, {L: lhs, R: rhs}, return_type='native')
 
     assert (
         normalize(str(result2)) == normalize("""
@@ -1220,23 +1223,23 @@ def test_aliased_views_with_computation():
 
     expr = join(by(L.x, y_total=L.y.sum()),
                 R)
-    a = compute(expr, {L: df_aaa, R: df_bbb})
-    b = compute(expr, {L: sql_aaa, R: sql_bbb})
+    a = compute(expr, {L: df_aaa, R: df_bbb}, return_type='native')
+    b = compute(expr, {L: sql_aaa, R: sql_bbb}, return_type='native')
     assert into(set, a) == into(set, b)
 
     expr2 = by(expr.w, count=expr.x.count(), total2=expr.y_total.sum())
-    a = compute(expr2, {L: df_aaa, R: df_bbb})
-    b = compute(expr2, {L: sql_aaa, R: sql_bbb})
+    a = compute(expr2, {L: df_aaa, R: df_bbb}, return_type='native')
+    b = compute(expr2, {L: sql_aaa, R: sql_bbb}, return_type='native')
     assert into(set, a) == into(set, b)
 
     expr3 = by(expr.x, count=expr.y_total.count())
-    a = compute(expr3, {L: df_aaa, R: df_bbb})
-    b = compute(expr3, {L: sql_aaa, R: sql_bbb})
+    a = compute(expr3, {L: df_aaa, R: df_bbb}, return_type='native')
+    b = compute(expr3, {L: sql_aaa, R: sql_bbb}, return_type='native')
     assert into(set, a) == into(set, b)
 
     expr4 = join(expr2, R)
-    a = compute(expr4, {L: df_aaa, R: df_bbb})
-    b = compute(expr4, {L: sql_aaa, R: sql_bbb})
+    a = compute(expr4, {L: df_aaa, R: df_bbb}, return_type='native')
+    b = compute(expr4, {L: sql_aaa, R: sql_bbb}, return_type='native')
     assert into(set, a) == into(set, b)
 
     """ # Takes a while
@@ -1250,7 +1253,7 @@ def test_aliased_views_with_computation():
 def test_distinct_count_on_projection():
     expr = t[['amount']].distinct().count()
 
-    result = compute(expr, {t: s})
+    result = compute(expr, {t: s}, return_type='native')
 
     assert (
         normalize(str(result)) == normalize("""
@@ -1267,7 +1270,7 @@ def test_distinct_count_on_projection():
     # note that id is the primary key
     expr = t[['amount', 'id']].distinct().count()
 
-    result = compute(expr, {t: s})
+    result = compute(expr, {t: s}, return_type='native')
     assert normalize(str(result)) == normalize("""
         SELECT count(alias.id) as count
         FROM (SELECT DISTINCT accounts.amount AS amount, accounts.id AS id
@@ -1277,12 +1280,12 @@ def test_distinct_count_on_projection():
 def test_join_count():
     ds = datashape.dshape(
         '{t1: var * {x: int, y: int}, t2: var * {a: int, b: int}}')
-    engine = resource('sqlite:///:memory:', dshape=ds)
+    engine = bz_data('sqlite:///:memory:', dshape=ds)
     db = symbol('db', ds)
 
     expr = join(db.t1[db.t1.x > -1], db.t2, 'x', 'a').count()
 
-    result = compute(expr, {db: engine}, post_compute=False)
+    result = compute(expr, {db: engine}, post_compute=False, return_type='native')
 
     expected1 = """
     SELECT count(alias.x) as count
@@ -1305,7 +1308,7 @@ def test_join_count():
 def test_transform_where():
     t2 = t[t.id == 1]
     expr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
 
     expected = """SELECT
         accounts.name,
@@ -1325,7 +1328,7 @@ def test_merge():
 
     expr = merge(t['name'], col)
 
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
 
     assert 'amount * ' in result
     assert 'FROM accounts' in result
@@ -1336,7 +1339,7 @@ def test_merge():
 def test_merge_where():
     t2 = t[t.id == 1]
     expr = merge(t2[['amount', 'name']], t2.id)
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = normalize("""SELECT
         accounts.amount,
         accounts.name,
@@ -1351,7 +1354,7 @@ def test_transform_filter_by_single_column():
     t2 = t[t.amount < 0]
     tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
     expr = by(tr.name, avg_amt=tr.abs_amt.mean())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = normalize("""SELECT
         accounts.name,
         avg(abs(accounts.amount)) AS avg_amt
@@ -1366,7 +1369,7 @@ def test_transform_filter_by_multiple_columns():
     t2 = t[t.amount < 0]
     tr = transform(t2, abs_amt=abs(t2.amount), sine=sin(t2.id))
     expr = by(tr.name, avg_amt=tr.abs_amt.mean(), sum_sine=tr.sine.sum())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = normalize("""SELECT
         accounts.name,
         avg(abs(accounts.amount)) AS avg_amt,
@@ -1384,7 +1387,7 @@ def test_transform_filter_by_different_order():
     expr = by(tr.name,
               avg_amt=tr.abs_amt.mean(),
               avg_sine=tr.sine.sum() / tr.sine.count())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = normalize("""SELECT
         accounts.name,
         avg(abs(accounts.amount)) AS avg_amt,
@@ -1402,7 +1405,7 @@ def test_transform_filter_by_projection():
     expr = by(tr[['name', 'id']],
               avg_amt=tr.abs_amt.mean(),
               avg_sine=tr.sine.sum() / tr.sine.count())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = normalize("""SELECT
         accounts.name,
         accounts.id,
@@ -1416,7 +1419,7 @@ def test_transform_filter_by_projection():
 
 
 def test_merge_compute():
-    data = [(1, 'Alice', 100),
+    dta = [(1, 'Alice', 100),
             (2, 'Bob', 200),
             (4, 'Dennis', 400)]
     ds = datashape.dshape('var * {id: int, name: string, amount: real}')
@@ -1424,10 +1427,10 @@ def test_merge_compute():
 
     with tmpfile('db') as fn:
         uri = 'sqlite:///' + fn
-        into(uri + '::table', data, dshape=ds)
+        into(uri + '::table', dta, dshape=ds)
 
         expr = transform(s, amount10=s.amount * 10)
-        result = into(list, compute(expr, {s: data}))
+        result = into(list, compute(expr, {s: dta}, return_type='native'))
 
         assert result == [(1, 'Alice', 100, 1000),
                           (2, 'Bob', 200, 2000),
@@ -1435,7 +1438,7 @@ def test_merge_compute():
 
 
 def test_notnull():
-    result = compute(nt[nt.name.notnull()], ns)
+    result = compute(nt[nt.name.notnull()], ns, return_type='native')
     expected = """SELECT
         nullaccounts.name,
         nullaccounts.amount,
@@ -1447,9 +1450,9 @@ def test_notnull():
 
 
 def test_head_limit():
-    assert compute(t.head(5).head(10), s)._limit == 5
-    assert compute(t.head(10).head(5), s)._limit == 5
-    assert compute(t.head(10).head(10), s)._limit == 10
+    assert compute(t.head(5).head(10), s, return_type='native')._limit == 5
+    assert compute(t.head(10).head(5), s, return_type='native')._limit == 5
+    assert compute(t.head(10).head(10), s, return_type='native')._limit == 10
 
 
 def test_no_extraneous_join():
@@ -1468,7 +1471,7 @@ def test_no_extraneous_join():
                                takeoff: bool,
                                datetime_nearest_close: ?string}}
         """
-    db = resource('sqlite:///:memory:', dshape=ds)
+    db = bz_data('sqlite:///:memory:', dshape=ds)
 
     d = symbol('db', dshape=ds)
 
@@ -1476,7 +1479,7 @@ def test_no_extraneous_join():
                 d.operation[['name', 'datetime_nearest_close']],
                 'operation', 'name')
 
-    result = compute(expr, db)
+    result = compute(expr, db, return_type='native')
 
     assert normalize(str(result)) == normalize("""
     SELECT
@@ -1516,17 +1519,17 @@ def test_no_extraneous_join():
 
 
 def test_math():
-    result = compute(sin(t.amount), s)
+    result = compute(sin(t.amount), s, return_type='native')
     assert normalize(str(result)) == normalize("""
             SELECT sin(accounts.amount) as amount
             FROM accounts""")
 
-    result = compute(floor(t.amount), s)
+    result = compute(floor(t.amount), s, return_type='native')
     assert normalize(str(result)) == normalize("""
             SELECT floor(accounts.amount) as amount
             FROM accounts""")
 
-    result = compute(t.amount // 2, s)
+    result = compute(t.amount // 2, s, return_type='native')
     assert normalize(str(result)) == normalize("""
             SELECT floor(accounts.amount / :amount_1) AS amount
             FROM accounts""")
@@ -1534,7 +1537,7 @@ def test_math():
 
 def test_transform_order():
     r = transform(t, sin_amount=sin(t.amount), cos_id=cos(t.id))
-    result = compute(r, s)
+    result = compute(r, s, return_type='native')
     expected = """SELECT
         accounts.name,
         accounts.amount,
@@ -1548,7 +1551,7 @@ def test_transform_order():
 
 def test_isin():
     result = t[t.name.isin(['foo', 'bar'])]
-    result_sql_expr = str(compute(result, s))
+    result_sql_expr = str(compute(result, s, return_type='native'))
     expected = """
         SELECT
             accounts.name,
@@ -1571,10 +1574,10 @@ def test_isin():
 def test_date_grouper_repeats_not_one_point_oh():
     columns = [sa.Column('amount', sa.REAL),
                sa.Column('ds', sa.TIMESTAMP)]
-    data = sa.Table('t', sa.MetaData(), *columns)
-    t = symbol('t', discover(data))
+    dta = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(dta))
     expr = by(t.ds.year, avg_amt=t.amount.mean())
-    result = str(compute(expr, data))
+    result = str(compute(expr, dta, return_type='native'))
 
     # FYI spark sql isn't able to parse this correctly
     expected = """SELECT
@@ -1593,10 +1596,10 @@ def test_date_grouper_repeats_not_one_point_oh():
 def test_date_grouper_repeats():
     columns = [sa.Column('amount', sa.REAL),
                sa.Column('ds', sa.TIMESTAMP)]
-    data = sa.Table('t', sa.MetaData(), *columns)
-    t = symbol('t', discover(data))
+    dta = sa.Table('t', sa.MetaData(), *columns)
+    t = symbol('t', discover(dta))
     expr = by(t.ds.year, avg_amt=t.amount.mean())
-    result = str(compute(expr, data))
+    result = str(compute(expr, dta, return_type='native'))
 
     # FYI spark sql isn't able to parse this correctly
     expected = """SELECT
@@ -1610,7 +1613,7 @@ def test_date_grouper_repeats():
 
 def test_transform_then_project_single_column():
     expr = transform(t, foo=t.id + 1)[['foo', 'id']]
-    result = normalize(str(compute(expr, s)))
+    result = normalize(str(compute(expr, s, return_type='native')))
     expected = normalize("""SELECT
         accounts.id + :id_1 as foo,
         accounts.id
@@ -1621,7 +1624,7 @@ def test_transform_then_project_single_column():
 def test_transform_then_project():
     proj = ['foo', 'id']
     expr = transform(t, foo=t.id + 1)[proj]
-    result = normalize(str(compute(expr, s)))
+    result = normalize(str(compute(expr, s, return_type='native')))
     expected = normalize("""SELECT
         accounts.id + :id_1 as foo,
         accounts.id
@@ -1631,7 +1634,7 @@ def test_transform_then_project():
 
 def test_reduce_does_not_compose():
     expr = by(t.name, counts=t.count()).counts.max()
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
     expected = """
     SELECT max(alias.counts) AS counts_max
     FROM
@@ -1644,7 +1647,7 @@ def test_reduce_does_not_compose():
 def test_normalize_reduction():
     expr = by(t.name, counts=t.count())
     expr = transform(expr, normed_counts=expr.counts / expr.counts.max())
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
     expected = """WITH alias AS
 (SELECT count(accounts.id) AS counts
 FROM accounts GROUP BY accounts.name)
@@ -1657,7 +1660,7 @@ def test_do_not_erase_group_by_functions_with_datetime():
     t, s = tdate, sdate
     expr = by(t[t.amount < 0].occurred_on.date,
               avg_amount=t[t.amount < 0].amount.mean())
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
     expected = """SELECT
         date(accdate.occurred_on) as occurred_on_date,
         avg(accdate.amount) as avg_amount
@@ -1673,7 +1676,7 @@ def test_do_not_erase_group_by_functions_with_datetime():
 
 def test_not():
     expr = t.amount[~t.name.isin(('Billy', 'Bob'))]
-    result = str(compute(expr, s))
+    result = str(compute(expr, s, return_type='native'))
     expected = """SELECT
         accounts.amount
     FROM
@@ -1686,7 +1689,7 @@ def test_not():
 
 def test_slice():
     start, stop, step = 50, 100, 1
-    result = str(compute(t[start:stop], s))
+    result = str(compute(t[start:stop], s, return_type='native'))
 
     # Verifies that compute is translating the query correctly
     assert result == str(select(s).offset(start).limit(stop))
@@ -1700,18 +1703,18 @@ def test_slice():
     assert normalize(str(result)) == normalize(str(expected))
 
     # Step size of 1 should be alright
-    compute(t[start:stop:step], s)
+    compute(t[start:stop:step], s, return_type='native')
 
 
 @pytest.mark.xfail(raises=ValueError)
 def test_slice_step():
     start, stop, step = 50, 100, 2
-    compute(t[start:stop:step], s)
+    compute(t[start:stop:step], s, return_type='native')
 
 
 def test_datetime_to_date():
     expr = tdate.occurred_on.date
-    result = str(compute(expr, sdate))
+    result = str(compute(expr, sdate, return_type='native'))
     expected = """SELECT
         DATE(accdate.occurred_on) as occurred_on_date
     FROM
@@ -1722,7 +1725,7 @@ def test_datetime_to_date():
 
 def test_sort_compose():
     expr = t.name[:5].sort()
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """select
             anon_1.name
         from (select
@@ -1734,7 +1737,7 @@ def test_sort_compose():
         order by
             anon_1.name asc"""
     assert normalize(str(result)) == normalize(expected)
-    assert (normalize(str(compute(t.sort('name').name[:5], s))) !=
+    assert (normalize(str(compute(t.sort('name').name[:5], s, return_type='native'))) !=
             normalize(expected))
 
 
@@ -1743,14 +1746,14 @@ def test_coerce():
     expected = """SELECT
         cast(accounts.amount AS BIGINT) AS amount
     FROM accounts"""
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     assert normalize(str(result)) == normalize(expected)
 
 
 def test_multi_column_by_after_transform():
     tbl = transform(t, new_amount=t.amount + 1, one_two=t.amount * 2)
     expr = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         accounts.name,
         accounts.amount * :amount_1 as one_two,
@@ -1767,7 +1770,7 @@ def test_multi_column_by_after_transform_and_filter():
     tbl = t[t.name == 'Alice']
     tbl = transform(tbl, new_amount=tbl.amount + 1, one_two=tbl.amount * 2)
     expr = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         accounts.name,
         accounts.amount * :amount_1 as one_two,
@@ -1785,7 +1788,7 @@ def test_multi_column_by_after_transform_and_filter():
 def test_attribute_access_on_transform_filter():
     tbl = transform(t, new_amount=t.amount + 1)
     expr = tbl[tbl.name == 'Alice'].new_amount
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         accounts.amount + :amount_1 as new_amount
     FROM
@@ -1801,7 +1804,7 @@ def test_attribute_on_filter_transform_groupby():
     tbl = transform(tbl, new_amount=tbl.amount + 1, one_two=tbl.amount * 2)
     gb = by(tbl[['name', 'one_two']], avg_amt=tbl.new_amount.mean())
     expr = gb.avg_amt
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         avg(accounts.amount + :amount_1) as avg_amt
     FROM
@@ -1820,8 +1823,8 @@ def test_label_projection():
     expr = tbl[['new_amount', 'one_two']]
 
     # column selection shouldn't affect the resulting SQL
-    result = compute(expr[expr.new_amount > 1].one_two, s)
-    result2 = compute(expr.one_two[expr.new_amount > 1], s)
+    result = compute(expr[expr.new_amount > 1].one_two, s, return_type='native')
+    result2 = compute(expr.one_two[expr.new_amount > 1], s, return_type='native')
 
     expected = """SELECT
         accounts.amount * :amount_1 as one_two
@@ -1833,12 +1836,12 @@ def test_label_projection():
 
 
 def test_baseball_nested_by():
-    data = resource('sqlite:///%s' % example('teams.db'))
-    dshape = discover(data)
+    dta = bz_data('sqlite:///%s' % example('teams.db'))
+    dshape = discover(dta)
     d = symbol('d', dshape)
     expr = by(d.teams.name,
               start_year=d.teams.yearID.min()).start_year.count_values()
-    result = compute(expr, data, post_compute=False)
+    result = compute(expr, dta, post_compute=False, return_type='native')
     expected = """SELECT
         anon_1.start_year,
         anon_1.count
@@ -1858,7 +1861,7 @@ def test_baseball_nested_by():
 
 def test_label_on_filter():
     expr = t[t.name == 'Alice'].amount.label('foo').head(2)
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         accounts.amount AS foo
     FROM
@@ -1872,7 +1875,7 @@ def test_label_on_filter():
 
 def test_single_field_filter():
     expr = t.amount[t.amount > 0]
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         accounts.amount
     FROM accounts
@@ -1883,7 +1886,7 @@ def test_single_field_filter():
 
 def test_multiple_field_filter():
     expr = t.name[t.amount > 0]
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         accounts.name
     FROM accounts
@@ -1894,7 +1897,7 @@ def test_multiple_field_filter():
 
 def test_distinct_on_label():
     expr = t.name.label('foo').distinct()
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         DISTINCT accounts.name AS foo
     FROM accounts
@@ -1905,7 +1908,7 @@ def test_distinct_on_label():
 @pytest.mark.parametrize('n', [-1, 0, 1])
 def test_shift_on_column(n):
     expr = t.name.shift(n)
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """SELECT
         lag(accounts.name, :lag_1) over () as name
     FROM accounts
@@ -1926,7 +1929,7 @@ def lhs():
 @pytest.yield_fixture
 def rhs():
     try:
-        t = resource(
+        t = bz_data(
             'sqlite:///:memory:::rhs',
             dshape='var * {a: int64, b: ?float64, c: ?string}'
         )
@@ -1953,14 +1956,14 @@ def test_multiple_table_join(lhs, rhs):
     lexpr = symbol('lhs', discover(lhs))
     rexpr = symbol('rhs', discover(rhs))
     expr = join(lexpr, rexpr, 'c')
-    result = compute(expr, {lexpr: lhs, rexpr: rhs})
+    result = compute(expr, {lexpr: lhs, rexpr: rhs}, return_type='native')
     expected = pd.merge(lhs, odo(rhs, pd.DataFrame), on='c')
     tm.assert_frame_equal(result, expected)
 
 
 def test_empty_string_comparison_with_option_type():
     expr = nt.amount[nt.name == '']
-    result = compute(expr, s)
+    result = compute(expr, s, return_type='native')
     expected = """
     SELECT accounts.amount
     FROM accounts
@@ -1971,31 +1974,31 @@ def test_empty_string_comparison_with_option_type():
 
 def test_tail_no_sort():
     assert (
-        normalize(str(compute(t.head(), {t: s}))) ==
-        normalize(str(compute(t.tail(), {t: s})))
+        normalize(str(compute(t.head(), {t: s}, return_type='native'))) ==
+        normalize(str(compute(t.tail(), {t: s}, return_type='native')))
     )
 
 
 def test_tail_of_sort():
     expected = normalize(str(compute(
         t.sort('id', ascending=False).head(5).sort('id'),
-        {t: s},
+        {t: s}, return_type='native'
     )))
-    result = normalize(str(compute(t.sort('id').tail(5), {t: s})))
+    result = normalize(str(compute(t.sort('id').tail(5), {t: s}, return_type='native')))
     assert expected == result
 
 
 def test_tail_sort_in_chilren():
     expected = normalize(str(compute(
         t.name.sort('id', ascending=False).head(5).sort('id'),
-        {t: s},
+        {t: s}, return_type='native'
     )))
-    result = normalize(str(compute(t.name.sort('id').tail(5), {t: s})))
+    result = normalize(str(compute(t.name.sort('id').tail(5), {t: s}, return_type='native')))
     assert expected == result
 
 
 def test_selection_inner_inputs():
-    result = normalize(str(compute(t[t.id == tdate.id], {t: s, tdate: sdate})))
+    result = normalize(str(compute(t[t.id == tdate.id], {t: s, tdate: sdate}, return_type='native')))
     expected = normalize("""
     select {a}.name, {a}.amount, {a}.id from {a}, {b} where {a}.id = {b}.id
     """).format(a=s.name, b=sdate.name)
@@ -2005,10 +2008,10 @@ def test_selection_inner_inputs():
 @pytest.mark.parametrize('unit', bz_datetime.units)
 def test_datetime_trunc(unit):
     ds = 'var * {a: datetime}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
 
-    assert normalize(compute(s.a.truncate(**{unit: 1}), db)) == normalize(
+    assert normalize(compute(s.a.truncate(**{unit: 1}), db, return_type='native')) == normalize(
         'select date_trunc(%r, s.a) as a from s' % unit,
     )
 
@@ -2016,10 +2019,10 @@ def test_datetime_trunc(unit):
 @pytest.mark.parametrize('alias,unit', bz_datetime.unit_aliases.items())
 def test_datetime_trunc_aliases(alias, unit):
     ds = 'var * {a: datetime}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
 
-    assert normalize(compute(s.a.truncate(**{alias: 1}), db)) == normalize(
+    assert normalize(compute(s.a.truncate(**{alias: 1}), db, return_type='native')) == normalize(
         'select date_trunc(%r, s.a) as a from s' % unit,
     )
 
@@ -2030,10 +2033,10 @@ def test_datetime_trunc_aliases(alias, unit):
 )
 def test_inner_select_with_filter():
     ds = 'var * {a: float32}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
 
-    assert normalize(compute(s[s.a == s.a[s.a == 1]].a, db)) == normalize(
+    assert normalize(compute(s[s.a == s.a[s.a == 1]].a, db, return_type='native')) == normalize(
         """\
         select
             s.a
@@ -2054,10 +2057,32 @@ def test_inner_select_with_filter():
 @pytest.mark.parametrize('op', (greatest, least))
 def test_greatest(op):
     ds = 'var * {a: int32, b: int32}'
-    db = resource('sqlite:///:memory:::s', dshape=ds)
+    db = bz_data('sqlite:///:memory:::s', dshape=ds)
     odo([(1, 2)], db)
     s = symbol('s', dshape=ds)
 
     assert normalize(compute(op(s.a, s.b), db)) == normalize(
         'select {op}(s.a, s.b) as {op}_1 from s'.format(op=op.__name__),
+    )
+
+
+def test_coalesce():
+    ds = 'var * {a: ?int32}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+    t = symbol('s', 'int32')
+
+    assert normalize(compute(coalesce(s.a, t), {s: db, t: 1})) == normalize(
+        """\
+        select
+            coalesce(s.a, 1) as coalesce_1
+        from s
+        """,
+    )
+    assert normalize(compute(coalesce(s.a, 1), {s: db})) == normalize(
+        """\
+        select
+            coalesce(s.a, 1) as a
+        from s
+        """,
     )

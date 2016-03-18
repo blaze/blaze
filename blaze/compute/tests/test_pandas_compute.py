@@ -14,10 +14,10 @@ from string import ascii_lowercase
 
 from blaze.compute.core import compute
 from blaze.compute.pandas import pdsort
-from blaze import dshape, discover, transform
+from blaze import dshape, discover, transform, broadcast_collect
 from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
-                        var, std, concat)
+                        var, std, concat, coalesce)
 from blaze.compatibility import builtins, xfail, assert_series_equal
 
 
@@ -43,6 +43,20 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Drew', 'M', 100, 5],
                    ['Drew', 'M', 200, 5]],
                   columns=['name', 'sex', 'amount', 'id'])
+
+
+def test_series_broadcast():
+    s = Series([1, 2, 3], name='a')
+    t = symbol('t', 'var * {a: int64}')
+    bcast = broadcast_collect(expr=(2 * t.a - t.a**2))
+    result = compute(bcast, s)
+    assert_series_equal(result, 2 * s - s**2)
+
+
+def test_frame_broadcast():
+    bcast = broadcast_collect(expr=t.amount * t.id)
+    result = compute(bcast, df)
+    assert_series_equal(result, df.amount * df.id)
 
 
 def test_series_columnwise():
@@ -897,3 +911,38 @@ def test_selection_inner_inputs():
 def test_by_with_reduction_on_df():
     expr = by(tbig.name, id_sum=tbig.id.sum(), count=tbig.count())
     compute(expr, dfbig)
+
+
+def test_coalesce():
+    data = pd.Series([0, None, 1, None, 2, None], dtype=object)
+
+    s = symbol('s', 'var * ?int')
+    t = symbol('t', 'int')
+    u = symbol('u', '?int')
+    v = symbol('v', 'var * int')
+    w = symbol('w', 'var * ?int')
+
+    # array to scalar
+    tm.assert_series_equal(
+        compute(coalesce(s, t), {s: data, t: -1}),
+        pd.Series([0, -1, 1, -1, 2, -1], dtype=object),
+    )
+    # array to scalar with NULL
+    tm.assert_series_equal(
+        compute(coalesce(s, u), {s: data, u: None}),
+        pd.Series([0, None, 1, None, 2, None], dtype=object),
+    )
+    # array to array
+    tm.assert_series_equal(
+        compute(coalesce(s, v), {
+            s: data, v: np.array([-1, -2, -3, -4, -5, -6]),
+        }),
+        pd.Series([0, -2, 1, -4, 2, -6], dtype=object),
+    )
+    # array to array with NULL
+    tm.assert_series_equal(
+        compute(coalesce(s, w), {
+            s: data, w: np.array([-1, None, -3, -4, -5, -6]),
+        }),
+        pd.Series([0, None, 1, -4, 2, -6], dtype=object),
+    )

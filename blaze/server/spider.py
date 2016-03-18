@@ -10,7 +10,7 @@ import importlib
 import toolz
 import yaml
 
-from odo import resource
+from blaze.interactive import data as bz_data
 from odo.utils import ignoring
 
 from .server import Server, DEFAULT_PORT
@@ -41,7 +41,7 @@ def _spider(resource_path, ignore, followlinks, hidden, extra_kwargs):
                 resources[basename] = new_resources
         else:
             with ignoring(*ignore):
-                resources[basename] = resource(filename, **(extra_kwargs or {}))
+                resources[basename] = bz_data(filename, **(extra_kwargs or {}))
     return resources
 
 
@@ -50,20 +50,20 @@ def data_spider(path,
                 followlinks=True,
                 hidden=False,
                 extra_kwargs=None):
-    """Traverse a directory and call ``odo.resource`` on its contents.
+    """Traverse a directory and call ``blaze.data`` on its contents.
 
     Parameters
     ----------
     path : str
         Path to a directory of resources to load
     ignore : tuple of Exception, optional
-        Ignore these exceptions when calling resource
+        Ignore these exceptions when calling ``blaze.data``
     followlinks : bool, optional
         Follow symbolic links
     hidden : bool, optional
         Load hidden files
     extra_kwargs: dict, optional
-        extra kwargs to forward on to ``odo.resource``.
+        extra kwargs to forward on to ``blaze.data``
 
     Returns
     -------
@@ -89,7 +89,7 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     path : str
         Path to a YAML specification of resources to load
     ignore : tuple of Exception, optional
-        Ignore these exceptions when calling resource
+        Ignore these exceptions when calling ``blaze.data``
     followlinks : bool, optional
         Follow symbolic links
     hidden : bool, optional
@@ -120,7 +120,7 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
                                           hidden=hidden,
                                           extra_kwargs=info)
         else:
-            resources[name] = resource(source, **info)
+            resources[name] = bz_data(source, **info)
     return resources
 
 
@@ -138,9 +138,9 @@ def _parse_args():
                    help='Follow links when listing files')
     p.add_argument('-e', '--ignored-exception', nargs='+',
                    default=['Exception'],
-                   help='Exceptions to ignore when calling resource on a file')
+                   help='Exceptions to ignore when calling ``blaze.data`` on a file')
     p.add_argument('-d', '--hidden', action='store_true',
-                   help='Call resource on hidden files')
+                   help='Call ``blaze.data`` on hidden files')
     p.add_argument('-D', '--debug', action='store_true',
                    help='Start the Flask server in debug mode')
     return p.parse_args()

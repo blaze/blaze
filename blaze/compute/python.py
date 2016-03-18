@@ -22,6 +22,9 @@ import random
 from collections import Iterator
 from functools import partial
 
+from datashape import Option, to_numpy_dtype
+import numpy as np
+import pandas as pd
 import toolz
 from toolz import map, filter, compose, juxt, identity, tail
 
@@ -38,7 +41,8 @@ from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     By, Sort, Head, Sample, Apply, Summary, Like, IsIn,
                     DateTime, Date, Time, Millisecond, ElemWise,
                     Symbol, Slice, Expr, Arithmetic, ndim, DateTimeTruncate,
-                    UTCFromTimestamp, notnull, UnaryMath, greatest, least)
+                    UTCFromTimestamp, notnull, UnaryMath, greatest, least,
+                    Coerce)
 from ..expr import reductions
 from ..expr import count, nunique, mean, var, std
 from ..expr import BinOp, UnaryOp, USub, Not, nelements
@@ -47,11 +51,50 @@ from .core import compute, compute_up, optimize, base
 
 from ..utils import listpack
 from ..expr.broadcast import broadcast_collect
-from .pyfunc import lambdify
+from .pyfunc import lambdify, funcstr
 from . import pydatetime
 
 # Dump exp, log, sin, ... into namespace
-from math import *
+from math import (
+    atan2,
+    atanh,
+    ceil,
+    copysign,
+    cos,
+    cosh,
+    degrees,
+    e,
+    erf,
+    erfc,
+    exp,
+    expm1,
+    fabs,
+    factorial,
+    floor,
+    fmod,
+    frexp,
+    fsum,
+    gamma,
+    hypot,
+    isinf,
+    isnan,
+    ldexp,
+    lgamma,
+    log,
+    log10,
+    log1p,
+    modf,
+    pi,
+    pow,
+    radians,
+    sin,
+    sinh,
+    sqrt,
+    tan,
+    tanh,
+    trunc,
+)
+
 
 
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
@@ -221,16 +264,6 @@ def rowfunc(expr):
     return expr.op
 
 
-@dispatch(greatest)
-def rowfunc(_):
-    return max
-
-
-@dispatch(least)
-def rowfunc(_):
-    return min
-
-
 @dispatch(ElemWise, base)
 def compute_up(expr, data, **kwargs):
     return rowfunc(expr)(data)
@@ -360,12 +393,12 @@ def compute_up(expr, data, **kwargs):
     return rowfunc(expr)(data)
 
 
-@dispatch(BinOp, numbers.Real, numbers.Real)
+@dispatch(BinOp, base, base)
 def compute_up(bop, a, b, **kwargs):
     return bop.op(a, b)
 
 
-@dispatch(UnaryOp, numbers.Real)
+@dispatch(UnaryOp, base)
 def compute_up(uop, x, **kwargs):
     return uop.op(x)
 
@@ -536,7 +569,7 @@ def compute_up(t, seq, **kwargs):
     else:
         grouper = rrowfunc(t.grouper, t._child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t._child: v}))
+        d = dict((k, compute(t.apply, {t._child: v}, return_type='native'))
                  for k, v in groups.items())
 
     if isscalar(t.grouper.dshape.measure):
@@ -689,11 +722,15 @@ def compute_up(expr, data, **kwargs):
         raise NotImplementedError('Only 1D reductions currently supported')
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-        result = tuple(compute(val, {expr._child: data})
-                       for val, data in zip(expr.values, datas))
+        result = tuple(
+            compute(val, {expr._child: data}, return_type='native')
+            for val, data in zip(expr.values, datas)
+        )
     else:
-        result = tuple(compute(val, {expr._child: data})
-                       for val in expr.values)
+        result = tuple(
+            compute(val, {expr._child: data}, return_type='native')
+            for val in expr.values
+        )
 
     if expr.keepdims:
         return (result,)
@@ -734,3 +771,24 @@ def compute_up(expr, seq, **kwargs):
 @dispatch(Field, dict)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
+
+
+@dispatch(Coerce, (np.float32, np.float64, np.int64, np.int32, base))
+def compute_up(expr, ob, **kwargs):
+    tp = expr.to
+    shape = tp.shape
+    if shape:
+        raise TypeError(
+            'cannot convert scalar object %r to array or matrix shape %r' % (
+                ob,
+                shape,
+            ),
+        )
+
+    measure = tp.measure
+    if isinstance(measure, Option):
+        if pd.isnull(ob):
+            return None
+        measure = measure.ty
+    dtype = to_numpy_dtype(measure)
+    return dtype.type(ob)

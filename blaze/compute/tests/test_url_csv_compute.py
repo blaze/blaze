@@ -2,7 +2,7 @@ import pytest
 
 import os
 
-from blaze import Data, compute
+from blaze import data, compute
 from blaze.utils import raises
 from odo import URL, CSV
 
@@ -28,10 +28,10 @@ iris_url = ('https://raw.githubusercontent.com/'
 @pytest.fixture
 def iris_local():
     thisdir = os.path.abspath(os.path.dirname(__file__))
-    return Data(os.path.join(thisdir, os.pardir, os.pardir, "examples", "data", "iris.csv"))
+    return data(os.path.join(thisdir, os.pardir, os.pardir, "examples", "data", "iris.csv"))
 
 def test_url_csv_data(iris_local):
-    iris_remote = Data(iris_url)
+    iris_remote = data(iris_url)
     assert isinstance(iris_remote.data, URL(CSV))
     iris_remote_df = compute(iris_remote)
     assert isinstance(iris_remote_df, pd.DataFrame)
