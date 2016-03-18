@@ -41,6 +41,14 @@ def test_merge_common_subexpression():
     assert result.isidentical(t.a)
 
 
+def test_merge_exceptions():
+    t = symbol('t', 'var * {x:int}')
+    with pytest.raises(ValueError) as excinfo:
+        merge(t, x=2*t.x)
+
+    assert "Repeated columns" in str(excinfo.value)
+
+
 def test_transform():
     t = symbol('t', '5 * {x: int, y: int}')
     expr = transform(t, z=t.x + t.y)
@@ -52,6 +60,39 @@ def test_transform():
 
 def test_distinct():
     assert '5' not in str(t.distinct().dshape)
+
+
+def test_distinct_exceptions():
+    t = symbol('t', 'var * {x:int}')
+    with pytest.raises(ValueError) as excinfo:
+        t.distinct('a')
+
+    assert "a is not a field of t" == str(excinfo.value)
+
+    with pytest.raises(TypeError) as excinfo:
+        t.distinct(10)
+
+    assert "on must be a name or field, not: 10" == str(excinfo.value)
+
+    s = symbol('s', 'var * {y:int}')
+    with pytest.raises(ValueError) as excinfo:
+        t.distinct(s.y)
+
+    assert "s.y is not a field of t" == str(excinfo.value)
+
+
+def test_sample_exceptions():
+    t = symbol('t', 'var * {x:int, y:int}')
+    with pytest.raises(ValueError):
+        t.sample(n=1, frac=0.1)
+    with pytest.raises(TypeError):
+        t.sample(n='a')
+    with pytest.raises(ValueError):
+        t.sample(frac='a')
+    with pytest.raises(TypeError):
+        t.sample(foo='a')
+    with pytest.raises(TypeError):
+        t.sample()
 
 
 def test_join_on_same_columns():
@@ -108,12 +149,30 @@ def test_join_option_types():
     assert join(b, a, 'x').dshape == dshape('var * {x: int}')
 
 
-def test_join_mismatched_schema():
+def test_join_exceptions():
+    """
+    exception raised for mismatched schema;
+    exception raised for no shared fields
+    """
     a = symbol('a', 'var * {x: int}')
     b = symbol('b', 'var * {x: string}')
-
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         join(a, b, 'x')
+
+    assert "Schemata of joining columns do not match," in str(excinfo.value)
+    assert "x=int32 and x=string" in str(excinfo.value)
+
+    b = symbol('b', 'var * {z: int}')
+    with pytest.raises(ValueError) as excinfo:
+        join(a, b)
+
+    assert "No shared columns between a and b" in str(excinfo.value)
+
+    b = symbol('b', 'var * {x: int}')
+    with pytest.raises(ValueError) as excinfo:
+        join(a, b, how='inner_')
+
+    assert "Got: inner_" in str(excinfo.value)
 
 
 def test_join_type_promotion():
@@ -178,32 +237,48 @@ def test_concat_different_measure():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 5 * float64')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         concat(a, b)
+
+    msg = 'Mismatched measures: {l} != {r}'.format(l=a.dshape.measure,
+                                                   r=b.dshape.measure)
+    assert msg == str(excinfo.value)
 
 
 def test_concat_different_along_concat_axis():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 6 * int32')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         concat(a, b, axis=0)
+
+    assert "not equal along axis 1: 5 != 6" in str(excinfo.value)
+
+    b = symbol('b', '4 * 6 * int32')
+    with pytest.raises(TypeError) as excinfo:
+        concat(a, b, axis=1)
+
+    assert "not equal along axis 0: 3 != 4" in str(excinfo.value)
 
 
 def test_concat_negative_axis():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 5 * int32')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         concat(a, b, axis=-1)
+
+    assert "must be in range: [0, 2)" in str(excinfo.value)
 
 
 def test_concat_axis_too_great():
     a = symbol('a', '3 * 5 * int32')
     b = symbol('b', '3 * 5 * int32')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         concat(a, b, axis=2)
+
+    assert "must be in range: [0, 2)" in str(excinfo.value)
 
 
 def test_shift():
@@ -214,3 +289,9 @@ def test_shift():
     assert repr(t.shift(1)) == 'shift(t, n=1)'
     assert repr(t.shift(0)) == 'shift(t, n=0)'
     assert repr(t.shift(-1)) == 'shift(t, n=-1)'
+
+
+def test_shift_not_int():
+    a = symbol('a', '3 * {x: int32, y: int32}')
+    with pytest.raises(TypeError):
+        a.x.shift(1.3)

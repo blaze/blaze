@@ -1,7 +1,6 @@
 from datetime import timedelta
 from operator import methodcaller
 import itertools
-import tempfile
 
 import pytest
 
@@ -16,9 +15,22 @@ import pandas.util.testing as tm
 
 from datashape import dshape
 from odo import odo, resource, drop, discover
-from blaze import symbol, compute, concat, by, join, sin, cos, radians, atan2
-from odo.utils import tmpfile
-from blaze import sqrt, transform, Data
+from blaze import (
+    Data,
+    atan2,
+    by,
+    compute,
+    concat,
+    cos,
+    greatest,
+    join,
+    least,
+    radians,
+    sin,
+    sqrt,
+    symbol,
+    transform,
+)
 from blaze.utils import example, normalize
 
 
@@ -41,6 +53,20 @@ def sql(url):
         pytest.skip(str(e))
     else:
         t = odo([('a', 1), ('b', 2)], t)
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
+def big_sql(url):
+    try:
+        t = resource(url % next(names), dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo(zip(list('a'*100), list(range(100))), t)
         try:
             yield t
         finally:
@@ -593,3 +619,31 @@ def test_sample_frac(nyc):
     num_rows = odo(compute(t.nrows, nyc), int)
     s2 = odo(result2, pd.DataFrame)
     assert len(s2) == int(num_rows * 0.5)
+
+
+def test_sample(big_sql):
+    nn = symbol('nn', discover(big_sql))
+    nrows = odo(compute(nn.nrows, big_sql), int)
+    result = compute(nn.sample(n=nrows // 2), big_sql)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == nrows // 2
+    result2 = compute(nn.sample(frac=0.5), big_sql)
+    s2 = odo(result2, pd.DataFrame)
+    assert len(s) == len(s2)
+
+
+@pytest.fixture
+def gl_data(sql_two_tables):
+    u_data, t_data = sql_two_tables
+    # populate the tables with some data and return it
+    return Data(odo([(1,)], u_data)), Data(odo([(2,)], t_data))
+
+
+def test_greatest(gl_data):
+    u, t = gl_data
+    assert odo(greatest(u.a.max(), t.a.max()), int) == 2
+
+
+def test_least(gl_data):
+    u, t = gl_data
+    assert odo(least(u.a.max(), t.a.max()), int) == 1

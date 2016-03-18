@@ -21,8 +21,23 @@ from odo import odo, drop
 from blaze.compatibility import xfail
 from blaze.compute.sql import compute, select, lower_column, compute_up
 from blaze.expr import (
-    symbol, transform, summary, by, sin, join,
-    floor, cos, merge, nunique, mean, sum, count, exp, datetime as bz_datetime
+    by,
+    cos,
+    count,
+    datetime as bz_datetime,
+    exp,
+    floor,
+    greatest,
+    join,
+    least,
+    mean,
+    merge,
+    nunique,
+    sin,
+    sum,
+    summary,
+    symbol,
+    transform,
 )
 from blaze.utils import tmpfile, example, normalize
 
@@ -520,8 +535,6 @@ def test_head():
 def test_sample():
     order_by = select(s).order_by(sa.func.random())
     assert str(compute(t.sample(n=5), s)) == str(order_by.limit(5))
-    limit_frac = select([sa.func.count() * 0.5]).as_scalar()
-    assert str(compute(t.sample(frac=0.5), s)) == str(order_by.limit(limit_frac))
 
 
 def test_label():
@@ -2035,4 +2048,16 @@ def test_inner_select_with_filter():
         where
             s.a = anon_1.a
         """,
+    )
+
+
+@pytest.mark.parametrize('op', (greatest, least))
+def test_greatest(op):
+    ds = 'var * {a: int32, b: int32}'
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    odo([(1, 2)], db)
+    s = symbol('s', dshape=ds)
+
+    assert normalize(compute(op(s.a, s.b), db)) == normalize(
+        'select {op}(s.a, s.b) as {op}_1 from s'.format(op=op.__name__),
     )
