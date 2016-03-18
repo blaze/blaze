@@ -61,31 +61,26 @@ if sys.version_info[0] == 2:
         install_requires.extend(f.read().strip().splitlines())
 
 
-setup(
-    name='blaze',
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-    author='Continuum Analytics',
-    author_email='blaze-dev@continuum.io',
-    description='Blaze',
-    long_description=longdesc,
-    install_requires=install_requires,
-    license='BSD',
-    classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'Intended Audience :: Education',
-        'License :: OSI Approved :: BSD License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Utilities',
-    ],
-    entry_points={
-        'console_scripts': ['blaze-server = blaze.server.spider:_main']
-    },
-    package_data={'blaze': package_data},
-    packages=packages
-)
+if __name__ == '__main__':
+    setup(name='blaze',
+          version=versioneer.get_version(),
+          cmdclass=versioneer.get_cmdclass(),
+          author='Continuum Analytics',
+          author_email='blaze-dev@continuum.io',
+          description='Blaze',
+          long_description=longdesc,
+          install_requires=install_requires,
+          license='BSD',
+          classifiers=['Development Status :: 2 - Pre-Alpha',
+                       'Environment :: Console',
+                       'Intended Audience :: Developers',
+                       'Intended Audience :: Science/Research',
+                       'Intended Audience :: Education',
+                       'License :: OSI Approved :: BSD License',
+                       'Operating System :: OS Independent',
+                       'Programming Language :: Python',
+                       'Topic :: Scientific/Engineering',
+                       'Topic :: Utilities'],
+          entry_points={'console_scripts': ['blaze-server = blaze.server.spider:_main']},
+          package_data={'blaze': package_data},
+          packages=packages)
