@@ -52,19 +52,13 @@ package_data += [x.replace('blaze' + os.sep, '')
 with open('README.rst') as f:
     longdesc = f.read()
 
-with open('requirements-install.txt') as f:
+with open('requirements-strict.txt') as f:
     install_requires = f.read().strip().splitlines()
-    print(install_requires)
 
 
-with open('requirements-build.txt') as f:
-    setup_requires = f.read().strip().splitlines()
-    print(setup_requires)
-
-
-with open('requirements-test.txt') as f:
-    tests_require = f.read().strip().splitlines()
-    print(tests_require)
+if sys.version_info[0] == 2:
+    with open('requirements-py2.txt') as f:
+        install_requires.extend(f.read().strip().splitlines())
 
 
 if __name__ == '__main__':
@@ -76,8 +70,6 @@ if __name__ == '__main__':
           description='Blaze',
           long_description=longdesc,
           install_requires=install_requires,
-          setup_requires=setup_requires,
-          tests_require=tests_require,
           license='BSD',
           classifiers=['Development Status :: 2 - Pre-Alpha',
                        'Environment :: Console',
