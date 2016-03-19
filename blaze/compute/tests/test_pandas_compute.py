@@ -386,8 +386,17 @@ def test_tail():
 def test_sample():
     samp = compute(t.sample(n=2), df)
     assert len(samp) == 2
-    samp = compute(t.sample(frac=0.5), df)
-    assert len(samp) == int(np.ceil(len(df) * 0.5))
+
+
+def test_sample_frac_rounding_edge_case():
+    samp_big = compute(tbig.sample(frac=0.1), dfbig)
+    assert len(samp_big) == int(np.ceil(len(dfbig) * 0.1))
+
+
+def test_sample_clip():
+    samp_series = compute(t.name.sample(n=2*len(df)), df)
+    samp_df = compute(t.sample(n=2*len(df)), df)
+    assert len(samp_series) == len(samp_df) == len(df)
 
 
 def test_label():

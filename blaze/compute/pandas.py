@@ -546,9 +546,31 @@ def compute_up(t, s, **kwargs):
         return s.order(ascending=t.ascending)
 
 
-@dispatch(Sample, (Series, DataFrame, DaskDataFrame, DaskSeries))
+@dispatch(Sample, (Series, DataFrame))
 def compute_up(t, df, **kwargs):
-    frac = t.frac if t.frac is not None else float(t.n) / len(df)
+    from math import modf
+    if t.frac is not None:
+        # Work around annoying edge case: Python's round() builtin (which
+        # Pandas' sample() uses) rounds 0.5, 2.5, 4.5, ... down to 0, 2, 4, ...,
+        # while it rounds 1.5, 3.5, 5.5, ... up.  This is inconsistent with any
+        # sane implementation of floating point rounding, including SQL's, so
+        # we work around it here.
+        fractional, integral = modf(t.frac * df.shape[0])
+        n = int(integral + (0 if fractional < 0.5 else 1))
+    else:
+        n = min(t.n, df.shape[0])
+    return df.sample(n=n)
+
+
+@dispatch(Sample, (DaskDataFrame, DaskSeries))
+def compute_up(t, df, **kwargs):
+    # Dask doesn't support sample(n=...), only sample(frac=...), so we have a
+    # separate dispatch for dask objects.
+    if t.frac is not None:
+        frac = t.frac
+    else:
+        nrows = len(df)
+        frac = float(min(t.n, nrows)) / nrows
     return df.sample(frac=frac)
 
 

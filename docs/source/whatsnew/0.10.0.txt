@@ -93,6 +93,8 @@ Bug Fixes
   :class:`~blaze.expr.broadcast.Broadcast` expressions (:issue:`1442`).  Added
   tests for Pandas frame and series and dask dataframes on ``Broadcast``
   expressions.
+* Fixed a bug with :class:`~blaze.expr.collections.Sample` on SQL backends
+  (:issue:`1452` :issue:`1423` :issue:`1424` :issue:`1425`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

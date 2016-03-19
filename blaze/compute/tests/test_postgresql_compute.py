@@ -1,6 +1,7 @@
 from datetime import timedelta
 from operator import methodcaller
 import itertools
+import math
 
 import pytest
 
@@ -68,16 +69,33 @@ def sql(url):
             drop(t)
 
 
+
+
 @pytest.yield_fixture(scope='module')
 def nyc(pg_ip):
+    # odoing csv -> pandas -> postgres is more robust, as it doesn't require
+    # the postgres server to be on the same filesystem as the csv file.
+    nyc_pd = odo(example('nyc.csv'), pd.DataFrame)
     try:
-        t = odo(
-            example('nyc.csv'),
-            'postgresql://postgres@{}/test::nyc'.format(pg_ip),
-        )
+        t = odo(nyc_pd,
+                'postgresql://postgres@{}/test::nyc'.format(pg_ip))
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+@pytest.yield_fixture
+def big_sql(url):
+    try:
+        t = data(url % next(names), dshape='var * {A: string, B: int64}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo(zip(list('a'*100), list(range(100))), t)
         try:
             yield t
         finally:
@@ -267,6 +285,27 @@ def sql_with_float(url):
             yield t
         finally:
             drop(t)
+
+
+@pytest.yield_fixture(scope='module')
+def nyc_csv(pg_ip):
+    try:
+        t = odo(
+            example('nyc.csv'),
+            'postgresql://postgres@{}/test::nyc'.format(pg_ip),
+        )
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
+def test_nyc_csv(nyc_csv):
+    t = symbol('t', discover(nyc_csv))
+    assert compute(t.nrows, nyc_csv, return_type='core') > 0
 
 
 def test_postgres_create(sql):
@@ -594,6 +633,34 @@ def test_interactive_len(sql):
     assert len(t) == int(t.count())
 
 
+def test_sample_n(nyc):
+    t = symbol('t', discover(nyc))
+    result = compute(t.sample(n=14), nyc)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == 14
+
+
+def test_sample_frac(nyc):
+    t = symbol('t', discover(nyc))
+    result = compute(t.sample(frac=0.5), nyc, return_type=pd.DataFrame)
+    num_rows = compute(t.nrows, nyc, return_type=int)
+    # *Sigh* have to do proper rounding manually; Python's round() builtin is
+    # borked.
+    fractional, integral = math.modf(num_rows * 0.5)
+    assert int(integral + (0 if fractional < 0.5 else 1)) == len(result)
+
+
+def test_sample(big_sql):
+    nn = symbol('nn', discover(big_sql))
+    nrows = odo(compute(nn.nrows, big_sql), int)
+    result = compute(nn.sample(n=nrows // 2), big_sql)
+    s = odo(result, pd.DataFrame)
+    assert len(s) == nrows // 2
+    result2 = compute(nn.sample(frac=0.5), big_sql)
+    s2 = odo(result2, pd.DataFrame)
+    assert len(s) == len(s2)
+
+
 def test_core_compute(nyc):
     t = symbol('t', discover(nyc))
     assert isinstance(compute(t, nyc, return_type='core'), pd.DataFrame)
@@ -601,15 +668,6 @@ def test_core_compute(nyc):
     assert iscorescalar(compute(t.passenger_count.mean(), nyc, return_type='core'))
     assert isinstance(compute(t, nyc, return_type=list), list)
 
-
-def test_sample(sql):
-    t = symbol('t', discover(sql))
-    result = compute(t.sample(n=1), sql)
-    s = odo(result, pd.DataFrame)
-    assert len(s) == 1
-    result2 = compute(t.sample(frac=0.5), sql)
-    s2 = odo(result2, pd.DataFrame)
-    assert len(s) == len(s2)
 
 @pytest.fixture
 def gl_data(sql_two_tables):
