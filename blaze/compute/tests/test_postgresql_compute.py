@@ -1,6 +1,7 @@
 from datetime import timedelta
 from operator import methodcaller
 import itertools
+import math
 
 import pytest
 
@@ -641,10 +642,12 @@ def test_sample_n(nyc):
 
 def test_sample_frac(nyc):
     t = symbol('t', discover(nyc))
-    result2 = compute(t.sample(frac=0.6), nyc)
-    num_rows = odo(compute(t.nrows, nyc), int)
-    s2 = odo(result2, pd.DataFrame)
-    assert len(s2) == int(num_rows * 0.6)
+    result = compute(t.sample(frac=0.5), nyc, return_type=pd.DataFrame)
+    num_rows = compute(t.nrows, nyc, return_type=int)
+    # *Sigh* have to do proper rounding manually; Python's round() builtin is
+    # borked.
+    fractional, integral = math.modf(num_rows * 0.5)
+    assert int(integral + (0 if fractional < 0.5 else 1)) == len(result)
 
 
 def test_sample(big_sql):
