@@ -99,3 +99,6 @@ Miscellaneous
 
 * Adds logging to server compute endpoint.  Includes expression being computed
   and total time to compute. (:issue:`1436`)
+* Merged the ``core`` and ``all`` conda recipes (:issue:`1451`).  This
+  simplifies the build process and makes it consistent with the single
+  ``blaze`` package provided by the Anaconda distribution.
