@@ -390,6 +390,12 @@ def test_sample():
     assert len(samp) == int(np.ceil(len(df) * 0.5))
 
 
+def test_sample_clip():
+    samp_series = compute(t.name.sample(n=2*len(df)), df)
+    samp_df = compute(t.sample(n=2*len(df)), df)
+    assert len(samp_series) == len(samp_df) == len(df)
+
+
 def test_label():
     expected = df['amount'] * 10
     expected.name = 'foo'

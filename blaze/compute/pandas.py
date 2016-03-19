@@ -548,7 +548,8 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Sample, (Series, DataFrame, DaskDataFrame, DaskSeries))
 def compute_up(t, df, **kwargs):
-    frac = t.frac if t.frac is not None else float(t.n) / len(df)
+    frac = (t.frac if t.frac is not None 
+            else float(min(df.shape[0], t.n)) / len(df))
     return df.sample(frac=frac)
 
 
