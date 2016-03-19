@@ -546,7 +546,7 @@ def compute_up(t, s, **kwargs):
         return s.order(ascending=t.ascending)
 
 
-@dispatch(Sample, (Series, DataFrame, DaskDataFrame, DaskSeries))
+@dispatch(Sample, (Series, DataFrame))
 def compute_up(t, df, **kwargs):
     from math import modf
     if t.frac is not None:
@@ -560,6 +560,18 @@ def compute_up(t, df, **kwargs):
     else:
         n = min(t.n, df.shape[0])
     return df.sample(n=n)
+
+
+@dispatch(Sample, (DaskDataFrame, DaskSeries))
+def compute_up(t, df, **kwargs):
+    # Dask doesn't support sample(n=...), only sample(frac=...), so we have a
+    # separate dispatch for dask objects.
+    if t.frac is not None:
+        frac = t.frac
+    else:
+        nrows = len(df)
+        frac = float(min(t.n, nrows)) / nrows
+    return df.sample(frac=frac)
 
 
 @dispatch(Head, (Series, DataFrame, DaskDataFrame, DaskSeries))
