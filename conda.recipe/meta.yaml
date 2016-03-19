@@ -1,3 +1,5 @@
+{% set data = load_setuptools() %}
+
 package:
   name: blaze
   version: {{ environ.get('GIT_DESCRIBE_TAG', '')}}
@@ -16,39 +18,22 @@ requirements:
   build:
     - python
     - setuptools
-    - contextlib2 [py2k]
-    - flask >=0.10.1
-    - flask-cors
-    - odo >=0.4.0
-    - psutil ==4.0
-    - sqlalchemy >=0.8.0
-    - toolz
+    {% for req in data.get('setup_requires', []) -%}
+    - {{req}}
+    {% endfor %}
   run:
     - python
-    - bcolz    [not win]
-    - contextlib2 [py2k]
-    - cytoolz
-    - dask
-    - flask >=0.10.1
-    - flask-cors
-    - h5py
-    - numba
-    - odo >=0.4.0
-    - psutil ==4.0
-    - pymongo ==2.8  [not py35]
-    - pytables >=3.0.0
-    - pyyaml
-    - requests
-    - sqlalchemy >=0.8.0
+    {% for req in data.get('install_requires', []) -%}
+    - {{req}}
+    {% endfor %}
 
 test:
   imports:
     - blaze
   requires:
-    - pytest >=2.7.0
-    - psycopg2 [unix]
-    - pymysql
-    - sqlite
+    {% for req in data.get('tests_require', []) -%}
+    - {{req}}
+    {% endfor %}
   commands:
     - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX
 

@@ -1,0 +1,5 @@
+pytest >=2.7.0
+pymongo ==2.8
+psycopg2 [unix]
+pymysql
+sqlite

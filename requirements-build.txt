@@ -1,6 +1,6 @@
-flask >=0.10.1
+contextlib2 [py2k]
 flask-cors
 odo >=0.4.0
-psutil
+psutil ==4.0
 sqlalchemy >=0.8.0
 toolz
