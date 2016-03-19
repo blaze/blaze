@@ -16,7 +16,7 @@ requirements:
   build:
     - python
     - setuptools
-    - contextlib2 [py2k]
+    - contextlib2 # [py2k]
     - flask >=0.10.1
     - flask-cors
     - odo >=0.4.0
@@ -25,8 +25,7 @@ requirements:
     - toolz
   run:
     - python
-    - bcolz    [not win]
-    - contextlib2 [py2k]
+    - contextlib2 # [py2k]
     - cytoolz
     - dask
     - flask >=0.10.1
@@ -35,7 +34,6 @@ requirements:
     - numba
     - odo >=0.4.0
     - psutil ==4.0
-    - pymongo ==2.8  [not py35]
     - pytables >=3.0.0
     - pyyaml
     - requests
@@ -46,7 +44,9 @@ test:
     - blaze
   requires:
     - pytest >=2.7.0
-    - psycopg2 [unix]
+    - psycopg2 # [unix]
+    - pymongo ==2.8
+    - bcolz   # [unix]
     - pymysql
     - sqlite
   commands:
