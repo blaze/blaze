@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
+import sys
 
 dask = pytest.importorskip('dask')
 
@@ -65,6 +66,8 @@ exprs = [2 * sx + 1,
 
 
 @pytest.mark.parametrize('expr', exprs)
+@pytest.mark.skipif(sys.platform == 'win32' and sys.version_info[:2] == (2, 7),
+		    reason="Nondeterministic exceptions relating to get_async")
 def test_compute(expr):
     result = compute(expr, dask_ns)
     expected = compute(expr, numpy_ns)
