@@ -37,10 +37,6 @@ from blaze import (
 from blaze.interactive import iscorescalar
 from blaze.utils import example, normalize
 
-from datashape import dshape
-from odo import odo, drop, discover
-from odo.utils import tmpfile
-
 
 names = ('tbl%d' % i for i in itertools.count())
 
@@ -635,9 +631,15 @@ def test_interactive_len(sql):
 
 def test_sample_n(nyc):
     t = symbol('t', discover(nyc))
-    result = compute(t.sample(n=14), nyc)
-    s = odo(result, pd.DataFrame)
-    assert len(s) == 14
+    result = compute(t.sample(n=14), nyc, return_type=pd.DataFrame)
+    assert len(result) == 14
+
+
+def test_sample_bounded(nyc):
+    t = symbol('t', discover(nyc))
+    nrows = compute(t.nrows, nyc, return_type=int)
+    result = compute(t.sample(n=2*nrows), nyc, return_type=pd.DataFrame)
+    assert len(result) == nrows
 
 
 def test_sample_frac(nyc):
@@ -653,12 +655,10 @@ def test_sample_frac(nyc):
 def test_sample(big_sql):
     nn = symbol('nn', discover(big_sql))
     nrows = odo(compute(nn.nrows, big_sql), int)
-    result = compute(nn.sample(n=nrows // 2), big_sql)
-    s = odo(result, pd.DataFrame)
-    assert len(s) == nrows // 2
-    result2 = compute(nn.sample(frac=0.5), big_sql)
-    s2 = odo(result2, pd.DataFrame)
-    assert len(s) == len(s2)
+    result = compute(nn.sample(n=nrows // 2), big_sql, return_type=pd.DataFrame)
+    assert len(result) == nrows // 2
+    result2 = compute(nn.sample(frac=0.5), big_sql, return_type=pd.DataFrame)
+    assert len(result) == len(result2)
 
 
 def test_core_compute(nyc):
