@@ -91,7 +91,8 @@ def big_sql(url):
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
-        t = odo(zip(list('a'*100), list(range(100))), t)
+        t = odo(zip(list("".join(['a'*25, 'b'*25, 'c'*25, 'd'*25])),
+                    np.random.randint(1, 10, (100,)).tolist()), t)
         try:
             yield t
         finally:
@@ -696,3 +697,35 @@ def test_coalesce(sqla):
         compute(coalesce(t.A, 'z'), {t: sqla}, return_type=list) ==
         [('a',), ('z',), ('c',)]
     )
+
+
+@pytest.mark.xfail(reason="Having clause not yet implemented")
+def test_having(big_sql):
+    '''
+    The blaze expression generated in 'res' below is incorrect. It invokes the
+    where clause but it should be using a HAVING clause. Need to add HAVING
+    clause to blaze
+
+        print(res)
+        SELECT tbl0."A", sum(tbl0."B") AS quant
+            FROM tbl0
+        WHERE sum(tbl0."B") > 125
+        GROUP BY
+            tbl0."A"
+
+    The correct expression uses HAVING for aggregate function:
+
+        SELECT tbl0."A", sum(tbl0."B") AS quant
+            FROM tbl0
+        GROUP BY
+            tbl0."A" HAVING sum(tbl0."B") > 125
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+    g1 = by(nn['A'], quant=nn.B.sum())
+    g1_res = odo(compute(g1, big_sql), list)
+    assert len(g1_res) == 4
+
+    expr = g1[g1.quant > 125]
+    res = compute(expr, big_sql)
+    odo(res, list)
