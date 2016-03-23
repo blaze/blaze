@@ -35,6 +35,25 @@ __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
 DEFAULT_PORT = 6363
 
 
+class RC(object):
+    """Simple namespace for HTTP status codes.
+    https://en.wikipedia.org/wiki/List_of_HTTP_status_codes 
+    """
+
+    OK = 200
+    CREATED = 201
+
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+    FORBIDDEN = 403
+    CONFLICT = 409
+    UNPROCESSABLE_ENTITY = 422
+    UNSUPPORTED_MEDIA_TYPE = 415
+
+    INTERNAL_SERVER_ERROR = 500
+    NOT_IMPLEMENTED = 501
+
+
 api = Blueprint('api', __name__)
 pickle_extension_api = Blueprint('pickle_extension_api', __name__)
 
@@ -172,7 +191,7 @@ def authorization(f):
         if not _get_auth()(request.authorization):
             return Response(
                 'bad auth token',
-                401,
+                RC.UNAUTHORIZED,
                 {'WWW-Authenticate': 'Basic realm="Login Required"'},
             )
 
@@ -187,20 +206,20 @@ def check_request(f):
         matched = mimetype_regex.match(content_type)
 
         if matched is None:
-            return 'Unsupported serialization format %s' % content_type, 415
+            return 'Unsupported serialization format %s' % content_type, RC.UNSUPPORTED_MEDIA_TYPE
 
         try:
             serial = _get_format(matched.groups()[0])
         except KeyError:
             return (
                 "Unsupported serialization format '%s'" % matched.groups()[0],
-                415,
+                RC.UNSUPPORTED_MEDIA_TYPE,
             )
 
         try:
             payload = serial.loads(request.data)
         except ValueError:
-            return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+            return ("Bad data.  Got %s " % request.data, RC.BAD_REQUEST)
 
         return f(payload, serial)
     return check
@@ -242,7 +261,7 @@ class Server(object):
 
         If this is the string ':response' then writing to the local filesystem
         is disabled. Only requests that specify `profiler_output=':response'`
-        will be served. All others will return a 403.
+        will be served. All others will return a 403 (Forbidden).
     profile_by_default : bool, optional
         Run the profiler on any computation that does not explicitly set
         "profile": false.
@@ -514,7 +533,7 @@ def compserver(payload, serial):
     if profile and not allow_profiler:
         return (
             'profiling is disabled on this server',
-            403,
+            RC.FORBIDDEN,
         )
 
     with ExitStack() as response_construction_context_stack:
@@ -527,7 +546,7 @@ def compserver(payload, serial):
                 return (
                     "local filepaths are disabled on this server, only"
                     " ':response' is allowed for the 'profiler_output' field",
-                    403,
+                    RC.FORBIDDEN,
                 )
 
             profiler_output = requested_profiler_output
@@ -560,16 +579,14 @@ def compserver(payload, serial):
                 odo_kwargs,
             )
         except NotImplementedError as e:
-            # 501: Not Implemented
-            return ("Computation not supported:\n%s" % e, 501)
+            return ("Computation not supported:\n%s" % e, RC.NOT_IMPLEMENTED)
         except Exception as e:
-            # 500: Internal Server Error
             return (
                 "Computation failed with message:\n%s: %s" % (
                     type(e).__name__,
                     e
                 ),
-                500,
+                RC.INTERNAL_SERVER_ERROR,
             )
 
         response = {
@@ -607,21 +624,48 @@ def compserver(payload, serial):
 def addserver(payload, serial):
     """Add a data resource to the server.
 
-    The reuest should contain serialized MutableMapping (dictionary) like
-    object, and the server should already be hosting a MutableMapping
-    resource.
+    The request should contain serialized MutableMapping (dictionary) like
+    object, and the server should already be hosting a MutableMapping resource.
     """
+
     data = _get_data.cache[flask.current_app]
 
-    data_not_mm_msg = ("Cannot update blaze server data since its current data"
-                       " is a %s and not a mutable mapping (dictionary like).")
     if not isinstance(data, collections.MutableMapping):
-        return (data_not_mm_msg % type(data), 422)
+        data_not_mm_msg = ("Cannot update blaze server data since its current "
+                           "data is a %s and not a mutable mapping (dictionary "
+                           "like).")
+        return (data_not_mm_msg % type(data), RC.UNPROCESSABLE_ENTITY)
 
-    payload_not_mm_msg = ("Cannot update blaze server with a %s payload, since"
-                          " it is not a mutable mapping (dictionary like).")
-    if not isinstance(payload, collections.MutableMapping):
-        return (payload_not_mm_msg % type(payload), 422)
+    if not isinstance(payload, collections.Mapping):
+        payload_not_mm_msg = ("Need a dictionary-like payload; instead was "
+                              "given %s of type %s.")
+        return (payload_not_mm_msg % (payload, type(payload)),
+                RC.UNPROCESSABLE_ENTITY)
 
-    data.update(valmap(resource, payload))
-    return 'OK'
+    if len(payload) > 1:
+        error_msg = "Given more than one resource to add: %s"
+        return (error_msg % list(payload.keys()),
+                RC.UNPROCESSABLE_ENTITY)
+
+    [(name, resource_uri)] = payload.items()
+
+    if name in data:
+        msg = "Cannot add dataset named %s, already exists on server."
+        return (msg % name, RC.CONFLICT)
+
+    try:
+        data.update({name: resource(resource_uri)})
+        # Force discovery of new dataset to check that the data is loadable.
+        ds = discover(data)
+        if name not in ds.dict:
+            raise ValueError("%s not added." % name)
+    except NotImplementedError as e:
+        error_msg = "Addition not supported:\n%s: %s"
+        return (error_msg % (type(e).__name__, e),
+                RC.UNPROCESSABLE_ENTITY)
+    except Exception as e:
+        error_msg = "Addition failed with message:\n%s: %s"
+        return (error_msg % (type(e).__name__, e),
+                RC.UNPROCESSABLE_ENTITY)
+
+    return ('OK', RC.CREATED)

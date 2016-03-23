@@ -22,7 +22,7 @@ from blaze.expr import Expr
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
-from blaze.server.server import Server, to_tree, from_tree
+from blaze.server.server import Server, to_tree, from_tree, RC
 from blaze.server.serialization import all_formats, fastmsgpack
 
 
@@ -446,7 +446,7 @@ def test_serialization_endpoints(test, serial):
 
 def test_cors_compute(test):
     res = test.options('/compute')
-    assert res.status_code == 200
+    assert res.status_code == RC.OK
     assert 'HEAD' in res.headers['Allow']
     assert 'OPTIONS' in res.headers['Allow']
     assert 'POST' in res.headers['Allow']
@@ -456,7 +456,7 @@ def test_cors_compute(test):
 
 def test_cors_datashape(test):
     res = test.options('/datashape')
-    assert res.status_code == 200
+    assert res.status_code == RC.OK
     assert 'HEAD' in res.headers['Allow']
     assert 'OPTIONS' in res.headers['Allow']
     assert 'GET' in res.headers['Allow']
@@ -466,7 +466,7 @@ def test_cors_datashape(test):
 
 def test_cors_add(test):
     res = test.options('/add')
-    assert res.status_code == 200
+    assert res.status_code == RC.OK
     assert 'HEAD' in res.headers['Allow']
     assert 'POST' in res.headers['Allow']
     assert 'OPTIONS' in res.headers['Allow']
@@ -515,7 +515,7 @@ def test_auth(test_with_auth, username, password, serial):
         '/datashape',
         headers={'authorization': basic_auth(username, password)},
     )
-    assert r.status_code == 200
+    assert r.status_code == RC.OK
     headers = mimetype(serial)
     headers['authorization'] = basic_auth(username, password)
     s = test_with_auth.post(
@@ -523,13 +523,13 @@ def test_auth(test_with_auth, username, password, serial):
         data=serial.dumps(query),
         headers=headers,
     )
-    assert s.status_code == 200
+    assert s.status_code == RC.OK
 
     u = test_with_auth.get(
         '/datashape',
         headers={'authorization': basic_auth(username + 'a', password + 'a')},
     )
-    assert u.status_code == 401
+    assert u.status_code == RC.UNAUTHORIZED
 
     headers['authorization'] = basic_auth(username + 'a', password + 'a')
     v = test_with_auth.post(
@@ -537,7 +537,7 @@ def test_auth(test_with_auth, username, password, serial):
         data=serial.dumps(query),
         headers=headers,
     )
-    assert v.status_code == 401
+    assert v.status_code == RC.UNAUTHORIZED
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -554,7 +554,7 @@ def test_minute_query(test, serial):
         'names': ['when_minute'],
         'datashape': '2 * int64'
     }
-    assert result.status_code == 200
+    assert result.status_code == RC.OK
     resp = serial.loads(result.data)
     assert list(serial.data_loads(resp['data'])) == expected['data']
     assert list(resp['names']) == expected['names']
@@ -575,7 +575,7 @@ def test_isin(test, serial):
         'names': ['value'],
         'datashape': '2 * bool',
     }
-    assert result.status_code == 200
+    assert result.status_code == RC.OK
     resp = serial.loads(result.data)
     assert list(serial.data_loads(resp['data'])) == expected['data']
     assert list(resp['names']) == expected['names']
@@ -593,8 +593,8 @@ def test_add_data_to_empty_server(empty_server, serial):
             headers=mimetype(serial),
             data=blob,
         )
-        assert 'OK' in response1.status
-        assert response1.status_code == 200
+        assert 'CREATED' in response1.status
+        assert response1.status_code == RC.CREATED
 
         # check for expected server datashape
         response2 = empty_server.get('/datashape')
@@ -628,8 +628,8 @@ def test_add_data_to_server(serial):
             headers=mimetype(serial),
             data=blob,
         )
-        assert 'OK' in response1.status
-        assert response1.status_code == 200
+        assert 'CREATED' in response1.status
+        assert response1.status_code == RC.CREATED
 
         # check for expected server datashape
         new_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
@@ -665,7 +665,46 @@ def test_cant_add_data_to_server(iris_server, serial):
         headers=mimetype(serial),
         data=blob,
     )
-    assert response1.status_code == 422
+    assert response1.status_code == RC.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_data_twice_error(empty_server, serial):
+    with temp_server():
+        # add iris
+        iris_path = example('iris.csv')
+        payload = serial.dumps({'iris': iris_path})
+        empty_server.post('/add',
+                          headers=mimetype(serial),
+                          data=payload)
+        # Try to add to existing 'iris'
+        resp = empty_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=payload)
+        assert resp.status_code == RC.CONFLICT
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_two_data_sets_at_once_error(empty_server, serial):
+    with temp_server():
+        # Try to add two things at once
+        payload = serial.dumps({'foo': 'iris.csv',
+                                'bar': 'iris.csv'})
+        resp = empty_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=payload)
+        assert resp.status_code == RC.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_bunk_data_error(empty_server, serial):
+    with temp_server():
+        # Try to add bunk data
+        payload = serial.dumps({'foo': None})
+        resp = empty_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=payload)
+        assert resp.status_code == RC.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -677,7 +716,7 @@ def test_bad_add_payload(empty_server, serial):
         headers=mimetype(serial),
         data=blob,
     )
-    assert response1.status_code == 422
+    assert response1.status_code == RC.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -690,7 +729,7 @@ def test_odo_kwargs(test, serial):
         headers=mimetype(serial),
         data=serial.dumps(bad_query),
     )
-    assert result.status_code == 500
+    assert result.status_code == RC.INTERNAL_SERVER_ERROR
     assert b'return_df must be passed' in result.data
 
     good_query = {
@@ -704,7 +743,7 @@ def test_odo_kwargs(test, serial):
         headers=mimetype(serial),
         data=serial.dumps(good_query)
     )
-    assert result.status_code == 200
+    assert result.status_code == RC.OK
     tdata = serial.loads(result.data)
     dshape = discover(DumbResource.df)
     assert_dshape_equal(
@@ -727,7 +766,7 @@ def test_compute_kwargs(test, serial):
         headers=mimetype(serial),
         data=serial.dumps(bad_query),
     )
-    assert result.status_code == 500
+    assert result.status_code == RC.INTERNAL_SERVER_ERROR
     assert b'return_df must be passed' in result.data
 
     good_query = {
@@ -741,7 +780,7 @@ def test_compute_kwargs(test, serial):
         headers=mimetype(serial),
         data=serial.dumps(good_query)
     )
-    assert result.status_code == 200
+    assert result.status_code == RC.OK
     tdata = serial.loads(result.data)
     dshape = discover(DumbResource.df)
     assert_dshape_equal(
@@ -762,7 +801,7 @@ def test_fastmsgmpack_mutable_dataframe(test):
         headers=mimetype(fastmsgpack),
         data=fastmsgpack.dumps(query)
     )
-    assert result.status_code == 200
+    assert result.status_code == RC.OK
     data = fastmsgpack.data_loads(fastmsgpack.loads(result.data)['data'])
 
     for block in data._data.blocks:
