@@ -563,11 +563,21 @@ def test_add_data_twice_error(temp_server, serial):
     temp_server.post('/add',
                       headers=mimetype(serial),
                       data=payload)
+
     # Try to add to existing 'iris'
     resp = temp_server.post('/add',
                             headers=mimetype(serial),
                             data=payload)
     assert resp.status_code == RC.CONFLICT
+
+    # Verify the server still serves the original 'iris'.
+    ds = datashape.dshape(temp_server.get('/datashape').data.decode('utf-8'))
+    t = symbol('t', ds)
+    query = {'expr': to_tree(t.iris)}
+    resp = temp_server.post('/compute',
+                            data=serial.dumps(query),
+                            headers=mimetype(serial))
+    assert resp.status_code == RC.OK
 
 
 @pytest.mark.parametrize('serial', all_formats)
