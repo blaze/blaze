@@ -80,25 +80,19 @@ def server():
     return s
 
 
-@contextmanager
-def temp_server(data=None):
+@pytest.yield_fixture(params=[None, tdata])
+def temp_server(request):
     """For when we want to mutate the server"""
+    data = request.param
     s = Server(copy(data), formats=all_formats)
     s.app.testing = True
-    yield s.app.test_client()
+    with s.app.test_client() as c:
+        yield c
 
 
 @pytest.yield_fixture
 def test(server):
     with server.app.test_client() as c:
-        yield c
-
-
-@pytest.yield_fixture
-def empty_server():
-    s = Server(formats=all_formats)
-    s.app.testing = True
-    with s.app.test_client() as c:
         yield c
 
 
@@ -520,67 +514,34 @@ def test_isin(test, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_add_data_to_empty_server(empty_server, serial):
+def test_add_data_to_server(temp_server, serial):
     # add data
-    with temp_server():
-        iris_path = example('iris.csv')
-        blob = serial.dumps({'iris': iris_path})
-        response1 = empty_server.post('/add',
-                                      headers=mimetype(serial),
-                                      data=blob)
-        assert 'CREATED' in response1.status
-        assert response1.status_code == RC.CREATED
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': iris_path})
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert 'CREATED' in response1.status
+    assert response1.status_code == RC.CREATED
 
-        # check for expected server datashape
-        response2 = empty_server.get('/datashape')
-        expected2 = str(discover({'iris': data(iris_path)}))
-        assert response2.data.decode('utf-8') == expected2
+    # check for expected server datashape
+    response2 = temp_server.get('/datashape')
+    expected2 = discover({'iris': data(iris_path)})
+    response_dshape = datashape.dshape(response2.data.decode('utf-8'))
+    assert_dshape_equal(response_dshape.measure.dict['iris'],
+                        expected2.measure.dict['iris'])
 
-        # compute on added data
-        t = data({'iris': data(iris_path)})
-        expr = t.iris.petal_length.sum()
+    # compute on added data
+    t = data({'iris': data(iris_path)})
+    expr = t.iris.petal_length.sum()
 
-        response3 = empty_server.post('/compute',
-                                      data=serial.dumps({'expr': to_tree(expr)}),
-                                      headers=mimetype(serial))
+    response3 = temp_server.post('/compute',
+                                 data=serial.dumps({'expr': to_tree(expr)}),
+                                 headers=mimetype(serial))
 
-        result3 = serial.data_loads(serial.loads(response3.data)['data'])
-        expected3 = compute(expr, {'iris': data(iris_path)})
-        assert result3 == expected3
-
-
-@pytest.mark.parametrize('serial', all_formats)
-def test_add_data_to_server(serial):
-    with temp_server(tdata) as test:
-        # add data
-        initial_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
-        iris_path = example('iris.csv')
-        blob = serial.dumps({'iris': iris_path})
-        response1 = test.post('/add',
-                              headers=mimetype(serial),
-                              data=blob)
-        assert 'CREATED' in response1.status
-        assert response1.status_code == RC.CREATED
-
-        # check for expected server datashape
-        new_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
-        data2 = tdata.copy()
-        data2.update({'iris': data(iris_path)})
-        expected2 = datashape.dshape(discover(data2))
-        assert_dshape_equal(new_datashape, expected2)
-        assert new_datashape.measure.fields != initial_datashape.measure.fields
-
-        # compute on added data
-        t = data({'iris': data(iris_path)})
-        expr = t.iris.petal_length.sum()
-
-        response3 = test.post('/compute',
-                              data=serial.dumps({'expr': to_tree(expr)}),
-                              headers=mimetype(serial))
-
-        result3 = serial.data_loads(serial.loads(response3.data)['data'])
-        expected3 = compute(expr, {'iris': data(iris_path)})
-        assert result3 == expected3
+    result3 = serial.data_loads(serial.loads(response3.data)['data'])
+    expected3 = compute(expr, {'iris': data(iris_path)})
+    assert result3 == expected3
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -595,51 +556,48 @@ def test_cant_add_data_to_server(iris_server, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_add_data_twice_error(empty_server, serial):
-    with temp_server():
-        # add iris
-        iris_path = example('iris.csv')
-        payload = serial.dumps({'iris': iris_path})
-        empty_server.post('/add',
-                          headers=mimetype(serial),
-                          data=payload)
-        # Try to add to existing 'iris'
-        resp = empty_server.post('/add',
-                                 headers=mimetype(serial),
-                                 data=payload)
-        assert resp.status_code == RC.CONFLICT
+def test_add_data_twice_error(temp_server, serial):
+    # add iris
+    iris_path = example('iris.csv')
+    payload = serial.dumps({'iris': iris_path})
+    temp_server.post('/add',
+                      headers=mimetype(serial),
+                      data=payload)
+    # Try to add to existing 'iris'
+    resp = temp_server.post('/add',
+                            headers=mimetype(serial),
+                            data=payload)
+    assert resp.status_code == RC.CONFLICT
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_add_two_data_sets_at_once_error(empty_server, serial):
-    with temp_server():
-        # Try to add two things at once
-        payload = serial.dumps({'foo': 'iris.csv',
-                                'bar': 'iris.csv'})
-        resp = empty_server.post('/add',
-                                 headers=mimetype(serial),
-                                 data=payload)
-        assert resp.status_code == RC.UNPROCESSABLE_ENTITY
+def test_add_two_data_sets_at_once_error(temp_server, serial):
+    # Try to add two things at once
+    payload = serial.dumps({'foo': 'iris.csv',
+                            'bar': 'iris.csv'})
+    resp = temp_server.post('/add',
+                            headers=mimetype(serial),
+                            data=payload)
+    assert resp.status_code == RC.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_add_bunk_data_error(empty_server, serial):
-    with temp_server():
-        # Try to add bunk data
-        payload = serial.dumps({'foo': None})
-        resp = empty_server.post('/add',
-                                 headers=mimetype(serial),
-                                 data=payload)
-        assert resp.status_code == RC.UNPROCESSABLE_ENTITY
+def test_add_bunk_data_error(temp_server, serial):
+    # Try to add bunk data
+    payload = serial.dumps({'foo': None})
+    resp = temp_server.post('/add',
+                            headers=mimetype(serial),
+                            data=payload)
+    assert resp.status_code == RC.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_bad_add_payload(empty_server, serial):
+def test_bad_add_payload(temp_server, serial):
     # try adding more data to server
     blob = serial.dumps('This is not a mutable mapping.')
-    response1 = empty_server.post('/add',
-                                  headers=mimetype(serial),
-                                  data=blob)
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
     assert response1.status_code == RC.UNPROCESSABLE_ENTITY
 
 
