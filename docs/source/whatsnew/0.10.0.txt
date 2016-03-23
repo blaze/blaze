@@ -95,6 +95,11 @@ Bug Fixes
   expressions.
 * Fixed a bug with :class:`~blaze.expr.collections.Sample` on SQL backends
   (:issue:`1452` :issue:`1423` :issue:`1424` :issue:`1425`).
+* Fixed several bugs relating to adding new datasets to blaze server instances
+  (:issue:`1459`).  Blaze server will make a best effort to ensure that the
+  added dataset is valid and loadable; if not, it will return appropriate HTTP
+  status codes.
+
 
 Miscellaneous
 ~~~~~~~~~~~~~
