@@ -91,7 +91,7 @@ def big_sql(url):
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
-        t = odo(zip(list("".join(['a'*25, 'b'*25, 'c'*25, 'd'*25])),
+        t = odo(zip(list("".join(['a' * 25, 'b' * 25, 'c' * 25, 'd' * 25])),
                     np.random.randint(1, 10, (100,)).tolist()), t)
         try:
             yield t
@@ -699,7 +699,6 @@ def test_coalesce(sqla):
     )
 
 
-@pytest.mark.xfail(reason="Having clause not yet implemented")
 def test_having(big_sql):
     '''
     The blaze expression generated in 'res' below is incorrect. It invokes the
@@ -708,7 +707,7 @@ def test_having(big_sql):
 
         print(res)
         SELECT tbl0."A", sum(tbl0."B") AS quant
-            FROM tbl0
+        FROM tbl0
         WHERE sum(tbl0."B") > 125
         GROUP BY
             tbl0."A"
@@ -716,16 +715,81 @@ def test_having(big_sql):
     The correct expression uses HAVING for aggregate function:
 
         SELECT tbl0."A", sum(tbl0."B") AS quant
-            FROM tbl0
+        FROM tbl0
         GROUP BY
             tbl0."A" HAVING sum(tbl0."B") > 125
     '''
     ds = discover(big_sql)
     nn = symbol('nn', ds)
     g1 = by(nn['A'], quant=nn.B.sum())
-    g1_res = odo(compute(g1, big_sql), list)
+    g1_res = compute(g1, big_sql, return_type=pd.DataFrame)
     assert len(g1_res) == 4
 
     expr = g1[g1.quant > 125]
-    res = compute(expr, big_sql)
-    odo(res, list)
+    bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
+
+    # assertion against pandas result
+    df = compute(nn, big_sql, return_type=pd.DataFrame)
+    df_g = df.groupby('A').sum()
+    df_g.columns = ['quant']
+    df_res = df_g[df_g.quant > 125].dropna()
+    df_res.reset_index(inplace=True)
+
+    assert all(df_res == bz_res)
+
+
+def test_having_multiple_conditions(big_sql):
+    '''
+    Similar to test_having(); however, it has multiple conditions that
+    HAVING must satisfy
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+    g1 = by(nn['A'], quant=nn.B.sum())
+    g1_res = compute(g1, big_sql, return_type=pd.DataFrame)
+    assert len(g1_res) == 4
+
+    expr = g1[(g1.A.like('a')) | (g1.quant < 125)]
+    bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
+
+    # assert both conditions are met in the result:
+    # either 'a' is in bz_res or the remaining rows are < 125
+    assert bz_res.A.str.contains('a').any()
+    assert all(bz_res.quant[~bz_res.A.str.contains('a')] < 125)
+
+
+def test_having_where(big_sql):
+    '''
+    compount SQL/blaze expression containg WHERE, GROUP BY and HAVING
+    The HAVING statement also has multiple conditions to satisfy
+
+    Expected outcome:
+        SELECT "A", sum("B")
+        FROM tbl0
+        WHERE "B" > 5
+        GROUP BY "A" HAVING sum("B") > 75
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+
+    # blaze expression generates:
+    #    SELECT tbl0."A", tbl0."B"
+    #    FROM tbl0
+    #    WHERE tbl0."B" > 5
+    s1 = nn[nn.B > 5]
+
+    g1 = by(s1['A'], quant=s1.B.sum())
+    g1_res = compute(g1, big_sql, return_type=pd.DataFrame)
+    assert len(g1_res) == 4
+
+    expr = g1[(g1.quant < 100) & (g1.quant > 50)]
+    bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
+
+    # assertion against pandas result
+    df = compute(s1, big_sql, return_type=pd.DataFrame)
+    df_g = df.groupby('A').sum()
+    df_g.columns = ['quant']
+    df_res = df_g[(df_g.quant < 100) & (df_g.quant > 50)].dropna()
+    df_res.reset_index(inplace=True)
+
+    assert all(df_res == bz_res)
