@@ -14,60 +14,85 @@ SELECT accounts.name
 FROM accounts
 WHERE accounts.amount < :amount_1
 """
+
 from __future__ import absolute_import, division, print_function
 
+from copy import copy
 import datetime
 import itertools
 from itertools import chain
-
 from operator import and_, eq, attrgetter
-from copy import copy
+import warnings
 
+from datashape import TimeDelta
+from datashape.predicates import iscollection, isscalar, isrecord
+import numpy as np
+import numbers
+from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
+from multipledispatch import MDNotImplementedError
 import sqlalchemy as sa
-
 from sqlalchemy import sql, Table, MetaData
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
-from sqlalchemy.engine import Engine
-
 import toolz
-
 from toolz import unique, concat, pipe, first
 from toolz.compatibility import zip
 from toolz.curried import map
 
-import numpy as np
-import numbers
-
-import warnings
-
-from multipledispatch import MDNotImplementedError
-
-from odo.backends.sql import metadata_of_engine, dshape_to_alchemy
-
-from datashape import TimeDelta
-from datashape.predicates import iscollection, isscalar, isrecord
-
-from ..dispatch import dispatch
-
 from .core import compute_up, compute, base
-
-
+from ..compatibility import reduce
+from ..dispatch import dispatch
 from ..expr import (
-    Projection, Selection, Field, Broadcast, Expr, IsIn, Slice, BinOp, UnaryOp,
-    Join, mean, var, std, Reduction, count, FloorDiv, UnaryStringFunction,
-    strlen, DateTime, Coerce, nunique, Distinct, By, Sort, Head, Tail, Sample,
-    Label, Concat, ReLabel, Merge, common_subexpression, Summary, Like,
-    nelements, notnull, Shift, BinaryMath, Pow, DateTimeTruncate, Sub,
+    BinOp,
+    BinaryMath,
+    Broadcast,
+    By,
+    Coalesce,
+    Coerce,
+    Concat,
+    DateTime,
+    DateTimeTruncate,
+    Distinct,
+    Expr,
+    Field,
+    FloorDiv,
+    Head,
+    IsIn,
+    Join,
+    Label,
+    Like,
+    Merge,
+    Pow,
+    Projection,
+    ReLabel,
+    Reduction,
+    Sample,
+    Selection,
+    Shift,
+    Slice,
+    Sort,
+    Sub,
+    Summary,
+    Tail,
+    UnaryOp,
+    UnaryStringFunction,
+    common_subexpression,
+    count,
+    greatest,
+    least,
+    mean,
+    nelements,
+    notnull,
+    nunique,
+    std,
+    strlen,
+    var,
 )
-
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
-
-from ..compatibility import reduce
-
 from ..utils import listpack
 
 
@@ -89,13 +114,23 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Projection, Selectable)
 def compute_up(expr, data, **kwargs):
-    return compute(expr, sa.select([data]), post_compute=False)
+    return compute(
+        expr,
+        sa.select([data]),
+        post_compute=False,
+        return_type='native',
+    )
 
 
 @dispatch(Projection, sa.Column)
 def compute_up(expr, data, **kwargs):
     selectables = [
-        compute(expr._child[field], data, post_compute=False)
+        compute(
+            expr._child[field],
+            data,
+            post_compute=False,
+            return_type='native',
+        )
         for field in expr.fields
     ]
     froms = set(concat(s.froms for s in selectables))
@@ -109,8 +144,12 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Projection, Select)
 def compute_up(expr, data, **kwargs):
     return data.with_only_columns(
-        first(compute(expr._child[field], data,
-                      post_compute=False).inner_columns)
+        first(compute(
+            expr._child[field],
+            data,
+            post_compute=False,
+            return_type='native',
+        ).inner_columns)
         for field in expr.fields
     )
 
@@ -138,8 +177,12 @@ def compute_up(expr, data, **kwargs):
         names = list(c.name for c in data.inner_columns)
         column = inner_columns[names.index(name)]
     except (KeyError, ValueError):
-        single_column_select = compute(expr, first(data.inner_columns),
-                                       post_compute=False)
+        single_column_select = compute(
+            expr,
+            first(data.inner_columns),
+            post_compute=False,
+            return_type='native',
+        )
         column = first(single_column_select.inner_columns)
         result = unify_froms(sa.select([column]),
                              data.froms + single_column_select.froms)
@@ -160,7 +203,12 @@ def compute_up(t, s, **kwargs):
     cols = list(inner_columns(s))
     d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
-    result = compute(t._scalar_expr, d, post_compute=False).label(t._name)
+    result = compute(
+        t._scalar_expr,
+        d,
+        post_compute=False,
+        return_type='native',
+    ).label(t._name)
 
     s = copy(s)
     s.append_column(result)
@@ -172,7 +220,12 @@ def compute_up(t, s, **kwargs):
     cols = list(inner_columns(s))
     d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
-    return compute(t._scalar_expr, d, post_compute=False).label(t._name)
+    return compute(
+        t._scalar_expr,
+        d,
+        post_compute=False,
+        return_type='native',
+    ).label(t._name)
 
 
 @dispatch(Concat, (Select, Selectable), (Select, Selectable))
@@ -189,47 +242,60 @@ def compute_up(t, lhs, rhs, **kwargs):
 @dispatch(Broadcast, ColumnElement)
 def compute_up(t, s, **kwargs):
     expr = t._scalar_expr
-    return compute(expr, s, post_compute=False).label(expr._name)
+    return compute(
+        expr,
+        s,
+        post_compute=False,
+        return_type='native',
+    ).label(expr._name)
 
 
-@dispatch(BinOp, ColumnElement)
-def compute_up(t, data, **kwargs):
-    if isinstance(t.lhs, Expr):
-        return t.op(data, t.rhs)
-    else:
-        return t.op(t.lhs, data)
+def _binop(type_, f):
+    @dispatch(type_, ColumnElement)
+    def compute_up(t, data, **kwargs):
+        if isinstance(t.lhs, Expr):
+            return t.op(data, t.rhs)
+        else:
+            return f(t, t.lhs, data)
+
+    @dispatch(type_, Select)
+    def compute_up(t, data, **kwargs):
+        assert len(data.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic'
+        )
+        column = first(data.inner_columns)
+        if isinstance(t.lhs, Expr):
+            return f(t, column, t.rhs)
+        else:
+            return f(t, t.lhs, column)
+
+    @compute_up.register(
+        type_, (Select, ColumnElement, base), (Select, ColumnElement),
+    )
+    @compute_up.register(type_, (Select, ColumnElement), base)
+    def binop_sql(t, lhs, rhs, **kwargs):
+        if isinstance(lhs, Select):
+            assert len(lhs.c) == 1, (
+                'Select cannot have more than a single column when doing'
+                ' arithmetic, got %r' % lhs
+            )
+            lhs = first(lhs.inner_columns)
+        if isinstance(rhs, Select):
+            assert len(rhs.c) == 1, (
+                'Select cannot have more than a single column when doing'
+                ' arithmetic, got %r' % rhs
+            )
+            rhs = first(rhs.inner_columns)
+
+        return f(t, lhs, rhs)
 
 
-@dispatch(BinOp, Select)
-def compute_up(t, data, **kwargs):
-    assert len(data.c) == 1, \
-        'Select cannot have more than a single column when doing arithmetic'
-    column = first(data.inner_columns)
-    if isinstance(t.lhs, Expr):
-        return t.op(column, t.rhs)
-    else:
-        return t.op(t.lhs, column)
-
-
-@compute_up.register(
-    BinOp, (Select, ColumnElement, base), (Select, ColumnElement),
+_binop(BinOp, lambda expr, lhs, rhs: expr.op(lhs, rhs))
+_binop(
+    (greatest, least),
+    lambda expr, lhs, rhs: getattr(sa.func, type(expr).__name__)(lhs, rhs),
 )
-@compute_up.register(BinOp, (Select, ColumnElement), base)
-def binop_sql(t, lhs, rhs, **kwargs):
-    if isinstance(lhs, Select):
-        assert len(lhs.c) == 1, (
-            'Select cannot have more than a single column when doing'
-            ' arithmetic, got %r' % lhs
-        )
-        lhs = first(lhs.inner_columns)
-    if isinstance(rhs, Select):
-        assert len(rhs.c) == 1, (
-            'Select cannot have more than a single column when doing'
-            ' arithmetic, got %r' % rhs
-        )
-        rhs = first(rhs.inner_columns)
-
-    return t.op(lhs, rhs)
 
 
 @dispatch(Pow, ColumnElement)
@@ -337,10 +403,16 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Selection, sa.sql.ColumnElement)
 def compute_up(expr, data, scope=None, **kwargs):
-    predicate = compute(expr.predicate, data, post_compute=False)
+    predicate = compute(
+        expr.predicate,
+        data,
+        post_compute=False,
+        return_type='native',
+    )
     return compute(
         expr,
         {expr._child: data, expr.predicate: predicate},
+        return_type='native',
         **kwargs
     )
 
@@ -369,6 +441,7 @@ def compute_up(expr, sel, scope=None, **kwargs):
                 post_compute=False,
             ),
         },
+        return_type='native',
         **kwargs
     )
 
@@ -564,7 +637,9 @@ def compute_up(expr, data, **kwargs):
     cols = list(inner_columns(data))
     d = dict((expr._child[c], cols[i])
              for i, c in enumerate(expr._child.fields))
-    return select([compute(expr, d, post_compute=False)])
+    return select([
+        compute(expr, d, post_compute=False, return_type='native')
+    ])
 
 
 @dispatch(Distinct, ColumnElement)
@@ -674,11 +749,24 @@ def compute_up(expr, data, **kwargs):
 @dispatch(By, sa.Column)
 def compute_up(expr, data, scope=None, **kwargs):
     data = lower_column(data)
-    grouper = compute(expr.grouper, scope, post_compute=False, **kwargs)
+    grouper = compute(
+        expr.grouper,
+        scope,
+        post_compute=False,
+        return_type='native',
+        **kwargs
+    )
 
     app = expr.apply
-    reductions = [compute(val, data, post_compute=None).label(name)
-                  for val, name in zip(app.values, app.fields)]
+    reductions = [
+        compute(
+            val,
+            data,
+            post_compute=None,
+            return_type='native',
+        ).label(name)
+        for val, name in zip(app.values, app.fields)
+    ]
 
     froms = list(unique(chain(get_all_froms(grouper),
                               concat(map(get_all_froms, reductions)))))
@@ -701,11 +789,24 @@ def compute_up(expr, data, **kwargs):
                         "got %s of type %r with dshape %s" %
                         (expr.grouper, type(expr.grouper).__name__,
                          expr.grouper.dshape))
-    grouper = get_inner_columns(compute(expr.grouper, data,
-                                        post_compute=False))
+    grouper = get_inner_columns(
+        compute(
+            expr.grouper,
+            data,
+            post_compute=False,
+            return_type='native',
+        ),
+    )
     app = expr.apply
-    reductions = [compute(val, data, post_compute=False).label(name)
-                  for val, name in zip(app.values, app.fields)]
+    reductions = [
+        compute(
+            val,
+            data,
+            post_compute=False,
+            return_type='native',
+        ).label(name)
+        for val, name in zip(app.values, app.fields)
+    ]
 
     return sa.select(grouper + reductions).group_by(*grouper)
 
@@ -803,11 +904,20 @@ def compute_up(expr, data, **kwargs):
     s = alias_it(data)
 
     if valid_reducer(expr.apply):
-        reduction = compute(expr.apply, s, post_compute=False)
+        reduction = compute(
+            expr.apply,
+            s,
+            post_compute=False, return_type='native',
+        )
     else:
         raise TypeError('apply must be a Summary expression')
 
-    grouper = get_inner_columns(compute(expr.grouper, s, post_compute=False))
+    grouper = get_inner_columns(compute(
+        expr.grouper,
+        s,
+        post_compute=False,
+        return_type='native',
+    ))
     reduction_columns = pipe(reduction.inner_columns,
                              map(get_inner_columns),
                              concat)
@@ -841,12 +951,15 @@ def compute_up(t, s, **kwargs):
     cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
     return s.order_by(*cols)
 
+
 def _samp_compute_up(t, s, **kwargs):
     if t.n is not None:
         limit = t.n
     else:
-        limit = select([safuncs.count() * t.frac]).as_scalar()
+        limit = sa.select([safuncs.count() * t.frac],
+                          from_obj=s.alias()).as_scalar()
     return s.order_by(safuncs.random()).limit(limit)
+
 
 @dispatch(Sample, sa.Table)
 def compute_up(t, s, **kwargs):
@@ -882,7 +995,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Head, ScalarSelect)
 def compute_up(t, s, **kwargs):
-    return compute(t, s.element, post_compute=False)
+    return compute(t, s.element, post_compute=False, return_type='native')
 
 
 @dispatch(Label, ColumnElement)
@@ -1000,8 +1113,15 @@ def compute_up(expr, data, **kwargs):
     subexpression = common_subexpression(*expr.children)
 
     # compute each child, including the common subexpression
-    children = [compute(child, {subexpression: data}, post_compute=False)
-                for child in expr.children]
+    children = [
+        compute(
+            child,
+            {subexpression: data},
+            post_compute=False,
+            return_type='native',
+        )
+        for child in expr.children
+    ]
 
     # Get the original columns from the selection and rip out columns from
     # Selectables and ScalarSelects
@@ -1017,8 +1137,15 @@ def compute_up(t, s, scope=None, **kwargs):
     d = dict((t._child[c], list(inner_columns(s))[i])
              for i, c in enumerate(t._child.fields))
 
-    cols = [compute(val, toolz.merge(scope, d), post_compute=None).label(name)
-            for name, val in zip(t.fields, t.values)]
+    cols = [
+        compute(
+            val,
+            toolz.merge(scope, d),
+            post_compute=None,
+            return_type='native',
+        ).label(name)
+        for name, val in zip(t.fields, t.values)
+    ]
 
     s = copy(s)
     for c in cols:
@@ -1031,7 +1158,12 @@ def compute_up(t, s, scope=None, **kwargs):
 def compute_up(t, s, **kwargs):
     scope = {t._child: s}
     return sa.select(
-        compute(value, scope, post_compute=None).label(name)
+        compute(
+            value,
+            scope,
+            post_compute=None,
+            return_type='native',
+        ).label(name)
         for value, name in zip(t.values, t.fields)
     )
 
@@ -1263,3 +1395,34 @@ def compute_up(expr, data, **kwargs):
 @dispatch(Shift, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.func.lag(data, expr.n).over().label(expr._name)
+
+
+@compute_up.register(Coalesce, (ColumnElement, base), ColumnElement)
+@compute_up.register(Coalesce, ColumnElement, base)
+def coalesce_sql(t, lhs, rhs, **kwargs):
+    return sa.sql.functions.coalesce(lhs, rhs).label(t._name)
+
+
+@compute_up.register(Coalesce, Select, base)
+@compute_up.register(Coalesce, base, Select)
+def coalesce_sql_select(expr, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        orig = lhs
+        lhs = first(lhs.inner_columns)
+    else:
+        orig = rhs
+        rhs = first(rhs.inner_columns)
+    result = sa.sql.functions.coalesce(lhs, rhs).label(expr._name)
+    return reconstruct_select([result], orig)
+
+
+@dispatch(Coalesce, (Select, ColumnElement))
+def compute_up(expr, data, **kwargs):
+    if isinstance(expr.lhs, Expr):
+        lhs = data
+        rhs = expr.rhs
+    else:
+        lhs = expr.lhs
+        rhs = expr.data
+
+    return compute_up(expr, lhs, rhs, **kwargs)

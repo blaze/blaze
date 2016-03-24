@@ -9,8 +9,8 @@ from functools import partial
 from datetime import datetime
 import datashape
 from datashape.predicates import iscollection, isscalar
-from blaze import CSV, Table
-from blaze.expr import (TableSymbol, projection, Field, selection, Broadcast,
+from blaze import CSV 
+from blaze.expr import (Symbol, projection, Field, selection, Broadcast,
                         join, cos, by, exp, distinct, Apply,
                         broadcast, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, any, summary,
@@ -25,13 +25,13 @@ import numpy as np
 
 
 def test_dshape():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     assert t.dshape == dshape('var * {name: string, amount: int}')
 
 
 def test_length():
-    t = TableSymbol('t', '10 * {name: string, amount: int}')
-    s = TableSymbol('s', '{name:string, amount:int}')
+    t = Symbol('t', '10 * {name: string, amount: int}')
+    s = Symbol('s', 'var * {name:string, amount:int}')
     assert t.dshape == dshape('10 * {name: string, amount: int}')
     assert len(t) == 10
     assert len(t.name) == 10
@@ -43,14 +43,14 @@ def test_length():
         len(s)
 
 
-def test_tablesymbol_eq():
-    assert not (TableSymbol('t', '{name: string}')
-             == TableSymbol('v', '{name: string}'))
+def test_symbol_eq():
+    assert not (Symbol('t', 'var * {name: string}') ==
+                Symbol('v', 'var * {name: string}'))
 
 
-def test_table_name():
-    t = TableSymbol('t', '10 * {people: string, amount: int}')
-    r = TableSymbol('r', 'int64')
+def test_symbol_name():
+    t = Symbol('t', '10 * {people: string, amount: int}')
+    r = Symbol('r', 'var * int64')
     with pytest.raises(AttributeError):
         t.name
     with pytest.raises(AttributeError):
@@ -58,21 +58,21 @@ def test_table_name():
 
 
 def test_shape():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     assert t.shape
     assert isinstance(t.shape, tuple)
     assert len(t.shape) == 1
 
 
 def test_eq():
-    assert TableSymbol('t', '{a: string, b: int}').isidentical(
-            TableSymbol('t', '{a: string, b: int}'))
-    assert not TableSymbol('t', '{b: string, a: int}').isidentical(
-            TableSymbol('t', '{a: string, b: int}'))
+    assert Symbol('t', 'var * {a: string, b: int}').isidentical(
+           Symbol('t', 'var * {a: string, b: int}'))
+    assert not Symbol('t', 'var * {b: string, a: int}').isidentical(
+            Symbol('t', 'var * {a: string, b: int}'))
 
 
 def test_arithmetic():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    t = Symbol('t', 'var * {x: int, y: int, z: int}')
     x, y, z = t['x'], t['y'], t['z']
     exprs = [x + 1, x + y, 1 + y,
              x - y, 1 - x, x - 1,
@@ -83,7 +83,7 @@ def test_arithmetic():
 
 
 def test_column():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     assert t.fields== ['name', 'amount']
 
     assert eval(str(t.name)) == t.name
@@ -95,7 +95,7 @@ def test_column():
 
 
 def test_symbol_projection_failures():
-    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    t = Symbol('t', '10 * {name: string, amount: int}')
     with pytest.raises(ValueError):
         t._project(['name', 'id'])
     with pytest.raises(AttributeError):
@@ -105,7 +105,7 @@ def test_symbol_projection_failures():
 
 
 def test_Projection():
-    t = TableSymbol('t', '{name: string, amount: int, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int32}')
     p = projection(t, ['amount', 'name'])
     assert p.schema == dshape('{amount: int32, name: string}')
     print(t['amount'].dshape)
@@ -120,20 +120,20 @@ def test_Projection():
 
 
 def test_Projection_retains_shape():
-    t = TableSymbol('t', '5 * {name: string, amount: int, id: int32}')
+    t = Symbol('t', '5 * {name: string, amount: int, id: int32}')
 
     assert t[['name', 'amount']].dshape == \
             dshape('5 * {name: string, amount: int}')
 
 
 def test_indexing():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == projection(t, ['amount', 'id'])
     assert t['amount'].isidentical(Field(t, 'amount'))
 
 
 def test_relational():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     r = (t['name'] == 'Alice')
 
@@ -142,7 +142,7 @@ def test_relational():
 
 
 def test_selection():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     s = selection(t, t['name'] == 'Alice')
     f = selection(t, t['id'] > t['amount'])
@@ -154,14 +154,14 @@ def test_selection():
 
 
 def test_selection_typecheck():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     assert raises(TypeError, lambda: t[t['amount'] + t['id']])
     assert raises(TypeError, lambda: t[t['name']])
 
 
 def test_selection_by_indexing():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     result = t[t['name'] == 'Alice']
 
@@ -170,7 +170,7 @@ def test_selection_by_indexing():
 
 
 def test_selection_by_getattr():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     result = t[t.name == 'Alice']
 
@@ -179,13 +179,13 @@ def test_selection_by_getattr():
 
 
 def test_selection_path_check():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     t2 = t[t.name == 'Alice']
     t3 = t2[t2.amount > 0]
 
 
 def test_path_issue():
-    t = TableSymbol('t', "{topic: string, word: string, result: ?float64}")
+    t = Symbol('t', "{topic: string, word: string, result: ?float64}")
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 
@@ -193,20 +193,20 @@ def test_path_issue():
 
 
 def test_getattr_doesnt_override_properties():
-    t = TableSymbol('t', '{_subs: string, schema: string}')
+    t = Symbol('t', 'var * {_subs: string, schema: string}')
     assert callable(t._subs)
     assert isinstance(t.schema, DataShape)
 
 
 def test_dir_contains_columns():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     result = dir(t)
     columns_set = set(t.fields)
     assert set(result) & columns_set == columns_set
 
 
 def test_selection_consistent_children():
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
 
     expr = t['name'][t['amount'] < 0]
 
@@ -215,7 +215,7 @@ def test_selection_consistent_children():
 
 def test_str():
     import re
-    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int, id: int}')
     expr = t[t['amount'] < 0]['id'] * 2
     assert '<class' not in str(expr)
     assert not re.search('0x[0-9a-f]+', str(expr))
@@ -226,10 +226,10 @@ def test_str():
 
 
 def test_join():
-    t = TableSymbol('t', '{name: string, amount: int}')
-    s = TableSymbol('t', '{name: string, id: int}')
-    r = TableSymbol('r', '{name: string, amount: int}')
-    q = TableSymbol('q', '{name: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
+    s = Symbol('t', 'var * {name: string, id: int}')
+    r = Symbol('r', 'var * {name: string, amount: int}')
+    q = Symbol('q', 'var * {name: int}')
 
     j = join(t, s, 'name', 'name')
 
@@ -248,23 +248,23 @@ def test_join():
 
 
 def test_join_different_on_right_left_columns():
-    t = TableSymbol('t', '{x: int, y: int}')
-    s = TableSymbol('t', '{a: int, b: int}')
+    t = Symbol('t', 'var * {x: int, y: int}')
+    s = Symbol('t', 'var * {a: int, b: int}')
     j = join(t, s, 'x', 'a')
     assert j.on_left == 'x'
     assert j.on_right == 'a'
 
 
 def test_joined_column_first_in_schema():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
-    s = TableSymbol('s', '{w: int, y: int}')
+    t = Symbol('t', 'var * {x: int, y: int, z: int}')
+    s = Symbol('s', 'var * {w: int, y: int}')
 
     assert join(t, s).schema == dshape('{y: int, x: int, z: int, w: int}')
 
 
 def test_outer_join():
-    t = TableSymbol('t', '{name: string, amount: int}')
-    s = TableSymbol('t', '{name: string, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
+    s = Symbol('t', 'var * {name: string, id: int}')
 
     jleft = join(t, s, 'name', 'name', how='left')
     jright = join(t, s, 'name', 'name', how='right')
@@ -286,14 +286,14 @@ def test_outer_join():
 
 
 def test_join_default_shared_columns():
-    t = TableSymbol('t', '{name: string, amount: int}')
-    s = TableSymbol('t', '{name: string, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
+    s = Symbol('t', 'var * {name: string, id: int}')
     assert join(t, s) == join(t, s, 'name', 'name')
 
 
 def test_multi_column_join():
-    a = TableSymbol('a', '{x: int, y: int, z: int}')
-    b = TableSymbol('b', '{w: int, x: int, y: int}')
+    a = Symbol('a', 'var * {x: int, y: int, z: int}')
+    b = Symbol('b', 'var * {w: int, x: int, y: int}')
     j = join(a, b, ['x', 'y'])
 
     assert set(j.fields) == set('wxyz')
@@ -305,7 +305,7 @@ def test_multi_column_join():
 
 
 def test_traverse():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     assert t in list(t._traverse())
 
     expr = t.amount.sum()
@@ -314,7 +314,7 @@ def test_traverse():
 
 
 def test_unary_ops():
-    t = TableSymbol('t', '{name: string, amount: int}')
+    t = Symbol('t', 'var * {name: string, amount: int}')
     expr = cos(exp(t['amount']))
     assert 'cos' in str(expr)
 
@@ -322,7 +322,7 @@ def test_unary_ops():
 
 
 def test_reduction():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     r = sum(t['amount'])
     assert r.dshape in (dshape('int64'),
                         dshape('{amount: int64}'),
@@ -338,26 +338,26 @@ def test_reduction():
     assert 'string' in str(t['name'].min().dshape)
     assert 'string' not in str(t.count().dshape)
 
-    t = TableSymbol('t', '{name: string, amount: real, id: int}')
+    t = Symbol('t', 'var * {name: string, amount: real, id: int}')
 
     assert 'int' in str(t['id'].sum().dshape)
     assert 'int' not in str(t['amount'].sum().dshape)
 
 
 def test_reduction_name():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     assert (t.amount + t.id).sum()._name
 
 
 def test_max_min_class():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     assert str(max(t).dshape) == '{name: string, amount: int32}'
     assert str(min(t).dshape) == '{name: string, amount: int32}'
 
 
 @pytest.fixture
 def symsum():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     return t, t.amount.sum()
 
 
@@ -373,13 +373,8 @@ def ds():
 
 
 def test_discover_dshape_symbol(ds):
-    t_ds = TableSymbol('t', dshape=ds)
+    t_ds = Symbol('t', dshape=ds)
     assert t_ds.fields is not None
-
-    t_sch = TableSymbol('t', dshape=ds.subshape[0])
-    assert t_sch.fields is not None
-
-    assert t_ds.isidentical(t_sch)
 
 
 class TestScalarArithmetic(object):
@@ -415,7 +410,7 @@ class TestScalarArithmetic(object):
 
 
 def test_summary():
-    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    t = Symbol('t', 'var * {id: int32, name: string, amount: int32}')
     s = summary(total=t.amount.sum(), num=t.id.count())
     assert s.dshape == dshape('{num: int32, total: int64}')
     assert hash(s)
@@ -432,13 +427,13 @@ def test_summary():
 
 
 def test_reduction_arithmetic():
-    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    t = Symbol('t', 'var * {id: int32, name: string, amount: int32}')
     expr = t.amount.sum() + 1
     assert eval(str(expr)).isidentical(expr)
 
 
 def test_Distinct():
-    t = TableSymbol('t', '{name: string, amount: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32}')
     r = distinct(t['name'])
     print(r.dshape)
     assert r.dshape  == dshape('var * string')
@@ -449,7 +444,7 @@ def test_Distinct():
 
 
 def test_by():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     r = by(t['name'], total=sum(t['amount']))
 
     print(r.schema)
@@ -458,7 +453,7 @@ def test_by():
 
 
 def test_by_summary():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     a = by(t['name'], sum=sum(t['amount']))
     b = by(t['name'], summary(sum=sum(t['amount'])))
 
@@ -472,7 +467,7 @@ def test_by_summary_printing():
 
 
 def test_by_columns():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
 
     assert len(by(t['id'], total=t['amount'].sum()).fields) == 2
     assert len(by(t['id'], count=t['id'].count()).fields) == 2
@@ -481,7 +476,7 @@ def test_by_columns():
 
 
 def test_sort():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     s = t.sort('amount', ascending=True)
     print(str(s))
     assert eval(str(s)).isidentical(s)
@@ -492,7 +487,7 @@ def test_sort():
 
 
 def test_head():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     s = t.head(10)
     assert eval(str(s)).isidentical(s)
 
@@ -500,7 +495,7 @@ def test_head():
 
 
 def test_label():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     quantity = (t['amount'] + 100).label('quantity')
 
     assert eval(str(quantity)).isidentical(quantity)
@@ -512,21 +507,21 @@ def test_label():
 
 
 def test_map_label():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     c = t.amount.map(identity, schema='int32')
     assert c.label('bar')._name == 'bar'
     assert c.label('bar')._child.isidentical(c._child)
 
 
 def test_columns():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     assert list(t.fields) == ['name', 'amount', 'id']
     assert list(t['name'].fields) == ['name']
     (t['amount'] + 1).fields
 
 
 def test_relabel():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
 
     rl = t.relabel({'name': 'NAME', 'id': 'ID'})
     rlc = t['amount'].relabel({'amount': 'BALANCE'})
@@ -541,7 +536,7 @@ def test_relabel():
 
 
 def test_relabel_join():
-    names = TableSymbol('names', '{first: string, last: string}')
+    names = Symbol('names', 'var * {first: string, last: string}')
 
     siblings = join(names.relabel({'last': 'left'}),
                     names.relabel({'last': 'right'}), 'first')
@@ -550,7 +545,7 @@ def test_relabel_join():
 
 
 def test_map():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     inc = lambda x: x + 1
     assert isscalar(t['amount'].map(inc, schema='int').dshape.measure)
     s = t['amount'].map(inc, schema='{amount: int}')
@@ -565,7 +560,7 @@ def test_map():
 
 @pytest.mark.xfail(reason="Not sure that we should even support this")
 def test_map_without_any_info():
-    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    t = Symbol('t', 'var * {name: string, amount: int32, id: int32}')
     assert iscolumn(t['amount'].map(inc, 'int'))
     assert not iscolumn(t[['name', 'amount']].map(identity))
 
@@ -578,8 +573,8 @@ def test_apply():
     assert r.schema == dshape('real')
 
 
-def test_TableSymbol_printing_is_legible():
-    accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
+def test_Symbol_printing_is_legible():
+    accounts = Symbol('accounts', 'var * {name: string, balance: int, id: int}')
 
     expr = (exp(accounts.balance * 10)) + accounts['id']
     assert "exp(accounts.balance * 10)" in str(expr)
@@ -587,10 +582,10 @@ def test_TableSymbol_printing_is_legible():
 
 
 def test_merge():
-    t = TableSymbol('t', 'int64')
-    p = TableSymbol('p', '{amount:int}')
-    accounts = TableSymbol('accounts',
-                           '{name: string, balance: int32, id: int32}')
+    t = Symbol('t', 'int64')
+    p = Symbol('p', 'var * {amount:int}')
+    accounts = Symbol('accounts',
+                           'var * {name: string, balance: int32, id: int32}')
     new_amount = (accounts.balance * 1.5).label('new')
 
     c = merge(accounts[['name', 'balance']], new_amount)
@@ -604,15 +599,15 @@ def test_merge():
 
 
 def test_merge_repeats():
-    accounts = TableSymbol('accounts',
-                           '{name: string, balance: int32, id: int32}')
+    accounts = Symbol('accounts',
+                           'var * {name: string, balance: int32, id: int32}')
     with pytest.raises(ValueError):
         merge(accounts, (accounts.balance + 1).label('balance'))
 
 
 def test_merge_project():
-    accounts = TableSymbol('accounts',
-                           '{name: string, balance: int32, id: int32}')
+    accounts = Symbol('accounts',
+                           'var * {name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
     c = merge(accounts[['name', 'balance']], new_amount)
 
@@ -626,7 +621,7 @@ inc = lambda x: x + 1
 
 
 def test_subterms():
-    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    a = Symbol('a', 'var * {x: int, y: int, z: int}')
     assert list(a._subterms()) == [a]
     assert set(a['x']._subterms()) == set([a, a['x']])
     assert set(a['x'].map(inc, 'int')._subterms()) == \
@@ -635,7 +630,7 @@ def test_subterms():
 
 
 def test_common_subexpression():
-    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    a = Symbol('a', 'var * {x: int, y: int, z: int}')
 
     assert common_subexpression(a).isidentical(a)
     assert common_subexpression(a, a['x']).isidentical(a)
@@ -644,7 +639,7 @@ def test_common_subexpression():
 
 
 def test_schema_of_complex_interaction():
-    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    a = Symbol('a', 'var * {x: int, y: int, z: int}')
     expr = (a['x'] + a['y']) / a['z']
     assert expr.schema == dshape('float64')
 
@@ -657,7 +652,7 @@ def iscolumn(x):
 
 
 def test_iscolumn():
-    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    a = Symbol('a', 'var * {x: int, y: int, z: int}')
     assert not iscolumn(a)
     assert iscolumn(a['x'])
     assert not iscolumn(a[['x', 'y']])
@@ -673,40 +668,39 @@ def test_iscolumn():
     assert iscolumn(a['x'].head())
     assert not iscolumn(a[['x', 'y']].head())
 
-    assert iscolumn(TableSymbol('b', 'int'))
-    assert not iscolumn(TableSymbol('b', '{x: int}'))
+    assert iscolumn(Symbol('b', 'int'))
+    assert not iscolumn(Symbol('b', 'var * {x: int}'))
 
 
 def test_discover():
-    schema = '{x: int, y: int, z: int}'
-    a = TableSymbol('a', schema)
-
-    assert discover(a) == var * schema
+    ds = 'var * {x: int, y: int, z: int}'
+    a = Symbol('a', ds)
+    assert discover(a) == dshape(ds)
 
 
 def test_improper_selection():
-    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    t = Symbol('t', 'var * {x: int, y: int, z: int}')
 
     assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])
 
 
 def test_serializable():
-    t = TableSymbol('t', '{id: int, name: string, amount: int}')
+    t = Symbol('t', 'var * {id: int, name: string, amount: int}')
     import pickle
     t2 = pickle.loads(pickle.dumps(t))
 
     assert t.isidentical(t2)
 
-    s = TableSymbol('t', '{id: int, city: string}')
+    s = Symbol('t', 'var * {id: int, city: string}')
     expr = join(t[t.amount < 0], s).sort('id').city.head()
     expr2 = pickle.loads(pickle.dumps(expr))
 
     assert expr.isidentical(expr2)
 
 
-def test_table_coercion():
+def test_symbol_coercion():
     from datetime import date
-    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+    t = Symbol('t', 'var * {name: string, amount: int, timestamp: ?date}')
     assert (t.amount + '10').rhs == 10
 
     assert (t.timestamp < '2014-12-01').rhs == date(2014, 12, 1)
@@ -714,7 +708,7 @@ def test_table_coercion():
 
 def test_isnan():
     from blaze import isnan
-    t = TableSymbol('t', '{name: string, amount: real, timestamp: ?date}')
+    t = Symbol('t', 'var * {name: string, amount: real, timestamp: ?date}')
 
     for expr in [t.amount.isnan(), ~t.amount.isnan()]:
         assert eval(str(expr)).isidentical(expr)
@@ -724,7 +718,7 @@ def test_isnan():
 
 
 def test_distinct_name():
-    t = TableSymbol('t', '{id: int32, name: string}')
+    t = Symbol('t', 'var * {id: int32, name: string}')
 
     assert t.name.isidentical(t['name'])
     assert t.distinct().name.isidentical(t.distinct()['name'])
@@ -733,8 +727,8 @@ def test_distinct_name():
 
 
 def test_leaves():
-    t = TableSymbol('t', '{id: int32, name: string}')
-    v = TableSymbol('v', '{id: int32, city: string}')
+    t = Symbol('t', 'var * {id: int32, name: string}')
+    v = Symbol('v', 'var * {id: int32, city: string}')
     x = symbol('x', 'int32')
 
     assert t._leaves() == [t]
@@ -748,13 +742,13 @@ def test_leaves():
 
 @pytest.fixture
 def t():
-    return TableSymbol('t', '{id: int, amount: float64, name: string}')
+    return Symbol('t', 'var * {id: int, amount: float64, name: string}')
 
 
 def funcname(x, y='<lambda>'):
     if PY3:
         return 'TestRepr.%s.<locals>.%s' % (x, y)
-    return 'test_table.%s' % y
+    return 'test_symbol.%s' % y
 
 
 class TestRepr(object):
@@ -811,7 +805,7 @@ class TestRepr(object):
 
 
 def test_count_values():
-    t = TableSymbol('t', '{name: string, amount: int, city: string}')
+    t = Symbol('t', 'var * {name: string, amount: int, city: string}')
     assert t.name.count_values(sort=False).isidentical(
             by(t.name, count=t.name.count()))
     assert t.name.count_values(sort=True).isidentical(
@@ -819,7 +813,7 @@ def test_count_values():
 
 
 def test_dir():
-    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+    t = Symbol('t', 'var * {name: string, amount: int, dt: datetime}')
     assert 'day' in dir(t.dt)
     assert 'mean' not in dir(t.dt)
     assert 'mean' in dir(t.amount)
@@ -828,15 +822,6 @@ def test_dir():
 
 
 def test_distinct_column():
-    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
+    t = Symbol('t', 'var * {name: string, amount: int, dt: datetime}')
     assert t.name.distinct().name.dshape == t.name.distinct().dshape
     assert t.name.distinct().name.isidentical(t.name.distinct())
-
-
-def test_columns_attribute_for_backwards_compatibility():
-    t = TableSymbol('t', '{name: string, amount: int, dt: datetime}')
-
-    assert t.columns == t.fields
-
-    assert 'columns' in dir(t)
-    assert 'columns' not in dir(t.name)

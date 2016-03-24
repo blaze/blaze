@@ -1,22 +1,26 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import itertools
 import numbers
+import warnings
 
 import toolz
 from toolz import first, unique, assoc
+from toolz.utils import no_default
 import pandas as pd
 from odo import odo
 
 from ..compatibility import basestring
-from ..expr import Expr, Field, Symbol, symbol, Join
+from ..expr import Expr, Field, Symbol, symbol, Join, Cast
 from ..dispatch import dispatch
+from ..interactive import coerce_core, into
+
 
 __all__ = ['compute', 'compute_up']
 
-base = numbers.Number, basestring, date, datetime
+base = numbers.Number, basestring, date, datetime, timedelta, type(None)
 
 
 @dispatch(Expr, object)
@@ -42,6 +46,13 @@ def compute_up(a, b, **kwargs):
     raise NotImplementedError("Blaze does not know how to compute "
                               "expression of type `%s` on data of type `%s`"
                               % (type(a).__name__, type(b).__name__))
+
+
+@dispatch(Cast, object)
+def compute_up(c, b, **kwargs):
+    # cast only works on the expression system and does not affect the
+    # computation
+    return b
 
 
 @dispatch(base)
@@ -192,8 +203,9 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     # 4. Repeat
     if expr.isidentical(expr3):
         raise NotImplementedError("Don't know how to compute:\n"
+                                  "type(expr): %s\n"
                                   "expr: %s\n"
-                                  "data: %s" % (expr3, scope4))
+                                  "data: %s" % (type(expr3), expr3, scope4))
     else:
         return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
@@ -346,8 +358,8 @@ def swap_resources_into_scope(expr, scope):
     Examples
     --------
 
-    >>> from blaze import Data
-    >>> t = Data([1, 2, 3], dshape='3 * int', name='t')
+    >>> from blaze import data
+    >>> t = data([1, 2, 3], dshape='3 * int', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
     (t.head(2), {t: [1, 2, 3]})
 
@@ -367,8 +379,20 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, **kwargs):
-    """ Compute expression against data sources
+def compute(expr, d, return_type=no_default, **kwargs):
+    """Compute expression against data sources.
+
+    Parameters
+    ----------
+    expr : str
+        blaze expression
+    d: resource
+        data source to compute expression on
+    return_type : {'native', 'core', type}, optional
+        Type to return data as. Defaults to 'native' but will be changed
+        to 'core' in version 0.11.  'core' forces the computation into a core type.
+        'native' returns the result as is from the respective backend's `post_compute`.
+        If a type is passed, it will odo the result into the type before returning.
 
     >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
@@ -406,6 +430,23 @@ def compute(expr, d, **kwargs):
     result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)
+
+    # return the backend's native response
+    if return_type is no_default:
+        msg = ("The default behavior of compute will change in version >= 0.11"
+               " where the `return_type` parameter will default to 'core'.")
+        warnings.warn(msg, DeprecationWarning)
+    # return result as a core type
+    # (python type, pandas Series/DataFrame, numpy array)
+    elif return_type == 'core':
+        result = coerce_core(result, expr.dshape)
+    # user specified type
+    elif isinstance(return_type, type):
+        result = into(return_type, result)
+    elif return_type != 'native':
+        raise ValueError(
+            "Invalid return_type passed to compute: {}".format(return_type),
+        )
 
     return result
 

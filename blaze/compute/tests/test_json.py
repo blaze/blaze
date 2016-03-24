@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from blaze.utils import example
 from odo.backends.json import JSON, JSONLines
 from odo import Chunks
-from blaze import symbol, discover, compute, into, resource
+from blaze import symbol, discover, compute, into, data
 
 
 js = JSON(example('accounts.json'))
@@ -23,6 +23,6 @@ def test_less_simple():
 
 
 def test_chunks_json():
-    r = resource(example('accounts-streaming*.json'))
-    assert isinstance(r, Chunks)
+    r = data(example('accounts-streaming*.json'))
+    assert isinstance(r.data, Chunks)
     assert compute(s.amount.sum(), r) == 200

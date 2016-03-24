@@ -3,10 +3,10 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from pandas import DataFrame
 import numpy as np
-from odo import resource, into
+from odo import into
 from datashape.predicates import isscalar, iscollection, isrecord
 from blaze.expr import symbol, by
-from blaze.interactive import Data
+from blaze.interactive import data
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 
@@ -29,7 +29,7 @@ sources = [df, x]
 
 try:
     import sqlalchemy
-    sql = resource('sqlite:///:memory:::accounts', dshape=t.dshape)
+    sql = data('sqlite:///:memory:::accounts', dshape=t.dshape)
     into(sql, L)
     sources.append(sql)
 except:
@@ -124,15 +124,15 @@ def typename(obj):
 def test_base():
     for expr, exclusions in expressions.items():
         if iscollection(expr.dshape):
-            model = into(DataFrame, into(np.ndarray, expr._subs({t: Data(base, t.dshape)})))
+            model = into(DataFrame, into(np.ndarray, expr._subs({t: data(base, t.dshape)})))
         else:
-            model = compute(expr._subs({t: Data(base, t.dshape)}))
+            model = compute(expr._subs({t: data(base, t.dshape)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
-            T = Data(source)
+            T = data(source)
             if iscollection(expr.dshape):
                 result = into(type(model), expr._subs({t: T}))
                 if isscalar(expr.dshape.measure):

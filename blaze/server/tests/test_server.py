@@ -20,10 +20,9 @@ from toolz import pipe
 from blaze.dispatch import dispatch
 from blaze.expr import Expr
 from blaze.utils import example
-from blaze import (discover, symbol, by, CSV, compute, join, into, resource,
-                   Data)
+from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
-from blaze.server.server import Server, to_tree, from_tree
+from blaze.server.server import Server, to_tree, from_tree, RC
 from blaze.server.serialization import all_formats, fastmsgpack
 
 
@@ -37,14 +36,12 @@ events = DataFrame([[1, datetime(2000, 1, 1, 12, 0, 0)],
                     [2, datetime(2000, 1, 2, 12, 0, 0)]],
                    columns=['value', 'when'])
 
-db = resource('sqlite:///' + example('iris.db'))
+db = data('sqlite:///' + example('iris.db'))
 
 
 class DumbResource(object):
-    df = DataFrame({
-        'a': np.arange(5),
-        'b': np.arange(5, 10),
-    })
+    df = DataFrame({'a': np.arange(5),
+                    'b': np.arange(5, 10)})
 
     class NoResource(Exception):
         pass
@@ -69,39 +66,33 @@ def _discover_dumb(d):
     return discover(DumbResource.df)
 
 
-data = {
-    'accounts': accounts,
-    'cities': cities,
-    'events': events,
-    'db': db,
-    'dumb': DumbResource(),
-}
+tdata = {'accounts': accounts,
+         'cities': cities,
+         'events': events,
+         'db': db,
+         'dumb': DumbResource()}
 
 
 @pytest.fixture(scope='module')
 def server():
-    s = Server(data, all_formats)
+    s = Server(tdata, all_formats)
     s.app.testing = True
     return s
 
-@contextmanager
-def temp_server(data=None):
+
+@pytest.yield_fixture(params=[None, tdata])
+def temp_server(request):
     """For when we want to mutate the server"""
+    data = request.param
     s = Server(copy(data), formats=all_formats)
     s.app.testing = True
-    yield s.app.test_client()
-
-@pytest.yield_fixture
-def test(server):
-    with server.app.test_client() as c:
+    with s.app.test_client() as c:
         yield c
 
 
 @pytest.yield_fixture
-def empty_server():
-    s = Server(formats=all_formats)
-    s.app.testing = True
-    with s.app.test_client() as c:
+def test(server):
+    with server.app.test_client() as c:
         yield c
 
 
@@ -116,25 +107,23 @@ def iris_server():
 
 def test_datasets(test):
     response = test.get('/datashape')
-    assert_dshape_equal(
-            datashape.dshape(response.data.decode('utf-8')),
-            datashape.dshape(discover(data))
-            )
+    assert_dshape_equal(datashape.dshape(response.data.decode('utf-8')),
+                        datashape.dshape(discover(tdata)))
 
 
 @pytest.mark.parametrize('serial', all_formats)
 def test_bad_responses(test, serial):
-    assert 'OK' not in test.post(
-        '/compute/accounts.{name}'.format(name=serial.name),
-        data=serial.dumps(500),
-    ).status
-    assert 'OK' not in test.post(
-        '/compute/non-existent-table.{name}'.format(name=serial.name),
-        data=serial.dumps(0),
-    ).status
-    assert 'OK' not in test.post(
-        '/compute/accounts.{name}'.format(name=serial.name),
-    ).status
+
+    post = test.post('/compute/accounts.{name}'.format(name=serial.name),
+                     data=serial.dumps(500),)
+    assert 'OK' not in post.status
+
+    post = test.post('/compute/non-existent-table.{name}'.format(name=serial.name),
+                     data=serial.dumps(0))
+    assert 'OK' not in post.status
+
+    post = test.post('/compute/accounts.{name}'.format(name=serial.name))
+    assert 'OK' not in post.status
 
 
 def test_to_from_json():
@@ -146,29 +135,14 @@ def test_to_from_json():
 def test_to_tree():
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
-    expected = {
-        'op': 'sum',
-        'args': [
-            {
-                'op': 'Field',
-                'args': [
-                    {
-                        'op': 'Symbol',
-                        'args': [
-                            't',
-                            datashape.dshape(
-                                'var * {name: string, amount: int32}',
-                            ),
-                            0,
-                        ]
-                    },
-                    'amount'
-                ]
-            },
-            [0],
-            False,
-        ],
-    }
+    dshape = datashape.dshape('var * {name: string, amount: int32}',)
+    sum_args = [{'op': 'Field',
+                 'args': [{'op': 'Symbol',
+                           'args': ['t', dshape, 0]},
+                          'amount']},
+                [0],
+                False]
+    expected = {'op': 'sum', 'args': sum_args}
     assert to_tree(expr) == expected
 
 
@@ -200,7 +174,7 @@ def test_from_tree_is_robust_to_unnecessary_namespace():
     assert from_tree(tree, {'t': t}).isidentical(expr)
 
 
-t = symbol('t', discover(data))
+t = symbol('t', discover(tdata))
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -209,16 +183,14 @@ def test_compute(test, serial):
     query = {'expr': to_tree(expr)}
     expected = 300
 
-    response = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    assert serial.data_loads(data['data']) == expected
-    assert list(data['names']) == ['amount_sum']
+    tdata = serial.loads(response.data)
+    assert serial.data_loads(tdata['data']) == expected
+    assert list(tdata['names']) == ['amount_sum']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -226,18 +198,18 @@ def test_get_datetimes(test, serial):
     expr = t.events
     query = {'expr': to_tree(expr)}
 
-    response = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    ds = datashape.dshape(data['datashape'])
-    result = into(np.ndarray, serial.data_loads(data['data']), dshape=ds)
+    tdata = serial.loads(response.data)
+    ds = datashape.dshape(tdata['datashape'])
+    result = into(np.ndarray,
+                  serial.data_loads(tdata['data']),
+                  dshape=ds)
     assert into(list, result) == into(list, events)
-    assert list(data['names']) == events.columns.tolist()
+    assert list(tdata['names']) == events.columns.tolist()
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -246,16 +218,14 @@ def dont_test_compute_with_namespace(test, serial):
                       'args': ['accounts', 'name']}}
     expected = ['Alice', 'Bob']
 
-    response = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    assert serial.data_loads(data['data']) == expected
-    assert data['names'] == ['name']
+    tdata = serial.loads(response.data)
+    assert serial.data_loads(tdata['data']) == expected
+    assert tdata['names'] == ['name']
 
 
 iris = CSV(example('iris.csv'))
@@ -270,43 +240,39 @@ def test_compute_with_variable_in_namespace(iris_server, serial):
     tree = to_tree(expr, {pl: 'pl'})
 
     blob = serial.dumps({'expr': tree, 'namespace': {'pl': 5}})
-    resp = test.post(
-        '/compute',
-        data=blob,
-        headers=mimetype(serial)
-    )
+    resp = test.post('/compute',
+                     data=blob,
+                     headers=mimetype(serial))
 
     assert 'OK' in resp.status
-    data = serial.loads(resp.data)
-    result = serial.data_loads(data['data'])
+    tdata = serial.loads(resp.data)
+    result = serial.data_loads(tdata['data'])
     expected = list(compute(expr._subs({pl: 5}), {t: iris}))
     assert odo(result, list) == expected
-    assert list(data['names']) == ['species']
+    assert list(tdata['names']) == ['species']
 
 
 @pytest.mark.parametrize('serial', all_formats)
 def test_compute_by_with_summary(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))
-    expr = by(
-        t.species,
-        max=t.petal_length.max(),
-        sum=t.petal_width.sum(),
-    )
+    expr = by(t.species,
+              max=t.petal_length.max(),
+              sum=t.petal_width.sum())
     tree = to_tree(expr)
     blob = serial.dumps({'expr': tree})
-    resp = test.post(
-        '/compute',
-        data=blob,
-        headers=mimetype(serial)
-    )
+    resp = test.post('/compute',
+                     data=blob,
+                     headers=mimetype(serial))
     assert 'OK' in resp.status
-    data = serial.loads(resp.data)
-    result = DataFrame(serial.data_loads(data['data'])).values
+    tdata = serial.loads(resp.data)
+    result = DataFrame(serial.data_loads(tdata['data'])).values
     expected = compute(expr, iris).values
-    np.testing.assert_array_equal(result[:, 0], expected[:, 0])
-    np.testing.assert_array_almost_equal(result[:, 1:], expected[:, 1:])
-    assert list(data['names']) == ['species', 'max', 'sum']
+    np.testing.assert_array_equal(result[:, 0],
+                                  expected[:, 0])
+    np.testing.assert_array_almost_equal(result[:, 1:],
+                                         expected[:, 1:])
+    assert list(tdata['names']) == ['species', 'max', 'sum']
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -318,36 +284,32 @@ def test_compute_column_wise(iris_server, serial):
     expr = t[subexpr]
     tree = to_tree(expr)
     blob = serial.dumps({'expr': tree})
-    resp = test.post(
-        '/compute',
-        data=blob,
-        headers=mimetype(serial)
-    )
+    resp = test.post('/compute',
+                     data=blob,
+                     headers=mimetype(serial))
 
     assert 'OK' in resp.status
-    data = serial.loads(resp.data)
-    result = serial.data_loads(data['data'])
+    tdata = serial.loads(resp.data)
+    result = serial.data_loads(tdata['data'])
     expected = compute(expr, iris)
-    assert list(map(tuple, odo(result, list))) == into(list, expected)
-    assert list(data['names']) == t.fields
+    assert list(map(tuple, into(list, result))) == into(list, expected)
+    assert list(tdata['names']) == t.fields
 
 
 @pytest.mark.parametrize('serial', all_formats)
 def test_multi_expression_compute(test, serial):
-    s = symbol('s', discover(data))
+    s = symbol('s', discover(tdata))
 
     expr = join(s.accounts, s.cities)
 
-    resp = test.post(
-        '/compute',
-        data=serial.dumps(dict(expr=to_tree(expr))),
-        headers=mimetype(serial)
-    )
+    resp = test.post('/compute',
+                     data=serial.dumps({'expr': to_tree(expr)}),
+                     headers=mimetype(serial))
 
     assert 'OK' in resp.status
     respdata = serial.loads(resp.data)
     result = serial.data_loads(respdata['data'])
-    expected = compute(expr, {s: data})
+    expected = compute(expr, {s: tdata})
 
     assert list(map(tuple, odo(result, list))) == into(list, expected)
     assert list(respdata['names']) == expr.fields
@@ -356,18 +318,16 @@ def test_multi_expression_compute(test, serial):
 @pytest.mark.parametrize('serial', all_formats)
 def test_leaf_symbol(test, serial):
     query = {'expr': {'op': 'Field', 'args': [':leaf', 'cities']}}
-    resp = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    resp = test.post('/compute',
+                     data=serial.dumps(query),
+                     headers=mimetype(serial))
 
-    data = serial.loads(resp.data)
-    a = serial.data_loads(data['data'])
+    tdata = serial.loads(resp.data)
+    a = serial.data_loads(tdata['data'])
     b = into(list, cities)
 
-    assert list(map(tuple, odo(a, list))) == b
-    assert list(data['names']) == cities.columns.tolist()
+    assert list(map(tuple, into(list, a))) == b
+    assert list(tdata['names']) == cities.columns.tolist()
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -375,36 +335,28 @@ def test_sqlalchemy_result(test, serial):
     expr = t.db.iris.head(5)
     query = {'expr': to_tree(expr)}
 
-    response = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
 
     assert 'OK' in response.status
-    data = serial.loads(response.data)
-    result = serial.data_loads(data['data'])
+    tdata = serial.loads(response.data)
+    result = serial.data_loads(tdata['data'])
     if isinstance(result, list):
         assert all(isinstance(item, (tuple, list)) for item in result)
     elif isinstance(result, DataFrame):
-        assert_frame_equal(
-            result,
-            DataFrame(
-                [[5.1,   3.5,   1.4,   0.2,   'Iris-setosa'],
-                 [4.9,   3.0,   1.4,   0.2,   'Iris-setosa'],
-                 [4.7,   3.2,   1.3,   0.2,   'Iris-setosa'],
-                 [4.6,   3.1,   1.5,   0.2,   'Iris-setosa'],
-                 [5.0,   3.6,   1.4,   0.2,   'Iris-setosa']],
-                columns=[
-                    'sepal_length',
-                    'sepal_width',
-                    'petal_length',
-                    'petal_width',
-                    'species',
-                ],
-            ),
-        )
-    assert list(data['names']) == t.db.iris.fields
+        expected = DataFrame([[5.1, 3.5, 1.4, 0.2, 'Iris-setosa'],
+                              [4.9, 3.0, 1.4, 0.2, 'Iris-setosa'],
+                              [4.7, 3.2, 1.3, 0.2, 'Iris-setosa'],
+                              [4.6, 3.1, 1.5, 0.2, 'Iris-setosa'],
+                              [5.0, 3.6, 1.4, 0.2, 'Iris-setosa']],
+                             columns=['sepal_length',
+                                      'sepal_width',
+                                      'petal_length',
+                                      'petal_width',
+                                      'species'])
+        assert_frame_equal(expected, result)
+    assert list(tdata['names']) == t.db.iris.fields
 
 
 def test_server_accepts_non_nonzero_ables():
@@ -415,16 +367,14 @@ def test_server_accepts_non_nonzero_ables():
 def test_server_can_compute_sqlalchemy_reductions(test, serial):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
-    response = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
 
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == odo(compute(expr, {t: data}), int)
+    assert result == into(int, compute(expr, {t: tdata}))
     assert list(respdata['names']) == ['petal_length_sum']
 
 
@@ -432,22 +382,20 @@ def test_server_can_compute_sqlalchemy_reductions(test, serial):
 def test_serialization_endpoints(test, serial):
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
-    response = test.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=mimetype(serial)
-    )
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
 
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == odo(compute(expr, {t: data}), int)
+    assert result == into(int, compute(expr, {t: tdata}))
     assert list(respdata['names']) == ['petal_length_sum']
 
 
 def test_cors_compute(test):
     res = test.options('/compute')
-    assert res.status_code == 200
+    assert res.status_code == RC.OK
     assert 'HEAD' in res.headers['Allow']
     assert 'OPTIONS' in res.headers['Allow']
     assert 'POST' in res.headers['Allow']
@@ -457,7 +405,7 @@ def test_cors_compute(test):
 
 def test_cors_datashape(test):
     res = test.options('/datashape')
-    assert res.status_code == 200
+    assert res.status_code == RC.OK
     assert 'HEAD' in res.headers['Allow']
     assert 'OPTIONS' in res.headers['Allow']
     assert 'GET' in res.headers['Allow']
@@ -467,7 +415,7 @@ def test_cors_datashape(test):
 
 def test_cors_add(test):
     res = test.options('/add')
-    assert res.status_code == 200
+    assert res.status_code == RC.OK
     assert 'HEAD' in res.headers['Allow']
     assert 'POST' in res.headers['Allow']
     assert 'OPTIONS' in res.headers['Allow']
@@ -490,7 +438,7 @@ def server_with_auth(username, password):
     def auth(a):
         return a and a.username == username and a.password == password
 
-    s = Server(data, all_formats, authorization=auth)
+    s = Server(tdata, all_formats, authorization=auth)
     s.app.testing = True
     return s
 
@@ -502,9 +450,7 @@ def test_with_auth(server_with_auth):
 
 
 def basic_auth(username, password):
-    return (
-        b'Basic ' + b64encode(':'.join((username, password)).encode('utf-8'))
-    )
+    return b'Basic ' + b64encode(':'.join((username, password)).encode('utf-8'))
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -512,50 +458,38 @@ def test_auth(test_with_auth, username, password, serial):
     expr = t.accounts.amount.sum()
     query = {'expr': to_tree(expr)}
 
-    r = test_with_auth.get(
-        '/datashape',
-        headers={'authorization': basic_auth(username, password)},
-    )
-    assert r.status_code == 200
+    r = test_with_auth.get('/datashape',
+                           headers={'authorization': basic_auth(username, password)})
+    assert r.status_code == RC.OK
     headers = mimetype(serial)
     headers['authorization'] = basic_auth(username, password)
-    s = test_with_auth.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=headers,
-    )
-    assert s.status_code == 200
+    s = test_with_auth.post('/compute',
+                            data=serial.dumps(query),
+                            headers=headers)
+    assert s.status_code == RC.OK
 
-    u = test_with_auth.get(
-        '/datashape',
-        headers={'authorization': basic_auth(username + 'a', password + 'a')},
-    )
-    assert u.status_code == 401
+    u = test_with_auth.get('/datashape',
+                           headers={'authorization': basic_auth(username + 'a', password + 'a')})
+    assert u.status_code == RC.UNAUTHORIZED
 
     headers['authorization'] = basic_auth(username + 'a', password + 'a')
-    v = test_with_auth.post(
-        '/compute',
-        data=serial.dumps(query),
-        headers=headers,
-    )
-    assert v.status_code == 401
+    v = test_with_auth.post('/compute',
+                            data=serial.dumps(query),
+                            headers=headers)
+    assert v.status_code == RC.UNAUTHORIZED
 
 
 @pytest.mark.parametrize('serial', all_formats)
 def test_minute_query(test, serial):
     expr = t.events.when.minute
     query = {'expr': to_tree(expr)}
-    result = test.post(
-        '/compute',
-        headers=mimetype(serial),
-        data=serial.dumps(query)
-    )
-    expected = {
-        'data': [0, 0],
-        'names': ['when_minute'],
-        'datashape': '2 * int64'
-    }
-    assert result.status_code == 200
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(query))
+    expected = {'data': [0, 0],
+                'names': ['when_minute'],
+                'datashape': '2 * int64'}
+    assert result.status_code == RC.OK
     resp = serial.loads(result.data)
     assert list(serial.data_loads(resp['data'])) == expected['data']
     assert list(resp['names']) == expected['names']
@@ -566,17 +500,13 @@ def test_minute_query(test, serial):
 def test_isin(test, serial):
     expr = t.events.value.isin(frozenset([1]))
     query = {'expr': to_tree(expr)}
-    result = test.post(
-        '/compute',
-        headers=mimetype(serial),
-        data=serial.dumps(query)
-    )
-    expected = {
-        'data': [True, False],
-        'names': ['value'],
-        'datashape': '2 * bool',
-    }
-    assert result.status_code == 200
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(query))
+    expected = {'data': [True, False],
+                'names': ['value'],
+                'datashape': '2 * bool'}
+    assert result.status_code == RC.OK
     resp = serial.loads(result.data)
     assert list(serial.data_loads(resp['data'])) == expected['data']
     assert list(resp['names']) == expected['names']
@@ -584,76 +514,34 @@ def test_isin(test, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_add_data_to_empty_server(empty_server, serial):
+def test_add_data_to_server(temp_server, serial):
     # add data
-    with temp_server() as test:
-        iris_path = example('iris.csv')
-        blob = serial.dumps({'iris': iris_path})
-        response1 = empty_server.post(
-            '/add',
-            headers=mimetype(serial),
-            data=blob,
-        )
-        assert 'OK' in response1.status
-        assert response1.status_code == 200
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': iris_path})
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert 'CREATED' in response1.status
+    assert response1.status_code == RC.CREATED
 
-        # check for expected server datashape
-        response2 = empty_server.get('/datashape')
-        expected2 = str(discover({'iris': resource(iris_path)}))
-        assert response2.data.decode('utf-8') == expected2
+    # check for expected server datashape
+    response2 = temp_server.get('/datashape')
+    expected2 = discover({'iris': data(iris_path)})
+    response_dshape = datashape.dshape(response2.data.decode('utf-8'))
+    assert_dshape_equal(response_dshape.measure.dict['iris'],
+                        expected2.measure.dict['iris'])
 
-        # compute on added data
-        t = Data({'iris': resource(iris_path)})
-        expr = t.iris.petal_length.sum()
+    # compute on added data
+    t = data({'iris': data(iris_path)})
+    expr = t.iris.petal_length.sum()
 
-        response3 = empty_server.post(
-            '/compute',
-            data=serial.dumps({'expr': to_tree(expr)}),
-            headers=mimetype(serial)
-        )
+    response3 = temp_server.post('/compute',
+                                 data=serial.dumps({'expr': to_tree(expr)}),
+                                 headers=mimetype(serial))
 
-        result3 = serial.data_loads(serial.loads(response3.data)['data'])
-        expected3 = compute(expr, {'iris': resource(iris_path)})
-        assert result3 == expected3
-
-
-@pytest.mark.parametrize('serial', all_formats)
-def test_add_data_to_server(serial):
-    with temp_server(data) as test:
-        # add data
-        initial_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
-        iris_path = example('iris.csv')
-        blob = serial.dumps({'iris': iris_path})
-        response1 = test.post(
-            '/add',
-            headers=mimetype(serial),
-            data=blob,
-        )
-        assert 'OK' in response1.status
-        assert response1.status_code == 200
-
-        # check for expected server datashape
-        new_datashape = datashape.dshape(test.get('/datashape').data.decode('utf-8'))
-        data2 = data.copy()
-        data2.update({'iris': resource(iris_path)})
-        expected2 = datashape.dshape(discover(data2))
-        from pprint import pprint as pp
-        assert_dshape_equal(new_datashape, expected2)
-        assert new_datashape.measure.fields != initial_datashape.measure.fields
-
-        # compute on added data
-        t = Data({'iris': resource(iris_path)})
-        expr = t.iris.petal_length.sum()
-
-        response3 = test.post(
-            '/compute',
-            data=serial.dumps({'expr': to_tree(expr)}),
-            headers=mimetype(serial)
-        )
-
-        result3 = serial.data_loads(serial.loads(response3.data)['data'])
-        expected3 = compute(expr, {'iris': resource(iris_path)})
-        assert result3 == expected3
+    result3 = serial.data_loads(serial.loads(response3.data)['data'])
+    expected3 = compute(expr, {'iris': data(iris_path)})
+    assert result3 == expected3
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -661,24 +549,66 @@ def test_cant_add_data_to_server(iris_server, serial):
     # try adding more data to server
     iris_path = example('iris.csv')
     blob = serial.dumps({'iris': iris_path})
-    response1 = iris_server.post(
-        '/add',
-        headers=mimetype(serial),
-        data=blob,
-    )
-    assert response1.status_code == 422
+    response1 = iris_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert response1.status_code == RC.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_bad_add_payload(empty_server, serial):
+def test_add_data_twice_error(temp_server, serial):
+    # add iris
+    iris_path = example('iris.csv')
+    payload = serial.dumps({'iris': iris_path})
+    temp_server.post('/add',
+                      headers=mimetype(serial),
+                      data=payload)
+
+    # Try to add to existing 'iris'
+    resp = temp_server.post('/add',
+                            headers=mimetype(serial),
+                            data=payload)
+    assert resp.status_code == RC.CONFLICT
+
+    # Verify the server still serves the original 'iris'.
+    ds = datashape.dshape(temp_server.get('/datashape').data.decode('utf-8'))
+    t = symbol('t', ds)
+    query = {'expr': to_tree(t.iris)}
+    resp = temp_server.post('/compute',
+                            data=serial.dumps(query),
+                            headers=mimetype(serial))
+    assert resp.status_code == RC.OK
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_two_data_sets_at_once_error(temp_server, serial):
+    # Try to add two things at once
+    payload = serial.dumps({'foo': 'iris.csv',
+                            'bar': 'iris.csv'})
+    resp = temp_server.post('/add',
+                            headers=mimetype(serial),
+                            data=payload)
+    assert resp.status_code == RC.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_bunk_data_error(temp_server, serial):
+    # Try to add bunk data
+    payload = serial.dumps({'foo': None})
+    resp = temp_server.post('/add',
+                            headers=mimetype(serial),
+                            data=payload)
+    assert resp.status_code == RC.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_bad_add_payload(temp_server, serial):
     # try adding more data to server
     blob = serial.dumps('This is not a mutable mapping.')
-    response1 = empty_server.post(
-        '/add',
-        headers=mimetype(serial),
-        data=blob,
-    )
-    assert response1.status_code == 422
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert response1.status_code == RC.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -686,36 +616,26 @@ def test_odo_kwargs(test, serial):
     expr = t.dumb
     bad_query = {'expr': to_tree(expr)}
 
-    result = test.post(
-        '/compute',
-        headers=mimetype(serial),
-        data=serial.dumps(bad_query),
-    )
-    assert result.status_code == 500
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(bad_query))
+    assert result.status_code == RC.INTERNAL_SERVER_ERROR
     assert b'return_df must be passed' in result.data
 
-    good_query = {
-        'expr': to_tree(expr),
-        'odo_kwargs': {
-            'return_df': odo(DumbResource.df, list),
-        },
-    }
-    result = test.post(
-        '/compute',
-        headers=mimetype(serial),
-        data=serial.dumps(good_query)
-    )
-    assert result.status_code == 200
-    data = serial.loads(result.data)
+    good_query = {'expr': to_tree(expr),
+                  'odo_kwargs': {'return_df': odo(DumbResource.df, list)}}
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(good_query))
+    assert result.status_code == RC.OK
+    tdata = serial.loads(result.data)
     dshape = discover(DumbResource.df)
-    assert_dshape_equal(
-        datashape.dshape(data['datashape']),
-        dshape,
-    )
-    assert_frame_equal(
-        odo(serial.data_loads(data['data']), DataFrame, dshape=dshape),
-        DumbResource.df,
-    )
+    assert_dshape_equal(datashape.dshape(tdata['datashape']),
+                        dshape)
+    assert_frame_equal(odo(serial.data_loads(tdata['data']),
+                           DataFrame,
+                           dshape=dshape),
+                       DumbResource.df)
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -723,47 +643,35 @@ def test_compute_kwargs(test, serial):
     expr = t.dumb.sort()
     bad_query = {'expr': to_tree(expr)}
 
-    result = test.post(
-        '/compute',
-        headers=mimetype(serial),
-        data=serial.dumps(bad_query),
-    )
-    assert result.status_code == 500
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(bad_query))
+    assert result.status_code == RC.INTERNAL_SERVER_ERROR
     assert b'return_df must be passed' in result.data
 
-    good_query = {
-        'expr': to_tree(expr),
-        'compute_kwargs': {
-            'return_df': odo(DumbResource.df, list),
-        },
-    }
-    result = test.post(
-        '/compute',
-        headers=mimetype(serial),
-        data=serial.dumps(good_query)
-    )
-    assert result.status_code == 200
-    data = serial.loads(result.data)
+    good_query = {'expr': to_tree(expr),
+                  'compute_kwargs': {'return_df': odo(DumbResource.df, list)}}
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(good_query))
+    assert result.status_code == RC.OK
+    tdata = serial.loads(result.data)
     dshape = discover(DumbResource.df)
-    assert_dshape_equal(
-        datashape.dshape(data['datashape']),
-        dshape,
-    )
-    assert_frame_equal(
-        odo(serial.data_loads(data['data']), DataFrame, dshape=dshape),
-        DumbResource.df,
-    )
+    assert_dshape_equal(datashape.dshape(tdata['datashape']),
+                        dshape)
+    assert_frame_equal(odo(serial.data_loads(tdata['data']),
+                           DataFrame,
+                           dshape=dshape),
+                       DumbResource.df)
 
 
 def test_fastmsgmpack_mutable_dataframe(test):
     expr = t.events  # just get back the dataframe
     query = {'expr': to_tree(expr)}
-    result = test.post(
-        '/compute',
-        headers=mimetype(fastmsgpack),
-        data=fastmsgpack.dumps(query)
-    )
-    assert result.status_code == 200
+    result = test.post('/compute',
+                       headers=mimetype(fastmsgpack),
+                       data=fastmsgpack.dumps(query))
+    assert result.status_code == RC.OK
     data = fastmsgpack.data_loads(fastmsgpack.loads(result.data)['data'])
 
     for block in data._data.blocks:

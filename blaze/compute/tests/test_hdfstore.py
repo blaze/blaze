@@ -3,10 +3,11 @@ tables = pytest.importorskip('tables')
 
 from blaze.compute.hdfstore import *
 from blaze.utils import tmpfile
-from blaze import symbol, discover, compute
+from datashape import discover, dshape
+from blaze import symbol, compute, data
 import pandas as pd
 from datetime import datetime
-from odo import Chunks, resource, into
+from odo import Chunks, into
 import os
 
 
@@ -31,7 +32,7 @@ def test_hdfstore():
         df.to_hdf(fn, '/appendable', format='table')
         df.to_hdf(fn, '/fixed')
 
-        hdf = resource('hdfstore://%s' % fn)
+        hdf = data('hdfstore://%s' % fn)
         s = symbol('s', discover(hdf))
 
         assert isinstance(compute(s.fixed, hdf),
@@ -40,13 +41,13 @@ def test_hdfstore():
                           (pd.io.pytables.AppendableFrameTable, Chunks))
 
         s = symbol('s', discover(df))
-        f = resource('hdfstore://%s::/fixed' % fn)
-        a = resource('hdfstore://%s::/appendable' % fn)
+        f = data('hdfstore://%s::/fixed' % fn)
+        a = data('hdfstore://%s::/appendable' % fn)
         assert isinstance(pre_compute(s, a), Chunks)
 
-        hdf.close()
-        f.parent.close()
-        a.parent.close()
+        hdf.data.close()
+        f.data.parent.close()
+        a.data.parent.close()
 
 
 
@@ -54,11 +55,11 @@ def test_groups():
     with tmpfile('.hdf5') as fn:
         df.to_hdf(fn, '/data/fixed')
 
-        hdf = resource('hdfstore://%s' % fn)
-        assert discover(hdf) == discover({'data': {'fixed': df}})
+        hdf = data('hdfstore://%s' % fn)
+        assert dshape(discover(hdf)) == dshape(discover({'data': {'fixed': df}}))
 
         s = symbol('s', discover(hdf))
 
         assert list(compute(s.data.fixed, hdf).a) == [1, 2, 3, 4]
 
-        hdf.close()
+        hdf.data.close()

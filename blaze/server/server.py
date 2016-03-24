@@ -8,6 +8,7 @@ from hashlib import md5
 import os
 import re
 import socket
+from time import time
 from warnings import warn
 
 from datashape import discover, pprint
@@ -23,7 +24,7 @@ from blaze.compute import compute_up
 from blaze.expr import utils as expr_utils
 
 from .serialization import json, all_formats
-from ..interactive import InteractiveSymbol
+from ..interactive import _Data
 from ..expr import Expr, symbol
 
 
@@ -32,6 +33,26 @@ __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
 # http://www.speedguide.net/port.php?port=6363
 # http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
 DEFAULT_PORT = 6363
+
+
+class RC(object):
+    """
+    Simple namespace for HTTP status codes.
+    https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+    """
+
+    OK = 200
+    CREATED = 201
+
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+    FORBIDDEN = 403
+    CONFLICT = 409
+    UNPROCESSABLE_ENTITY = 422
+    UNSUPPORTED_MEDIA_TYPE = 415
+
+    INTERNAL_SERVER_ERROR = 500
+    NOT_IMPLEMENTED = 501
 
 
 api = Blueprint('api', __name__)
@@ -49,11 +70,8 @@ def _get_option(option, options, default=_no_default):
             return default
 
         # Provides a more informative error message.
-        raise TypeError(
-            'The blaze api must be registered with {option}'.format(
-                option=option,
-            ),
-        )
+        msg = 'The blaze api must be registered with {option}'
+        raise TypeError(msg.format(option=option))
 
 
 def ensure_dir(path):
@@ -69,32 +87,26 @@ def _register_api(app, options, first_registration=False):
     Register the data with the blueprint.
     """
     _get_data.cache[app] = _get_option('data', options)
-    _get_format.cache[app] = dict(
-        (f.name, f) for f in _get_option('formats', options)
-    )
-    _get_auth.cache[app] = (
-        _get_option('authorization', options, None) or (lambda a: True)
-    )
+    _get_format.cache[app] = {f.name: f for f in _get_option('formats', options)}
+    _get_auth.cache[app] = (_get_option('authorization', options, None) or
+                            (lambda a: True))
     allow_profiler = _get_option('allow_profiler', options, False)
     profiler_output = _get_option('profiler_output', options, None)
     profile_by_default = _get_option('profile_by_default', options, False)
     if not allow_profiler and (profiler_output or profile_by_default):
-        raise ValueError(
-            "cannot set %s%s%s when 'allow_profiler' is False" % (
-                'profiler_output' if profiler_output else '',
-                ' or ' if profiler_output and profile_by_default else '',
-                'profile_by_default' if profile_by_default else '',
-            ),
-        )
+        msg = "cannot set %s%s%s when 'allow_profiler' is False"
+        raise ValueError(msg % ('profiler_output' if profiler_output else '',
+                                ' or ' if profiler_output and profile_by_default else '',
+                                'profile_by_default' if profile_by_default else ''))
     if allow_profiler:
         if profiler_output is None:
             profiler_output = 'profiler_output'
         if profiler_output != ':response':
             ensure_dir(profiler_output)
 
-    _get_profiler_info.cache[app] = (
-        allow_profiler, profiler_output, profile_by_default
-    )
+    _get_profiler_info.cache[app] = (allow_profiler,
+                                     profiler_output,
+                                     profile_by_default)
 
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
@@ -157,24 +169,20 @@ def _prof_path(profiler_output, expr):
     -----
     This function ensures that the dirname of the returned path exists.
     """
-    dir_ = os.path.join(
-        profiler_output,
-        expr_md5(expr),  # use the md5 so the client knows where to look
-    )
+    dir_ = os.path.join(profiler_output,
+                        expr_md5(expr))  # Use md5 so the client knows where to look.
     ensure_dir(dir_)
-    return os.path.join(dir_, str(int(datetime.utcnow().timestamp())))
+    return os.path.join(dir_,
+                        str(int(datetime.utcnow().timestamp())))
 
 
 def authorization(f):
     @functools.wraps(f)
     def authorized(*args, **kwargs):
         if not _get_auth()(request.authorization):
-            return Response(
-                'bad auth token',
-                401,
-                {'WWW-Authenticate': 'Basic realm="Login Required"'},
-            )
-
+            return Response('bad auth token',
+                            RC.UNAUTHORIZED,
+                            {'WWW-Authenticate': 'Basic realm="Login Required"'})
         return f(*args, **kwargs)
     return authorized
 
@@ -186,20 +194,19 @@ def check_request(f):
         matched = mimetype_regex.match(content_type)
 
         if matched is None:
-            return 'Unsupported serialization format %s' % content_type, 415
+            return ('Unsupported serialization format %s' % content_type,
+                    RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
             serial = _get_format(matched.groups()[0])
         except KeyError:
-            return (
-                "Unsupported serialization format '%s'" % matched.groups()[0],
-                415,
-            )
+            return ("Unsupported serialization format '%s'" % matched.groups()[0],
+                    RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
             payload = serial.loads(request.data)
         except ValueError:
-            return ("Bad data.  Got %s " % request.data, 400)  # 400: Bad Request
+            return ("Bad data.  Got %s " % request.data, RC.BAD_REQUEST)
 
         return f(payload, serial)
     return check
@@ -241,7 +248,7 @@ class Server(object):
 
         If this is the string ':response' then writing to the local filesystem
         is disabled. Only requests that specify `profiler_output=':response'`
-        will be served. All others will return a 403.
+        will be served. All others will return a 403 (Forbidden).
     profile_by_default : bool, optional
         Run the profiler on any computation that does not explicitly set
         "profile": false.
@@ -267,18 +274,21 @@ class Server(object):
                  allow_profiler=False,
                  profiler_output=None,
                  profile_by_default=False):
+        if isinstance(data, collections.Mapping):
+            data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
+                          data)
+        elif isinstance(data, _Data):
+            data = data._resources()
         app = self.app = Flask('blaze.server.server')
         if data is None:
-            data = dict()
-        app.register_blueprint(
-            api,
-            data=data,
-            formats=formats if formats is not None else (json,),
-            authorization=authorization,
-            allow_profiler=allow_profiler,
-            profiler_output=profiler_output,
-            profile_by_default=profile_by_default,
-        )
+            data = {}
+        app.register_blueprint(api,
+                               data=data,
+                               formats=formats if formats is not None else (json,),
+                               authorization=authorization,
+                               allow_profiler=allow_profiler,
+                               profiler_output=profiler_output,
+                               profile_by_default=profile_by_default)
         self.data = data
 
     def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
@@ -340,16 +350,12 @@ def to_tree(expr, names=None):
 
     >>> to_tree(t.x.sum()) # doctest: +SKIP
     {'op': 'sum',
-     'args': [
-         {'op': 'Column',
-         'args': [
-             {
-              'op': 'Symbol'
-              'args': ['t', 'var * { x : int32, y : int32 }', False]
-             }
-             'x']
-         }]
-     }
+     'args': [{'op': 'Column',
+               'args': [{'op': 'Symbol'
+                         'args': ['t',
+                                  'var * { x : int32, y : int32 }',
+                                  False]}
+                        'x']}]}
 
     Simplify expresion using explicit ``names`` dictionary.  In the example
     below we replace the ``Symbol`` node with the string ``'t'``.
@@ -376,7 +382,7 @@ def to_tree(expr, names=None):
         return {'op': 'slice',
                 'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
-    elif isinstance(expr, InteractiveSymbol):
+    elif isinstance(expr, _Data):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
@@ -433,16 +439,12 @@ def from_tree(expr, namespace=None):
     >>> tree = to_tree(t.x.sum())
     >>> tree # doctest: +SKIP
     {'op': 'sum',
-     'args': [
-         {'op': 'Field',
-         'args': [
-             {
-              'op': 'Symbol'
-              'args': ['t', 'var * { x : int32, y : int32 }', False]
-             }
-             'x']
-         }]
-     }
+     'args': [{'op': 'Field',
+               'args': [{'op': 'Symbol'
+                         'args': ['t',
+                                  'var * {x : int32, y : int32}',
+                                  False]}
+                        'x']}]}
 
     >>> from_tree(tree)
     sum(t.x)
@@ -496,39 +498,36 @@ def compserver(payload, serial):
     (allow_profiler,
      default_profiler_output,
      profile_by_default) = _get_profiler_info()
-    requested_profiler_output = payload.get(
-        'profiler_output',
-        default_profiler_output,
-    )
+    requested_profiler_output = payload.get('profiler_output',
+                                            default_profiler_output)
     profile = payload.get('profile')
-    profiling = (
-        allow_profiler and
-        (profile or (profile_by_default and requested_profiler_output))
-    )
+    profiling = (allow_profiler and
+                 (profile or (profile_by_default and requested_profiler_output)))
     if profile and not allow_profiler:
-        return (
-            'profiling is disabled on this server',
-            403,
-        )
+        return ('profiling is disabled on this server', RC.FORBIDDEN)
 
     with ExitStack() as response_construction_context_stack:
         if profiling:
             from cProfile import Profile
 
             if (default_profiler_output == ':response' and
-                requested_profiler_output != ':response'):
+                    requested_profiler_output != ':response'):
                 # writing to the local filesystem is disabled
-                return (
-                    "local filepaths are disabled on this server, only"
-                    " ':response' is allowed for the 'profiler_output' field",
-                    403,
-                )
+                return ("local filepaths are disabled on this server, only"
+                        " ':response' is allowed for the 'profiler_output' field",
+                        RC.FORBIDDEN)
 
             profiler_output = requested_profiler_output
             profiler = Profile()
             profiler.enable()
             # ensure that we stop profiling in the case of an exception
             response_construction_context_stack.callback(profiler.disable)
+
+        @response_construction_context_stack.callback
+        def log_time(start=time()):
+            flask.current_app.logger.info('compute expr: %s\ntotal time (s): %.3f',
+                                          expr,
+                                          time() - start)
 
         ns = payload.get('namespace', {})
         compute_kwargs = payload.get('compute_kwargs') or {}
@@ -541,29 +540,20 @@ def compserver(payload, serial):
         leaf = expr._leaves()[0]
 
         try:
-            result = serial.materialize(
-                compute(expr, {leaf: dataset}, **compute_kwargs),
-                expr.dshape,
-                odo_kwargs,
-            )
+            result = serial.materialize(compute(expr,
+                                                {leaf: dataset},
+                                                **compute_kwargs),
+                                        expr.dshape,
+                                        odo_kwargs)
         except NotImplementedError as e:
-            # 501: Not Implemented
-            return ("Computation not supported:\n%s" % e, 501)
+            return ("Computation not supported:\n%s" % e, RC.NOT_IMPLEMENTED)
         except Exception as e:
-            # 500: Internal Server Error
-            return (
-                "Computation failed with message:\n%s: %s" % (
-                    type(e).__name__,
-                    e
-                ),
-                500,
-            )
+            return ("Computation failed with message:\n%s: %s" % (type(e).__name__, e),
+                    RC.INTERNAL_SERVER_ERROR)
 
-        response = {
-            'datashape': pprint(expr.dshape, width=0),
-            'data': serial.data_dumps(result),
-            'names': expr.fields
-        }
+        response = {'datashape': pprint(expr.dshape, width=0),
+                    'data': serial.data_dumps(result),
+                    'names': expr.fields}
 
     if profiling:
         import marshal
@@ -594,21 +584,48 @@ def compserver(payload, serial):
 def addserver(payload, serial):
     """Add a data resource to the server.
 
-    The reuest should contain serialized MutableMapping (dictionary) like
-    object, and the server should already be hosting a MutableMapping
-    resource.
+    The request should contain serialized MutableMapping (dictionary) like
+    object, and the server should already be hosting a MutableMapping resource.
     """
+
     data = _get_data.cache[flask.current_app]
 
-    data_not_mm_msg = ("Cannot update blaze server data since its current data"
-                       " is a %s and not a mutable mapping (dictionary like).")
     if not isinstance(data, collections.MutableMapping):
-        return (data_not_mm_msg % type(data), 422)
+        data_not_mm_msg = ("Cannot update blaze server data since its current "
+                           "data is a %s and not a mutable mapping (dictionary "
+                           "like).")
+        return (data_not_mm_msg % type(data), RC.UNPROCESSABLE_ENTITY)
 
-    payload_not_mm_msg = ("Cannot update blaze server with a %s payload, since"
-                          " it is not a mutable mapping (dictionary like).")
-    if not isinstance(payload, collections.MutableMapping):
-        return (payload_not_mm_msg % type(payload), 422)
+    if not isinstance(payload, collections.Mapping):
+        payload_not_mm_msg = ("Need a dictionary-like payload; instead was "
+                              "given %s of type %s.")
+        return (payload_not_mm_msg % (payload, type(payload)),
+                RC.UNPROCESSABLE_ENTITY)
 
-    data.update(valmap(resource, payload))
-    return 'OK'
+    if len(payload) > 1:
+        error_msg = "Given more than one resource to add: %s"
+        return (error_msg % list(payload.keys()),
+                RC.UNPROCESSABLE_ENTITY)
+
+    [(name, resource_uri)] = payload.items()
+
+    if name in data:
+        msg = "Cannot add dataset named %s, already exists on server."
+        return (msg % name, RC.CONFLICT)
+
+    try:
+        data.update({name: resource(resource_uri)})
+        # Force discovery of new dataset to check that the data is loadable.
+        ds = discover(data)
+        if name not in ds.dict:
+            raise ValueError("%s not added." % name)
+    except NotImplementedError as e:
+        error_msg = "Addition not supported:\n%s: %s"
+        return (error_msg % (type(e).__name__, e),
+                RC.UNPROCESSABLE_ENTITY)
+    except Exception as e:
+        error_msg = "Addition failed with message:\n%s: %s"
+        return (error_msg % (type(e).__name__, e),
+                RC.UNPROCESSABLE_ENTITY)
+
+    return ('OK', RC.CREATED)

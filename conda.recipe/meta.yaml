@@ -6,24 +6,49 @@ build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   {% if environ.get('GIT_DESCRIBE_NUMBER', '0') == '0' %}string: py{{ environ.get('PY_VER').replace('.', '') }}_0
   {% else %}string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}{% endif %}
+  entry_points:
+    - blaze-server = blaze.server.spider:_main
 
 source:
   git_url: ../
 
 requirements:
+  build:
+    - python
+    - setuptools
+    - contextlib2 # [py2k]
+    - flask >=0.10.1
+    - flask-cors
+    - odo >=0.4.0
+    - psutil ==4.0
+    - sqlalchemy >=0.8.0
+    - toolz
   run:
     - python
-    - blaze-core
+    - contextlib2 # [py2k]
+    - cytoolz
+    - dask
+    - flask >=0.10.1
+    - flask-cors
     - h5py
-    - pytables >=3.0.0
-    - pymongo >=2.8,<3
     - numba
-    - bcolz
+    - odo >=0.4.0
+    - psutil ==4.0
+    - pytables >=3.0.0
+    - pyyaml
+    - requests
+    - sqlalchemy >=0.8.0
 
 test:
+  imports:
+    - blaze
   requires:
     - pytest >=2.7.0
-
+    - psycopg2 # [unix]
+    - pymongo ==2.8
+    - bcolz   # [unix]
+    - pymysql
+    - sqlite
   commands:
     - py.test -vx --doctest-modules --doctest-ignore-import-errors --pyargs blaze -rsxX
 
