@@ -7,7 +7,6 @@ import sys
 import argparse
 import importlib
 
-import toolz
 import yaml
 
 from blaze.interactive import data as bz_data
@@ -105,9 +104,27 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     data_spider : Traverse a directory tree for resources
     """
     resources = {}
+    yaml_dir = os.path.split(os.path.abspath(path.name))[0]
+    owd = os.getcwd()
     for name, info in yaml.load(path.read()).items():
         try:
             source = info.pop('source')
+
+            # convert relative pathes to absolute relative to yaml file
+            if (not os.path.isabs(source) and
+               not source.startswith('http') and
+               '~' not in source):
+                os.chdir(yaml_dir)
+                src = os.path.abspath(source)
+                os.chdir(owd)
+
+                # handle 'sqlite:///../path/with/protocol/test.db'
+                if ('://' in source):
+                    protocol = source.split('://')[0]
+                    source = protocol + '://' + src
+
+                source = src
+
         except KeyError:
             raise ValueError('source key not found for data source named %r' %
                              name)
