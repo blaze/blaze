@@ -85,15 +85,12 @@ def pushd(path):
     """Context manager that changes to ``path`` directory on enter and
     changes back to ``os.getcwd()`` on exit.
     """
-    path = os.path.abspath(path)
     cwd = os.getcwd()
-    if path != cwd:
-        os.chdir(path)
+    os.chdir(os.path.abspath(path))
     try:
         yield
     finally:
-        if path != cwd:
-            os.chdir(cwd)
+        os.chdir(cwd)
 
 
 def from_yaml(fh,
