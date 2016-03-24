@@ -81,20 +81,22 @@ def data_spider(path,
 
 
 @contextmanager
-def manage_chdir(root):
-    """Context manager that changes to ``root`` directory on ``__entry__`` and
-    changes back to ``os.getcwd()`` on __exit__.
+def pushd(path):
+    """Context manager that changes to ``path`` directory on enter and
+    changes back to ``os.getcwd()`` on exit.
     """
-    root = os.path.abspath(root)
-    cwd = os.path.abspath(os.getcwd())
-    if root != cwd:
-        os.chdir(root)
-    yield
-    if root != cwd:
-        os.chdir(cwd)
+    path = os.path.abspath(path)
+    cwd = os.getcwd()
+    if path != cwd:
+        os.chdir(path)
+    try:
+        yield
+    finally:
+        if path != cwd:
+            os.chdir(cwd)
 
 
-def from_yaml(path,
+def from_yaml(fh,
               ignore=(ValueError, NotImplementedError),
               followlinks=True,
               hidden=False,
@@ -103,7 +105,7 @@ def from_yaml(path,
 
     Parameters
     ----------
-    path : file
+    fh : file
         File object referring to the YAML specification of resources to load.
     ignore : tuple of Exception, optional
         Ignore these exceptions when calling ``blaze.data``.
@@ -125,9 +127,9 @@ def from_yaml(path,
     data_spider : Traverse a directory tree for resources
     """
     resources = {}
-    yaml_dir = os.path.dirname(os.path.abspath(path.name))
-    for name, info in yaml.load(path.read()).items():
-        with manage_chdir(yaml_dir if relative_to_yaml_dir else os.getcwd()):
+    yaml_dir = os.path.dirname(os.path.abspath(fh.name))
+    for name, info in yaml.load(fh.read()).items():
+        with pushd(yaml_dir if relative_to_yaml_dir else os.getcwd()):
             try:
                 source = info.pop('source')
             except KeyError:
