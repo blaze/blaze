@@ -7,6 +7,8 @@ import sys
 import argparse
 import importlib
 
+from contextlib import contextmanager
+
 import yaml
 
 from odo import resource
@@ -71,28 +73,47 @@ def data_spider(path,
     """
     # NOTE: this is named `data_spider` rather than just `spider` to
     # disambiguate this function from the `blaze.server.spider` module.
-    return {
-        os.path.basename(path): _spider(path, ignore=ignore,
-                                        followlinks=followlinks,
-                                        hidden=hidden,
-                                        extra_kwargs=extra_kwargs)
-    }
+    return {os.path.basename(path): _spider(path,
+                                            ignore=ignore,
+                                            followlinks=followlinks,
+                                            hidden=hidden,
+                                            extra_kwargs=extra_kwargs)}
 
 
-def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
-              hidden=False):
+@contextmanager
+def manage_chdir(root):
+    """Context manager that changes to ``root`` directory on ``__entry__`` and
+    changes back to ``os.getcwd()`` on __exit__.
+    """
+    root = os.path.abspath(root)
+    cwd = os.path.abspath(os.getcwd())
+    if root != cwd:
+        os.chdir(root)
+    yield
+    if root != cwd:
+        os.chdir(cwd)
+
+
+def from_yaml(path,
+              ignore=(ValueError, NotImplementedError),
+              followlinks=True,
+              hidden=False,
+              relative_to_yaml_dir=False):
     """Construct a dictionary of resources from a YAML specification.
 
     Parameters
     ----------
-    path : str
-        Path to a YAML specification of resources to load
+    path : file
+        File object referring to the YAML specification of resources to load.
     ignore : tuple of Exception, optional
-        Ignore these exceptions when calling resource
+        Ignore these exceptions when calling resource.
     followlinks : bool, optional
-        Follow symbolic links
+        Follow symbolic links.
     hidden : bool, optional
-        Load hidden files
+        Load hidden files.
+    relative_to_yaml_dir: bool, optional, default False
+        Load paths relative to yaml file's directory.  Default is to load
+        relative to process' CWD.
 
     Returns
     -------
@@ -104,40 +125,24 @@ def from_yaml(path, ignore=(ValueError, NotImplementedError), followlinks=True,
     data_spider : Traverse a directory tree for resources
     """
     resources = {}
-    yaml_dir = os.path.split(os.path.abspath(path.name))[0]
-    owd = os.getcwd()
+    yaml_dir = os.path.dirname(os.path.abspath(path.name))
     for name, info in yaml.load(path.read()).items():
-        try:
-            source = info.pop('source')
-
-            # convert relative pathes to absolute relative to yaml file
-            if (not os.path.isabs(source) and
-               not source.startswith('http') and
-               '~' not in source):
-                os.chdir(yaml_dir)
-                src = os.path.abspath(source)
-                os.chdir(owd)
-
-                # handle 'sqlite:///../path/with/protocol/test.db'
-                if ('://' in source):
-                    protocol = source.split('://')[0]
-                    source = protocol + '://' + src
-
-                source = src
-
-        except KeyError:
-            raise ValueError('source key not found for data source named %r' %
-                             name)
-        for mod in info.pop('imports', []):
-            importlib.import_module(mod)
-        if os.path.isdir(source):
-            resources[name] = data_spider(os.path.expanduser(source),
-                                          ignore=ignore,
-                                          followlinks=followlinks,
-                                          hidden=hidden,
-                                          extra_kwargs=info)
-        else:
-            resources[name] = resource(source, **info)
+        with manage_chdir(yaml_dir if relative_to_yaml_dir else os.getcwd()):
+            try:
+                source = info.pop('source')
+            except KeyError:
+                raise ValueError('source key not found for data source named %r' %
+                                 name)
+            for mod in info.pop('imports', []):
+                importlib.import_module(mod)
+            if os.path.isdir(source):
+                resources[name] = data_spider(os.path.expanduser(source),
+                                              ignore=ignore,
+                                              followlinks=followlinks,
+                                              hidden=hidden,
+                                              extra_kwargs=info)
+            else:
+                resources[name] = resource(source, **info)
     return resources
 
 
@@ -158,6 +163,8 @@ def _parse_args():
                    help='Exceptions to ignore when calling resource on a file')
     p.add_argument('-d', '--hidden', action='store_true',
                    help='Call resource on hidden files')
+    p.add_argument('--yaml-dir', action='store_true',
+                   help='Load path-based resources relative to yaml file directory.')
     p.add_argument('-D', '--debug', action='store_true',
                    help='Start the Flask server in debug mode')
     return p.parse_args()
@@ -169,8 +176,11 @@ def _main():
     resources = from_yaml(args.path,
                           ignore=ignore,
                           followlinks=args.follow_links,
-                          hidden=args.hidden)
-    Server(resources).run(host=args.host, port=args.port, debug=args.debug)
+                          hidden=args.hidden,
+                          relative_to_yaml_dir=args.yaml_dir)
+    Server(resources).run(host=args.host,
+                          port=args.port,
+                          debug=args.debug)
 
 
 if __name__ == '__main__':
