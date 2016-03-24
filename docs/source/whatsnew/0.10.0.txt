@@ -109,3 +109,6 @@ Miscellaneous
 * Merged the ``core`` and ``all`` conda recipes (:issue:`1451`).  This
   simplifies the build process and makes it consistent with the single
   ``blaze`` package provided by the Anaconda distribution.
+* Adds a ``--yaml-dir`` option to ``blaze-server`` to indicate the server
+  should load path-based ``yaml`` resources relative to the yaml file's
+  directory, not the CWD of the process (:issue:`1460`).
