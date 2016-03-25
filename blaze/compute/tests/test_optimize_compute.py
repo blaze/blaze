@@ -1,12 +1,14 @@
-from blaze.expr import Expr, symbol
-from blaze.dispatch import dispatch
+from blaze.expr import Expr, symbol, Cast
+from blaze.compute import compute_up
 from blaze import compute
+
 
 class Foo(object):
     def __init__(self, data):
         self.data = data
 
-@dispatch(Expr, Foo)
+
+@compute_up.register((Expr, Cast), Foo)
 def compute_up(expr, data, **kwargs):
     return data
 

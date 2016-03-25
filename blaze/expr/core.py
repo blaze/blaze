@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import numbers
 import inspect
 
@@ -18,7 +19,7 @@ from ..utils import ordered_intersect
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
 
-base = (numbers.Number,) + _strtypes
+base = (numbers.Number,) + _strtypes + (datetime.datetime, datetime.timedelta)
 
 
 def isidentical(a, b):

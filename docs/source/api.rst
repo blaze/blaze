@@ -30,6 +30,8 @@ Expressions
    Map
    Apply
    Coerce
+   Coalesce
+   Cast
 
 .. currentmodule:: blaze.expr.collections
 

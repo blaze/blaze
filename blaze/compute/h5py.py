@@ -128,7 +128,7 @@ def compute_chunk(source, target, chunk, chunk_expr, parts):
     """ Pull out a part, compute it, insert it into the target """
     source_part, target_part = parts
     part = source[source_part]
-    result = compute(chunk_expr, {chunk: part})
+    result = compute(chunk_expr, {chunk: part}, return_type='native')
     target[target_part] = result
 
 
@@ -190,4 +190,4 @@ def compute_down(expr, data, map=None, **kwargs):
     ))
 
     # Compute on the aggregate
-    return compute(agg_expr, {agg: intermediate})
+    return compute(agg_expr, {agg: intermediate}, return_type='native')

@@ -4,6 +4,7 @@ from datashape import Option, real, int_, bool_, isreal, isnumeric
 
 from .arithmetic import UnaryOp, BinOp, Arithmetic
 from .expressions import schema_method_list
+from ..compatibility import builtins
 
 
 # Here follows a large number of unary operators.  These were selected by
@@ -79,11 +80,19 @@ for name in _binary_math_names:
 class greatest(Arithmetic):
     __slots__ = '_hash', 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
+    op = builtins.max
+
+    def __str__(self):
+        return 'greatest(%s, %s)' % (self.lhs, self.rhs)
 
 
 class least(Arithmetic):
     __slots__ = '_hash', 'lhs', 'rhs'
     __inputs__ = 'lhs', 'rhs'
+    op = builtins.min
+
+    def __str__(self):
+        return 'least(%s, %s)' % (self.lhs, self.rhs)
 
 
 _unary_integer_math = (

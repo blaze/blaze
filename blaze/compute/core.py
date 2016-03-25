@@ -1,26 +1,26 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import itertools
 import numbers
 import warnings
 
 import toolz
 from toolz import first, unique, assoc
-import numpy as np
+from toolz.utils import no_default
 import pandas as pd
 from odo import odo
 
 from ..compatibility import basestring
-from ..expr import Expr, Field, Symbol, symbol, Join
+from ..expr import Expr, Field, Symbol, symbol, Join, Cast
 from ..dispatch import dispatch
-from ..interactive import coerce_scalar, coerce_core, into, iscoretype, _Data
+from ..interactive import coerce_core, into
 
 
 __all__ = ['compute', 'compute_up']
 
-base = numbers.Number, basestring, date, datetime
+base = numbers.Number, basestring, date, datetime, timedelta, type(None)
 
 
 @dispatch(Expr, object)
@@ -46,6 +46,13 @@ def compute_up(a, b, **kwargs):
     raise NotImplementedError("Blaze does not know how to compute "
                               "expression of type `%s` on data of type `%s`"
                               % (type(a).__name__, type(b).__name__))
+
+
+@dispatch(Cast, object)
+def compute_up(c, b, **kwargs):
+    # cast only works on the expression system and does not affect the
+    # computation
+    return b
 
 
 @dispatch(base)
@@ -196,8 +203,9 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     # 4. Repeat
     if expr.isidentical(expr3):
         raise NotImplementedError("Don't know how to compute:\n"
+                                  "type(expr): %s\n"
                                   "expr: %s\n"
-                                  "data: %s" % (expr3, scope4))
+                                  "data: %s" % (type(expr3), expr3, scope4))
     else:
         return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
@@ -371,7 +379,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, dict)
-def compute(expr, d, return_type='native', **kwargs):
+def compute(expr, d, return_type=no_default, **kwargs):
     """Compute expression against data sources.
 
     Parameters
@@ -424,18 +432,21 @@ def compute(expr, d, return_type='native', **kwargs):
         result = post_compute_(expr3, result, scope=d4)
 
     # return the backend's native response
-    if return_type == 'native':
-        msg = ("The default behavior of compute will change in version >= 0.11 "
-               "where the `return_type` parameter will default to 'core'.")
+    if return_type is no_default:
+        msg = ("The default behavior of compute will change in version >= 0.11"
+               " where the `return_type` parameter will default to 'core'.")
         warnings.warn(msg, DeprecationWarning)
-    # return result as a core type (python type, pandas Series/DataFrame, numpy array)
+    # return result as a core type
+    # (python type, pandas Series/DataFrame, numpy array)
     elif return_type == 'core':
         result = coerce_core(result, expr.dshape)
     # user specified type
     elif isinstance(return_type, type):
         result = into(return_type, result)
-    else:
-        raise ValueError("Invalid return_type passed to compute: {}".format(str(return_type)))
+    elif return_type != 'native':
+        raise ValueError(
+            "Invalid return_type passed to compute: {}".format(return_type),
+        )
 
     return result
 

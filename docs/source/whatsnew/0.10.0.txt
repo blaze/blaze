@@ -10,12 +10,37 @@ New Expressions
 * The ``sample`` expression allows random sampling of rows to facilitate
   interactive data exploration (:issue:`1410`).  It is implemented for the
   Pandas, Dask, SQL, and Python backends.
+* Adds :func:`~blaze.expr.expressions.coalesce` expression which takes two
+  arguments and returns the first non missing value. If both are missing then
+  the result is missing. For example: ``coalesce(1, 2) == 1``,
+  ``coalesce(None, 1)`` == 1, and ``coalesce(None, None) == None``.
+  This is inspired by the sql function of the same name (:issue:`1409`).
+* Adds :func:`~blaze.expr.expressions.cast` expression to reinterpret an
+  expression's dshape. This is based on C++ ``reinterpret_cast``, or just normal
+  C casts. For example:
+  ``symbol('s', 'int32').cast('uint32').dshape == dshape('uint32')``. This
+  expression has no affect on the computation, it merely tells blaze to treat
+  the result of the expression as the new dshape. The compute definition for
+  ``cast`` is simply:
+
+  .. code-block:: python
+
+     @dispatch(Cast, object)
+     def compute_up(expr, data, **kwargs):
+         return data
+
+  (:issue:`1409`).
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
 * The test suite was expanded to validate proper expression input error handling
   (:issue:`1420`).
+* The :func:`~blaze.expr.datetime.truncate` function was refactored to raise an
+  exception for incorrect inputs, rather than using assertions (:issue:`1443`).
+* The docstring for :class:`~blaze.expr.collections.Merge` was expanded to
+  include examples using :class:`~blaze.expr.expressions.Label` to control the
+  ordering of the columns in the result (:issue:`1447`).
 
 New Backends
 ~~~~~~~~~~~~
@@ -69,9 +94,22 @@ Bug Fixes
   :class:`~blaze.expr.broadcast.Broadcast` expressions (:issue:`1442`).  Added
   tests for Pandas frame and series and dask dataframes on ``Broadcast``
   expressions.
+* Fixed a bug with :class:`~blaze.expr.collections.Sample` on SQL backends
+  (:issue:`1452` :issue:`1423` :issue:`1424` :issue:`1425`).
+* Fixed several bugs relating to adding new datasets to blaze server instances
+  (:issue:`1459`).  Blaze server will make a best effort to ensure that the
+  added dataset is valid and loadable; if not, it will return appropriate HTTP
+  status codes.
+
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
 * Adds logging to server compute endpoint.  Includes expression being computed
   and total time to compute. (:issue:`1436`)
+* Merged the ``core`` and ``all`` conda recipes (:issue:`1451`).  This
+  simplifies the build process and makes it consistent with the single
+  ``blaze`` package provided by the Anaconda distribution.
+* Adds a ``--yaml-dir`` option to ``blaze-server`` to indicate the server
+  should load path-based ``yaml`` resources relative to the yaml file's
+  directory, not the CWD of the process (:issue:`1460`).
