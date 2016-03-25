@@ -8,10 +8,10 @@ We use the well known iris dataset
 
 .. code-block:: python
 
-   >>> from blaze import Data
+   >>> from blaze import data
    >>> from blaze.utils import example
-   >>> iris = Data(example('iris.csv'))
-   >>> iris
+   >>> iris = data(example('iris.csv'))
+   >>> iris.peek()
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -203,9 +203,9 @@ Split-Apply-Combine
 
 .. code-block:: python
 
-   >>> from blaze import Data, by
-   >>> t = Data('sqlite:///%s::iris' % example('iris.db'))
-   >>> t
+   >>> from blaze import data, by
+   >>> t = data('sqlite:///%s::iris' % example('iris.db'))
+   >>> t.peek()
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa

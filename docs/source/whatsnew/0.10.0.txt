@@ -85,6 +85,17 @@ API Changes
   support in Blaze was rudimentary and based on an egregiously outdated and
   buggy version of DyND.  We are aware of no actual use of DyND via Blaze in
   practice.
+* The :class:`~blaze.expr.expressions.Expr` ``__repr__`` method's triggering of
+  implicit computation has been deprecated.  Using this aspect of Blaze will
+  trigger a ``DeprecationWarning`` in version 0.10, and this behavior will be
+  replaced by a standard (boring) ``__repr__`` implementation in version 0.11.
+  Users can explicitly trigger a computation to see a quick view of the results
+  of an interactive expression by means of the
+  :func:`~blaze.expr.expressions.Expr.peek` method.  By setting the
+  :mod:`~blaze.interactive.use_new_repr` flag to ``True``, users can use the
+  new (boring) ``__repr__`` implementation in version 0.10 (:issue:`1414`
+  and :issue:`1395`).
+
 
 Bug Fixes
 ~~~~~~~~~

@@ -5,17 +5,17 @@ Tips for working with CSV files
 How to
 ------
 
-Typically one provides a csv filename to the ``Data`` constructor like so
+Typically one provides a csv filename to the ``data`` constructor like so
 
 .. code-block:: python
 
-   >>> d = Data('myfile.csv')  # doctest: +SKIP
+   >>> d = data('myfile.csv')  # doctest: +SKIP
 
 GZip extensions or collections of csv files are handled in the same manner.
 
 .. code-block:: python
 
-   >>> d = Data('myfile-2014-01-*.csv.gz')  # doctest: +SKIP
+   >>> d = data('myfile-2014-01-*.csv.gz')  # doctest: +SKIP
 
 In the case of collections of CSV files the files are sorted by filename and
 then considered to be concatenated into a single table.
@@ -66,12 +66,12 @@ Correcting Column Types
 
 In the second case of incorrect guessing of column types Blaze accepts a
 :doc:`datashape` as an additional keyword argument.  Common practice is to create a
-``Data`` object around a csv file, ask for its datashape, tweak that datashape
+``data`` object around a csv file, ask for its datashape, tweak that datashape
 and then recreate the data object.
 
 .. code-block:: python
 
-   >>> d = Data('myfile.csv')  # doctest: +SKIP
+   >>> d = data('myfile.csv')  # doctest: +SKIP
    >>> d  # doctest: +SKIP
    Exception: Integer column has NA values
 
@@ -81,7 +81,7 @@ and then recreate the data object.
    # <Copy-Paste>
    >>> ds = dshape("var * {name: string, amount: float64}")  # change int to float  # doctest: +SKIP
 
-   >>> d = Data('myfile.csv', dshape=ds)  # doctest: +SKIP
+   >>> d = data('myfile.csv', dshape=ds)  # doctest: +SKIP
 
 
 Migrate to Binary Storage Formats
@@ -127,7 +127,7 @@ editing automatically generated datashapes
 
 .. code-block:: python
 
-   >>> d = Data('myfile.csv')  # doctest: +SKIP
+   >>> d = data('myfile.csv')  # doctest: +SKIP
    >>> d.dshape  # doctest: +SKIP
    dshape("var * {name: string, amount: int64}")
 

@@ -13,8 +13,8 @@ Interact with a set of CSV files or a SQL database
 
    >>> from blaze import *
    >>> from blaze.utils import example
-   >>> t = Data(example('accounts_*.csv'))
-   >>> t
+   >>> t = data(example('accounts_*.csv'))
+   >>> t.peek()
       id      name  amount
    0   1     Alice     100
    1   2       Bob     200
@@ -22,8 +22,8 @@ Interact with a set of CSV files or a SQL database
    3   4       Dan     400
    4   5     Edith     500
 
-   >>> t = Data('sqlite:///%s::iris' % example('iris.db'))
-   >>> t
+   >>> t = data('sqlite:///%s::iris' % example('iris.db'))
+   >>> t.peek()
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa

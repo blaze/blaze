@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
 from collections import Iterator
 import decimal
 import datetime
@@ -19,6 +20,7 @@ from pandas import DataFrame, Series, Timestamp
 
 
 from .expr import Expr, Symbol, ndim
+from .expr.expressions import sanitized_dshape
 from .dispatch import dispatch
 from .compatibility import _strtypes
 
@@ -103,6 +105,12 @@ class _Data(Symbol):
         except TypeError:
             data = id(data)
         return data, self.dshape, self._name
+
+    def __repr__(self):
+        fmt =  "<'{}' data; _name='{}', dshape='{}'>"
+        return fmt.format(type(self.data).__name__,
+                          self._name,
+                          sanitized_dshape(self.dshape))
 
 
 class InteractiveSymbol(_Data):
@@ -227,6 +235,10 @@ def concrete_head(expr, n=10):
         return df
 
 
+def _peek_tables(expr, n=10):
+    return concrete_head(expr, n).rename(columns={None: ''})
+
+
 def repr_tables(expr, n=10):
     result = concrete_head(expr, n).rename(columns={None: ''})
 
@@ -236,7 +248,7 @@ def repr_tables(expr, n=10):
             s = '\n'.join(s.split('\n')[:-1]) + '\n...'
         return s
     else:
-        return repr(result)  # pragma: no cover
+        return result.peek()  # pragma: no cover
 
 
 def numel(shape):
@@ -307,6 +319,32 @@ def coerce_core(result, dshape, odo_kwargs=None):
     return result
 
 
+def _peek(expr):
+    # Pure Expressions, not interactive
+    if not set(expr._resources().keys()).issuperset(expr._leaves()):
+        return expr
+
+    # Scalars
+    if ndim(expr) == 0 and isscalar(expr.dshape):
+        return coerce_scalar(compute(expr), str(expr.dshape))
+
+    # Tables
+    if (ndim(expr) == 1 and (istabular(expr.dshape) or
+                             isscalar(expr.dshape.measure) or
+                             isinstance(expr.dshape.measure, Map))):
+        return _peek_tables(expr, 10)
+
+    # Smallish arrays
+    if ndim(expr) >= 2 and numel(expr.shape) and numel(expr.shape) < 1000000:
+        return compute(expr)
+
+    # Other
+    dat = expr._resources().values()
+    if len(dat) == 1:
+        dat = list(dat)[0]  # may be dict_values
+    return dat
+
+
 def expr_repr(expr, n=10):
     # Pure Expressions, not interactive
     if not set(expr._resources().keys()).issuperset(expr._leaves()):
@@ -348,7 +386,7 @@ def to_html(df):
 def to_html(expr):
     # Tables
     if not expr._resources() or ndim(expr) != 1:
-        return to_html(repr(expr))
+        return to_html(expr_repr(expr))
     return to_html(concrete_head(expr))
 
 
@@ -390,9 +428,38 @@ def table_length(expr):
     except ValueError:
         return int(expr.count())
 
+_warning_msg = """
+In version 0.11, Blaze's expresssion repr will return a standard 
+representation and will no longer implicitly compute.  Use the `peek()`
+method to see a preview of the expression's results.\
+"""
 
-Expr.__repr__ = expr_repr
-Expr._repr_html_ = lambda x: to_html(x)
+use_new_repr = False
+def _choose_repr(self):
+    if use_new_repr:
+        return new_repr(self)
+    else:
+        warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
+        return expr_repr(self)
+
+
+def _warning_repr_html(self):
+    if use_new_repr:
+        return new_repr(self)
+    else:
+        warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
+        return to_html(self)
+
+
+def new_repr(self):
+    fmt =  "<`{}` expression; dshape='{}'>"
+    return fmt.format(type(self).__name__,
+                      sanitized_dshape(self.dshape))
+
+
+Expr.__repr__ = _choose_repr
+Expr.peek = _peek
+Expr._repr_html_ = _warning_repr_html
 Expr.__len__ = table_length
 
 

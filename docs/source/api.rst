@@ -13,7 +13,7 @@ Interactive Use
 
 .. autosummary::
 
-   Data
+   _Data
 
 
 Expressions

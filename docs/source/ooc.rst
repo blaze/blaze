@@ -14,10 +14,10 @@ large files.
 
 .. code-block:: python
 
-   >>> d = Data('my-small-file.csv')  # doctest: +SKIP
+   >>> d = data('my-small-file.csv')  # doctest: +SKIP
    >>> d.my_column.count()  # Uses Pandas  # doctest: +SKIP
 
-   >>> d = Data('my-large-file.csv')  # doctest: +SKIP
+   >>> d = data('my-large-file.csv')  # doctest: +SKIP
    >>> d.my_column.count()  # Uses Chunked Pandas  # doctest: +SKIP
 
 How does it work?
@@ -97,7 +97,7 @@ use the explicit ``compute`` function.
 
 .. code-block:: python
 
-   >>> d = Data('my-many-csv-files-*.csv')  # doctest: +SKIP
+   >>> d = data('my-many-csv-files-*.csv')  # doctest: +SKIP
    >>> d.my_column.count()  # Single core by default  # doctest: +SKIP
    ...
 
