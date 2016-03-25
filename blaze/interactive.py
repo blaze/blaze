@@ -107,8 +107,10 @@ class _Data(Symbol):
         return data, self.dshape, self._name
 
     def __repr__(self):
-        return "<{} data; dshape='{}'>".format(type(self.data).__name__,
-                                               sanitized_dshape(self.dshape))
+        fmt =  "<'{}' data; _name='{}', dshape='{}'>"
+        return fmt.format(type(self.data).__name__,
+                          self._name,
+                          sanitized_dshape(self.dshape))
 
 
 class InteractiveSymbol(_Data):
@@ -437,8 +439,6 @@ def _choose_repr(self):
     if use_new_repr:
         return new_repr(self)
     else:
-        # DeprecationWarnings are ignored by default, so we use a UserWarning here
-        # instead to ensure users are aware of this significant API change.
         warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
         return expr_repr(self)
 
@@ -452,7 +452,9 @@ def _warning_repr_html(self):
 
 
 def new_repr(self):
-    return "<`{}` expression; dshape='{}'>".format(type(self).__name__, sanitized_dshape(self.dshape))
+    fmt =  "<`{}` expression; dshape='{}'>"
+    return fmt.format(type(self).__name__,
+                      sanitized_dshape(self.dshape))
 
 
 Expr.__repr__ = _choose_repr

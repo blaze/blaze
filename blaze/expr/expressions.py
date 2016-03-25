@@ -322,10 +322,9 @@ class Symbol(Expr):
         self._token = token
         self._hash = None
 
-
     def __repr__(self):
-        return self._name
-        # return "<`{}` symbol; dshape='{}'>".format(self._name, sanitized_dshape(self.dshape))
+        fmt =  "<`{}` symbol; dshape='{}'>"
+        return fmt.format(self._name, sanitized_dshape(self.dshape))
 
     def __str__(self):
         return self._name or ''
