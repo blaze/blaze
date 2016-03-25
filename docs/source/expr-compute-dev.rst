@@ -46,15 +46,15 @@ This object contains its information in a .args attribute
 
 .. code-block:: python
 
-   >>> amounts._args
-   (t, 'amount')
+   >>> amounts._args == (t, 'amount')
+   True
 
 And the set of input expressions in a ``._inputs`` attribute
 
 .. code-block:: python
 
-   >>> amounts._inputs
-   (t,)
+   >>> amounts._inputs == (t,)
+   True
 
 By traversing ``._args`` one can traverse the tree of all identifying
 information (including annotating strings and values like ``'amount'``) or by

@@ -104,7 +104,7 @@ def split(leaf, expr, chunk=None, agg=None, **kwargs):
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.id.count()
     >>> split(t, expr)
-    ((chunk, count(chunk.id, keepdims=True)), (aggregate, sum(aggregate)))
+    ((<`chunk` symbol; dshape='...'>, count(chunk.id, keepdims=True)), (<`aggregate` symbol; dshape='...'>, sum(aggregate)))
     """
     center = path_split(leaf, expr)
     if chunk is None:

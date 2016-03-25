@@ -434,7 +434,7 @@ def from_tree(expr, namespace=None):
      'args': ['t', 'var * { x : int32, y : int32 }', False]}
 
     >>> from_tree(tree)
-    t
+    <`t` symbol; dshape='var * {x: int32, y: int32}'>
 
     >>> tree = to_tree(t.x.sum())
     >>> tree # doctest: +SKIP

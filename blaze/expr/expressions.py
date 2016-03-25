@@ -305,7 +305,7 @@ class Symbol(Expr):
     --------
     >>> points = symbol('points', '5 * 3 * {x: int, y: int}')
     >>> points
-    points
+    <`points` symbol; dshape='5 * 3 * {x: int32, y: int32}'>
     >>> points.dshape
     dshape("5 * 3 * {x: int32, y: int32}")
     """

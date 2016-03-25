@@ -227,14 +227,14 @@ def makeleaf(expr):
     >>> _reset_leaves()
 
     >>> t = symbol('t', '{x: int, y: int, z: int}')
-    >>> makeleaf(t)
-    t
+    >>> makeleaf(t) == t
+    True
     >>> makeleaf(t.x)
-    x
+    <`x` symbol; dshape='int32'>
     >>> makeleaf(t.x + 1)
-    x
-    >>> makeleaf(t.x + 1)
-    x
+    <`x` symbol; dshape='int64'>
+    >>> makeleaf(t.y + 1)
+    <`y` symbol; dshape='int64'>
     >>> makeleaf(t.x).isidentical(makeleaf(t.x + 1))
     False
 
@@ -307,7 +307,7 @@ def bottom_up_until_type_break(expr, scope, **kwargs):
 
     >>> e = s.amount.sum() + 1
     >>> bottom_up_until_type_break(e, {s: data})
-    (amount_sum + 1, {amount_sum: 600})
+    (amount_sum + 1, {<`amount_sum` symbol; dshape='int64'>: 600})
     """
     # 0. Base case.  Return if expression is in scope
     if expr in scope:
@@ -361,7 +361,7 @@ def swap_resources_into_scope(expr, scope):
     >>> from blaze import data
     >>> t = data([1, 2, 3], dshape='3 * int', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
-    (t.head(2), {t: [1, 2, 3]})
+    (t.head(2), {<`t` symbol; dshape='3 * int32'>: [1, 2, 3]})
 
     >>> expr, scope = _
     >>> list(scope.keys())[0]._resources()

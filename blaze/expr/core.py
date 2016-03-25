@@ -119,13 +119,13 @@ class Node(object):
 
         >>> t = symbol('t', 'var * {id: int32, name: string}')
         >>> t._leaves()
-        [t]
+        [<`t` symbol; dshape='var * {id: int32, name: string}'>]
         >>> by(t.name, count=t.id.nunique())._leaves()
-        [t]
+        [<`t` symbol; dshape='var * {id: int32, name: string}'>]
 
         >>> v = symbol('v', 'var * {id: int32, city: string}')
-        >>> join(t, v)._leaves()
-        [t, v]
+        >>> join(t, v)._leaves() == [t, v]
+        True
         """
 
         if not self._inputs:
@@ -400,7 +400,7 @@ def path(a, b):
     >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
     >>> expr = t.amount.sum()
     >>> list(path(expr, t))
-    [sum(t.amount), t.amount, t]
+    [sum(t.amount), t.amount, <`t` symbol; dshape='...'>]
     """
     while not a.isidentical(b):
         yield a
@@ -422,7 +422,7 @@ def common_subexpression(expr, *exprs):
     >>> from blaze.expr import symbol
     >>> t = symbol('t', 'var * {x: int, y: int}')
     >>> common_subexpression(t.x, t.y)
-    t
+    <`t` symbol; dshape='var * {x: int32, y: int32}'>
     """
     # only one expression has itself as a common subexpression
     if not exprs:
