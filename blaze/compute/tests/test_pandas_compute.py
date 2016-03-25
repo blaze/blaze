@@ -666,6 +666,21 @@ def test_strlen():
     assert_series_equal(expected, result)
 
 
+def test_strupper():
+    expr = t.name.strupper()
+    expected = pd.Series(['ALICE', 'BOB', 'ALICE'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+
+def test_strlower():
+    expr = t.name.strlower()
+    expected = pd.Series(['alice', 'bob', 'alice'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+
+
 def test_rowwise_by():
     f = lambda _, id, name: id + len(name)
     expr = by(t.map(f, 'int'), total=t.amount.sum())

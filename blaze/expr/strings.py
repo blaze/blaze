@@ -51,6 +51,14 @@ class strlen(UnaryStringFunction):
     schema = datashape.int64
 
 
+class strupper(UnaryStringFunction):
+    schema = datashape.string
+
+
+class strlower(UnaryStringFunction):
+    schema = datashape.string
+
+
 def isstring(ds):
     measure = ds.measure
     return isinstance(getattr(measure, 'ty', measure), String)
@@ -64,7 +72,7 @@ schema_method_list.extend([
     (
         isstring,
         set([
-            _add, _radd, _mod, _rmod, _mul, _rmul, repeat, interp, like, strlen
+            _add, _radd, _mod, _rmod, _mul, _rmul, repeat, interp, like, strlen, strupper, strlower
         ])
     )
 ])

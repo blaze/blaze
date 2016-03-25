@@ -286,6 +286,8 @@ def compute_up(expr, data, **kwargs):
 
 string_func_names = {
     'strlen': 'len',
+    'strupper': 'upper',
+    'strlower': 'lower',
 }
 
 
