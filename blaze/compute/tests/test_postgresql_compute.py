@@ -91,8 +91,8 @@ def big_sql(url):
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
-        t = odo(zip(list("".join(['a' * 25, 'b' * 25, 'c' * 25, 'd' * 25])),
-                    np.random.randint(1, 10, (100,)).tolist()), t)
+        t = odo(zip("".join(['a' * 25, 'b' * 25, 'c' * 25, 'd' * 25]),
+                    range(1, 101)), t)
         try:
             yield t
         finally:
@@ -699,6 +699,28 @@ def test_coalesce(sqla):
     )
 
 
+def test_having_exp_group_by(big_sql):
+    '''
+    The following three tests (test_having, test_having_multiple_conditions,
+    test_having_where) expect big_sql column B to contain range(1, 101). Verify
+    results of 'group by' before proceeding - just to ensure the data in
+    big_sql isn't changed inadvertently.
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+    g1 = by(nn['A'], quant=nn.B.sum())
+
+    # expected result of group by for big_sql table
+    #    A  quant
+    # 0  a    325
+    # 1  b    950
+    # 2  c   1575
+    # 3  d   2200
+    # ensure this is correct for one of the tests
+    g1_res = compute(g1.sort('A'), big_sql, return_type=list)
+    assert g1_res == [('a', 325), ('b', 950), ('c', 1575), ('d', 2200)]
+
+
 def test_having(big_sql):
     '''
     The blaze expression generated in 'res' below is incorrect. It invokes the
@@ -722,20 +744,11 @@ def test_having(big_sql):
     ds = discover(big_sql)
     nn = symbol('nn', ds)
     g1 = by(nn['A'], quant=nn.B.sum())
-    g1_res = compute(g1, big_sql, return_type=pd.DataFrame)
-    assert len(g1_res) == 4
+    expr = g1[(g1.quant > 325) & (g1.quant < 2000)]
+    bz_res = compute(expr, big_sql, return_type=list)
 
-    expr = g1[g1.quant > 125]
-    bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
-
-    # assertion against pandas result
-    df = compute(nn, big_sql, return_type=pd.DataFrame)
-    df_g = df.groupby('A').sum()
-    df_g.columns = ['quant']
-    df_res = df_g[df_g.quant > 125].dropna()
-    df_res.reset_index(inplace=True)
-
-    assert all(df_res == bz_res)
+    assert len(bz_res) == 2
+    assert ('b', 950) in bz_res and ('c', 1575) in bz_res
 
 
 def test_having_multiple_conditions(big_sql):
@@ -746,16 +759,22 @@ def test_having_multiple_conditions(big_sql):
     ds = discover(big_sql)
     nn = symbol('nn', ds)
     g1 = by(nn['A'], quant=nn.B.sum())
-    g1_res = compute(g1, big_sql, return_type=pd.DataFrame)
-    assert len(g1_res) == 4
 
-    expr = g1[(g1.A.like('a')) | (g1.quant < 125)]
+    # expected result of group by for big_sql table
+    #    A  quant
+    # 0  a    325
+    # 1  b    950
+    # 2  c   1575
+    # 3  d   2200
+    #
+    expr = g1[(g1.A.like('a')) | (g1.quant > 1000)]
     bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
 
     # assert both conditions are met in the result:
-    # either 'a' is in bz_res or the remaining rows are < 125
-    assert bz_res.A.str.contains('a').any()
-    assert all(bz_res.quant[~bz_res.A.str.contains('a')] < 125)
+    # either 'a' is in bz_res or the remaining rows are > 1000
+    assert len(bz_res) == 3
+    assert all(bz_res.A.isin(['a', 'c', 'd']))
+    assert all(bz_res.quant[~bz_res.A.str.contains('a')] > 1000)
 
 
 def test_having_where(big_sql):
@@ -777,19 +796,16 @@ def test_having_where(big_sql):
     #    FROM tbl0
     #    WHERE tbl0."B" > 5
     s1 = nn[nn.B > 5]
-
     g1 = by(s1['A'], quant=s1.B.sum())
-    g1_res = compute(g1, big_sql, return_type=pd.DataFrame)
-    assert len(g1_res) == 4
 
-    expr = g1[(g1.quant < 100) & (g1.quant > 50)]
-    bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
-
-    # assertion against pandas result
-    df = compute(s1, big_sql, return_type=pd.DataFrame)
-    df_g = df.groupby('A').sum()
-    df_g.columns = ['quant']
-    df_res = df_g[(df_g.quant < 100) & (df_g.quant > 50)].dropna()
-    df_res.reset_index(inplace=True)
-
-    assert all(df_res == bz_res)
+    # expected result of group by for big_sql table
+    #    A  quant
+    # 0  a    310
+    # 1  b    950
+    # 2  c   1575
+    # 3  d   2200
+    #
+    expr = g1[(g1.quant > 310) & (g1.quant < 2000)]
+    bz_res = compute(expr, big_sql, return_type=list)
+    assert len(bz_res) == 2
+    assert ('b', 950) in bz_res and ('c', 1575) in bz_res
