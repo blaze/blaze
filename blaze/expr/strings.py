@@ -8,7 +8,7 @@ from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
 from ..compatibility import basestring
 
-__all__ = ['Like', 'like', 'strlen', 'UnaryStringFunction']
+__all__ = ['Like', 'like', 'strlen', 'str_len', 'str_upper', 'str_lower', 'UnaryStringFunction']
 
 
 class Like(ElemWise):
@@ -48,14 +48,23 @@ class UnaryStringFunction(ElemWise):
 
 
 class strlen(UnaryStringFunction):
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn("`strlen()` has been deprecated in 0.10 and will be "
+                      "removed in 0.11.  Use ``str_len()`` instead.",
+                      DeprecationWarning)
+        super(self, strlen).__init__(*args, **kwargs)
+
+
+class str_len(UnaryStringFunction):
     schema = datashape.int64
 
 
-class strupper(UnaryStringFunction):
+class str_upper(UnaryStringFunction):
     schema = datashape.string
 
 
-class strlower(UnaryStringFunction):
+class str_lower(UnaryStringFunction):
     schema = datashape.string
 
 
@@ -68,11 +77,17 @@ _mod, _rmod = _mkbin('mod', Interp)
 _mul, _rmul = _mkbin('mul', Repeat)
 
 
-schema_method_list.extend([
-    (
-        isstring,
-        set([
-            _add, _radd, _mod, _rmod, _mul, _rmul, repeat, interp, like, strlen, strupper, strlower
-        ])
-    )
-])
+schema_method_list.extend([(isstring,
+                            set([_add,
+                                 _radd,
+                                 _mod,
+                                 _rmod,
+                                 _mul,
+                                 _rmul,
+                                 repeat,
+                                 interp,
+                                 like,
+                                 str_len,
+                                 strlen,
+                                 str_upper,
+                                 str_lower]))])

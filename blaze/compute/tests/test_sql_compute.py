@@ -786,10 +786,24 @@ def test_not_like():
     WHERE accounts.name NOT LIKE :name_1""")
 
 
-def test_strlen():
-    expr = t.name.strlen()
+def test_str_len():
+    expr = t.name.str_len()
     result = str(compute(expr, s, return_type='native'))
     expected = "SELECT char_length(accounts.name) as name FROM accounts"
+    assert normalize(result) == normalize(expected)
+
+
+def test_str_upper():
+    expr = t.name.str_upper()
+    result = str(compute(expr, s, return_type='native'))
+    expected = "SELECT upper(accounts.name) as name FROM accounts"
+    assert normalize(result) == normalize(expected)
+
+    
+def test_str_lower():
+    expr = t.name.str_lower()
+    result = str(compute(expr, s, return_type='native'))
+    expected = "SELECT lower(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
 

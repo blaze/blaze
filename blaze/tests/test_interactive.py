@@ -106,9 +106,9 @@ def test_str_does_not_repr():
     # see GH issue #1240.
     d = data([('aa', 1), ('b', 2)], name="ZZZ",
              dshape='2 * {a: string, b: int64}')
-    expr = transform(d, c=d.a.strlen() + d.b)
+    expr = transform(d, c=d.a.str_len() + d.b)
     assert str(
-        expr) == "Merge(_child=ZZZ, children=(ZZZ, label(strlen(_child=ZZZ.a) + ZZZ.b, 'c')))"
+        expr) == "Merge(_child=ZZZ, children=(ZZZ, label(str_len(_child=ZZZ.a) + ZZZ.b, 'c')))"
 
 
 def test_repr_of_scalar():

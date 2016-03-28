@@ -88,6 +88,7 @@ from ..expr import (
     notnull,
     nunique,
     std,
+    str_len,
     strlen,
     var,
 )
@@ -1182,6 +1183,8 @@ def compute_up(t, s, **kwargs):
 
 string_func_names = {
     # <blaze function name>: <SQL function name>
+    'str_upper': 'upper',
+    'str_lower': 'lower',
 }
 
 
@@ -1196,7 +1199,7 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
     return compiler.visit_function(element, **kwargs)
 
 
-@dispatch(strlen, ColumnElement)
+@dispatch((strlen, str_len), ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
