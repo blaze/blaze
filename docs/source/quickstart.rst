@@ -17,14 +17,14 @@ dimensionality and data type to use.
 
 .. code-block:: python
 
-    >>> t = Data([(1, 'Alice', 100),
+    >>> t = data([(1, 'Alice', 100),
     ...           (2, 'Bob', -200),
     ...           (3, 'Charlie', 300),
     ...           (4, 'Denis', 400),
     ...           (5, 'Edith', -500)],
     ...          fields=['id', 'name', 'balance'])
 
-    >>> t
+    >>> t.peek()
        id     name  balance
     0   1    Alice      100
     1   2      Bob     -200
@@ -61,8 +61,8 @@ operate on a CSV file of the traditional `iris dataset`_.
 .. code-block:: python
 
    >>> from blaze.utils import example
-   >>> iris = Data(example('iris.csv'))
-   >>> iris
+   >>> iris = data(example('iris.csv'))
+   >>> iris.peek()
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -82,8 +82,8 @@ stored in a `sqlite file`_.
 
 .. code-block:: python
 
-   >>> iris = Data('sqlite:///%s::iris' % example('iris.db'))
-   >>> iris
+   >>> iris = data('sqlite:///%s::iris' % example('iris.db'))
+   >>> iris.peek()
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa

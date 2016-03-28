@@ -18,7 +18,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> from blaze import *
    >>> from blaze.utils import example
    >>> csv = CSV(example('iris.csv'))
-   >>> Data(csv)
+   >>> data(csv).peek()
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
    1            4.9          3.0           1.4          0.2  Iris-setosa
@@ -210,8 +210,8 @@ for us
 
    # Client code, run this in a separate process from the Server
 
-   >>> from blaze import Data, by
-   >>> t = Data('blaze://localhost:6363')  # doctest: +SKIP
+   >>> from blaze import data, by
+   >>> t = data('blaze://localhost:6363')  # doctest: +SKIP
 
    >>> t  # doctest: +SKIP
        sepal_length  sepal_width  petal_length  petal_width      species
@@ -251,10 +251,10 @@ For example:
     >>> Server(my_data, formats=(msgpack_format, json_format).run()  # doctest: +SKIP
 
     # Client code, run this in a separate process from the Server
-    >>> from blaze import Client, Data
+    >>> from blaze import Client, data
     >>> from blaze.server import msgpack_format, json_format
-    >>> msgpack_client = Data(Client('localhost', msgpack_format))  # doctest: +SKIP
-    >>> json_client = Data(Client('localhost', json_format))  # doctest +SKIP
+    >>> msgpack_client = data(Client('localhost', msgpack_format))  # doctest: +SKIP
+    >>> json_client = data(Client('localhost', json_format))  # doctest +SKIP
 
 In this example, ``msgpack_client`` will make requests to the
 ``/compute.msgpack`` endpoint and will send and receive data using the msgpack
@@ -438,11 +438,11 @@ If accumulated results are likely to fill up memory then other, on-disk
    >>> cached = CachedDataset(dset, cache=Chest())  # doctest: +SKIP
 
 These cached objects can be used anywhere normal objects can be used in Blaze,
-including an interactive (and now performance cached) ``Data`` object
+including an interactive (and now performance cached) ``data`` object
 
 .. code-block:: python
 
-   >>> d = Data(cached)  # doctest: +SKIP
+   >>> d = data(cached)  # doctest: +SKIP
 
 or a Blaze server
 

@@ -105,9 +105,9 @@ expressions while ``._args`` also contains parameters like the string
    >>> t = symbol('t', 'var * {name: string, balance: int}')
    >>> expr = t.sort('balance', ascending=True)
    >>> expr._args
-   (t, 'balance', True)
+   (<`t` symbol; dshape='...'>, 'balance', True)
    >>> expr._inputs
-   (t,)
+   (<`t` symbol; dshape='...'>,)
 
 Some convenience functions for common traversals already exist:
 
@@ -121,7 +121,7 @@ Some convenience functions for common traversals already exist:
 * ``._subterms``, a traversal along ``._inputs``::
 
    >>> list(z._subterms())  # doctest: +NORMALIZE_WHITESPACE
-   [(log(x - 1)) ** y, log(x - 1), x - 1, x, y]
+   [(log(x - 1)) ** y, log(x - 1), x - 1, <`x` symbol; dshape=...>, <`y` symbol; dshape=...>]
 
 
 * ``._traverse``, a traversal along ``._args``::
@@ -130,12 +130,12 @@ Some convenience functions for common traversals already exist:
    [(log(x - 1)) ** y,
     log(x - 1),
     x - 1,
-    x,
+    <`x` symbol; dshape=...>,
     'x',
     dshape("int64"),
     0,
     1,
-    y,
+    <`y` symbol; dshape=...>,
     'y',
     dshape("float32"),
     0]

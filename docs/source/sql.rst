@@ -5,18 +5,18 @@ Interacting with SQL Databases
 How to
 ------
 
-Typically one provides a SQL connection string to the ``Data`` constructor
+Typically one provides a SQL connection string to the ``data`` constructor
 
 .. code-block:: python
 
-   >>> db = Data('postgresql:///user:pass@hostname')  # doctest: +SKIP
+   >>> db = data('postgresql:///user:pass@hostname')  # doctest: +SKIP
 
    or
 
-   >>> t = Data('postgresql://user:pass@hostname::my-table-name')  # doctest: +SKIP
+   >>> t = data('postgresql://user:pass@hostname::my-table-name')  # doctest: +SKIP
 
 Alternatively users familiar with SQLAlchemy can pass any SQLAlchemy engine,
-metadata, or Table objects to ``Data``.  This can be useful if you need to
+metadata, or Table objects to ``data``.  This can be useful if you need to
 specify more information that does not fit comfortably into a URI (like a
 desired schema.)
 
@@ -25,7 +25,7 @@ desired schema.)
    >>> import sqlalchemy  # doctest: +SKIP
    >>> engine = sqlalchemy.create_engine('postgreqsql://hostname')  # doctest: +SKIP
 
-   >>> db = Data(engine)  # doctest: +SKIP
+   >>> db = data(engine)  # doctest: +SKIP
 
 How does it work?
 -----------------
@@ -66,8 +66,8 @@ to that database with the following code
 
 .. code-block:: python
 
-   >>> from blaze import Data
-   >>> db = Data('sqlite:///Downloads/lahman2013.sqlite') # doctest: +SKIP
+   >>> from blaze import data
+   >>> db = data('sqlite:///Downloads/lahman2013.sqlite') # doctest: +SKIP
    >>> db.<tab>  # see available tables  # doctest: +SKIP
    db.AllstarFull          db.FieldingOF           db.Schools              db.fields
    db.Appearances          db.FieldingPost         db.SchoolsPlayers       db.isidentical
@@ -78,7 +78,7 @@ to that database with the following code
    db.Batting              db.Pitching             db.apply                db.temp
    db.BattingPost          db.PitchingPost         db.data
    db.Fielding             db.Salaries             db.dshape
-   >>> db.Teams  # view one particular database  # doctest: +SKIP
+   >>> db.Teams.peek()  # view one particular database  # doctest: +SKIP
        yearID lgID teamID franchID divID  Rank   G  Ghome   W   L     ...       \
    0     1871   NA    BS1      BNA  None     3  31    NaN  20  10     ...
    1     1871   NA    CH1      CNA  None     2  28    NaN  19   9     ...
@@ -105,14 +105,14 @@ Connecting to a Schema Other than ``public`` with PostgreSQL
 ------------------------------------------------------------
 
 To connect to a non-default schema, one may pass a ``sqlalchemy.MetaData``
-object to ``Data``. For example:
+object to ``data``. For example:
 
 
 .. code-block:: python
 
-   >>> from blaze import Data
+   >>> from blaze import data
    >>> from sqlalchemy import MetaData
-   >>> ds = Data(MetaData('postgresql://localhost/test', schema='my_schema'))
+   >>> ds = data(MetaData('postgresql://localhost/test', schema='my_schema'))
    >>> ds.dshape  # doctest: +SKIP
    dshape("{table_a: var * {a: ?int32}, table_b: var * {b: ?int32}}")
 
@@ -169,8 +169,8 @@ The previous example in blaze looks like this:
 
   .. code-block:: python
 
-     >>> from blaze import Data, compute
-     >>> d = Data('postgresql://localhost/db')  # doctest: +SKIP
+     >>> from blaze import data, compute
+     >>> d = data('postgresql://localhost/db')  # doctest: +SKIP
      >>> d.fields  # doctest: +SKIP
      ['products', 'orders']
      >>> expr = d.orders.product_id.name  # doctest: +SKIP

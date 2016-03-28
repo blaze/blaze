@@ -10,7 +10,7 @@ Imports and Construction
 
    import numpy as np
    import pandas as pd
-   from blaze import Data, by, join, merge, concat
+   from blaze import data, by, join, merge, concat
 
    # construct a DataFrame
    df = pd.DataFrame({
@@ -20,7 +20,7 @@ Imports and Construction
    })
 
    # put the `df` DataFrame into a Blaze Data object
-   df = Data(df)
+   df = data(df)
 
 
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
@@ -95,7 +95,7 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +=================+=================================================================+===================================================+
 | Load            | .. code-block:: python                                          | .. code-block:: python                            |
 | directory of    |                                                                 |                                                   |
-| CSV files       |    df = pd.concat([pd.read_csv(filename)                        |    df = Data('path/to/*.csv')                     |
+| CSV files       |    df = pd.concat([pd.read_csv(filename)                        |    df = data('path/to/*.csv')                     |
 |                 |                    for filename in                              |                                                   |
 |                 |                    glob.glob('path/to/*.csv')])                 |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
@@ -107,7 +107,7 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
 | Read from       | .. code-block:: python                                          | .. code-block:: python                            |
 | SQL database    |                                                                 |                                                   |
-|                 |    df = pd.read_sql('select * from t', con='sqlite:///db.db')   |    df = Data('sqlite://db.db::t')                 |
+|                 |    df = pd.read_sql('select * from t', con='sqlite:///db.db')   |    df = data('sqlite://db.db::t')                 |
 |                 |                                                                 |                                                   |
 |                 |    df = pd.read_sql('select * from t',                          |                                                   |
 |                 |                     con=sa.create_engine('sqlite:///db.db'))    |                                                   |

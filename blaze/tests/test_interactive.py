@@ -112,18 +112,18 @@ def test_str_does_not_repr():
 
 
 def test_repr_of_scalar():
-    assert repr(t.amount.sum()) == '300'
+    assert expr_repr(t.amount.sum()) == '300'
 
 
 def test_mutable_backed_repr():
     mutable_backed_table = data([[0]], fields=['col1'])
-    repr(mutable_backed_table)
+    expr_repr(mutable_backed_table)
 
 
 def test_dataframe_backed_repr():
     df = pd.DataFrame(data=[0], columns=['col1'])
     dataframe_backed_table = data(df)
-    repr(dataframe_backed_table)
+    expr_repr(dataframe_backed_table)
 
 
 def test_dataframe_backed_repr_complex():
@@ -134,7 +134,7 @@ def test_dataframe_backed_repr_complex():
                        (5, 'Edith', -500)],
                       columns=['id', 'name', 'balance'])
     t = data(df)
-    repr(t[t['balance'] < 0])
+    expr_repr(t[t['balance'] < 0])
 
 
 def test_repr_html_on_no_resources_symbol():
@@ -143,7 +143,7 @@ def test_repr_html_on_no_resources_symbol():
 
 
 def test_expr_repr_empty():
-    s = repr(t[t.amount > 1e9])
+    s = expr_repr(t[t.amount > 1e9])
     assert isinstance(s, str)
     assert 'amount' in s
 
@@ -225,7 +225,7 @@ def test_Data_attribute_repr():
     t = data(CSV(example('accounts-datetimes.csv')))
     result = t.when.day
     expected = pd.DataFrame({'when_day': [1, 2, 3, 4, 5]})
-    assert repr(result) == repr(expected)
+    assert expr_repr(result) == repr(expected)
 
 
 def test_can_trivially_create_csv_data():
@@ -284,14 +284,14 @@ def test_Data_on_json_is_concrete():
 
 def test_repr_on_nd_array_doesnt_err():
     d = data(np.ones((2, 2, 2)))
-    repr(d + 1)
+    expr_repr(d + 1)
 
 
 def test_generator_reprs_concretely():
     x = [1, 2, 3, 4, 5, 6]
     d = data(x)
     expr = d[d > 2] + 1
-    assert '4' in repr(expr)
+    assert '4' in expr_repr(expr)
 
 
 def test_incompatible_types():
@@ -347,7 +347,7 @@ def test_head_compute():
 
     # skip the header and the ... at the end of the repr
     expr = d.head(n)
-    s = repr(expr)
+    s = expr_repr(expr)
     assert '...' not in s
     result = s.split('\n')[1:]
     assert len(result) == n
@@ -357,48 +357,48 @@ def test_scalar_sql_compute():
     t = into('sqlite:///:memory:::t', tdata,
              dshape=dshape('var * {name: string, amount: int}'))
     d = data(t)
-    assert repr(d.amount.sum()) == '300'
+    assert expr_repr(d.amount.sum()) == '300'
 
 
 def test_no_name_for_simple_data():
     d = data([1, 2, 3])
-    assert repr(d) == '    \n0  1\n1  2\n2  3'
+    assert expr_repr(d) == '    \n0  1\n1  2\n2  3'
     assert not d._name
 
     d = data(1)
     assert not d._name
-    assert repr(d) == '1'
+    assert expr_repr(d) == '1'
 
 
 def test_coerce_date_and_datetime():
     x = datetime.datetime.now().date()
     d = data(x)
-    assert repr(d) == repr(x)
+    assert expr_repr(d) == repr(x)
 
     x = pd.Timestamp.now()
     d = data(x)
-    assert repr(d) == repr(x)
+    assert expr_repr(d) == repr(x)
 
     x = np.nan
     d = data(x, dshape='datetime')
-    assert repr(d) == repr(pd.NaT)
+    assert expr_repr(d) == repr(pd.NaT)
 
     x = float('nan')
     d = data(x, dshape='datetime')
-    assert repr(d) == repr(pd.NaT)
+    assert expr_repr(d) == repr(pd.NaT)
 
 
 def test_coerce_timedelta():
     x = datetime.timedelta(days=1, hours=2, minutes=3)
     d = data(x)
 
-    assert repr(d) == repr(x)
+    assert expr_repr(d) == repr(x)
 
 
 def test_highly_nested_repr():
     tdata = [[0, [[1, 2], [3]], 'abc']]
     d = data(tdata)
-    assert 'abc' in repr(d.head())
+    assert 'abc' in expr_repr(d.head())
 
 
 def test_asarray_fails_on_different_column_names():
@@ -452,7 +452,7 @@ def test_csv_with_trailing_commas():
             # note the trailing space in the header
             f.write('a,b,c, \n1, 2, 3, ')
         csv = CSV(fn)
-        assert repr(data(fn))
+        assert expr_repr(data(fn))
         assert discover(csv).measure.names == [
             'a', 'b', 'c', ''
         ]
@@ -460,7 +460,7 @@ def test_csv_with_trailing_commas():
         with open(fn, 'wt') as f:
             f.write('a,b,c,\n1, 2, 3, ')  # NO trailing space in the header
         csv = CSV(fn)
-        assert repr(data(fn))
+        assert expr_repr(data(fn))
         assert discover(csv).measure.names == [
             'a', 'b', 'c', 'Unnamed: 3'
         ]
@@ -478,7 +478,7 @@ def test_pickle_roundtrip():
 
 def test_nameless_data():
     tdata = [('a', 1)]
-    assert repr(tdata) in repr(data(tdata))
+    assert repr(tdata) in expr_repr(data(tdata))
 
 
 def test_partially_bound_expr():
@@ -491,7 +491,7 @@ def test_partially_bound_expr():
     tdata = data(df, name='data')
     a = symbol('a', 'int')
     expr = tdata.name[tdata.balance > a]
-    assert repr(expr) == 'data[data.balance > a].name'
+    assert expr_repr(expr) == 'data[data.balance > a].name'
 
 
 def test_isidentical_regr():
