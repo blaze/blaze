@@ -659,11 +659,26 @@ def test_like():
     tm.assert_frame_equal(result, expected)
 
 
-def test_strlen():
-    expr = t.name.strlen()
+def test_str_len():
+    expr = t.name.str_len()
     expected = pd.Series([5, 3, 5], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+
+
+def test_str_upper():
+    expr = t.name.str_upper()
+    expected = pd.Series(['ALICE', 'BOB', 'ALICE'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+
+def test_str_lower():
+    expr = t.name.str_lower()
+    expected = pd.Series(['alice', 'bob', 'alice'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
 
 
 def test_rowwise_by():

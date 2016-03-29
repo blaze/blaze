@@ -56,11 +56,17 @@ Improved Backends
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
-None
+* The :class:`~blaze.expr.strings.str_upper` and
+  :class:`~blaze.expr.strings.str_lower` expressions were added for the Pandas
+  and SQL backends (:issue:`1462`).  These are marked experimental since their
+  names are subject to change.  More string methods will be added in coming
+  versions.
 
 API Changes
 ~~~~~~~~~~~
 
+* The :class:`~blaze.expr.strings.strlen` expression was deprecated in favor of
+  :class:`~blaze.expr.strings.str_len` (:issue:`1462`).
 * Long deprecated :func:`~blaze.table.Table` and
   :func:`~blaze.table.TableSymbol` were removed (:issue:`1441`).  The
   ``TableSymbol`` tests in ``test_table.py`` were migrated to

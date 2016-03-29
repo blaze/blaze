@@ -284,9 +284,10 @@ def compute_up(expr, data, **kwargs):
     return compute_up(expr._child.distinct().count(), data, **kwargs)
 
 
-string_func_names = {
-    'strlen': 'len',
-}
+string_func_names = {'str_len': 'len',
+                     'strlen': 'len',
+                     'str_upper': 'upper',
+                     'str_lower': 'lower'}
 
 
 @dispatch(UnaryStringFunction, Series)
