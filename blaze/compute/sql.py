@@ -1022,10 +1022,11 @@ def compute_up(expr, data, **kwargs):
     names = data.c.keys()
     assert names == expr._child.fields
     d = dict(zip(names, getattr(data, 'inner_columns', data.c)))
-    return reconstruct_select([d[col].label(new_col) if col != new_col
-                               else d[col]
-                               for col, new_col
-                               in zip(expr._child.fields, expr.fields)], data)
+    return reconstruct_select(
+        (d[col].label(new_col) if col != new_col else d[col]
+         for col, new_col in zip(expr._child.fields, expr.fields)),
+        data,
+    )
 
 
 @dispatch(FromClause)
