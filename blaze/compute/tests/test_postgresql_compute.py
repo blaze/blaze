@@ -65,22 +65,6 @@ def sql(url):
             drop(t)
 
 
-@pytest.yield_fixture
-def sql_more_data(url):
-    ds = dshape('var * {A: string, B: int64}')
-    try:
-        t = data(url % next(names), dshape=ds)
-    except sa.exc.OperationalError as e:
-        pytest.skip(str(e))
-    else:
-        assert t.dshape == ds
-        t = data(odo([(1, 2, 3), (4, 5, 6)], t))
-        try:
-            yield t
-        finally:
-            drop(t)
-
-
 @pytest.yield_fixture(scope='module')
 def nyc(pg_ip):
     # odoing csv -> pandas -> postgres is more robust, as it doesn't require
@@ -424,15 +408,12 @@ def test_distinct_on(sql):
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
 
 
-def test_relabel_columns_over_selection(sql_more_data):
-    sql = sql_more_data.data
-    t = symbol('t', discover(sql))
-    result = normalize(str(compute(t[t['A'] == 2].relabel(A='a'),
-                     sql_more_data, return_type='native')))
-    expected = normalize("""
-    SELECT {tbl}."A" as a, {tbl}."B" from {tbl} where {tbl}."A" = % ( a_1 ) s
-    """.format(tbl=sql.name))
-    assert str(result) == expected
+def test_relabel_columns_over_selection(big_sql):
+    t = symbol('t', discover(big_sql))
+    result = compute(t[t['B'] == 2].relabel(B='b'),
+                     big_sql, return_type=pd.DataFrame)
+    expected = pd.DataFrame({"A": ['a'], "b": [2]})
+    tm.assert_frame_equal(result.sort(axis=1), expected.sort(axis=1))
 
 
 def test_auto_join_field(orders):

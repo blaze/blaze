@@ -557,12 +557,12 @@ def test_relabel_table():
 
 
 def test_relabel_columns_over_selection():
-    result = compute(t[t['amount'] > 150].relabel(name='NAME'), s, return_type
-    = 'native')
+    result = compute(
+        t[t['amount'] > 150].relabel(name='NAME'), s, return_type='native'
+    )
     expected = str(sa.select(
         [s.c.name.label('NAME'), s.c.amount, s.c.id]
     ).where(s.c.amount > 150))
-    import pdb; pdb.set_trace()
     assert str(result) == str(expected)
 
 
