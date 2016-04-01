@@ -52,6 +52,8 @@ Improved Backends
 
 * Adds :class:`~blaze.expr.math.greatest` and :class:`~blaze.expr.math.least`
   support to the sql backend (:issue:`1428`).
+* Generalize ``Field`` to support :class:`collections.Mapping` object
+  (:issue:`1467`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~

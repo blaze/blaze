@@ -19,6 +19,7 @@ from .utils import ignoring
 import warnings
 from .expr import (
     Symbol,
+    broadcast_collect,
     by,
     cast,
     coalesce,

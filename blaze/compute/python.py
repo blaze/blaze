@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
+from collections import Mapping
 import itertools
 import numbers
 import fnmatch
@@ -768,7 +769,7 @@ def compute_up(expr, seq, **kwargs):
     raise NotImplementedError("Only 1d slices supported")
 
 
-@dispatch(Field, dict)
+@dispatch(Field, Mapping)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
 
