@@ -65,6 +65,20 @@ def sql(url):
             drop(t)
 
 
+@pytest.yield_fixture
+def sql_more_data(url):
+    ds = dshape('var * {A: string, B: int64}')
+    try:
+        t = data(url % next(names), dshape=ds)
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        assert t.dshape == ds
+        t = data(odo([(1, 2, 3), (4, 5, 6)], t))
+        try:
+            yield t
+        finally:
+            drop(t)
 
 
 @pytest.yield_fixture(scope='module')
@@ -408,6 +422,17 @@ def test_distinct_on(sql):
     FROM {tbl}) AS anon_1 ORDER BY anon_1."A" ASC
     """.format(tbl=sql.name))
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
+
+
+def test_relabel_columns_over_selection(sql_more_data):
+    sql = sql_more_data.data
+    t = symbol('t', discover(sql))
+    result = normalize(str(compute(t[t['A'] == 2].relabel(A='a'),
+                     sql_more_data, return_type='native')))
+    expected = normalize("""
+    SELECT {tbl}."A" as a, {tbl}."B" from {tbl} where {tbl}."A" = % ( a_1 ) s
+    """.format(tbl=sql.name))
+    assert str(result) == expected
 
 
 def test_auto_join_field(orders):
