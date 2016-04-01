@@ -113,7 +113,7 @@ def pre_compute(expr, seq, scope=None, **kwargs):
             first = next(iter(seq))
     except StopIteration:
         return []
-    if isinstance(first, dict):
+    if isinstance(first, Mapping):
         leaf = expr._leaves()[0]
         return pluck(leaf.fields, seq)
     else:
@@ -767,11 +767,6 @@ def compute_up(expr, seq, **kwargs):
         else:
             return itertools.islice(seq, index.start, index.stop, index.step)
     raise NotImplementedError("Only 1d slices supported")
-
-
-@dispatch(Field, Mapping)
-def compute_up(expr, data, **kwargs):
-    return data[expr._name]
 
 
 @dispatch(Coerce, (np.float32, np.float64, np.int64, np.int32, base))

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import Mapping
 from keyword import iskeyword
 import re
 
@@ -323,7 +324,7 @@ class Symbol(Expr):
         self._hash = None
 
     def __repr__(self):
-        fmt =  "<`{}` symbol; dshape='{}'>"
+        fmt = "<`{}` symbol; dshape='{}'>"
         return fmt.format(self._name, sanitized_dshape(self.dshape))
 
     def __str__(self):
@@ -339,7 +340,7 @@ def symbol(name, dshape, token=None):
     return Symbol(name, dshape, token=token or 0)
 
 
-@dispatch(Symbol, dict)
+@dispatch(Symbol, Mapping)
 def _subs(o, d):
     """ Subs symbols using symbol function
 
@@ -483,7 +484,6 @@ def sliceit(child, index):
     s = Slice(child, index3)
     hash(s)
     return s
-
 
 
 class Slice(Expr):
@@ -671,9 +671,8 @@ class ReLabel(ElemWise):
 
 @copydoc(ReLabel)
 def relabel(child, labels=None, **kwargs):
-    labels = labels or dict()
-    labels = toolz.merge(labels, kwargs)
-    labels = dict((k, v) for k, v in labels.items() if k != v)
+    labels = {k: v
+              for k, v in toolz.merge(labels or {}, kwargs).items() if k != v}
     label_keys = set(labels)
     fields = child.fields
     if not label_keys.issubset(fields):
@@ -682,7 +681,7 @@ def relabel(child, labels=None, **kwargs):
                          ', '.join(map(repr, non_existent_fields)))
     if not labels:
         return child
-    if isinstance(labels, dict):  # Turn dict into tuples
+    if isinstance(labels, Mapping):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):
         if child._name == labels[0][0]:

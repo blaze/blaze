@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
-from collections import Iterator
+from collections import Iterator, Mapping
 import decimal
 import datetime
 from functools import reduce, partial
@@ -182,7 +181,7 @@ def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs
     return _Data(data_source, ds, name)
 
 
-@dispatch(_Data, dict)
+@dispatch(_Data, Mapping)
 def _subs(o, d):
     return o
 
