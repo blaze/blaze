@@ -34,6 +34,8 @@ New Expressions
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
+* The :class:`~blaze.expr.strings.UnaryStringFunctions` expressions were added
+  to the set of ``Broadcastable`` expressions (:issue:`1469`).
 * The test suite was expanded to validate proper expression input error handling
   (:issue:`1420`).
 * The :func:`~blaze.expr.datetime.truncate` function was refactored to raise an
