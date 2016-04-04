@@ -65,8 +65,6 @@ def sql(url):
             drop(t)
 
 
-
-
 @pytest.yield_fixture(scope='module')
 def nyc(pg_ip):
     # odoing csv -> pandas -> postgres is more robust, as it doesn't require
@@ -408,6 +406,14 @@ def test_distinct_on(sql):
     FROM {tbl}) AS anon_1 ORDER BY anon_1."A" ASC
     """.format(tbl=sql.name))
     assert odo(computation, tuple) == (('a', 1), ('b', 2))
+
+
+def test_relabel_columns_over_selection(big_sql):
+    t = symbol('t', discover(big_sql))
+    result = compute(t[t['B'] == 2].relabel(B=u'b'),
+                     big_sql, return_type=pd.DataFrame)
+    expected = pd.DataFrame([['a', 2]], columns=[u'A', u'b'])
+    tm.assert_frame_equal(result, expected)
 
 
 def test_auto_join_field(orders):
