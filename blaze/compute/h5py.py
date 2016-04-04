@@ -17,12 +17,16 @@ from ..expr import nelements
 from ..expr import path, shape, Symbol
 from ..expr.split import split
 
-from .core import compute
+from .core import compute, compute_single_object
 from ..dispatch import dispatch
 from ..utils import available_memory
 
 
 __all__ = []
+
+
+# h5py File and Group are mapping objects.
+compute.register(Expr, (h5py.File, h5py.Group))(compute_single_object)
 
 
 @dispatch(Slice, h5py.Dataset)

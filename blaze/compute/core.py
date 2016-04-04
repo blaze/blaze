@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import defaultdict, Iterator
+from collections import defaultdict, Iterator, Mapping
 from datetime import date, datetime, timedelta
 import itertools
 import numbers
@@ -63,27 +63,6 @@ def compute_up(a, **kwargs):
 @dispatch((list, tuple))
 def compute_up(seq, scope=None, **kwargs):
     return type(seq)(compute(item, scope or {}, **kwargs) for item in seq)
-
-
-@dispatch(Expr, object)
-def compute(expr, o, **kwargs):
-    """ Compute against single input
-
-    Assumes that only one Symbol exists in expression
-
-    >>> t = symbol('t', 'var * {name: string, balance: int}')
-    >>> deadbeats = t[t['balance'] < 0]['name']
-
-    >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
-    >>> # list(compute(deadbeats, {t: data}))
-    >>> list(compute(deadbeats, data))
-    ['Bob', 'Charlie']
-    """
-    ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])
-    if len(ts) == 1:
-        return compute(expr, {first(ts): o}, **kwargs)
-    else:
-        raise ValueError("Give compute dictionary input, got %s" % str(o))
 
 
 @dispatch(object)
@@ -378,7 +357,7 @@ def swap_resources_into_scope(expr, scope):
     return expr, new_scope
 
 
-@dispatch(Expr, dict)
+@dispatch(Expr, Mapping)
 def compute(expr, d, return_type=no_default, **kwargs):
     """Compute expression against data sources.
 
@@ -451,7 +430,28 @@ def compute(expr, d, return_type=no_default, **kwargs):
     return result
 
 
-@dispatch(Field, dict)
+@compute.register(Expr, object)
+def compute_single_object(expr, o, **kwargs):
+    """ Compute against single input
+
+    Assumes that only one Symbol exists in expression
+
+    >>> t = symbol('t', 'var * {name: string, balance: int}')
+    >>> deadbeats = t[t['balance'] < 0]['name']
+
+    >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
+    >>> # list(compute(deadbeats, {t: data}))
+    >>> list(compute(deadbeats, data))
+    ['Bob', 'Charlie']
+    """
+    ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])
+    if len(ts) == 1:
+        return compute(expr, {first(ts): o}, **kwargs)
+    else:
+        raise ValueError("Give compute dictionary input, got %s" % str(o))
+
+
+@dispatch(Field, Mapping)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
 

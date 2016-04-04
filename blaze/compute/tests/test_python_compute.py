@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from collections import Mapping
 
 import math
 import itertools
@@ -6,12 +7,14 @@ import operator
 import pytest
 from datetime import datetime, date
 import datashape
+from datashape.py2help import mappingproxy
 from collections import Iterator, Iterable
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape, symbol, discover
+from blaze.compatibility import PY2
 from blaze.compute.core import compute, compute_up, pre_compute
 from blaze.expr import (by, merge, join, distinct, sum, min, max, any, summary,
                         count, std, head, sample, transform, greatest, least)
@@ -832,6 +835,32 @@ def test_compute_field_on_dicts():
     s = symbol('s', '{x: 3 * int, y: 3 * int}')
     d = {'x': [1, 2, 3], 'y': [4, 5, 6]}
     assert compute(s.x, {s: d}) == [1, 2, 3]
+
+
+class _MapProxy(Mapping):  # pragma: no cover
+    def __init__(self, mapping):
+        self._map = mapping
+
+    def __getitem__(self, key):
+        return self._map[key]
+
+    def __iter__(self):
+        return iter(self._map)
+
+    def __len__(self):
+        return len(self._map)
+
+
+@pytest.mark.parametrize(
+    'cls',
+    # mappingproxy refers to PyDictProxy in py2 which is not registered
+    # as a mapping
+    (_MapProxy,) + (mappingproxy,) if not PY2 else (),
+)
+def test_comute_on_mapping(cls):
+    s = symbol('s', '{x: 3 * int64, y: 3 * float32}')
+    d = cls({'x': [1, 2, 3], 'y': [4.0, 5.0, 6.0]})
+    assert compute(s.x, {s: d}, return_type='native') == [1, 2, 3]
 
 
 def test_truncate():
