@@ -410,10 +410,10 @@ def test_distinct_on(sql):
 
 def test_relabel_columns_over_selection(big_sql):
     t = symbol('t', discover(big_sql))
-    result = compute(t[t['B'] == 2].relabel(B='b'),
+    result = compute(t[t['B'] == 2].relabel(B=u'b'),
                      big_sql, return_type=pd.DataFrame)
-    expected = pd.DataFrame({"A": ['a'], "b": [2]})
-    tm.assert_frame_equal(result.sort(axis=1), expected.sort(axis=1))
+    expected = pd.DataFrame([['a', 2]], columns=[u'A', u'b'])
+    tm.assert_frame_equal(result, expected)
 
 
 def test_auto_join_field(orders):
