@@ -61,11 +61,17 @@ class str_len(UnaryStringFunction):
 
 
 class str_upper(UnaryStringFunction):
-    schema = datashape.string
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 
 class str_lower(UnaryStringFunction):
-    schema = datashape.string
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 
 def isstring(ds):
