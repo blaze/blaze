@@ -149,6 +149,30 @@ def test_join_option_types():
     assert join(b, a, 'x').dshape == dshape('var * {x: int}')
 
 
+@pytest.mark.xfail
+def test_join_option_types_outer():
+    a = symbol('a', 'var * {x: ?int}')
+    b = symbol('b', 'var * {x: int}')
+
+    assert (join(a, b, 'x', how='outer').dshape ==
+            join(b, a, 'x', how='outer').dshape ==
+            dshape('var * {x: ?int}'))
+
+
+def test_join_option_string_types():
+    a = symbol('a', 'var * {x: ?string}')
+    b = symbol('b', 'var * {x: string}')
+    c = symbol('c', 'var * {x: ?string}')
+
+    assert (join(a, b, 'x').dshape ==
+            join(b, a, 'x').dshape ==
+            dshape('var * {x: string}'))
+
+    assert (join(a, c, 'x').dshape ==
+            join(c, a, 'x').dshape ==
+            dshape('var * {x: ?string}'))
+
+
 def test_join_exceptions():
     """
     exception raised for mismatched schema;
