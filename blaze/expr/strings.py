@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import warnings
+
 import datashape
 from datashape import String, DataShape, Option, bool_
 from odo.utils import copydoc
