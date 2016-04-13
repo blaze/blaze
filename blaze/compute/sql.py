@@ -90,7 +90,7 @@ from ..expr import (
     std,
     str_len,
     strlen,
-    str_cat,
+    StrCat,
     var,
 )
 from ..expr.broadcast import broadcast_collect
@@ -1206,13 +1206,10 @@ def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
-@dispatch(str_cat, ColumnElement, ColumnElement)
-def compute_up(expr, *data, **kwargs):
-    scope = kwargs.get('scope')
-    col1 = scope[expr._child]
-    col2 = scope[expr.col]
-    res = (getattr(sa.sql.func, 'concat')
-           (col1, expr.sep, col2).label(col1.name))
+@dispatch(StrCat, ColumnElement, ColumnElement)
+def compute_up(expr, lhs_data, rhs_data, **kwargs):
+    res = (sa.sql.functions.concat(lhs_data, expr.sep,
+                                   rhs_data).label(lhs_data.name))
     return res
 
 

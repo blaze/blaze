@@ -17,6 +17,7 @@ __all__ = ['Like',
            'str_upper',
            'str_lower',
            'str_cat',
+           'StrCat',
            'UnaryStringFunction']
 
 
@@ -83,7 +84,7 @@ class str_lower(UnaryStringFunction):
         return self._child.schema
 
 
-class str_cat(ElemWise):
+class StrCat(ElemWise):
     """
     Concatenate two string columns together with optional 'sep' argument
 
@@ -113,24 +114,23 @@ class str_cat(ElemWise):
     __slots__ = '_hash', '_child', 'col', 'sep'
     __inputs__ = '_child', 'col'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # check _child is present
-        if self.col is None:
-            raise TypeError("require column to concatenate")
-
     def _dshape(self):
         '''
         since pandas supports concat for string columns, do the same for blaze
         '''
-        new_s_len = self._child.schema.measure.fixlen
-        try:
-            new_s_len += self.col.schema.measure.fixlen
-        except AttributeError:
-            raise TypeError("can only concat string columns")
+        new_s_len = \
+            self._child.schema.measure.fixlen + self.col.schema.measure.fixlen
         shape, schema = self._child.dshape.shape, DataShape(String(new_s_len))
         return DataShape(*(shape + (schema,)))
+
+
+@copydoc(StrCat)
+def str_cat(expr, to_concat, sep=None):
+    # pandas supports concat for string columns only, do the same for blaze
+    if not isstring(to_concat.dshape):
+        raise TypeError("can only concat string columns")
+
+    return StrCat(expr, to_concat, sep=sep)
 
 
 def isstring(ds):
