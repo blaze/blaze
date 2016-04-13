@@ -90,6 +90,7 @@ from ..expr import (
     std,
     str_len,
     strlen,
+    str_cat,
     var,
 )
 from ..expr.broadcast import broadcast_collect
@@ -1185,7 +1186,7 @@ def compute_up(t, s, **kwargs):
 string_func_names = {
     # <blaze function name>: <SQL function name>
     'str_upper': 'upper',
-    'str_lower': 'lower',
+    'str_lower': 'lower'
 }
 
 
@@ -1203,6 +1204,16 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
 @dispatch((strlen, str_len), ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
+
+
+@dispatch(str_cat, ColumnElement, ColumnElement)
+def compute_up(expr, *data, **kwargs):
+    scope = kwargs.get('scope')
+    col1 = scope[expr._child]
+    col2 = scope[expr.col]
+    res = (getattr(sa.sql.func, 'concat')
+           (col1, expr.sep, col2).label(col1.name))
+    return res
 
 
 @dispatch(UnaryStringFunction, ColumnElement)
