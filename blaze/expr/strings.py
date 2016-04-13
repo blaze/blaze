@@ -86,7 +86,7 @@ class str_lower(UnaryStringFunction):
 
 class StrCat(ElemWise):
     """
-    Concatenate two string columns together with optional 'sep' argument
+    Concatenate two string columns together with optional 'sep' argument.
 
     >>> from blaze.expr import symbol
     >>> from datashape import dshape
@@ -97,30 +97,29 @@ class StrCat(ElemWise):
                 ('suri', 'this is not good', 1),
                 ('jinka', 'this is ok', 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
+
     >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
         0       alice -- this is good
         1    suri -- this is not good
         2         jinka -- this is ok
         Name: name, dtype: object
 
+
     Invoking str_cat() on a non string column raises a TypeError during compute
+
     >>> compute(s.name.str_cat(s.num, sep=' -- '), df)
     TypeError: can only concat string columns
-
-    Invoking str_cat() with no arguments raises TypeError
-    >>> s.name.str_cat()
-    TypeError: require column to concatenate
     """
-    __slots__ = '_hash', '_child', 'col', 'sep'
-    __inputs__ = '_child', 'col'
+    __slots__ = '_hash', 'lhs', 'rhs', 'sep'
+    __inputs__ = 'lhs', 'rhs'
 
     def _dshape(self):
         '''
         since pandas supports concat for string columns, do the same for blaze
         '''
         new_s_len = \
-            self._child.schema.measure.fixlen + self.col.schema.measure.fixlen
-        shape, schema = self._child.dshape.shape, DataShape(String(new_s_len))
+            self.lhs.schema.measure.fixlen + self.rhs.schema.measure.fixlen
+        shape, schema = self.lhs.dshape.shape, DataShape(String(new_s_len))
         return DataShape(*(shape + (schema,)))
 
 

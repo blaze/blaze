@@ -1208,7 +1208,8 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(StrCat, ColumnElement, ColumnElement)
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
-    res = (sa.sql.functions.concat(lhs_data, expr.sep,
+    res = (sa.sql.functions.concat(lhs_data,
+                                   expr.sep,
                                    rhs_data).label(lhs_data.name))
     return res
 
