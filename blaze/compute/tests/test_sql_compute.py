@@ -78,6 +78,7 @@ def city_data():
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+t2 = symbol('t', 'var * {name: string, amount: int, id: int, comment: string}')
 nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 metadata = sa.MetaData()
@@ -86,6 +87,12 @@ s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
              sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True))
+
+s2 = sa.Table('accounts2', metadata,
+              sa.Column('name', sa.String),
+              sa.Column('amount', sa.Integer),
+              sa.Column('id', sa.Integer, primary_key=True),
+              sa.Column('comment', sa.String))
 
 tdate = symbol('t',
                """var * {
@@ -809,11 +816,29 @@ def test_str_upper():
     expected = "SELECT upper(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
-    
+
 def test_str_lower():
     expr = t.name.str_lower()
     result = str(compute(expr, s, return_type='native'))
     expected = "SELECT lower(accounts.name) as name FROM accounts"
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.mark.parametrize("sep", [None, " sep "])
+def test_str_cat(sep):
+    """
+    Need at least two string columns to test str_cat
+    """
+    expected = ("SELECT concat(accounts2.name, {}, accounts2.comment) "
+                "AS name FROM accounts2")
+    if sep is None:
+        expr = t2.name.str_cat(t2.comment)
+        expected = expected.format("NULL")
+    else:
+        expr = t2.name.str_cat(t2.comment, sep=sep)
+        expected = expected.format(':param_1')
+
+    result = str(compute(expr, s2, return_type='native'))
     assert normalize(result) == normalize(expected)
 
 
