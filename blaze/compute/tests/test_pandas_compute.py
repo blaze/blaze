@@ -687,14 +687,6 @@ class TestStrCat():
             ('jinka', 'this is ok', 2)]
     df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
 
-    def test_str_cat_exception_no_column_to_concat(self):
-        with pytest.raises(TypeError):
-            compute(self.s.name.str_cat(), self.df)
-
-    def test_str_cat_exception_non_string_col_to_cat(self):
-        with pytest.raises(TypeError):
-            compute(self.s.name.str_cat(self.s.num), self.df)
-
     def test_str_cat(self):
         res = compute(self.s.name.str_cat(self.s.comment), self.df)
         assert all(self.df.name.str.cat(self.df.comment) == res)

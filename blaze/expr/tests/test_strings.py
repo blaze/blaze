@@ -1,4 +1,3 @@
-import datashape
 import pytest
 from datashape import dshape
 
@@ -28,3 +27,16 @@ def test_str_upper_schema(ds):
     assert (expr_upper.schema.measure ==
             expr_lower.schema.measure ==
             dshape('%sstring' % ('?' if '?' in ds else '')).measure)
+
+
+class TestStrCatExceptions():
+    ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
+    s = symbol('s', dshape=ds)
+
+    def test_str_cat_exception_non_string_sep(self):
+        with pytest.raises(TypeError):
+            self.s.name.str_cat(self.s.comment, sep=123)
+
+    def test_str_cat_exception_non_string_col_to_cat(self):
+        with pytest.raises(TypeError):
+            self.s.name.str_cat(self.s.num)

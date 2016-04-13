@@ -129,6 +129,10 @@ def str_cat(expr, to_concat, sep=None):
     if not isstring(to_concat.dshape):
         raise TypeError("can only concat string columns")
 
+    if sep is not None:
+        if not isinstance(sep, basestring):
+            raise TypeError("keyword argument 'sep' must be a String")
+
     return StrCat(expr, to_concat, sep=sep)
 
 
