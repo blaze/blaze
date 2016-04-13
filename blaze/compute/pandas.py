@@ -98,6 +98,7 @@ from ..expr import (
     summary,
     symbol,
     var,
+    str_cat,
 )
 
 __all__ = []
@@ -294,6 +295,19 @@ string_func_names = {'str_len': 'len',
 def compute_up(expr, data, **kwargs):
     name = type(expr).__name__
     return getattr(data.str, string_func_names.get(name, name))()
+
+
+@dispatch(str_cat, Series, Series)
+def compute_up(expr, *data, **kwargs):
+    # What is best way to access data since it is in multiple places
+    #     data[0] is n_name series
+    #     data[1] is n_comment series
+    #     also passing in scope
+    # should probably also check that both columns are strings
+    scope = kwargs.get('scope')
+    cat_ = getattr(getattr(scope[expr._child], 'str'), 'cat')
+    res = cat_(scope[expr.col], sep=expr.sep)
+    return res
 
 
 def unpack(seq):

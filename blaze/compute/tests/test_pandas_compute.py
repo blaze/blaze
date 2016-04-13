@@ -680,6 +680,29 @@ def test_str_lower():
     assert_series_equal(expected, result)
 
 
+class TestStrCat():
+    ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
+    s = symbol('s', dshape=ds)
+    data = [('alice', 'this is good', 0), ('suri', 'this is not good', 1),
+            ('jinka', 'this is ok', 2)]
+    df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
+
+    def test_str_cat_exception_no_column_to_concat(self):
+        with pytest.raises(TypeError):
+            compute(self.s.name.str_cat(), self.df)
+
+    def test_str_cat_exception_non_string_col_to_cat(self):
+        with pytest.raises(TypeError):
+            compute(self.s.name.str_cat(self.s.num), self.df)
+
+    def test_str_cat(self):
+        res = compute(self.s.name.str_cat(self.s.comment), self.df)
+        assert all(self.df.name.str.cat(self.df.comment) == res)
+
+    def test_str_cat_sep(self):
+        res = compute(self.s.name.str_cat(self.s.comment, sep=' -- '), self.df)
+        assert all(self.df.name.str.cat(self.df.comment, sep=' -- ') == res)
+
 
 def test_rowwise_by():
     f = lambda _, id, name: id + len(name)
