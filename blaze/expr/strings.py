@@ -10,7 +10,14 @@ from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
 from ..compatibility import basestring
 
-__all__ = ['Like', 'like', 'strlen', 'str_len', 'str_upper', 'str_lower', 'UnaryStringFunction']
+__all__ = ['Like',
+           'like',
+           'strlen',
+           'str_len',
+           'str_upper',
+           'str_lower',
+           'str_cat',
+           'UnaryStringFunction']
 
 
 class Like(ElemWise):
@@ -76,6 +83,56 @@ class str_lower(UnaryStringFunction):
         return self._child.schema
 
 
+class str_cat(ElemWise):
+    """
+    Concatenate two string columns together with optional 'sep' argument
+
+    >>> from blaze.expr import symbol
+    >>> from datashape import dshape
+
+    >>> ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
+    >>> s = symbol('s', dshape=ds)
+    >>> data = [('alice', 'this is good', 0),
+                ('suri', 'this is not good', 1),
+                ('jinka', 'this is ok', 2)]
+    >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
+    >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
+        0       alice -- this is good
+        1    suri -- this is not good
+        2         jinka -- this is ok
+        Name: name, dtype: object
+
+    Invoking str_cat() on a non string column raises a TypeError during compute
+    >>> compute(s.name.str_cat(s.num, sep=' -- '), df)
+    TypeError: can only concat string columns
+
+    Invoking str_cat() with no arguments raises TypeError
+    >>> s.name.str_cat()
+    TypeError: require column to concatenate
+    """
+    __slots__ = '_hash', '_child', 'col', 'sep'
+    __inputs__ = '_child', 'col'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # check _child is present
+        if self.col is None:
+            raise TypeError("require column to concatenate")
+
+    def _dshape(self):
+        '''
+        since pandas supports concat for string columns, do the same for blaze
+        '''
+        new_s_len = self._child.schema.measure.fixlen
+        try:
+            new_s_len += self.col.schema.measure.fixlen
+        except AttributeError:
+            raise TypeError("can only concat string columns")
+        shape, schema = self._child.dshape.shape, DataShape(String(new_s_len))
+        return DataShape(*(shape + (schema,)))
+
+
 def isstring(ds):
     measure = ds.measure
     return isinstance(getattr(measure, 'ty', measure), String)
@@ -98,4 +155,5 @@ schema_method_list.extend([(isstring,
                                  str_len,
                                  strlen,
                                  str_upper,
-                                 str_lower]))])
+                                 str_lower,
+                                 str_cat]))])
