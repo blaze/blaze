@@ -93,9 +93,7 @@ class StrCat(ElemWise):
 
     >>> ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
     >>> s = symbol('s', dshape=ds)
-    >>> data = [('alice', 'this is good', 0),
-                ('suri', 'this is not good', 1),
-                ('jinka', 'this is ok', 2)]
+    >>> data = [('alice', 'this is good', 0), ('suri', 'this is not good', 1), ('jinka', 'this is ok', 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
 
     >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
