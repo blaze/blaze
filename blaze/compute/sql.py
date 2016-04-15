@@ -1210,7 +1210,7 @@ def compute_up(expr, data, **kwargs):
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
     res = (sa.sql.functions.concat(lhs_data,
                                    expr.sep,
-                                   rhs_data).label(lhs_data.name))
+                                   rhs_data).label(expr.lhs._name))
     return res
 
 
