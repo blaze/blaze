@@ -124,6 +124,34 @@ class Client(object):
 
         return dshape(content(response).decode('utf-8'))
 
+    def add(self, name, resource_uri, *args, **kwargs):
+        """Add the given resource URI to the Blaze server.
+
+        Parameters
+        ----------
+        name : str
+            The name to give the resource
+        resource_uri : str
+            The URI string describing the resource to add to the server, e.g
+            'sqlite:///path/to/file.db::table'
+        args : any, optional
+            Any additional positional arguments that can be passed to the
+            ``blaze.resource`` constructor for this resource type
+        kwargs : any, optional
+            Any additional keyword arguments that can be passed to the
+            ``blaze.resource`` constructor for this resource type
+        """
+        payload = {name: resource_uri}
+        if args:
+            payload['args'] = args
+        if kwargs:
+            payload['kwargs'] = kwargs
+        response = post(self, '/add', auth=self.auth,
+                        data=self.serial.dumps(payload),
+                        headers={'Content-Type': 'application/vnd.blaze+' + self.serial.name})
+        if not ok(response):
+            raise ValueError("Bad Response: %s" % reason(response))
+
 
 @dispatch(Client)
 def discover(c):

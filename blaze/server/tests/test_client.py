@@ -10,6 +10,7 @@ from blaze.expr import Expr, symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.server.client import Client
+from blaze.utils import example
 
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -110,3 +111,13 @@ def test_client_dataset_fails():
 def test_client_dataset():
     d = bz_data('blaze://localhost')
     assert list(map(tuple, into(list, d.accounts))) == into(list, df)
+
+
+def test_client_add_dataset():
+    ec = Client('localhost:6363')
+    ec.add('iris', example('iris.csv'))
+    assert 'iris' in ec.dshape.measure.dict
+    iris_keys = ['petal_length', 'petal_width', 'sepal_length', 'sepal_width',
+                 'species']
+    assert sorted(ec.dshape.measure.dict['iris'].measure.dict.keys()) ==\
+        sorted(iris_keys)
