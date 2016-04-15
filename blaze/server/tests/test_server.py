@@ -612,6 +612,53 @@ def test_bad_add_payload(temp_server, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
+def test_add_expanded_payload(temp_server, serial):
+    # Ensure that the expanded payload format is accepted by the server
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': {'source': iris_path,
+                                  'kwargs': {'delimiter': ','}}})
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert 'CREATED' in response1.status
+    assert response1.status_code == RC.CREATED
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_expanded_payload_has_effect(temp_server, serial):
+    # Ensure that the expanded payload format actually passes the arguments
+    # through to the resource constructor
+    iris_path = example('iris-latin1.tsv')
+    csv_kwargs = {'delimiter': '\t', 'encoding': 'iso-8859-1'}
+    blob = serial.dumps({'iris': {'source': iris_path,
+                                  'kwargs': csv_kwargs}})
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert 'CREATED' in response1.status
+    assert response1.status_code == RC.CREATED
+
+    # check for expected server datashape
+    response2 = temp_server.get('/datashape')
+    expected2 = discover({'iris': data(iris_path, **csv_kwargs)})
+    response_dshape = datashape.dshape(response2.data.decode('utf-8'))
+    assert_dshape_equal(response_dshape.measure.dict['iris'],
+                        expected2.measure.dict['iris'])
+
+    # compute on added data
+    t = data({'iris': data(iris_path, **csv_kwargs)})
+    expr = t.iris.petal_length.sum()
+
+    response3 = temp_server.post('/compute',
+                                 data=serial.dumps({'expr': to_tree(expr)}),
+                                 headers=mimetype(serial))
+
+    result3 = serial.data_loads(serial.loads(response3.data)['data'])
+    expected3 = compute(expr, {'iris': data(iris_path, **csv_kwargs)})
+    assert result3 == expected3
+
+
+@pytest.mark.parametrize('serial', all_formats)
 def test_odo_kwargs(test, serial):
     expr = t.dumb
     bad_query = {'expr': to_tree(expr)}

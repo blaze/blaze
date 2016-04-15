@@ -607,14 +607,22 @@ def addserver(payload, serial):
         return (error_msg % list(payload.keys()),
                 RC.UNPROCESSABLE_ENTITY)
 
-    [(name, resource_uri)] = payload.items()
+    [(name, resource_info)] = payload.items()
 
     if name in data:
         msg = "Cannot add dataset named %s, already exists on server."
         return (msg % name, RC.CONFLICT)
 
     try:
-        data.update({name: resource(resource_uri)})
+        if isinstance(resource_info, dict):
+            # Extract resource creation arguments
+            source = resource_info['source']
+            args = resource_info.get('args', [])
+            kwargs = resource_info.get('kwargs', {})
+        else:
+            # Just a URI
+            source, args, kwargs = resource_info, [], {}
+        data.update({name: resource(source, *args, **kwargs)})
         # Force discovery of new dataset to check that the data is loadable.
         ds = discover(data)
         if name not in ds.dict:
