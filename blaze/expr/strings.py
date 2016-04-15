@@ -89,8 +89,7 @@ class StrCat(ElemWise):
     Concatenate two string columns together with optional 'sep' argument.
 
     >>> import pandas as pd
-    >>> from blaze.expr import symbol, compute
-    >>> from datashape import dshape
+    >>> from blaze import symbol, compute, dshape
 
     >>> ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
     >>> s = symbol('s', dshape=ds)
@@ -98,15 +97,11 @@ class StrCat(ElemWise):
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
 
     >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
-        0       alice -- this is good
-        1    suri -- this is not good
-        2         jinka -- this is ok
+        0          al -- good
+        1    suri -- not good
+        2         jinka -- ok
         Name: name, dtype: object
 
-
-    Invoking str_cat() on a non string column raises a TypeError during compute
-    >>> compute(s.name.str_cat(s.num, sep=' -- '), df)
-    TypeError: can only concat string columns
     """
     __slots__ = '_hash', 'lhs', 'rhs', 'sep'
     __inputs__ = 'lhs', 'rhs'
@@ -121,6 +116,11 @@ class StrCat(ElemWise):
 
 @copydoc(StrCat)
 def str_cat(expr, to_concat, sep=None):
+    """
+    Raises:
+        Invoking on a non string column raises a TypeError
+        If kwarg 'sep' is not a string, raises a TypeError
+    """
     # pandas supports concat for string columns only, do the same for blaze
     if not isstring(to_concat.dshape):
         raise TypeError("can only concat string columns")
