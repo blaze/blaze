@@ -97,10 +97,10 @@ class StrCat(ElemWise):
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
 
     >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
-        0          al -- good
-        1    suri -- not good
-        2         jinka -- ok
-        Name: name, dtype: object
+    0          al -- good
+    1    suri -- not good
+    2         jinka -- ok
+    Name: name, dtype: object
 
     """
     __slots__ = '_hash', 'lhs', 'rhs', 'sep'
