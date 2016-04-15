@@ -667,6 +667,26 @@ def test_sample(big_sql):
     assert len(result) == len(result2)
 
 
+@pytest.mark.parametrize("sep", [None, " -- "])
+def test_str_cat(nyc, sep):
+    """
+    test str_cat() functionality for postgres backend
+    """
+    t = symbol('t', discover(nyc))
+    res = compute(t.medallion.str_cat(t.hack_license, sep=sep), nyc,
+                  return_type=list)
+    cols = compute(t[['medallion', 'hack_license']], nyc, return_type=list)
+
+    if sep is None:
+        expected = map(lambda x: "".join(x), cols)
+    else:
+        expected = map(lambda x: sep.join(x), cols)
+
+    actual = map(lambda x: x[0], res)
+    for exp, act in zip(expected, actual):
+        assert exp == act
+
+
 def test_core_compute(nyc):
     t = symbol('t', discover(nyc))
     assert isinstance(compute(t, nyc, return_type='core'), pd.DataFrame)
