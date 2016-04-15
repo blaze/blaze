@@ -54,6 +54,8 @@ Improved Backends
 
 * Adds :class:`~blaze.expr.math.greatest` and :class:`~blaze.expr.math.least`
   support to the sql backend (:issue:`1428`).
+* Generalize ``Field`` to support :class:`collections.Mapping` object
+  (:issue:`1467`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
@@ -108,6 +110,10 @@ API Changes
 Bug Fixes
 ~~~~~~~~~
 
+* The :class:`~blaze.expr.strings.str_upper` and
+  :class:`~blaze.expr.strings.str_lower` schemas were fixed to pass through
+  their underlying ``_child``'s schema to ensure option types are handled
+  correctly (:issue:`1472`).
 * Fixed a bug with Pandas' implementation of ``compute_up`` on
   :class:`~blaze.expr.broadcast.Broadcast` expressions (:issue:`1442`).  Added
   tests for Pandas frame and series and dask dataframes on ``Broadcast``

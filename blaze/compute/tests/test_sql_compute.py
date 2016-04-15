@@ -41,7 +41,7 @@ from blaze.expr import (
     symbol,
     transform,
 )
-from blaze.utils import tmpfile, example, normalize
+from blaze.utils import tmpfile, example, normalize, literal_compile
 
 
 def computefull(t, s):
@@ -554,6 +554,16 @@ def test_relabel_table():
     ])
 
     assert str(result) == str(expected)
+
+
+def test_relabel_columns_over_selection():
+    result = compute(
+        t[t['amount'] > 150].relabel(name='NAME'), s, return_type='native'
+    )
+    expected = sa.select(
+        [s.c.name.label('NAME'), s.c.amount, s.c.id]
+    ).where(s.c.amount > 150)
+    assert literal_compile(result) == literal_compile(expected)
 
 
 def test_relabel_projection():

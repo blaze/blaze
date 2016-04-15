@@ -60,6 +60,7 @@ Bug Fixes
   objects (:issue:`1382`).
 * Fixed weakkeydict cache failures that were causing ``.dshape`` lookups to fail
   sometimes (:issue:`1399`).
+* Fixed relabeling columns over selects by using `reconstruct_select` (:issue: `1471`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

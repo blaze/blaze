@@ -12,7 +12,7 @@ from .arithmetic import maxshape, UnaryOp, BinOp
 from .strings import Like, UnaryStringFunction
 from .datetime import DateTime
 
-__all__ = ['broadcast', 'Broadcast', 'scalar_symbols']
+__all__ = ['broadcast', 'Broadcast', 'scalar_symbols', 'broadcast_collect']
 
 
 def broadcast(expr, leaves, scalars=None):

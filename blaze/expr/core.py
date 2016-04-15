@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import Mapping
 import datetime
 import numbers
 import inspect
@@ -7,10 +8,8 @@ import inspect
 from pprint import pformat
 from functools import reduce, partial
 
-import numpy as np
 import toolz
 from toolz import unique, concat, first
-import pandas as pd
 
 from ..compatibility import _strtypes
 from ..dispatch import dispatch
@@ -365,12 +364,12 @@ def subs(o, d):
     return _subs(o, d)
 
 
-@dispatch((tuple, list), dict)
+@dispatch((tuple, list), Mapping)
 def _subs(o, d):
     return type(o)([subs(arg, d) for arg in o])
 
 
-@dispatch(Node, dict)
+@dispatch(Node, Mapping)
 def _subs(o, d):
     """
 
@@ -383,7 +382,7 @@ def _subs(o, d):
     return type(o)(*newargs)
 
 
-@dispatch(object, dict)
+@dispatch(object, Mapping)
 def _subs(o, d):
     """ Private dispatched version of ``subs``
 
