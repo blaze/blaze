@@ -32,7 +32,7 @@ def content(response):
 
 def ok(response):
     if isinstance(response, flask.Response):
-        return 'OK' in response.status
+        return 200 <= response.status_code <= 299
     if isinstance(response, requests.Response):
         return response.ok
 
