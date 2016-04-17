@@ -141,11 +141,11 @@ class Client(object):
             Any additional keyword arguments that can be passed to the
             ``blaze.resource`` constructor for this resource type
         """
-        payload = {name: resource_uri}
+        payload = {name: {'source': resource_uri}}
         if args:
-            payload['args'] = args
+            payload[name]['args'] = args
         if kwargs:
-            payload['kwargs'] = kwargs
+            payload[name]['kwargs'] = kwargs
         response = post(self, '/add', auth=self.auth,
                         data=self.serial.dumps(payload),
                         headers={'Content-Type': 'application/vnd.blaze+' + self.serial.name})

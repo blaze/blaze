@@ -117,7 +117,21 @@ def test_client_add_dataset():
     ec = Client('localhost:6363')
     ec.add('iris', example('iris.csv'))
     assert 'iris' in ec.dshape.measure.dict
-    iris_keys = ['petal_length', 'petal_width', 'sepal_length', 'sepal_width',
-                 'species']
-    assert sorted(ec.dshape.measure.dict['iris'].measure.dict.keys()) ==\
-        sorted(iris_keys)
+    iris_data = bz_data(example('iris.csv'))
+    assert ec.dshape.measure.dict['iris'] == iris_data.dshape
+
+
+def test_client_add_dataset_failure():
+    ec = Client('localhost:6363')
+    with pytest.raises(ValueError) as exc:
+        ec.add('iris2', example('iris.csv'), -1, bad_arg='value')
+    assert '422 UNPROCESSABLE ENTITY' in str(exc.value)
+
+
+def test_client_add_dataset_with_args():
+    ec = Client('localhost:6363')
+    ec.add('teams', 'sqlite:///' + example('teams.db'), 'teams',
+           primary_key='teamID')
+    assert 'teams' in ec.dshape.measure.dict
+    teams_data = bz_data('sqlite:///' + example('teams.db') + '::teams')
+    assert ec.dshape.measure.dict['teams'] == teams_data.dshape
