@@ -34,6 +34,7 @@ import sqlalchemy as sa
 from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
+from sqlalchemy.sql import expression as sa_expr
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
@@ -1208,9 +1209,28 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(StrCat, ColumnElement, ColumnElement)
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
-    res = sa.sql.functions.concat(lhs_data,
-                                  expr.sep,
-                                  rhs_data).label(expr.lhs._name)
+    """
+    concat two string columns element wise. If a row in either column is NULL,
+    then return a NULL otherwise perform concat() with the user defined 'sep'
+    between the two elements.
+    """
+    if expr.sep is None:
+        # this will automatically handle null values correctly
+        res = (lhs_data + rhs_data).label(expr.lhs._name)
+    else:
+        # only use concat function if both columns have non null values
+        # this is consistent with how pandas works
+        res = \
+            sa_expr.case([
+                          (sa.or_(lhs_data == sa_expr.null(),
+                                  rhs_data == sa_expr.null()),
+                           sa_expr.null())
+                          ],
+                         else_=sa.sql.functions.concat(lhs_data,
+                                                       expr.sep,
+                                                       rhs_data)
+                         ).label(expr.lhs._name)
+        res = select(res)
     return res
 
 
