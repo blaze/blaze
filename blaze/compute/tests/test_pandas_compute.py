@@ -45,6 +45,23 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                   columns=['name', 'sex', 'amount', 'id'])
 
 
+@pytest.fixture(scope='module',
+                params=['lhs', 'rhs', 'both'])
+def df_add_null(request):
+    if request.param == 'lhs':
+        row = [None, 'M', 300, 6]
+    elif request.param == 'rhs':
+        row = ['first', None, 300, 6]
+    else:
+        row = [None, None, 300, 6]
+
+    df_add_null = dfbig.append(DataFrame([row],
+                                         columns=dfbig.columns
+                                         ), ignore_index=True)
+
+    return df_add_null
+
+
 def test_series_broadcast():
     s = Series([1, 2, 3], name='a')
     t = symbol('t', 'var * {a: int64}')
@@ -680,20 +697,23 @@ def test_str_lower():
     assert_series_equal(expected, result)
 
 
-class TestStrCat():
-    ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
-    s = symbol('s', dshape=ds)
-    data = [('alice', 'this is good', 0), ('suri', 'this is not good', 1),
-            ('jinka', 'this is ok', 2)]
-    df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
+def test_str_cat():
+    res = compute(tbig.name.str_cat(tbig.sex), dfbig)
+    assert all(dfbig.name.str.cat(dfbig.sex) == res)
 
-    def test_str_cat(self):
-        res = compute(self.s.name.str_cat(self.s.comment), self.df)
-        assert all(self.df.name.str.cat(self.df.comment) == res)
 
-    def test_str_cat_sep(self):
-        res = compute(self.s.name.str_cat(self.s.comment, sep=' -- '), self.df)
-        assert all(self.df.name.str.cat(self.df.comment, sep=' -- ') == res)
+def test_str_cat_sep():
+    res = compute(tbig.name.str_cat(tbig.sex, sep=' -- '), dfbig)
+    assert all(dfbig.name.str.cat(dfbig.sex, sep=' -- ') == res)
+
+
+def test_str_cat_null_row(df_add_null):
+    res = compute(tbig.name.str_cat(tbig.sex, sep=' -- '), df_add_null)
+    exp_res = df_add_null.name.str.cat(df_add_null.sex, sep=' -- ')
+    assert all(exp_res[~exp_res.isnull()] == res[~exp_res.isnull()])
+
+    # last element should be null
+    assert res.isnull().iloc[-1]
 
 
 def test_rowwise_by():
