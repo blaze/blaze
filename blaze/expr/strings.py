@@ -123,21 +123,23 @@ class StrCat(ElemWise):
 
 
 @copydoc(StrCat)
-def str_cat(expr, to_concat, sep=None):
+def str_cat(lhs, rhs, sep=None):
     """
+    returns lhs + sep + rhs
+
     Raises:
         Invoking on a non string column raises a TypeError
         If kwarg 'sep' is not a string, raises a TypeError
     """
     # pandas supports concat for string columns only, do the same for blaze
-    if not isstring(to_concat.dshape):
+    if not isstring(rhs.dshape):
         raise TypeError("can only concat string columns")
 
     if sep is not None:
         if not isinstance(sep, basestring):
             raise TypeError("keyword argument 'sep' must be a String")
 
-    return StrCat(expr, to_concat, sep=sep)
+    return StrCat(lhs, rhs, sep=sep)
 
 
 def isstring(ds):
