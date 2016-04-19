@@ -110,7 +110,15 @@ class StrCat(ElemWise):
         '''
         since pandas supports concat for string columns, do the same for blaze
         '''
-        shape, schema = self.lhs.dshape.shape, DataShape(String())
+        shape = self.lhs.dshape.shape
+        if isinstance(self.lhs.schema.measure, Option):
+            schema = self.lhs.schema
+        elif isinstance(self.rhs.schema.measure, Option):
+            schema = self.rhs.schema
+        else:
+            # convert fixed length string to variable length string
+            schema = DataShape(String())
+
         return DataShape(*(shape + (schema,)))
 
 
