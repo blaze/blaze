@@ -47,6 +47,7 @@ class RC(object):
 
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
+    NOT_FOUND = 404
     FORBIDDEN = 403
     CONFLICT = 409
     UNPROCESSABLE_ENTITY = 422
@@ -108,6 +109,13 @@ def _register_api(app, options, first_registration=False):
     _get_profiler_info.cache[app] = (allow_profiler,
                                      profiler_output,
                                      profile_by_default)
+
+    # Allowing users to dynamically add datasets to the Blaze server can be
+    # dangerous, so we only expose the method if specifically requested
+    allow_add = _get_option('allow_add', options, False)
+    if allow_add:
+        app.add_url_rule('/add', 'addserver', addserver,
+                         methods=['POST', 'HEAD', 'OPTIONS'])
 
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
@@ -254,6 +262,10 @@ class Server(object):
         Run the profiler on any computation that does not explicitly set
         "profile": false.
         This requires `allow_profiler=True`.
+    allow_add : bool, optional
+        Expose an `/add` endpoint to allow datasets to be dynamically added to
+        the server. Since this increases the risk of security holes, it defaults
+        to `False`.
 
     Examples
     --------
@@ -274,7 +286,8 @@ class Server(object):
                  authorization=None,
                  allow_profiler=False,
                  profiler_output=None,
-                 profile_by_default=False):
+                 profile_by_default=False,
+                 allow_add=False):
         if isinstance(data, collections.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
                           data)
@@ -289,7 +302,8 @@ class Server(object):
                                authorization=authorization,
                                allow_profiler=allow_profiler,
                                profiler_output=profiler_output,
-                               profile_by_default=profile_by_default)
+                               profile_by_default=profile_by_default,
+                               allow_add=allow_add)
         self.data = data
 
     def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
@@ -578,7 +592,6 @@ def compserver(payload, serial):
     return serial.dumps(response)
 
 
-@api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
