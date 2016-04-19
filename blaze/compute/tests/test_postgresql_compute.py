@@ -65,6 +65,30 @@ def sql(url):
             drop(t)
 
 
+@pytest.yield_fixture
+def sql_with_null(url):
+    ds = dshape('var * {name: ?string, sex: ?string, amount: int32, id: int32}')
+    rows = [('Alice', 'F', 100, 1),
+            (None, 'M', 300, 2),
+            ('Drew', 'F', 100, 3),
+            ('first', None, 300, 4),
+            ('Bob', 'M', 400, 5),
+            (None, None, 300, 6)]
+    try:
+        x = url % next(names)
+        t = data(x, dshape=ds)
+        print(x)
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        assert t.dshape == ds
+        t = data(odo(rows, t))
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
 @pytest.yield_fixture(scope='module')
 def nyc(pg_ip):
     # odoing csv -> pandas -> postgres is more robust, as it doesn't require
@@ -668,23 +692,18 @@ def test_sample(big_sql):
 
 
 @pytest.mark.parametrize("sep", [None, " -- "])
-def test_str_cat(nyc, sep):
-    """
-    test str_cat() functionality for postgres backend
-    """
-    t = symbol('t', discover(nyc))
-    res = compute(t.medallion.str_cat(t.hack_license, sep=sep), nyc,
+def test_str_cat_with_null(sql_with_null, sep):
+    t = symbol('t', discover(sql_with_null))
+    res = compute(t.name.str_cat(t.sex, sep=sep), sql_with_null,
                   return_type=list)
-    cols = compute(t[['medallion', 'hack_license']], nyc, return_type=list)
+    res = [r[0] for r in res]
+    cols = compute(t[['name', 'sex']], sql_with_null, return_type=list)
 
-    if sep is None:
-        expected = map(lambda x: "".join(x), cols)
-    else:
-        expected = map(lambda x: sep.join(x), cols)
-
-    actual = map(lambda x: x[0], res)
-    for exp, act in zip(expected, actual):
-        assert exp == act
+    for r, (n, s) in zip(res, cols):
+        if n is None or s is None:
+            assert r is None
+        else:
+            assert (r == n + s if sep is None else r == n + sep + s)
 
 
 def test_core_compute(nyc):
