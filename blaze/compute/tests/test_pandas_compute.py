@@ -45,17 +45,12 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                   columns=['name', 'sex', 'amount', 'id'])
 
 
-@pytest.fixture(scope='module',
-                params=['lhs', 'rhs', 'both'])
-def df_add_null(request):
-    if request.param == 'lhs':
-        row = [None, 'M', 300, 6]
-    elif request.param == 'rhs':
-        row = ['first', None, 300, 6]
-    else:
-        row = [None, None, 300, 6]
-
-    df_add_null = dfbig.append(DataFrame([row],
+@pytest.fixture(scope='module')
+def df_add_null():
+    rows = [(None, 'M', 300, 6),
+            ('first', None, 300, 6),
+            (None, None, 300, 6)]
+    df_add_null = dfbig.append(DataFrame(rows,
                                          columns=dfbig.columns
                                          ), ignore_index=True)
 
@@ -710,10 +705,9 @@ def test_str_cat_sep():
 def test_str_cat_null_row(df_add_null):
     res = compute(tbig.name.str_cat(tbig.sex, sep=' -- '), df_add_null)
     exp_res = df_add_null.name.str.cat(df_add_null.sex, sep=' -- ')
-    assert all(exp_res[~exp_res.isnull()] == res[~exp_res.isnull()])
 
-    # last element should be null
-    assert res.isnull().iloc[-1]
+    assert all(exp_res.isnull() == res.isnull())
+    assert all(exp_res[~exp_res.isnull()] == res[~res.isnull()])
 
 
 def test_rowwise_by():
