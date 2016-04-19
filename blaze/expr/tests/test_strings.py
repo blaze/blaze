@@ -13,7 +13,8 @@ lhsrhs_ds = ['var * {name: string, comment: string[25]}',
              'var * {name: string[10], comment: string}',
              'var * {name: string, comment: string}',
              'var * {name: ?string, comment: string}',
-             'var * {name: string, comment: ?string}']
+             'var * {name: string, comment: ?string}',
+             '10 * {name: string, comment: ?string}']
 
 
 @pytest.fixture(scope='module')
@@ -47,11 +48,12 @@ def test_str_upper_schema(ds):
 
 
 @pytest.mark.parametrize('ds', lhsrhs_ds)
-def test_str_schema(ds):
+def test_str_cat_schema_shape(ds):
     t = symbol('t', ds)
     expr = t.name.str_cat(t.comment)
     assert (expr.schema.measure ==
             dshape('%sstring' % ('?' if '?' in ds else '')).measure)
+    assert expr.lhs.shape == expr.rhs.shape == expr.shape
 
 
 def test_str_cat_exception_non_string_sep(strcat_sym):
