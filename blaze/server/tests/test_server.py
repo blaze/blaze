@@ -625,6 +625,20 @@ def test_add_expanded_payload(temp_server, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
+def test_add_expanded_payload_with_imports(temp_server, serial):
+    # Ensure that the expanded payload format is accepted by the server
+    iris_path = example('iris.csv')
+    blob = serial.dumps({'iris': {'source': iris_path,
+                                  'kwargs': {'delimiter': ','},
+                                  'imports': ['csv']}})
+    response1 = temp_server.post('/add',
+                                 headers=mimetype(serial),
+                                 data=blob)
+    assert 'CREATED' in response1.status
+    assert response1.status_code == RC.CREATED
+
+
+@pytest.mark.parametrize('serial', all_formats)
 def test_add_expanded_payload_has_effect(temp_server, serial):
     # Ensure that the expanded payload format actually passes the arguments
     # through to the resource constructor

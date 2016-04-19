@@ -10,6 +10,7 @@ import re
 import socket
 from time import time
 from warnings import warn
+import importlib
 
 from datashape import discover, pprint
 import flask
@@ -614,14 +615,21 @@ def addserver(payload, serial):
         return (msg % name, RC.CONFLICT)
 
     try:
+        imports = []
         if isinstance(resource_info, dict):
             # Extract resource creation arguments
             source = resource_info['source']
+            imports = resource_info.get('imports', [])
             args = resource_info.get('args', [])
             kwargs = resource_info.get('kwargs', {})
         else:
             # Just a URI
             source, args, kwargs = resource_info, [], {}
+        # If we've been given libraries to import, we need to do so
+        # before we can create the resource.
+        for mod in imports:
+            importlib.import_module(mod)
+        # Finally, we actually add the resource to the dataset
         data.update({name: resource(source, *args, **kwargs)})
         # Force discovery of new dataset to check that the data is loadable.
         ds = discover(data)

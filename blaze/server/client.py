@@ -134,6 +134,10 @@ class Client(object):
         resource_uri : str
             The URI string describing the resource to add to the server, e.g
             'sqlite:///path/to/file.db::table'
+        imports : list
+            A list of string names for any modules that must be imported on
+            the Blaze server before the resource can be added. This is identical
+            to the `imports` field in a Blaze server YAML file.
         args : any, optional
             Any additional positional arguments that can be passed to the
             ``blaze.resource`` constructor for this resource type
@@ -142,10 +146,14 @@ class Client(object):
             ``blaze.resource`` constructor for this resource type
         """
         payload = {name: {'source': resource_uri}}
+        imports = kwargs.pop('imports', None)
+        if imports is not None:
+            payload[name]['imports'] = imports
         if args:
             payload[name]['args'] = args
         if kwargs:
             payload[name]['kwargs'] = kwargs
+
         response = post(self, '/add', auth=self.auth,
                         data=self.serial.dumps(payload),
                         headers={'Content-Type': 'application/vnd.blaze+' + self.serial.name})
