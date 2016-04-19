@@ -829,14 +829,25 @@ def test_str_cat(sep):
     """
     Need at least two string columns to test str_cat
     """
-    expected = ("SELECT concat(accounts2.name, {}, accounts2.comment) "
-                "AS name FROM accounts2")
     if sep is None:
         expr = t2.name.str_cat(t2.comment)
-        expected = expected.format("NULL")
+        expected = """
+                   SELECT accounts2.name || accounts2.comment
+                   AS name FROM accounts2
+                   """
     else:
         expr = t2.name.str_cat(t2.comment, sep=sep)
-        expected = expected.format(':param_1')
+        expected = \
+            """
+            SELECT
+                CASE
+                    WHEN (accounts2.name is NULL or accounts2.comment is NULL)
+                        THEN NULL
+                    ELSE concat(accounts2.name, :param_1, accounts2.comment)
+                END
+                AS name
+            FROM accounts2
+           """
 
     result = str(compute(expr, s2, return_type='native'))
     assert normalize(result) == normalize(expected)
