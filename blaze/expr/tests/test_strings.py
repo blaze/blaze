@@ -9,6 +9,23 @@ dshapes = ['var * {name: string}',
            'var * ?string',
            'string']
 
+lhsrhs_ds = ['var * {name: string, comment: string[25]}',
+             'var * {name: string[10], comment: string}',
+             'var * {name: string, comment: string}',
+             'var * {name: ?string, comment: string}',
+             'var * {name: string, comment: ?string}']
+
+
+@pytest.fixture(scope='module')
+def strcat_sym():
+    '''
+    blaze symbol used to test exceptions raised by str_cat()
+    '''
+    ds = dshape('3 * {name: string, comment: string, num: int32}')
+    s = symbol('s', dshape=ds)
+    return s
+
+
 @pytest.mark.parametrize('ds', dshapes)
 def test_like(ds):
     t = symbol('t', ds)
@@ -29,14 +46,19 @@ def test_str_upper_schema(ds):
             dshape('%sstring' % ('?' if '?' in ds else '')).measure)
 
 
-class TestStrCatExceptions():
-    ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
-    s = symbol('s', dshape=ds)
+@pytest.mark.parametrize('ds', lhsrhs_ds)
+def test_str_schema(ds):
+    t = symbol('t', ds)
+    expr = t.name.str_cat(t.comment)
+    assert (expr.schema.measure ==
+            dshape('%sstring' % ('?' if '?' in ds else '')).measure)
 
-    def test_str_cat_exception_non_string_sep(self):
-        with pytest.raises(TypeError):
-            self.s.name.str_cat(self.s.comment, sep=123)
 
-    def test_str_cat_exception_non_string_col_to_cat(self):
-        with pytest.raises(TypeError):
-            self.s.name.str_cat(self.s.num)
+def test_str_cat_exception_non_string_sep(strcat_sym):
+    with pytest.raises(TypeError):
+        strcat_sym.name.str_cat(strcat_sym.comment, sep=123)
+
+
+def test_str_cat_exception_non_string_col_to_cat(strcat_sym):
+    with pytest.raises(TypeError):
+        strcat_sym.name.str_cat(strcat_sym.num)
