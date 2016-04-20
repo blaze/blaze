@@ -67,13 +67,19 @@ def sql(url):
 
 @pytest.yield_fixture
 def sql_with_null(url):
-    ds = dshape('var * {name: ?string, sex: ?string, amount: int32, id: int32}')
-    rows = [('Alice', 'F', 100, 1),
-            (None, 'M', 300, 2),
-            ('Drew', 'F', 100, 3),
-            ('first', None, 300, 4),
-            ('Bob', 'M', 400, 5),
-            (None, None, 300, 6)]
+    ds = dshape(""" var * {name: ?string,
+                           sex: ?string,
+                           amount: int,
+                           id: int,
+                           comment: ?string}
+              """)
+    rows = [('Alice', 'F', 100, 1, 'Alice comment'),
+            (None, 'M', 300, 2, None),
+            ('Drew', 'F', 100, 4, 'Drew comment'),
+            ('Bob', 'M', 100, 5, 'Bob comment 2'),
+            ('Drew', 'M', 200, 5, None),
+            ('first', None, 300, 4, 'Missing info'),
+            (None, None, 300, 6, None)]
     try:
         x = url % next(names)
         t = data(x, dshape=ds)
@@ -704,6 +710,22 @@ def test_str_cat_with_null(sql_with_null, sep):
             assert r is None
         else:
             assert (r == n + s if sep is None else r == n + sep + s)
+
+
+def test_chain_str_cat_with_null(sql_with_null):
+    t = symbol('t', discover(sql_with_null))
+    expr = t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '),
+                          sep=' ++ ')
+    res = compute(expr, sql_with_null, return_type=list)
+    res = [r[0] for r in res]
+    cols = compute(t[['name', 'comment', 'sex']], sql_with_null,
+                   return_type=list)
+
+    for r, (n, c, s) in zip(res, cols):
+        if n is None or c is None or s is None:
+            assert r is None
+        else:
+            assert (r == n + ' ++ ' + c + ' -- ' + s)
 
 
 def test_core_compute(nyc):

@@ -45,6 +45,24 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                   columns=['name', 'sex', 'amount', 'id'])
 
 
+# for now jsut copy this, but will open a PR to see if we can remove some of
+# the repetitive copying
+tbgr = symbol('tbgr',
+              """ var * {name: string,
+                         sex: string[1],
+                         amount: int,
+                         id: int,
+                         comment: ?string}
+              """)
+
+dfbgr = DataFrame([['Alice', 'F', 100, 1, 'Alice comment'],
+                   ['Alice', 'F', 100, 3, None],
+                   ['Drew', 'F', 100, 4, 'Drew comment'],
+                   ['Drew', 'M', 100, 5, 'Drew comment 2'],
+                   ['Drew', 'M', 200, 5, None]],
+                  columns=['name', 'sex', 'amount', 'id', 'comment'])
+
+
 @pytest.fixture(scope='module')
 def df_add_null():
     rows = [(None, 'M', 300, 6),
@@ -706,6 +724,16 @@ def test_str_cat_null_row(df_add_null):
     res = compute(tbig.name.str_cat(tbig.sex, sep=' -- '), df_add_null)
     exp_res = df_add_null.name.str.cat(df_add_null.sex, sep=' -- ')
 
+    assert all(exp_res.isnull() == res.isnull())
+    assert all(exp_res[~exp_res.isnull()] == res[~res.isnull()])
+
+
+def test_str_cat_chain_operation():
+    expr = tbgr.name.str_cat(tbgr.comment.str_cat(tbgr.sex, sep=' --- '),
+                             sep=' +++ ')
+    res = compute(expr, dfbgr)
+    exp_res = dfbgr.name.str.cat(dfbgr.comment.str.cat(dfbgr.sex, sep=' --- '),
+                                 sep=' +++ ')
     assert all(exp_res.isnull() == res.isnull())
     assert all(exp_res[~exp_res.isnull()] == res[~res.isnull()])
 
