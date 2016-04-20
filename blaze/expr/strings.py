@@ -91,7 +91,7 @@ class StrCat(ElemWise):
     >>> import pandas as pd
     >>> from blaze import symbol, compute, dshape
 
-    >>> ds = dshape('3 * {name: string[10], comment: string[25], num: int32}')
+    >>> ds = dshape('3 * {name: ?string, comment: ?string, num: int32}')
     >>> s = symbol('s', dshape=ds)
     >>> data = [('al', 'good', 0), ('suri', 'not good', 1), ('jinka', 'ok', 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
@@ -100,6 +100,17 @@ class StrCat(ElemWise):
     0          al -- good
     1    suri -- not good
     2         jinka -- ok
+    Name: name, dtype: object
+
+    For rows with null entries, it returns null. This is consistent with
+    default pandas behavior with kwarg: na_rep=None.
+
+    >>> data = [(None, None, 0), ('suri', 'not good', 1), ('jinka', None, 2)]
+    >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
+    >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
+    0                 NaN
+    1    suri -- not good
+    2                 NaN
     Name: name, dtype: object
 
     """
