@@ -157,6 +157,12 @@ class Client(object):
         response = post(self, '/add', auth=self.auth,
                         data=self.serial.dumps(payload),
                         headers={'Content-Type': 'application/vnd.blaze+' + self.serial.name})
+        # A special case for the "Not Found" error, since that means that this
+        # server doesn't support adding datasets, and the user should see a more
+        # helpful response
+        if response.status_code == 404:
+            raise ValueError("Server does not support dynamically adding datasets")
+
         if not ok(response):
             raise ValueError("Bad Response: %s" % reason(response))
 

@@ -22,8 +22,10 @@ df2 = DataFrame([['Charlie', 100], ['Dan', 200]],
 tdata = {'accounts': df, 'accounts2': df}
 
 server = Server(tdata)
+add_server = Server(tdata, allow_add=True)
 
 test = server.app.test_client()
+test_add = add_server.app.test_client()
 
 from blaze.server import client
 client.requests = test # OMG monkey patching
@@ -113,7 +115,15 @@ def test_client_dataset():
     assert list(map(tuple, into(list, d.accounts))) == into(list, df)
 
 
+def test_client_cant_add_dataset():
+    ec = Client('localhost:6363')
+    with pytest.raises(ValueError) as excinfo:
+        ec.add('iris', example('iris.csv'))
+    assert "Server does not support" in str(excinfo.value)
+
+
 def test_client_add_dataset():
+    client.requests = test_add  # OMG more monkey patching
     ec = Client('localhost:6363')
     ec.add('iris', example('iris.csv'))
     assert 'iris' in ec.dshape.measure.dict
@@ -122,6 +132,7 @@ def test_client_add_dataset():
 
 
 def test_client_add_dataset_failure():
+    client.requests = test_add  # OMG more monkey patching
     ec = Client('localhost:6363')
     with pytest.raises(ValueError) as exc:
         ec.add('iris2', example('iris.csv'), -1, bad_arg='value')
@@ -129,6 +140,7 @@ def test_client_add_dataset_failure():
 
 
 def test_client_add_dataset_with_args():
+    client.requests = test_add  # OMG more monkey patching
     ec = Client('localhost:6363')
     ec.add('teams', 'sqlite:///' + example('teams.db'), 'teams',
            primary_key='teamID')
