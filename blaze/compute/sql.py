@@ -1207,13 +1207,25 @@ def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
-@dispatch(StrCat, ColumnElement, ColumnElement)
+@dispatch(StrCat, (ColumnElement, ColumnElement), (ColumnElement, Select))
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
     """
     concat two string columns element wise. If a row in either column is NULL,
     then return a NULL otherwise perform concat() with the user defined 'sep'
     between the two elements.
+
+    Also use same function to chain str_cat() function.
+    e.g.
+        t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '), sep=' ++ ')
     """
+    if isinstance(rhs_data, Select):
+        # this gives desired result by mutating the select in place instead
+        # of chaining
+        rhs_data.append_column(lhs_data)
+        a_rhs = rhs_data.alias()
+        rhs_data = a_rhs.columns._all_columns[0]
+        lhs_data = a_rhs.columns._all_columns[1]
+
     if expr.sep is None:
         # this will automatically handle null values correctly
         res = (lhs_data + rhs_data).label(expr.lhs._name)
