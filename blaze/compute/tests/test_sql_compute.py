@@ -78,7 +78,13 @@ def city_data():
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
-t2 = symbol('t', 'var * {name: string, amount: int, id: int, comment: string}')
+t_str_cat = symbol('t',
+                   """var * {name: string,
+                             amount: int,
+                             id: int,
+                             comment: string,
+                             product: string}""")
+
 nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 metadata = sa.MetaData()
@@ -88,11 +94,12 @@ s = sa.Table('accounts', metadata,
              sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True))
 
-s2 = sa.Table('accounts2', metadata,
-              sa.Column('name', sa.String),
-              sa.Column('amount', sa.Integer),
-              sa.Column('id', sa.Integer, primary_key=True),
-              sa.Column('comment', sa.String))
+s_str_cat = sa.Table('accounts2', metadata,
+                     sa.Column('name', sa.String),
+                     sa.Column('amount', sa.Integer),
+                     sa.Column('id', sa.Integer, primary_key=True),
+                     sa.Column('comment', sa.String),
+                     sa.Column('product', sa.String))
 
 tdate = symbol('t',
                """var * {
@@ -830,13 +837,13 @@ def test_str_cat(sep):
     Need at least two string columns to test str_cat
     """
     if sep is None:
-        expr = t2.name.str_cat(t2.comment)
+        expr = t_str_cat.name.str_cat(t_str_cat.comment)
         expected = """
                    SELECT accounts2.name || accounts2.comment
                    AS name FROM accounts2
                    """
     else:
-        expr = t2.name.str_cat(t2.comment, sep=sep)
+        expr = t_str_cat.name.str_cat(t_str_cat.comment, sep=sep)
         expected = \
             """
             SELECT
@@ -849,7 +856,7 @@ def test_str_cat(sep):
             FROM accounts2
            """
 
-    result = str(compute(expr, s2, return_type='native'))
+    result = str(compute(expr, s_str_cat, return_type='native'))
     assert normalize(result) == normalize(expected)
 
 
