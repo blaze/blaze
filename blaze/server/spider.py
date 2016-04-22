@@ -164,6 +164,8 @@ def _parse_args():
                    help='Call ``blaze.data`` on hidden files')
     p.add_argument('--yaml-dir', action='store_true',
                    help='Load path-based resources relative to yaml file directory.')
+    p.add_argument('--allow-dynamic-addition', action='store_true',
+                   help='Allow dynamically adding datasets to the server')
     p.add_argument('-D', '--debug', action='store_true',
                    help='Start the Flask server in debug mode')
     return p.parse_args()
@@ -177,9 +179,8 @@ def _main():
                           followlinks=args.follow_links,
                           hidden=args.hidden,
                           relative_to_yaml_dir=args.yaml_dir)
-    Server(resources).run(host=args.host,
-                          port=args.port,
-                          debug=args.debug)
+    server = Server(resources, allow_add=args.allow_dynamic_addition)
+    server.run(host=args.host, port=args.port, debug=args.debug)
 
 
 if __name__ == '__main__':
