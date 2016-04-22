@@ -1218,6 +1218,9 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
     e.g.
         t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '), sep=' ++ ')
     """
+    if lhs_data._from_objects != rhs_data._from_objects:
+        raise ValueError('cannot concat columns from different tables')
+
     if isinstance(rhs_data, Select):
         # this gives desired result by mutating the select in place instead
         # of chaining
