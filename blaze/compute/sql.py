@@ -1218,16 +1218,21 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
     e.g.
         t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '), sep=' ++ ')
     """
-    if lhs_data._from_objects != rhs_data._from_objects:
-        raise ValueError('cannot concat columns from different tables')
+    err = 'cannot concat columns from different tables'
 
     if isinstance(rhs_data, Select):
+        if lhs_data._from_objects != rhs_data._from_objects[0].froms:
+            raise ValueError(err)
+
         # this gives desired result by mutating the select in place instead
         # of chaining
         rhs_data.append_column(lhs_data)
         a_rhs = rhs_data.alias()
         rhs_data = a_rhs.columns._all_columns[0]
         lhs_data = a_rhs.columns._all_columns[1]
+    else:
+        if lhs_data._from_objects != rhs_data._from_objects:
+            raise ValueError(err)
 
     if expr.sep is None:
         # this will automatically handle null values correctly
