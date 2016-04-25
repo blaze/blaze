@@ -876,8 +876,8 @@ def test_str_cat_no_runtime_exception():
     """
     No exception raised if resource is the same
     """
-    expr = t.name.str_cat(t_str_cat.comment)
-    compute(expr, {t: s, t_str_cat: s}, return_type='native')
+    expr = t_str_cat.comment.str_cat(t.name)
+    compute(expr, {t: s_str_cat, t_str_cat: s_str_cat}, return_type='native')
 
 
 def test_columnwise_on_complex_selection():
