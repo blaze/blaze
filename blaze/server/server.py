@@ -486,7 +486,7 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
+mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)(?:;.*)?$' %
                             '|'.join(x.name for x in all_formats))
 
 
