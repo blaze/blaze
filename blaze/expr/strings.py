@@ -165,6 +165,32 @@ _mod, _rmod = _mkbin('mod', Interp)
 _mul, _rmul = _mkbin('mul', Repeat)
 
 
+class str_ns(object):
+
+    def __init__(self, field):
+        self.field = field
+
+    def upper(self):
+        return str_upper(self.field)
+
+    def lower(self):
+        return str_lower(self.field)
+
+    def len(self):
+        return str_len(self.field)
+
+    def like(self, pattern):
+        return like(self.field, pattern)
+
+
+class str(object):
+
+    __name__ = 'str'
+
+    def __get__(self, obj, type=None):
+        return str_ns(obj)
+
+
 schema_method_list.extend([(isstring,
                             set([_add,
                                  _radd,
@@ -172,6 +198,7 @@ schema_method_list.extend([(isstring,
                                  _rmod,
                                  _mul,
                                  _rmul,
+                                 str(),
                                  repeat,
                                  interp,
                                  like,
