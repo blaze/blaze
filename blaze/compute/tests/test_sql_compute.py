@@ -872,6 +872,14 @@ def test_str_cat_runtime_exception(expr):
         compute(expr, {t: s, t_str_cat: s_str_cat}, return_type='native')
 
 
+def test_str_cat_no_runtime_exception():
+    """
+    No exception raised if resource is the same
+    """
+    expr = t.name.str_cat(t_str_cat.comment)
+    compute(expr, {t: s, t_str_cat: s}, return_type='native')
+
+
 def test_columnwise_on_complex_selection():
     result = str(select(compute(t[t.amount > 0].amount + 1, s, return_type='native')))
     assert normalize(result) == \
