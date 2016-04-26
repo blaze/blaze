@@ -1,0 +1,48 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+* Adds consistency check to blaze server at startup for YAML file and dynamic
+  addition options (:issue:`1491`).
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+
+Bug Fixes
+~~~~~~~~~
+
+None
+
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None
