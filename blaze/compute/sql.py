@@ -1207,7 +1207,54 @@ def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
-@dispatch(StrCat, (ColumnElement, ColumnElement), (ColumnElement, Select))
+def str_cat_lhs_rhs_data(lhs_data, rhs_data):
+    err = 'cannot concat columns from different tables'
+
+    if isinstance(rhs_data, Select):
+        # lhs should only ever have 1 column
+        # rhs can have more than one columns if chained StrCat?
+        c_rhs = rhs_data.columns.keys()[0]
+
+        if isinstance(lhs_data, ColumnElement):
+            # (ColumnElement, Select)
+            # If RHS is Select, then this becomes the table from which to
+            # concat columns. Append LHS column to RHS so we don't end up with
+            # a cross join.
+            c_lhs = lhs_data.name
+            rhs_data.append_column(lhs_data)
+            alias_ = rhs_data.alias()
+
+            lhs_data = alias_.columns.get(c_lhs)
+
+        else:
+            # lhs could have more than one column if we chain StrCat
+            # still experimenting with this
+            if len(lhs_data.columns.keys()) > 1:
+                msg = ("WIP: this is likely chaining StrCat and has a where "
+                       "clause. SQL is not consistent with pandas result")
+                warnings.warn(msg)
+
+            c_lhs = lhs_data.columns.keys()[0]
+
+            # (Select, Select)
+            c_append = lhs_data.froms[0].columns.get(c_lhs)
+            rhs_data.append_column(c_append)
+
+            alias_ = rhs_data.alias()
+
+        lhs_data = alias_.columns.get(c_lhs)
+        rhs_data = alias_.columns.get(c_rhs)
+
+    else:
+        if lhs_data._from_objects != rhs_data._from_objects:
+            raise ValueError(err)
+
+    return lhs_data, rhs_data
+
+
+@dispatch(StrCat,
+          (ColumnElement, ColumnElement),
+          (ColumnElement, Select))
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
     """
     concat two string columns element wise. If a row in either column is NULL,
@@ -1218,21 +1265,7 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
     e.g.
         t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '), sep=' ++ ')
     """
-    err = 'cannot concat columns from different tables'
-
-    if isinstance(rhs_data, Select):
-        if lhs_data._from_objects != rhs_data._from_objects[0].froms:
-            raise ValueError(err)
-
-        # this gives desired result by mutating the select in place instead
-        # of chaining
-        rhs_data.append_column(lhs_data)
-        a_rhs = rhs_data.alias()
-        rhs_data = a_rhs.columns._all_columns[0]
-        lhs_data = a_rhs.columns._all_columns[1]
-    else:
-        if lhs_data._from_objects != rhs_data._from_objects:
-            raise ValueError(err)
+    lhs_data, rhs_data = str_cat_lhs_rhs_data(lhs_data, rhs_data)
 
     if expr.sep is None:
         # this will automatically handle null values correctly
@@ -1250,6 +1283,35 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
                                                        expr.sep,
                                                        rhs_data)
                          ).label(expr.lhs._name)
+        res = select(res)
+    return res
+
+
+@dispatch(StrCat, Select, Select)
+def compute_up(expr, lhs_data, rhs_data, **kwargs):
+    """
+    Assumes: StrCat operates on data from same table
+    Not sure why I cannot just add (Select, Select) to function above
+    """
+    lhs_data, rhs_data = str_cat_lhs_rhs_data(lhs_data, rhs_data)
+
+    if expr.sep is None:
+        # this will automatically handle null values correctly
+        res = (lhs_data + rhs_data).label(expr.lhs._name)
+    else:
+        # only use concat function if both columns have non null values
+        # this is consistent with how pandas works
+        res = \
+            sa_expr.case([
+                          (sa.or_(lhs_data == sa_expr.null(),
+                                  rhs_data == sa_expr.null()),
+                           sa_expr.null())
+                          ],
+                         else_=sa.sql.functions.concat(lhs_data,
+                                                       expr.sep,
+                                                       rhs_data)
+                         ).label(expr.lhs._name)
+
         res = select(res)
     return res
 

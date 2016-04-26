@@ -728,6 +728,22 @@ def test_chain_str_cat_with_null(sql_with_null):
             assert (r == n + ' ++ ' + c + ' -- ' + s)
 
 
+def test_str_cat_where_clause(sql_with_null):
+    """
+    Invokes the (Select, Select) path for compute_up
+    """
+    t = symbol('t', discover(sql_with_null))
+    s = t[t.amount <= 200]
+    c1 = s.comment.str_cat(s.sex, sep=' -- ')
+
+    bres = compute(c1, sql_with_null, return_type=pd.Series)
+    df_s = compute(s, sql_with_null, return_type=pd.DataFrame)
+    exp = df_s.comment.str.cat(df_s.sex, ' -- ')
+
+    assert all(exp[~exp.isnull()] == bres[~bres.isnull()])
+    assert all(exp[exp.isnull()].index == bres[bres.isnull()].index)
+
+
 def test_core_compute(nyc):
     t = symbol('t', discover(nyc))
     assert isinstance(compute(t, nyc, return_type='core'), pd.DataFrame)
