@@ -32,7 +32,7 @@ def content(response):
 
 def ok(response):
     if isinstance(response, flask.Response):
-        return 'OK' in response.status
+        return 200 <= response.status_code <= 299
     if isinstance(response, requests.Response):
         return response.ok
 
@@ -123,6 +123,48 @@ class Client(object):
             raise ValueError("Bad Response: %s" % reason(response))
 
         return dshape(content(response).decode('utf-8'))
+
+    def add(self, name, resource_uri, *args, **kwargs):
+        """Add the given resource URI to the Blaze server.
+
+        Parameters
+        ----------
+        name : str
+            The name to give the resource
+        resource_uri : str
+            The URI string describing the resource to add to the server, e.g
+            'sqlite:///path/to/file.db::table'
+        imports : list
+            A list of string names for any modules that must be imported on
+            the Blaze server before the resource can be added. This is identical
+            to the `imports` field in a Blaze server YAML file.
+        args : any, optional
+            Any additional positional arguments that can be passed to the
+            ``blaze.resource`` constructor for this resource type
+        kwargs : any, optional
+            Any additional keyword arguments that can be passed to the
+            ``blaze.resource`` constructor for this resource type
+        """
+        payload = {name: {'source': resource_uri}}
+        imports = kwargs.pop('imports', None)
+        if imports is not None:
+            payload[name]['imports'] = imports
+        if args:
+            payload[name]['args'] = args
+        if kwargs:
+            payload[name]['kwargs'] = kwargs
+
+        response = post(self, '/add', auth=self.auth,
+                        data=self.serial.dumps(payload),
+                        headers={'Content-Type': 'application/vnd.blaze+' + self.serial.name})
+        # A special case for the "Not Found" error, since that means that this
+        # server doesn't support adding datasets, and the user should see a more
+        # helpful response
+        if response.status_code == 404:
+            raise ValueError("Server does not support dynamically adding datasets")
+
+        if not ok(response):
+            raise ValueError("Bad Response: %s" % reason(response))
 
 
 @dispatch(Client)
