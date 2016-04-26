@@ -149,7 +149,7 @@ def _parse_args():
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument('path', type=argparse.FileType('r'), nargs='?',
-                   default=sys.stdin,
+                   default=None,
                    help='A YAML file specifying the resources to load')
     p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                    help='Port number')
@@ -173,12 +173,18 @@ def _parse_args():
 
 def _main():
     args = _parse_args()
+    if not (args.path or args.allow_dynamic_addition):
+        msg = "No YAML file provided and --allow-dynamic-addition flag not set."
+        raise RuntimeError(msg)
     ignore = tuple(getattr(builtins, e) for e in args.ignored_exception)
-    resources = from_yaml(args.path,
-                          ignore=ignore,
-                          followlinks=args.follow_links,
-                          hidden=args.hidden,
-                          relative_to_yaml_dir=args.yaml_dir)
+    if args.path:
+        resources = from_yaml(args.path,
+                              ignore=ignore,
+                              followlinks=args.follow_links,
+                              hidden=args.hidden,
+                              relative_to_yaml_dir=args.yaml_dir)
+    else:
+        resources = {}
     server = Server(resources, allow_add=args.allow_dynamic_addition)
     server.run(host=args.host, port=args.port, debug=args.debug)
 
