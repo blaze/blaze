@@ -1253,7 +1253,7 @@ def str_cat_lhs_rhs_data(lhs_data, rhs_data):
 
 
 @dispatch(StrCat,
-          (ColumnElement, ColumnElement),
+          (Select, ColumnElement),
           (ColumnElement, Select))
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
     """
@@ -1267,34 +1267,8 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
     """
     lhs_data, rhs_data = str_cat_lhs_rhs_data(lhs_data, rhs_data)
 
-    if expr.sep is None:
-        # this will automatically handle null values correctly
-        res = (lhs_data + rhs_data).label(expr.lhs._name)
-    else:
-        # only use concat function if both columns have non null values
-        # this is consistent with how pandas works
-        res = \
-            sa_expr.case([
-                          (sa.or_(lhs_data == sa_expr.null(),
-                                  rhs_data == sa_expr.null()),
-                           sa_expr.null())
-                          ],
-                         else_=sa.sql.functions.concat(lhs_data,
-                                                       expr.sep,
-                                                       rhs_data)
-                         ).label(expr.lhs._name)
-        res = select(res)
-    return res
-
-
-@dispatch(StrCat, Select, Select)
-def compute_up(expr, lhs_data, rhs_data, **kwargs):
-    """
-    Assumes: StrCat operates on data from same table
-    Not sure why I cannot just add (Select, Select) to function above
-    """
-    lhs_data, rhs_data = str_cat_lhs_rhs_data(lhs_data, rhs_data)
-
+    # try following to get rid of case statement below
+    # res = (lhs_data + expr.sep + rhs_data).label(expr.lhs._name)
     if expr.sep is None:
         # this will automatically handle null values correctly
         res = (lhs_data + rhs_data).label(expr.lhs._name)
@@ -1312,7 +1286,8 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
                                                        rhs_data)
                          ).label(expr.lhs._name)
 
-        res = select(res)
+    res = select(res)
+
     return res
 
 
