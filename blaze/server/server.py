@@ -1,5 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
+import logging
+from logging import Formatter
+from functools import wraps
+import traceback
 import collections
 from datetime import datetime
 import errno
@@ -62,6 +66,17 @@ pickle_extension_api = Blueprint('pickle_extension_api', __name__)
 
 
 _no_default = object()  # sentinel
+
+
+def _logging(func):
+    @wraps(func)
+    def _logger(*args, **kwargs):
+        logger = flask.current_app.logger
+        logger.debug("Calling %s" % func.__name__)
+        ret = func(*args, **kwargs)
+        logger.debug("Leaving %s" % func.__name__)
+        return ret
+    return _logger
 
 
 def _get_option(option, options, default=_no_default):
@@ -287,7 +302,9 @@ class Server(object):
                  allow_profiler=False,
                  profiler_output=None,
                  profile_by_default=False,
-                 allow_add=False):
+                 allow_add=False,
+                 logfile=None,
+                 loglevel=None):
         if isinstance(data, collections.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
                           data)
@@ -305,6 +322,12 @@ class Server(object):
                                profile_by_default=profile_by_default,
                                allow_add=allow_add)
         self.data = data
+        if logfile:
+            file_handler = logging.FileHandler(logfile)
+            file_handler.setFormatter(Formatter('[%(asctime)s %(levelname)s] %(message)s '
+                                                '[in %(pathname)s:%(lineno)d]'))
+            file_handler.setLevel(getattr(logging, loglevel, 'WARNING'))
+            app.logger.addHandler(file_handler)
 
     def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
         """Run the server.
@@ -338,6 +361,7 @@ class Server(object):
 @api.route('/datashape', methods=['GET'])
 @cross_origin(origins='*', methods=['GET'])
 @authorization
+@_logging
 def shape():
     return pprint(discover(_get_data()), width=0)
 
@@ -509,7 +533,9 @@ mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
+@_logging
 def compserver(payload, serial):
+    app = flask.current_app
     (allow_profiler,
      default_profiler_output,
      profile_by_default) = _get_profiler_info()
@@ -540,7 +566,7 @@ def compserver(payload, serial):
 
         @response_construction_context_stack.callback
         def log_time(start=time()):
-            flask.current_app.logger.info('compute expr: %s\ntotal time (s): %.3f',
+            app.logger.info('compute expr: %s\ntotal time (s): %.3f',
                                           expr,
                                           time() - start)
 
@@ -561,10 +587,13 @@ def compserver(payload, serial):
                                         expr.dshape,
                                         odo_kwargs)
         except NotImplementedError as e:
-            return ("Computation not supported:\n%s" % e, RC.NOT_IMPLEMENTED)
+            error_msg = "Computation not supported:\n%s\n%s" % (e, traceback.format_exc())
+            app.logger.error(error_msg)
+            return (error_msg, RC.NOT_IMPLEMENTED)
         except Exception as e:
-            return ("Computation failed with message:\n%s: %s" % (type(e).__name__, e),
-                    RC.INTERNAL_SERVER_ERROR)
+            error_msg = "Computation failed with message:\n%s: %s\n%s" % (type(e).__name__, e, traceback.format_exc())
+            app.logger.error(error_msg)
+            return (error_msg, RC.INTERNAL_SERVER_ERROR)
 
         response = {'datashape': pprint(expr.dshape, width=0),
                     'data': serial.data_dumps(result),
@@ -595,6 +624,7 @@ def compserver(payload, serial):
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
+@_logging
 def addserver(payload, serial):
     """Add a data resource to the server.
 
