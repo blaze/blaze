@@ -168,14 +168,15 @@ def _parse_args():
                    help='Allow dynamically adding datasets to the server')
     p.add_argument('-D', '--debug', action='store_true',
                    help='Start the Flask server in debug mode')
-    return p.parse_args()
+    args = p.parse_args()
+    if not (args.path or args.allow_dynamic_addition):
+        msg = "No YAML file provided and --allow-dynamic-addition flag not set."
+        p.error(msg)
+    return args
 
 
 def _main():
     args = _parse_args()
-    if not (args.path or args.allow_dynamic_addition):
-        msg = "No YAML file provided and --allow-dynamic-addition flag not set."
-        raise RuntimeError(msg)
     ignore = tuple(getattr(builtins, e) for e in args.ignored_exception)
     if args.path:
         resources = from_yaml(args.path,
