@@ -866,20 +866,6 @@ def test_str_cat_chain():
     assert normalize(result) == normalize(expected)
 
 
-
-@pytest.mark.xfail(reason="raise exception code needed for refactored StrCat")
-@pytest.mark.parametrize("expr",
-                         [t.name.str_cat(t_str_cat.comment),
-                          t.name.str_cat(t_str_cat.comment.str_cat(t_str_cat.name))])
-def test_str_cat_runtime_exception(expr):
-    """
-    concat columns within the same table for SQL
-    """
-    with pytest.raises(ValueError):
-        # ValueError: cannot concat columns from different tables
-        compute(expr, {t: s, t_str_cat: s_str_cat}, return_type='native')
-
-
 def test_str_cat_no_runtime_exception():
     """
     No exception raised if resource is the same
@@ -890,12 +876,12 @@ def test_str_cat_no_runtime_exception():
 
 def test_columnwise_on_complex_selection():
     result = str(select(compute(t[t.amount > 0].amount + 1, s, return_type='native')))
-    assert normalize(result) == \
-        normalize("""
-    SELECT accounts.amount + :amount_1 AS amount
-    FROM accounts
-    WHERE accounts.amount > :amount_2
-    """)
+    expected = """
+               SELECT accounts.amount + :amount_1 AS amount
+               FROM accounts
+               WHERE accounts.amount > :amount_2
+               """
+    assert normalize(result) == normalize(expected)
 
 
 def test_reductions_on_complex_selections():
