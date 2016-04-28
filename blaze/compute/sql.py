@@ -1208,41 +1208,39 @@ def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
-@compute_up.register(StrCat,
-                     (Select, ColumnElement, basestring),
-                     (Select, ColumnElement))
-@compute_up.register(StrCat,
-                     (Select, ColumnElement),
-                     basestring)
-def compute_up(expr, lhs, rhs, **kwargs):
-    # TODO: FIXME: Ensure the expr.lhs and expr.rhs come from the same table?
-    # This is not checked for any other binary column operation, so it's a
-    # pervasive issue throught Blaze's SQL implementation that should be
-    # addressed consistently.
+@compute_up.register(StrCat, Select, basestring)
+@compute_up.register(StrCat, basestring, Select)
+def str_cat_sql(expr, lhs, rhs, **kwargs):
     if isinstance(lhs, Select):
-        assert len(lhs.c) == 1, (
-            'Select cannot have more than a single column when doing'
-            ' arithmetic, got %r' % lhs
-        )
-        lhs_col = first(lhs.inner_columns)
+        orig = lhs
+        lhs = first(lhs.inner_columns)
     else:
-        lhs_col = lhs
-    if isinstance(rhs, Select):
-        assert len(rhs.c) == 1, (
-            'Select cannot have more than a single column when doing'
-            ' arithmetic, got %r' % rhs
-        )
-        rhs_col = first(rhs.inner_columns)
-    else:
-        rhs_col = rhs
+        orig = rhs
+        rhs = first(rhs.inner_columns)
     if expr.sep:
-        sel = select((lhs_col + expr.sep + rhs_col).label(expr.lhs._name))
+        result = (lhs + expr.sep + rhs).label(expr.lhs._name)
     else:
-        sel = select((lhs_col + rhs_col).label(expr.lhs._name))
-    wheres = unify_wheres([lhs, rhs])
-    if wheres is not None:
-        return sel.where(wheres)
-    return sel
+        result = (lhs + rhs).label(expr.lhs._name)
+    return reconstruct_select([result], orig)
+
+
+@compute_up.register(StrCat, Select, Select)
+def str_cat_sql(expr, lhs, rhs, **kwargs):
+    left, right = first(lhs.inner_columns), first(rhs.inner_columns)
+    if expr.sep:
+        result = (left + expr.sep + right).label(expr.lhs._name)
+    else:
+        result = (left + right).label(expr.lhs._name)
+    return reconstruct_select([result], lhs)
+
+
+@compute_up.register(StrCat, (ColumnElement, basestring), ColumnElement)
+@compute_up.register(StrCat, ColumnElement, basestring)
+def str_cat_sql(expr, lhs, rhs, **kwargs):
+    if expr.sep:
+        return (lhs + expr.sep + rhs).label(expr.lhs._name)
+    else:
+        return (lhs + rhs).label(expr.lhs._name)
 
 
 @dispatch(UnaryStringFunction, ColumnElement)

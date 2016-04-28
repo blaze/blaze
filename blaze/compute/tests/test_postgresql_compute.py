@@ -16,7 +16,6 @@ import pandas.util.testing as tm
 
 from datashape import dshape
 from odo import odo, drop, discover
-from odo.utils import tmpfile
 from blaze import (
     data,
     atan2,
@@ -728,6 +727,22 @@ def test_chain_str_cat_with_null(sql_with_null):
         else:
             assert (r == n + ' ++ ' + c + ' -- ' + s)
 
+
+def test_str_cat_bcast(sql_with_null):
+    t = symbol('t', discover(sql_with_null))
+    lit_sym = symbol('s', 'string')
+    s = t[t.amount <= 200]
+    result = compute(s.comment.str_cat(lit_sym, sep=' '),
+                     {t: sql_with_null, lit_sym: '!!'},
+                     return_type=pd.Series)
+    df = compute(s, sql_with_null,
+                 return_type=pd.DataFrame)
+    expected = df.comment.str.cat(['!!']*len(df.comment), sep=' ')
+
+    assert all(expected[~expected.isnull()] == result[~result.isnull()])
+    assert all(expected[expected.isnull()].index == result[result.isnull()].index)
+
+    
 
 def test_str_cat_where_clause(sql_with_null):
     """

@@ -841,13 +841,13 @@ def test_str_cat(sep):
         expr = t_str_cat.name.str_cat(t_str_cat.comment)
         expected = """
                    SELECT accounts2.name || accounts2.comment
-                   AS name FROM accounts2
+                   AS anon_1 FROM accounts2
                    """
     else:
         expr = t_str_cat.name.str_cat(t_str_cat.comment, sep=sep)
         expected = """
                    SELECT accounts2.name || :name_1 || accounts2.comment
-                   AS name FROM accounts2
+                   AS anon_1 FROM accounts2
                    """
 
     result = str(compute(expr, s_str_cat, return_type='native'))
@@ -861,7 +861,7 @@ def test_str_cat_chain():
     result = str(compute(expr, {t_str_cat: s_str_cat}, return_type='native'))
     expected = """
                SELECT accounts2.name || :name_1 || accounts2.comment ||
-               :param_1 || accounts2.product AS _ FROM accounts2
+               :param_1 || accounts2.product AS anon_1 FROM accounts2
                """
     assert normalize(result) == normalize(expected)
 
