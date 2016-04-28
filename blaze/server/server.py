@@ -16,6 +16,7 @@ from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
+from werkzeug.http import parse_options_header
 from toolz import valmap
 
 import blaze
@@ -199,15 +200,15 @@ def authorization(f):
 def check_request(f):
     @functools.wraps(f)
     def check():
-        content_type = request.headers['content-type']
-        matched = mimetype_regex.match(content_type)
+        raw_content_type = request.headers['content-type']
+        content_type, options = parse_options_header(raw_content_type)
 
-        if matched is None:
+        if content_type not in accepted_mimetypes:
             return ('Unsupported serialization format %s' % content_type,
                     RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
-            serial = _get_format(matched.groups()[0])
+            serial = _get_format(accepted_mimetypes[content_type])
         except KeyError:
             return ("Unsupported serialization format '%s'" % matched.groups()[0],
                     RC.UNSUPPORTED_MEDIA_TYPE)
@@ -501,8 +502,8 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
-                            '|'.join(x.name for x in all_formats))
+accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
+                         in all_formats}
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
