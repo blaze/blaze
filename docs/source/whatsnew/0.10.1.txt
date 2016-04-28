@@ -22,6 +22,8 @@ None
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
+* Blaze server's ``/add`` endpoint was enhanced to take a more general payload
+  (:issue:`1481`).
 * Adds consistency check to blaze server at startup for YAML file and dynamic
   addition options (:issue:`1491`).
 
@@ -39,8 +41,8 @@ None
 Bug Fixes
 ~~~~~~~~~
 
-None
-
+* The content type specification parsing was improved to accept more elaborate
+  headers (:issue:`1490`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
