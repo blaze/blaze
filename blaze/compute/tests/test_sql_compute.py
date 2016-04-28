@@ -78,6 +78,13 @@ def city_data():
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+t_str_cat = symbol('t',
+                   """var * {name: string,
+                             amount: int,
+                             id: int,
+                             comment: string,
+                             product: string}""")
+
 nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 metadata = sa.MetaData()
@@ -86,6 +93,13 @@ s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
              sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True))
+
+s_str_cat = sa.Table('accounts2', metadata,
+                     sa.Column('name', sa.String),
+                     sa.Column('amount', sa.Integer),
+                     sa.Column('id', sa.Integer, primary_key=True),
+                     sa.Column('comment', sa.String),
+                     sa.Column('product', sa.String))
 
 tdate = symbol('t',
                """var * {
@@ -809,12 +823,62 @@ def test_str_upper():
     expected = "SELECT upper(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
-    
+
 def test_str_lower():
     expr = t.name.str_lower()
     result = str(compute(expr, s, return_type='native'))
     expected = "SELECT lower(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
+
+
+@pytest.mark.parametrize("sep", [None, " sep "])
+def test_str_cat(sep):
+    """
+    Need at least two string columns to test str_cat
+    """
+    if sep is None:
+        expr = t_str_cat.name.str_cat(t_str_cat.comment)
+        expected = """
+                   SELECT accounts2.name || accounts2.comment
+                   AS name FROM accounts2
+                   """
+    else:
+        expr = t_str_cat.name.str_cat(t_str_cat.comment, sep=sep)
+        expected = \
+            """
+            SELECT
+                CASE
+                    WHEN (accounts2.name is NULL or accounts2.comment is NULL)
+                        THEN NULL
+                    ELSE concat(accounts2.name, :param_1, accounts2.comment)
+                END
+                AS name
+            FROM accounts2
+           """
+
+    result = str(compute(expr, s_str_cat, return_type='native'))
+    assert normalize(result) == normalize(expected)
+
+
+@pytest.mark.xfail(reason="raise exception code needed for refactored StrCat")
+@pytest.mark.parametrize("expr",
+                         [t.name.str_cat(t_str_cat.comment),
+                          t.name.str_cat(t_str_cat.comment.str_cat(t_str_cat.name))])
+def test_str_cat_runtime_exception(expr):
+    """
+    concat columns within the same table for SQL
+    """
+    with pytest.raises(ValueError):
+        # ValueError: cannot concat columns from different tables
+        compute(expr, {t: s, t_str_cat: s_str_cat}, return_type='native')
+
+
+def test_str_cat_no_runtime_exception():
+    """
+    No exception raised if resource is the same
+    """
+    expr = t_str_cat.comment.str_cat(t.name)
+    compute(expr, {t: s_str_cat, t_str_cat: s_str_cat}, return_type='native')
 
 
 def test_columnwise_on_complex_selection():

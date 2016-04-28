@@ -65,6 +65,36 @@ def sql(url):
             drop(t)
 
 
+@pytest.yield_fixture
+def sql_with_null(url):
+    ds = dshape(""" var * {name: ?string,
+                           sex: ?string,
+                           amount: int,
+                           id: int,
+                           comment: ?string}
+              """)
+    rows = [('Alice', 'F', 100, 1, 'Alice comment'),
+            (None, 'M', 300, 2, None),
+            ('Drew', 'F', 100, 4, 'Drew comment'),
+            ('Bob', 'M', 100, 5, 'Bob comment 2'),
+            ('Drew', 'M', 200, 5, None),
+            ('first', None, 300, 4, 'Missing info'),
+            (None, None, 300, 6, None)]
+    try:
+        x = url % next(names)
+        t = data(x, dshape=ds)
+        print(x)
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        assert t.dshape == ds
+        t = data(odo(rows, t))
+        try:
+            yield t
+        finally:
+            drop(t)
+
+
 @pytest.yield_fixture(scope='module')
 def nyc(pg_ip):
     # odoing csv -> pandas -> postgres is more robust, as it doesn't require
@@ -665,6 +695,53 @@ def test_sample(big_sql):
     assert len(result) == nrows // 2
     result2 = compute(nn.sample(frac=0.5), big_sql, return_type=pd.DataFrame)
     assert len(result) == len(result2)
+
+
+@pytest.mark.parametrize("sep", [None, " -- "])
+def test_str_cat_with_null(sql_with_null, sep):
+    t = symbol('t', discover(sql_with_null))
+    res = compute(t.name.str_cat(t.sex, sep=sep), sql_with_null,
+                  return_type=list)
+    res = [r[0] for r in res]
+    cols = compute(t[['name', 'sex']], sql_with_null, return_type=list)
+
+    for r, (n, s) in zip(res, cols):
+        if n is None or s is None:
+            assert r is None
+        else:
+            assert (r == n + s if sep is None else r == n + sep + s)
+
+
+def test_chain_str_cat_with_null(sql_with_null):
+    t = symbol('t', discover(sql_with_null))
+    expr = t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '),
+                          sep=' ++ ')
+    res = compute(expr, sql_with_null, return_type=list)
+    res = [r[0] for r in res]
+    cols = compute(t[['name', 'comment', 'sex']], sql_with_null,
+                   return_type=list)
+
+    for r, (n, c, s) in zip(res, cols):
+        if n is None or c is None or s is None:
+            assert r is None
+        else:
+            assert (r == n + ' ++ ' + c + ' -- ' + s)
+
+
+def test_str_cat_where_clause(sql_with_null):
+    """
+    Invokes the (Select, Select) path for compute_up
+    """
+    t = symbol('t', discover(sql_with_null))
+    s = t[t.amount <= 200]
+    c1 = s.comment.str_cat(s.sex, sep=' -- ')
+
+    bres = compute(c1, sql_with_null, return_type=pd.Series)
+    df_s = compute(s, sql_with_null, return_type=pd.DataFrame)
+    exp = df_s.comment.str.cat(df_s.sex, ' -- ')
+
+    assert all(exp[~exp.isnull()] == bres[~bres.isnull()])
+    assert all(exp[exp.isnull()].index == bres[bres.isnull()].index)
 
 
 def test_core_compute(nyc):
