@@ -127,8 +127,11 @@ class StrCat(ElemWise):
         elif isinstance(self.rhs.schema.measure, Option):
             schema = self.rhs.schema
         else:
+            _, lhs_encoding = self.lhs.schema.measure.parameters
+            _, rhs_encoding = self.rhs.schema.measure.parameters
+            assert lhs_encoding == rhs_encoding
             # convert fixed length string to variable length string
-            schema = DataShape(String())
+            schema = DataShape(String(None, lhs_encoding))
 
         return DataShape(*(shape + (schema,)))
 
