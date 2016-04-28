@@ -714,8 +714,9 @@ def test_str_cat_with_null(sql_with_null, sep):
 
 def test_chain_str_cat_with_null(sql_with_null):
     t = symbol('t', discover(sql_with_null))
-    expr = t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '),
-                          sep=' ++ ')
+    expr = (t.name
+            .str_cat(t.comment, sep=' ++ ')
+            .str_cat(t.sex, sep=' -- '))
     res = compute(expr, sql_with_null, return_type=list)
     res = [r[0] for r in res]
     cols = compute(t[['name', 'comment', 'sex']], sql_with_null,

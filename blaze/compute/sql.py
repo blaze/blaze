@@ -34,7 +34,6 @@ import sqlalchemy as sa
 from sqlalchemy import sql, Table, MetaData
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Selectable, Select, functions as safuncs
-from sqlalchemy.sql import expression as sa_expr
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.elements import ClauseElement, ColumnElement, ColumnClause
 from sqlalchemy.sql.selectable import FromClause, ScalarSelect
@@ -44,7 +43,7 @@ from toolz.compatibility import zip
 from toolz.curried import map
 
 from .core import compute_up, compute, base
-from ..compatibility import reduce
+from ..compatibility import reduce, basestring
 from ..dispatch import dispatch
 from ..expr import (
     BinOp,
@@ -273,10 +272,12 @@ def _binop(type_, f):
         else:
             return f(t, t.lhs, column)
 
-    @compute_up.register(
-        type_, (Select, ColumnElement, base), (Select, ColumnElement),
-    )
-    @compute_up.register(type_, (Select, ColumnElement), base)
+    @compute_up.register(type_,
+                         (Select, ColumnElement, base),
+                         (Select, ColumnElement))
+    @compute_up.register(type_,
+                         (Select, ColumnElement),
+                         base)
     def binop_sql(t, lhs, rhs, **kwargs):
         if isinstance(lhs, Select):
             assert len(lhs.c) == 1, (
@@ -1207,88 +1208,41 @@ def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
-def str_cat_lhs_rhs_data(lhs_data, rhs_data):
-    err = 'cannot concat columns from different tables'
-
-    if isinstance(rhs_data, Select):
-        # lhs should only ever have 1 column
-        # rhs can have more than one columns if chained StrCat?
-        c_rhs = rhs_data.columns.keys()[0]
-
-        if isinstance(lhs_data, ColumnElement):
-            # (ColumnElement, Select)
-            # If RHS is Select, then this becomes the table from which to
-            # concat columns. Append LHS column to RHS so we don't end up with
-            # a cross join.
-            c_lhs = lhs_data.name
-            rhs_data.append_column(lhs_data)
-            alias_ = rhs_data.alias()
-
-            lhs_data = alias_.columns.get(c_lhs)
-
-        else:
-            # lhs could have more than one column if we chain StrCat
-            # still experimenting with this
-            if len(lhs_data.columns.keys()) > 1:
-                msg = ("WIP: this is likely chaining StrCat and has a where "
-                       "clause. SQL is not consistent with pandas result")
-                warnings.warn(msg)
-
-            c_lhs = lhs_data.columns.keys()[0]
-
-            # (Select, Select)
-            c_append = lhs_data.froms[0].columns.get(c_lhs)
-            rhs_data.append_column(c_append)
-
-            alias_ = rhs_data.alias()
-
-        lhs_data = alias_.columns.get(c_lhs)
-        rhs_data = alias_.columns.get(c_rhs)
-
+@compute_up.register(StrCat,
+                     (Select, ColumnElement, basestring),
+                     (Select, ColumnElement))
+@compute_up.register(StrCat,
+                     (Select, ColumnElement),
+                     basestring)
+def compute_up(expr, lhs, rhs, **kwargs):
+    # TODO: FIXME: Ensure the expr.lhs and expr.rhs come from the same table?
+    # This is not checked for any other binary column operation, so it's a
+    # pervasive issue throught Blaze's SQL implementation that should be
+    # addressed consistently.
+    if isinstance(lhs, Select):
+        assert len(lhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %r' % lhs
+        )
+        lhs_col = first(lhs.inner_columns)
     else:
-        if lhs_data._from_objects != rhs_data._from_objects:
-            raise ValueError(err)
-
-    return lhs_data, rhs_data
-
-
-@dispatch(StrCat,
-          (Select, ColumnElement),
-          (ColumnElement, Select))
-def compute_up(expr, lhs_data, rhs_data, **kwargs):
-    """
-    concat two string columns element wise. If a row in either column is NULL,
-    then return a NULL otherwise perform concat() with the user defined 'sep'
-    between the two elements.
-
-    Also use same function to chain str_cat() function.
-    e.g.
-        t.name.str_cat(t.comment.str_cat(t.sex, sep=' -- '), sep=' ++ ')
-    """
-    lhs_data, rhs_data = str_cat_lhs_rhs_data(lhs_data, rhs_data)
-
-    # try following to get rid of case statement below
-    # res = (lhs_data + expr.sep + rhs_data).label(expr.lhs._name)
-    if expr.sep is None:
-        # this will automatically handle null values correctly
-        res = (lhs_data + rhs_data).label(expr.lhs._name)
+        lhs_col = lhs
+    if isinstance(rhs, Select):
+        assert len(rhs.c) == 1, (
+            'Select cannot have more than a single column when doing'
+            ' arithmetic, got %r' % rhs
+        )
+        rhs_col = first(rhs.inner_columns)
     else:
-        # only use concat function if both columns have non null values
-        # this is consistent with how pandas works
-        res = \
-            sa_expr.case([
-                          (sa.or_(lhs_data == sa_expr.null(),
-                                  rhs_data == sa_expr.null()),
-                           sa_expr.null())
-                          ],
-                         else_=sa.sql.functions.concat(lhs_data,
-                                                       expr.sep,
-                                                       rhs_data)
-                         ).label(expr.lhs._name)
-
-    res = select(res)
-
-    return res
+        rhs_col = rhs
+    if expr.sep:
+        sel = select((lhs_col + expr.sep + rhs_col).label(expr.lhs._name))
+    else:
+        sel = select((lhs_col + rhs_col).label(expr.lhs._name))
+    wheres = unify_wheres([lhs, rhs])
+    if wheres is not None:
+        return sel.where(wheres)
+    return sel
 
 
 @dispatch(UnaryStringFunction, ColumnElement)

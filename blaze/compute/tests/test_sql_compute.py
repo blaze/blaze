@@ -836,6 +836,7 @@ def test_str_cat(sep):
     """
     Need at least two string columns to test str_cat
     """
+
     if sep is None:
         expr = t_str_cat.name.str_cat(t_str_cat.comment)
         expected = """
@@ -844,20 +845,26 @@ def test_str_cat(sep):
                    """
     else:
         expr = t_str_cat.name.str_cat(t_str_cat.comment, sep=sep)
-        expected = \
-            """
-            SELECT
-                CASE
-                    WHEN (accounts2.name is NULL or accounts2.comment is NULL)
-                        THEN NULL
-                    ELSE concat(accounts2.name, :param_1, accounts2.comment)
-                END
-                AS name
-            FROM accounts2
-           """
+        expected = """
+                   SELECT accounts2.name || :name_1 || accounts2.comment
+                   AS name FROM accounts2
+                   """
 
     result = str(compute(expr, s_str_cat, return_type='native'))
     assert normalize(result) == normalize(expected)
+
+
+def test_str_cat_chain():
+    expr = (t_str_cat.name
+            .str_cat(t_str_cat.comment, sep=' -- ')
+            .str_cat(t_str_cat.product, sep=' ++ '))
+    result = str(compute(expr, {t_str_cat: s_str_cat}, return_type='native'))
+    expected = """
+               SELECT accounts2.name || :name_1 || accounts2.comment ||
+               :param_1 || accounts2.product AS _ FROM accounts2
+               """
+    assert normalize(result) == normalize(expected)
+
 
 
 @pytest.mark.xfail(reason="raise exception code needed for refactored StrCat")
