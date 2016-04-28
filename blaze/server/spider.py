@@ -149,7 +149,7 @@ def _parse_args():
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument('path', type=argparse.FileType('r'), nargs='?',
-                   default=sys.stdin,
+                   default=None,
                    help='A YAML file specifying the resources to load')
     p.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                    help='Port number')
@@ -164,22 +164,30 @@ def _parse_args():
                    help='Call ``blaze.data`` on hidden files')
     p.add_argument('--yaml-dir', action='store_true',
                    help='Load path-based resources relative to yaml file directory.')
+    p.add_argument('--allow-dynamic-addition', action='store_true',
+                   help='Allow dynamically adding datasets to the server')
     p.add_argument('-D', '--debug', action='store_true',
                    help='Start the Flask server in debug mode')
-    return p.parse_args()
+    args = p.parse_args()
+    if not (args.path or args.allow_dynamic_addition):
+        msg = "No YAML file provided and --allow-dynamic-addition flag not set."
+        p.error(msg)
+    return args
 
 
 def _main():
     args = _parse_args()
     ignore = tuple(getattr(builtins, e) for e in args.ignored_exception)
-    resources = from_yaml(args.path,
-                          ignore=ignore,
-                          followlinks=args.follow_links,
-                          hidden=args.hidden,
-                          relative_to_yaml_dir=args.yaml_dir)
-    Server(resources).run(host=args.host,
-                          port=args.port,
-                          debug=args.debug)
+    if args.path:
+        resources = from_yaml(args.path,
+                              ignore=ignore,
+                              followlinks=args.follow_links,
+                              hidden=args.hidden,
+                              relative_to_yaml_dir=args.yaml_dir)
+    else:
+        resources = {}
+    server = Server(resources, allow_add=args.allow_dynamic_addition)
+    server.run(host=args.host, port=args.port, debug=args.debug)
 
 
 if __name__ == '__main__':

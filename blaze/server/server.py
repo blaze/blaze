@@ -10,11 +10,13 @@ import re
 import socket
 from time import time
 from warnings import warn
+import importlib
 
 from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
+from werkzeug.http import parse_options_header
 from toolz import valmap
 
 import blaze
@@ -46,6 +48,7 @@ class RC(object):
 
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
+    NOT_FOUND = 404
     FORBIDDEN = 403
     CONFLICT = 409
     UNPROCESSABLE_ENTITY = 422
@@ -107,6 +110,13 @@ def _register_api(app, options, first_registration=False):
     _get_profiler_info.cache[app] = (allow_profiler,
                                      profiler_output,
                                      profile_by_default)
+
+    # Allowing users to dynamically add datasets to the Blaze server can be
+    # dangerous, so we only expose the method if specifically requested
+    allow_add = _get_option('allow_add', options, False)
+    if allow_add:
+        app.add_url_rule('/add', 'addserver', addserver,
+                         methods=['POST', 'HEAD', 'OPTIONS'])
 
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
@@ -190,15 +200,15 @@ def authorization(f):
 def check_request(f):
     @functools.wraps(f)
     def check():
-        content_type = request.headers['content-type']
-        matched = mimetype_regex.match(content_type)
+        raw_content_type = request.headers['content-type']
+        content_type, options = parse_options_header(raw_content_type)
 
-        if matched is None:
+        if content_type not in accepted_mimetypes:
             return ('Unsupported serialization format %s' % content_type,
                     RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
-            serial = _get_format(matched.groups()[0])
+            serial = _get_format(accepted_mimetypes[content_type])
         except KeyError:
             return ("Unsupported serialization format '%s'" % matched.groups()[0],
                     RC.UNSUPPORTED_MEDIA_TYPE)
@@ -253,6 +263,10 @@ class Server(object):
         Run the profiler on any computation that does not explicitly set
         "profile": false.
         This requires `allow_profiler=True`.
+    allow_add : bool, optional
+        Expose an `/add` endpoint to allow datasets to be dynamically added to
+        the server. Since this increases the risk of security holes, it defaults
+        to `False`.
 
     Examples
     --------
@@ -273,7 +287,8 @@ class Server(object):
                  authorization=None,
                  allow_profiler=False,
                  profiler_output=None,
-                 profile_by_default=False):
+                 profile_by_default=False,
+                 allow_add=False):
         if isinstance(data, collections.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
                           data)
@@ -288,7 +303,8 @@ class Server(object):
                                authorization=authorization,
                                allow_profiler=allow_profiler,
                                profiler_output=profiler_output,
-                               profile_by_default=profile_by_default)
+                               profile_by_default=profile_by_default,
+                               allow_add=allow_add)
         self.data = data
 
     def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
@@ -486,8 +502,8 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
-                            '|'.join(x.name for x in all_formats))
+accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
+                         in all_formats}
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
@@ -577,7 +593,6 @@ def compserver(payload, serial):
     return serial.dumps(response)
 
 
-@api.route('/add', methods=['POST', 'HEAD', 'OPTIONS'])
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
@@ -607,14 +622,29 @@ def addserver(payload, serial):
         return (error_msg % list(payload.keys()),
                 RC.UNPROCESSABLE_ENTITY)
 
-    [(name, resource_uri)] = payload.items()
+    [(name, resource_info)] = payload.items()
 
     if name in data:
         msg = "Cannot add dataset named %s, already exists on server."
         return (msg % name, RC.CONFLICT)
 
     try:
-        data.update({name: resource(resource_uri)})
+        imports = []
+        if isinstance(resource_info, dict):
+            # Extract resource creation arguments
+            source = resource_info['source']
+            imports = resource_info.get('imports', [])
+            args = resource_info.get('args', [])
+            kwargs = resource_info.get('kwargs', {})
+        else:
+            # Just a URI
+            source, args, kwargs = resource_info, [], {}
+        # If we've been given libraries to import, we need to do so
+        # before we can create the resource.
+        for mod in imports:
+            importlib.import_module(mod)
+        # Finally, we actually add the resource to the dataset
+        data.update({name: resource(source, *args, **kwargs)})
         # Force discovery of new dataset to check that the data is loadable.
         ds = discover(data)
         if name not in ds.dict:

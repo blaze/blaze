@@ -10,6 +10,7 @@ from blaze.expr import Expr, symbol, Field
 from blaze.dispatch import dispatch
 from blaze.server import Server
 from blaze.server.client import Client
+from blaze.utils import example
 
 
 df = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -21,8 +22,10 @@ df2 = DataFrame([['Charlie', 100], ['Dan', 200]],
 tdata = {'accounts': df, 'accounts2': df}
 
 server = Server(tdata)
+add_server = Server(tdata, allow_add=True)
 
 test = server.app.test_client()
+test_add = add_server.app.test_client()
 
 from blaze.server import client
 client.requests = test # OMG monkey patching
@@ -110,3 +113,37 @@ def test_client_dataset_fails():
 def test_client_dataset():
     d = bz_data('blaze://localhost')
     assert list(map(tuple, into(list, d.accounts))) == into(list, df)
+
+
+def test_client_cant_add_dataset():
+    ec = Client('localhost:6363')
+    with pytest.raises(ValueError) as excinfo:
+        ec.add('iris', example('iris.csv'))
+    assert "Server does not support" in str(excinfo.value)
+
+
+def test_client_add_dataset():
+    client.requests = test_add  # OMG more monkey patching
+    ec = Client('localhost:6363')
+    ec.add('iris', example('iris.csv'))
+    assert 'iris' in ec.dshape.measure.dict
+    iris_data = bz_data(example('iris.csv'))
+    assert ec.dshape.measure.dict['iris'] == iris_data.dshape
+
+
+def test_client_add_dataset_failure():
+    client.requests = test_add  # OMG more monkey patching
+    ec = Client('localhost:6363')
+    with pytest.raises(ValueError) as exc:
+        ec.add('iris2', example('iris.csv'), -1, bad_arg='value')
+    assert '422 UNPROCESSABLE ENTITY' in str(exc.value)
+
+
+def test_client_add_dataset_with_args():
+    client.requests = test_add  # OMG more monkey patching
+    ec = Client('localhost:6363')
+    ec.add('teams', 'sqlite:///' + example('teams.db'), 'teams',
+           primary_key='teamID')
+    assert 'teams' in ec.dshape.measure.dict
+    teams_data = bz_data('sqlite:///' + example('teams.db') + '::teams')
+    assert ec.dshape.measure.dict['teams'] == teams_data.dshape
