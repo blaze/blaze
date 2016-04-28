@@ -1185,11 +1185,9 @@ def compute_up(t, s, **kwargs):
     return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
-string_func_names = {
-    # <blaze function name>: <SQL function name>
-    'str_upper': 'upper',
-    'str_lower': 'lower'
-}
+string_func_names = {# <blaze function name>: <SQL function name>
+                     'str_upper': 'upper',
+                     'str_lower': 'lower'}
 
 
 # TODO: remove if the alternative fix goes into PyHive
