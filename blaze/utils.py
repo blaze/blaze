@@ -1,9 +1,5 @@
 from __future__ import absolute_import, division, print_function
 import types
-try:
-    import builtins
-except ImportError:
-    import __builtin__ as builtins
 
 import datetime
 from collections import Iterator
@@ -25,7 +21,7 @@ import psutil
 import sqlalchemy as sa
 
 # Imports that replace older utils.
-from .compatibility import map, zip, PY2
+from .compatibility import map, zip, PY2, builtins
 from .dispatch import dispatch
 
 
