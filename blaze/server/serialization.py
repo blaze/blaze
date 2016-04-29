@@ -1,4 +1,3 @@
-import sys
 from functools import partial
 import json as json_module
 

@@ -1,4 +1,6 @@
 from __future__ import absolute_import, division, print_function
+import types
+import builtins
 
 import datetime
 from collections import Iterator
@@ -187,6 +189,11 @@ def json_dumps(ds):
     return {'__!datashape': str(ds)}
 
 
+@dispatch(types.BuiltinFunctionType)
+def json_dumps(f):
+    return {'__!builtin_function': f.__name__}
+
+
 # dict of converters. This is stored as a default arg to object hook for
 # performance because this function is really really slow when unpacking data.
 # This is a mutable default but it is not a bug!
@@ -262,6 +269,7 @@ del _keys  # captured by default args
 object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
 object_hook.register('datashape', dshape)
+object_hook.register('builtin_function', lambda x: getattr(builtins, x))
 
 
 @object_hook.register('mono')

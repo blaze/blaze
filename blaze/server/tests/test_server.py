@@ -385,9 +385,9 @@ def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize('serial', all_formats)
 def test_map_client_server(iris_server, serial):
+    print(serial)
     test = iris_server
     t = symbol('t', discover(iris))
     expr = t.species.map(len, 'int')
@@ -398,10 +398,16 @@ def test_map_client_server(iris_server, serial):
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == compute(expr, {t: iris}, return_type=list)
+
+    istrue = result == compute(expr, {t: iris}, return_type=list)
+    try:
+        assert istrue
+    except:
+        # ofr fastmsgpack - pandas loads data into a Series - this is
+        # inconsistent with other serialization types that load a list
+        assert all(istrue)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize('serial', all_formats)
 def test_apply_client_server(iris_server, serial):
     test = iris_server
