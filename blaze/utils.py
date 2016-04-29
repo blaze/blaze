@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 import types
-import builtins
+try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
 
 import datetime
 from collections import Iterator
