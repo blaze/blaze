@@ -43,7 +43,7 @@ from toolz.compatibility import zip
 from toolz.curried import map
 
 from .core import compute_up, compute, base
-from ..compatibility import reduce
+from ..compatibility import reduce, basestring
 from ..dispatch import dispatch
 from ..expr import (
     BinOp,
@@ -90,6 +90,7 @@ from ..expr import (
     std,
     str_len,
     strlen,
+    StrCat,
     var,
 )
 from ..expr.broadcast import broadcast_collect
@@ -271,10 +272,12 @@ def _binop(type_, f):
         else:
             return f(t, t.lhs, column)
 
-    @compute_up.register(
-        type_, (Select, ColumnElement, base), (Select, ColumnElement),
-    )
-    @compute_up.register(type_, (Select, ColumnElement), base)
+    @compute_up.register(type_,
+                         (Select, ColumnElement, base),
+                         (Select, ColumnElement))
+    @compute_up.register(type_,
+                         (Select, ColumnElement),
+                         base)
     def binop_sql(t, lhs, rhs, **kwargs):
         if isinstance(lhs, Select):
             assert len(lhs.c) == 1, (
@@ -1182,11 +1185,9 @@ def compute_up(t, s, **kwargs):
     return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
-string_func_names = {
-    # <blaze function name>: <SQL function name>
-    'str_upper': 'upper',
-    'str_lower': 'lower',
-}
+string_func_names = {# <blaze function name>: <SQL function name>
+                     'str_upper': 'upper',
+                     'str_lower': 'lower'}
 
 
 # TODO: remove if the alternative fix goes into PyHive
@@ -1203,6 +1204,41 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
 @dispatch((strlen, str_len), ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
+
+
+@compute_up.register(StrCat, Select, basestring)
+@compute_up.register(StrCat, basestring, Select)
+def str_cat_sql(expr, lhs, rhs, **kwargs):
+    if isinstance(lhs, Select):
+        orig = lhs
+        lhs = first(lhs.inner_columns)
+    else:
+        orig = rhs
+        rhs = first(rhs.inner_columns)
+    if expr.sep:
+        result = (lhs + expr.sep + rhs).label(expr.lhs._name)
+    else:
+        result = (lhs + rhs).label(expr.lhs._name)
+    return reconstruct_select([result], orig)
+
+
+@compute_up.register(StrCat, Select, Select)
+def str_cat_sql(expr, lhs, rhs, **kwargs):
+    left, right = first(lhs.inner_columns), first(rhs.inner_columns)
+    if expr.sep:
+        result = (left + expr.sep + right).label(expr.lhs._name)
+    else:
+        result = (left + right).label(expr.lhs._name)
+    return reconstruct_select([result], lhs)
+
+
+@compute_up.register(StrCat, (ColumnElement, basestring), ColumnElement)
+@compute_up.register(StrCat, ColumnElement, basestring)
+def str_cat_sql(expr, lhs, rhs, **kwargs):
+    if expr.sep:
+        return (lhs + expr.sep + rhs).label(expr.lhs._name)
+    else:
+        return (lhs + rhs).label(expr.lhs._name)
 
 
 @dispatch(UnaryStringFunction, ColumnElement)

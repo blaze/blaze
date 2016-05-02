@@ -30,7 +30,8 @@ Improved Backends
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
-None
+* The ``str_cat()`` expression was added, mirroring Pandas'
+  ``Series.str.cat()`` API (:issue:`1496`).
 
 API Changes
 ~~~~~~~~~~~

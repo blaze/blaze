@@ -98,6 +98,7 @@ from ..expr import (
     summary,
     symbol,
     var,
+    StrCat,
 )
 
 __all__ = []
@@ -294,6 +295,12 @@ string_func_names = {'str_len': 'len',
 def compute_up(expr, data, **kwargs):
     name = type(expr).__name__
     return getattr(data.str, string_func_names.get(name, name))()
+
+
+@dispatch(StrCat, Series, Series)
+def compute_up(expr, lhs_data, rhs_data, **kwargs):
+    res = lhs_data.str.cat(rhs_data, sep=expr.sep)
+    return res
 
 
 def unpack(seq):
