@@ -23,7 +23,7 @@ from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree, RC
-from blaze.server.serialization import all_formats, fastmsgpack
+from blaze.server.serialization import all_formats, most_formats, fastmsgpack
 
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -385,10 +385,11 @@ def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
 
-@pytest.mark.parametrize('serial', all_formats)
-def test_map_client_server(iris_server, serial):
-    print(serial)
-    test = iris_server
+def serialize_query_with_map_builtin_function(test, serial):
+    """
+    serialize a query that invokes the 'map' operation using a builtin function
+    return the result of the post operation along with expected result
+    """
     t = symbol('t', discover(iris))
     expr = t.species.map(len, 'int')
     query = {'expr': to_tree(expr)}
@@ -399,13 +400,31 @@ def test_map_client_server(iris_server, serial):
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
 
-    istrue = result == compute(expr, {t: iris}, return_type=list)
-    try:
-        assert istrue
-    except:
-        # ofr fastmsgpack - pandas loads data into a Series - this is
-        # inconsistent with other serialization types that load a list
-        assert all(istrue)
+    exp_res = compute(expr, {t: iris}, return_type=list)
+    return (exp_res, result)
+
+
+@pytest.mark.parametrize('serial', most_formats)
+def test_map_client_server(iris_server, serial):
+    """
+    serialization for 'most_formats' returns a list so this is valid for
+    everything in most_formats
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                serial)
+
+    assert result == exp_res
+
+
+def test_map_client_server_fastmsgpack(iris_server):
+    """
+    serialization using fastmsgpack returns a Series object so our assertion
+    must be for all elements in Series
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                fastmsgpack)
+
+    assert all(result == exp_res)
 
 
 @pytest.mark.parametrize('serial', all_formats)

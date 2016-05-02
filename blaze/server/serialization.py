@@ -226,6 +226,11 @@ fastmsgpack = SerializationFormat(
 )
 
 
+most_formats = frozenset(
+    g for _, g in globals().items() if isinstance(g, SerializationFormat) and
+    g is not fastmsgpack
+)
+
 all_formats = frozenset(
     g for _, g in globals().items() if isinstance(g, SerializationFormat)
 )

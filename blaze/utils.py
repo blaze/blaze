@@ -190,7 +190,8 @@ def json_dumps(ds):
 
 @dispatch(types.BuiltinFunctionType)
 def json_dumps(f):
-    return {'__!builtin_function': f.__name__}
+    if f.__module__ in ('__builtin__', 'builtins'):
+        return {'__!builtin_function': f.__name__}
 
 
 # dict of converters. This is stored as a default arg to object hook for
