@@ -193,10 +193,9 @@ def json_dumps(f):
     return {'__!builtin_function': f.__name__}
 
 
-# conscturct a list of all numpy functions and their types
-
 @dispatch(Callable)
 def json_dumps(f):
+    # only serialize numpy/pandas functions
     if f.__module__.startswith('numpy') or f.__module__.startswith('pandas'):
         fcn = ".".join([f.__module__, f.__name__])
     else:
