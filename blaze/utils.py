@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 import types
 
 import datetime
-from collections import Iterator
+from collections import Iterator, Callable
 from itertools import islice, product
 import os
 import re
@@ -21,7 +21,7 @@ import psutil
 import sqlalchemy as sa
 
 # Imports that replace older utils.
-from .compatibility import map, zip, PY2, builtins
+from .compatibility import map, zip, PY2, builtins, reduce
 from .dispatch import dispatch
 
 
@@ -193,6 +193,17 @@ def json_dumps(f):
     return {'__!builtin_function': f.__name__}
 
 
+# conscturct a list of all numpy functions and their types
+
+@dispatch(Callable)
+def json_dumps(f):
+    if f.__module__.startswith('numpy') or f.__module__.startswith('pandas'):
+        fcn = ".".join([f.__module__, f.__name__])
+    else:
+        raise NotImplementedError("Only supports numpy or pandas functions")
+    return {'__!numpy_pandas_function': fcn}
+
+
 # dict of converters. This is stored as a default arg to object hook for
 # performance because this function is really really slow when unpacking data.
 # This is a mutable default but it is not a bug!
@@ -269,6 +280,26 @@ object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
 object_hook.register('datashape', dshape)
 object_hook.register('builtin_function', lambda x: getattr(builtins, x))
+
+
+def numpy_pandas_function_from_str(f):
+    """
+    reconstruct function from string representation
+    """
+    if f.startswith("numpy"):
+        mod = np
+
+    elif f.startswith("pandas"):
+        mod = pd
+
+    else:
+        raise NotImplementedError("accepts numpy/pandas/builtin funcs only")
+
+    fcn = reduce(getattr, f.split('.')[1:], mod)
+    return fcn
+
+
+object_hook.register('numpy_pandas_function', numpy_pandas_function_from_str)
 
 
 @object_hook.register('mono')

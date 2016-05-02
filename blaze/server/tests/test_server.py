@@ -13,6 +13,7 @@ from datashape.util.testing import assert_dshape_equal
 import numpy as np
 from odo import odo, convert
 from datetime import datetime
+import pandas as pd
 from pandas import DataFrame
 from pandas.util.testing import assert_frame_equal
 from toolz import pipe
@@ -385,13 +386,13 @@ def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
 
 
-def serialize_query_with_map_builtin_function(test, serial):
+def serialize_query_with_map_builtin_function(test, serial, fcn):
     """
     serialize a query that invokes the 'map' operation using a builtin function
     return the result of the post operation along with expected result
     """
     t = symbol('t', discover(iris))
-    expr = t.species.map(len, 'int')
+    expr = t.species.map(fcn, 'int')
     query = {'expr': to_tree(expr)}
     response = test.post('/compute',
                          data=serial.dumps(query),
@@ -405,24 +406,76 @@ def serialize_query_with_map_builtin_function(test, serial):
 
 
 @pytest.mark.parametrize('serial', most_formats)
-def test_map_client_server(iris_server, serial):
+def test_map_builtin_client_server(iris_server, serial):
     """
     serialization for 'most_formats' returns a list so this is valid for
     everything in most_formats
     """
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
-                                                                serial)
+                                                                serial,
+                                                                len)
 
     assert result == exp_res
 
 
-def test_map_client_server_fastmsgpack(iris_server):
+def test_map_builtin_client_server_fastmsgpack(iris_server):
     """
     serialization using fastmsgpack returns a Series object so our assertion
     must be for all elements in Series
     """
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
-                                                                fastmsgpack)
+                                                                fastmsgpack,
+                                                                len)
+
+    assert all(result == exp_res)
+
+
+@pytest.mark.parametrize('serial', most_formats)
+def test_map_numpy_client_server(iris_server, serial):
+    """
+    serialization for 'most_formats' returns a list so this is valid for
+    everything in most_formats
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                serial,
+                                                                np.size)
+
+    assert result == exp_res
+
+
+def test_map_numpy_client_server_fastmsgpack(iris_server):
+    """
+    serialization using fastmsgpack returns a Series object so our assertion
+    must be for all elements in Series
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                fastmsgpack,
+                                                                np.size)
+
+    assert all(result == exp_res)
+
+
+@pytest.mark.parametrize('serial', most_formats)
+def test_map_pandas_client_server(iris_server, serial):
+    """
+    serialization for 'most_formats' returns a list so this is valid for
+    everything in most_formats
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                serial,
+                                                                pd.isnull)
+
+    assert result == exp_res
+
+
+def test_map_pandas_client_server_fastmsgpack(iris_server):
+    """
+    serialization using fastmsgpack returns a Series object so our assertion
+    must be for all elements in Series
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                fastmsgpack,
+                                                                pd.isnull)
 
     assert all(result == exp_res)
 
