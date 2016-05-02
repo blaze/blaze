@@ -4,6 +4,7 @@ import pytest
 
 from blaze import symbol
 import blaze as bz
+from blaze.expr.strings import str_upper, str_lower, str_cat, str_len, like
 
 dshapes = ['var * {name: string}',
            'var * {name: ?string}',
@@ -50,6 +51,18 @@ def test_str_upper_schema(ds):
             dshape('%sstring' % ('?' if '?' in ds else '')).measure)
 
 
+def test_str_namespace():
+    t = symbol('t', 'var * {name: string}')
+    assert str_upper(t.name).isidentical(t.name.str.upper())
+    assert str_lower(t.name).isidentical(t.name.str.lower())
+    assert str_lower(str_upper(t.name)).isidentical(t.name.str.upper().str.lower())
+    assert str_len(t.name).isidentical(t.name.str.len())
+    assert like(t.name, '*a').isidentical(t.name.str.like('*a'))
+    assert (str_cat(str_cat(t.name, t.name, sep=' ++ '), t.name)
+            .isidentical(t.name.str.cat(t.name, sep=' ++ ')
+                               .str.cat(t.name)))
+
+
 @pytest.mark.parametrize('ds', lhsrhs_ds)
 def test_str_cat_schema_shape(ds):
     t = symbol('t', ds)
@@ -68,16 +81,3 @@ def test_str_cat_exception_non_string_col_to_cat(strcat_sym):
     with pytest.raises(TypeError):
         strcat_sym.name.str_cat(strcat_sym.num)
 
-def test_str_namespace():
-    t = symbol('t', 'var * {name: string}')
-    expr_upper_method = t.name.str.upper()
-    expr_lower_method = t.name.str.lower()
-    expr_upper_lower_methods = t.name.str.upper().str.lower()
-    expr_len_method = t.name.str.len()
-    expr_like_method = t.name.str.like('*a')
-
-    # expr_upper_func = bz.str.upper(t.name)
-    # expr_lower_func = bz.str.lower(t.name)
-    # expr_upper_lower_funcs = bz.str.lower(bz.str.upper(t.name))
-    # expr_len_func = bz.str.len(t.name)
-    # expr_like_func = bz.str.like(t.name, '*a')
