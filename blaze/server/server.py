@@ -6,7 +6,6 @@ import errno
 import functools
 from hashlib import md5
 import os
-import re
 import socket
 from time import time
 from warnings import warn
@@ -643,10 +642,11 @@ def addserver(payload, serial):
         # before we can create the resource.
         for mod in imports:
             importlib.import_module(mod)
-        # Finally, we actually add the resource to the dataset
-        data.update({name: resource(source, *args, **kwargs)})
-        # Force discovery of new dataset to check that the data is loadable.
-        ds = discover(data)
+        # Make a new resource and try to discover it.
+        new_resource = {name: resource(source, *args, **kwargs)}
+        # Discovery is a minimal consistency check to determine if the new
+        # resource is valid.
+        ds = discover(new_resource)
         if name not in ds.dict:
             raise ValueError("%s not added." % name)
     except NotImplementedError as e:
@@ -657,5 +657,9 @@ def addserver(payload, serial):
         error_msg = "Addition failed with message:\n%s: %s"
         return (error_msg % (type(e).__name__, e),
                 RC.UNPROCESSABLE_ENTITY)
+    else:
+        # Now that we've established that the new resource is discoverable--and
+        # thus exists and is accessible--we add the resource to the server.
+        data.update(new_resource)
 
     return ('OK', RC.CREATED)
