@@ -97,6 +97,7 @@ def temp_server(request):
     with s.app.test_client() as c:
         yield c
 
+
 @pytest.yield_fixture(params=[None, tdata])
 def temp_add_server(request):
     """For when we want to mutate the server, and also add datasets to it."""
@@ -453,6 +454,34 @@ def test_map_numpy_client_server_fastmsgpack(iris_server):
                                                                 np.size)
 
     assert all(result == exp_res)
+
+
+@pytest.mark.xfail(reason="pickle does not produce same error")
+@pytest.mark.parametrize('serial', all_formats)
+def test_map_builtin_403_exception(iris_server, serial):
+    t = symbol('t', discover(iris))
+
+    for func in (eval, exec):
+        expr = t.species.map(func, 'str')
+        query = {'expr': to_tree(expr)}
+        response = iris_server.post('/compute',
+                                    data=serial.dumps(query),
+                                    headers=mimetype(serial))
+
+        assert '403 FORBIDDEN'.lower() in response.status.lower()
+
+
+@pytest.mark.xfail(reason="pickle does nto produce same error")
+@pytest.mark.parametrize('serial', all_formats)
+def test_map_builtin_501_exception(iris_server, serial):
+    t = symbol('t', discover(iris))
+    expr = t.species.map(copy, 'str')
+    query = {'expr': to_tree(expr)}
+    response = iris_server.post('/compute',
+                                data=serial.dumps(query),
+                                headers=mimetype(serial))
+
+    assert '501 Not Implemented'.lower() in response.status.lower()
 
 
 @pytest.mark.parametrize('serial', most_formats)
