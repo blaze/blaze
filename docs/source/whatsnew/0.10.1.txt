@@ -44,6 +44,8 @@ Bug Fixes
 
 * The content type specification parsing was improved to accept more elaborate
   headers (:issue:`1490`).
+* The discoverablility consistency check is done before a dataset is
+  dynamically added to the server (:issue:`1498`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
