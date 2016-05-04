@@ -461,14 +461,13 @@ def test_map_numpy_client_server_fastmsgpack(iris_server):
 def test_map_builtin_403_exception(iris_server, serial):
     t = symbol('t', discover(iris))
 
-    for func in (eval, exec):
-        expr = t.species.map(func, 'str')
-        query = {'expr': to_tree(expr)}
-        response = iris_server.post('/compute',
-                                    data=serial.dumps(query),
-                                    headers=mimetype(serial))
+    expr = t.species.map(eval, 'str')
+    query = {'expr': to_tree(expr)}
+    response = iris_server.post('/compute',
+                                data=serial.dumps(query),
+                                headers=mimetype(serial))
 
-        assert '403 FORBIDDEN'.lower() in response.status.lower()
+    assert '403 FORBIDDEN'.lower() in response.status.lower()
 
 
 @pytest.mark.xfail(reason="pickle does nto produce same error")
