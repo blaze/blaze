@@ -47,7 +47,9 @@ def pre_compute(expr, data, comfortable_memory=None, chunksize=2**18, **kwargs):
     leaf = oexpr._leaves()[0]
     pth = list(path(oexpr, leaf))
     if len(pth) >= 2 and isinstance(pth[-2], (Projection, Field)):
-        kwargs['usecols'] = pth[-2].fields
+        # NOTE: FIXME: We pass the column names through `str` to workaround a
+        # PY2 Pandas bug with strings / unicode objects.
+        kwargs['usecols'] = list(map(str, pth[-2].fields))
 
     if chunksize:
         return into(chunks(pd.DataFrame), data, dshape=leaf.dshape, **kwargs)
