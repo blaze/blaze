@@ -92,6 +92,7 @@ from ..expr import (
     str_len,
     strlen,
     StrCat,
+    StrFind,
     var,
 )
 from ..expr.broadcast import broadcast_collect
@@ -1205,6 +1206,12 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
 @dispatch((strlen, str_len), ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
+
+
+@dispatch(StrFind, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    sub = sa.sql.expression.literal(expr.sub)
+    return sa.sql.func.position(sub.op('in')(data))
 
 
 @compute_up.register(StrCat, Select, basestring)

@@ -696,6 +696,13 @@ def test_sample(big_sql):
     assert len(result) == len(result2)
 
 
+def test_str_find(sql_with_null):
+    t = symbol('t', discover(sql_with_null))
+    result = compute(t.name.str.find('e'), sql_with_null, return_type=pd.Series)
+    expected = pd.Series([5.0, np.nan, 3.0, 0.0, 3.0, 0.0, np.nan], name='position_1')
+    tm.assert_series_equal(result, expected)
+
+
 @pytest.mark.parametrize("sep", [None, " -- "])
 def test_str_cat_with_null(sql_with_null, sep):
     t = symbol('t', discover(sql_with_null))

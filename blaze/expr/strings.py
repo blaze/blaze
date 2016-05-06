@@ -18,6 +18,7 @@ __all__ = ['Like',
            'str_lower',
            'str_cat',
            'StrCat',
+           'StrFind',
            'UnaryStringFunction']
 
 
@@ -82,6 +83,24 @@ class str_lower(UnaryStringFunction):
     @property
     def schema(self):
         return self._child.schema
+
+
+class StrFind(ElemWise):
+    """
+    Find literal substring in string column.
+
+    """
+
+    __slots__ = '_hash', '_child', 'sub'
+    schema = datashape.Option(datashape.int64)
+
+
+@copydoc(StrFind)
+def str_find(col, sub):
+    if not isinstance(sub, basestring):
+        raise TypeError("'sub' argument must be a String")
+    return StrFind(col, sub)
+
 
 
 class StrCat(ElemWise):
@@ -181,6 +200,12 @@ class str_ns(object):
 
     def like(self, pattern):
         return like(self.field, pattern)
+
+    def cat(self, other, sep=None):
+        return str_cat(self.field, other, sep=sep)
+
+    def find(self, sub):
+        return str_find(self.field, sub)
 
 
 class str(object):

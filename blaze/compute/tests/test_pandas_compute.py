@@ -710,6 +710,14 @@ def test_str_lower():
     assert_series_equal(expected, result)
 
 
+@pytest.mark.parametrize('df', [df, ndf])
+def test_str_find(df):
+    expr = t.name.str.find('ce')
+    expected = df.name.str.find('ce')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+
 def test_str_cat():
     res = compute(tbig.name.str_cat(tbig.sex), dfbig)
     assert all(dfbig.name.str.cat(dfbig.sex) == res)

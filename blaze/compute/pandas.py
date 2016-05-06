@@ -99,6 +99,7 @@ from ..expr import (
     symbol,
     var,
     StrCat,
+    StrFind,
 )
 
 __all__ = []
@@ -301,6 +302,11 @@ def compute_up(expr, data, **kwargs):
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
     res = lhs_data.str.cat(rhs_data, sep=expr.sep)
     return res
+
+
+@dispatch(StrFind, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.find(expr.sub)
 
 
 def unpack(seq):
