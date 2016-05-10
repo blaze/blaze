@@ -8,7 +8,7 @@ from odo.utils import copydoc
 
 from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
-from ..compatibility import basestring
+from ..compatibility import basestring, _inttypes
 
 __all__ = ['Like',
            'like',
@@ -19,6 +19,7 @@ __all__ = ['Like',
            'str_cat',
            'StrCat',
            'StrFind',
+           'StrSlice',
            'UnaryStringFunction']
 
 
@@ -101,6 +102,17 @@ def str_find(col, sub):
         raise TypeError("'sub' argument must be a String")
     return StrFind(col, sub)
 
+
+class StrSlice(ElemWise):
+    __slots__ = '_hash', '_child', 'slice'
+    schema = datashape.Option(datashape.string)
+
+
+@copydoc(StrSlice)
+def str_slice(col, idx):
+    if not isinstance(idx, (slice, _inttypes)):
+        raise TypeError("idx argument must be a slice or integer, given {}".format(slc))
+    return StrSlice(col, (idx.start, idx.stop, idx.step) if isinstance(idx, slice) else idx)
 
 
 class StrCat(ElemWise):
@@ -206,6 +218,9 @@ class str_ns(object):
 
     def find(self, sub):
         return str_find(self.field, sub)
+
+    def __getitem__(self, idx):
+        return str_slice(self.field, idx)
 
 
 class str(object):

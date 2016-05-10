@@ -710,6 +710,18 @@ def test_str_lower():
     assert_series_equal(expected, result)
 
 
+@pytest.mark.parametrize('slc', [0, -1, 1000,
+                                 slice(0, 1), slice(None, 3),
+                                 slice(-1, -2, -1),
+                                 slice(-2, None)])
+@pytest.mark.parametrize('df', [df, ndf])
+def test_str_slice(slc, df):
+    expr = t.name.str[slc]
+    expected = df.name.str[slc]
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+
 @pytest.mark.parametrize('df', [df, ndf])
 def test_str_find(df):
     expr = t.name.str.find('ce')

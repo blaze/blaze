@@ -100,6 +100,7 @@ from ..expr import (
     var,
     StrCat,
     StrFind,
+    StrSlice,
 )
 
 __all__ = []
@@ -307,6 +308,13 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
 @dispatch(StrFind, Series)
 def compute_up(expr, data, **kwargs):
     return data.str.find(expr.sub)
+
+
+@dispatch(StrSlice, Series)
+def compute_up(expr, data, **kwargs):
+    if isinstance(expr.slice, tuple):
+        return data.str[slice(*expr.slice)]
+    return data.str[expr.slice]
 
 
 def unpack(seq):
