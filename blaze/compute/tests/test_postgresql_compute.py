@@ -63,7 +63,6 @@ def sql(url):
         finally:
             drop(t)
 
-
 @pytest.yield_fixture
 def sql_with_null(url):
     ds = dshape(""" var * {name: ?string,
@@ -694,6 +693,19 @@ def test_sample(big_sql):
     assert len(result) == nrows // 2
     result2 = compute(nn.sample(frac=0.5), big_sql, return_type=pd.DataFrame)
     assert len(result) == len(result2)
+
+
+@pytest.mark.parametrize('slc', [0, 1000,
+                                 slice(0, 1), slice(None, 3),
+                                 slice(0, None), slice(2, None)])
+def test_str_slice(slc, sql_with_null):
+    name_series = pd.Series(['Alice', None, 'Drew', 'Bob', 'Drew', 'first', None],       
+                            name='substring_1')
+    t = symbol('t', discover(sql_with_null))
+    result = compute(t.name.str[slc], sql_with_null, return_type=pd.Series).fillna('zzz')
+    result[result == ''] = 'zzz'
+    expected = name_series.str[slc].fillna('zzz')
+    tm.assert_series_equal(result, expected)
 
 
 def test_str_find(sql_with_null):
