@@ -363,16 +363,19 @@ def compute(expr, d, return_type=no_default, **kwargs):
 
     Parameters
     ----------
-    expr : str
-        blaze expression
-    d: resource
-        data source to compute expression on
+    expr : Expr
+        The blaze expression to compute.
+    d : any
+        The data source to compute expression on.
     return_type : {'native', 'core', type}, optional
         Type to return data as. Defaults to 'native' but will be changed
-        to 'core' in version 0.11.  'core' forces the computation into a core type.
-        'native' returns the result as is from the respective backend's `post_compute`.
-        If a type is passed, it will odo the result into the type before returning.
+        to 'core' in version 0.11.  'core' forces the computation into a core
+        type. 'native' returns the result as is from the respective backend's
+        ``post_compute``. If a type is passed, it will odo the result into the
+        type before returning.
 
+    Examples
+    --------
     >>> t = symbol('t', 'var * {name: string, balance: int}')
     >>> deadbeats = t[t['balance'] < 0]['name']
 
