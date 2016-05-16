@@ -11,7 +11,6 @@ from datashape import dshape
 import numpy as np
 # these are used throughout blaze, don't remove them
 import pandas as pd
-import werkzeug.exceptions as wz_ex
 
 # Imports that replace older utils.
 from .compatibility import PY2, builtins, reduce
@@ -81,7 +80,6 @@ def register(typename, converter, converters=_converters):
     converters['__!' + typename] = converter
     return converter
 object_hook.register = register
-del register
 
 object_hook._converters = _converters  # make this accesible for debugging
 del _converters
@@ -91,36 +89,6 @@ del _keys  # captured by default args
 object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
 object_hook.register('datashape', dshape)
-
-
-def builtins_function_from_str(f):
-    if f in ("eval", "exec"):
-        raise wz_ex.Forbidden("cannot invoke eval or exec")
-
-    return getattr(builtins, f)
-
-object_hook.register('builtin_function', builtins_function_from_str)
-
-
-def numpy_pandas_function_from_str(f):
-    """
-    reconstruct function from string representation
-    """
-    if f.startswith("numpy"):
-        mod = np
-
-    elif f.startswith("pandas"):
-        mod = pd
-
-    else:
-        raise wz_ex.NotImplemented("accepts numpy/pandas/builtin funcs only")
-
-    fcn = reduce(getattr, f.split('.')[1:], mod)
-    return fcn
-
-
-object_hook.register('numpy_pandas_function', numpy_pandas_function_from_str)
-
 
 @object_hook.register('mono')
 def _read_mono(m):
@@ -137,3 +105,5 @@ def _read_bytes(bs):
     if not isinstance(bs, bytes):
         bs = bs.encode('latin1')
     return bs
+
+
