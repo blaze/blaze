@@ -24,7 +24,7 @@ from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree, RC
-from blaze.server.serialization import all_formats, most_formats, fastmsgpack
+from blaze.server.serialization import all_formats, most_formats, trusted_formats, fastmsgpack
 
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -406,7 +406,7 @@ def serialize_query_with_map_builtin_function(test, serial, fcn):
     return (exp_res, result)
 
 
-@pytest.mark.parametrize('serial', most_formats)
+@pytest.mark.parametrize('serial', trusted_formats)
 def test_map_builtin_client_server(iris_server, serial):
     """
     serialization for 'most_formats' returns a list so this is valid for
@@ -415,23 +415,11 @@ def test_map_builtin_client_server(iris_server, serial):
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
                                                                 serial,
                                                                 len)
-
-    assert result == exp_res
-
-
-def test_map_builtin_client_server_fastmsgpack(iris_server):
-    """
-    serialization using fastmsgpack returns a Series object so our assertion
-    must be for all elements in Series
-    """
-    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
-                                                                fastmsgpack,
-                                                                len)
-
-    assert all(result == exp_res)
+    # Pass through Series() to canonicalize results.
+    assert (pd.Series(result) == pd.Series(exp_res)).all()
 
 
-@pytest.mark.parametrize('serial', most_formats)
+@pytest.mark.parametrize('serial', trusted_formats)
 def test_map_numpy_client_server(iris_server, serial):
     """
     serialization for 'most_formats' returns a list so this is valid for
@@ -440,20 +428,8 @@ def test_map_numpy_client_server(iris_server, serial):
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
                                                                 serial,
                                                                 np.size)
-
-    assert result == exp_res
-
-
-def test_map_numpy_client_server_fastmsgpack(iris_server):
-    """
-    serialization using fastmsgpack returns a Series object so our assertion
-    must be for all elements in Series
-    """
-    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
-                                                                fastmsgpack,
-                                                                np.size)
-
-    assert all(result == exp_res)
+    # Pass through Series() to canonicalize results.
+    assert (pd.Series(result) == pd.Series(exp_res)).all()
 
 
 @pytest.mark.xfail(reason="pickle does not produce same error")
@@ -493,7 +469,7 @@ def test_builtin_501_exception(iris_server, serial):
         assert '501 Not Implemented'.lower() in response.status.lower()
 
 
-@pytest.mark.parametrize('serial', most_formats)
+@pytest.mark.parametrize('serial', trusted_formats)
 def test_map_pandas_client_server(iris_server, serial):
     """
     serialization for 'most_formats' returns a list so this is valid for
@@ -502,23 +478,12 @@ def test_map_pandas_client_server(iris_server, serial):
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
                                                                 serial,
                                                                 pd.isnull)
-
-    assert result == exp_res
-
-
-def test_map_pandas_client_server_fastmsgpack(iris_server):
-    """
-    serialization using fastmsgpack returns a Series object so our assertion
-    must be for all elements in Series
-    """
-    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
-                                                                fastmsgpack,
-                                                                pd.isnull)
-
-    assert all(result == exp_res)
+    # Pass through Series() to canonicalize results.
+    assert (pd.Series(result) == pd.Series(exp_res)).all()
 
 
-@pytest.mark.parametrize('serial', all_formats)
+
+@pytest.mark.parametrize('serial', trusted_formats)
 def test_apply_client_server(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))

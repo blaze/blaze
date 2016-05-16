@@ -21,8 +21,10 @@ import sqlalchemy as sa
 # Imports that replace older utils.
 from .compatibility import map, zip
 
-from .object_hook_trusted import object_hook_trusted as object_hook
+from .object_hook import object_hook
+from .object_hook_trusted import object_hook_trusted
 from .json_dumps import json_dumps
+from .json_dumps_trusted import json_dumps_trusted
 
 
 def nth_list(n, seq):
