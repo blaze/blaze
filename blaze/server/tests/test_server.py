@@ -5,7 +5,6 @@ pytest.importorskip('flask')
 pytest.importorskip('flask.ext.cors')
 
 from base64 import b64encode
-from contextlib import contextmanager
 from copy import copy
 
 import datashape
@@ -646,6 +645,26 @@ def test_isin(test, serial):
     assert list(serial.data_loads(resp['data'])) == expected['data']
     assert list(resp['names']) == expected['names']
     assert resp['datashape'] == expected['datashape']
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_add_errors(temp_add_server, serial):
+    pre_datashape = datashape.dshape(temp_add_server
+                                     .get('/datashape')
+                                     .data.decode('utf-8'))
+    bunk_path = example('bunk.csv')
+    blob = serial.dumps({'bunk': bunk_path})
+    response1 = temp_add_server.post('/add',
+                                     headers=mimetype(serial),
+                                     data=blob)
+    assert response1.status_code == RC.UNPROCESSABLE_ENTITY
+
+    # Test that the datashape of the server is accessible and unchanged after
+    # trying to add a non-existent dataset.
+    response2 = temp_add_server.get('/datashape')
+    assert response2.status_code == RC.OK
+    response_dshape = datashape.dshape(response2.data.decode('utf-8'))
+    assert_dshape_equal(pre_datashape, response_dshape)
 
 
 @pytest.mark.parametrize('serial', all_formats)

@@ -1,0 +1,53 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+* Blaze server's ``/add`` endpoint was enhanced to take a more general payload
+  (:issue:`1481`).
+* Adds consistency check to blaze server at startup for YAML file and dynamic
+  addition options (:issue:`1491`).
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+* The ``str_cat()`` expression was added, mirroring Pandas'
+  ``Series.str.cat()`` API (:issue:`1496`).
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+
+Bug Fixes
+~~~~~~~~~
+
+* The content type specification parsing was improved to accept more elaborate
+  headers (:issue:`1490`).
+* The discoverablility consistency check is done before a dataset is
+  dynamically added to the server (:issue:`1498`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None

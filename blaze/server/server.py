@@ -6,7 +6,6 @@ import errno
 import functools
 from hashlib import md5
 import os
-import re
 import socket
 from time import time
 from warnings import warn
@@ -16,6 +15,7 @@ from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
+from werkzeug.http import parse_options_header
 from toolz import valmap
 
 import blaze
@@ -199,15 +199,15 @@ def authorization(f):
 def check_request(f):
     @functools.wraps(f)
     def check():
-        content_type = request.headers['content-type']
-        matched = mimetype_regex.match(content_type)
+        raw_content_type = request.headers['content-type']
+        content_type, options = parse_options_header(raw_content_type)
 
-        if matched is None:
+        if content_type not in accepted_mimetypes:
             return ('Unsupported serialization format %s' % content_type,
                     RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
-            serial = _get_format(matched.groups()[0])
+            serial = _get_format(accepted_mimetypes[content_type])
         except KeyError:
             return ("Unsupported serialization format '%s'" % matched.groups()[0],
                     RC.UNSUPPORTED_MEDIA_TYPE)
@@ -501,8 +501,8 @@ def from_tree(expr, namespace=None):
         return expr
 
 
-mimetype_regex = re.compile(r'^application/vnd\.blaze\+(%s)$' %
-                            '|'.join(x.name for x in all_formats))
+accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
+                         in all_formats}
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
@@ -642,10 +642,11 @@ def addserver(payload, serial):
         # before we can create the resource.
         for mod in imports:
             importlib.import_module(mod)
-        # Finally, we actually add the resource to the dataset
-        data.update({name: resource(source, *args, **kwargs)})
-        # Force discovery of new dataset to check that the data is loadable.
-        ds = discover(data)
+        # Make a new resource and try to discover it.
+        new_resource = {name: resource(source, *args, **kwargs)}
+        # Discovery is a minimal consistency check to determine if the new
+        # resource is valid.
+        ds = discover(new_resource)
         if name not in ds.dict:
             raise ValueError("%s not added." % name)
     except NotImplementedError as e:
@@ -656,5 +657,9 @@ def addserver(payload, serial):
         error_msg = "Addition failed with message:\n%s: %s"
         return (error_msg % (type(e).__name__, e),
                 RC.UNPROCESSABLE_ENTITY)
+    else:
+        # Now that we've established that the new resource is discoverable--and
+        # thus exists and is accessible--we add the resource to the server.
+        data.update(new_resource)
 
     return ('OK', RC.CREATED)

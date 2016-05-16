@@ -139,7 +139,7 @@ def fastmsgpack_object_hook(ob):
         for block in df._data.blocks:
             values = block.values
             if not values.flags.writeable:
-                if _final_base(values) == 2:
+                if sys.getrefcount(_final_base(values)) == 2:
                     # Compatibility shim until this is fixed in pandas
                     # See: https://github.com/pydata/pandas/pull/12359
                     # Mark that we own the memory for this block.
@@ -150,7 +150,7 @@ def fastmsgpack_object_hook(ob):
                 else:
                     # If we cannot 'safely' make the bytes object mutable
                     # then just copy the data.
-                    block.values = block.values.copy()
+                    block.values = values.copy()
         return df
     return pd_msgpack_object_hook(ob)
 

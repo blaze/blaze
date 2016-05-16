@@ -78,6 +78,13 @@ def city_data():
 
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
+t_str_cat = symbol('t',
+                   """var * {name: string,
+                             amount: int,
+                             id: int,
+                             comment: string,
+                             product: string}""")
+
 nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
 
 metadata = sa.MetaData()
@@ -86,6 +93,13 @@ s = sa.Table('accounts', metadata,
              sa.Column('name', sa.String),
              sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True))
+
+s_str_cat = sa.Table('accounts2', metadata,
+                     sa.Column('name', sa.String),
+                     sa.Column('amount', sa.Integer),
+                     sa.Column('id', sa.Integer, primary_key=True),
+                     sa.Column('comment', sa.String),
+                     sa.Column('product', sa.String))
 
 tdate = symbol('t',
                """var * {
@@ -809,7 +823,7 @@ def test_str_upper():
     expected = "SELECT upper(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
-    
+
 def test_str_lower():
     expr = t.name.str_lower()
     result = str(compute(expr, s, return_type='native'))
@@ -817,14 +831,57 @@ def test_str_lower():
     assert normalize(result) == normalize(expected)
 
 
+@pytest.mark.parametrize("sep", [None, " sep "])
+def test_str_cat(sep):
+    """
+    Need at least two string columns to test str_cat
+    """
+
+    if sep is None:
+        expr = t_str_cat.name.str_cat(t_str_cat.comment)
+        expected = """
+                   SELECT accounts2.name || accounts2.comment
+                   AS anon_1 FROM accounts2
+                   """
+    else:
+        expr = t_str_cat.name.str_cat(t_str_cat.comment, sep=sep)
+        expected = """
+                   SELECT accounts2.name || :name_1 || accounts2.comment
+                   AS anon_1 FROM accounts2
+                   """
+
+    result = str(compute(expr, s_str_cat, return_type='native'))
+    assert normalize(result) == normalize(expected)
+
+
+def test_str_cat_chain():
+    expr = (t_str_cat.name
+            .str_cat(t_str_cat.comment, sep=' -- ')
+            .str_cat(t_str_cat.product, sep=' ++ '))
+    result = str(compute(expr, {t_str_cat: s_str_cat}, return_type='native'))
+    expected = """
+               SELECT accounts2.name || :name_1 || accounts2.comment ||
+               :param_1 || accounts2.product AS anon_1 FROM accounts2
+               """
+    assert normalize(result) == normalize(expected)
+
+
+def test_str_cat_no_runtime_exception():
+    """
+    No exception raised if resource is the same
+    """
+    expr = t_str_cat.comment.str_cat(t.name)
+    compute(expr, {t: s_str_cat, t_str_cat: s_str_cat}, return_type='native')
+
+
 def test_columnwise_on_complex_selection():
     result = str(select(compute(t[t.amount > 0].amount + 1, s, return_type='native')))
-    assert normalize(result) == \
-        normalize("""
-    SELECT accounts.amount + :amount_1 AS amount
-    FROM accounts
-    WHERE accounts.amount > :amount_2
-    """)
+    expected = """
+               SELECT accounts.amount + :amount_1 AS amount
+               FROM accounts
+               WHERE accounts.amount > :amount_2
+               """
+    assert normalize(result) == normalize(expected)
 
 
 def test_reductions_on_complex_selections():
