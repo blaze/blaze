@@ -458,29 +458,39 @@ def test_map_numpy_client_server_fastmsgpack(iris_server):
 
 @pytest.mark.xfail(reason="pickle does not produce same error")
 @pytest.mark.parametrize('serial', all_formats)
-def test_map_builtin_403_exception(iris_server, serial):
+def test_builtin_403_exception(iris_server, serial):
+    '''
+    ensure exception is raised when both map and apply are invoked.
+    exception is raised in check_request() when object_hook is invoked;
+    this is when the payload is loaded from the bytes object in reqeust.data
+    '''
     t = symbol('t', discover(iris))
 
-    expr = t.species.map(eval, 'str')
-    query = {'expr': to_tree(expr)}
-    response = iris_server.post('/compute',
-                                data=serial.dumps(query),
-                                headers=mimetype(serial))
+    for name in ('map', 'apply'):
+        func = getattr(t.species, name)
+        expr = func(eval, 'int')
+        query = {'expr': to_tree(expr)}
+        response = iris_server.post('/compute',
+                                    data=serial.dumps(query),
+                                    headers=mimetype(serial))
 
-    assert '403 FORBIDDEN'.lower() in response.status.lower()
+        assert '403 FORBIDDEN'.lower() in response.status.lower()
 
 
 @pytest.mark.xfail(reason="pickle does nto produce same error")
 @pytest.mark.parametrize('serial', all_formats)
-def test_map_builtin_501_exception(iris_server, serial):
+def test_builtin_501_exception(iris_server, serial):
     t = symbol('t', discover(iris))
-    expr = t.species.map(copy, 'str')
-    query = {'expr': to_tree(expr)}
-    response = iris_server.post('/compute',
-                                data=serial.dumps(query),
-                                headers=mimetype(serial))
 
-    assert '501 Not Implemented'.lower() in response.status.lower()
+    for name in ('map', 'apply'):
+        func = getattr(t.species, name)
+        expr = func(copy, 'int')
+        query = {'expr': to_tree(expr)}
+        response = iris_server.post('/compute',
+                                    data=serial.dumps(query),
+                                    headers=mimetype(serial))
+
+        assert '501 Not Implemented'.lower() in response.status.lower()
 
 
 @pytest.mark.parametrize('serial', most_formats)
