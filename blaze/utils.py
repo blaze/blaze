@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
+import types
 
 import datetime
-from collections import Iterator
+from collections import Iterator, Callable
 from itertools import islice, product
 import os
 import re
@@ -18,9 +19,10 @@ from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 import pandas as pd
 import psutil
 import sqlalchemy as sa
+import werkzeug.exceptions as wz_ex
 
 # Imports that replace older utils.
-from .compatibility import map, zip, PY2
+from .compatibility import map, zip, PY2, builtins, reduce
 from .dispatch import dispatch
 
 
@@ -187,6 +189,20 @@ def json_dumps(ds):
     return {'__!datashape': str(ds)}
 
 
+@dispatch(types.BuiltinFunctionType)
+def json_dumps(f):
+    return {'__!builtin_function': f.__name__}
+
+
+@dispatch(Callable)
+def json_dumps(f):
+    # let the server serialize any callable - this is only used for testing
+    # at present - do the error handling when json comes from client so in
+    # object_hook, catch anything that is not pandas_numpy
+    fcn = ".".join([f.__module__, f.__name__])
+    return {'__!numpy_pandas_function': fcn}
+
+
 # dict of converters. This is stored as a default arg to object hook for
 # performance because this function is really really slow when unpacking data.
 # This is a mutable default but it is not a bug!
@@ -262,6 +278,35 @@ del _keys  # captured by default args
 object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
 object_hook.register('datashape', dshape)
+
+
+def builtins_function_from_str(f):
+    if f in ("eval", "exec"):
+        raise wz_ex.Forbidden("cannot invoke eval or exec")
+
+    return getattr(builtins, f)
+
+object_hook.register('builtin_function', builtins_function_from_str)
+
+
+def numpy_pandas_function_from_str(f):
+    """
+    reconstruct function from string representation
+    """
+    if f.startswith("numpy"):
+        mod = np
+
+    elif f.startswith("pandas"):
+        mod = pd
+
+    else:
+        raise wz_ex.NotImplemented("accepts numpy/pandas/builtin funcs only")
+
+    fcn = reduce(getattr, f.split('.')[1:], mod)
+    return fcn
+
+
+object_hook.register('numpy_pandas_function', numpy_pandas_function_from_str)
 
 
 @object_hook.register('mono')

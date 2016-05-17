@@ -12,6 +12,7 @@ from datashape.util.testing import assert_dshape_equal
 import numpy as np
 from odo import odo, convert
 from datetime import datetime
+import pandas as pd
 from pandas import DataFrame
 from pandas.util.testing import assert_frame_equal
 from toolz import pipe
@@ -22,7 +23,7 @@ from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree, RC
-from blaze.server.serialization import all_formats, fastmsgpack
+from blaze.server.serialization import all_formats, most_formats, fastmsgpack
 
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -383,6 +384,152 @@ def test_sqlalchemy_result(test, serial):
 
 def test_server_accepts_non_nonzero_ables():
     Server(DataFrame())
+
+
+def serialize_query_with_map_builtin_function(test, serial, fcn):
+    """
+    serialize a query that invokes the 'map' operation using a builtin function
+    return the result of the post operation along with expected result
+    """
+    t = symbol('t', discover(iris))
+    expr = t.species.map(fcn, 'int')
+    query = {'expr': to_tree(expr)}
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
+    assert 'OK' in response.status
+    respdata = serial.loads(response.data)
+    result = serial.data_loads(respdata['data'])
+
+    exp_res = compute(expr, {t: iris}, return_type=list)
+    return (exp_res, result)
+
+
+@pytest.mark.parametrize('serial', most_formats)
+def test_map_builtin_client_server(iris_server, serial):
+    """
+    serialization for 'most_formats' returns a list so this is valid for
+    everything in most_formats
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                serial,
+                                                                len)
+
+    assert result == exp_res
+
+
+def test_map_builtin_client_server_fastmsgpack(iris_server):
+    """
+    serialization using fastmsgpack returns a Series object so our assertion
+    must be for all elements in Series
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                fastmsgpack,
+                                                                len)
+
+    assert all(result == exp_res)
+
+
+@pytest.mark.parametrize('serial', most_formats)
+def test_map_numpy_client_server(iris_server, serial):
+    """
+    serialization for 'most_formats' returns a list so this is valid for
+    everything in most_formats
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                serial,
+                                                                np.size)
+
+    assert result == exp_res
+
+
+def test_map_numpy_client_server_fastmsgpack(iris_server):
+    """
+    serialization using fastmsgpack returns a Series object so our assertion
+    must be for all elements in Series
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                fastmsgpack,
+                                                                np.size)
+
+    assert all(result == exp_res)
+
+
+@pytest.mark.xfail(reason="pickle does not produce same error")
+@pytest.mark.parametrize('serial', all_formats)
+def test_builtin_403_exception(iris_server, serial):
+    '''
+    ensure exception is raised when both map and apply are invoked.
+    exception is raised in check_request() when object_hook is invoked;
+    this is when the payload is loaded from the bytes object in reqeust.data
+    '''
+    t = symbol('t', discover(iris))
+
+    for name in ('map', 'apply'):
+        func = getattr(t.species, name)
+        expr = func(eval, 'int')
+        query = {'expr': to_tree(expr)}
+        response = iris_server.post('/compute',
+                                    data=serial.dumps(query),
+                                    headers=mimetype(serial))
+
+        assert '403 FORBIDDEN'.lower() in response.status.lower()
+
+
+@pytest.mark.xfail(reason="pickle does nto produce same error")
+@pytest.mark.parametrize('serial', all_formats)
+def test_builtin_501_exception(iris_server, serial):
+    t = symbol('t', discover(iris))
+
+    for name in ('map', 'apply'):
+        func = getattr(t.species, name)
+        expr = func(copy, 'int')
+        query = {'expr': to_tree(expr)}
+        response = iris_server.post('/compute',
+                                    data=serial.dumps(query),
+                                    headers=mimetype(serial))
+
+        assert '501 Not Implemented'.lower() in response.status.lower()
+
+
+@pytest.mark.parametrize('serial', most_formats)
+def test_map_pandas_client_server(iris_server, serial):
+    """
+    serialization for 'most_formats' returns a list so this is valid for
+    everything in most_formats
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                serial,
+                                                                pd.isnull)
+
+    assert result == exp_res
+
+
+def test_map_pandas_client_server_fastmsgpack(iris_server):
+    """
+    serialization using fastmsgpack returns a Series object so our assertion
+    must be for all elements in Series
+    """
+    exp_res, result = serialize_query_with_map_builtin_function(iris_server,
+                                                                fastmsgpack,
+                                                                pd.isnull)
+
+    assert all(result == exp_res)
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_apply_client_server(iris_server, serial):
+    test = iris_server
+    t = symbol('t', discover(iris))
+    expr = t.species.apply(id, 'int') # Very dumb example...
+    query = {'expr': to_tree(expr)}
+    response = test.post('/compute',
+                         data=serial.dumps(query),
+                         headers=mimetype(serial))
+    assert 'OK' in response.status
+    respdata = serial.loads(response.data)
+    result = serial.data_loads(respdata['data'])
+    assert type(result) == type(compute(expr, {t: iris}, return_type=int))
 
 
 @pytest.mark.parametrize('serial', all_formats)

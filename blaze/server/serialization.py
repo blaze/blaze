@@ -1,4 +1,3 @@
-import sys
 from functools import partial
 import json as json_module
 
@@ -226,6 +225,11 @@ fastmsgpack = SerializationFormat(
     materialize=fastmsgpack_materialize,
 )
 
+
+most_formats = frozenset(
+    g for _, g in globals().items() if isinstance(g, SerializationFormat) and
+    g is not fastmsgpack
+)
 
 all_formats = frozenset(
     g for _, g in globals().items() if isinstance(g, SerializationFormat)
