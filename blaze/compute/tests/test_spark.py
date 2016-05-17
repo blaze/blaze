@@ -66,52 +66,49 @@ def test_multicols_projection(rdd):
     assert result == expected
 
 
-reduction_exprs = [
-    t['amount'].sum(),
-    t['amount'].min(),
-    t['amount'].max(),
-    t['amount'].nunique(),
-    t['name'].nunique(),
-    t['amount'].count(),
-    (t['amount'] > 150).any(),
-    (t['amount'] > 150).all(),
-    t['amount'].mean(),
-    t['amount'].var(),
-    summary(a=t.amount.sum(), b=t.id.count()),
-    t['amount'].std()
-]
+reduction_exprs = (t['amount'].sum(),
+                   t['amount'].min(),
+                   t['amount'].max(),
+                   t['amount'].nunique(),
+                   t['name'].nunique(),
+                   t['amount'].count(),
+                   (t['amount'] > 150).any(),
+                   (t['amount'] > 150).all(),
+                   t['amount'].mean(),
+                   t['amount'].var(),
+                   summary(a=t.amount.sum(), b=t.id.count()),
+                   t['amount'].std())
 
 
-def test_reductions(rdd):
-    for expr in reduction_exprs:
-        result = compute(expr, rdd)
-        expected = compute(expr, data)
-        if not result == expected:
-            print(result)
-            print(expected)
-            if isinstance(result, float):
-                assert abs(result - expected) < 0.001
-            else:
-                assert result == expected
+@pytest.mark.parametrize('expr', reduction_exprs)
+def test_reductions(expr, rdd):
+    result = compute(expr, rdd)
+    expected = compute(expr, data)
+    if not result == expected:
+        print(result)
+        print(expected)
+        if isinstance(result, float):
+            assert abs(result - expected) < 0.001
+        else:
+            assert result == expected
 
-exprs = [
-    t['amount'],
-    t['amount'] == 100,
-    t['amount'].truncate(150),
-    t[t['name'] == 'Alice'],
-    t[t['amount'] == 0],
-    t[t['amount'] > 150],
-    t['amount'] + t['id'],
-    t['amount'] % t['id'],
-    exp(t['amount']),
-    by(t['name'], total=t['amount'].sum()),
-    by(t['name'], total=(t['amount'] + 1).sum()),
-    (t['amount'] * 1).label('foo'),
-    t.map(lambda tup: tup[1] + tup[2], 'real'),
-    t[t.name.like('Alice')],
-    t['amount'].apply(identity, 'var * real', splittable=True),
-    t['amount'].map(lambda x: x + 1, 'int')
-]
+
+exprs = (t['amount'],
+         t['amount'] == 100,
+         t['amount'].truncate(150),
+         t[t['name'] == 'Alice'],
+         t[t['amount'] == 0],
+         t[t['amount'] > 150],
+         t['amount'] + t['id'],
+         t['amount'] % t['id'],
+         exp(t['amount']),
+         by(t['name'], total=t['amount'].sum()),
+         by(t['name'], total=(t['amount'] + 1).sum()),
+         (t['amount'] * 1).label('foo'),
+         t.map(lambda tup: tup[1] + tup[2], 'real'),
+         t[t.name.like('Alice')],
+         t['amount'].apply(identity, 'var * real', splittable=True),
+         t['amount'].map(lambda x: x + 1, 'int'))
 
 exprs = list(zip(map(str, exprs), exprs))
 
