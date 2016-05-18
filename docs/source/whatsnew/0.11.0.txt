@@ -1,0 +1,51 @@
+Release |version|
+-----------------
+
+:Release: |version|
+:Date: TBD
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+* To allow access to the ``map`` and ``apply`` expressions in client / server
+  interactions when in a trusted environment, new ``_trusted`` versions of the
+  several default ``SerializationFormat`` instances were added.  These trusted
+  variants allow (de)serialization of builtin functions, NumPy functions, and
+  Pandas functions.  They are intentially kept separate from the default
+  versions to ensure they are not accidentally enabled in untrusted
+  environments (:issue:`1497` :issue:`1504`).
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+Bug Fixes
+~~~~~~~~~
+
+None
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None

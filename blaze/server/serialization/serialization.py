@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 import sys
 from functools import partial
 import json as json_module
@@ -14,9 +16,12 @@ from pandas.io.packers import (
 import pandas.msgpack as msgpack_module
 from toolz import identity
 
-from ..compatibility import pickle as pickle_module, unicode, PY2
-from ..interactive import coerce_scalar
-from ..utils import json_dumps, object_hook
+from blaze.compatibility import pickle as pickle_module, unicode, PY2
+from blaze.interactive import coerce_scalar
+from .json_dumps import json_dumps
+from .json_dumps_trusted import json_dumps_trusted
+from .object_hook import object_hook
+from .object_hook_trusted import object_hook_trusted
 
 
 class SerializationFormat(object):
@@ -84,6 +89,15 @@ json = SerializationFormat(
     lambda data: json_module.loads(_coerce_str(data), object_hook=object_hook),
     partial(json_module.dumps, default=json_dumps),
 )
+
+
+json_trusted = SerializationFormat(
+        'json_trusted',
+        lambda data: json_module.loads(_coerce_str(data), object_hook=object_hook_trusted),
+        partial(json_module.dumps, default=json_dumps_trusted)
+)
+
+
 pickle = SerializationFormat(
     'pickle',
     pickle_module.loads,
@@ -94,6 +108,12 @@ msgpack = SerializationFormat(
     'msgpack',
     partial(msgpack_module.unpackb, encoding='utf-8', object_hook=object_hook),
     partial(msgpack_module.packb, default=json_dumps),
+)
+
+msgpack_trusted = SerializationFormat(
+    'msgpack_trusted',
+    partial(msgpack_module.unpackb, encoding='utf-8', object_hook=object_hook_trusted),
+    partial(msgpack_module.packb, default=json_dumps_trusted),
 )
 
 
@@ -164,7 +184,7 @@ def fastmsgpack_data_loads(data):
     return raw
 
 
-def fastmsgpack_loads(data):
+def fastmsgpack_loads(data, object_hook=object_hook):
     raw = list(msgpack_unpack(
         BytesIO(_l1(data)),
         object_hook=object_hook,
@@ -197,12 +217,12 @@ def fastmsgpack_data_dumps(data):
     }
 
 
-def fastmsgpack_dumps(data):
+def fastmsgpack_dumps(data, default=json_dumps):
     return pd.to_msgpack(
         None,
         data,
         compress=compress,
-        default=json_dumps,
+        default=default,
         encoding='latin1',
     )
 
@@ -227,9 +247,20 @@ fastmsgpack = SerializationFormat(
 )
 
 
-all_formats = frozenset(
-    g for _, g in globals().items() if isinstance(g, SerializationFormat)
+fastmsgpack_trusted = SerializationFormat(
+    'fastmsgpack_trusted',
+    loads=partial(fastmsgpack_loads, object_hook=object_hook_trusted),
+    dumps=partial(fastmsgpack_dumps, default=json_dumps_trusted),
+    data_loads=fastmsgpack_data_loads,
+    data_dumps=fastmsgpack_data_dumps,
+    materialize=fastmsgpack_materialize,
 )
 
 
-__all__ = ['all_formats'] + list(f.name for f in all_formats)
+all_formats = frozenset(g for g in globals().values()
+                        if isinstance(g, SerializationFormat))
+trusted_formats = frozenset([json_trusted,
+                             msgpack_trusted,
+                             fastmsgpack_trusted])
+
+__all__ = ['SerializationFormat', 'all_formats', 'trusted_formats'] + list(f.name for f in all_formats)
