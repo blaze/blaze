@@ -16,14 +16,7 @@ object_hook_trusted.register = register(converters=_converters_trusted)
 del _converters_trusted
 
 
-@object_hook_trusted.register('builtin_function')
-def builtins_function_from_str(f):
-    if f in ("eval", "exec"):
-        raise wz_ex.Forbidden("cannot invoke eval or exec")
-    return getattr(builtins, f)
-
-
-@object_hook_trusted.register('numpy_pandas_function')
+@object_hook_trusted.register('callable')
 def numpy_pandas_function_from_str(f):
     """
     reconstruct function from string representation
@@ -32,7 +25,11 @@ def numpy_pandas_function_from_str(f):
         mod = np
     elif f.startswith("pandas"):
         mod = pd
+    elif f.startswith('builtins'):
+        mod = builtins
     else:
-        raise wz_ex.NotImplemented("accepts numpy/pandas/builtin funcs only")
+        msg = ("Function {} not recognized; only numpy, pandas, or builtin "
+               "functions are supported.")
+        raise wz_ex.NotImplemented(msg.format(f))
     fcn = reduce(getattr, f.split('.')[1:], mod)
     return fcn

@@ -251,14 +251,10 @@ fastmsgpack_trusted = SerializationFormat(
 )
 
 
-most_formats = frozenset(g for _, g in globals().items()
-                         if (isinstance(g, SerializationFormat) and
-                             g is not fastmsgpack))
-
-all_formats = frozenset(g for _, g in globals().items()
+all_formats = frozenset(g for g in globals().values()
                         if isinstance(g, SerializationFormat))
-
-trusted_formats = frozenset([json_trusted, msgpack_trusted, fastmsgpack_trusted])
-
+trusted_formats = frozenset([json_trusted,
+                             msgpack_trusted,
+                             fastmsgpack_trusted])
 
 __all__ = ['all_formats'] + list(f.name for f in all_formats)

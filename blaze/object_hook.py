@@ -9,7 +9,6 @@ except ImportError:
 
 from datashape import dshape
 import numpy as np
-# these are used throughout blaze, don't remove them
 import pandas as pd
 
 # Imports that replace older utils.

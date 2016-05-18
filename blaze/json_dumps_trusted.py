@@ -12,9 +12,6 @@ from .json_dumps import json_dumps
 json_dumps_trusted_ns = dict()
 dispatch = partial(dispatch, namespace=json_dumps_trusted_ns)
 
-@dispatch(types.BuiltinFunctionType)
-def json_dumps_trusted(f):
-    return {'__!builtin_function': f.__name__}
 
 @dispatch(Callable)
 def json_dumps_trusted(f):
@@ -22,11 +19,8 @@ def json_dumps_trusted(f):
     # at present - do the error handling when json comes from client so in
     # object_hook, catch anything that is not pandas_numpy
     fcn = ".".join([f.__module__, f.__name__])
-    return {'__!numpy_pandas_function': fcn}
+    return {'__!callable': fcn}
 
 
 for types, func in json_dumps.funcs.items():
     json_dumps_trusted.register(types)(func)
-
-print(json_dumps_trusted.funcs)
-

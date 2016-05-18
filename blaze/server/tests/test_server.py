@@ -23,7 +23,7 @@ from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree, RC
-from blaze.server.serialization import all_formats, most_formats, trusted_formats, fastmsgpack
+from blaze.server.serialization import all_formats, trusted_formats, fastmsgpack
 
 
 accounts = DataFrame([['Alice', 100], ['Bob', 200]],
@@ -407,10 +407,6 @@ def serialize_query_with_map_builtin_function(test, serial, fcn):
 
 @pytest.mark.parametrize('serial', trusted_formats)
 def test_map_builtin_client_server(iris_server, serial):
-    """
-    serialization for 'most_formats' returns a list so this is valid for
-    everything in most_formats
-    """
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
                                                                 serial,
                                                                 len)
@@ -420,10 +416,6 @@ def test_map_builtin_client_server(iris_server, serial):
 
 @pytest.mark.parametrize('serial', trusted_formats)
 def test_map_numpy_client_server(iris_server, serial):
-    """
-    serialization for 'most_formats' returns a list so this is valid for
-    everything in most_formats
-    """
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
                                                                 serial,
                                                                 np.size)
@@ -470,10 +462,6 @@ def test_builtin_501_exception(iris_server, serial):
 
 @pytest.mark.parametrize('serial', trusted_formats)
 def test_map_pandas_client_server(iris_server, serial):
-    """
-    serialization for 'most_formats' returns a list so this is valid for
-    everything in most_formats
-    """
     exp_res, result = serialize_query_with_map_builtin_function(iris_server,
                                                                 serial,
                                                                 pd.isnull)
