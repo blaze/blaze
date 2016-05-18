@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 from pytz import utc
 
-from blaze.server.serialization import json_dumps, json_dumps_trusted, object_hook, object_hook_trusted
+from blaze.server.serialization import (json_dumps, json_dumps_trusted,
+                                        object_hook, object_hook_trusted)
 
 
 @pytest.mark.parametrize('serializers', [(json_dumps, object_hook),

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 # Imports that replace older utils.
-from blaze.compatibility import PY2, builtins, reduce
+from blaze.compatibility import PY2
 
 # dict of converters. This is stored as a default arg to object hook for
 # performance because this function is really really slow when unpacking data.
@@ -89,6 +89,7 @@ object_hook.register('datetime', pd.Timestamp)
 object_hook.register('frozenset', frozenset)
 object_hook.register('datashape', dshape)
 
+
 @object_hook.register('mono')
 def _read_mono(m):
     return dshape(m).measure
@@ -104,5 +105,3 @@ def _read_bytes(bs):
     if not isinstance(bs, bytes):
         bs = bs.encode('latin1')
     return bs
-
-

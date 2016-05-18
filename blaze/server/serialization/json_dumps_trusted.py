@@ -4,7 +4,7 @@ import types
 from collections import Callable
 
 from blaze.dispatch import dispatch
-from functools import partial, wraps
+from functools import partial
 
 from .json_dumps import json_dumps
 
@@ -22,5 +22,5 @@ def json_dumps_trusted(f):
     return {'__!callable': fcn}
 
 
-for types, func in json_dumps.funcs.items():
-    json_dumps_trusted.register(types)(func)
+for tps, func in json_dumps.funcs.items():
+    json_dumps_trusted.register(tps)(func)
