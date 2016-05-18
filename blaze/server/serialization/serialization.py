@@ -13,9 +13,12 @@ from pandas.io.packers import (
 import pandas.msgpack as msgpack_module
 from toolz import identity
 
-from ..compatibility import pickle as pickle_module, unicode, PY2
-from ..interactive import coerce_scalar
-from ..utils import json_dumps, json_dumps_trusted, object_hook, object_hook_trusted
+from blaze.compatibility import pickle as pickle_module, unicode, PY2
+from blaze.interactive import coerce_scalar
+from .json_dumps import json_dumps
+from .json_dumps_trusted import json_dumps_trusted
+from .object_hook import object_hook
+from .object_hook_trusted import object_hook_trusted
 
 
 class SerializationFormat(object):
@@ -257,4 +260,4 @@ trusted_formats = frozenset([json_trusted,
                              msgpack_trusted,
                              fastmsgpack_trusted])
 
-__all__ = ['all_formats'] + list(f.name for f in all_formats)
+__all__ = ['SerializationFormat', 'all_formats', 'trusted_formats'] + list(f.name for f in all_formats)

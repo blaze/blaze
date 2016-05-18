@@ -4,7 +4,7 @@ import datetime
 
 import pandas as pd
 
-from .dispatch import dispatch
+from blaze.dispatch import dispatch
 from datashape import Mono, DataShape
 from functools import partial
 

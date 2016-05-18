@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 # Imports that replace older utils.
-from .compatibility import PY2, builtins, reduce
+from blaze.compatibility import PY2, builtins, reduce
 
 # dict of converters. This is stored as a default arg to object hook for
 # performance because this function is really really slow when unpacking data.

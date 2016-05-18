@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import types
 from collections import Callable
 
-from .dispatch import dispatch
+from blaze.dispatch import dispatch
 from functools import partial, wraps
 
 from .json_dumps import json_dumps

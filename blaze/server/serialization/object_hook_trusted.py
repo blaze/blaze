@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .object_hook import object_hook, register
 import werkzeug.exceptions as wz_ex
-from .compatibility import builtins, reduce
+from blaze.compatibility import builtins, reduce
 import numpy as np
 import pandas as pd
 
@@ -21,11 +21,11 @@ def numpy_pandas_function_from_str(f):
     """
     reconstruct function from string representation
     """
-    if f.startswith("numpy"):
+    if f.startswith(np.__name__):
         mod = np
-    elif f.startswith("pandas"):
+    elif f.startswith(pd.__name__):
         mod = pd
-    elif f.startswith('builtins'):
+    elif f.startswith(builtins.__name__):
         mod = builtins
     else:
         msg = ("Function {} not recognized; only numpy, pandas, or builtin "
