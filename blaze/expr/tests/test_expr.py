@@ -338,3 +338,4 @@ def test_cast():
     assert_dshape_equal(
         s.cast(dshape('var * int64')).dshape,
         dshape('var * int64'),
+    )

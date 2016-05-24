@@ -11,7 +11,7 @@ from time import time
 from warnings import warn
 import importlib
 
-from datashape import discover, pprint, Mono
+from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, request, Response
 from flask.ext.cors import cross_origin
@@ -397,15 +397,11 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
-    elif isinstance(expr, Mono):
-        return str(expr)
     elif isinstance(expr, _Data):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
-        return {
-            'op': type(expr).__name__,
-            'args': [to_tree(arg, names) for arg in expr._args],
-        }
+        return {'op': type(expr).__name__,
+                'args': [to_tree(arg, names) for arg in expr._args]}
     else:
         return expr
 
@@ -486,9 +482,8 @@ def from_tree(expr, namespace=None):
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
         if 'slice' == op:
-            return expr_utils._slice(
-                *[from_tree(arg, namespace) for arg in args]
-            )
+            return expr_utils._slice(*[from_tree(arg, namespace)
+                                       for arg in args])
         if hasattr(blaze.expr, op):
             cls = getattr(blaze.expr, op)
         else:

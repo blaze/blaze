@@ -158,7 +158,7 @@ def test_to_from_json():
 def test_to_tree():
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
-    dshape = datashape.dshape('var * {name: string, amount: int32}',)
+    dshape = datashape.dshape('var * {name: string, amount: int32}')
     sum_args = [{'op': 'Field',
                  'args': [{'op': 'Symbol',
                            'args': ['t', dshape, 0]},
