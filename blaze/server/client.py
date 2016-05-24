@@ -216,6 +216,7 @@ def compute_down(expr, ec, profiler_output=None, **kwargs):
     tree = to_tree(expr)
     serial = ec.serial
     if profiler_output is not None:
+        kwargs['profile'] = True
         kwargs['profiler_output'] = ':response'
     r = post(
         ec,
