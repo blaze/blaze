@@ -60,7 +60,7 @@ def test_broadcast_collect():
     expected = broadcast(expected.x + 2 * expected.y, [expected])
     expected = expected.distinct()
 
-    assert result is expected
+    assert result.isidentical(expected)
 
 
 def test_pyfunc_works_with_invalid_python_names():

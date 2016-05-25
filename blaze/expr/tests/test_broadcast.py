@@ -19,7 +19,7 @@ def test_broadcast_basic():
     assert b.shape == x.shape
     assert b.schema == (xx + yy).dshape
 
-    assert eval(str(b)) is b
+    assert eval(str(b)).isidentical(b)
 
 
 def test_scalar_symbols():
@@ -35,12 +35,12 @@ def test_broadcast_function():
     expr =  Pow(Add(x, Mult(2, y)), 2)  # (x + (2 * y)) ** 2
     b = broadcast(expr, [x, y])
     xx, yy = b._scalars
-    assert b._scalar_expr is (xx + (2 * yy)) ** 2
+    assert b._scalar_expr.isidentical((xx + (2 * yy)) ** 2)
 
     # A different set of leaves
     b = broadcast(expr, [x, Mult(2, y)])
     xx, yy = b._scalars
-    assert b._scalar_expr is (xx + yy) ** 2
+    assert b._scalar_expr.isidentical((xx + yy) ** 2)
 
 
 t = symbol('t', 'var * {x: int, y: int, z: int}')
@@ -52,7 +52,7 @@ def test_tabular_case():
     b = broadcast(expr, [t])
     tt, = b._scalars
 
-    assert b._scalar_expr is tt.x + tt.y * 2
+    assert b._scalar_expr.isidentical(tt.x + tt.y * 2)
 
 
 def test_optimize_broadcast():
@@ -65,7 +65,7 @@ def test_optimize_broadcast():
         want_to_broadcast=(Field, Arithmetic),
     )
 
-    assert result is expected
+    assert result.isidentical(expected)
 
 
 def test_leaves_of_type():
@@ -73,17 +73,15 @@ def test_leaves_of_type():
 
     result = leaves_of_type((Distinct,), expr)
     assert len(result) == 1
-    assert list(result)[0] is t.x
+    assert list(result)[0].isidentical(t.x)
 
 
 def test_broadcast_collect_doesnt_collect_scalars():
     expr = xx + yy * a
 
-    assert broadcast_collect(
-        expr,
-        broadcastable=Arithmetic,
-        want_to_broadcast=Arithmetic,
-    ) is expr
+    assert broadcast_collect(expr,
+                             broadcastable=Arithmetic,
+                             want_to_broadcast=Arithmetic).isidentical(expr)
 
 
 def test_table_broadcast():
@@ -94,24 +92,24 @@ def test_table_broadcast():
 
     expected = t.distinct()
     expected = broadcast(2 * expected.x + expected.y + 1, [expected]).distinct()
-    assert broadcast_collect(expr) is expected
+    assert broadcast_collect(expr).isidentical(expected)
 
     expr = (t.x + t.y).sum()
     result = broadcast_collect(expr)
     expected = broadcast(t.x + t.y, [t]).sum()
-    assert result is expected
+    assert result.isidentical(expected)
 
 
 def test_broadcast_doesnt_affect_scalars():
     t = symbol('t', '{x: int, y: int, z: int}')
     expr = (2 * t.x + t.y + 1)
 
-    assert broadcast_collect(expr) is expr
+    assert broadcast_collect(expr).isidentical(expr)
 
 
 def test_full_expr():
     b = Broadcast((x, y), (xx, yy), xx + yy)
-    assert b._full_expr is x + y
+    assert b._full_expr.isidentical(x + y)
 
 
 def test_broadcast_naming():

@@ -537,6 +537,8 @@ def compserver(payload, serial):
             # ensure that we stop profiling in the case of an exception
             response_construction_context_stack.callback(profiler.disable)
 
+        expr = '<failed to parse expr>'
+
         @response_construction_context_stack.callback
         def log_time(start=time()):
             flask.current_app.logger.info('compute expr: %s\ntotal time (s): %.3f',

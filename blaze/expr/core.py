@@ -228,7 +228,7 @@ class Node(object):
         >>> from blaze.expr import symbol
         >>> t = symbol('t', 'var * {name: string, amount: int, id: int}')
         >>> expr = t.amount + 3
-        >>> expr._subs({3: 4, 'amount': 'id'}) is t.id + 4
+        >>> expr._subs({3: 4, 'amount': 'id'}).isidentical(t.id + 4)
         True
         """
         return subs(self, d)
@@ -253,7 +253,7 @@ class Node(object):
 
     def __eq__(self, other):
         try:
-            return self is other or self._eq(other)
+            return self.isidentical(other) or self._eq(other)
         except AttributeError:
             return False
 
@@ -462,12 +462,12 @@ def path(a, b):
     >>> list(path(expr, t))
     [sum(t.amount), t.amount, <`t` symbol; dshape='...'>]
     """
-    while a is not b:
+    while not a.isidentical(b):
         yield a
         if not a._inputs:
             break
         for child in a._inputs:
-            if any(b is node for node in child._traverse()):
+            if any(b.isidentical(node) for node in child._traverse()):
                 a = child
                 break
     yield a

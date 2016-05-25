@@ -522,7 +522,7 @@ def selection(table, predicate):
 
     if not builtins.all(
             isinstance(node, (ElemWise, Symbol)) or
-            node is subexpr
+            node.isidentical(subexpr)
             for node in concat([path(predicate, subexpr),
                                 path(table, subexpr)])):
 

@@ -63,8 +63,6 @@ def make_sqlalchemy_table(expr):
 
 @curry
 def istable(db, t):
-    return (
-        isinstance(t, Field) and
-        isrecord(t.dshape.measure) and
-        t._child is db
-    )
+    return (isinstance(t, Field) and
+            isrecord(t.dshape.measure) and
+            t._child.isidentical(db))

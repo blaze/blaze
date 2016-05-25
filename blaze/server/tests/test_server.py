@@ -151,8 +151,8 @@ def test_bad_responses(test, serial):
 
 def test_to_from_json():
     t = symbol('t', 'var * {name: string, amount: int}')
-    assert from_tree(to_tree(t)) is t
-    assert from_tree(to_tree(t.amount + 1)) is t.amount + 1
+    assert from_tree(to_tree(t)).isidentical(t)
+    assert from_tree(to_tree(t.amount + 1)).isidentical(t.amount + 1)
 
 
 def test_to_tree():
@@ -178,7 +178,7 @@ def test_to_tree_slice(serial):
                  serial.dumps,
                  serial.loads,
                  partial(from_tree, namespace={'t': t}))
-    assert expr is expr2
+    assert expr.isidentical(expr2)
 
 
 def test_to_from_tree_namespace():
@@ -189,17 +189,7 @@ def test_to_from_tree_namespace():
     assert tree == {'op': 'Field', 'args': ['t', 'name']}
 
     new = from_tree(tree, namespace={'t': t})
-    assert new is expr
-
-
-def test_from_tree_is_robust_to_unnecessary_namespace():
-    t = symbol('t', 'var * {name: string, amount: int32}')
-    expr = t.amount + 1
-
-    tree = to_tree(expr)  # don't use namespace
-
-    assert from_tree(tree, {'t': 't'}) is expr
-
+    assert new.isidentical(expr)
 
 t = symbol('t', discover(tdata))
 

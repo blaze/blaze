@@ -116,7 +116,7 @@ def test_Projection():
     assert t['amount'].dshape == dshape('var * int32')
     assert t['amount']._name == 'amount'
 
-    assert eval(str(p)) is p
+    assert eval(str(p)).isidentical(p)
     assert p._project(['amount', 'name']) == p[['amount', 'name']]
     with pytest.raises(ValueError):
         p._project('balance')
@@ -134,7 +134,7 @@ def test_Projection_retains_shape():
 def test_indexing():
     t = symbol('t', 'var * {name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == projection(t, ['amount', 'id'])
-    assert t['amount'] is Field(t, 'amount')
+    assert t['amount'].isidentical(Field(t, 'amount'))
 
 
 def test_relational():
@@ -194,7 +194,7 @@ def test_path_issue():
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 
-    assert builtins.any(t2.sizes is node for node in t2.children)
+    assert builtins.any(t2.sizes.isidentical(node) for node in t2.children)
 
 
 def test_getattr_doesnt_override_properties():
@@ -315,7 +315,7 @@ def test_traverse():
 
     expr = t.amount.sum()
     trav = list(expr._traverse())
-    assert builtins.any(t.amount is x for x in trav)
+    assert builtins.any(t.amount.isidentical(x) for x in trav)
 
 
 def test_unary_ops():
@@ -389,14 +389,14 @@ class TestScalarArithmetic(object):
     def test_scalar_arith(self, symsum):
         def runner(f):
             result = f(r, 1)
-            assert eval('r %s 1' % op) is result
+            assert eval('r %s 1' % op).isidentical(result)
 
             a = f(r, r)
             b = eval('r %s r' % op)
-            assert a is b
+            assert a is b or a.isidentical(b)
 
             result = f(1, r)
-            assert eval('1 %s r' % op) is result
+            assert eval('1 %s r' % op).isidentical(result)
 
         t, r = symsum
         r = t.amount.sum()
@@ -406,7 +406,7 @@ class TestScalarArithmetic(object):
     def test_scalar_usub(self, symsum):
         t, r = symsum
         result = -r
-        assert eval(str(result)) is result
+        assert eval(str(result)).isidentical(result)
 
     @pytest.mark.xfail
     def test_scalar_uadd(self, symsum):
@@ -419,21 +419,21 @@ def test_summary():
     s = summary(total=t.amount.sum(), num=t.id.count())
     assert s.dshape == dshape('{num: int32, total: int64}')
     assert hash(s)
-    assert eval(str(s)) is s
+    assert eval(str(s)).isidentical(s)
 
     assert 'summary(' in str(s)
     assert 'total=' in str(s)
     assert 'num=' in str(s)
     assert str(t.amount.sum()) in str(s)
 
-    assert not summary(total=t.amount.sum())._child is t.amount.sum()
+    assert not summary(total=t.amount.sum())._child.isidentical(t.amount.sum())
     assert iscollection(summary(total=t.amount.sum() + 1)._child.dshape)
 
 
 def test_reduction_arithmetic():
     t = symbol('t', 'var * {id: int32, name: string, amount: int32}')
     expr = t.amount.sum() + 1
-    assert eval(str(expr)) is expr
+    assert eval(str(expr)).isidentical(expr)
 
 
 def test_Distinct():
@@ -461,7 +461,7 @@ def test_by_summary():
     a = by(t['name'], sum=sum(t['amount']))
     b = by(t['name'], summary(sum=sum(t['amount'])))
 
-    assert a is b
+    assert a.isidentical(b)
 
 
 def test_by_summary_printing():
@@ -483,7 +483,7 @@ def test_sort():
     t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
     s = t.sort('amount', ascending=True)
     print(str(s))
-    assert eval(str(s)) is s
+    assert eval(str(s)).isidentical(s)
 
     assert s.schema == t.schema
 
@@ -493,7 +493,7 @@ def test_sort():
 def test_head():
     t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
     s = t.head(10)
-    assert eval(str(s)) is s
+    assert eval(str(s)).isidentical(s)
 
     assert s.schema == t.schema
 
@@ -502,7 +502,7 @@ def test_label():
     t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
     quantity = (t['amount'] + 100).label('quantity')
 
-    assert eval(str(quantity)) is quantity
+    assert eval(str(quantity)).isidentical(quantity)
 
     assert quantity.fields == ['quantity']
 
@@ -514,7 +514,7 @@ def test_map_label():
     t = symbol('t', 'var * {name: string, amount: int32, id: int32}')
     c = t.amount.map(identity, schema='int32')
     assert c.label('bar')._name == 'bar'
-    assert c.label('bar')._child is c._child
+    assert c.label('bar')._child.isidentical(c._child)
 
 
 def test_columns():
@@ -530,7 +530,7 @@ def test_relabel():
     rl = t.relabel({'name': 'NAME', 'id': 'ID'})
     rlc = t['amount'].relabel({'amount': 'BALANCE'})
 
-    assert eval(str(rl)) is rl
+    assert eval(str(rl)).isidentical(rl)
 
     print(rl.fields)
     assert rl.fields == ['NAME', 'amount', 'ID']
@@ -616,10 +616,10 @@ def test_merge_project():
     new_amount = (accounts['balance'] * 1.5).label('new')
     c = merge(accounts[['name', 'balance']], new_amount)
 
-    assert c['new'] is new_amount
-    assert c['name'] is accounts['name']
+    assert c['new'].isidentical(new_amount)
+    assert c['name'].isidentical(accounts['name'])
 
-    assert c[['name', 'new']] is merge(accounts.name, new_amount)
+    assert c[['name', 'new']].isidentical(merge(accounts.name, new_amount))
 
 
 inc = lambda x: x + 1
@@ -637,10 +637,12 @@ def test_subterms():
 def test_common_subexpression():
     a = symbol('a', 'var * {x: int, y: int, z: int}')
 
-    assert common_subexpression(a) is a
-    assert common_subexpression(a, a['x']) is a
-    assert common_subexpression(a['y'] + 1, a['x']) is a
-    assert common_subexpression(a['x'].map(inc, 'int'), a['x']) is a['x']
+    assert common_subexpression(a).isidentical(a)
+    assert common_subexpression(a, a['x']).isidentical(a)
+    assert common_subexpression(a['y'] + 1, a['x']).isidentical(a)
+    assert common_subexpression(a['x'].map(inc, 'int'), a['x']).isidentical(
+        a['x'],
+    )
 
 
 def test_schema_of_complex_interaction():
@@ -694,13 +696,13 @@ def test_serializable():
     import pickle
     t2 = pickle.loads(pickle.dumps(t, protocol=pickle.HIGHEST_PROTOCOL))
 
-    assert t is t2
+    assert t.isidentical(t2)
 
     s = symbol('t', 'var * {id: int, city: string}')
     expr = join(t[t.amount < 0], s).sort('id').city.head()
     expr2 = pickle.loads(pickle.dumps(expr, protocol=pickle.HIGHEST_PROTOCOL))
 
-    assert expr is expr2
+    assert expr.isidentical(expr2)
 
 
 def test_symbol_coercion():
@@ -715,7 +717,7 @@ def test_isnan():
     t = symbol('t', 'var * {name: string, amount: real, timestamp: ?date}')
 
     for expr in [t.amount.isnan(), ~t.amount.isnan()]:
-        assert eval(str(expr)) is expr
+        assert eval(str(expr)).isidentical(expr)
 
     assert iscollection(t.amount.isnan().dshape)
     assert 'bool' in str(t.amount.isnan().dshape)
@@ -724,8 +726,8 @@ def test_isnan():
 def test_distinct_name():
     t = symbol('t', 'var * {id: int32, name: string}')
 
-    assert t.name is t['name']
-    assert t.distinct().name is t.distinct()['name']
+    assert t.name.isidentical(t['name'])
+    assert t.distinct().name.isidentical(t.distinct()['name'])
     assert t.id.distinct()._name == 'id'
     assert t.name._name == 'name'
 

@@ -9,4 +9,4 @@ def test_math_shapes():
 
 
 def test_abs():
-    assert abs(x) is mathabs(x)
+    assert abs(x).isidentical(mathabs(x))

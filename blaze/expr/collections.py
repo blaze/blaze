@@ -173,7 +173,7 @@ def distinct(expr, *on):
     append = _on.append
     for n in on:
         if isinstance(n, Field):
-            if n._child is expr:
+            if n._child.isidentical(expr):
                 n = n._name
             else:
                 raise ValueError('{0} is not a field of {1}'.format(n, expr))

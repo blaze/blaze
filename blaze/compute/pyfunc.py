@@ -56,7 +56,7 @@ def print_python(leaves, expr):
     scope: dict
        A namespace to add to be given to eval
     """
-    if isinstance(expr, Expr) and any(expr is lf for lf in leaves):
+    if isinstance(expr, Expr) and any(expr.isidentical(lf) for lf in leaves):
         return valid_identifier(expr._name), {}
     return _print_python(expr, leaves=leaves)
 

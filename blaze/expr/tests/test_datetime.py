@@ -5,6 +5,7 @@ from datashape import dshape
 
 import pytest
 
+
 def test_datetime_dshape():
     t = symbol('t', '5 * {name: string, when: datetime}')
     assert t.when.day.dshape == dshape('5 * int64')
@@ -14,7 +15,7 @@ def test_datetime_dshape():
 def test_date_attribute():
     t = symbol('t', '5 * {name: string, when: datetime}')
     expr = t.when.day
-    assert eval(str(expr)) is expr
+    assert eval(str(expr)).isidentical(expr)
 
 
 def test_invalid_date_attribute():

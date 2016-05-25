@@ -88,7 +88,7 @@ class TensorDot(Expr):
         return DataShape(*(shape + (measure,)))
 
     def __str__(self):
-        if self is tensordot(self.lhs, self.rhs):
+        if self.isidentical(tensordot(self.lhs, self.rhs)):
             return 'tensordot(%s, %s)' % (self.lhs, self.rhs)
         else:
             la = self._left_axes
