@@ -4,7 +4,7 @@ import pytest
 
 from blaze import symbol
 import blaze as bz
-from blaze.expr.strings import str_upper, str_lower, str_cat, str_len, like
+import blaze.expr.strings as bzs
 
 dshapes = ['var * {name: string}',
            'var * {name: ?string}',
@@ -45,7 +45,7 @@ def test_like(ds):
 def test_str_upper_schema(ds):
     t = symbol('t', ds)
     expr_upper = getattr(t, 'name', t).str.upper()
-    expr_lower = getattr(t, 'name', t).str.upper()
+    expr_lower = getattr(t, 'name', t).str.lower()
     assert (expr_upper.schema.measure ==
             expr_lower.schema.measure ==
             dshape('%sstring' % ('?' if '?' in ds else '')).measure)
@@ -53,15 +53,33 @@ def test_str_upper_schema(ds):
 
 def test_str_namespace():
     t = symbol('t', 'var * {name: string}')
-    assert str_upper(t.name).isidentical(t.name.str.upper())
-    assert str_lower(t.name).isidentical(t.name.str.lower())
-    assert str_lower(str_upper(t.name)).isidentical(t.name.str.upper().str.lower())
-    assert str_len(t.name).isidentical(t.name.str.len())
-    assert like(t.name, '*a').isidentical(t.name.str.like('*a'))
-    assert (str_cat(str_cat(t.name, t.name, sep=' ++ '), t.name)
+    assert bzs.str_upper(t.name).isidentical(t.name.str.upper())
+    assert bzs.str_lower(t.name).isidentical(t.name.str.lower())
+    assert (bzs.str_lower(bzs.str_upper(t.name))
+            .isidentical(t.name.str.upper().str.lower()))
+    assert bzs.str_len(t.name).isidentical(t.name.str.len())
+    assert bzs.like(t.name, '*a').isidentical(t.name.str.like('*a'))
+    assert (bzs.str_cat(bzs.str_cat(t.name, t.name, sep=' ++ '), t.name)
             .isidentical(t.name.str.cat(t.name, sep=' ++ ')
                                .str.cat(t.name)))
+    assert bzs.str_isalnum(t.name).isidentical(t.name.str.isalnum())
+    assert bzs.str_isalpha(t.name).isidentical(t.name.str.isalpha())
+    assert bzs.str_isdecimal(t.name).isidentical(t.name.str.isdecimal())
+    assert bzs.str_isdigit(t.name).isidentical(t.name.str.isdigit())
+    assert bzs.str_islower(t.name).isidentical(t.name.str.islower())
+    assert bzs.str_isnumeric(t.name).isidentical(t.name.str.isnumeric())
+    assert bzs.str_isspace(t.name).isidentical(t.name.str.isspace())
+    assert bzs.str_istitle(t.name).isidentical(t.name.str.istitle())
+    assert bzs.str_isupper(t.name).isidentical(t.name.str.isupper())
 
+    assert bzs.Replace(t.name, 'A', 'a').isidentical(t.name.str.replace('A', 'a'))
+    assert bzs.Capitalize(t.name).isidentical(t.name.str.capitalize())
+    assert bzs.Strip(t.name).isidentical(t.name.str.strip())
+    assert bzs.LStrip(t.name).isidentical(t.name.str.lstrip())
+    assert bzs.RStrip(t.name).isidentical(t.name.str.rstrip())
+    assert bzs.Pad(t.name, 5).isidentical(t.name.str.pad(5))
+    assert (bzs.SliceReplace(t.name, 1, 3, 'foo')
+            .isidentical(t.name.str.slice_replace(1, 3, 'foo')))
 
 @pytest.mark.parametrize('ds', lhsrhs_ds)
 def test_str_cat_schema_shape(ds):

@@ -709,6 +709,86 @@ def test_str_lower():
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
 
+@pytest.mark.parametrize('old,new,max,expected', (
+    ('o', 'x', None, 'Sxmexne'),
+    ('o', 'x', 1, 'Sxmeone')))
+def test_str_replace(old, new, max, expected):
+    df = pd.Series(['Someone'], name='name')
+    expr = t.name.str.replace(old, new, max)
+    expected = pd.Series([expected], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+def test_str_capitalize():
+    df = pd.Series(['someone'], name='name')
+    expr = t.name.str.capitalize()
+    expected = pd.Series(['Someone'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+def test_str_strip():
+    df = pd.Series([' someone '], name='name')
+    expr = t.name.str.strip()
+    expected = pd.Series(['someone'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+def test_str_lstrip():
+    df = pd.Series([' someone '], name='name')
+    expr = t.name.str.lstrip()
+    expected = pd.Series(['someone '], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+def test_str_rstrip():
+    df = pd.Series([' someone '], name='name')
+    expr = t.name.str.rstrip()
+    expected = pd.Series([' someone'], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+@pytest.mark.parametrize('width,side,fillchar, expected', (
+    (10, None, None, '   someone'),
+    (10, 'left', None, '   someone'),
+    (10, 'right', None, 'someone   '),
+    (10, None, 'x', 'xxxsomeone')))
+def test_str_pad(width, side, fillchar, expected):
+    df = pd.Series(['someone'], name='name')
+    expr = t.name.str.pad(width, side, fillchar)
+    expected = pd.Series([expected], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+@pytest.mark.parametrize('start,stop,repl,expected', (
+    (1, 3, 'x', 'sxeone'),
+    (None, 3, 'x', 'xeone'),
+    (1, None, 'x', 'sx'),
+    (None, None, 'x', 'x'),
+    (1, None, None, 's')))
+def test_str_slice_replace(start, stop, repl, expected):
+    df = pd.Series(['someone'], name='name')
+    expr = t.name.str.slice_replace(start, stop, repl)
+    expected = pd.Series([expected], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
+@pytest.mark.parametrize('what,expected',
+                         [('alnum', True),
+                          ('alpha', True),
+                          ('decimal', False),
+                          ('digit', False),
+                          ('lower', False),
+                          ('numeric', False),
+                          ('space', False),
+                          ('title', True),
+                          ('upper', False)])
+def test_str_predicates(what, expected):
+    predicate = 'is' + what
+    expr = getattr(t.name.str, predicate)()
+    expected = pd.Series([expected, expected, expected], name='name')
+    result = compute(expr, df).reset_index(drop=True)
+    assert_series_equal(expected, result)
+
 
 @pytest.mark.parametrize('slc', [0, -1, 1000,
                                  slice(0, 1), slice(None, 3),

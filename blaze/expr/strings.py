@@ -17,10 +17,35 @@ __all__ = ['Like',
            'str_upper',
            'str_lower',
            'str_cat',
+           'str_isalnum',
+           'str_isalpha',
+           'str_isdecimal',
+           'str_isdigit',
+           'str_islower',
+           'str_isnumeric',
+           'str_isspace',
+           'str_istitle',
+           'str_isupper',
            'StrCat',
            'StrFind',
            'StrSlice',
+           'SliceReplace',
+           'Replace',
+           'Capitalize',
+           'Strip',
+           'LStrip',
+           'RStrip',
+           'Pad',
            'UnaryStringFunction']
+
+def _validate(var, name, type, typename):
+    if not isinstance(var, type):
+        raise TypeError('"%s" argument must be a %s'%(name, typename))
+
+def _validate_optional(var, name, type, typename):
+    if var is not None and not isinstance(var, type):
+        raise TypeError('"%s" argument must be a %s'%(name, typename))
+
 
 
 class Like(ElemWise):
@@ -85,6 +110,15 @@ class str_lower(UnaryStringFunction):
     def schema(self):
         return self._child.schema
 
+class str_isalnum(UnaryStringFunction): schema = bool_
+class str_isalpha(UnaryStringFunction): schema = bool_
+class str_isdecimal(UnaryStringFunction): schema = bool_
+class str_isdigit(UnaryStringFunction): schema = bool_
+class str_islower(UnaryStringFunction): schema = bool_
+class str_isnumeric(UnaryStringFunction): schema = bool_
+class str_isspace(UnaryStringFunction): schema = bool_
+class str_istitle(UnaryStringFunction): schema = bool_
+class str_isupper(UnaryStringFunction): schema = bool_
 
 class StrFind(ElemWise):
     """
@@ -102,11 +136,33 @@ def str_find(col, sub):
         raise TypeError("'sub' argument must be a String")
     return StrFind(col, sub)
 
+class Replace(ElemWise):
+    __slots__ = '_hash', '_child', 'old', 'new', 'max'
+    schema = datashape.string
+
+class Pad(ElemWise):
+    __slots__ = '_hash', '_child', 'width', 'side', 'fillchar'
+    schema = datashape.string
+
+class Capitalize(UnaryStringFunction):
+    schema = datashape.string
+
+class Strip(UnaryStringFunction):
+    schema = datashape.string
+
+class LStrip(UnaryStringFunction):
+    schema = datashape.string
+
+class RStrip(UnaryStringFunction):
+    schema = datashape.string
 
 class StrSlice(ElemWise):
     __slots__ = '_hash', '_child', 'slice'
     schema = datashape.Option(datashape.string)
 
+class SliceReplace(ElemWise):
+    __slots__ = '_hash', '_child', 'start', 'stop', 'repl'
+    schema = datashape.Option(datashape.string)
 
 @copydoc(StrSlice)
 def str_slice(col, idx):
@@ -180,10 +236,7 @@ def str_cat(lhs, rhs, sep=None):
     if not isstring(rhs.dshape):
         raise TypeError("can only concat string columns")
 
-    if sep is not None:
-        if not isinstance(sep, basestring):
-            raise TypeError("keyword argument 'sep' must be a String")
-
+    _validate_optional(sep, 'sep', basestring, 'string')
     return StrCat(lhs, rhs, sep=sep)
 
 
@@ -219,9 +272,44 @@ class str_ns(object):
     def find(self, sub):
         return str_find(self.field, sub)
 
+    def isalnum(self): return str_isalnum(self.field)
+    def isalpha(self): return str_isalpha(self.field)
+    def isdecimal(self): return str_isdecimal(self.field)
+    def isdigit(self): return str_isdigit(self.field)
+    def islower(self): return str_islower(self.field)
+    def isnumeric(self): return str_isnumeric(self.field)
+    def isspace(self): return str_isspace(self.field)
+    def istitle(self): return str_istitle(self.field)
+    def isupper(self): return str_isupper(self.field)
+
+    def replace(self, old, new, max=None):
+        _validate(old, 'old', basestring, 'string')
+        _validate(new, 'new', basestring, 'string')
+        _validate_optional(max, 'max', int, 'integer')
+        return Replace(self.field, old, new, max)
+
+    def capitalize(self):
+        return Capitalize(self.field)
+
+    def pad(self, width, side=None, fillchar=None):
+        _validate(width, 'width', int, 'integer')
+        if side not in (None, 'left', 'right'):
+            raise TypeError('"side" argument must be either "left" or "right"')
+        _validate_optional(fillchar, 'fillchar', basestring, 'string')
+        return Pad(self.field, width, side, fillchar)
+
+    def strip(self): return Strip(self.field)
+    def lstrip(self): return LStrip(self.field)
+    def rstrip(self): return RStrip(self.field)
+
     def __getitem__(self, idx):
         return str_slice(self.field, idx)
 
+    def slice_replace(self, start=None, stop=None, repl=None):
+        _validate_optional(start, 'start', int, 'integer')
+        _validate_optional(stop, 'stop', int, 'integer')
+        _validate_optional(repl, 'repl', basestring, 'string')
+        return SliceReplace(self.field, start, stop, repl)
 
 class str(object):
 
