@@ -795,3 +795,18 @@ def test_coalesce(sqla):
         compute(coalesce(t.A, 'z'), {t: sqla}, return_type=list) ==
         [('a',), ('z',), ('c',)]
     )
+
+
+def test_any(sql):
+    s = symbol('s', discover(sql))
+    assert compute((s.B == 1).any(), {s: sql}, return_type='core')
+    assert compute((s.B == 2).any(), {s: sql}, return_type='core')
+    assert compute(~(s.B == 3).any(), {s: sql}, return_type='core')
+
+
+def test_all(sql):
+    s = symbol('s', discover(sql))
+    assert compute(s.B.isin({1, 2}).all(), {s: sql}, return_type='core')
+    assert compute(~(s.B == 1).all(), {s: sql}, return_type='core')
+    assert compute(~(s.B == 2).all(), {s: sql}, return_type='core')
+    assert compute(~(s.B == 3).all(), {s: sql}, return_type='core')

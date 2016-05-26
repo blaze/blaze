@@ -12,7 +12,7 @@ None
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
-None
+* Adds support for ``any`` and ``all`` to the sql backend (:issue:`1511`).
 
 New Backends
 ~~~~~~~~~~~~

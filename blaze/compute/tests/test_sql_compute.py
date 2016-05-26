@@ -2151,7 +2151,7 @@ def test_coalesce():
     ds = 'var * {a: ?int32}'
     db = resource('sqlite:///:memory:::s', dshape=ds)
     s = symbol('s', ds)
-    t = symbol('s', 'int32')
+    t = symbol('t', 'int32')
 
     assert normalize(compute(coalesce(s.a, t), {s: db, t: 1})) == normalize(
         """\
@@ -2161,9 +2161,39 @@ def test_coalesce():
         """,
     )
     assert normalize(compute(coalesce(s.a, 1), {s: db})) == normalize(
-        """\
+        """
         select
             coalesce(s.a, 1) as a
+        from s
+        """,
+    )
+
+
+def test_any():
+    ds = datashape.dshape('var * {a: int32}')
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+    t = symbol('t', 'int32')
+
+    assert normalize(compute((s.a == t).any(), {s: db, t: 1})) == normalize(
+        """
+        select
+            sum(cast(s.a = 1 as integer)) != 0 as anon_1
+        from s
+        """,
+    )
+
+
+def test_all():
+    ds = datashape.dshape('var * {a: int32}')
+    db = resource('sqlite:///:memory:::s', dshape=ds)
+    s = symbol('s', ds)
+    t = symbol('t', 'int32')
+
+    assert normalize(compute((s.a == t).all(), {s: db, t: 1})) == normalize(
+        """
+        select
+            sum(cast(s.a != 1 as integer)) = 0 as anon_1
         from s
         """,
     )
