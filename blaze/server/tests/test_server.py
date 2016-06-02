@@ -15,7 +15,7 @@ from datetime import datetime
 import pandas as pd
 from pandas import DataFrame
 from pandas.util.testing import assert_frame_equal
-from toolz import pipe
+from toolz import pipe, partial
 
 from blaze.dispatch import dispatch
 from blaze.expr import Expr
@@ -173,7 +173,11 @@ def test_to_tree():
 def test_to_tree_slice(serial):
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t[:5]
-    expr2 = pipe(expr, to_tree, serial.dumps, serial.loads, from_tree)
+    expr2 = pipe(expr,
+                 partial(to_tree, names={t: 't'}),
+                 serial.dumps,
+                 serial.loads,
+                 partial(from_tree, namespace={'t': t}))
     assert expr.isidentical(expr2)
 
 
