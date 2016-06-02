@@ -387,16 +387,18 @@ def to_tree(expr, names=None):
 
     from_tree
     """
+    if isinstance(expr, slice):
+        # NOTE: This case must come first, since `slice` objects are not
+        # hashable, so a dict lookup inside `names` will raise an execption.
+        return {'op': 'slice',
+                'args': [to_tree(arg, names=names) for arg in
+                         [expr.start, expr.stop, expr.step]]}
     if names and expr in names:
         return names[expr]
     if isinstance(expr, tuple):
         return [to_tree(arg, names=names) for arg in expr]
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
-    if isinstance(expr, slice):
-        return {'op': 'slice',
-                'args': [to_tree(arg, names=names) for arg in
-                         [expr.start, expr.stop, expr.step]]}
     elif isinstance(expr, _Data):
         return to_tree(symbol(expr._name, expr.dshape), names)
     elif isinstance(expr, Expr):
