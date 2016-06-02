@@ -100,10 +100,27 @@ def sort(child, key=None, ascending=True):
     ascending : bool, optional
         Determines order of the sort
     """
-    if not isrecord(child.dshape.measure):
-        key = None
+    if not isrecord(child.dshape.measure) and key is not None:
+        msg = "cannot sort a non-tabular dataset with dshape {} with key {}"
+        raise ValueError(msg.format(child.dshape, key))
+    if ascending not in (True, False):
+        msg = "ascending must be True or False, given {}"
+        raise ValueError(msg.format(ascending))
+    if key is None and isrecord(child.dshape.measure):
+        msg = "Must provide one or more columns by which to sort for tabular dataset."
+        raise ValueError(msg)
     if isinstance(key, list):
-        key = tuple(key)
+        key = keys_to_validate = tuple(key)
+    else:
+        keys_to_validate = (key,)
+    for k in keys_to_validate:
+        if isinstance(k, _strtypes):
+            if k not in child.dshape.measure.names:
+                msg = "sort key {} is not a column of schema {}"
+                raise ValueError(msg.format(k, child.dshape.measure))
+        elif not isinstance(k, Expr):
+            msg = "sort key {} is not a string column name or an expression."
+            raise ValueError(msg.format(k))
     return Sort(child, key, ascending)
 
 

@@ -22,6 +22,34 @@ def test_merge():
     assert expr.y.isidentical(e.x.label('y'))
 
 
+@pytest.mark.parametrize('bunk_column',
+                         ['deadbeef',
+                          ['deadbeef'],
+                          ['name', 'deadbeef'],
+                          10,
+                          [10],
+                          None,
+                          [None]])
+def test_sort_validation_tabular(bunk_column):
+    t = symbol('t', 'var * {name: string, id: int32}')
+    with pytest.raises(ValueError):
+        t.sort(bunk_column)
+
+
+def test_sort_validation_array():
+    t = symbol('t', '10 * 20 * int32')
+    with pytest.raises(ValueError):
+        t.sort('foobar')
+
+
+def test_sort_validation_ascending():
+    t = symbol('t', '10 * 20 * int32')
+    with pytest.raises(ValueError):
+        t.sort(ascending=None)
+    with pytest.raises(ValueError):
+        t.sort(ascending='zzz')
+
+
 def test_merge_options():
     s = symbol('s', 'var * {a: ?A, b: ?B}')
 
