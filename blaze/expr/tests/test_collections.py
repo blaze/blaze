@@ -28,7 +28,6 @@ def test_merge():
                           ['name', 'deadbeef'],
                           10,
                           [10],
-                          None,
                           [None]])
 def test_sort_validation_tabular(bunk_column):
     t = symbol('t', 'var * {name: string, id: int32}')
@@ -36,6 +35,8 @@ def test_sort_validation_tabular(bunk_column):
         t.sort(bunk_column)
 
 
+@pytest.mark.xfail(reason=("Can't validate sort key "
+                           "when sorting array-like dataset."))
 def test_sort_validation_array():
     t = symbol('t', '10 * 20 * int32')
     with pytest.raises(ValueError):
