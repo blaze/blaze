@@ -12,6 +12,9 @@ from ..compatibility import basestring, _inttypes
 
 __all__ = ['Like',
            'like',
+           'Pad',
+           'Replace',
+           'SliceReplace',
            'strlen',
            'str_len',
            'str_upper',
@@ -29,13 +32,13 @@ __all__ = ['Like',
            'StrCat',
            'StrFind',
            'StrSlice',
-           'SliceReplace',
-           'Replace',
-           'Capitalize',
-           'Strip',
-           'LStrip',
-           'RStrip',
-           'Pad',
+           'str_slice_replace',
+           'str_replace',
+           'str_capitalize',
+           'str_strip',
+           'str_lstrip',
+           'str_rstrip',
+           'str_pad',
            'UnaryStringFunction']
 
 def _validate(var, name, type, typename):
@@ -140,20 +143,33 @@ class Replace(ElemWise):
     __slots__ = '_hash', '_child', 'old', 'new', 'max'
     schema = datashape.string
 
+def str_replace(col, old, new, max=None):
+    _validate(old, 'old', basestring, 'string')
+    _validate(new, 'new', basestring, 'string')
+    _validate_optional(max, 'max', int, 'integer')
+    return Replace(col, old, new, max)
+
 class Pad(ElemWise):
     __slots__ = '_hash', '_child', 'width', 'side', 'fillchar'
     schema = datashape.string
 
-class Capitalize(UnaryStringFunction):
+def str_pad(col, width, side=None, fillchar=None):
+    _validate(width, 'width', int, 'integer')
+    if side not in (None, 'left', 'right'):
+        raise TypeError('"side" argument must be either "left" or "right"')
+    _validate_optional(fillchar, 'fillchar', basestring, 'string')
+    return Pad(col, width, side, fillchar)
+
+class str_capitalize(UnaryStringFunction):
     schema = datashape.string
 
-class Strip(UnaryStringFunction):
+class str_strip(UnaryStringFunction):
     schema = datashape.string
 
-class LStrip(UnaryStringFunction):
+class str_lstrip(UnaryStringFunction):
     schema = datashape.string
 
-class RStrip(UnaryStringFunction):
+class str_rstrip(UnaryStringFunction):
     schema = datashape.string
 
 class StrSlice(ElemWise):
@@ -163,6 +179,13 @@ class StrSlice(ElemWise):
 class SliceReplace(ElemWise):
     __slots__ = '_hash', '_child', 'start', 'stop', 'repl'
     schema = datashape.Option(datashape.string)
+
+def str_slice_replace(col, start=None, stop=None, repl=None):
+    _validate_optional(start, 'start', int, 'integer')
+    _validate_optional(stop, 'stop', int, 'integer')
+    _validate_optional(repl, 'repl', basestring, 'string')
+    return SliceReplace(col, start, stop, repl)
+
 
 @copydoc(StrSlice)
 def str_slice(col, idx):
@@ -283,33 +306,23 @@ class str_ns(object):
     def isupper(self): return str_isupper(self.field)
 
     def replace(self, old, new, max=None):
-        _validate(old, 'old', basestring, 'string')
-        _validate(new, 'new', basestring, 'string')
-        _validate_optional(max, 'max', int, 'integer')
-        return Replace(self.field, old, new, max)
+        return str_replace(self.field, old, new, max)
 
     def capitalize(self):
-        return Capitalize(self.field)
+        return str_capitalize(self.field)
 
     def pad(self, width, side=None, fillchar=None):
-        _validate(width, 'width', int, 'integer')
-        if side not in (None, 'left', 'right'):
-            raise TypeError('"side" argument must be either "left" or "right"')
-        _validate_optional(fillchar, 'fillchar', basestring, 'string')
-        return Pad(self.field, width, side, fillchar)
+        return str_pad(self.field, width, side, fillchar)
 
-    def strip(self): return Strip(self.field)
-    def lstrip(self): return LStrip(self.field)
-    def rstrip(self): return RStrip(self.field)
+    def strip(self): return str_strip(self.field)
+    def lstrip(self): return str_lstrip(self.field)
+    def rstrip(self): return str_rstrip(self.field)
 
     def __getitem__(self, idx):
         return str_slice(self.field, idx)
 
     def slice_replace(self, start=None, stop=None, repl=None):
-        _validate_optional(start, 'start', int, 'integer')
-        _validate_optional(stop, 'stop', int, 'integer')
-        _validate_optional(repl, 'repl', basestring, 'string')
-        return SliceReplace(self.field, start, stop, repl)
+        return str_slice_replace(self.field, start, stop, repl)
 
 class str(object):
 
