@@ -158,7 +158,7 @@ def test_to_from_json():
 def test_to_tree():
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
-    dshape = datashape.dshape('var * {name: string, amount: int32}',)
+    dshape = datashape.dshape('var * {name: string, amount: int32}')
     sum_args = [{'op': 'Field',
                  'args': [{'op': 'Symbol',
                            'args': ['t', dshape, 0]},
@@ -190,16 +190,6 @@ def test_to_from_tree_namespace():
 
     new = from_tree(tree, namespace={'t': t})
     assert new.isidentical(expr)
-
-
-def test_from_tree_is_robust_to_unnecessary_namespace():
-    t = symbol('t', 'var * {name: string, amount: int32}')
-    expr = t.amount + 1
-
-    tree = to_tree(expr)  # don't use namespace
-
-    assert from_tree(tree, {'t': t}).isidentical(expr)
-
 
 t = symbol('t', discover(tdata))
 

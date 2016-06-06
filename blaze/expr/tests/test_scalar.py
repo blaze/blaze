@@ -18,7 +18,9 @@ def test_basic():
     expr = (x + y) * 3
 
     assert eval(str(expr)).isidentical(expr)
-    assert expr.isidentical(Mult(Add(symbol('x', 'real'), symbol('y', 'real')), 3))
+    assert expr.isidentical(
+        Mult(Add(symbol('x', 'real'), symbol('y', 'real')), 3),
+    )
 
 
 def test_eval_str():
@@ -142,7 +144,8 @@ class TestExprify(object):
 
         assert exprify('x // y', self.dtypes).isidentical(self.x // self.y)
         assert exprify('1 // y // x', self.dtypes).isidentical(
-            1 // self.y // self.x)
+            1 // self.y // self.x,
+        )
 
     def test_comparison(self):
         other = (self.x == 1) | (self.x == 2)

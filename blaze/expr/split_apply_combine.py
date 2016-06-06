@@ -44,7 +44,7 @@ class By(Expr):
     [('Alice', 150), ('Bob', 200)]
     """
 
-    __slots__ = '_hash', 'grouper', 'apply'
+    _arguments = 'grouper', 'apply'
 
     @property
     def _child(self):

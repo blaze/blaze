@@ -44,7 +44,6 @@ def test_mean():
     assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
                                           count=chunk.amount.count(),
                                           keepdims=True))
-
     assert isrecord(agg.dshape.measure)
     assert agg_expr.isidentical(agg.total.sum() / agg['count'].sum())
 
@@ -59,8 +58,8 @@ def test_var():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical((agg.x2.sum() / (agg.n.sum())
-                                 - (agg.x.sum() / (agg.n.sum())) ** 2))
+    assert agg_expr.isidentical(agg.x2.sum() / (agg.n.sum()) -
+                                (agg.x.sum() / (agg.n.sum())) ** 2)
 
 
 def test_std():
@@ -73,8 +72,8 @@ def test_std():
                                           keepdims=True))
 
     assert isrecord(agg.dshape.measure)
-    assert agg_expr.isidentical(sqrt((agg.x2.sum() / (agg.n.sum())
-                                      - (agg.x.sum() / (agg.n.sum())) ** 2)))
+    assert agg_expr.isidentical(sqrt(agg.x2.sum() / agg.n.sum() -
+                                     (agg.x.sum() / (agg.n.sum())) ** 2))
 
 
 def test_sum_with_axis_argument():
@@ -143,14 +142,15 @@ def test_summary():
 
     assert chunk.schema == t.schema
     assert chunk_expr.isidentical(summary(a=chunk.amount.count(),
-                                          b=chunk.id.sum(), keepdims=True))
+                                          b=chunk.id.sum(),
+                                          keepdims=True))
 
     # assert not agg.schema == dshape('{a: int32, b: int32}')
     assert agg_expr.isidentical(summary(a=agg.a.sum(),
                                         b=agg.b.sum() + 1))
 
-    (chunk, chunk_expr), (agg, agg_expr) = \
-        split(t, summary(total=t.amount.sum()))
+    (chunk, chunk_expr), (agg, agg_expr) = split(t,
+                                                 summary(total=t.amount.sum()))
 
     assert chunk_expr.isidentical(summary(total=chunk.amount.sum(),
                                           keepdims=True))
@@ -168,8 +168,10 @@ def test_summary_with_mean():
                                           keepdims=True))
 
     # assert not agg.schema == dshape('{a: int32, b: int32}')
-    expected = summary(a=agg.a.sum(),
-                       b=(agg.b_total.sum() / agg.b_count.sum()) + 1)
+    expected = summary(
+        a=agg.a.sum(),
+        b=(agg.b_total.sum() / agg.b_count.sum()) + 1,
+    )
     assert agg_expr.isidentical(expected)
 
 
@@ -187,10 +189,12 @@ def test_complex_summaries():
                                           w_x2=(chunk.a ** 2).sum(),
                                           keepdims=True))
 
-    expected = summary(e=agg.e.sum(),
-                       q=agg.q_total.sum() / agg.q_count.sum(),
-                       w=sqrt((agg.w_x2.sum() / agg.w_n.sum())
-                              - (agg.w_x.sum() / agg.w_n.sum()) ** 2))
+    expected = summary(
+        e=agg.e.sum(),
+        q=agg.q_total.sum() / agg.q_count.sum(),
+        w=sqrt((agg.w_x2.sum() / agg.w_n.sum())
+               - (agg.w_x.sum() / agg.w_n.sum()) ** 2),
+    )
     assert agg_expr.isidentical(expected)
 
 
@@ -223,7 +227,8 @@ def test_by_mean():
                                      avg_count=chunk.amount.count()))
 
     assert agg_expr.isidentical(by(agg.name,
-                                   avg=(agg.avg_total.sum() / agg.avg_count.sum())))
+                                   avg=agg.avg_total.sum() /
+                                   agg.avg_count.sum()))
 
 
 def test_embarassing_rowwise():
@@ -318,9 +323,10 @@ def test_by_with_single_field_child():
 
     assert chunk_expr.isidentical(by(chunk, total=chunk.sum()))
 
-    assert (agg_expr.isidentical(by(agg[agg.fields[0]],
-                                    total=agg.total.sum())
-            .relabel({agg.fields[0]: 'x'})))
+    assert agg_expr.isidentical(by(
+        agg[agg.fields[0]],
+        total=agg.total.sum()
+    ).relabel({agg.fields[0]: 'x'}))
 
 
 def test_keepdims_equals_true_doesnt_mess_up_agg_shape():
@@ -337,7 +343,8 @@ def test_splittable_apply():
     (chunk, chunk_expr), (agg, agg_expr) = \
         split(t, t.amount.apply(f, 'var * int', splittable=True))
     assert chunk_expr.isidentical(
-        chunk.amount.apply(f, 'var * int', splittable=True))
+        chunk.amount.apply(f, 'var * int', splittable=True),
+    )
 
     assert agg_expr.isidentical(agg)
 

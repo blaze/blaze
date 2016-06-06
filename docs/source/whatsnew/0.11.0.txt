@@ -50,4 +50,18 @@ Bug Fixes
 Miscellaneous
 ~~~~~~~~~~~~~
 
-None
+Expression Identity Rework
+``````````````````````````
+
+Expression are now memoized by their inputs. This means that two identical
+expressions will always be the same object, or that ``a.isidentical(b)`` is the
+same as ``a is b``. ``isidentical`` is called hundreds of thousands of times in
+a normal blaze workload. Moving more work to expression construction time has
+been shown to dramatically improve compute times when the expressions grow in
+complexity or size. In the past, blaze was spending linear time relative to the
+expression size to compare expressions because it needed to recurse through the
+entire expression tree but now it can do ``isidentical`` in constant time.
+
+Users should still use ``a.isidentical(b)`` instead of ``a is b`` because we
+reserve the right to add more arguments or change the implementation of
+``isidentical`` in the future.

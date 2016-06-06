@@ -219,7 +219,7 @@ def makeleaf(expr):
 
     >>> from blaze import sin, cos
     >>> x = symbol('x', 'real')
-    >>> makeleaf(cos(x)**2).isidentical(sin(x)**2)
+    >>> makeleaf(cos(x)**2).isidentical(sin(x) ** 2)
     False
 
     >>> makeleaf(t) is t  # makeleaf passes on Symbols

@@ -79,11 +79,9 @@ def test_leaves_of_type():
 def test_broadcast_collect_doesnt_collect_scalars():
     expr = xx + yy * a
 
-    assert broadcast_collect(
-        expr,
-        broadcastable=Arithmetic,
-        want_to_broadcast=Arithmetic,
-    ).isidentical(expr)
+    assert broadcast_collect(expr,
+                             broadcastable=Arithmetic,
+                             want_to_broadcast=Arithmetic).isidentical(expr)
 
 
 def test_table_broadcast():

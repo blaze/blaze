@@ -20,9 +20,9 @@ from blaze.expr import (
 )
 
 
-def test_slots():
-    assert Expr.__slots__ == ('_hash', '__weakref__', '__dict__')
-    assert Node.__slots__ == ()
+def test_arguments():
+    assert Expr._arguments == ('_child',)
+    assert Node._arguments == ('_child',)
 
 
 def test_Symbol():
@@ -104,15 +104,6 @@ def test_fields_with_spaces():
     assert e.a_b.isidentical(e['a b'])
 
 
-def test_fields_with_spaces():
-    e = symbol('e', '{x: int, "a.b": int}')
-    assert isinstance(e['a.b'], Field)
-    assert 'a.b' not in dir(e)
-
-    assert 'a_b' in dir(e)
-    assert e.a_b.isidentical(e['a.b'])
-
-
 def test_selection_name_matches_child():
     t = symbol('t', 'var * {x: int, "a.b": int}')
     assert t.x[t.x > 0]._name == t.x._name
@@ -120,12 +111,12 @@ def test_selection_name_matches_child():
 
 
 def test_symbol_subs():
-    assert symbol('e', '{x: int}') is symbol('e', '{x: int}', None)
-    assert symbol('e', '{x: int}') is symbol('e', dshape('{x: int}'))
+    assert symbol('e', '{x: int}').isidentical(symbol('e', '{x: int}', None))
+    assert symbol('e', '{x: int}').isidentical(symbol('e', dshape('{x: int}')))
     e = symbol('e', '{x: int, y: int}')
     f = symbol('f', '{x: int, y: int}')
     d = {'e': 'f'}
-    assert e._subs(d) is f
+    assert e._subs(d).isidentical(f)
 
 
 def test_multiple_renames_on_series_fails():
@@ -161,7 +152,6 @@ def test_hash_to_different_values():
 
 def test_hash():
     e = symbol('e', 'int')
-    assert '_hash' in e.__slots__
     h = hash(e)
     assert isinstance(h, int)
     assert h == hash(e)
@@ -211,7 +201,9 @@ def test_method_before_name():
 def test_pickle_roundtrip():
     t = symbol('t', 'var * int64')
     expr = (t + 1).mean()  # some expression with more than one node.
-    assert expr.isidentical(pickle.loads(pickle.dumps(expr)))
+    assert expr.isidentical(pickle.loads(
+        pickle.dumps(expr, protocol=pickle.HIGHEST_PROTOCOL),
+    ))
 
 
 def test_coalesce():

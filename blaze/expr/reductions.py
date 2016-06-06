@@ -13,6 +13,16 @@ from .expressions import Expr, ndim, dshape_method_list, method_properties
 from .strings import isstring
 
 
+def _normalize_axis(axis, child):
+    if axis is None:
+        axis = tuple(range(child.ndim))
+    if isinstance(axis, (set, list)):
+        axis = tuple(axis)
+    if not isinstance(axis, tuple):
+        axis = (axis,)
+    return tuple(sorted(axis))
+
+
 class Reduction(Expr):
 
     """ A column-wise reduction
@@ -36,20 +46,11 @@ class Reduction(Expr):
     >>> compute(e, data)
     350
     """
-    __slots__ = '_hash', '_child', 'axis', 'keepdims'
+    _arguments = '_child', 'axis', 'keepdims'
 
-    def __init__(self, _child, axis=None, keepdims=False):
-        self._child = _child
-        if axis is None:
-            axis = tuple(range(_child.ndim))
-        if isinstance(axis, (set, list)):
-            axis = tuple(axis)
-        if not isinstance(axis, tuple):
-            axis = (axis,)
-        axis = tuple(sorted(axis))
-        self.axis = axis
-        self.keepdims = keepdims
-        self._hash = None
+    def __new__(cls, _child, axis=None, keepdims=False):
+        axis = _normalize_axis(axis, _child)
+        return super(Reduction, cls).__new__(cls, _child, axis, keepdims)
 
     def _dshape(self):
         axis = self.axis
@@ -89,7 +90,7 @@ class Reduction(Expr):
         if self.axis != tuple(range(self._child.ndim)):
             kwargs.append('axis=' + str(self.axis))
         other = sorted(
-            set(self.__slots__[1:]) - set(['_child', 'axis', 'keepdims']))
+            set(self._arguments[1:]) - set(['_child', 'axis', 'keepdims']))
         for slot in other:
             kwargs.append('%s=%s' % (slot, getattr(self, slot)))
         name = type(self).__name__
@@ -151,11 +152,13 @@ class var(FloatingReduction):
         ``True``. In NumPy and pandas, this parameter is called ``ddof`` (delta
         degrees of freedom) and is equal to 1 for unbiased and 0 for biased.
     """
-    __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
+    _arguments = '_child', 'unbiased', 'axis', 'keepdims'
 
-    def __init__(self, child, unbiased=False, *args, **kwargs):
-        self.unbiased = unbiased
-        super(var, self).__init__(child, *args, **kwargs)
+    def __new__(cls, child, unbiased=False, axis=None, keepdims=False):
+        axis = _normalize_axis(axis, child)
+        return super(Reduction, cls).__new__(
+            cls, child, unbiased, axis, keepdims,
+        )
 
 
 class std(FloatingReduction):
@@ -179,11 +182,13 @@ class std(FloatingReduction):
     --------
     var
     """
-    __slots__ = '_hash', '_child', 'unbiased', 'axis', 'keepdims'
+    _arguments = '_child', 'unbiased', 'axis', 'keepdims'
 
-    def __init__(self, child, unbiased=False, *args, **kwargs):
-        self.unbiased = unbiased
-        super(std, self).__init__(child, *args, **kwargs)
+    def __new__(cls, child, unbiased=False, axis=None, keepdims=False):
+        axis = _normalize_axis(axis, child)
+        return super(Reduction, cls).__new__(
+            cls, child, unbiased, axis, keepdims,
+        )
 
 
 class count(Reduction):
@@ -237,15 +242,12 @@ class Summary(Expr):
     >>> compute(expr, data)
     (2, 350)
     """
-    __slots__ = '_hash', '_child', 'names', 'values', 'axis', 'keepdims'
+    _arguments = '_child', 'names', 'values', 'axis', 'keepdims'
 
-    def __init__(self, _child, names, values, axis=None, keepdims=False):
-        self._child = _child
-        self.names = names
-        self.values = values
-        self.keepdims = keepdims
-        self.axis = axis
-        self._hash = None
+    def __new__(cls, _child, names, values, axis=None, keepdims=False):
+        return super(Summary, cls).__new__(
+            cls, _child, names, values, axis, keepdims,
+        )
 
     def _dshape(self):
         axis = self.axis

@@ -1,12 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping
+from collections import Mapping, OrderedDict
 import datetime
-import numbers
+from functools import reduce, partial
 import inspect
+from itertools import repeat
+import numbers
 
 from pprint import pformat
-from functools import reduce, partial
+from weakref import WeakValueDictionary
 
 import toolz
 from toolz import unique, concat, first
@@ -21,42 +23,97 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 base = (numbers.Number,) + _strtypes + (datetime.datetime, datetime.timedelta)
 
 
-def isidentical(a, b):
-    """ Strict equality testing
+def _resolve_args(cls, *args, **kwargs):
+    """Resolve the arguments from a node class into an ordereddict.
+    All arguments are assumed to have a default of None.
 
-    Different from x == y -> Eq(x, y)
+    This is sort of like getargspec but uses the `Node` specific machinery.
 
-    >>> isidentical(1, 1)
-    True
+    Parameters
+    ----------
+    cls : subclass of Node
+        The class to resolve the arguments for.
+    *args, **kwargs
+        The arguments that were passed.
 
-    >>> from blaze.expr import symbol
-    >>> x = symbol('x', 'int')
-    >>> isidentical(x, 1)
-    False
+    Returns
+    -------
+    args : OrderedDict
+        A dictionary mapping argument names to their value in the order
+        they appear in the `_arguments` tuple.
 
-    >>> isidentical(x + 1, x + 1)
-    True
+    Examples
+    --------
+    >>> class MyNode(Node):
+    ...     _arguments = 'a', 'b', 'c'
+    ...
 
-    >>> isidentical(x + 1, x + 2)
-    False
+    good cases
+    >>> _resolve_args(MyNode, 1, 2, 3)
+    OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    >>> _resolve_args(MyNode, 1, 2, c=3)
+    OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    >>> _resolve_args(MyNode, a=1, b=2, c=3)
+    OrderedDict([('a', 1), ('b', 2), ('c', 3)])
 
-    >>> isidentical((x, x + 1), (x, x + 1))
-    True
-
-    >>> isidentical((x, x + 1), (x, x + 2))
-    False
+    error cases
+    >>> _resolve_args(MyNode, 1, 2, 3, a=4)
+    Traceback (most recent call last):
+       ...
+    TypeError: MyNode got multiple values for argument 'a'
+    >>> _resolve_args(MyNode, 1, 2, 3, 4)
+    Traceback (most recent call last):
+       ...
+    TypeError: MyNode takes 3 positional arguments but 4 were given
+    >>> _resolve_args(MyNode, 1, 2, 3, d=4)
+    Traceback (most recent call last):
+       ...
+    TypeError: MyNode got unknown keywords: d
     """
-    if a is b:
-        return True
-    if isinstance(a, base) and isinstance(b, base):
-        return a == b
-    if type(a) != type(b):
-        return False
-    if isinstance(a, Node):
-        return all(map(isidentical, a._hashargs, b._hashargs))
-    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
-        return len(a) == len(b) and all(map(isidentical, a, b))
-    return a == b
+    attrs = cls._arguments
+    attrset = set(attrs)
+    if not set(kwargs) <= attrset:
+        raise TypeError(
+            '%s got unknown keywords: %s' % (
+                cls.__name__,
+                ', '.join(set(kwargs) - attrset),
+            ),
+        )
+
+    if len(args) > len(attrs):
+        raise TypeError(
+            '%s takes 3 positional arguments but %d were given' % (
+                cls.__name__,
+                len(args),
+            ),
+        )
+
+    attributes = OrderedDict(zip(attrs, repeat(None)))
+    to_add = dict(zip(attrs, args))
+    attributes.update(to_add)
+    added = set(to_add)
+
+    for key, value in kwargs.items():
+        if key in added:
+            raise TypeError(
+                '%s got multiple values for argument %r' % (
+                    cls.__name__,
+                    key,
+                ),
+            )
+        attributes[key] = value
+        added.add(key)
+
+    return attributes
+
+
+def _static_identity(ob):
+    return type(ob)._static_identity(*ob._args)
+
+
+def _setattr(ob, name, value):
+    object.__setattr__(ob, name, value)
+    return value
 
 
 class Node(object):
@@ -72,38 +129,38 @@ class Node(object):
 
     blaze.expr.expressions.Expr
     """
-    __slots__ = ()
+    _arguments = '_child',
     __inputs__ = '_child',
+    __expr_instance_cache = WeakValueDictionary()
 
-    def __init__(self, *args, **kwargs):
-        slots = set(self.__slots__)
-        if not frozenset(slots) <= slots:
-            raise TypeError('Unknown keywords: %s' % (set(kwargs) - slots))
+    def __new__(cls, *args, **kwargs):
+        static_id = cls._static_identity(*args, **kwargs)
+        try:
+            return cls.__expr_instance_cache[static_id]
+        except KeyError:
+            cls.__expr_instance_cache[static_id] = self = super(
+                Node,
+                cls,
+            ).__new__(cls)._init(*args, **kwargs)
+            return self
 
-        assigned = set()
-        for slot, arg in zip(self.__slots__[1:], args):
-            assigned.add(slot)
-            setattr(self, slot, arg)
+    def _init(self, *args, **kwargs):
+        for name, arg in _resolve_args(type(self), *args, **kwargs).items():
+            _setattr(self, name, arg)
 
-        for key, value in kwargs.items():
-            if key in assigned:
-                raise TypeError(
-                    '%s got multiple values for argument %r' % (
-                        type(self).__name__,
-                        key,
-                    ),
-                )
-            assigned.add(key)
-            setattr(self, key, value)
+        _setattr(self, '_hash', None)
+        return self
 
-        for slot in slots - assigned:
-            setattr(self, slot, None)
+    def __setattr__(self, name, value):
+        raise AttributeError('cannot set attributes of immutable objects')
 
     @property
     def _args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__[1:])
+        return tuple(getattr(self, slot) for slot in self._arguments)
 
-    _hashargs = _args
+    @classmethod
+    def _static_identity(cls, *args, **kwargs):
+        return (cls,) + tuple(_resolve_args(cls, *args, **kwargs).values())
 
     @property
     def _inputs(self):
@@ -133,29 +190,37 @@ class Node(object):
             return list(unique(concat(i._leaves() for i in self._inputs if
                                       isinstance(i, Node))))
 
-    isidentical = isidentical
+    def isidentical(self, other):
+        """Identity check for blaze expressions.
+        """
+        return self is other
 
     def __hash__(self):
         hash_ = self._hash
         if hash_ is None:
-            hash_ = self._hash = hash((type(self), self._hashargs))
+            hash_ = _setattr(
+                self,
+                '_hash',
+                hash((type(self), _static_identity(self))),
+            )
         return hash_
 
     def __str__(self):
         rep = [
             '%s=%s' % (slot, _str(arg))
-            for slot, arg in zip(self.__slots__[1:], self._args)
+            for slot, arg in zip(self._arguments, self._args)
         ]
         return '%s(%s)' % (type(self).__name__, ', '.join(rep))
 
     def _traverse(self):
         """ Traverse over tree, yielding all subtrees and leaves """
         yield self
-        traversals = (arg._traverse() if isinstance(arg, Node) else [arg]
-                      for arg in self._args)
-        for trav in traversals:
-            for item in trav:
-                yield item
+        traversals = (
+            arg._traverse() if isinstance(arg, Node) else [arg]
+            for arg in self._args
+        )
+        for item in concat(traversals):
+            yield item
 
     def _subs(self, d):
         """ Substitute terms in the tree
@@ -178,23 +243,19 @@ class Node(object):
     def __contains__(self, other):
         return other in set(self._subterms())
 
-    def __getstate__(self):
-        return tuple(self._args)
-
-    def __setstate__(self, state):
-        self.__init__(*state)
+    def __reduce_ex__(self, protocol):
+        if protocol < 2:
+            raise ValueError(
+                'blaze expressions may only be pickled with protocol'
+                ' 2 or greater',
+            )
+        return type(self), self._args
 
     def __eq__(self, other):
-        ident = self.isidentical(other)
-        if ident is True:
-            return ident
-
         try:
-            return self._eq(other)
+            return self.isidentical(other) or self._eq(other)
         except AttributeError:
-            # e.g., we can't compare whole tables to other things (yet?)
-            pass
-        return False
+            return False
 
     def __ne__(self, other):
         return self._ne(other)
@@ -352,7 +413,7 @@ def subs(o, d):
     >>> subs([1, 2, 3], {2: 'Hello'})
     [1, 'Hello', 3]
     """
-    d = dict((k, v) for k, v in d.items() if k is not v)
+    d = {k: v for k, v in d.items() if k is not v}
     if not d:
         return o
     try:
@@ -366,7 +427,7 @@ def subs(o, d):
 
 @dispatch((tuple, list), Mapping)
 def _subs(o, d):
-    return type(o)([subs(arg, d) for arg in o])
+    return type(o)(subs(arg, d) for arg in o)
 
 
 @dispatch(Node, Mapping)
@@ -378,7 +439,7 @@ def _subs(o, d):
     >>> subs(t, {'balance': 'amount'}).fields
     ['name', 'amount']
     """
-    newargs = [subs(arg, d) for arg in o._args]
+    newargs = (subs(arg, d) for arg in o._args)
     return type(o)(*newargs)
 
 

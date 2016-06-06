@@ -25,7 +25,7 @@ Blaze separates the computations that we want to perform:
 .. code-block:: python
 
    >>> from blaze import *
-   >>> accounts = Symbol('accounts', 'var * {id: int, name: string, amount: int}')
+   >>> accounts = symbol('accounts', 'var * {id: int, name: string, amount: int}')
 
    >>> deadbeats = accounts[accounts.amount < 0].name
 

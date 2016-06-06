@@ -23,15 +23,15 @@ Blaze represents expressions as Python objects.  Classes include
 - **Also**: ``Sort, Distinct, Head, Label, Map, Merge, ...``
 
 In each case an operation (like ``Selection``) is a Python class.  Each
-expression defines a fixed set of fields in the ``__slots__`` attribute
+expression defines a fixed set of fields in the ``_arguments`` attribute
 
 .. code-block:: python
 
    class Selection(Expr):
-       __slots__ = '_hash', '_child', 'predicate'
+       _arguments = '_child', 'predicate'
 
    class Field(ElemWise):
-       __slots__ = '_hash', '_child', 'fieldname'
+       _arguments = '_child', 'fieldname'
 
 
 To create a node in the tree explicitly we create a Python object of this class
@@ -39,7 +39,7 @@ To create a node in the tree explicitly we create a Python object of this class
 .. code-block:: python
 
    >>> from blaze.expr import *
-   >>> t = Symbol('t', 'var * {id: int, name: string, amount: int}')
+   >>> t = symbol('t', 'var * {id: int, name: string, amount: int}')
    >>> amounts = Field(t, 'amount')
 
 This object contains its information in a .args attribute
@@ -219,10 +219,12 @@ Adding Expressions
 
 Expressions can be added by creating a new subclass of
 :class:`blaze.expr.expressions.Expr`. When adding a class, one should define all
-of the instance data that the type will need in the ``__slots__``. This should
-probably include a ``_hash``. which will be used to cache the hash value of the
-node. Often we should defer to the ``__init__`` defined on the super class. This
-will reflect the signature from the ``__slots__``.
+of the arguments the type will accept in the ``_arguments`` attribute. Blaze
+expressions are memoized based on these arguments. Memoization happens at object
+construction time so any custom initialization logic should happen in the
+``__new__`` instead of the ``__init__``. Construction should always forward to
+the superclass's ``__new__``. By default, the ``__new__`` will reflect a
+signature from the ``_arguments`` attribute.
 
 To define the shape of our new expression, we should implement the
 ``_dshape`` method. This method should use the shapes of the arguments

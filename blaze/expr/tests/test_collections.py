@@ -54,8 +54,9 @@ def test_transform():
     expr = transform(t, z=t.x + t.y)
     assert expr.fields == ['x', 'y', 'z']
 
-    assert builtins.any((t.x + t.y).isidentical(node)
-                        for node in expr._subterms())
+    assert builtins.any(
+        (t.x + t.y).isidentical(node) for node in expr._subterms()
+    )
 
 
 def test_distinct():

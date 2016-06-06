@@ -21,15 +21,11 @@ class UnaryMath(UnaryOp):
 
     """Mathematical unary operator with real valued dshape like sin, or exp
     """
-    __slots__ = '_hash', '_child'
-
+    _arguments = '_child',
     _dtype = real
 
 
 class BinaryMath(BinOp):
-    __slots__ = '_hash', 'lhs', 'rhs'
-    __inputs__ = 'lhs', 'rhs'
-
     _dtype = real
 
     def __str__(self):
@@ -78,8 +74,7 @@ for name in _binary_math_names:
 
 
 class greatest(Arithmetic):
-    __slots__ = '_hash', 'lhs', 'rhs'
-    __inputs__ = 'lhs', 'rhs'
+    _arguments = 'lhs', 'rhs'
     op = builtins.max
 
     def __str__(self):
@@ -87,8 +82,7 @@ class greatest(Arithmetic):
 
 
 class least(Arithmetic):
-    __slots__ = '_hash', 'lhs', 'rhs'
-    __inputs__ = 'lhs', 'rhs'
+    _arguments = 'lhs', 'rhs'
     op = builtins.min
 
     def __str__(self):

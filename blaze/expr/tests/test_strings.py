@@ -1,5 +1,6 @@
-import pytest
 from datashape import dshape
+from datashape.util.testing import assert_dshape_equal
+import pytest
 
 from blaze import symbol
 
@@ -32,9 +33,10 @@ def test_like(ds):
     t = symbol('t', ds)
     expr = getattr(t, 'name', t).like('Alice*')
     assert expr.pattern == 'Alice*'
-    assert expr.schema.measure == dshape(
-        '%sbool' % ('?' if '?' in ds else '')
-    ).measure
+    assert_dshape_equal(
+        expr.schema.measure,
+        dshape('%sbool' % ('?' if '?' in ds else '')).measure,
+    )
 
 
 @pytest.mark.parametrize('ds', dshapes)

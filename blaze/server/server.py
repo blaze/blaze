@@ -22,11 +22,9 @@ import blaze
 from blaze import compute, resource
 from blaze.compatibility import ExitStack
 from blaze.compute import compute_up
-from blaze.expr import utils as expr_utils
-
 from .serialization import json, all_formats
 from ..interactive import _Data
-from ..expr import Expr, symbol
+from ..expr import Expr, symbol, utils as expr_utils, Symbol
 
 
 __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
@@ -209,7 +207,7 @@ def check_request(f):
         try:
             serial = _get_format(accepted_mimetypes[content_type])
         except KeyError:
-            return ("Unsupported serialization format '%s'" % matched.groups()[0],
+            return ("Unsupported serialization format '%s'" % content_type,
                     RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
@@ -490,10 +488,9 @@ def from_tree(expr, namespace=None):
             cls = getattr(blaze.expr, op)
         else:
             cls = expression_from_name(op)
-        if 'Symbol' in op:
-            children = [from_tree(arg) for arg in args]
-        else:
-            children = [from_tree(arg, namespace) for arg in args]
+        if cls is Symbol:
+            cls = symbol
+        children = [from_tree(arg, namespace) for arg in args]
         return cls(*children)
     elif isinstance(expr, (list, tuple)):
         return tuple(from_tree(arg, namespace) for arg in expr)
@@ -504,7 +501,7 @@ def from_tree(expr, namespace=None):
 
 
 accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
-                         in all_formats}
+                      in all_formats}
 
 
 @api.route('/compute', methods=['POST', 'HEAD', 'OPTIONS'])
@@ -539,6 +536,8 @@ def compserver(payload, serial):
             profiler.enable()
             # ensure that we stop profiling in the case of an exception
             response_construction_context_stack.callback(profiler.disable)
+
+        expr = '<failed to parse expr>'
 
         @response_construction_context_stack.callback
         def log_time(start=time()):

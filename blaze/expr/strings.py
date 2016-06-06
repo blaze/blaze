@@ -35,7 +35,7 @@ class Like(ElemWise):
     >>> list(compute(expr, data))
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
-    __slots__ = '_hash', '_child', 'pattern'
+    _arguments = '_child', 'pattern'
 
     def _dshape(self):
         shape, schema = self._child.dshape.shape, self._child.schema
@@ -54,7 +54,7 @@ class UnaryStringFunction(ElemWise):
 
     """String function that only takes a single argument.
     """
-    __slots__ = '_hash', '_child'
+    _arguments = '_child',
 
 
 class strlen(UnaryStringFunction):
@@ -114,7 +114,7 @@ class StrCat(ElemWise):
     Name: name, dtype: object
 
     """
-    __slots__ = '_hash', 'lhs', 'rhs', 'sep'
+    _arguments = 'lhs', 'rhs', 'sep'
     __inputs__ = 'lhs', 'rhs'
 
     def _dshape(self):
