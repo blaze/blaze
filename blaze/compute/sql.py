@@ -24,7 +24,7 @@ from itertools import chain
 from operator import and_, eq, attrgetter
 import warnings
 
-from datashape import TimeDelta
+from datashape import TimeDelta, Option, int32
 from datashape.predicates import iscollection, isscalar, isrecord
 import numpy as np
 import numbers
@@ -87,6 +87,7 @@ from ..expr import (
     nelements,
     notnull,
     nunique,
+    reductions,
     std,
     str_len,
     strlen,
@@ -1319,6 +1320,30 @@ def _subexpr_optimize(expr):
 
 
 timedelta_ns = TimeDelta(unit='ns')
+
+
+@dispatch(reductions.any)
+def _subexpr_optimize(expr):
+    if expr.axis != tuple(range(expr._child.ndim)):
+        raise ValueError("Cannot perform 'any' over an axis: %s")
+    if expr.keepdims:
+        raise ValueError("Cannot perform 'any' with keepdims=True")
+
+    return expr._child.coerce(Option(int32)
+                              if isinstance(expr._child.dshape, Option) else
+                              int32).sum() != 0
+
+
+@dispatch(reductions.all)
+def _subexpr_optimize(expr):
+    if expr.axis != tuple(range(expr._child.ndim)):
+        raise ValueError("Cannot perform 'all' over an axis: %s")
+    if expr.keepdims:
+        raise ValueError("Cannot perform 'all' with keepdims=True")
+
+    return (~expr._child).coerce(Option(int32)
+                                 if isinstance(expr._child.dshape, Option) else
+                                 int32).sum() == 0
 
 
 @dispatch(Sub)
