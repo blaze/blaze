@@ -46,6 +46,8 @@ Bug Fixes
 * Fixed a bug with ``to_tree()`` and ``slice`` objects. Have to change the
   order of cases in ``to_tree()`` to ensure ``slice`` objects are handled
   before lookups inside the ``names`` namespace (:issue:`1516`).
+* Perform more input validation for ``sort()`` expression arguments
+  (:issue:`1517`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

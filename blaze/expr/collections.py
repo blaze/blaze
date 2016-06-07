@@ -97,13 +97,46 @@ def sort(child, key=None, ascending=True):
           * A list of column strings: ``t.sort(['name', 'amount'])``
           * An expression: ``t.sort(-t.amount)``
 
+        If sorting a columnar dataset, the ``key`` is ignored, as it is not
+        necessary:
+
+          * ``t.amount.sort()``
+          * ``t.amount.sort('amount')``
+          * ``t.amount.sort('foobar')``
+
+       are all equivalent.
+
     ascending : bool, optional
         Determines order of the sort
     """
+    if ascending not in (True, False):
+        # NOTE: this test is to guard against users saying `x.sort('a', 'b')`
+        # when they should have said `x.sort(['a', 'b'])`.
+        msg = "ascending must be True or False, given {}"
+        raise ValueError(msg.format(ascending))
     if not isrecord(child.dshape.measure):
-        key = None
+        if key is None or isinstance(key, _strtypes):
+            # Handle this case separately.
+            return Sort(child, None, ascending)
+        msg = "sort key {!r} not valid for schema {!r}"
+        raise ValueError(msg.format(key, child.dshape.measure))
+    if key is None and isrecord(child.dshape.measure):
+        key = child.dshape.measure.names
     if isinstance(key, list):
-        key = tuple(key)
+        key = keys_to_validate = tuple(key)
+    else:
+        keys_to_validate = (key,)
+    for k in keys_to_validate:
+        if k is None:
+            msg = "sort key {!r} not valid for schema {!r}"
+            raise ValueError(msg.format(k, child.dshape.measure))
+        elif isinstance(k, _strtypes):
+            if k not in child.dshape.measure.names:
+                msg = "sort key {} is not a column of schema {}"
+                raise ValueError(msg.format(k, child.dshape.measure))
+        elif not isinstance(k, Expr):
+            msg = "sort key {} is not a string column name or an expression."
+            raise ValueError(msg.format(k))
     return Sort(child, key, ascending)
 
 

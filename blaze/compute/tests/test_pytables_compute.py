@@ -192,7 +192,7 @@ class TestCSISort(object):
                   np.sort(x, order='id'))
 
     def test_non_existent_column(self, csi_data):
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             compute(t.sort('not here'), csi_data)
 
     def test_ascending(self, csi_data):
