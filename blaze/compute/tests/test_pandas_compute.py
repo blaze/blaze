@@ -718,6 +718,7 @@ def test_str_replace(old, new, max, expected):
     expected = pd.Series([expected, None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 def test_str_capitalize():
     df = pd.Series(['someone', None], name='name')
@@ -725,6 +726,7 @@ def test_str_capitalize():
     expected = pd.Series(['Someone', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 def test_str_strip():
     df = pd.Series([' someone ', None], name='name')
@@ -732,6 +734,7 @@ def test_str_strip():
     expected = pd.Series(['someone', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 def test_str_lstrip():
     df = pd.Series([' someone ', None], name='name')
@@ -739,6 +742,7 @@ def test_str_lstrip():
     expected = pd.Series(['someone ', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 def test_str_rstrip():
     df = pd.Series([' someone ', None], name='name')
@@ -746,6 +750,7 @@ def test_str_rstrip():
     expected = pd.Series([' someone', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 @pytest.mark.parametrize('width,side,fillchar, expected', (
     (10, None, None, '   someone'),
@@ -758,6 +763,7 @@ def test_str_pad(width, side, fillchar, expected):
     expected = pd.Series([expected, None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 @pytest.mark.parametrize('start,stop,repl,expected', (
     (1, 3, 'x', 'sxeone'),
@@ -771,6 +777,7 @@ def test_str_slice_replace(start, stop, repl, expected):
     expected = pd.Series([expected, None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 @pytest.mark.parametrize('what,expected',
                          [('alnum', True),
@@ -788,6 +795,7 @@ def test_str_predicates(what, expected):
     expected = pd.Series([expected, expected, expected], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
+    assert discover(result).measure == expr.dshape.measure
 
 
 @pytest.mark.parametrize('slc', [0, -1, 1000,

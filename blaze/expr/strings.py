@@ -141,7 +141,7 @@ def str_find(col, sub):
 
 class Replace(ElemWise):
     __slots__ = '_hash', '_child', 'old', 'new', 'max'
-    schema = datashape.string
+    schema = datashape.Option(datashape.string)
 
 def str_replace(col, old, new, max=None):
     _validate(old, 'old', basestring, 'string')
@@ -151,7 +151,7 @@ def str_replace(col, old, new, max=None):
 
 class Pad(ElemWise):
     __slots__ = '_hash', '_child', 'width', 'side', 'fillchar'
-    schema = datashape.string
+    schema = datashape.Option(datashape.string)
 
 def str_pad(col, width, side=None, fillchar=None):
     _validate(width, 'width', int, 'integer')
@@ -161,16 +161,16 @@ def str_pad(col, width, side=None, fillchar=None):
     return Pad(col, width, side, fillchar)
 
 class str_capitalize(UnaryStringFunction):
-    schema = datashape.string
+    schema = datashape.Option(datashape.string)
 
 class str_strip(UnaryStringFunction):
-    schema = datashape.string
+    schema = datashape.Option(datashape.string)
 
 class str_lstrip(UnaryStringFunction):
-    schema = datashape.string
+    schema = datashape.Option(datashape.string)
 
 class str_rstrip(UnaryStringFunction):
-    schema = datashape.string
+    schema = datashape.Option(datashape.string)
 
 class StrSlice(ElemWise):
     __slots__ = '_hash', '_child', 'slice'
