@@ -469,7 +469,7 @@ def test_map_pandas_client_server(iris_server, serial):
 def test_apply_client_server(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))
-    expr = t.species.apply(id, 'int') # Very dumb example...
+    expr = t.species.apply(id, 'int32') # Very dumb example...
     query = {'expr': to_tree(expr)}
     response = test.post('/compute',
                          data=serial.dumps(query),
@@ -478,7 +478,7 @@ def test_apply_client_server(iris_server, serial):
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
     assert isinstance(result, _inttypes)
-    assert isinstance(compute(expr, {t: iris}, return_type=int), _inttypes)
+    assert isinstance(int(compute(expr, {t: iris}, return_type=int)), _inttypes)
 
 
 @pytest.mark.parametrize('serial', all_formats)
