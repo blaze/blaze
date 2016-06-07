@@ -129,7 +129,7 @@ class StrFind(ElemWise):
 
     """
 
-    __slots__ = '_hash', '_child', 'sub'
+    _arguments = '_child', 'sub'
     schema = datashape.Option(datashape.int64)
 
 
@@ -140,7 +140,7 @@ def str_find(col, sub):
     return StrFind(col, sub)
 
 class Replace(ElemWise):
-    __slots__ = '_hash', '_child', 'old', 'new', 'max'
+    _arguments = '_child', 'old', 'new', 'max'
     schema = datashape.Option(datashape.string)
 
 def str_replace(col, old, new, max=None):
@@ -150,7 +150,7 @@ def str_replace(col, old, new, max=None):
     return Replace(col, old, new, max)
 
 class Pad(ElemWise):
-    __slots__ = '_hash', '_child', 'width', 'side', 'fillchar'
+    _arguments = '_child', 'width', 'side', 'fillchar'
     schema = datashape.Option(datashape.string)
 
 def str_pad(col, width, side=None, fillchar=None):
@@ -173,11 +173,11 @@ class str_rstrip(UnaryStringFunction):
     schema = datashape.Option(datashape.string)
 
 class StrSlice(ElemWise):
-    __slots__ = '_hash', '_child', 'slice'
+    _arguments = '_child', 'slice'
     schema = datashape.Option(datashape.string)
 
 class SliceReplace(ElemWise):
-    __slots__ = '_hash', '_child', 'start', 'stop', 'repl'
+    _arguments = '_child', 'start', 'stop', 'repl'
     schema = datashape.Option(datashape.string)
 
 def str_slice_replace(col, start=None, stop=None, repl=None):
