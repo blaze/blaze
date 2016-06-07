@@ -97,6 +97,15 @@ def sort(child, key=None, ascending=True):
           * A list of column strings: ``t.sort(['name', 'amount'])``
           * An expression: ``t.sort(-t.amount)``
 
+        If sorting a columnar dataset, the ``key`` is ignored, as it is not
+        necessary:
+
+          * ``t.amount.sort()``
+          * ``t.amount.sort('amount')``
+          * ``t.amount.sort('foobar')``
+
+       are all equivalent.
+
     ascending : bool, optional
         Determines order of the sort
     """
