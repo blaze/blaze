@@ -488,7 +488,7 @@ def test_apply_client_server(iris_server, serial):
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
     assert isinstance(result, _inttypes)
-    assert isinstance(int(compute(expr, {t: iris}, return_type=int)), _inttypes)
+    assert isinstance(int(compute(expr, {t: iris})), _inttypes)
 
 
 @pytest.mark.parametrize('serial', all_formats)
