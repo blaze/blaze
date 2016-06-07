@@ -18,6 +18,7 @@ from pandas.util.testing import assert_frame_equal
 from toolz import pipe, partial
 
 from blaze.dispatch import dispatch
+from blaze.compatibility import _inttypes
 from blaze.expr import Expr
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
