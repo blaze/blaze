@@ -101,6 +101,8 @@ def sort(child, key=None, ascending=True):
         Determines order of the sort
     """
     if ascending not in (True, False):
+        # NOTE: this test is to guard against users saying `x.sort('a', 'b')`
+        # when they should have said `x.sort(['a', 'b'])`.
         msg = "ascending must be True or False, given {}"
         raise ValueError(msg.format(ascending))
     if not isrecord(child.dshape.measure):
