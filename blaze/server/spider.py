@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-
 from __future__ import absolute_import
 
 import os
-import sys
 import argparse
 import importlib
 
@@ -169,9 +167,10 @@ def _parse_args():
     p.add_argument('-D', '--debug', action='store_true',
                    help='Start the Flask server in debug mode')
     p.add_argument('--log-file', type=str, default=None,
-                   help='Log file for warnings and errors.')
+                   help='Log filename -- if not set, logs to standard output.')
     p.add_argument('--log-level', type=str, default='WARNING',
-                   help='Logging level.')
+                   help=('Level of output for logs. Set to DEBUG for most'
+                         'verbose, or ERROR for least.'))
     args = p.parse_args()
     if not (args.path or args.allow_dynamic_addition):
         msg = "No YAML file provided and --allow-dynamic-addition flag not set."
