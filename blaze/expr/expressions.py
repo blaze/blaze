@@ -304,7 +304,7 @@ class Symbol(Expr):
 
 @copydoc(Symbol)
 def symbol(name, dshape, token=None):
-    return Symbol(name, datashape.dshape(dshape), token or 0)
+    return Symbol(name, dshape, token or 0)
 
 
 @dispatch(Symbol, Mapping)
