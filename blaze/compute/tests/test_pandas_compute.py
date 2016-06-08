@@ -714,7 +714,7 @@ def test_str_lower():
     ('o', 'x', 1, 'Sxmeone')))
 def test_str_replace(old, new, max, expected):
     df = pd.Series(['Someone', None], name='name')
-    expr = t.name.str.replace(old, new, max)
+    expr = nt.name.str.replace(old, new, max)
     expected = pd.Series([expected, None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -722,7 +722,7 @@ def test_str_replace(old, new, max, expected):
 
 def test_str_capitalize():
     df = pd.Series(['someone', None], name='name')
-    expr = t.name.str.capitalize()
+    expr = nt.name.str.capitalize()
     expected = pd.Series(['Someone', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -730,7 +730,7 @@ def test_str_capitalize():
 
 def test_str_strip():
     df = pd.Series([' someone ', None], name='name')
-    expr = t.name.str.strip()
+    expr = nt.name.str.strip()
     expected = pd.Series(['someone', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -738,7 +738,7 @@ def test_str_strip():
 
 def test_str_lstrip():
     df = pd.Series([' someone ', None], name='name')
-    expr = t.name.str.lstrip()
+    expr = nt.name.str.lstrip()
     expected = pd.Series(['someone ', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -746,7 +746,7 @@ def test_str_lstrip():
 
 def test_str_rstrip():
     df = pd.Series([' someone ', None], name='name')
-    expr = t.name.str.rstrip()
+    expr = nt.name.str.rstrip()
     expected = pd.Series([' someone', None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -759,7 +759,7 @@ def test_str_rstrip():
     (10, None, 'x', 'xxxsomeone')))
 def test_str_pad(width, side, fillchar, expected):
     df = pd.Series(['someone', None], name='name')
-    expr = t.name.str.pad(width, side, fillchar)
+    expr = nt.name.str.pad(width, side, fillchar)
     expected = pd.Series([expected, None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -773,7 +773,7 @@ def test_str_pad(width, side, fillchar, expected):
     (1, None, None, 's')))
 def test_str_slice_replace(start, stop, repl, expected):
     df = pd.Series(['someone', None], name='name')
-    expr = t.name.str.slice_replace(start, stop, repl)
+    expr = nt.name.str.slice_replace(start, stop, repl)
     expected = pd.Series([expected, None], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
