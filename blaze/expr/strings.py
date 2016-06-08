@@ -151,7 +151,10 @@ def str_replace(col, old, new, max=None):
 
 class Pad(ElemWise):
     _arguments = '_child', 'width', 'side', 'fillchar'
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 def str_pad(col, width, side=None, fillchar=None):
     _validate(width, 'width', int, 'integer')
@@ -161,16 +164,28 @@ def str_pad(col, width, side=None, fillchar=None):
     return Pad(col, width, side, fillchar)
 
 class str_capitalize(UnaryStringFunction):
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 class str_strip(UnaryStringFunction):
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 class str_lstrip(UnaryStringFunction):
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 class str_rstrip(UnaryStringFunction):
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 class StrSlice(ElemWise):
     _arguments = '_child', 'slice'
