@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
 import logging
 from logging import Formatter
 from functools import wraps
@@ -279,6 +280,12 @@ class Server(object):
         Expose an `/add` endpoint to allow datasets to be dynamically added to
         the server. Since this increases the risk of security holes, it defaults
         to `False`.
+    logfile : str or file-like object, optional
+        A filename or open file-like stream to which to send log output. Defaults
+        to `sys.stdout`.
+    loglevel : str, optional
+        A string logging level (e.g. 'WARNING', 'INFO') to set how verbose log
+        output should be.
 
     Examples
     --------
@@ -301,8 +308,8 @@ class Server(object):
                  profiler_output=None,
                  profile_by_default=False,
                  allow_add=False,
-                 logfile=None,
-                 loglevel=None):
+                 logfile=sys.stdout,
+                 loglevel='WARNING'):
         if isinstance(data, collections.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
                           data)
@@ -321,11 +328,14 @@ class Server(object):
                                allow_add=allow_add)
         self.data = data
         if logfile:
-            file_handler = logging.FileHandler(logfile)
-            file_handler.setFormatter(Formatter('[%(asctime)s %(levelname)s] %(message)s '
-                                                '[in %(pathname)s:%(lineno)d]'))
-            file_handler.setLevel(getattr(logging, loglevel, 'WARNING'))
-            app.logger.addHandler(file_handler)
+            if isinstance(logfile, (str, bytes)):
+                handler = logging.FileHandler(logfile)
+            else:
+                handler = logging.StreamHandler(logfile)
+            handler.setFormatter(Formatter('[%(asctime)s %(levelname)s] %(message)s '
+                                           '[in %(pathname)s:%(lineno)d]'))
+            handler.setLevel(getattr(logging, loglevel))
+            app.logger.addHandler(handler)
 
     def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
         """Run the server.
