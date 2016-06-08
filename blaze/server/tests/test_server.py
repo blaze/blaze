@@ -18,6 +18,7 @@ from pandas.util.testing import assert_frame_equal
 from toolz import pipe, partial
 
 from blaze.dispatch import dispatch
+from blaze.compatibility import _inttypes
 from blaze.expr import Expr
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
@@ -476,7 +477,8 @@ def test_apply_client_server(iris_server, serial):
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert type(result) == type(compute(expr, {t: iris}, return_type=int))
+    assert isinstance(result, _inttypes)
+    assert isinstance(compute(expr, {t: iris}), _inttypes)
 
 
 @pytest.mark.parametrize('serial', all_formats)
