@@ -356,7 +356,9 @@ class Server(object):
         self.port = port
         try:
             # Blocks until the server is shut down.
+            self.app.logger.debug('Starting server...')
             self.app.run(port=port, **kwargs)
+            self.app.logger.debug('Stopping server...')
         except socket.error:
             if not retry:
                 raise
@@ -578,8 +580,8 @@ def compserver(payload, serial):
         @response_construction_context_stack.callback
         def log_time(start=time()):
             app.logger.info('compute expr: %s\ntotal time (s): %.3f',
-                                          expr,
-                                          time() - start)
+                            expr,
+                            time() - start)
 
         ns = payload.get('namespace', {})
         compute_kwargs = payload.get('compute_kwargs') or {}
@@ -663,6 +665,7 @@ def addserver(payload, serial):
                 RC.UNPROCESSABLE_ENTITY)
 
     [(name, resource_info)] = payload.items()
+    flask.current_app.logger.debug("Attempting to add dataset '%s'" % name)
 
     if name in data:
         msg = "Cannot add dataset named %s, already exists on server."
