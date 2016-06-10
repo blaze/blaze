@@ -925,6 +925,19 @@ def test_coerce_series():
     assert_series_equal(result, expected)
 
 
+@pytest.mark.parametrize('d, tp, ptp', [(list(range(10)), 'string', str),
+                                        (list(range(10)) + [None], '?string', str),
+                                        (['2010-01-01'], 'datetime', np.datetime64),
+                                        (['2010-01-01', None, ''], '?datetime', np.datetime64)])
+def test_coerce_series_string_datetime(d, tp, ptp):
+    s = pd.Series(d, name='a')
+    e = symbol('t', discover(s)).coerce(to=tp)
+    assert e.schema == dshape(tp)
+    result = compute(e, s)
+    expected = s.astype(ptp)
+    assert_series_equal(result, expected)
+
+
 def test_concat_arr():
     s_data = Series(np.arange(15))
     t_data = Series(np.arange(15, 30))
