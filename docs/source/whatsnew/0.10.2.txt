@@ -47,6 +47,8 @@ Bug Fixes
   before lookups inside the ``names`` namespace (:issue:`1516`).
 * Perform more input validation for ``sort()`` expression arguments
   (:issue:`1517`).
+* Fixes issue with string and datetime coercions on Pandas objects
+  (:issue:`1519` :issue:`1524`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
