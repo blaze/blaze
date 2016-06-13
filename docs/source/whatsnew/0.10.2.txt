@@ -49,6 +49,8 @@ Bug Fixes
   (:issue:`1517`).
 * Fixes issue with string and datetime coercions on Pandas objects
   (:issue:`1519` :issue:`1524`).
+* Fixed a bug with ``isin`` and ``Selection``\s on sql selectables
+  (:issue:`1528`).
 
 Miscellaneous
 ~~~~~~~~~~~~~

@@ -810,3 +810,23 @@ def test_all(sql):
     assert compute(~(s.B == 1).all(), {s: sql}, return_type='core')
     assert compute(~(s.B == 2).all(), {s: sql}, return_type='core')
     assert compute(~(s.B == 3).all(), {s: sql}, return_type='core')
+
+
+def test_isin_selectable(sql):
+    s = symbol('s', discover(sql))
+
+    # wrap the resource in a select
+    assert compute(s.B.isin({1, 3}),
+                   sa.select(sql._resources()[sql].columns),
+                   return_type=list) == [(True,), (False,)]
+
+
+def test_selection_selectable(sql):
+    s = symbol('s', discover(sql))
+
+    # wrap the resource in a select
+    assert (compute(s[s.B.isin({1, 3})],
+                    sa.select(sql._resources()[sql].columns),
+                    return_type=pd.DataFrame) ==
+            pd.DataFrame([['a', 1]],
+                         columns=s.dshape.measure.names)).all().all()
