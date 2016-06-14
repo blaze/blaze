@@ -1,7 +1,6 @@
 # Documentation end-to-end examples, walkthroughs, quickstart 
 
-## Example with remote live data: Yahoo Finance. 
-## Static data: US Gov public data
+## Example with remote live data: Yahoo Finance. \n Static data: US Gov public data
 
 * Access with `http` URIs with `blaze.data`
   - `yhoo_finance_example.ipynb`: notebook example with output
