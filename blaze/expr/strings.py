@@ -141,7 +141,10 @@ def str_find(col, sub):
 
 class Replace(ElemWise):
     _arguments = '_child', 'old', 'new', 'max'
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 def str_replace(col, old, new, max=None):
     _validate(old, 'old', basestring, 'string')
@@ -189,11 +192,17 @@ class str_rstrip(UnaryStringFunction):
 
 class StrSlice(ElemWise):
     _arguments = '_child', 'slice'
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 class SliceReplace(ElemWise):
     _arguments = '_child', 'start', 'stop', 'repl'
-    schema = datashape.Option(datashape.string)
+
+    @property
+    def schema(self):
+        return self._child.schema
 
 def str_slice_replace(col, start=None, stop=None, repl=None):
     _validate_optional(start, 'start', int, 'integer')
