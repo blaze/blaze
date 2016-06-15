@@ -4,7 +4,8 @@
 
 * Access with `http` URIs with `blaze.data`
   - Notebook example of [Yahoo Finance Data](yhoo_finance_example.ipynb)
-  - Sample CSV data from `catalog.data.gov` for [`Impaired Driving In 2012`](impaired_driving_data_us_states_2012.ipynb): 
+  - Sample CSV data from `catalog.data.gov` for [`Impaired Driving In 2012`](impaired_driving_data_us_states_2012.ipynb)
+    - Rendered plots on [anaconda.org](https://beta.anaconda.org/jsandhu/impaired_driving_data_us_states_2012/notebook)
 
 
 * Describe briefly download and caching with `Temp(CSV)`
