@@ -3,7 +3,10 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 from datetime import datetime, timedelta, date, time
+import itertools
+import random
 
+import blaze as bz
 import numpy as np
 
 import pandas as pd
@@ -62,6 +65,12 @@ dfbgr = DataFrame([['Alice', 'F', 100, 1, 'Alice comment'],
                    ['Drew', 'M', 100, 5, 'Drew comment 2'],
                    ['Drew', 'M', 200, 5, None]],
                   columns=['name', 'sex', 'amount', 'id', 'comment'])
+
+
+df_float = DataFrame([[4.0, 782.0, 144.0, 767.0],
+                      [4.0, 300.0, 10.0, 20.0],
+                      [4.0, 200.0, 1000.0, 2000.0],
+                      [29.0, 762.0, 224.0, 88.0]], columns=['a', 'b', 'c', 'd'])
 
 
 @pytest.fixture(scope='module')
@@ -1187,3 +1196,162 @@ def test_coalesce():
         }),
         pd.Series([0, None, 1, -4, 2, -6], dtype=object),
     )
+
+
+def test_asc():
+    df = df_float
+    data = bz.data(df_float)
+
+    x = compute(bz.asc(data))
+    y = df.sort_values(['a', 'b', 'c', 'd'], ascending=True)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.asc(data, 'a'))
+    y = df.sort_values(['a'], ascending=True)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.asc(data, 'b'))
+    y = df.sort_values(['b'], ascending=True)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.asc(data, data.a))
+    y = df.sort_values(['a'], ascending=True)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.asc(data, data.d))
+    y = df.sort_values(['d'], ascending=True)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.asc(data.a))
+    y = df.a.sort_values(ascending=True)
+    assert_series_equal(x, y)
+
+    x = compute(bz.asc(data.c))
+    y = df.c.sort_values(ascending=True)
+    assert_series_equal(x, y)
+
+    x = compute(bz.asc(data.a, 'a'))
+    y = df.a.sort_values(ascending=True)
+    assert_series_equal(x, y)
+
+    x = compute(bz.asc(data.c, 'c'))
+    y = df.c.sort_values(ascending=True)
+    assert_series_equal(x, y)
+
+
+def test_desc():
+    df = df_float
+    data = bz.data(df_float)
+
+    x = compute(bz.desc(data))
+    y = df.sort_values(['a', 'b', 'c', 'd'], ascending=False)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.desc(data, 'a'))
+    y = df.sort_values(['a'], ascending=False)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.desc(data, 'b'))
+    y = df.sort_values(['b'], ascending=False)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.desc(data, data.a))
+    y = df.sort_values(['a'], ascending=False)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.desc(data, data.d))
+    y = df.sort_values(['d'], ascending=False)
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.desc(data.a))
+    y = df.a.sort_values(ascending=False)
+    assert_series_equal(x, y)
+
+    x = compute(bz.desc(data.c))
+    y = df.c.sort_values(ascending=False)
+    assert_series_equal(x, y)
+
+    x = compute(bz.desc(data.a, 'a'))
+    y = df.a.sort_values(ascending=False)
+    assert_series_equal(x, y)
+
+    x = compute(bz.desc(data.c, 'c'))
+    y = df.c.sort_values(ascending=False)
+    assert_series_equal(x, y)
+
+
+def test_sort2():
+    df = df_float
+    data = bz.data(df_float)
+
+    x = compute(bz.sort(data))
+    y = df.sort_values(['a', 'b', 'c', 'd'])
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.sort2(data, data.asc()))
+    y = df.sort_values(['a', 'b', 'c', 'd'])
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.sort2(data, data.asc('b')))
+    y = df.sort_values(['b'])
+    tm.assert_frame_equal(x, y)
+
+    x = compute(bz.sort2(data, data.asc(data.c)))
+    y = df.sort_values(['c'])
+    tm.assert_frame_equal(x, y)
+
+    # This is GitHub issue #1525, which is already fixed for sort2/sqlalchemy.
+    # Raise ValueError for now.
+    with pytest.raises(ValueError):
+        compute(bz.sort2(data.a, data.asc(data.b)))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort2(data.a, data.desc('b')))
+
+    x = compute(bz.sort2(data.a, data.desc(data.a)))
+    y = df.a.sort_values(ascending=[False])
+    assert_series_equal(x, y)
+
+    for n in range(1, 5):
+        for keys in itertools.permutations(['a', 'b', 'c', 'd'], n):
+            x = compute(bz.sort2(data, *keys))
+            y = df.sort_values(list(keys))
+            tm.assert_frame_equal(x, y)
+
+            ascending = []
+            xkeys = []
+            for k in keys:
+                b = random.choice([True, False])
+                ascending.append(b)
+                xkeys.append(bz.asc(k) if b else bz.desc(k))
+
+            x = compute(bz.sort2(data, *xkeys))
+            y = df.sort_values(list(keys), ascending=ascending)
+            tm.assert_frame_equal(x, y)
+
+
+def test_sort2():
+    tm.assert_frame_equal(compute(t.sort2('amount'), df),
+                          pdsort(df, 'amount'))
+
+    tm.assert_frame_equal(compute(t.sort2(bz.asc('amount')), df),
+                          pdsort(df, 'amount', ascending=True))
+
+    tm.assert_frame_equal(compute(t.sort2('amount', 'id'), df),
+                          pdsort(df, ['amount', 'id']))
+
+
+def test_sort2_on_series_no_warning(recwarn):
+    expected = df.amount.order()
+
+    recwarn.clear()
+
+    assert_series_equal(compute(t['amount'].sort2('amount'), df), expected)
+
+    # raises as assertion error if no warning occurs, same thing for below
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)
+
+    assert_series_equal(compute(t['amount'].sort2(), df), expected)
+    with pytest.raises(AssertionError):
+        assert recwarn.pop(FutureWarning)

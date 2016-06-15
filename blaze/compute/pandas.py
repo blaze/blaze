@@ -72,6 +72,7 @@ from ..expr import (
     Interp,
     IsIn,
     Join,
+    Key,
     Label,
     Like,
     Map,
@@ -89,6 +90,7 @@ from ..expr import (
     Shift,
     Slice,
     Sort,
+    Sort2,
     strftime,
     Summary,
     Tail,
@@ -569,6 +571,39 @@ pdsort = getattr(
     pd.DataFrame,
     'sort' if LooseVersion(pd.__version__) < '0.17.0' else 'sort_values'
 )
+
+
+@dispatch(Key, (DataFrame, DaskDataFrame))
+def compute_up(t, df, **kwargs):
+    return pdsort(df, t.key, ascending=t.ascending)
+
+
+@dispatch(Key, Series)
+def compute_up(t, s, **kwargs):
+    try:
+        return s.sort_values(ascending=t.ascending)
+    except AttributeError:
+        return s.order(ascending=t.ascending)
+
+
+@dispatch(Sort2, (DataFrame, DaskDataFrame))
+def compute_up(t, df, **kwargs):
+    ascending = [x.ascending for x in t.keys for _ in x.key]
+    key = [k for x in t.keys for k in x.key]
+    return pdsort(df, key, ascending=ascending)
+
+
+@dispatch(Sort2, Series)
+def compute_up(t, s, **kwargs):
+    ascending = [x.ascending for x in t.keys for _ in x.key]
+    key = [k for x in t.keys for k in x.key]
+    if len(key) != 1 or key[0] != s.name:
+        raise ValueError(
+            "cannot sort pandas series '%s' with key '%s'" % (s.name, key[0]))
+    try:
+        return s.sort_values(ascending=ascending)
+    except AttributeError:
+        return s.order(ascending=ascending)
 
 
 @dispatch(Sort, DataFrame)

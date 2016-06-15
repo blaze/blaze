@@ -21,8 +21,10 @@ from ..compatibility import zip_longest, _strtypes
 from ..utils import listpack
 
 
-__all__ = ['Concat',
+__all__ = ['asc',
+           'Concat',
            'concat',
+           'desc',
            'Distinct',
            'distinct',
            'Head',
@@ -31,6 +33,7 @@ __all__ = ['Concat',
            'isin',
            'Join',
            'join',
+           'Key',
            'Merge',
            'merge',
            'Sample',
@@ -38,10 +41,190 @@ __all__ = ['Concat',
            'Shift',
            'shift',
            'Sort',
+           'Sort2',
            'sort',
+           'sort2',
            'Tail',
            'tail',
            'transform']
+
+
+class Key(Expr):
+
+    """Expression sorted in ascending or descending order"""
+
+    _arguments = '_child', 'table', '_key', 'ascending'
+
+    def _dshape(self):
+        return self._child.dshape
+
+    @property
+    def key(self):
+        return list(self._key)
+
+    def _len(self):
+        return self._child._len()
+
+    @property
+    def _name(self):
+        return self._child._name
+
+    def _copy(self):
+        """Create a copy of self, detached from any specific table."""
+        return Key(None, None, self._key, self.ascending)
+
+    def _invert(self):
+        """Create a copy of self, detached from any specific table and
+           with inverted order."""
+        return Key(None, None, self._key, not self.ascending)
+
+    def __str__(self):
+        func = 'asc' if self.ascending else 'desc'
+        key = repr(self._key[0]) if len(self._key) == 1 else ""
+        return "%s.%s(%s)" % (self._child, func, key)
+
+
+def _isrecord(obj):
+    return isinstance(obj, Expr) and isrecord(obj.dshape.measure)
+
+
+def _find_table_and_field(obj):
+    while True:
+        try:
+            child = obj._child
+        except AttributeError:
+            return None, None
+        if isinstance(obj, Field) and _isrecord(child):
+            return child, obj
+        obj = child
+
+
+def _extract_key_args(first, second, func):
+    child = first
+    if isinstance(first, _strtypes) and second is None: # asc('a')
+         child = None
+         table = None
+         key = (first,)
+    elif _isrecord(first):
+         table = first
+         if second is None: # asc(data)
+             key = tuple(table.dshape.measure.names)
+         elif isinstance(second, _strtypes) and second in table.dshape.measure.names: # asc(data, 'a')
+             key = (second,)
+         elif hasattr(second, '_child') and second._child.isidentical(table): # asc(data, data.a)
+             key = (second._name,)
+         else:
+             raise ValueError("%s(): invalid key for table %s" % (func, str(table)))
+    else:
+         table, field = _find_table_and_field(first)
+         if table is None:
+             raise ValueError("%s(): invalid key for table %s" % (func, str(table)))
+
+         if second is None: # asc(data.a)
+             key = (field._name,)
+         elif isinstance(second, _strtypes) and second in table.dshape.measure.names: # asc(data.a, 'a')
+             key = (second,)
+         elif hasattr(second, '_child') and second._child.isidentical(table): # asc(data.a, data.a)
+             key = (second._name,)
+         else:
+             raise ValueError("%s(): invalid key for table %s" % (func, str(table)))
+    return child, table, key
+
+
+def asc(first=None, second=None):
+    """Sort an expression in ascending order"""
+    child, table, key = _extract_key_args(first, second, 'asc')
+    return Key(child, table, key, True)
+
+
+def desc(first=None, second=None):
+    """Sort an expression in descending order"""
+    child, table, key = _extract_key_args(first, second, 'desc')
+    return Key(child, table, key, False)
+
+
+class Sort2(Expr):
+
+    """ Table in sorted order
+
+    Examples
+    --------
+    >>> import blaze as bz
+    >>> from blaze import symbol
+    >>> accounts = symbol('accounts', 'var * {name: string, amount: int}')
+    >>> accounts.sort2(bz.desc('amount')).schema
+    dshape("{name: string, amount: int32}")
+    """
+
+    _arguments = '_child', '_keys'
+
+    def _dshape(self):
+        return self._child.dshape
+
+    @property
+    def keys(self):
+        return list(self._keys)
+
+    def _len(self):
+        return self._child._len()
+
+    @property
+    def _name(self):
+        return self._child._name
+
+    def __str__(self):
+        return "%s.sort2(%s)" % (self._child, ", ".join(str(x) for x in self.keys))
+
+
+def sort2(first, *rest):
+    """ Sort a collection
+
+    Parameters
+    ----------
+    key1, key2, ...
+        Defines by what you want to sort.
+
+          * A single column string: ``t.sort2('amount')``
+          * A list of column strings: ``t.sort2('name', 'amount')``
+          * Specify the sort order: ``t.sort2(bz.desc('amount'))``
+    """
+    child = table = first
+    if _isrecord(first):
+        if not rest: # sort2(data)
+            rest = [asc(table, k) for k in table.dshape.measure.names]
+    else:
+        table, field = _find_table_and_field(first)
+        if table is None:
+            raise ValueError("sort2(): no valid table in the sort expression")
+        if not rest: # sort2(data.a)
+            rest = [field._name]
+    keys = []
+    field_names = []
+    for k in rest:
+        if isinstance(k, _strtypes): # sort2(data, 'a', ...)
+            keys.append(asc(child, k))
+            field_names.append(k)
+        elif isinstance(k, Key):
+            if k.table is None: # sort2(data, asc('a'), ...)
+                # len(k.key) == 1
+                keys.append(asc(child, k.key[0]) if k.ascending else desc(child, k.key[0]))
+                field_names.extend(k.key)
+            elif k.table.isidentical(table): # sort2(data, asc(data.a), ...)
+                keys.append(k)
+                field_names.extend(k.key)
+            else:
+                raise ValueError("sort2(): key argument refers to invalid table")
+        else:
+            t, f = _find_table_and_field(k) # sort2(data, data.a, ...)
+            if t is not None and t.isidentical(table):
+                k = asc(k)
+                keys.append(k)
+                field_names.extend(k.key)
+            else:
+                raise ValueError("sort2(): invalid sort key: '%s'" % k)
+    if len(set(field_names)) != len(field_names):
+        raise ValueError("sort2(): duplicate fieldname arguments")
+    return Sort2(child, tuple(keys))
 
 
 class Sort(Expr):
@@ -831,7 +1014,7 @@ def shift(expr, n):
     return Shift(expr, n)
 
 
-dshape_method_list.extend([(iscollection, set([sort, head, tail, sample])),
+dshape_method_list.extend([(iscollection, set([asc, desc, sort, sort2, head, tail, sample])),
                            (lambda ds: len(ds.shape) == 1, set([distinct, shift])),
                            (lambda ds: (len(ds.shape) == 1 and
                                         isscalar(getattr(ds.measure, 'key', ds.measure))), set([isin])),
