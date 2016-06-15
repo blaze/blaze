@@ -459,6 +459,16 @@ def compute_up(expr, tbl, predicate, scope=None, **kwargs):
         return select([tbl]).where(predicate)
 
 
+@dispatch(Selection, Selectable, Selectable)
+def compute_up(expr, tbl, predicate, **kwargs):
+    col, = inner_columns(predicate)
+    return reconstruct_select(
+        inner_columns(tbl),
+        tbl,
+        whereclause=unify_wheres((tbl, predicate)),
+    ).where(col)
+
+
 def select(s):
     """ Permissive SQL select
 
@@ -1406,6 +1416,15 @@ def post_compute(_, s, **kwargs):
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
+
+
+@dispatch(IsIn, Selectable)
+def compute_up(expr, data, **kwargs):
+    assert len(data.columns) == 1, (
+        'only 1 column is allowed in a Select in IsIn'
+    )
+    col, = inner_columns(data)
+    return reconstruct_select((col.in_(expr._keys),), data)
 
 
 @dispatch(Slice, (Select, Selectable, ColumnElement))
