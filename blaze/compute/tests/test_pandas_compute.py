@@ -20,7 +20,7 @@ from blaze.expr import symbol, join, by, summary, distinct, shape
 from blaze.expr import (merge, exp, mean, count, nunique, sum, min, max, any,
                         var, std, concat, coalesce)
 from blaze.compatibility import builtins, xfail, assert_series_equal
-
+import sys
 
 t = symbol('t', 'var * {name: string, amount: int, id: int}')
 nt = symbol('t', 'var * {name: ?string, amount: float64, id: int}')
@@ -733,12 +733,15 @@ inputs = [ # dshape, op, args, data, expected
           ]
 
 # Generate inputs with missing values based on above `inputs` sequence.
-na_inputs = [(datashape.Option(dshape),
+na_inputs = [(datashape.Option(ds),
               op,
               args,
               data + [None],
               expected + [None]) for
-             (dshape, op, args, data, expected) in inputs]
+             (ds, op, args, data, expected) in inputs]
+# Address listcomp variable leakage in Py2.
+if sys.version_info[0] == 2:
+    del ds, op, args, data, expected
 
 @pytest.mark.parametrize('ds, op, args, data, expected', inputs + na_inputs)
 def test_str_ops(ds, op, args, data, expected):
