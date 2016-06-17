@@ -727,9 +727,6 @@ inputs = [ # dshape, op, args, data, expected
           ('string', 'slice_replace', [1, None, 'x'], ['someone'], ['sx']),
           ('string', 'slice_replace', [None, None, 'x'], ['someone'], ['x']),
           ('string', 'slice_replace', [1, None, None], ['someone'], ['s']),
-          # TODO: slice
-          # TODO: cat
-          # TODO: find
           ]
 
 # Generate inputs with missing values based on above `inputs` sequence.
