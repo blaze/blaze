@@ -75,9 +75,11 @@ from ..expr import (
     Map,
     Merge,
     Millisecond,
+    Pad,
     Projection,
     ReLabel,
     Reduction,
+    Replace,
     Sample,
     Selection,
     Shift,
@@ -99,6 +101,9 @@ from ..expr import (
     symbol,
     var,
     StrCat,
+    StrFind,
+    StrSlice,
+    SliceReplace,
 )
 
 __all__ = []
@@ -288,7 +293,20 @@ def compute_up(expr, data, **kwargs):
 string_func_names = {'str_len': 'len',
                      'strlen': 'len',
                      'str_upper': 'upper',
-                     'str_lower': 'lower'}
+                     'str_lower': 'lower',
+                     'str_capitalize': 'capitalize',
+                     'str_strip': 'strip',
+                     'str_lstrip': 'lstrip',
+                     'str_rstrip': 'rstrip',
+                     'str_isalnum': 'isalnum',
+                     'str_isalpha': 'isalpha',
+                     'str_isdecimal': 'isdecimal',
+                     'str_isdigit': 'isdigit',
+                     'str_islower': 'islower',
+                     'str_isnumeric': 'isnumeric',
+                     'str_isspace': 'isspace',
+                     'str_istitle': 'istitle',
+                     'str_isupper': 'isupper'}
 
 
 @dispatch(UnaryStringFunction, Series)
@@ -296,12 +314,37 @@ def compute_up(expr, data, **kwargs):
     name = type(expr).__name__
     return getattr(data.str, string_func_names.get(name, name))()
 
+@dispatch(Replace, Series)
+def compute_up(expr, data, **kwargs):
+    max = expr.max is None and -1 or expr.max
+    return data.str.replace(expr.old, expr.new, max)
+
+@dispatch(Pad, Series)
+def compute_up(expr, data, **kwargs):
+    side = expr.side is None and 'left' or expr.side
+    fillchar = expr.fillchar is None and ' ' or expr.fillchar
+    return data.str.pad(expr.width, side, fillchar)
 
 @dispatch(StrCat, Series, Series)
 def compute_up(expr, lhs_data, rhs_data, **kwargs):
     res = lhs_data.str.cat(rhs_data, sep=expr.sep)
     return res
 
+
+@dispatch(StrFind, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.find(expr.sub)
+
+
+@dispatch(StrSlice, Series)
+def compute_up(expr, data, **kwargs):
+    if isinstance(expr.slice, tuple):
+        return data.str[slice(*expr.slice)]
+    return data.str[expr.slice]
+
+@dispatch(SliceReplace, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.slice_replace(expr.start, expr.stop, expr.repl)
 
 def unpack(seq):
     """ Unpack sequence of length one

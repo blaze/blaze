@@ -831,6 +831,26 @@ def test_str_lower():
     assert normalize(result) == normalize(expected)
 
 
+def test_str_find():
+    expr = t.name.str.find('a')
+    expected = """
+               SELECT position(:param_1 in accounts.name) as position_1
+               FROM accounts
+               """
+    result = str(compute(expr, s, return_type='native'))
+    assert normalize(result) == normalize(expected)
+
+
+def test_str_slice():
+    expr = t.name.str[1:3]
+    expected = """
+               SELECT substring(accounts.name, :substring_2, :substring_3) as substring_1
+               from accounts
+               """
+    result = str(compute(expr, s, return_type='native'))
+    assert normalize(result) == normalize(expected)
+
+
 @pytest.mark.parametrize("sep", [None, " sep "])
 def test_str_cat(sep):
     """

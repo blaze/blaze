@@ -43,7 +43,7 @@ from toolz.compatibility import zip
 from toolz.curried import map
 
 from .core import compute_up, compute, base
-from ..compatibility import reduce, basestring
+from ..compatibility import reduce, basestring, _inttypes
 from ..dispatch import dispatch
 from ..expr import (
     BinOp,
@@ -92,6 +92,8 @@ from ..expr import (
     str_len,
     strlen,
     StrCat,
+    StrFind,
+    StrSlice,
     var,
 )
 from ..expr.broadcast import broadcast_collect
@@ -1215,6 +1217,39 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
 @dispatch((strlen, str_len), ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
+
+
+@dispatch(StrSlice, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    if isinstance(expr.slice, _inttypes):
+        idx = expr.slice + 1
+        if idx < 1: # SQL string indexing is 1-based and positive.
+            msg = "Index {} out-of-bounds for SQL string indexing."
+            raise IndexError(msg.format(expr.slice))
+        args = idx, 1
+    elif isinstance(expr.slice, tuple):
+        start, stop, step = expr.slice
+        if step is not None:
+            msg = "step value {} not valid for SQL string indexing."
+            raise ValueError(msg.format(step))
+        norm_start = start if isinstance(start, _inttypes) else 0
+        if norm_start < 0:
+            msg = "Negative indexing not valid for SQL strings; given {}."
+            raise ValueError(msg.format(norm_start))
+        if isinstance(stop, _inttypes):
+            if stop < 0:
+                msg = "Negative indexing not valid for SQL strings; given {}."
+                raise ValueError(msg.format(stop))
+            args = norm_start + 1, (stop - norm_start)
+        elif stop is None:
+            args = norm_start + 1,
+    return sa.sql.func.substring(data, *args)
+
+
+@dispatch(StrFind, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    sub = sa.sql.expression.literal(expr.sub)
+    return sa.sql.func.position(sub.op('in')(data))
 
 
 @compute_up.register(StrCat, Select, basestring)
