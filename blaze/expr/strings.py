@@ -352,8 +352,8 @@ class str(object):
 
     __name__ = 'str'
 
-    def __get__(self, obj, type=None):
-        return str_ns(obj)
+    def __get__(self, obj, type):
+        return str_ns(obj) if obj is not None else self
 
 
 schema_method_list.extend([(isstring,
