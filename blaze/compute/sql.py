@@ -43,7 +43,7 @@ from toolz.compatibility import zip
 from toolz.curried import map
 
 from .core import compute_up, compute, base
-from ..compatibility import reduce, basestring
+from ..compatibility import reduce, basestring, _inttypes
 from ..dispatch import dispatch
 from ..expr import (
     BinOp,
@@ -92,6 +92,8 @@ from ..expr import (
     str_len,
     strlen,
     StrCat,
+    StrFind,
+    StrSlice,
     var,
 )
 from ..expr.broadcast import broadcast_collect
@@ -457,6 +459,16 @@ def compute_up(expr, tbl, predicate, scope=None, **kwargs):
         return tbl.where(predicate)
     except AttributeError:
         return select([tbl]).where(predicate)
+
+
+@dispatch(Selection, Selectable, Selectable)
+def compute_up(expr, tbl, predicate, **kwargs):
+    col, = inner_columns(predicate)
+    return reconstruct_select(
+        inner_columns(tbl),
+        tbl,
+        whereclause=unify_wheres((tbl, predicate)),
+    ).where(col)
 
 
 def select(s):
@@ -1207,6 +1219,39 @@ def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
 
+@dispatch(StrSlice, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    if isinstance(expr.slice, _inttypes):
+        idx = expr.slice + 1
+        if idx < 1: # SQL string indexing is 1-based and positive.
+            msg = "Index {} out-of-bounds for SQL string indexing."
+            raise IndexError(msg.format(expr.slice))
+        args = idx, 1
+    elif isinstance(expr.slice, tuple):
+        start, stop, step = expr.slice
+        if step is not None:
+            msg = "step value {} not valid for SQL string indexing."
+            raise ValueError(msg.format(step))
+        norm_start = start if isinstance(start, _inttypes) else 0
+        if norm_start < 0:
+            msg = "Negative indexing not valid for SQL strings; given {}."
+            raise ValueError(msg.format(norm_start))
+        if isinstance(stop, _inttypes):
+            if stop < 0:
+                msg = "Negative indexing not valid for SQL strings; given {}."
+                raise ValueError(msg.format(stop))
+            args = norm_start + 1, (stop - norm_start)
+        elif stop is None:
+            args = norm_start + 1,
+    return sa.sql.func.substring(data, *args)
+
+
+@dispatch(StrFind, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    sub = sa.sql.expression.literal(expr.sub)
+    return sa.sql.func.position(sub.op('in')(data))
+
+
 @compute_up.register(StrCat, Select, basestring)
 @compute_up.register(StrCat, basestring, Select)
 def str_cat_sql(expr, lhs, rhs, **kwargs):
@@ -1406,6 +1451,15 @@ def post_compute(_, s, **kwargs):
 @dispatch(IsIn, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return data.in_(expr._keys)
+
+
+@dispatch(IsIn, Selectable)
+def compute_up(expr, data, **kwargs):
+    assert len(data.columns) == 1, (
+        'only 1 column is allowed in a Select in IsIn'
+    )
+    col, = inner_columns(data)
+    return reconstruct_select((col.in_(expr._keys),), data)
 
 
 @dispatch(Slice, (Select, Selectable, ColumnElement))

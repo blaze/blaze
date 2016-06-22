@@ -122,7 +122,7 @@ def sort(child, key=None, ascending=True):
         raise ValueError(msg.format(key, child.dshape.measure))
     if key is None and isrecord(child.dshape.measure):
         key = child.dshape.measure.names
-    if isinstance(key, list):
+    if isinstance(key, (list, tuple)):
         key = keys_to_validate = tuple(key)
     else:
         keys_to_validate = (key,)

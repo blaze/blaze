@@ -80,7 +80,7 @@ expressions = {
         exp(t.amount): [sql, mongo],
         t.amount > 50: [mongo],
         t[t.amount > 50]: [],
-        t[t.name.like('Alic*')]: [],
+        t[t.name.str.like('Alic*')]: [],
         t.sort('name'): [bc],
         t.sort('name', ascending=False): [bc],
         t.head(3): [],

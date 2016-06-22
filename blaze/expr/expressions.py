@@ -229,6 +229,8 @@ class Expr(Node):
                 func = methods[key]
                 if func in method_properties:
                     result = func(self)
+                elif getattr(func, '__get__', None):
+                    result = func.__get__(self, type(self))
                 else:
                     result = boundmethod(func, self)
             elif self.fields and key in fields:

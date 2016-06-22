@@ -63,7 +63,6 @@ def sql(url):
         finally:
             drop(t)
 
-
 @pytest.yield_fixture
 def sql_with_null(url):
     ds = dshape(""" var * {name: ?string,
@@ -696,6 +695,26 @@ def test_sample(big_sql):
     assert len(result) == len(result2)
 
 
+@pytest.mark.parametrize('slc', [0, 1000,
+                                 slice(0, 1), slice(None, 3),
+                                 slice(0, None), slice(2, None)])
+def test_str_slice(slc, sql_with_null):
+    name_series = pd.Series(['Alice', None, 'Drew', 'Bob', 'Drew', 'first', None],       
+                            name='substring_1')
+    t = symbol('t', discover(sql_with_null))
+    result = compute(t.name.str[slc], sql_with_null, return_type=pd.Series).fillna('zzz')
+    result[result == ''] = 'zzz'
+    expected = name_series.str[slc].fillna('zzz')
+    tm.assert_series_equal(result, expected)
+
+
+def test_str_find(sql_with_null):
+    t = symbol('t', discover(sql_with_null))
+    result = compute(t.name.str.find('e'), sql_with_null, return_type=pd.Series)
+    expected = pd.Series([5.0, np.nan, 3.0, 0.0, 3.0, 0.0, np.nan], name='position_1')
+    tm.assert_series_equal(result, expected)
+
+
 @pytest.mark.parametrize("sep", [None, " -- "])
 def test_str_cat_with_null(sql_with_null, sep):
     t = symbol('t', discover(sql_with_null))
@@ -810,3 +829,23 @@ def test_all(sql):
     assert compute(~(s.B == 1).all(), {s: sql}, return_type='core')
     assert compute(~(s.B == 2).all(), {s: sql}, return_type='core')
     assert compute(~(s.B == 3).all(), {s: sql}, return_type='core')
+
+
+def test_isin_selectable(sql):
+    s = symbol('s', discover(sql))
+
+    # wrap the resource in a select
+    assert compute(s.B.isin({1, 3}),
+                   sa.select(sql._resources()[sql].columns),
+                   return_type=list) == [(True,), (False,)]
+
+
+def test_selection_selectable(sql):
+    s = symbol('s', discover(sql))
+
+    # wrap the resource in a select
+    assert (compute(s[s.B.isin({1, 3})],
+                    sa.select(sql._resources()[sql].columns),
+                    return_type=pd.DataFrame) ==
+            pd.DataFrame([['a', 1]],
+                         columns=s.dshape.measure.names)).all().all()
