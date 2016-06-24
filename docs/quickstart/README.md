@@ -16,3 +16,9 @@
   - user doesn't need to know where the data is physically downloaded
 
 * Point out how it updates when re-run with latest data
+
+
+## Example with `blaze-server`
+
+* [bz_server_data.ipynb](bz_server_data.ipynb) contains instructions on setting up config file for server.
+* also contains examples with questions and issues.
