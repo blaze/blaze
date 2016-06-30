@@ -691,21 +691,21 @@ def test_like():
 
 
 def test_str_len():
-    expr = t.name.str_len()
+    expr = t.name.str.len()
     expected = pd.Series([5, 3, 5], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
 
 
 def test_str_upper():
-    expr = t.name.str_upper()
+    expr = t.name.str.upper()
     expected = pd.Series(['ALICE', 'BOB', 'ALICE'], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
 
 
 def test_str_lower():
-    expr = t.name.str_lower()
+    expr = t.name.str.lower()
     expected = pd.Series(['alice', 'bob', 'alice'], name='name')
     result = compute(expr, df).reset_index(drop=True)
     assert_series_equal(expected, result)
@@ -793,17 +793,17 @@ def test_str_find(df):
 
 
 def test_str_cat():
-    res = compute(tbig.name.str_cat(tbig.sex), dfbig)
+    res = compute(tbig.name.str.cat(tbig.sex), dfbig)
     assert all(dfbig.name.str.cat(dfbig.sex) == res)
 
 
 def test_str_cat_sep():
-    res = compute(tbig.name.str_cat(tbig.sex, sep=' -- '), dfbig)
+    res = compute(tbig.name.str.cat(tbig.sex, sep=' -- '), dfbig)
     assert all(dfbig.name.str.cat(dfbig.sex, sep=' -- ') == res)
 
 
 def test_str_cat_null_row(df_add_null):
-    res = compute(tbig.name.str_cat(tbig.sex, sep=' -- '), df_add_null)
+    res = compute(tbig.name.str.cat(tbig.sex, sep=' -- '), df_add_null)
     exp_res = df_add_null.name.str.cat(df_add_null.sex, sep=' -- ')
 
     assert all(exp_res.isnull() == res.isnull())
@@ -811,7 +811,7 @@ def test_str_cat_null_row(df_add_null):
 
 
 def test_str_cat_chain_operation():
-    expr = tbgr.name.str_cat(tbgr.comment.str_cat(tbgr.sex, sep=' --- '),
+    expr = tbgr.name.str.cat(tbgr.comment.str.cat(tbgr.sex, sep=' --- '),
                              sep=' +++ ')
     res = compute(expr, dfbgr)
     exp_res = dfbgr.name.str.cat(dfbgr.comment.str.cat(dfbgr.sex, sep=' --- '),

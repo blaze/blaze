@@ -290,23 +290,10 @@ def compute_up(expr, data, **kwargs):
     return compute_up(expr._child.distinct().count(), data, **kwargs)
 
 
-string_func_names = {'str_len': 'len',
-                     'strlen': 'len',
-                     'str_upper': 'upper',
-                     'str_lower': 'lower',
-                     'str_capitalize': 'capitalize',
-                     'str_strip': 'strip',
-                     'str_lstrip': 'lstrip',
-                     'str_rstrip': 'rstrip',
-                     'str_isalnum': 'isalnum',
-                     'str_isalpha': 'isalpha',
-                     'str_isdecimal': 'isdecimal',
-                     'str_isdigit': 'isdigit',
-                     'str_islower': 'islower',
-                     'str_isnumeric': 'isnumeric',
-                     'str_isspace': 'isspace',
-                     'str_istitle': 'istitle',
-                     'str_isupper': 'isupper'}
+# No mapping needed - the original names work just fine.
+string_func_names = {
+    # <blaze function name>: <pandas function name>
+}
 
 
 @dispatch(UnaryStringFunction, Series)

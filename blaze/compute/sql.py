@@ -89,13 +89,12 @@ from ..expr import (
     nunique,
     reductions,
     std,
-    str_len,
-    strlen,
     StrCat,
     StrFind,
     StrSlice,
     var,
 )
+from ..expr.strings import len as str_len
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
 from ..utils import listpack
@@ -1198,9 +1197,10 @@ def compute_up(t, s, **kwargs):
     return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
-string_func_names = {# <blaze function name>: <SQL function name>
-                     'str_upper': 'upper',
-                     'str_lower': 'lower'}
+# No mapping needed - the original names work just fine.
+string_func_names = {
+    # <blaze function name>: <SQL function name>
+}
 
 
 # TODO: remove if the alternative fix goes into PyHive
@@ -1214,7 +1214,7 @@ def compile_char_length_on_hive(element, compiler, **kwargs):
     return compiler.visit_function(element, **kwargs)
 
 
-@dispatch((strlen, str_len), ColumnElement)
+@dispatch(str_len, ColumnElement)
 def compute_up(expr, data, **kwargs):
     return sa.sql.functions.char_length(data).label(expr._name)
 
