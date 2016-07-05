@@ -1197,12 +1197,6 @@ def compute_up(t, s, **kwargs):
     return s.like(t.pattern.replace('*', '%').replace('?', '_'))
 
 
-# No mapping needed - the original names work just fine.
-string_func_names = {
-    # <blaze function name>: <SQL function name>
-}
-
-
 # TODO: remove if the alternative fix goes into PyHive
 @compiles(sa.sql.functions.Function, 'hive')
 def compile_char_length_on_hive(element, compiler, **kwargs):
@@ -1290,7 +1284,6 @@ def str_cat_sql(expr, lhs, rhs, **kwargs):
 @dispatch(UnaryStringFunction, ColumnElement)
 def compute_up(expr, data, **kwargs):
     func_name = type(expr).__name__
-    func_name = string_func_names.get(func_name, func_name)
     return getattr(sa.sql.func, func_name)(data).label(expr._name)
 
 

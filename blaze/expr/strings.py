@@ -8,7 +8,7 @@ from odo.utils import copydoc
 
 from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
-from ..compatibility import basestring, _inttypes
+from ..compatibility import basestring, _inttypes, builtins
 from ..deprecation import deprecated
 
 __all__ = ['Like',
@@ -207,7 +207,6 @@ def slice_replace(col, start=None, stop=None, repl=None):
 
 @copydoc(StrSlice)
 def slice(col, idx):
-    import builtins
     if not isinstance(idx, (builtins.slice, _inttypes)):
         raise TypeError("idx argument must be a slice or integer, given {}".format(slc))
     return StrSlice(col, (idx.start, idx.stop, idx.step) if isinstance(idx, builtins.slice) else idx)

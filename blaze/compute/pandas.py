@@ -290,16 +290,10 @@ def compute_up(expr, data, **kwargs):
     return compute_up(expr._child.distinct().count(), data, **kwargs)
 
 
-# No mapping needed - the original names work just fine.
-string_func_names = {
-    # <blaze function name>: <pandas function name>
-}
-
-
 @dispatch(UnaryStringFunction, Series)
 def compute_up(expr, data, **kwargs):
     name = type(expr).__name__
-    return getattr(data.str, string_func_names.get(name, name))()
+    return getattr(data.str, name)()
 
 @dispatch(Replace, Series)
 def compute_up(expr, data, **kwargs):
