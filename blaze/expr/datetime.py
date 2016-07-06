@@ -4,6 +4,8 @@ from .expressions import ElemWise, schema_method_list, method_properties
 
 import datashape
 from datashape import dshape, isdatelike, isnumeric
+from datashape.coretypes import timedelta_
+from ..compatibility import basestring
 
 
 __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
@@ -13,6 +15,11 @@ __all__ = ['DateTime', 'Date', 'date', 'Year', 'year', 'Month', 'month', 'Day',
            'date', 'Time', 'time', 'week', 'nanoseconds', 'seconds', 'total_seconds',
            'UTCFromTimestamp', 'DateTimeTruncate',
            'Ceil', 'Floor', 'Round', 'strftime']
+
+
+def _validate(var, name, type, typename):
+    if not isinstance(var, type):
+        raise TypeError('"%s" argument must be a %s'%(name, typename))
 
 
 class DateTime(ElemWise):
@@ -332,14 +339,18 @@ class dt_ns(object):
     def days_in_month(self):
         return days_in_month(self.field)
     def strftime(self, format):
+        _validate(format, 'format', basestring, 'string')
         return strftime(self.field, format)
     def truncate(self, *args, **kwargs):
         return truncate(self.field, *args, **kwargs)
     def round(self, freq):
+        _validate(freq, 'freq', basestring, 'string')
         return Round(self.field, freq)
     def floor(self, freq):
+        _validate(freq, 'freq', basestring, 'string')
         return Floor(self.field, freq)
     def ceil(self, freq):
+        _validate(freq, 'freq', basestring, 'string')
         return Ceil(self.field, freq)
     def week(self):
         return week(self.field)
@@ -358,7 +369,7 @@ class seconds(DateTime): _dtype = datashape.int64
 class total_seconds(DateTime): _dtype = datashape.int64
 
 
-class td_ns(object):
+class timedelta_ns(object):
 
     def __init__(self, field):
         self.field = field
@@ -369,18 +380,17 @@ class td_ns(object):
     def total_seconds(self): return total_seconds(self.field)
 
 
-class td(object):
+class timedelta(object):
 
     # pandas uses the same 'dt' name for
     # DateTimeProperties and TimedeltaProperties.
     __name__ = 'dt'
 
     def __get__(self, obj, type=None):
-        return td_ns(obj) if obj is not None else self
+        return timedelta_ns(obj) if obj is not None else self
 
 
 def isdeltalike(ds):
-    from datashape.coretypes import timedelta_
     return ds == timedelta_
 
 schema_method_list.extend([
@@ -388,7 +398,7 @@ schema_method_list.extend([
                       millisecond, microsecond, truncate,
                       dt()])),
     (isnumeric, set([utcfromtimestamp])),
-    (isdeltalike, set([td()]))
+    (isdeltalike, set([timedelta()]))
 ])
 
 method_properties |= set([year, month, day, hour, minute, second, millisecond,

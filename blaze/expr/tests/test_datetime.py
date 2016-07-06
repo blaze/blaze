@@ -1,6 +1,5 @@
 from blaze.expr import symbol
 import blaze.expr.datetime as bdt
-#from blaze.expr.datetime import isdatelike
 from blaze.compatibility import builtins
 from datashape import dshape
 
