@@ -107,15 +107,15 @@ class lower(UnaryStringFunction):
     def schema(self):
         return self._child.schema
 
-class isalnum(UnaryStringFunction): schema = bool_
-class isalpha(UnaryStringFunction): schema = bool_
-class isdecimal(UnaryStringFunction): schema = bool_
-class isdigit(UnaryStringFunction): schema = bool_
-class islower(UnaryStringFunction): schema = bool_
-class isnumeric(UnaryStringFunction): schema = bool_
-class isspace(UnaryStringFunction): schema = bool_
-class istitle(UnaryStringFunction): schema = bool_
-class isupper(UnaryStringFunction): schema = bool_
+class isalnum(UnaryStringFunction): schema = Option(bool_)
+class isalpha(UnaryStringFunction): schema = Option(bool_)
+class isdecimal(UnaryStringFunction): schema = Option(bool_)
+class isdigit(UnaryStringFunction): schema = Option(bool_)
+class islower(UnaryStringFunction): schema = Option(bool_)
+class isnumeric(UnaryStringFunction): schema = Option(bool_)
+class isspace(UnaryStringFunction): schema = Option(bool_)
+class istitle(UnaryStringFunction): schema = Option(bool_)
+class isupper(UnaryStringFunction): schema = Option(bool_)
 
 class StrFind(ElemWise):
     """
@@ -124,7 +124,7 @@ class StrFind(ElemWise):
     """
 
     _arguments = '_child', 'sub'
-    schema = datashape.Option(datashape.int64)
+    schema = Option(datashape.int64)
 
 
 @copydoc(StrFind)
