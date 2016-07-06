@@ -1,0 +1,52 @@
+Release 0.11.0
+-----------------
+
+:Release: 0.11.0
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+* Many new string utility expressions were added that follow the Pandas
+  vectorized string methods API closely
+  `http://pandas.pydata.org/pandas-docs/stable/text.html#text-string-methods`_.
+  These are gathered under the ``.str`` sub-namespace, allowing the user to
+  say::
+
+    t.col.str.lower()
+
+  to compute a new column with the string contents lowercased.
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+None
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+Bug Fixes
+~~~~~~~~~
+
+None
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None
