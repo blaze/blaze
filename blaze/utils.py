@@ -274,18 +274,25 @@ def parameter_space(*args):
     )))
 
 
-def memoize_mutable(fn):
+def memoize_obj_mapping(fn):
+    """Memoize fn with the argument types (object, Mapping). The arguments
+       may be mutable.
+    """
     memo = {}
     @functools.wraps(fn)
-    def inner(*args):
+    def inner(o, d):
+        key = (o, tuple(d.items()))
         try:
-            s = dumps(args, HIGHEST_PROTOCOL)
-        except (TypeError, AttributeError, PicklingError):
-            s = None
-        if s is None:
-            return fn(*args)
+            hash(key)
+        except TypeError:
+            try:
+                key = dumps((o, d), HIGHEST_PROTOCOL)
+            except (TypeError, AttributeError, PicklingError):
+                key = None
+        if key is None:
+            return fn(o, d)
         else:
-            if not s in memo:
-                memo[s] = fn(*args)
-            return memo[s]
+            if not key in memo:
+                memo[key] = fn(o, d)
+            return memo[key]
     return inner
