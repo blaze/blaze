@@ -107,15 +107,23 @@ class lower(UnaryStringFunction):
     def schema(self):
         return self._child.schema
 
-class isalnum(UnaryStringFunction): schema = Option(bool_)
-class isalpha(UnaryStringFunction): schema = Option(bool_)
-class isdecimal(UnaryStringFunction): schema = Option(bool_)
-class isdigit(UnaryStringFunction): schema = Option(bool_)
-class islower(UnaryStringFunction): schema = Option(bool_)
-class isnumeric(UnaryStringFunction): schema = Option(bool_)
-class isspace(UnaryStringFunction): schema = Option(bool_)
-class istitle(UnaryStringFunction): schema = Option(bool_)
-class isupper(UnaryStringFunction): schema = Option(bool_)
+
+class PredicateFunction(UnaryStringFunction):
+
+    @property
+    def schema(self):
+        return bool_ if self._child.schema == datashape.string else Option(bool_)
+
+
+class isalnum(PredicateFunction): pass
+class isalpha(PredicateFunction): pass
+class isdecimal(PredicateFunction): pass
+class isdigit(PredicateFunction): pass
+class islower(PredicateFunction): pass
+class isnumeric(PredicateFunction): pass
+class isspace(PredicateFunction): pass
+class istitle(PredicateFunction): pass
+class isupper(PredicateFunction): pass
 
 class StrFind(ElemWise):
     """

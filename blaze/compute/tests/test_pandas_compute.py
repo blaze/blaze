@@ -765,7 +765,7 @@ def test_str_ops(ds, op, args, data, expected):
                           ('upper', False)])
 def test_str_predicates(what, expected):
     predicate = 'is' + what
-    expr = getattr(t.name.str, predicate)()
+    expr = getattr(nt.name.str, predicate)()
     expected = pd.Series([expected, expected, None], name='name')
     result = compute(expr, ndf).reset_index(drop=True)
     assert_series_equal(expected, result)
