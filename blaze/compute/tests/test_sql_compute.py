@@ -811,21 +811,21 @@ def test_not_like():
 
 
 def test_str_len():
-    expr = t.name.str_len()
+    expr = t.name.str.len()
     result = str(compute(expr, s, return_type='native'))
     expected = "SELECT char_length(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
 
 def test_str_upper():
-    expr = t.name.str_upper()
+    expr = t.name.str.upper()
     result = str(compute(expr, s, return_type='native'))
     expected = "SELECT upper(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)
 
 
 def test_str_lower():
-    expr = t.name.str_lower()
+    expr = t.name.str.lower()
     result = str(compute(expr, s, return_type='native'))
     expected = "SELECT lower(accounts.name) as name FROM accounts"
     assert normalize(result) == normalize(expected)

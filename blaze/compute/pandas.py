@@ -290,29 +290,10 @@ def compute_up(expr, data, **kwargs):
     return compute_up(expr._child.distinct().count(), data, **kwargs)
 
 
-string_func_names = {'str_len': 'len',
-                     'strlen': 'len',
-                     'str_upper': 'upper',
-                     'str_lower': 'lower',
-                     'str_capitalize': 'capitalize',
-                     'str_strip': 'strip',
-                     'str_lstrip': 'lstrip',
-                     'str_rstrip': 'rstrip',
-                     'str_isalnum': 'isalnum',
-                     'str_isalpha': 'isalpha',
-                     'str_isdecimal': 'isdecimal',
-                     'str_isdigit': 'isdigit',
-                     'str_islower': 'islower',
-                     'str_isnumeric': 'isnumeric',
-                     'str_isspace': 'isspace',
-                     'str_istitle': 'istitle',
-                     'str_isupper': 'isupper'}
-
-
 @dispatch(UnaryStringFunction, Series)
 def compute_up(expr, data, **kwargs):
     name = type(expr).__name__
-    return getattr(data.str, string_func_names.get(name, name))()
+    return getattr(data.str, name)()
 
 @dispatch(Replace, Series)
 def compute_up(expr, data, **kwargs):
