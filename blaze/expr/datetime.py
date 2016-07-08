@@ -30,7 +30,8 @@ class DateTime(ElemWise):
         return '%s.%s' % (str(self._child), type(self).__name__.lower())
 
     def _schema(self):
-        return dshape(self._dtype)
+        ds = dshape(self._dtype)
+        return ds if not isinstance(self._child.schema.measure, datashape.Option) else datashape.Option(ds)
 
     @property
     def _name(self):
