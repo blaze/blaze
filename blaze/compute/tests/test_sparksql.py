@@ -335,7 +335,7 @@ def test_by_non_native_ops(ctx, db):
 
 
 def test_str_len(ctx, db):
-    expr = db.t.name.str_len()
+    expr = db.t.name.str.len()
     result = odo(compute(expr, ctx, return_type='native'), pd.Series)
     expected = compute(expr, {db: {'t': df}}, return_type='native')
     assert result.name == 'name'

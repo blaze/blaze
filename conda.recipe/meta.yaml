@@ -19,7 +19,8 @@ requirements:
     - contextlib2 # [py2k]
     - flask >=0.10.1
     - flask-cors
-    - odo >=0.4.0
+    - odo >=0.5.0
+    - datashape >=0.5.3
     - psutil ==4.0
     - sqlalchemy >=0.8.0
     - toolz
@@ -32,7 +33,8 @@ requirements:
     - flask-cors
     - h5py
     - numba
-    - odo >=0.4.0
+    - odo >=0.5.0
+    - datashape >=0.5.3
     - psutil ==4.0
     - pytables >=3.0.0
     - pyyaml

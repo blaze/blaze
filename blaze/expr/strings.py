@@ -8,37 +8,40 @@ from odo.utils import copydoc
 
 from .expressions import schema_method_list, ElemWise
 from .arithmetic import Interp, Repeat, _mkbin, repeat, interp, _add, _radd
-from ..compatibility import basestring, _inttypes
+from ..compatibility import basestring, _inttypes, builtins
+from ..deprecation import deprecated
 
 __all__ = ['Like',
            'like',
            'Pad',
            'Replace',
            'SliceReplace',
-           'strlen',
-           'str_len',
-           'str_upper',
-           'str_lower',
-           'str_cat',
-           'str_isalnum',
-           'str_isalpha',
-           'str_isdecimal',
-           'str_isdigit',
-           'str_islower',
-           'str_isnumeric',
-           'str_isspace',
-           'str_istitle',
-           'str_isupper',
+           # prevent 'len' to end up in global namespace
+           #'len',
+           'upper',
+           'lower',
+           'cat',
+           'isalnum',
+           'isalpha',
+           'isdecimal',
+           'isdigit',
+           'islower',
+           'isnumeric',
+           'isspace',
+           'istitle',
+           'isupper',
            'StrCat',
+           'find',
            'StrFind',
            'StrSlice',
-           'str_slice_replace',
-           'str_replace',
-           'str_capitalize',
-           'str_strip',
-           'str_lstrip',
-           'str_rstrip',
-           'str_pad',
+           'slice',
+           'slice_replace',
+           'replace',
+           'capitalize',
+           'strip',
+           'lstrip',
+           'rstrip',
+           'pad',
            'UnaryStringFunction']
 
 def _validate(var, name, type, typename):
@@ -87,41 +90,40 @@ class UnaryStringFunction(ElemWise):
     _arguments = '_child',
 
 
-class strlen(UnaryStringFunction):
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("`strlen()` has been deprecated in 0.10 and will be "
-                      "removed in 0.11.  Use ``str_len()`` instead.",
-                      DeprecationWarning)
-        super(self, strlen).__init__(*args, **kwargs)
-
-
-class str_len(UnaryStringFunction):
+class len(UnaryStringFunction):
     schema = datashape.int64
 
 
-class str_upper(UnaryStringFunction):
+class upper(UnaryStringFunction):
 
     @property
     def schema(self):
         return self._child.schema
 
 
-class str_lower(UnaryStringFunction):
+class lower(UnaryStringFunction):
 
     @property
     def schema(self):
         return self._child.schema
 
-class str_isalnum(UnaryStringFunction): schema = bool_
-class str_isalpha(UnaryStringFunction): schema = bool_
-class str_isdecimal(UnaryStringFunction): schema = bool_
-class str_isdigit(UnaryStringFunction): schema = bool_
-class str_islower(UnaryStringFunction): schema = bool_
-class str_isnumeric(UnaryStringFunction): schema = bool_
-class str_isspace(UnaryStringFunction): schema = bool_
-class str_istitle(UnaryStringFunction): schema = bool_
-class str_isupper(UnaryStringFunction): schema = bool_
+
+class PredicateFunction(UnaryStringFunction):
+
+    @property
+    def schema(self):
+        return bool_ if self._child.schema == datashape.string else Option(bool_)
+
+
+class isalnum(PredicateFunction): pass
+class isalpha(PredicateFunction): pass
+class isdecimal(PredicateFunction): pass
+class isdigit(PredicateFunction): pass
+class islower(PredicateFunction): pass
+class isnumeric(PredicateFunction): pass
+class isspace(PredicateFunction): pass
+class istitle(PredicateFunction): pass
+class isupper(PredicateFunction): pass
 
 class StrFind(ElemWise):
     """
@@ -130,11 +132,11 @@ class StrFind(ElemWise):
     """
 
     _arguments = '_child', 'sub'
-    schema = datashape.Option(datashape.int64)
+    schema = Option(datashape.int64)
 
 
 @copydoc(StrFind)
-def str_find(col, sub):
+def find(col, sub):
     if not isinstance(sub, basestring):
         raise TypeError("'sub' argument must be a String")
     return StrFind(col, sub)
@@ -146,7 +148,7 @@ class Replace(ElemWise):
     def schema(self):
         return self._child.schema
 
-def str_replace(col, old, new, max=None):
+def replace(col, old, new, max=None):
     _validate(old, 'old', basestring, 'string')
     _validate(new, 'new', basestring, 'string')
     _validate_optional(max, 'max', int, 'integer')
@@ -159,32 +161,32 @@ class Pad(ElemWise):
     def schema(self):
         return self._child.schema
 
-def str_pad(col, width, side=None, fillchar=None):
+def pad(col, width, side=None, fillchar=None):
     _validate(width, 'width', int, 'integer')
     if side not in (None, 'left', 'right'):
         raise TypeError('"side" argument must be either "left" or "right"')
     _validate_optional(fillchar, 'fillchar', basestring, 'string')
     return Pad(col, width, side, fillchar)
 
-class str_capitalize(UnaryStringFunction):
+class capitalize(UnaryStringFunction):
 
     @property
     def schema(self):
         return self._child.schema
 
-class str_strip(UnaryStringFunction):
+class strip(UnaryStringFunction):
 
     @property
     def schema(self):
         return self._child.schema
 
-class str_lstrip(UnaryStringFunction):
+class lstrip(UnaryStringFunction):
 
     @property
     def schema(self):
         return self._child.schema
 
-class str_rstrip(UnaryStringFunction):
+class rstrip(UnaryStringFunction):
 
     @property
     def schema(self):
@@ -204,7 +206,7 @@ class SliceReplace(ElemWise):
     def schema(self):
         return self._child.schema
 
-def str_slice_replace(col, start=None, stop=None, repl=None):
+def slice_replace(col, start=None, stop=None, repl=None):
     _validate_optional(start, 'start', int, 'integer')
     _validate_optional(stop, 'stop', int, 'integer')
     _validate_optional(repl, 'repl', basestring, 'string')
@@ -212,11 +214,10 @@ def str_slice_replace(col, start=None, stop=None, repl=None):
 
 
 @copydoc(StrSlice)
-def str_slice(col, idx):
-    if not isinstance(idx, (slice, _inttypes)):
+def slice(col, idx):
+    if not isinstance(idx, (builtins.slice, _inttypes)):
         raise TypeError("idx argument must be a slice or integer, given {}".format(slc))
-    return StrSlice(col, (idx.start, idx.stop, idx.step) if isinstance(idx, slice) else idx)
-
+    return StrSlice(col, (idx.start, idx.stop, idx.step) if isinstance(idx, builtins.slice) else idx)
 
 class StrCat(ElemWise):
     """
@@ -230,7 +231,7 @@ class StrCat(ElemWise):
     >>> data = [('al', 'good', 0), ('suri', 'not good', 1), ('jinka', 'ok', 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
 
-    >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
+    >>> compute(s.name.str.cat(s.comment, sep=' -- '), df)
     0          al -- good
     1    suri -- not good
     2         jinka -- ok
@@ -241,7 +242,7 @@ class StrCat(ElemWise):
 
     >>> data = [(None, None, 0), ('suri', 'not good', 1), ('jinka', None, 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
-    >>> compute(s.name.str_cat(s.comment, sep=' -- '), df)
+    >>> compute(s.name.str.cat(s.comment, sep=' -- '), df)
     0                 NaN
     1    suri -- not good
     2                 NaN
@@ -271,7 +272,7 @@ class StrCat(ElemWise):
 
 
 @copydoc(StrCat)
-def str_cat(lhs, rhs, sep=None):
+def cat(lhs, rhs, sep=None):
     """
     returns lhs + sep + rhs
 
@@ -301,52 +302,30 @@ class str_ns(object):
     def __init__(self, field):
         self.field = field
 
-    def upper(self):
-        return str_upper(self.field)
-
-    def lower(self):
-        return str_lower(self.field)
-
-    def len(self):
-        return str_len(self.field)
-
-    def like(self, pattern):
-        return like(self.field, pattern)
-
-    def cat(self, other, sep=None):
-        return str_cat(self.field, other, sep=sep)
-
-    def find(self, sub):
-        return str_find(self.field, sub)
-
-    def isalnum(self): return str_isalnum(self.field)
-    def isalpha(self): return str_isalpha(self.field)
-    def isdecimal(self): return str_isdecimal(self.field)
-    def isdigit(self): return str_isdigit(self.field)
-    def islower(self): return str_islower(self.field)
-    def isnumeric(self): return str_isnumeric(self.field)
-    def isspace(self): return str_isspace(self.field)
-    def istitle(self): return str_istitle(self.field)
-    def isupper(self): return str_isupper(self.field)
-
-    def replace(self, old, new, max=None):
-        return str_replace(self.field, old, new, max)
-
-    def capitalize(self):
-        return str_capitalize(self.field)
-
-    def pad(self, width, side=None, fillchar=None):
-        return str_pad(self.field, width, side, fillchar)
-
-    def strip(self): return str_strip(self.field)
-    def lstrip(self): return str_lstrip(self.field)
-    def rstrip(self): return str_rstrip(self.field)
-
-    def __getitem__(self, idx):
-        return str_slice(self.field, idx)
-
+    def upper(self): return upper(self.field)
+    def lower(self): return lower(self.field)
+    def len(self): return len(self.field)
+    def like(self, pattern): return like(self.field, pattern)
+    def cat(self, other, sep=None): return cat(self.field, other, sep=sep)
+    def find(self, sub): return find(self.field, sub)
+    def isalnum(self): return isalnum(self.field)
+    def isalpha(self): return isalpha(self.field)
+    def isdecimal(self): return isdecimal(self.field)
+    def isdigit(self): return isdigit(self.field)
+    def islower(self): return islower(self.field)
+    def isnumeric(self): return isnumeric(self.field)
+    def isspace(self): return isspace(self.field)
+    def istitle(self): return istitle(self.field)
+    def isupper(self): return isupper(self.field)
+    def replace(self, old, new, max=None): return replace(self.field, old, new, max)
+    def capitalize(self): return capitalize(self.field)
+    def pad(self, width, side=None, fillchar=None): return pad(self.field, width, side, fillchar)
+    def strip(self): return strip(self.field)
+    def lstrip(self): return lstrip(self.field)
+    def rstrip(self): return rstrip(self.field)
+    def __getitem__(self, idx): return slice(self.field, idx)
     def slice_replace(self, start=None, stop=None, repl=None):
-        return str_slice_replace(self.field, start, stop, repl)
+        return slice_replace(self.field, start, stop, repl)
 
 class str(object):
 
@@ -354,6 +333,16 @@ class str(object):
 
     def __get__(self, obj, type):
         return str_ns(obj) if obj is not None else self
+
+
+@deprecated('0.11', replacement='len()')
+def str_len(*args, **kwds): return len(*args, **kwds)
+@deprecated('0.11', replacement='upper()')
+def str_upper(*args, **kwds): return upper(*args, **kwds)
+@deprecated('0.11', replacement='lower()')
+def str_lower(*args, **kwds): return lower(*args, **kwds)
+@deprecated('0.11', replacement='cat(lhs, rhs, sep=None)')
+def str_cat(*args, **kwds): return cat(*args, **kwds)
 
 
 schema_method_list.extend([(isstring,
@@ -367,8 +356,7 @@ schema_method_list.extend([(isstring,
                                  repeat,
                                  interp,
                                  like,
-                                 str_len,
-                                 strlen,
-                                 str_upper,
-                                 str_lower,
-                                 str_cat]))])
+                                 str_len, # deprecated
+                                 str_upper, # deprecated
+                                 str_lower, # deprecated
+                                 str_cat]))]) # deprecated
