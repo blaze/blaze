@@ -8,13 +8,17 @@ New Expressions
 
 * Many new string utility expressions were added that follow the Pandas
   vectorized string methods API closely
-  `http://pandas.pydata.org/pandas-docs/stable/text.html#text-string-methods`_.
+  `<http://pandas.pydata.org/pandas-docs/stable/text.html#text-string-methods>`_.
   These are gathered under the ``.str`` sub-namespace, allowing the user to
   say::
 
     t.col.str.lower()
 
   to compute a new column with the string contents lowercased.
+
+* Likewise, many new datetime utility expressions were added to the ``.dt``
+  sub-namespace, following Pandas vectorized datetime methods API
+  `<http://pandas.pydata.org/pandas-docs/stable/timeseries.html>`_.
 
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
@@ -39,7 +43,17 @@ None
 API Changes
 ~~~~~~~~~~~
 
-None
+* The following functions were deprecated in favor of equivalent functions without the `str_` name prefix:
+
+  ======================================  ===================================
+  deprecated function                     replacement function
+  ======================================  ===================================
+  :func:`~blaze.expr.strings.str_len`     :func:`~blaze.expr.strings.len`
+  :func:`~blaze.expr.strings.str_upper`   :func:`~blaze.expr.strings.upper`
+  :func:`~blaze.expr.strings.str_lower`   :func:`~blaze.expr.strings.lower`
+  :func:`~blaze.expr.strings.str_cat`     :func:`~blaze.expr.strings.cat`
+  ======================================  ===================================
+
 
 Bug Fixes
 ~~~~~~~~~

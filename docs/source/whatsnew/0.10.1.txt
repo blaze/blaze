@@ -1,7 +1,7 @@
-Release |version|
------------------
+Release 0.10.1
+--------------
 
-:Release: |version|
+:Release: 0.10.1
 :Date: TBD
 
 New Expressions

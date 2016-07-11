@@ -2,6 +2,16 @@
 Release Notes
 =============
 
+.. include:: whatsnew/0.11.0.txt
+
+.. include:: whatsnew/0.10.2.txt
+
+.. include:: whatsnew/0.10.1.txt
+
+.. include:: whatsnew/0.10.0.txt
+
+.. include:: whatsnew/0.9.1.txt
+
 .. include:: whatsnew/0.9.0.txt
 
 .. include:: whatsnew/0.8.3.txt
