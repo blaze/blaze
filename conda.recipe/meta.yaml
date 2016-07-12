@@ -10,7 +10,7 @@ build:
     - blaze-server = blaze.server.spider:_main
 
 source:
-  git_url: ../
+  git_url: https://github.com/blaze/blaze.git
 
 requirements:
   build:
