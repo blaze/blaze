@@ -43,7 +43,8 @@ None
 API Changes
 ~~~~~~~~~~~
 
-* The following functions were deprecated in favor of equivalent functions without the `str_` name prefix:
+* The following functions were deprecated in favor of equivalent functions
+  without the `str_` name prefix:
 
   ======================================  ===================================
   deprecated function                     replacement function
