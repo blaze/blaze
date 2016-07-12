@@ -57,6 +57,7 @@ from ..expr import (
     BinOp,
     Broadcast,
     By,
+    Ceil,
     Coalesce,
     Coerce,
     Concat,
@@ -66,6 +67,7 @@ from ..expr import (
     ElemWise,
     Expr,
     Field,
+    Floor,
     Head,
     Interp,
     IsIn,
@@ -80,11 +82,14 @@ from ..expr import (
     ReLabel,
     Reduction,
     Replace,
+    Round,
     Sample,
+    seconds,
     Selection,
     Shift,
     Slice,
     Sort,
+    strftime,
     Summary,
     Tail,
     UTCFromTimestamp,
@@ -104,6 +109,7 @@ from ..expr import (
     StrFind,
     StrSlice,
     SliceReplace,
+    total_seconds,
 )
 
 __all__ = []
@@ -715,6 +721,12 @@ def compute_up(expr, s, **kwargs):
     return get_date_attr(s, expr.attr, expr._name)
 
 
+@dispatch(total_seconds, Series)
+def compute_up(expr, s, **kwargs):
+    result = s.dt.total_seconds()
+    result.name = expr._name
+    return result
+
 @dispatch(UTCFromTimestamp, Series)
 def compute_up(expr, s, **kwargs):
     return pd.datetools.to_datetime(s * 1e9, utc=True)
@@ -724,6 +736,26 @@ def compute_up(expr, s, **kwargs):
 def compute_up(expr, s, **kwargs):
     return get_date_attr(s, 'microsecond',
                          '%s_millisecond' % expr._child._name) // 1000
+
+
+@dispatch(Round, Series)
+def compute_up(expr, data, **kwargs):
+    return data.dt.round(expr.freq)
+
+
+@dispatch(Ceil, Series)
+def compute_up(expr, data, **kwargs):
+    return data.dt.ceil(expr.freq)
+
+
+@dispatch(Floor, Series)
+def compute_up(expr, data, **kwargs):
+    return data.dt.floor(expr.freq)
+
+
+@dispatch(strftime, Series)
+def compute_up(expr, data, **kwargs):
+    return data.dt.strftime(expr.format)
 
 
 @dispatch(Slice, (DataFrame, Series))

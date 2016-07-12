@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 
 import numpy as np
 
@@ -848,6 +848,68 @@ def test_datetime_access():
         expr = getattr(t.when, attr)
         assert_series_equal(compute(expr, df),
                             Series([1, 1, 1], name=expr._name))
+
+
+@pytest.mark.parametrize('attr, args, expected',
+                         [('date', [], date(2016, 6, 5)),
+                          ('year', [], 2016),
+                          ('month', [], 6),
+                          ('day', [], 5),
+                          ('time', [], time(13, 32, 1)),
+                          ('hour', [], 13),
+                          ('minute', [], 32),
+                          ('second', [], 1),
+                          ('millisecond', [], 0),
+                          ('microsecond', [], 0),
+                          ('nanosecond', [], 0),
+                          ('week', [], 22),
+                          ('weekday', [], 6),
+                          ('weekday_name', [], 'Sunday'),
+                          ('daysinmonth', [], 30),
+                          ('weekofyear', [], 22),
+                          ('dayofyear', [], 157),
+                          ('dayofweek', [], 6),
+                          ('quarter', [], 2),
+                          ('is_month_start', [], False),
+                          ('is_month_end', [], False),
+                          ('is_quarter_start', [], False),
+                          ('is_quarter_end', [], False),
+                          ('is_year_start', [], False),
+                          ('is_year_end', [], False),
+                          ('days_in_month', [], 30),
+                          ('strftime', ['%Y-%m-%d'], '2016-06-05'),
+                         ])
+def test_dt_namespace(attr, args, expected):
+    df = DataFrame({'when': [datetime(2016, 6, 5, 13, 32, 1)]})
+    t = symbol('t', 'var * {when: datetime}')
+    expr = getattr(t.when.dt, attr)(*args)
+    assert_series_equal(compute(expr, df), Series(expected, name=expr._name))
+
+
+@pytest.mark.parametrize('attr, args, expected',
+                         [('days', [], 7),
+                          ('nanoseconds', [], 0),
+                          ('seconds', [], 0),
+                          ('total_seconds', [], 604800.),
+                         ])
+def test_td_namespace(attr, args, expected):
+    """timedelta functions"""
+    df = DataFrame({'span': [timedelta(7)]})
+    t = symbol('t', 'var * {span: timedelta}')
+    expr = getattr(t.span.dt, attr)(*args)
+    assert_series_equal(compute(expr, df), Series(expected, name=expr._name))
+
+
+@pytest.mark.parametrize('op, freq, expected',
+                         [('round', 's', datetime(2016, 6, 5, 13, 32, 1)),
+                          ('round', 'h', datetime(2016, 6, 5, 14, 0, 0)),
+                          ('floor', 'h', datetime(2016, 6, 5, 13, 0, 0)),
+                          ('ceil', 'h', datetime(2016, 6, 5, 14, 0, 0))])
+def test_dt_round(op, freq, expected):
+    df = DataFrame({'when': [datetime(2016, 6, 5, 13, 32, 1)]})
+    t = symbol('t', 'var * {when: datetime}')
+    expr = getattr(t.when.dt, op)(freq)
+    assert_series_equal(compute(expr, df), Series(expected, name=expr._name))
 
 
 def test_frame_slice():

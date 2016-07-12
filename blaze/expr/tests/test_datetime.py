@@ -1,5 +1,5 @@
 from blaze.expr import symbol
-from blaze.expr.datetime import isdatelike
+import blaze.expr.datetime as bdt
 from blaze.compatibility import builtins
 from datashape import dshape
 
@@ -43,9 +43,9 @@ def test_utcfromtimestamp():
 
 
 def test_isdatelike():
-    assert not isdatelike('int32')
-    assert isdatelike('?date')
-    assert not isdatelike('{is_outdated: bool}')
+    assert not bdt.isdatelike('int32')
+    assert bdt.isdatelike('?date')
+    assert not bdt.isdatelike('{is_outdated: bool}')
 
 
 def test_truncate_names():
@@ -76,3 +76,43 @@ def test_attributes(attr):
     t = symbol('t', 'var * datetime')
     assert getattr(t, attr).dshape is not None
     assert getattr(t, attr)._child is t
+
+
+def test_dt_namespace():
+    t = symbol('t', 'var * {when: datetime}')
+    assert bdt.Ceil(t.when, 's').isidentical(t.when.dt.ceil('s'))
+    assert bdt.date(t.when).isidentical(t.when.dt.date())
+    assert bdt.day(t.when).isidentical(t.when.dt.day())
+    assert bdt.dayofweek(t.when).isidentical(t.when.dt.dayofweek())
+    assert bdt.dayofyear(t.when).isidentical(t.when.dt.dayofyear())
+    assert bdt.days_in_month(t.when).isidentical(t.when.dt.days_in_month())
+    assert bdt.Floor(t.when, 's').isidentical(t.when.dt.floor('s'))
+    assert bdt.hour(t.when).isidentical(t.when.dt.hour())
+    assert bdt.is_month_end(t.when).isidentical(t.when.dt.is_month_end())
+    assert bdt.is_month_start(t.when).isidentical(t.when.dt.is_month_start())
+    assert bdt.is_quarter_end(t.when).isidentical(t.when.dt.is_quarter_end())
+    assert bdt.is_quarter_start(t.when).isidentical(t.when.dt.is_quarter_start())
+    assert bdt.is_year_end(t.when).isidentical(t.when.dt.is_year_end())
+    assert bdt.is_year_start(t.when).isidentical(t.when.dt.is_year_start())
+    assert bdt.microsecond(t.when).isidentical(t.when.dt.microsecond())
+    assert bdt.millisecond(t.when).isidentical(t.when.dt.millisecond())
+    assert bdt.minute(t.when).isidentical(t.when.dt.minute())
+    assert bdt.month(t.when).isidentical(t.when.dt.month())
+    assert bdt.nanosecond(t.when).isidentical(t.when.dt.nanosecond())
+    assert bdt.Round(t.when, 's').isidentical(t.when.dt.round('s'))
+    assert bdt.quarter(t.when).isidentical(t.when.dt.quarter())
+    assert bdt.second(t.when).isidentical(t.when.dt.second())
+    assert bdt.strftime(t.when, 'format').isidentical(t.when.dt.strftime('format'))
+    assert bdt.time(t.when).isidentical(t.when.dt.time())
+    assert bdt.truncate(t.when, days=2).isidentical(t.when.dt.truncate(days=2))
+    assert bdt.week(t.when).isidentical(t.when.dt.week())
+    assert bdt.weekday(t.when).isidentical(t.when.dt.weekday())
+    assert bdt.weekofyear(t.when).isidentical(t.when.dt.weekofyear())
+    assert bdt.year(t.when).isidentical(t.when.dt.year())
+
+def test_td_namespace():
+    t = symbol('t', 'var * {span: timedelta}')
+    assert bdt.nanoseconds(t.span).isidentical(t.span.dt.nanoseconds())
+    assert bdt.seconds(t.span).isidentical(t.span.dt.seconds())
+    assert bdt.total_seconds(t.span).isidentical(t.span.dt.total_seconds())
+

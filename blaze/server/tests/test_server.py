@@ -606,7 +606,7 @@ def test_minute_query(test, serial):
                        data=serial.dumps(query))
     expected = {'data': [0, 0],
                 'names': ['when_minute'],
-                'datashape': '2 * int64'}
+                'datashape': '2 * ?int64'}
     assert result.status_code == RC.OK
     resp = serial.loads(result.data)
     assert list(serial.data_loads(resp['data'])) == expected['data']

@@ -1,7 +1,7 @@
-Release |version|
------------------
+Release 0.9.0
+-------------
 
-:Release: |version|
+:Release: 0.9.0
 :Date: December 17th, 2015
 
 New Expressions
