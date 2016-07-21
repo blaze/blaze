@@ -41,11 +41,11 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask pymongo=2.8 flask-cors psycopg2
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask pymongo=3.0 flask-cors psycopg2
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
 
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' || $TRAVIS_PYTHON_VERSION == '3.4' ]]; then conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; fi
+  - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive -c blaze; fi
 
   # blaze required deps
