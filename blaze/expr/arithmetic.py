@@ -263,10 +263,9 @@ def scalar_coerce(_, val):
     if val == '':
         raise TypeError('%r is not a valid date' % val)
     dt = dt_parse(val)
-    if dt.time():  # TODO: doesn't work with python 3.5
-        raise TypeError(
-            "Can not coerce %r to type Date, contains time information" % val
-        )
+    if any(x > 0 for x in (dt.hour, dt.minute, dt.second, dt.microsecond)):
+        msg = "Can not coerce %r to type Date, contains time information" 
+        raise TypeError(msg % val)
     return dt.date()
 
 
