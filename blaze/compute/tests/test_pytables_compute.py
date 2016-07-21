@@ -4,15 +4,7 @@ import os
 import pytest
 import pandas as pd
 tb = pytest.importorskip('tables')
-
-
-try:
-    f = pd.HDFStore('foo')
-except (RuntimeError, ImportError) as e:
-    pytest.skip('skipping test_hdfstore.py %s' % e)
-else:
-    f.close()
-    os.remove('foo')
+pytest.importorskip('pandas.HDFStore')
 
 
 from blaze.compatibility import xfail

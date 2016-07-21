@@ -13,7 +13,7 @@ import importlib
 
 from datashape import discover, pprint
 import flask
-from flask import Blueprint, Flask, request, Response
+from flask import Blueprint, Flask, Response
 from flask.ext.cors import cross_origin
 from werkzeug.http import parse_options_header
 from toolz import valmap
@@ -186,7 +186,7 @@ def _prof_path(profiler_output, expr):
 def authorization(f):
     @functools.wraps(f)
     def authorized(*args, **kwargs):
-        if not _get_auth()(request.authorization):
+        if not _get_auth()(flask.request.authorization):
             return Response('bad auth token',
                             RC.UNAUTHORIZED,
                             {'WWW-Authenticate': 'Basic realm="Login Required"'})
@@ -197,7 +197,7 @@ def authorization(f):
 def check_request(f):
     @functools.wraps(f)
     def check():
-        raw_content_type = request.headers['content-type']
+        raw_content_type = flask.request.headers['content-type']
         content_type, options = parse_options_header(raw_content_type)
 
         if content_type not in accepted_mimetypes:
@@ -211,9 +211,9 @@ def check_request(f):
                     RC.UNSUPPORTED_MEDIA_TYPE)
 
         try:
-            payload = serial.loads(request.data)
+            payload = serial.loads(flask.request.data)
         except ValueError:
-            return ("Bad data.  Got %s " % request.data, RC.BAD_REQUEST)
+            return ("Bad data.  Got %s " % flask.request.data, RC.BAD_REQUEST)
 
         return f(payload, serial)
     return check

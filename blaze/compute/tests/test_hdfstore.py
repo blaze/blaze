@@ -1,5 +1,6 @@
 import pytest
 tables = pytest.importorskip('tables')
+pytest.importorskip('pandas.HDFStore')
 
 from blaze.compute.hdfstore import *
 from blaze.utils import tmpfile
@@ -9,15 +10,6 @@ import pandas as pd
 from datetime import datetime
 from odo import Chunks, into
 import os
-
-
-try:
-    f = pd.HDFStore('foo')
-except (RuntimeError, ImportError) as e:
-    pytest.skip('skipping test_hdfstore.py %s' % e)
-else:
-    f.close()
-    os.remove('foo')
 
 
 df = pd.DataFrame([['a', 1, 10., datetime(2000, 1, 1)],

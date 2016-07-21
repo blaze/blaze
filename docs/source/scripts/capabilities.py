@@ -89,53 +89,54 @@ capabilities = {
     }
 }
 
-colormap = {True: "#5EDA9E", False: "#FFFFFF"}
+if __name__ == '__main__':
+    colormap = {True: "#5EDA9E", False: "#FFFFFF"}
 
-backends = sorted(capabilities.keys())
-operations = sorted(tuple(capabilities.values())[0].keys())
+    backends = sorted(capabilities.keys())
+    operations = sorted(tuple(capabilities.values())[0].keys())
 
-statuses = [capabilities[backend][op] for backend in backends
-            for op in operations]
+    statuses = [capabilities[backend][op] for backend in backends
+                for op in operations]
 
-x, y = map(list, zip(*itertools.product(backends, operations)))
+    x, y = map(list, zip(*itertools.product(backends, operations)))
 
-colors = [colormap[1] if value else colormap[0] for value in statuses]
+    colors = [colormap[1] if value else colormap[0] for value in statuses]
 
-reset_output()
+    reset_output()
 
-output_file('source/_static/html/capabilities.html')
+    output_file('source/_static/html/capabilities.html')
 
 
-source = ColumnDataSource(
-    data=dict(
-        xname=x,
-        yname=y,
-        statuses=statuses,
-        colors=colors,
+    source = ColumnDataSource(
+        data=dict(
+            xname=x,
+            yname=y,
+            statuses=statuses,
+            colors=colors,
+        )
     )
-)
 
-p = figure(title="Blaze Capabilities by Backend",
-           tools='hover,save',
-           x_range=backends,
-           y_range=list(reversed(operations)),
-           x_axis_location="above")
-p.plot_width = 800
-p.plot_height = 600
+    p = figure(title="Blaze Capabilities by Backend",
+               tools='hover,save',
+               x_range=backends,
+               y_range=list(reversed(operations)),
+               x_axis_location="above")
+    p.plot_width = 800
+    p.plot_height = 600
 
-p.rect('xname', 'yname', 0.99, 0.99, source=source,
-       color='colors')
+    p.rect('xname', 'yname', 0.99, 0.99, source=source,
+           color='colors')
 
-p.grid.grid_line_color = None
-p.axis.axis_line_color = None
-p.axis.major_tick_line_color = None
-p.axis.major_label_text_font_size = "5pt"
-p.axis.major_label_standoff = 0
+    p.grid.grid_line_color = None
+    p.axis.axis_line_color = None
+    p.axis.major_tick_line_color = None
+    p.axis.major_label_text_font_size = "5pt"
+    p.axis.major_label_standoff = 0
 
-hover = p.select(dict(type=HoverTool))[0]
-hover.tooltips = OrderedDict([
-    ('names', '@yname, @xname'),
-    ('status', '@statuses'),
-])
+    hover = p.select(dict(type=HoverTool))[0]
+    hover.tooltips = OrderedDict([
+        ('names', '@yname, @xname'),
+        ('status', '@statuses'),
+    ])
 
-save(p)
+    save(p)
