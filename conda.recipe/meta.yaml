@@ -47,7 +47,7 @@ test:
   requires:
     - pytest >=2.7.0
     - psycopg2 # [unix]
-    - pymongo ==2.8
+    - pymongo ==3.0
     - bcolz   # [unix]
     - pymysql
     - sqlite
