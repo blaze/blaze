@@ -45,7 +45,7 @@ install:
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
 
-  - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; fi
+  - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive -c blaze; fi
 
   # blaze required deps
