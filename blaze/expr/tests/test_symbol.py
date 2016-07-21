@@ -805,9 +805,12 @@ class TestRepr(object):
         f = partial(partial(myfunc, 2), 1)
         expr = t.amount.map(f)
         s = str(expr)
-        assert s == ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
-                     " _asschema=None, _name0=None)" %
-                     funcname('test_nested_partial', 'myfunc'))
+        fn = funcname('test_nested_partial', 'myfunc')
+        assert s in ("Map(_child=t.amount, func=partial(partial(%s, 2), 1),"
+                     " _asschema=None, _name0=None)" % fn,
+                     # Py3.5 version does partial() folding!
+                     "Map(_child=t.amount, func=partial(%s, 2, 1),"
+                     " _asschema=None, _name0=None)" % fn)
 
 
 def test_count_values():
