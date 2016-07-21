@@ -1,6 +1,6 @@
 import pytest
 tables = pytest.importorskip('tables')
-pytest.importorskip('pandas.HDFStore')
+pytest.importorskip('pandas.io.pytables')
 
 from blaze.compute.hdfstore import *
 from blaze.utils import tmpfile

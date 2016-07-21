@@ -4,7 +4,7 @@ import os
 import pytest
 import pandas as pd
 tb = pytest.importorskip('tables')
-pytest.importorskip('pandas.HDFStore')
+pytest.importorskip('pandas.io.pytables')
 
 
 from blaze.compatibility import xfail
