@@ -2,12 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import pytest
-import pandas as pd
 tb = pytest.importorskip('tables')
-pytest.importorskip('pandas.io.pytables')
-
-
-from blaze.compatibility import xfail
 
 import numpy as np
 
@@ -161,11 +156,17 @@ class TestFailingSort(object):
         with pytest.raises(ValueError):
             compute(t.sort('id'), data)
 
-    @xfail(reason='PyTables does not support multiple column sorting')
+    @pytest.mark.xfail(
+        raises=TypeError,
+        reason='PyTables does not support multiple column sorting'
+    )
     def test_multiple_columns(self, data):
         compute(t.sort(['amount', 'id']), data)
 
-    @xfail(reason='PyTables does not support multiple column sorting')
+    @pytest.mark.xfail(
+        raises=TypeError,
+        reason='PyTables does not support multiple column sorting'
+    )
     def test_multiple_columns_sorted_data(self, csi_data):
         compute(t.sort(['amount', 'id']), csi_data)
 
@@ -197,11 +198,17 @@ class TestCSISort(object):
 class TestIndexSort(object):
     """Fails with a partially sorted index"""
 
-    @xfail(reason='PyTables cannot sort with a standard index')
+    @pytest.mark.xfail(
+        raises=ValueError,
+        reason='PyTables cannot sort with a standard index'
+    )
     def test_basic(self, idx_data):
         compute(t.sort('amount'), idx_data)
 
-    @xfail(reason='PyTables cannot sort with a standard index')
+    @pytest.mark.xfail(
+        raises=ValueError,
+        reason='PyTables cannot sort with a standard index'
+    )
     def test_ascending(self, idx_data):
         compute(t.sort('amount', ascending=False), idx_data)
 
@@ -217,13 +224,15 @@ def pyt():
     fn = 'test.pyt.h5'
     f = tb.open_file(fn, mode='w')
     d = f.create_table('/', 'test', x)
-    yield d
-    d.close()
-    f.close()
     try:
-        os.remove(fn)
-    except OSError:
-        pass
+        yield d
+    finally:
+        d.close()
+        f.close()
+        try:
+            os.remove(fn)
+        except OSError:
+            pass
 
 
 def test_drop(pyt):
