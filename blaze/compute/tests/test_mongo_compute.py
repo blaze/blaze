@@ -75,7 +75,10 @@ def date_data(db):
 @pytest.yield_fixture
 def bank(db):
     coll = db.bank
-    coll = into(coll, bank_raw)
+    try:
+        coll = into(coll, bank_raw)
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('No mongo server running')
     try:
         yield coll
     finally:
