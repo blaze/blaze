@@ -31,6 +31,7 @@ matrix:
 
 services:
     - mongodb
+    - mysql
 
 addons:
   postgresql: "9.3"
@@ -45,7 +46,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask pymongo=3.0 flask-cors psycopg2
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask pymongo=3.0 flask-cors psycopg2 pymysql
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
 
@@ -64,13 +65,14 @@ install:
   - python setup.py install
 
 before_script:
-  - sleep 15
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
   - psql -c "create database test;" -U postgres
+  - mysql -e "create database if not exists test;" -u root
+  - sleep 15
 
 script:
   - echo '[pytest]' > pytest.ini
-  - echo 'addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs' >> pytest.ini
+  - echo "addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs" >> pytest.ini
   - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
   - coverage run --include='blaze/*' --omit='blaze/_version.py' $(which py.test)
   - coverage report --show-missing
