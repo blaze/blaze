@@ -51,9 +51,9 @@ def test_compute_with_projection_projects_on_data_frames():
 def test_compute_calls_lean_projection():
     csv = CSV(example('iris.csv'))
     s = symbol('s', discover(csv))
-    result = compute(s[s.sepal_length > 5.0].species,
-                     csv, comfortable_memory=10)
-    assert len(result) == 118
+    result = pre_compute(s[s.sepal_length > 5.0].species,
+                         csv, comfortable_memory=10)
+    assert set(result.columns) == set(['sepal_length', 'species'])
 
 
 def test_unused_datetime_columns():
