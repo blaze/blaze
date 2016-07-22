@@ -8,11 +8,18 @@ from datetime import datetime
 from toolz import pluck, reduceby, groupby
 
 from datashape import Record
-from blaze import into, compute, compute_up, discover, dshape, data
+from blaze import into as bz_into, compute, compute_up, discover, dshape, data
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import symbol, by, floor, ceil
 from blaze.compatibility import xfail
+
+
+def into(*args, **kwargs):
+    try:
+        return bz_into(*args, **kwargs)
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('No mongo server running')
 
 @pytest.fixture(scope='module')
 def mongo_host_port():
@@ -75,10 +82,7 @@ def date_data(db):
 @pytest.yield_fixture
 def bank(db):
     coll = db.bank
-    try:
-        coll = into(coll, bank_raw)
-    except pymongo.errors.ConnectionFailure:
-        pytest.skip('No mongo server running')
+    coll = into(coll, bank_raw)
     try:
         yield coll
     finally:
