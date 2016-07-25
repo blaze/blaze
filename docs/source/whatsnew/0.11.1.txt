@@ -21,7 +21,8 @@ None
 Improved Backends
 ~~~~~~~~~~~~~~~~~
 
-None
+* The CSV backend was refactored to use ``dask.dataframe``.  Previously it used
+``odo.chunks`` (:issue:`1549`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
