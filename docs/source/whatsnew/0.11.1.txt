@@ -42,4 +42,4 @@ None
 Miscellaneous
 ~~~~~~~~~~~~~
 
-None
+* Support for Python 3.5 added.

@@ -50,7 +50,7 @@ def test_agg_sql(db, data):
             nyc.passenger_count as passenger_count
          from
             nyc
-         where nyc.passenger_count < %(passenger_count_1)s) as alias
+         where nyc.passenger_count < %s) as alias
     """
     assert normalize(str(result)) == normalize(expected)
 

@@ -1,24 +1,33 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-import platform
 pymongo = pytest.importorskip('pymongo')
 
 from datetime import datetime
 from toolz import pluck, reduceby, groupby
 
 from datashape import Record
-from blaze import into, compute, compute_up, discover, dshape, data
+import blaze
+from blaze import compute, compute_up, discover, dshape, data
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import symbol, by, floor, ceil
 from blaze.compatibility import xfail
+
+
+def into(*args, **kwargs):
+    try:
+        return blaze.into(*args, **kwargs)
+    except pymongo.errors.ConnectionFailure:
+        pytest.skip('No mongo server running')
+
 
 @pytest.fixture(scope='module')
 def mongo_host_port():
     import os
     return (os.environ.get('MONGO_IP', 'localhost'),
             os.environ.get('MONGO_PORT', 27017))
+
 
 @pytest.fixture(scope='module')
 def conn(mongo_host_port):
@@ -343,7 +352,8 @@ def test_missing_values(missing_vals):
 
 def test_datetime_access(date_data):
     t = symbol('t',
-               'var * {amount: float64, id: int64, name: string, when: datetime}')
+               ('var * {amount: float64, id: int64,'
+                      ' name: string, when: datetime}'))
 
     py_data = into(list, date_data)  # a python version of the collection
 
@@ -354,7 +364,8 @@ def test_datetime_access(date_data):
 
 def test_datetime_access_and_arithmetic(date_data):
     t = symbol('t',
-               'var * {amount: float64, id: int64, name: string, when: datetime}')
+               ('var * {amount: float64, id: int64,'
+                       ' name: string, when: datetime}'))
 
     py_data = into(list, date_data)  # a python version of the collection
 
