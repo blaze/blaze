@@ -1,0 +1,45 @@
+Release 0.11.1
+-----------------
+
+:Release: 0.11.1
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+* The CSV backend was refactored to use ``dask.dataframe``.  Previously it used
+``odo.chunks`` (:issue:`1549`).
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+Bug Fixes
+~~~~~~~~~
+
+None
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None
