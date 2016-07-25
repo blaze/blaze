@@ -571,7 +571,7 @@ pdsort = getattr(
 )
 
 
-@dispatch(Sort, (DataFrame, DaskDataFrame))
+@dispatch(Sort, DataFrame)
 def compute_up(t, df, **kwargs):
     return pdsort(df, t.key, ascending=t.ascending)
 
