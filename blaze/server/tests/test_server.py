@@ -6,7 +6,12 @@ pytest.importorskip('flask.ext.cors')
 
 from base64 import b64encode
 from copy import copy
-from io import StringIO
+# Python 2.7's `io.StringIO` doesn't behave as expected
+# with str values
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import datashape
 from datashape.util.testing import assert_dshape_equal
