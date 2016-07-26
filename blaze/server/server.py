@@ -247,8 +247,9 @@ class FlaskWithExceptionFormatting(Flask):
     """
     log_exception_formatter = None
 
-    def __init__(self, *args, log_exception_formatter=None, **kwargs):
-        self.log_exception_formatter = log_exception_formatter
+    def __init__(self, *args, **kwargs):
+        self.log_exception_formatter = kwargs.pop('log_exception_formatter',
+                                                  _default_log_exception_formatter)
         super(FlaskWithExceptionFormatting, self).__init__(*args, **kwargs)
 
 
