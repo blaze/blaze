@@ -62,7 +62,6 @@ from ..expr import (
     Head,
     IsIn,
     Join,
-    Key,
     Label,
     Like,
     Merge,
@@ -954,29 +953,6 @@ def compute_up(expr, data, **kwargs):
                               group_by=grouper)
 
 
-@dispatch(Key, (Selectable, Select))
-def compute_up(t, s, **kwargs):
-    s = select(s.alias())
-    direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
-    return s.order_by(*cols)
-
-
-@dispatch(Key, sa.Table)
-def compute_up(t, s, **kwargs):
-    s = select(s)
-    direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(s.c[c])) for c in listpack(t.key)]
-    return s.order_by(*cols)
-
-
-@dispatch(Key, ColumnElement)
-def compute_up(t, s, **kwargs):
-    direction = sa.asc if t.ascending else sa.desc
-    cols = [direction(lower_column(s.table.c[c])) for c in listpack(t.key)]
-    return select(s).order_by(*cols)
-
-
 @dispatch(Sort2, (Selectable, Select))
 def compute_up(t, s, **kwargs):
     s = select(s.alias())
@@ -1459,7 +1435,7 @@ def _subexpr_optimize(expr):
 @dispatch(Tail)
 def _subexpr_optimize(expr):
     child = sorter = expr._child
-    while not isinstance(sorter, (Sort, Sort2, Key)):
+    while not isinstance(sorter, (Sort, Sort2)):
         try:
             sorter = sorter._child
         except AttributeError:
@@ -1474,7 +1450,7 @@ def _subexpr_optimize(expr):
                     ascending=not sorter.ascending,
                 ),
             }).head(expr.n).sort(sorter._key, ascending=sorter.ascending)
-        elif isinstance(sorter, Sort2):
+        else:
             table, field = sorter._child, None
             if isinstance(sorter._child, Field):
                 table, field = sorter._child._child, sorter._child._name
@@ -1484,18 +1460,6 @@ def _subexpr_optimize(expr):
                         *[k._invert() for k in sorter.keys]
                     ),
                   }).head(expr.n).sort2(*[k._copy() for k in sorter.keys])
-
-            return ret[field] if field else ret
-        else:
-            table, field = sorter._child, None
-            if isinstance(sorter._child, Field):
-                table, field = sorter._child._child, sorter._child._name
-
-            key = sorter.key if len(sorter.key) == 1 else []
-            if sorter.ascending:
-                ret = child._subs({ sorter: table.desc(*key), }).head(expr.n).asc(*key)
-            else:
-                ret = child._subs({ sorter: table.asc(*key), }).head(expr.n).desc(*key)
 
             return ret[field] if field else ret
 

@@ -237,6 +237,7 @@ def test_join():
     assert list(result.c.keys()) == list(joined.fields)
 
     # test sort on join
+
     result = compute(joined.sort('amount'), {L: lhs, R: rhs}, return_type='native')
     assert normalize(str(result)) == normalize("""
      select
@@ -2260,172 +2261,6 @@ def test_all():
     )
 
 
-def test_asc_invalid():
-    s = sa_float
-    data = bz.data(sa_float)
-    data2 = bz.data(sa_float2)
-
-    with pytest.raises(ValueError):
-        compute(bz.asc([]))
-
-    with pytest.raises(TypeError):
-        compute(bz.asc(data, 'b', 'c'))
-
-    with pytest.raises(AttributeError):
-        compute(bz.asc(data.a.b, 'b'))
-
-    with pytest.raises(ValueError):
-        compute(bz.asc(data, 'z'))
-
-    with pytest.raises(ValueError):
-        compute(bz.asc(data, data2.a))
-
-    with pytest.raises(ValueError):
-        compute(bz.desc(data.a, data2.a))
-
-
-def test_asc():
-    s = sa_float
-    data = bz.data(sa_float)
-
-    x = str(compute(bz.asc(data), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.a), sa.asc(s.c.b), sa.asc(s.c.c), sa.asc(s.c.d)))
-    assert x == y
-
-    x = str(compute(data.asc(), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.a), sa.asc(s.c.b), sa.asc(s.c.c), sa.asc(s.c.d)))
-    assert x == y
-
-    x = str(compute(bz.asc(data, 'a'), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.a)))
-    assert x == y
-
-    x = str(compute(data.asc('a'), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.a)))
-    assert x == y
-
-    x = str(compute(bz.asc(data, 'b'), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.b)))
-    assert x == y
-
-    x = str(compute(bz.asc(data, data.a), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.a)))
-    assert x == y
-
-    x = str(compute(bz.asc(data, data.d), return_type='native'))
-    y = str(select(s).order_by(sa.asc(s.c.d)))
-    assert x == y
-
-    x = str(compute(bz.asc(data.a), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.asc(s.c.a)))
-    assert x == y
-
-    x = str(compute(bz.asc(data.c), return_type='native'))
-    y = str(select(s.c.c).order_by(sa.asc(s.c.c)))
-    assert x == y
-
-    x = str(compute(bz.asc(data.a, 'a'), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.asc(s.c.a)))
-    assert x == y
-
-    x = str(compute(data.a.asc(), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.asc(s.c.a)))
-    assert x == y
-
-    x = str(compute(data.a.asc('b'), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.asc(s.c.b)))
-    assert x == y
-
-    x = str(compute(bz.asc(data.c, 'c'), return_type='native'))
-    y = str(select(s.c.c).order_by(sa.asc(s.c.c)))
-    assert x == y
-
-    x = str(compute(bz.asc(data.c, data.c), return_type='native'))
-    y = str(select(s.c.c).order_by(sa.asc(s.c.c)))
-    assert x == y
-
-
-def test_desc_invalid():
-    s = sa_float
-    data = bz.data(sa_float)
-    data2 = bz.data(sa_float2)
-
-    with pytest.raises(ValueError):
-        compute(bz.desc({'a': 20000}))
-
-    with pytest.raises(ValueError):
-        compute(bz.desc(10.0))
-
-    with pytest.raises(ValueError):
-        compute(bz.desc(data, 288))
-
-    with pytest.raises(ValueError):
-        compute(bz.desc(data, 'z'))
-
-    with pytest.raises(ValueError):
-        compute(bz.desc(data, data2.a))
-
-    with pytest.raises(ValueError):
-        compute(bz.desc(data.a, data2.a))
-
-
-def test_desc():
-    s = sa_float
-    data = bz.data(sa_float)
-
-    x = str(compute(bz.desc(data), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.a), sa.desc(s.c.b), sa.desc(s.c.c), sa.desc(s.c.d)))
-    assert x == y
-
-    x = str(compute(data.desc(), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.a), sa.desc(s.c.b), sa.desc(s.c.c), sa.desc(s.c.d)))
-    assert x == y
-
-    x = str(compute(bz.desc(data, 'a'), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.a)))
-    assert x == y
-
-    x = str(compute(data.desc('a'), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.a)))
-    assert x == y
-
-    x = str(compute(bz.desc(data, 'b'), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.b)))
-    assert x == y
-
-    x = str(compute(bz.desc(data, data.a), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.a)))
-    assert x == y
-
-    x = str(compute(bz.desc(data, data.d), return_type='native'))
-    y = str(select(s).order_by(sa.desc(s.c.d)))
-    assert x == y
-
-    x = str(compute(bz.desc(data.a), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.desc(s.c.a)))
-    assert x == y
-
-    x = str(compute(data.a.desc(), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.desc(s.c.a)))
-    assert x == y
-
-    x = str(compute(bz.desc(data.c), return_type='native'))
-    y = str(select(s.c.c).order_by(sa.desc(s.c.c)))
-    assert x == y
-
-    x = str(compute(bz.desc(data.a, 'a'), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.desc(s.c.a)))
-    assert x == y
-
-    x = str(compute(data.a.desc('c'), return_type='native'))
-    y = str(select(s.c.a).order_by(sa.desc(s.c.c)))
-    assert x == y
-
-    x = str(compute(bz.desc(data.c, 'c'), return_type='native'))
-    y = str(select(s.c.c).order_by(sa.desc(s.c.c)))
-    assert x == y
-
-
 def test_sort2_invalid():
     s = sa_float
     data = bz.data(sa_float)
@@ -2527,9 +2362,6 @@ def test_sort2_compat():
     assert str(compute(t.sort2(bz.desc('amount')), s, return_type='native')) == \
         str(select(s).order_by(sa.desc(s.c.amount)))
 
-    assert str(compute(t.desc('amount'), s, return_type='native')) == \
-        str(select(s).order_by(sa.desc(s.c.amount)))
-
     ### test_multicolumn_sort
     assert str(compute(t.sort2('amount', 'id'), s, return_type='native')) == \
         str(select(s).order_by(sa.asc(s.c.amount), sa.asc(s.c.id)))
@@ -2580,36 +2412,6 @@ def test_sort2_compat():
     result = normalize(str(compute(t.name.sort2('id').tail(5), {t: s}, return_type='native')))
     assert expected == result
 
-    ### test_tail_of_asc
-    expected = normalize(str(compute(
-        t.desc('id').head(5).asc('id'),
-        {t: s}, return_type='native'
-    )))
-    result = normalize(str(compute(t.asc('id').tail(5), {t: s}, return_type='native')))
-    assert expected == result
-
-    expected = normalize(str(compute(
-        t.desc('id').head(5).asc('id').name,
-        {t: s}, return_type='native'
-    )))
-    result = normalize(str(compute(t.name.asc('id').tail(5), {t: s}, return_type='native')))
-    assert expected == result
-
-    ### test_tail_of_desc
-    expected = normalize(str(compute(
-        t.asc('id').head(5).desc('id'),
-        {t: s}, return_type='native'
-    )))
-    result = normalize(str(compute(t.desc('id').tail(5), {t: s}, return_type='native')))
-    assert expected == result
-
-    expected = normalize(str(compute(
-        t.asc('id').head(5).desc('id').name,
-        {t: s}, return_type='native'
-    )))
-    result = normalize(str(compute(t.name.desc('id').tail(5), {t: s}, return_type='native')))
-    assert expected == result
-
     ### test_usub_expression
     assert str(t.sort2(-t.amount)) == "t.sort2(-t.amount.asc('amount'))"
 
@@ -2628,6 +2430,5 @@ def test_sort2_compat():
     y = str(compute(data.c.tail(3).tail(2).sort().tail(2), return_type='native'))
     assert x == y
 
-    x = str(compute(data.c.tail(3).tail(2).asc().tail(2), return_type='native'))
     y = str(compute(data.c.tail(3).tail(2).sort().tail(2), return_type='native'))
     assert x == y
