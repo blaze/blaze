@@ -23,6 +23,7 @@ Improved Backends
 
 * The CSV backend was refactored to use ``dask.dataframe``.  Previously it used
 ``odo.chunks`` (:issue:`1549`).
+* Configurable blaze server logging was added (:issue:`1521`).
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
