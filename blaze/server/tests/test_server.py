@@ -6,6 +6,12 @@ pytest.importorskip('flask.ext.cors')
 
 from base64 import b64encode
 from copy import copy
+# Python 2.7's `io.StringIO` doesn't behave as expected
+# with str values
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import datashape
 from datashape.util.testing import assert_dshape_equal
@@ -106,6 +112,20 @@ def temp_add_server(request):
     s.app.testing = True
     with s.app.test_client() as c:
         yield c
+
+
+@pytest.yield_fixture(params=[None, tdata])
+def temp_server_with_excfmt(request):
+    """With a custom log exception formatter"""
+    data = request.param
+    log_format_exc = lambda tb: 'CUSTOM TRACEBACK'
+    stream = StringIO()
+    s = Server(copy(data), formats=all_formats, allow_add=True,
+               logfile=stream, log_exception_formatter=log_format_exc)
+    s.app.testing = True
+    with s.app.test_client() as client:
+        yield (client, stream)
+
 
 
 @pytest.yield_fixture
@@ -660,6 +680,19 @@ def test_add_default_not_allowed(temp_server, serial):
                                  data=blob)
     assert 'NOT FOUND' in response1.status
     assert response1.status_code == RC.NOT_FOUND
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_log_format_exc(temp_server_with_excfmt, serial):
+    expr = t.dumb.sort()
+    bad_query = {'expr': to_tree(expr)}
+
+    server, log_stream = temp_server_with_excfmt
+    result = server.post('/compute', headers=mimetype(serial),
+                         data=serial.dumps(bad_query))
+
+    assert 'CUSTOM TRACEBACK' in log_stream.getvalue()
+
 
 
 @pytest.mark.parametrize('serial', all_formats)

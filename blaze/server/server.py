@@ -1,5 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
+import logging
+from logging import Formatter
+from functools import wraps
+import traceback
 import collections
 from datetime import datetime
 import errno
@@ -16,7 +21,7 @@ import flask
 from flask import Blueprint, Flask, Response
 from flask.ext.cors import cross_origin
 from werkzeug.http import parse_options_header
-from toolz import valmap
+from toolz import valmap, compose
 
 import blaze
 from blaze import compute, resource
@@ -62,6 +67,19 @@ pickle_extension_api = Blueprint('pickle_extension_api', __name__)
 _no_default = object()  # sentinel
 
 
+def _logging(func):
+    @wraps(func)
+    def _logger(*args, **kwargs):
+        logger = flask.current_app.logger
+        try:
+            logger.debug("Calling %s" % func.__name__)
+            ret = func(*args, **kwargs)
+        finally:
+            logger.debug("Leaving %s" % func.__name__)
+        return ret
+    return _logger
+
+
 def _get_option(option, options, default=_no_default):
     try:
         return options[option]
@@ -80,6 +98,10 @@ def ensure_dir(path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+# Default for logging exception tracebacks is to simply use the standard
+# `traceback.format_tb`
+_default_log_exception_formatter = compose(''.join, traceback.format_tb)
 
 
 def _register_api(app, options, first_registration=False):
@@ -219,6 +241,18 @@ def check_request(f):
     return check
 
 
+class FlaskWithExceptionFormatting(Flask):
+    """ Add a `log_exception_formatter` instance attribute to the Flask
+    application object, to allow it to store a handler function.
+    """
+    log_exception_formatter = None
+
+    def __init__(self, *args, **kwargs):
+        self.log_exception_formatter = kwargs.pop('log_exception_formatter',
+                                                  _default_log_exception_formatter)
+        super(FlaskWithExceptionFormatting, self).__init__(*args, **kwargs)
+
+
 class Server(object):
 
     """ Blaze Data Server
@@ -264,6 +298,17 @@ class Server(object):
         Expose an `/add` endpoint to allow datasets to be dynamically added to
         the server. Since this increases the risk of security holes, it defaults
         to `False`.
+    logfile : str or file-like object, optional
+        A filename or open file-like stream to which to send log output. Defaults
+        to `sys.stdout`.
+    loglevel : str, optional
+        A string logging level (e.g. 'WARNING', 'INFO') to set how verbose log
+        output should be.
+    log_exception_formatter : callable, optional
+        A callable to be used to format an exception traceback for logging. It
+        should take a traceback argument, and return the string to be logged.
+        This defaults to the standard library `traceback.format_tb`
+
 
     Examples
     --------
@@ -285,13 +330,17 @@ class Server(object):
                  allow_profiler=False,
                  profiler_output=None,
                  profile_by_default=False,
-                 allow_add=False):
+                 allow_add=False,
+                 logfile=sys.stdout,
+                 loglevel='WARNING',
+                 log_exception_formatter=_default_log_exception_formatter):
         if isinstance(data, collections.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
                           data)
         elif isinstance(data, _Data):
             data = data._resources()
-        app = self.app = Flask('blaze.server.server')
+        app = self.app = FlaskWithExceptionFormatting('blaze.server.server',
+                                                      log_exception_formatter=log_exception_formatter)
         if data is None:
             data = {}
         app.register_blueprint(api,
@@ -303,6 +352,15 @@ class Server(object):
                                profile_by_default=profile_by_default,
                                allow_add=allow_add)
         self.data = data
+        if logfile:
+            if isinstance(logfile, (str, bytes)):
+                handler = logging.FileHandler(logfile)
+            else:
+                handler = logging.StreamHandler(logfile)
+            handler.setFormatter(Formatter('[%(asctime)s %(levelname)s] %(message)s '
+                                           '[in %(pathname)s:%(lineno)d]'))
+            handler.setLevel(getattr(logging, loglevel))
+            app.logger.addHandler(handler)
 
     def run(self, port=DEFAULT_PORT, retry=False, **kwargs):
         """Run the server.
@@ -323,7 +381,9 @@ class Server(object):
         self.port = port
         try:
             # Blocks until the server is shut down.
+            self.app.logger.debug('Starting server...')
             self.app.run(port=port, **kwargs)
+            self.app.logger.debug('Stopping server...')
         except socket.error:
             if not retry:
                 raise
@@ -336,6 +396,7 @@ class Server(object):
 @api.route('/datashape', methods=['GET'])
 @cross_origin(origins='*', methods=['GET'])
 @authorization
+@_logging
 def shape():
     return pprint(discover(_get_data()), width=0)
 
@@ -508,7 +569,9 @@ accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
+@_logging
 def compserver(payload, serial):
+    app = flask.current_app
     (allow_profiler,
      default_profiler_output,
      profile_by_default) = _get_profiler_info()
@@ -541,9 +604,9 @@ def compserver(payload, serial):
 
         @response_construction_context_stack.callback
         def log_time(start=time()):
-            flask.current_app.logger.info('compute expr: %s\ntotal time (s): %.3f',
-                                          expr,
-                                          time() - start)
+            app.logger.info('compute expr: %s\ntotal time (s): %.3f',
+                            expr,
+                            time() - start)
 
         ns = payload.get('namespace', {})
         compute_kwargs = payload.get('compute_kwargs') or {}
@@ -556,16 +619,26 @@ def compserver(payload, serial):
         leaf = expr._leaves()[0]
 
         try:
+            formatter = getattr(flask.current_app, 'log_exception_formatter',
+                                _default_log_exception_formatter)
             result = serial.materialize(compute(expr,
                                                 {leaf: dataset},
                                                 **compute_kwargs),
                                         expr.dshape,
                                         odo_kwargs)
         except NotImplementedError as e:
-            return ("Computation not supported:\n%s" % e, RC.NOT_IMPLEMENTED)
+            # Note: `sys.exc_info()[2]` holds the current traceback, for
+            # Python 2 / 3 compatibility. It's important not to store a local
+            # reference to it.
+            formatted_tb = formatter(sys.exc_info()[2])
+            error_msg = "Computation not supported:\n%s\n%s" % (e, formatted_tb)
+            app.logger.error(error_msg)
+            return (error_msg, RC.NOT_IMPLEMENTED)
         except Exception as e:
-            return ("Computation failed with message:\n%s: %s" % (type(e).__name__, e),
-                    RC.INTERNAL_SERVER_ERROR)
+            formatted_tb = formatter(sys.exc_info()[2])
+            error_msg = "Computation failed with message:\n%s: %s\n%s" % (type(e).__name__, e, formatted_tb)
+            app.logger.error(error_msg)
+            return (error_msg, RC.INTERNAL_SERVER_ERROR)
 
         response = {'datashape': pprint(expr.dshape, width=0),
                     'data': serial.data_dumps(result),
@@ -596,6 +669,7 @@ def compserver(payload, serial):
 @cross_origin(origins='*', methods=['POST', 'HEAD', 'OPTIONS'])
 @authorization
 @check_request
+@_logging
 def addserver(payload, serial):
     """Add a data resource to the server.
 
@@ -623,6 +697,7 @@ def addserver(payload, serial):
                 RC.UNPROCESSABLE_ENTITY)
 
     [(name, resource_info)] = payload.items()
+    flask.current_app.logger.debug("Attempting to add dataset '%s'" % name)
 
     if name in data:
         msg = "Cannot add dataset named %s, already exists on server."
