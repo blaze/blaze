@@ -67,8 +67,11 @@ class SortKey(object):
         return SortKey(None, self.field, not self.ascending)
 
     def __str__(self):
-        key = "%s.%s" % (self.table._name, self.field) if self.table is not None else self.field
-        return "SortKey(key=%s, ascending=%s)" % (key, self.ascending)
+        func = 'asc' if self.ascending else 'desc'
+        if self.table is None:
+            return "%s(%s)" % (func, repr(self.field))
+        else:
+            return "%s.%s.%s()" % (self.table._name, self.field, func)
 
     def __eq__(self, other):
         if isinstance(other, SortKey):
