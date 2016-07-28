@@ -173,7 +173,7 @@ def sort_values(first, *rest):
 
           * A single column string: ``t.sort_values('amount')``
           * A list of column strings: ``t.sort_values('name', 'amount')``
-          * Specify the sort order: ``t.sort_values(bz.desc('amount'))``
+          * Specify the sort order: ``t.sort_values(t.name.asc(), t.amount.desc())``
     """
     child = table = first
     if _isrecord(first):
