@@ -115,11 +115,17 @@ def _get_sort_key_params(key, func):
 
 
 def asc(key):
+    """Create a sort key with ascending order for use in sort_values().
+       The argument must be a field expression or a column name.
+    """
     table, field = _get_sort_key_params(key, 'asc')
     return SortKey(table, field, True)
 
 
 def desc(key):
+    """Create a sort key with descending order for use in sort_values().
+       The argument must be a field expression or a column name.
+    """
     table, field = _get_sort_key_params(key, 'desc')
     return SortKey(table, field, False)
 
