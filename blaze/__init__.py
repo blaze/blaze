@@ -50,7 +50,7 @@ from .expr import (
     selection,
     shape,
     sort,
-    sort2,
+    sort_values,
     summary,
     symbol,
     time,

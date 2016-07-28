@@ -74,7 +74,7 @@ from ..expr import (
     Shift,
     Slice,
     Sort,
-    Sort2,
+    SortValues,
     Sub,
     Summary,
     Tail,
@@ -953,39 +953,35 @@ def compute_up(expr, data, **kwargs):
                               group_by=grouper)
 
 
-@dispatch(Sort2, (Selectable, Select))
+def _sqlalchemy_sort_keys(t, column_collection):
+    cols = []
+    for k in listpack(t.keys):
+        direction = sa.asc if k.ascending else sa.desc
+        cols.append(direction(lower_column(column_collection[k.field])))
+    return cols
+
+
+@dispatch(SortValues, (Selectable, Select))
 def compute_up(t, s, **kwargs):
     s = select(s.alias())
-    cols = []
-    for k in listpack(t.keys):
-        for c in k.key:
-            direction = sa.asc if k.ascending else sa.desc
-            cols.append(direction(lower_column(s.c[c])))
+    cols = _sqlalchemy_sort_keys(t, s.c)
     return s.order_by(*cols)
 
 
-@dispatch(Sort2, sa.Table)
+@dispatch(SortValues, sa.Table)
 def compute_up(t, s, **kwargs):
     s = select(s)
-    cols = []
-    for k in listpack(t.keys):
-        for c in k.key:
-            direction = sa.asc if k.ascending else sa.desc
-            cols.append(direction(lower_column(s.c[c])))
+    cols = _sqlalchemy_sort_keys(t, s.c)
     return s.order_by(*cols)
 
 
-@dispatch(Sort2, ColumnElement)
+@dispatch(SortValues, ColumnElement)
 def compute_up(t, s, **kwargs):
     if hasattr(s, 'table'):
         col_collect = s.table.c
     else: # label or comparator objects
         col_collect = select(s).c
-    cols = []
-    for k in listpack(t.keys):
-        for c in k.key:
-            direction = sa.asc if k.ascending else sa.desc
-            cols.append(direction(lower_column(col_collect[c])))
+    cols = _sqlalchemy_sort_keys(t, col_collect)
     return select(s).order_by(*cols)
 
 
@@ -1435,7 +1431,7 @@ def _subexpr_optimize(expr):
 @dispatch(Tail)
 def _subexpr_optimize(expr):
     child = sorter = expr._child
-    while not isinstance(sorter, (Sort, Sort2)):
+    while not isinstance(sorter, (Sort, SortValues)):
         try:
             sorter = sorter._child
         except AttributeError:
@@ -1456,10 +1452,10 @@ def _subexpr_optimize(expr):
                 table, field = sorter._child._child, sorter._child._name
 
             ret = child._subs({
-                    sorter: table.sort2(
-                        *[k._invert() for k in sorter.keys]
+                    sorter: table.sort_values(
+                        *[k.invert() for k in sorter.keys]
                     ),
-                  }).head(expr.n).sort2(*[k._copy() for k in sorter.keys])
+                  }).head(expr.n).sort_values(*[k.copy() for k in sorter.keys])
 
             return ret[field] if field else ret
 

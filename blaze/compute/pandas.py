@@ -89,7 +89,7 @@ from ..expr import (
     Shift,
     Slice,
     Sort,
-    Sort2,
+    SortValues,
     strftime,
     Summary,
     Tail,
@@ -572,17 +572,17 @@ pdsort = getattr(
 )
 
 
-@dispatch(Sort2, (DataFrame, DaskDataFrame))
+@dispatch(SortValues, (DataFrame, DaskDataFrame))
 def compute_up(t, df, **kwargs):
-    ascending = [x.ascending for x in t.keys for _ in x.key]
-    key = [k for x in t.keys for k in x.key]
+    ascending = [x.ascending for x in t.keys]
+    key = [x.field for x in t.keys]
     return pdsort(df, key, ascending=ascending)
 
 
-@dispatch(Sort2, Series)
+@dispatch(SortValues, Series)
 def compute_up(t, s, **kwargs):
-    ascending = [x.ascending for x in t.keys for _ in x.key]
-    key = [k for x in t.keys for k in x.key]
+    ascending = [x.ascending for x in t.keys]
+    key = [x.field for x in t.keys]
     if len(key) != 1 or key[0] != s.name:
         raise ValueError(
             "cannot sort pandas series '%s' with key '%s'" % (s.name, key[0]))
