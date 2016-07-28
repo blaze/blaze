@@ -50,6 +50,9 @@ __all__ = ['asc',
 
 
 class SortKey(object):
+    """Internal object for holding the sort keys of the sort_values() function.
+       The API is not guaranteed.
+    """
 
     def __init__(self, table, field, ascending=True):
         self.table = table
