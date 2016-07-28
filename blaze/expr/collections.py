@@ -4,6 +4,7 @@ import numbers
 import numpy as np
 from functools import partial
 from itertools import chain
+import warnings
 
 import datashape
 from datashape import (DataShape, Option, Record, Unit, dshape, var, Fixed,
@@ -81,7 +82,7 @@ class SortKey(object):
             return (self.table == other.table and
                     self.field == other.field and
                     self.ascending == other.ascending)
-        return False
+        return NotImplemented
 
     def __hash__(self):
         if self._hash is None:
@@ -275,6 +276,12 @@ def sort(child, key=None, ascending=True):
     ascending : bool, optional
         Determines order of the sort
     """
+    msg = (
+      "\nThe signature of the sort() function will change.  Use the transitional\n"
+      "sort_values() function to get the new signature.  At some point in the\n"
+      "future sort_values() will be renamed to sort().")
+    warnings.warn(msg, DeprecationWarning)
+
     if ascending not in (True, False):
         # NOTE: this test is to guard against users saying `x.sort('a', 'b')`
         # when they should have said `x.sort(['a', 'b'])`.
