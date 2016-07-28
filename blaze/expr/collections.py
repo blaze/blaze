@@ -169,7 +169,7 @@ def sort_values(first, *rest):
     else:
         table, field = _find_table_and_field(first)
         if table is None:
-            raise ValueError("sort_values(): no valid table in the sort expression")
+            raise ValueError("no valid table in the sort expression")
         if not rest: # sort_values(data.a)
             rest = [field._name]
     keys = []
@@ -186,7 +186,7 @@ def sort_values(first, *rest):
                 keys.append(k)
                 field_names.append(k.field)
             else:
-                raise ValueError("sort_values(): key argument refers to invalid table")
+                raise ValueError("key argument refers to invalid table: '%s'" % k)
         else:
             t, f = _find_table_and_field(k) # sort_values(data, data.a, ...)
             if t is not None and t.isidentical(table):
@@ -194,11 +194,13 @@ def sort_values(first, *rest):
                 keys.append(k)
                 field_names.append(f._name)
             else:
-                raise ValueError("sort_values(): invalid sort key: '%s'" % k)
+                raise ValueError("key argument refers to invalid table: '%s'" % k)
     if len(set(field_names)) != len(field_names):
-        raise ValueError("sort_values(): duplicate fieldname arguments")
+        col = next(c for c in field_names if field_names.count(c) > 1)
+        raise ValueError("duplicate sort key: '%s'" % col)
     if not set(field_names) <= set(table.dshape.measure.names):
-        raise ValueError("sort_values(): %s %s" % (field_names, table.dshape.measure.names))
+        col = next(c for c in field_names if not c in table.dshape.measure.names)
+        raise ValueError("invalid sort key: '%s'" % col)
     return SortValues(child, tuple(keys))
 
 
