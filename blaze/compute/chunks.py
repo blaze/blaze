@@ -12,7 +12,7 @@ import numpy as np
 from ..expr import Head, ElemWise, Distinct, Symbol, Expr, path
 from ..expr.split import split
 from .core import compute
-from .pmap import get_default_pmap
+from dask.threaded import get as dsk_get
 
 
 __all__ = ['Cheap', 'compute_chunk', 'compute_down']
@@ -35,16 +35,21 @@ def compute_chunk(chunk, chunk_expr, part):
 
 
 @dispatch(Expr, Chunks)
-def compute_down(expr, data, map=None, **kwargs):
-    if map is None:
-        map = get_default_pmap()
+def compute_down(expr, data, **kwargs):
 
     leaf = expr._leaves()[0]
 
     (chunk, chunk_expr), (agg, agg_expr) = split(leaf, expr)
-
-    parts = list(map(curry(compute_chunk, chunk, chunk_expr), data))
-
+    # Use dask to parallelize the embarassingly parallel per-chunk computation...
+    f = curry(compute_chunk, chunk, chunk_expr)
+    p = []
+    dsk = {}
+    for i, d in enumerate(data.data):
+        dsk['d%d'%i] = d
+        dsk['p%d'%i] = (f, 'd%d'%i)
+        p.append('p%d'%i)
+    parts = dsk_get(dsk, p)
+    # ... then aggregate the result.
     if isinstance(parts[0], np.ndarray):
         intermediate = np.concatenate(parts)
     elif isinstance(parts[0], pd.DataFrame):
