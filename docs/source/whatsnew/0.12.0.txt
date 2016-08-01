@@ -1,0 +1,45 @@
+Release 0.12.0
+-----------------
+
+:Release: 0.12.0
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+None
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+None
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+Bug Fixes
+~~~~~~~~~
+
+* The ``flask.ext.cors`` import was updated to resolve a ``DeprecationWarning``
+(:issue:`1556`).
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+None
