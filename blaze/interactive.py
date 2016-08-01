@@ -441,7 +441,10 @@ def _choose_repr(self):
         return new_repr(self)
     else:
         warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
-        return expr_repr(self)
+        try:
+            return expr_repr(self)
+        except Exception as exc:
+            return new_repr(self)
 
 
 def _warning_repr_html(self):
@@ -449,7 +452,10 @@ def _warning_repr_html(self):
         return new_repr(self)
     else:
         warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
-        return to_html(self)
+        try:
+            return to_html(self)
+        except Exception as exc:
+            return new_repr(self)
 
 
 def new_repr(self):
