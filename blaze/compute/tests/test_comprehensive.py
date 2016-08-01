@@ -140,7 +140,7 @@ def test_base():
                 else:
                     assert df_eq(result, model)
             elif isrecord(expr.dshape):
-                result = compute(expr._subs({t: T}))
+                result = compute(expr._subs({t: T}), return_type='native')
                 assert into(tuple, result) == into(tuple, model)
             else:
                 result = compute(expr._subs({t: T}))

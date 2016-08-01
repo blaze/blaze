@@ -21,7 +21,7 @@ def test_dataset():
     assert discover(d) == discover(ns)
 
     s = symbol('s', discover(d))
-    compute(s.x * 2, d) == 20
+    compute(s.x * 2, d, return_type=int) == 20
     cache == {s.x * 2: 20}
 
 
@@ -34,7 +34,7 @@ def test_streaming():
 
     s = symbol('s', discover(d))
     expr = s.t.x * 2
-    result = compute(expr, d)
+    result = compute(expr, d, return_type=list)
 
     assert not isinstance(d.cache[expr], Iterator)
     assert into(list, d.cache[expr]) == [2, 2]

@@ -114,7 +114,7 @@ class notnull(UnaryOp):
     >>> expr = notnull(s)
     >>> expr.dshape
     dshape("var * bool")
-    >>> list(compute(expr, [1, 2, None, 3]))
+    >>> list(compute(expr, [1, 2, None, 3], return_type='native'))
     [True, True, False, True]
     """
     _dtype = bool_
@@ -127,9 +127,9 @@ def truncate(expr, precision):
     --------
     >>> from blaze import symbol, compute
     >>> x = symbol('x', 'real')
-    >>> compute(x.truncate(10), 123)
+    >>> compute(x.truncate(10), 123, return_type='native')
     120
-    >>> compute(x.truncate(0.1), 3.1415)  # doctest: +SKIP
+    >>> compute(x.truncate(0.1), 3.1415, return_type='native')  # doctest: +SKIP
     3.1
     """
     return expr // precision * precision

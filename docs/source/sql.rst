@@ -174,7 +174,7 @@ The previous example in blaze looks like this:
      >>> d.fields  # doctest: +SKIP
      ['products', 'orders']
      >>> expr = d.orders.product_id.name  # doctest: +SKIP
-     >>> print(compute(expr))  # doctest: +SKIP
+     >>> print(compute(expr, return_type='native'))  # doctest: +SKIP
      SELECT orders.id, p.name
      FROM orders as o, products as p
      WHERE o.product_id = p.id

@@ -50,26 +50,26 @@ def test_reductions():
     assert len(list(compute(t.a.distinct(), b))) == 3
 
     assert compute(t.a.nunique(), b) == 3
-    assert isinstance(compute(t.a.nunique(), b), np.integer)
+    assert isinstance(compute(t.a.nunique(), b, return_type='native'), np.integer)
 
     assert compute(t.a.count(), b) == 3
-    assert isinstance(compute(t.date.count(), b), np.integer)
+    assert isinstance(compute(t.date.count(), b, return_type='native'), np.integer)
 
     assert compute(t.date.nunique(), b) == 2
-    assert isinstance(compute(t.date.nunique(), b), np.integer)
+    assert isinstance(compute(t.date.nunique(), b, return_type='native'), np.integer)
 
     assert compute(t.date.count(), b) == 2
-    assert isinstance(compute(t.a.count(), b), np.integer)
+    assert isinstance(compute(t.a.count(), b, return_type='native'), np.integer)
 
     assert compute(t.a[0], b) == 1
     assert compute(t.a[-1], b) == 3
-    assert compute(t[0], b) == compute(t[0], b)
-    assert compute(t[-1], b) == compute(t[-1], b)
+    assert compute(t[0], b, return_type='native') == compute(t[0], b, return_type='native')
+    assert compute(t[-1], b, return_type='native') == compute(t[-1], b, return_type='native')
 
 
 def test_nunique():
-    assert compute(t.a.nunique(), b) == 3
-    assert compute(t.nunique(), b) == 3
+    assert compute(t.a.nunique(), b, return_type='native') == 3
+    assert compute(t.nunique(), b, return_type='native') == 3
 
 
 def test_selection_head():
@@ -80,15 +80,15 @@ def test_selection_head():
     t = symbol('t', ds)
 
     # numpy reductions return numpy scalars
-    assert compute((t.a < t.b).all(), b).item() is True
-    assert list(compute(t[t.a < t.b].a.head(10), b)) == list(range(10))
-    assert list(compute(t[t.a > t.b].a.head(10), b)) == []
+    assert compute((t.a < t.b).all(), b, return_type='native').item() is True
+    assert list(compute(t[t.a < t.b].a.head(10), b, return_type='native')) == list(range(10))
+    assert list(compute(t[t.a > t.b].a.head(10), b, return_type='native')) == []
 
-    assert into([], compute(t[t.a + t.b > t.c], b)) == [(0, 1, 0),
-                                                        (1, 2, 1),
-                                                        (2, 3, 4)]
-    assert len(compute(t[t.a + t.b > t.c].head(10), b))  # non-empty
-    assert len(compute(t[t.a + t.b < t.c].head(10), b))  # non-empty
+    assert into([], compute(t[t.a + t.b > t.c], b), return_type='native') == [(0, 1, 0),
+                                                                              (1, 2, 1),
+                                                                              (2, 3, 4)]
+    assert len(compute(t[t.a + t.b > t.c].head(10), b, return_type='native'))  # non-empty
+    assert len(compute(t[t.a + t.b < t.c].head(10), b, return_type='native'))  # non-empty
 
 
 def test_selection_isnan():
@@ -167,6 +167,6 @@ def test_by_with_single_row():
     t = symbol('t', discover(ct))
     subset = t[t.a == 3]
     expr = by(subset.a, b_sum=subset.b.sum())
-    result = compute(expr, ct)
-    expected = compute(expr, ct, optimize=False)
+    result = compute(expr, ct, return_type='native')
+    expected = compute(expr, ct, optimize=False, return_type='native')
     tm.assert_frame_equal(result, expected)

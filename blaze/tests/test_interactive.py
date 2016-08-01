@@ -75,7 +75,7 @@ def test_len():
 
 
 def test_compute():
-    assert list(compute(t['amount'] + 1)) == [101, 201]
+    assert list(compute(t['amount'] + 1, return_type='native')) == [101, 201]
 
 
 def test_create_with_schema():
@@ -213,21 +213,21 @@ def test_into_np_ndarray_column():
     t = data(L, fields=['id', 'name', 'balance'])
     expr = t[t.balance < 0].name
     colarray = into(np.ndarray, expr)
-    assert len(list(compute(expr))) == len(colarray)
+    assert len(list(compute(expr, return_type='native'))) == len(colarray)
 
 
 def test_into_nd_array_selection():
     t = data(L, fields=['id', 'name', 'balance'])
     expr = t[t['balance'] < 0]
     selarray = into(np.ndarray, expr)
-    assert len(list(compute(expr))) == len(selarray)
+    assert len(list(compute(expr, return_type='native'))) == len(selarray)
 
 
 def test_into_nd_array_column_failure():
     tble = data(L, fields=['id', 'name', 'balance'])
     expr = tble[tble['balance'] < 0]
     colarray = into(np.ndarray, expr)
-    assert len(list(compute(expr))) == len(colarray)
+    assert len(list(compute(expr, return_type='native'))) == len(colarray)
 
 
 def test_Data_attribute_repr():

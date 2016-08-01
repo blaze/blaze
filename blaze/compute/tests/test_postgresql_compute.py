@@ -419,7 +419,7 @@ def test_coerce_bool_and_sum(sql):
     n = sql.name
     t = symbol(n, discover(sql))
     expr = (t.B > 1.0).coerce(to='int32').sum()
-    result = compute(expr, sql).scalar()
+    result = compute(expr, sql, return_type='native').scalar()
     expected = compute(t.B, sql, return_type=pd.Series).gt(1).sum()
     assert result == expected
 

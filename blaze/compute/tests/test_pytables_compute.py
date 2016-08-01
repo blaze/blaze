@@ -68,12 +68,12 @@ def test_discover_datashape(data):
 
 
 def test_symbol(data):
-    assert compute(t, data) == data
+    assert compute(t, data, return_type='native') == data
     assert isinstance(data, tb.Table)
 
 
 def test_single_column(data):
-    assert eq(compute(t['name'], data), x['name'])
+    assert eq(compute(t['name'], data, return_type='native'), x['name'])
 
 
 def test_projection(data):

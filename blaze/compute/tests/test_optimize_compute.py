@@ -21,5 +21,5 @@ def optimize(expr, data):
 
 def test_scope_gets_updated_after_optimize_call():
     a = symbol('a', 'int')
-    result = compute(a + 1, Foo('foo'), optimize=optimize)
+    result = compute(a + 1, Foo('foo'), optimize=optimize, return_type='native')
     assert result.data == 'foo'

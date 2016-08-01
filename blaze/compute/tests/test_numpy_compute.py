@@ -356,7 +356,7 @@ def test_month():
 def test_truncate_on_np_datetime64_scalar():
     s = symbol('s', 'datetime')
     data = np.datetime64('2000-01-02T12:30:00Z')
-    assert compute(s.truncate(1, 'day'), data) == data.astype('M8[D]')
+    assert compute(s.truncate(1, 'day'), data, return_type='native') == data.astype('M8[D]')
 
 
 def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
@@ -364,7 +364,7 @@ def test_numpy_and_python_datetime_truncate_agree_on_start_of_week():
     n = np.datetime64('2014-11-11')
     p = datetime(2014, 11, 11)
     expr = s.truncate(1, 'week')
-    assert compute(expr, n) == compute(expr, p)
+    assert compute(expr, n, return_type='native') == compute(expr, p, return_type='native')
 
 
 def test_add_multiple_ndarrays():

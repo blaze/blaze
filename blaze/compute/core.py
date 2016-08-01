@@ -358,7 +358,7 @@ def swap_resources_into_scope(expr, scope):
 
 
 @dispatch(Expr, Mapping)
-def compute(expr, d, return_type=no_default, **kwargs):
+def compute(expr, d, return_type='core', **kwargs):
     """Compute expression against data sources.
 
     Parameters
@@ -380,7 +380,7 @@ def compute(expr, d, return_type=no_default, **kwargs):
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
-    >>> list(compute(deadbeats, {t: data}))
+    >>> list(compute(deadbeats, {t: data}, return_type='native'))
     ['Bob', 'Charlie']
     """
     _reset_leaves()
@@ -413,14 +413,9 @@ def compute(expr, d, return_type=no_default, **kwargs):
     if post_compute_:
         result = post_compute_(expr3, result, scope=d4)
 
-    # return the backend's native response
-    if return_type is no_default:
-        msg = ("The default behavior of compute will change in version >= 0.11"
-               " where the `return_type` parameter will default to 'core'.")
-        warnings.warn(msg, DeprecationWarning)
     # return result as a core type
     # (python type, pandas Series/DataFrame, numpy array)
-    elif return_type == 'core':
+    if return_type == 'core':
         result = coerce_core(result, expr.dshape)
     # user specified type
     elif isinstance(return_type, type):
@@ -444,7 +439,7 @@ def compute_single_object(expr, o, **kwargs):
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
     >>> # list(compute(deadbeats, {t: data}))
-    >>> list(compute(deadbeats, data))
+    >>> list(compute(deadbeats, data, return_type='native'))
     ['Bob', 'Charlie']
     """
     ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])

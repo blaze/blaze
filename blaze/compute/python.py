@@ -6,7 +6,7 @@
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
->>> list(compute(deadbeats, data))
+>>> list(compute(deadbeats, data, return_type='native'))
 ['Bob', 'Charlie']
 """
 from __future__ import absolute_import, division, print_function

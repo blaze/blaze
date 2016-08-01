@@ -473,7 +473,7 @@ def intonumpy(data, dtype=None, **kwargs):
 
 
 def convert_base(typ, x):
-    x = compute(x)
+    x = compute(x, return_type='native')
     try:
         return typ(x)
     except:
