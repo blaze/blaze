@@ -33,6 +33,9 @@ None
 API Changes
 ~~~~~~~~~~~
 
+* The default for the ``return_type`` parameter of the ``compute()`` function
+  has changed from `native` to `core` (:issue:`1551`).
+
 None
 
 Bug Fixes
