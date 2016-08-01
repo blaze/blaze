@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 pytest.importorskip('flask')
-pytest.importorskip('flask.ext.cors')
+pytest.importorskip('flask_cors')
 
 from base64 import b64encode
 from copy import copy

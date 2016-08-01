@@ -19,7 +19,7 @@ import importlib
 from datashape import discover, pprint
 import flask
 from flask import Blueprint, Flask, Response
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 from werkzeug.http import parse_options_header
 from toolz import valmap, compose
 
