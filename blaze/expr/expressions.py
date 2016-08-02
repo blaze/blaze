@@ -220,9 +220,13 @@ class Expr(Node):
         except AttributeError:
             fields = dict(zip(map(valid_identifier, self.fields), self.fields))
 
+            measure = self.dshape.measure
+            if isinstance(measure, datashape.Map): # Foreign key
+                measure = measure.key
+
             # prefer the method if there's a field with the same name
             methods = toolz.merge(
-                schema_methods(self.dshape.measure),
+                schema_methods(measure),
                 dshape_methods(self.dshape)
             )
             if key in methods:
