@@ -368,7 +368,7 @@ def compute(expr, d, return_type='core', **kwargs):
     d : any
         The data source to compute expression on.
     return_type : {'core', 'native', type}, optional
-        Type to return data as.  Defaults to 'core' since version 0.11.1.
+        Type to return data as.  Defaults to 'core' since version 0.12.
         'core' forces the computation into a core type. 'native' returns
         the result as is from the respective backend's ``post_compute``.
         If a type is passed, it will odo the result into the type before
