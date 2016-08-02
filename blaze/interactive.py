@@ -94,10 +94,7 @@ class _Data(Symbol):
             cls,
             data,
             dshape,
-            name or (
-                next(names)
-                if isrecord(dshape.measure) else None
-            ),
+            name or next(names),
         )
 
     def _resources(self):
