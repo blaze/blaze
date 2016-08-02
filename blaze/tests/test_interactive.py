@@ -374,8 +374,13 @@ def test_simple_data_equality():
     x = data(157)
     y = data(101)
     z = data(157)
-    assert compute(x == y) == False
-    assert compute(x == z) == True
+    assert compute(x == y) is False
+    assert compute(x == z) is True
+
+
+def test_Data_invalid_args():
+    with pytest.raises(TypeError):
+        x = data(1, name=10)
 
 
 def test_coerce_date_and_datetime():

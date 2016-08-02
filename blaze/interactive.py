@@ -90,11 +90,15 @@ class _Data(Symbol):
     _arguments = 'data', 'dshape', '_name'
 
     def __new__(cls, data, dshape, name=None):
+        if name is None:
+            name = next(names)
+        elif not isinstance(name, _strtypes):
+            raise TypeError("'name' argument must be a string")
         return super(Symbol, cls).__new__(
             cls,
             data,
             dshape,
-            name or next(names),
+            name,
         )
 
     def _resources(self):
