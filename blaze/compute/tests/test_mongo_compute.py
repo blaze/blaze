@@ -358,8 +358,8 @@ def test_datetime_access(date_data):
     py_data = into(list, date_data)  # a python version of the collection
 
     for attr in ['day', 'minute', 'second', 'year', 'month']:
-        assert list(compute(getattr(t.when, attr), date_data, return_type='native')) == \
-            list(compute(getattr(t.when, attr), py_data, return_type='native'))
+        assert compute(getattr(t.when, attr), date_data) == \
+               compute(getattr(t.when, attr), py_data, return_type=list)
 
 
 def test_datetime_access_and_arithmetic(date_data):
@@ -371,7 +371,7 @@ def test_datetime_access_and_arithmetic(date_data):
 
     expr = t.when.day + t.id
 
-    assert list(compute(expr, date_data, return_type='native')) == list(compute(expr, py_data, return_type='native'))
+    assert compute(expr, date_data) == compute(expr, py_data, return_type=list)
 
 
 def test_floor_ceil(bank):

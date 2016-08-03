@@ -34,7 +34,7 @@ def test_streaming():
 
     s = symbol('s', discover(d))
     expr = s.t.x * 2
-    result = compute(expr, d, return_type=list)
+    result = compute(expr, d)
 
     assert not isinstance(d.cache[expr], Iterator)
     assert into(list, d.cache[expr]) == [2, 2]

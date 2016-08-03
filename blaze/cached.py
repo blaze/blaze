@@ -42,8 +42,6 @@ def compute_down(expr, data, **kwargs):
     leaf, = expr._leaves()
 
     # Do work
-    if 'return_type' not in kwargs:
-        kwargs['return_type'] = 'native'
     result = compute(expr, {leaf: data.data}, **kwargs)
 
     ds = expr.dshape

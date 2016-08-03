@@ -31,7 +31,7 @@ def pre_compute(expr, data, **kwargs):
 
 
 def compute_chunk(chunk, chunk_expr, part):
-    return compute(chunk_expr, {chunk: part}, return_type='native')
+    return compute(chunk_expr, {chunk: part})
 
 
 @dispatch(Expr, Chunks)

@@ -43,7 +43,7 @@ Blaze enables users to solve data-oriented problems
 
 .. code-block:: python
 
-   >>> list(compute(deadbeats, L, return_type='native'))
+   >>> compute(deadbeats, L, return_type=list)
    ['Bob', 'Edith']
 
 But the separation of expression from data allows us to switch between

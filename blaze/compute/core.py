@@ -380,7 +380,7 @@ def compute(expr, d, return_type='core', **kwargs):
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
-    >>> list(compute(deadbeats, {t: data}, return_type='native'))
+    >>> compute(deadbeats, {t: data}, return_type=list)
     ['Bob', 'Charlie']
     """
     _reset_leaves()
@@ -438,8 +438,8 @@ def compute_single_object(expr, o, **kwargs):
     >>> deadbeats = t[t['balance'] < 0]['name']
 
     >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
-    >>> # list(compute(deadbeats, {t: data}))
-    >>> list(compute(deadbeats, data, return_type='native'))
+    >>> # compute(deadbeats, {t: data})
+    >>> compute(deadbeats, data, return_type=list)
     ['Bob', 'Charlie']
     """
     ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])

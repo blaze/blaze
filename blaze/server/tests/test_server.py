@@ -416,7 +416,7 @@ def serialize_query_with_map_builtin_function(test, serial, fcn):
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
 
-    exp_res = compute(expr, {t: iris}, return_type=list)
+    exp_res = compute(expr, {t: iris})
     return (exp_res, result)
 
 
