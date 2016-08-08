@@ -9,4 +9,3 @@ __all__ = 'dispatch', 'namespace'
 
 
 dispatch = partial(dispatch, namespace=namespace)
-
