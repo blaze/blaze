@@ -216,12 +216,12 @@ def compute_down(expr, ec, profiler_output=None, **kwargs):
     tree = to_tree(expr)
     serial = ec.serial
     if profiler_output is not None:
-        kwargs['profile'] = True
-        kwargs['profiler_output'] = ':response'
+        kwargs[u'profile'] = True
+        kwargs[u'profiler_output'] = ':response'
     r = post(
         ec,
         '/compute',
-        data=serial.dumps(assoc(kwargs, 'expr', tree)),
+        data=serial.dumps(assoc(kwargs, u'expr', tree)),
         auth=ec.auth,
         headers=mimetype(serial),
     )
@@ -230,8 +230,8 @@ def compute_down(expr, ec, profiler_output=None, **kwargs):
         raise ValueError("Bad response: %s" % reason(r))
     response = serial.loads(content(r))
     if profiler_output is not None:
-        profiler_output.write(response['profiler_output'])
-    return serial.data_loads(response['data'])
+        profiler_output.write(response[u'profiler_output'])
+    return serial.data_loads(response[u'data'])
 
 
 @resource.register('blaze://.+')

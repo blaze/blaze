@@ -21,11 +21,11 @@ import flask
 from flask import Blueprint, Flask, Response
 from flask_cors import cross_origin
 from werkzeug.http import parse_options_header
-from toolz import valmap, compose
+from toolz import valmap, compose, identity
 
 import blaze
 from blaze import compute, resource
-from blaze.compatibility import ExitStack
+from blaze.compatibility import ExitStack, PY2
 from blaze.compute import compute_up
 from .serialization import json, all_formats
 from ..interactive import _Data
@@ -401,6 +401,13 @@ def shape():
     return pprint(discover(_get_data()), width=0)
 
 
+if PY2:
+    def _u8(cs):
+        return cs.decode('utf-8')
+else:
+    _u8 = identity
+
+
 def to_tree(expr, names=None):
     """ Represent Blaze expression with core data structures
 
@@ -449,8 +456,8 @@ def to_tree(expr, names=None):
     if isinstance(expr, slice):
         # NOTE: This case must come first, since `slice` objects are not
         # hashable, so a dict lookup inside `names` will raise an execption.
-        return {'op': 'slice',
-                'args': [to_tree(arg, names=names) for arg in
+        return {u'op': 'slice',
+                u'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
     if names and expr in names:
         return names[expr]
@@ -459,10 +466,12 @@ def to_tree(expr, names=None):
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
     elif isinstance(expr, _Data):
-        return to_tree(symbol(expr._name, expr.dshape), names)
+        return to_tree(symbol(_u8(expr._name), expr.dshape), names)
     elif isinstance(expr, Expr):
-        return {'op': type(expr).__name__,
-                'args': [to_tree(arg, names) for arg in expr._args]}
+        return {u'op': _u8(type(expr).__name__),
+                u'args': [to_tree(arg, names) for arg in expr._args]}
+    elif isinstance(expr, str):
+        return _u8(expr)
     else:
         return expr
 
@@ -541,7 +550,7 @@ def from_tree(expr, namespace=None):
     to_tree
     """
     if isinstance(expr, dict):
-        op, args = expr['op'], expr['args']
+        op, args = expr[u'op'], expr[u'args']
         if 'slice' == op:
             return expr_utils._slice(*[from_tree(arg, namespace)
                                        for arg in args])
@@ -575,9 +584,9 @@ def compserver(payload, serial):
     (allow_profiler,
      default_profiler_output,
      profile_by_default) = _get_profiler_info()
-    requested_profiler_output = payload.get('profiler_output',
+    requested_profiler_output = payload.get(u'profiler_output',
                                             default_profiler_output)
-    profile = payload.get('profile')
+    profile = payload.get(u'profile')
     profiling = (allow_profiler and
                  (profile or (profile_by_default and requested_profiler_output)))
     if profile and not allow_profiler:
@@ -608,13 +617,13 @@ def compserver(payload, serial):
                             expr,
                             time() - start)
 
-        ns = payload.get('namespace', {})
-        compute_kwargs = payload.get('compute_kwargs') or {}
-        odo_kwargs = payload.get('odo_kwargs') or {}
+        ns = payload.get(u'namespace', {})
+        compute_kwargs = payload.get(u'compute_kwargs') or {}
+        odo_kwargs = payload.get(u'odo_kwargs') or {}
         dataset = _get_data()
         ns[':leaf'] = symbol('leaf', discover(dataset))
 
-        expr = from_tree(payload['expr'], namespace=ns)
+        expr = from_tree(payload[u'expr'], namespace=ns)
         assert len(expr._leaves()) == 1
         leaf = expr._leaves()[0]
 
@@ -640,9 +649,9 @@ def compserver(payload, serial):
             app.logger.error(error_msg)
             return (error_msg, RC.INTERNAL_SERVER_ERROR)
 
-        response = {'datashape': pprint(expr.dshape, width=0),
-                    'data': serial.data_dumps(result),
-                    'names': expr.fields}
+        response = {u'datashape': pprint(expr.dshape, width=0),
+                    u'data': serial.data_dumps(result),
+                    u'names': expr.fields}
 
     if profiling:
         import marshal
@@ -661,7 +670,7 @@ def compserver(payload, serial):
             # a file path.
             marshal.dump(Stats(profiler).stats, file)
             if profiler_output == ':response':
-                response['profiler_output'] = {'__!bytes': file.getvalue()}
+                response[u'profiler_output'] = {'__!bytes': file.getvalue()}
 
     return serial.dumps(response)
 

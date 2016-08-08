@@ -166,8 +166,16 @@ if PY2:
         if isinstance(bs, unicode):
             return bs.encode('latin1')
         return bs
+
+    def _str(bs):
+        if isinstance(bs, str):
+            return bs.decode('utf-8')
+        return bs
 else:
     def _l1(bs):
+        return bs
+
+    def _str(bs):
         return bs
 
 
@@ -212,7 +220,8 @@ def fastmsgpack_data_dumps(data):
             data,
             compress=compress,
             default=fastmsgpack_default,
-            encoding='latin1',
+            encoding='utf-8',
+            use_bin_type=True,
         ),
     }
 
@@ -223,7 +232,8 @@ def fastmsgpack_dumps(data, default=json_dumps):
         data,
         compress=compress,
         default=default,
-        encoding='latin1',
+        encoding='utf-8',
+        use_bin_type=True,
     )
 
 

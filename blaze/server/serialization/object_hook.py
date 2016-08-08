@@ -10,6 +10,7 @@ except ImportError:
 from datashape import dshape
 import numpy as np
 import pandas as pd
+from pandas.io.packers import decode
 
 # Imports that replace older utils.
 from blaze.compatibility import PY2
@@ -65,7 +66,7 @@ def object_hook(ob,
     True
     """
     if _len(ob) != 1:
-        return ob
+        return decode(ob)
 
     key = _keys(ob)[0]
     if key[_first_three_chars] != '__!':
