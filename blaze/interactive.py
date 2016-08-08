@@ -267,6 +267,8 @@ def short_dshape(ds, nlines=5):
 
 
 def coerce_to(typ, x, odo_kwargs=None):
+    if hasattr(x, 'compute'):
+        return x.compute()
     try:
         return typ(x)
     except TypeError:
