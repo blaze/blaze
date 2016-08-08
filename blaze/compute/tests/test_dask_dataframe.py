@@ -121,7 +121,7 @@ def test_selection_inner_inputs():
 
 
 def test_reductions():
-    assert compute(mean(t['amount']), ddf) == 350 / 3
+    assert compute(mean(t['amount']), ddf) == 350 / 3.0
     assert compute(count(t['amount']), ddf) == 3
     assert compute(sum(t['amount']), ddf) == 100 + 200 + 50
     assert compute(min(t['amount']), ddf) == 50
