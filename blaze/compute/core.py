@@ -139,8 +139,8 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     top_to_bottom -- older version
     bottom_up -- older version still
     """
-    rl = kwargs.get('_recurse_level', 0)
-    kwargs['_recurse_level'] = rl
+    # rl = kwargs.get('_recurse_level', 0)
+    # kwargs['_recurse_level'] = rl
     # print('\t' * rl, ' -- ttbttae:', str(expr))
     # for k, v in scope.items():
     #     if rl > 2:
@@ -194,7 +194,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
                                   "expr: %s\n"
                                   "data: %s" % (type(expr3), expr3, scope4))
     else:
-        kwargs['_recurse_level'] += 1
+        # kwargs['_recurse_level'] += 1
         return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
