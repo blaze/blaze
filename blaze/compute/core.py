@@ -141,11 +141,11 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     """
     rl = kwargs.get('_recurse_level', 0)
     kwargs['_recurse_level'] = rl
-    print('\t' * rl, ' -- ttbttae:', str(expr))
-    for k, v in scope.items():
-        if rl > 2:
-            v = list(v)
-        print('\t' * rl, '\t', k, '->', v)
+    # print('\t' * rl, ' -- ttbttae:', str(expr))
+    # for k, v in scope.items():
+    #     if rl > 2:
+    #         v = list(v)
+    #     print('\t' * rl, '\t', k, '->', v)
     # 0. Base case: expression is in dict, return associated data
     if expr in scope:
         return scope[expr]

@@ -377,7 +377,7 @@ def compute_up(expr, seq, predicate, **kwargs):
     filter_id = uuid.uuid4()
     def filter_(item):
         include_ = next(preds)
-        print('filter:', filter_id, item, include_)
+        # print('filter:', filter_id, item, include_)
         return include_
 
     return filter(filter_, seq)
