@@ -305,7 +305,7 @@ Now we use Blaze to generate the query programmatically
    >>> expr = t.petal_length.sum()
    >>> d = to_tree(expr, names={t: ':leaf'})
    >>> query = {'expr': d}
-   >>> pprint(query)
+   >>> pprint(query)  # doctest: +SKIP
    {'expr': {'args': [{'args': [':leaf', 'petal_length'], 'op': 'Field'},
                       [0],
                       False],
@@ -315,7 +315,7 @@ Alternatively we build a query to grab a single column
 
 .. code-block:: python
 
-   >>> pprint(to_tree(t.species, names={t: ':leaf'}))
+   >>> pprint(to_tree(t.species, names={t: ':leaf'}))  # doctest: +SKIP
    {'args': [':leaf', 'species'], 'op': 'Field'}
 
 
