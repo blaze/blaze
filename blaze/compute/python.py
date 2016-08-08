@@ -373,8 +373,8 @@ def compute_up(expr, seq, predicate, **kwargs):
     # print('compute_up seq:', list(copy_seq))
     # print('compute_up preds:', list(copy_preds))
     preds = iter(predicate)
-    import cuid
-    filter_id = cuid.slug()
+    import uuid
+    filter_id = uuid.uuid4()
     def filter_(item):
         include_ = next(preds)
         print('filter:', filter_id, item, include_)

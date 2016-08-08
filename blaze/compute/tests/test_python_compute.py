@@ -86,8 +86,8 @@ def test_selection():
 
 class PrintyList(list):
     def __iter__(self):
-        import cuid
-        iterator_id = cuid.slug()
+        import uuid
+        iterator_id = uuid.uuid4()
         print('list:make_iter', iterator_id)
         return self._generate_contents(iterator_id)
 
