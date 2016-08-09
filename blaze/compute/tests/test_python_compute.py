@@ -84,24 +84,13 @@ def test_selection():
         [x for x in data if x[1] > 150]
 
 
-class PrintyList(list):
-    def __iter__(self):
-        import uuid
-        iterator_id = uuid.uuid4()
-        print('list:make_iter', iterator_id)
-        return self._generate_contents(iterator_id)
-
-    def _generate_contents(self, iid):
-        for x in list.__iter__(self):
-            print('  list:', iid, '__next__:', x)
-            yield x
-
-selection_data = PrintyList([{'id': 1, 'url': '/'},
+selection_data = [{'id': 1, 'url': '/'},
                   {'id': 2, 'url': '/foo'},
                   {'id': 3, 'url': '/'},
                   {'id': 4, 'url': '/foo'},
                   {'id': 5, 'url': '/'},
-                  {'id': 6, 'url': '/foo'}])
+                  {'id': 6, 'url': '/foo'},
+                  {'id': 7, 'url': '/'}]
 
 s1 = blaze.data(selection_data)
 
