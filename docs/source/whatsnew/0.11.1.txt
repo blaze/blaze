@@ -38,7 +38,8 @@ None
 Bug Fixes
 ~~~~~~~~~
 
-None
+* Fixed a testing regression introduced by the latest pymysql version
+(:issue:`1571`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
