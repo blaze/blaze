@@ -1016,7 +1016,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Label, ColumnElement)
 def compute_up(t, s, **kwargs):
-    return s.label(t.label)
+    return s.label(t._label)
 
 
 @dispatch(Label, FromClause)
@@ -1024,7 +1024,7 @@ def compute_up(t, s, **kwargs):
     assert len(s.c) == 1, \
         'expected %s to have a single column but has %d' % (s, len(s.c))
     inner_column, = s.inner_columns
-    return reconstruct_select([inner_column.label(t.label)], s)
+    return reconstruct_select([inner_column.label(t._label)], s)
 
 
 @dispatch(Expr, ScalarSelect)
