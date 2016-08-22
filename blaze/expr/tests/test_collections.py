@@ -52,18 +52,19 @@ def test_sort_validation_ascending():
         t.sort(ascending='zzz')
 
 def test_sort_by_field():
-    t0 = data([('Alice', 100),
-              ('Alice', 200),
-              ('Charlie', 300),
-              ('Denis', 400),
+    t0 = data([(1, 'Alice', 100),
+              (2, 'Alice', 200),
+              (3, 'Charlie', 300),
+              (4, 'Denis', 400),
               ],
              fields=['name', 'amount'])
-    t = data([('Alice', 200),
-              ('Denis', 400),
-              ('Charlie', 300),
-              ('Alice', 100),
+    t = data([(2, 'Alice', 200),
+              (4, 'Denis', 400),
+              (3, 'Charlie', 300),
+              (1, 'Alice', 100),
               ],
-             fields=['name', 'amount'])
+             fields=['id', 'name', 'amount'])
+    assert list(t.sort([t.id]))==list(t0)
     assert list(t.sort([t.name, t.amount]))==list(t0)
 
 def test_merge_options():
