@@ -137,7 +137,7 @@ def sort(child, key=None, ascending=True):
         elif isinstance(k, Field):
             if k._resources() != child._resources():
                 msg = "sort key {} is not a field of resource {}"
-                raise ValueError(msg.format(k, child._resource()))
+                raise ValueError(msg.format(k._name, child._resources()))
         elif not isinstance(k, Expr):
             msg = "sort key {} is not a string column name or an expression."
             raise ValueError(msg.format(k))

@@ -57,13 +57,15 @@ def test_sort_by_field():
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               ],
-             fields=['name', 'amount'])
+             fields=['id', 'name', 'amount'])
     t = data([(2, 'Alice', 200),
               (4, 'Denis', 400),
               (3, 'Charlie', 300),
               (1, 'Alice', 100),
               ],
              fields=['id', 'name', 'amount'])
+    with pytest.raises(ValueError):
+        t.sort(t0.id)
     assert list(t.sort([t.id]))==list(t0)
     assert list(t.sort([t.name, t.amount]))==list(t0)
 
