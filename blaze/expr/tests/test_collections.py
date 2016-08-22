@@ -3,6 +3,7 @@ import pytest
 from datashape import dshape
 from datashape.util.testing import assert_dshape_equal
 
+from blaze import data
 from blaze.expr import symbol
 from blaze.expr.core import common_subexpression
 from blaze.expr.collections import merge, join, transform, concat
@@ -50,6 +51,20 @@ def test_sort_validation_ascending():
     with pytest.raises(ValueError):
         t.sort(ascending='zzz')
 
+def test_sort_by_field():
+    t0 = data([('Alice', 100),
+              ('Bob', -200),
+              ('Charlie', 300),
+              ('Denis', 400),
+              ],
+             fields=['name', 'amount'])
+    t = data([('Alice', 100),
+              ('Denis', 400),
+              ('Charlie', 300),
+              ('Bob', -200),
+              ],
+             fields=['name', 'amount'])
+    assert list(t.sort(t.name))==list(t0)
 
 def test_merge_options():
     s = symbol('s', 'var * {a: ?A, b: ?B}')
