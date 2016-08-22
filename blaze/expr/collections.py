@@ -123,8 +123,10 @@ def sort(child, key=None, ascending=True):
     if key is None and isrecord(child.dshape.measure):
         key = child.dshape.measure.names
     if isinstance(key, (list, tuple)):
-        key = keys_to_validate = tuple(key)
+        key = keys_to_validate = tuple([k._name if isinstance(k, Field) else k for k in key])
     else:
+        if isinstance(key, Field):
+            key = key._name
         keys_to_validate = (key,)
     for k in keys_to_validate:
         if k is None:
