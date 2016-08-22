@@ -66,7 +66,7 @@ def test_sort_by_field():
              fields=['id', 'name', 'amount'])
     with pytest.raises(ValueError):
         t.sort(t0.id)
-    assert list(t.sort([t.id]))==list(t0)
+    assert list(t.sort(t.id))==list(t0)
     assert list(t.sort([t.name, t.amount]))==list(t0)
 
 def test_merge_options():

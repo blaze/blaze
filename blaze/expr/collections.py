@@ -135,9 +135,9 @@ def sort(child, key=None, ascending=True):
                 msg = "sort key {} is not a column of schema {}"
                 raise ValueError(msg.format(k, child.dshape.measure))
         elif isinstance(k, Field):
-            if k._resources() != child._resources():
-                msg = "sort key {} is not a field of resource {}"
-                raise ValueError(msg.format(k._name, child._resources()))
+            if not k._child.isidentical(child):
+                msg = "sort key {} is not a field of {}"
+                raise ValueError(msg.format(k._name, child._name))
         elif not isinstance(k, Expr):
             msg = "sort key {} is not a string column name or an expression."
             raise ValueError(msg.format(k))
