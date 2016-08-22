@@ -53,18 +53,18 @@ def test_sort_validation_ascending():
 
 def test_sort_by_field():
     t0 = data([('Alice', 100),
-              ('Bob', -200),
+              ('Alice', 200),
               ('Charlie', 300),
               ('Denis', 400),
               ],
              fields=['name', 'amount'])
-    t = data([('Alice', 100),
+    t = data([('Alice', 200),
               ('Denis', 400),
               ('Charlie', 300),
-              ('Bob', -200),
+              ('Alice', 100),
               ],
              fields=['name', 'amount'])
-    assert list(t.sort(t.name))==list(t0)
+    assert list(t.sort([t.name, t.amount]))==list(t0)
 
 def test_merge_options():
     s = symbol('s', 'var * {a: ?A, b: ?B}')

@@ -123,10 +123,8 @@ def sort(child, key=None, ascending=True):
     if key is None and isrecord(child.dshape.measure):
         key = child.dshape.measure.names
     if isinstance(key, (list, tuple)):
-        key = keys_to_validate = tuple([k._name if isinstance(k, Field) else k for k in key])
+        key = keys_to_validate = tuple(key)
     else:
-        if isinstance(key, Field):
-            key = key._name
         keys_to_validate = (key,)
     for k in keys_to_validate:
         if k is None:
@@ -136,9 +134,17 @@ def sort(child, key=None, ascending=True):
             if k not in child.dshape.measure.names:
                 msg = "sort key {} is not a column of schema {}"
                 raise ValueError(msg.format(k, child.dshape.measure))
+        elif isinstance(k, Field):
+            if k._resources() != child._resources():
+                msg = "sort key {} is not a field of resource {}"
+                raise ValueError(msg.format(k, child._resource()))
         elif not isinstance(k, Expr):
             msg = "sort key {} is not a string column name or an expression."
             raise ValueError(msg.format(k))
+    if isinstance(key, (list, tuple)):
+        key = tuple([k._name if isinstance(k, Field) else k for k in key])
+    elif isinstance(key, Field):
+        key = key._name
     return Sort(child, key, ascending)
 
 
