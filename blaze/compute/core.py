@@ -342,7 +342,7 @@ def swap_resources_into_scope(expr, scope):
     >>> swap_resources_into_scope(t.head(2), {})     # doctest: +SKIP
     (t.head(2), {<`t` symbol; dshape='3 * int32'>: [1, 2, 3]})
 
-    >>> expr, scope = _
+    >>> expr, scope = swap_resources_into_scope(t.head(2), {})
     >>> list(scope.keys())[0]._resources()
     {}
     """
