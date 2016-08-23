@@ -347,7 +347,7 @@ def swap_resources_into_scope(expr, scope):
     {}
     """
     resources = expr._resources()
-    symbol_dict = dict((t, symbol(t._name+str(id(t)) if t._name else str(id(t)), t.dshape)) for t in resources)
+    symbol_dict = dict((t, symbol(t._name+str(id(t)) if t._name else None, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
     other_scope = dict((k, v) for k, v in scope.items()
                        if k not in symbol_dict)
