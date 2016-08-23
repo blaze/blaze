@@ -3,7 +3,7 @@ import pytest
 
 from blaze.expr import Add, USub, Not, Gt, Mult, Concat, Interp, Repeat, \
     Relational
-from blaze import symbol
+from blaze import symbol, Data
 from datashape import dshape, Option
 
 
@@ -145,3 +145,8 @@ def test_datetime_add():
     assert (g + l).dshape == dshape('?datetime')
     assert (i + k).dshape == dshape('?datetime')
     assert (i + l).dshape == dshape('?datetime')
+
+def test_interactive_symbol_with_same_name():
+    s1 = Data(1, name='s')
+    s2 = Data(2, name='s')
+    assert Add(s1, s2) == 3
