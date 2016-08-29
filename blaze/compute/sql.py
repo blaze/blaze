@@ -622,7 +622,8 @@ names = {
 
 def reconstruct_select(columns, original, **kwargs):
     return sa.select(columns,
-                     from_obj=kwargs.pop('from_obj', None),
+                     from_obj=kwargs.pop('from_obj',
+                                         getattr(original, '_from_obj', None)),
                      whereclause=kwargs.pop('whereclause',
                                             getattr(original,
                                                     '_whereclause', None)),

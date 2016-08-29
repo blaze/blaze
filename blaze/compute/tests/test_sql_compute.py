@@ -594,6 +594,28 @@ def test_relabel_projection():
     )
 
 
+def test_relabel_join():
+    metadata = sa.MetaData()
+    amounts_tbl = sa.Table('amounts', metadata,
+                           sa.Column('id', sa.Integer),
+                           sa.Column('amount', sa.Integer))
+    ids_tbl = sa.Table('ids', metadata,
+                       sa.Column('name', sa.String),
+                       sa.Column('id', sa.Integer))
+    joined_sql = amounts_tbl.join(ids_tbl, amounts_tbl.c.id == ids_tbl.c.id)
+
+    amounts = symbol('amounts', discover(amounts_tbl))
+    ids = symbol('ids', discover(ids_tbl))
+    joined_expr = join(amounts, ids, 'id').relabel({'amount': 'balance'})
+
+    ns = {amounts: amounts_tbl, ids: ids_tbl}
+    result = str(compute(joined_expr, ns, return_type='native'))
+    expected = sa.select([amounts_tbl.c.id, amounts_tbl.c.amount.label('balance'),
+                          ids_tbl.c.name], from_obj=joined_sql)
+    assert result == literal_compile(expected)
+
+
+
 def test_merge():
     col = (t['amount'] * 2).label('new')
 
