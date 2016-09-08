@@ -40,9 +40,12 @@ Bug Fixes
 
 * Fixed a testing regression introduced by the latest pymysql version
 (:issue:`1571`).
-
 * Fixed unicode conversion issues when using a Python 3 blaze server and a
   Python 2 client (:issue:`1572`), (:issue:`1566`).
+* Fixed ``dayofweek`` and ``dayofyear`` expressions for the SQL backend. The
+  ``dayofweek`` expression uses monday = 0 like :class:`datetime.datetime` and
+  :class:`pandas.Timestamp` instead of the SQL convention of sunday = 0.
+  (:issue:`1585`).
 
 Miscellaneous
 ~~~~~~~~~~~~~
