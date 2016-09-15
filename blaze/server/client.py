@@ -8,8 +8,9 @@ from flask.testing import FlaskClient
 from odo import resource
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from toolz import assoc
+from toolz import assoc, keymap
 
+from ..compatibility import u8
 from ..expr import Expr
 from ..dispatch import dispatch
 from .server import DEFAULT_PORT
@@ -186,7 +187,12 @@ def mimetype(serial):
 
 
 @dispatch(Expr, Client)
-def compute_down(expr, ec, profiler_output=None, **kwargs):
+def compute_down(expr,
+                 ec,
+                 profiler_output=None,
+                 compute_kwargs=None,
+                 odo_kwargs=None,
+                 **kwargs):
     """Compute down for blaze clients.
 
     Parameters
@@ -213,11 +219,17 @@ def compute_down(expr, ec, profiler_output=None, **kwargs):
     """
     from .server import to_tree
 
+    kwargs = keymap(u8, kwargs)
+
     tree = to_tree(expr)
     serial = ec.serial
     if profiler_output is not None:
         kwargs[u'profile'] = True
         kwargs[u'profiler_output'] = ':response'
+
+    kwargs[u'compute_kwargs'] = keymap(u8, compute_kwargs or {})
+    kwargs[u'odo_kwargs'] = keymap(u8, odo_kwargs or {})
+
     r = post(
         ec,
         '/compute',
