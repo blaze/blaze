@@ -573,6 +573,17 @@ accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
 @check_request
 @_logging
 def compserver(payload, serial):
+    expected_keys = {u'namespace',
+                     u'odo_kwargs',
+                     u'compute_kwargs',
+                     u'expr',
+                     u'profile',
+                     u'profiler_output'}
+    if not set(payload.keys()) < expected_keys:
+        return ('unexpected keys in payload: %r' % sorted(set(payload.keys()) -
+                                                          expected_keys),
+                RC.BAD_REQUEST)
+
     app = flask.current_app
     (allow_profiler,
      default_profiler_output,
@@ -617,7 +628,11 @@ def compserver(payload, serial):
         ns[':leaf'] = symbol('leaf', discover(dataset))
 
         expr = from_tree(payload[u'expr'], namespace=ns)
-        assert len(expr._leaves()) == 1
+
+        if len(expr._leaves()) != 1:
+            return ('too many leaves, expected 1 got %d' % len(expr._leaves()),
+                    RC.BAD_REQUEST)
+
         leaf = expr._leaves()[0]
 
         try:
