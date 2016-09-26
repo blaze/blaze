@@ -220,7 +220,10 @@ def orders(url, products):
         orders = data(url % 'orders',
                       dshape="""var * {
                         order_id: int64,
-                        product_id: map[int64, T],
+                        product_id: map[int64,
+                                        {product_id: int64,
+                                         color: ?string,
+                                         price: float64}],
                         quantity: int64}""",
                       foreign_keys=dict(product_id=products.data.c.product_id),
                       primary_key=['order_id'])
@@ -264,7 +267,12 @@ def pkey(url, main):
                     np.random.randint(main.count().scalar(), size=n).tolist()))
     try:
         pkey = odo(data, url % 'pkey',
-                   dshape=dshape('var * {id: int64, sym: string, price: float64, main: map[int64, T]}'),
+                dshape=dshape('''var * {id: int64,
+                                        sym: string,
+                                        price: float64,
+                                        main: map[int64,
+                                                  {id: int64,
+                                                   data: int64}]}'''),
                    foreign_keys=dict(main=main.c.id),
                    primary_key=['id'])
     except sa.exc.OperationalError as e:
@@ -284,7 +292,15 @@ def fkey(url, pkey):
                      int(np.random.randint(10000)))
                     for i in range(10)],
                    url % 'fkey',
-                   dshape=dshape('var * {id: int64, sym_id: map[int64, T], size: int64}'),
+                   dshape=dshape('''var * {id: int64,
+                                           sym_id: map[int64,
+                                                       {id: int64,
+                                                        sym: string,
+                                                        price: float64,
+                                                        main: map[int64,
+                                                                  {id: int64,
+                                                                  data: int64}]}],
+                                           size: int64}'''),
                    foreign_keys=dict(sym_id=pkey.c.id),
                    primary_key=['id'])
     except sa.exc.OperationalError as e:
