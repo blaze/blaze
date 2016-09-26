@@ -201,6 +201,19 @@ def test_table_resource():
         assert isinstance(t.data, CSV)
         assert into(list, compute(t)) == into(list, csv)
 
+def test_explicit_dshape():
+    ds = dshape("var * {a: ?float64, b: ?string, c: ?float32}")
+    s = """a,b,c
+1,x,3
+NaN,y,4
+3,,5
+"""
+    with tmpfile('.csv') as filename:
+        with open(filename, 'w') as fd:
+            fd.write(s)
+        bdf = data(filename, dshape=ds)
+        assert bdf.dshape == ds
+
 
 def test_concretehead_failure():
     t = symbol('t', 'var * {x:int, y:int}')

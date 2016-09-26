@@ -148,17 +148,17 @@ def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs
     if isinstance(data_source, _Data):
         return data(data_source.data, dshape, name, fields, schema, **kwargs)
 
-    if isinstance(data_source, _strtypes):
-        data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
-        return _Data(data_source, discover(data_source), name)
-
-    if (isinstance(data_source, Iterator) and
-            not isinstance(data_source, tuple(not_an_iterator))):
-        data_source = tuple(data_source)
     if schema and not dshape:
         dshape = var * schema
     if dshape and isinstance(dshape, _strtypes):
         dshape = datashape.dshape(dshape)
+
+    if isinstance(data_source, _strtypes):
+        data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
+
+    if (isinstance(data_source, Iterator) and
+            not isinstance(data_source, tuple(not_an_iterator))):
+        data_source = tuple(data_source)
     if not dshape:
         dshape = discover(data_source)
         types = None
