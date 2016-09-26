@@ -1,3 +1,4 @@
+import textwrap
 import datetime
 import pickle
 import sys
@@ -201,13 +202,19 @@ def test_table_resource():
         assert isinstance(t.data, CSV)
         assert into(list, compute(t)) == into(list, csv)
 
-def test_explicit_dshape():
-    ds = dshape("var * {a: ?float64, b: ?string, c: ?float32}")
-    s = """a,b,c
-1,x,3
-NaN,y,4
-3,,5
-"""
+
+def test_explicit_override_dshape():
+    ds = dshape("""var * {a: ?float64,
+                        b: ?string,
+                        c: ?float32}""")
+    # If not overridden, the dshape discovery will return:
+    # var * {a: int64, b: string, c: int64}.
+    s = textwrap.dedent("""\
+                        a,b,c
+                        1,x,3
+                        2,y,4
+                        3,z,5
+                        """)
     with tmpfile('.csv') as filename:
         with open(filename, 'w') as fd:
             fd.write(s)
