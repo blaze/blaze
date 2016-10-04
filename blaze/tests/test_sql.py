@@ -2,13 +2,14 @@ import pytest
 
 pytest.importorskip('sqlalchemy')
 
+from datashape import dshape
 from functools import partial
 
 from toolz import first
 from sqlalchemy.exc import OperationalError
 from odo import into, drop
 
-from blaze import data as bz_data
+from blaze import data as bz_data, join, symbol
 from blaze import create_index
 
 
@@ -97,3 +98,9 @@ def test_ignore_existing(sql, cols):
 
     # Shouldn't error
     create_call(ignore_existing=True)
+
+
+def test_join_foreign_key():
+    a = symbol('a', "var * {timestamp: string, pkid: map[int32, {pkid: int32, label: ?string}]}")
+    b = symbol('a', "var * {pkid: int32, label: ?string}")
+    assert join(a, b, 'pkid', 'pkid').dshape == dshape("var * {pkid: int32, timestamp: string, label: ?string}")
