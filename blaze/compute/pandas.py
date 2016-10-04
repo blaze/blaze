@@ -108,6 +108,8 @@ from ..expr import (
     StrCat,
     StrFind,
     StrSlice,
+    StrStartswith,
+    StrEndswith,
     SliceReplace,
     total_seconds,
 )
@@ -321,6 +323,16 @@ def compute_up(expr, lhs_data, rhs_data, **kwargs):
 @dispatch(StrFind, Series)
 def compute_up(expr, data, **kwargs):
     return data.str.find(expr.sub)
+
+
+@dispatch(StrStartswith, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.startswith(expr.pattern)
+
+
+@dispatch(StrEndswith, Series)
+def compute_up(expr, data, **kwargs):
+    return data.str.endswith(expr.pattern)
 
 
 @dispatch(StrSlice, Series)

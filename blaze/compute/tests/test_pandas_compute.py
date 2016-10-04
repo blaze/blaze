@@ -690,6 +690,24 @@ def test_like():
     tm.assert_frame_equal(result, expected)
 
 
+def test_startswith():
+    expr = t[t.name.str.startswith('Ali')]
+    expected = DataFrame([['Alice', 100, 1],
+                          ['Alice', 50, 3]],
+                         columns=['name', 'amount', 'id'])
+    result = compute(expr, df).reset_index(drop=True)
+    tm.assert_frame_equal(result, expected)
+
+
+def test_endswith():
+    expr = t[t.name.str.endswith('ice')]
+    expected = DataFrame([['Alice', 100, 1],
+                          ['Alice', 50, 3]],
+                         columns=['name', 'amount', 'id'])
+    result = compute(expr, df).reset_index(drop=True)
+    tm.assert_frame_equal(result, expected)
+
+
 def test_str_len():
     expr = t.name.str.len()
     expected = pd.Series([5, 3, 5], name='name')
