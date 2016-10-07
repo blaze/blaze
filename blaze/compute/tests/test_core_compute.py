@@ -154,7 +154,7 @@ def test_simple_add(n):
     (1, symbol('x', 'int'), 'core', int),
     # use dask array to test core since isn't core type
     (into(da.core.Array, [1, 2], chunks=(10,)), symbol('x', '2 * int'), 'core', pd.Series),  # test 1-d to series
-    (into(da.core.Array, [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], chunks=(10,10)), symbol('x', '2 * {a: int, b: int}'), 'core', pd.DataFrame),  # test 2-d tabular to dataframe
+    (into(da.core.Array, [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], chunks=(10,)), symbol('x', '2 * {a: int, b: int}'), 'core', pd.DataFrame),  # test 2-d tabular to dataframe
     (into(da.core.Array, [[1, 2], [3, 4]], chunks=(10, 10)), symbol('x', '2 *  2 * int'), 'core', np.ndarray),  # test 2-d non tabular to ndarray
     ([1, 2], symbol('x', '2 * int') , tuple, tuple)
 ])
