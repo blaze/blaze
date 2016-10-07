@@ -24,7 +24,7 @@ from pandas.util.testing import assert_frame_equal
 from toolz import pipe, partial
 
 from blaze.dispatch import dispatch
-from blaze.compatibility import _inttypes
+from blaze.compatibility import _inttypes, PY2
 from blaze.expr import Expr
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
@@ -921,3 +921,19 @@ def test_fastmsgmpack_mutable_dataframe(test):
     for block in data._data.blocks:
         # make sure all the blocks are mutable
         assert block.values.flags.writeable
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_bad_payload_keys(test, serial):
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps({u'ayy': 'lmao',
+                                          u'nah': 'fam',
+                                          u'profile': True,
+                                          u'profiler_output': ':response'}))
+
+    assert result.status_code == RC.BAD_REQUEST
+    assert (result.data ==
+            "unexpected keys in payload: [{u}'ayy', {u}'nah']".format(
+                u='u' if PY2 else '',
+            ).encode('ascii'))

@@ -41,6 +41,9 @@ Bug Fixes
 * Fixed a testing regression introduced by the latest pymysql version
 (:issue:`1571`).
 
+* Fixed unicode conversion issues when using a Python 3 blaze server and a
+  Python 2 client (:issue:`1572`), (:issue:`1566`).
+
 Miscellaneous
 ~~~~~~~~~~~~~
 

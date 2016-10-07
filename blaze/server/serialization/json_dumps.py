@@ -27,27 +27,27 @@ def json_dumps(dt):
         if not dt.tzname():
             s += u'Z'
 
-    return {'__!datetime': s}
+    return {u'__!datetime': s}
 
 
 @dispatch(frozenset)
 def json_dumps(ds):
-    return {'__!frozenset': list(ds)}
+    return {u'__!frozenset': list(ds)}
 
 
 @dispatch(datetime.timedelta)
 def json_dumps(ds):
-    return {'__!timedelta': ds.total_seconds()}
+    return {u'__!timedelta': ds.total_seconds()}
 
 
 @dispatch(Mono)
 def json_dumps(m):
-    return {'__!mono': unicode(m)}
+    return {u'__!mono': unicode(m)}
 
 
 @dispatch(DataShape)
 def json_dumps(ds):
-    return {'__!datashape': unicode(ds)}
+    return {u'__!datashape': unicode(ds)}
 
 
 @dispatch(object)

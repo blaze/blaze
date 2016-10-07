@@ -4,6 +4,7 @@ import sys
 from types import MethodType
 
 import pandas.util.testing as tm
+from toolz import identity
 
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
@@ -135,3 +136,10 @@ def assert_series_equal(left, right, check_names=True, **kwargs):
         if check_names:
             assert left.name == right.name
         return tm.assert_series_equal(left, right, **kwargs)
+
+
+if PY2:
+    def u8(cs):
+        return cs.decode('utf-8')
+else:
+    u8 = identity
