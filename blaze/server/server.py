@@ -635,9 +635,9 @@ def compserver(payload, serial):
 
         leaf = expr._leaves()[0]
 
+        formatter = getattr(flask.current_app, 'log_exception_formatter',
+                            _default_log_exception_formatter)
         try:
-            formatter = getattr(flask.current_app, 'log_exception_formatter',
-                                _default_log_exception_formatter)
             result = serial.materialize(compute(expr,
                                                 {leaf: dataset},
                                                 **compute_kwargs),
