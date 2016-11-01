@@ -424,7 +424,7 @@ def compute(expr, d, return_type=no_default, **kwargs):
         result = coerce_core(result, expr.dshape)
     # user specified type
     elif isinstance(return_type, type):
-        result = into(return_type, result)
+        result = into(return_type, result, dshape=expr.dshape)
     elif return_type != 'native':
         raise ValueError(
             "Invalid return_type passed to compute: {}".format(return_type),
