@@ -809,11 +809,11 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(Coerce, (Series, DaskSeries))
 def compute_up(expr, data, **kwargs):
-    if datashape.dshape(expr.to) in {datashape.string,
-                                     datashape.Option(datashape.string)}:
+    measure = expr.to.measure
+    if measure in {datashape.string, datashape.Option(datashape.string)}:
         return data.astype(str)
-    elif datashape.dshape(expr.to) in {datashape.datetime_,
-                                       datashape.Option(datashape.datetime_)}:
+    elif measure in {datashape.datetime_,
+                     datashape.Option(datashape.datetime_)}:
         return data.astype(np.datetime64)
     return data.astype(to_numpy_dtype(expr.schema))
 
