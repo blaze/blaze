@@ -1,32 +1,32 @@
-channels: !!python/tuple
-- !!python/unicode 'defaults'
-- !!python/unicode 'blaze'
-dependencies:
-- pytest=2.9.2
-- numpy=1.11.1
-- sqlalchemy=1.0.13
-- pandas=0.18.1
-- h5py=2.6.0
-- pip=8.1.2
-- flask=0.11.1
-- flask-cors=2.1.2
-- requests=2.10.0
-- pytables=3.2.3.1
-- cython=0.24.1
-- bcolz=1.0.0
-- xlrd=1.0.0
-- coverage=4.2
-- psutil=4.3.0
-- networkx=1.11
-- numba=0.27.0
-- pyyaml=3.11
-- cytoolz=0.8.0
-- toolz=0.8.0
-- multipledispatch=0.4.8
-- dask=0.11.1
-- pymongo=3.0.3
-- psycopg2=2.6.1
-- pymysql=0.7.9
+# channels: !!python/tuple
+# - !!python/unicode 'defaults'
+# - !!python/unicode 'blaze'
+# dependencies:
+pytest=2.9.2
+numpy=1.11.1
+sqlalchemy=1.0.13
+pandas=0.18.1
+h5py=2.6.0
+pip=8.1.2
+flask=0.11.1
+flask-cors=2.1.2
+requests=2.10.0
+pytables=3.2.3.1
+cython=0.24.1
+bcolz=1.0.0
+xlrd=1.0.0
+coverage=4.2
+psutil=4.3.0
+networkx=1.11
+numba=0.27.0
+pyyaml=3.11
+cytoolz=0.8.0
+toolz=0.8.0
+multipledispatch=0.4.8
+dask=0.11.1
+pymongo=3.0.3
+psycopg2=2.6.1
+pymysql=0.7.9
   #-------------------------------
   # - appnope=0.1.0
   # - bokeh=0.12.0
