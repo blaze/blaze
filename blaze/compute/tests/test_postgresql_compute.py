@@ -354,7 +354,7 @@ def test_postgres_isnan(sql_with_float):
     dta = (1.0,), (float('nan'),)
     table = odo(dta, sql_with_float)
     sym = symbol('s', discover(dta))
-    assert compute(sym.isnan(), table, return_type=list) == [(False,), (True,)]
+    assert compute(sym.isnan(), table, return_type=list) == [False, True]
 
 
 def test_insert_from_subselect(sql_with_float):
@@ -736,7 +736,6 @@ def test_str_cat_with_null(sql_with_null, sep):
     t = symbol('t', discover(sql_with_null))
     res = compute(t.name.str_cat(t.sex, sep=sep), sql_with_null,
                   return_type=list)
-    res = [r[0] for r in res]
     cols = compute(t[['name', 'sex']], sql_with_null, return_type=list)
 
     for r, (n, s) in zip(res, cols):
@@ -752,7 +751,6 @@ def test_chain_str_cat_with_null(sql_with_null):
             .str_cat(t.comment, sep=' ++ ')
             .str_cat(t.sex, sep=' -- '))
     res = compute(expr, sql_with_null, return_type=list)
-    res = [r[0] for r in res]
     cols = compute(t[['name', 'comment', 'sex']], sql_with_null,
                    return_type=list)
 
@@ -824,11 +822,11 @@ def test_coalesce(sqla):
     t = symbol('t', discover(sqla))
     assert (
         compute(coalesce(t.B, -1), {t: sqla}, return_type=list) ==
-        [(1,), (1,), (-1,)]
+        [1, 1, -1]
     )
     assert (
         compute(coalesce(t.A, 'z'), {t: sqla}, return_type=list) ==
-        [('a',), ('z',), ('c',)]
+        ['a', 'z', 'c']
     )
 
 
@@ -853,7 +851,7 @@ def test_isin_selectable(sql):
     # wrap the resource in a select
     assert compute(s.B.isin({1, 3}),
                    sa.select(sql._resources()[sql].columns),
-                   return_type=list) == [(True,), (False,)]
+                   return_type=list) == [True, False]
 
 
 def test_selection_selectable(sql):

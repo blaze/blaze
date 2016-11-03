@@ -547,7 +547,7 @@ def test_isidentical_regr():
                           # test 2-d tabular to dataframe
                           (into(da.core.Array,
                                 [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
-                                chunks=(10, 10)),
+                                chunks=(10,)),
                            dshape('2 * {a: int, b: int}'),
                            pd.DataFrame),
                           # test 2-d non tabular to ndarray
