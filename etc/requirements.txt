@@ -1,0 +1,7 @@
+flask>=0.10.1
+flask-cors
+odo>=0.5.0
+psutil
+sqlalchemy>=0.8.0
+toolz
+dask[dataframe]

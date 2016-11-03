@@ -46,24 +46,27 @@ install:
   - conda update conda
 
   # Install dependencies
-  # - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy=1.0.* pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask pymongo=3.0 flask-cors psycopg2=2.6.1 pymysql
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION --file blaze_env.yml
-  - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
+  # Use conda **ONLY** for numpy numba, this speeds up the builds a
+  # lot. Use the normal pip install for the rest.
+  - conda create -n blaze python=$TRAVIS_PYTHON_VERSION numpy=1.11.2 numba=0.29.0
   - source activate blaze
+  # update setuptools and pip
+  - conda update setuptools pip
 
   - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then conda install pyhive -c blaze; fi
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
   - pip install git+https://github.com/blaze/odo
-  - if [ -n "$PANDAS_VERSION" ]; then pip install "$PANDAS_VERSION"; fi
+  # if we are not pulling pandas from master, then install if from conda for
+  # speed
+  - if [ -n "$PANDAS_VERSION" ]; then pip install cython==0.24.1; pip install $PANDAS_VERSION; else conda install pandas=0.19.0; fi
 
   # Install coveralls
   - pip install coveralls
 
   # Install Blaze
-  - python setup.py install
+  - pip install -e .[ci]
 
 before_script:
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
@@ -73,11 +76,8 @@ before_script:
   - sleep 15
 
 script:
-  - echo '[pytest]' > pytest.ini
-  - echo "addopts = -vv -r sxX --doctest-modules --doctest-ignore-import-errors --doctest-glob='*.rst' --pyargs blaze docs" >> pytest.ini
-  - echo 'norecursedirs = docs/source/scripts' >> pytest.ini
-  - coverage run --include='blaze/*' --omit='blaze/_version.py' $(which py.test)
-  - coverage report --show-missing
+  - conda list
+  - py.test blaze
 
 after_success:
   - coveralls
