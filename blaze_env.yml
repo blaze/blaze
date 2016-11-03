@@ -1,4 +1,3 @@
-name: blaze
 channels: !!python/tuple
 - !!python/unicode 'defaults'
 - !!python/unicode 'blaze'
