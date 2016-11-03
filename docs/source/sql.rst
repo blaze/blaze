@@ -112,7 +112,7 @@ object to ``data``. For example:
 
    >>> from blaze import data
    >>> from sqlalchemy import MetaData
-   >>> ds = data(MetaData('postgresql://localhost/test', schema='my_schema'))
+   >>> ds = data(MetaData('postgresql://localhost/test', schema='my_schema')) # doctest: +SKIP
    >>> ds.dshape  # doctest: +SKIP
    dshape("{table_a: var * {a: ?int32}, table_b: var * {b: ?int32}}")
 
