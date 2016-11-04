@@ -414,7 +414,7 @@ def test_timedelta_arith(sql_with_dts):
     ).all()
     assert (
         compute(sym - (sym - delta), sql_with_dts, return_type=pd.Series) ==
-        dates - (dates - delta)
+        (dates - (dates - delta))
     ).all()
 
 

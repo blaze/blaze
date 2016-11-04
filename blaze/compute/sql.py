@@ -138,7 +138,7 @@ def compute_up(expr, data, **kwargs):
         for field in expr.fields
     ]
     froms = set(concat(s.froms for s in selectables))
-    assert 1 <= len(froms) <= 2
+    assert 1 <= len(froms) <= 2, 'len(froms) = %s' % len(froms)
     result = unify_froms(sa.select(first(sel.inner_columns)
                                    for sel in selectables),
                          froms)
@@ -378,7 +378,7 @@ def binary_math_sql_select(t, lhs, rhs, **kwargs):
 def binary_math_sql_select(t, lhs, rhs, **kwargs):
     left, right = first(lhs.inner_columns), first(rhs.inner_columns)
     result = getattr(sa.func, type(t).__name__)(left, right)
-    assert lhs.table == rhs.table
+    assert lhs.table == rhs.table, '%s != %s' % (lhs.table, rhs.table)
     return reconstruct_select([result], lhs.table)
 
 
@@ -1036,7 +1036,9 @@ def post_compute(t, s, **kwargs):
 @dispatch(ReLabel, Selectable)
 def compute_up(expr, data, **kwargs):
     names = data.c.keys()
-    assert names == expr._child.fields
+    assert names == expr._child.fields, (
+        'names = %r\nexpr._child.fields = %r' % (names, expr._child.fields)
+    )
     d = dict(zip(names, getattr(data, 'inner_columns', data.c)))
     return reconstruct_select(
         (d[col].label(new_col) if col != new_col else d[col]

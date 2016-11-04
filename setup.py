@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from itertools import chain
 import os
 import sys
 from fnmatch import fnmatch
@@ -49,17 +50,45 @@ package_data += [x.replace('blaze' + os.sep, '')
                  for x in find_data_files(exts)]
 
 
-with open('README.rst') as f:
-    longdesc = f.read()
-
-with open('requirements-strict.txt') as f:
-    install_requires = f.read().strip().splitlines()
+def read(filename):
+    with open(filename, 'r') as f:
+        return f.read()
 
 
-if sys.version_info[0] == 2:
-    with open('requirements-py2.txt') as f:
-        install_requires.extend(f.read().strip().splitlines())
+def read_reqs(filename):
+    return read(filename).strip().splitlines()
 
+
+def install_requires():
+    reqs = read_reqs('etc/requirements.txt')
+    if sys.version_info[0] == 2:
+        reqs += read_reqs('etc/requirements_py2.txt')
+    return reqs
+
+
+def extras_require():
+    extras = {req: read_reqs('etc/requirements_%s.txt' % req)
+              for req in {'bcolz',
+                          'ci',
+                          'dask',
+                          'h5py',
+                          'mongo',
+                          'mysql',
+                          'numba',
+                          'postgres',
+                          'pyhive',
+                          'pytables',
+                          'server',
+                          'sql',
+                          'test'}}
+
+    extras['mysql'] += extras['sql']
+    extras['postgres'] += extras['sql']
+
+    # don't include the 'ci' or 'test' targets in 'all'
+    extras['all'] = list(chain.from_iterable(v for k, v in extras.items()
+                                             if k not in {'ci', 'test'}))
+    return extras
 
 if __name__ == '__main__':
     setup(name='blaze',
@@ -68,8 +97,9 @@ if __name__ == '__main__':
           author='Continuum Analytics',
           author_email='blaze-dev@continuum.io',
           description='Blaze',
-          long_description=longdesc,
-          install_requires=install_requires,
+          long_description=read('README.rst'),
+          install_requires=install_requires(),
+          extras_require=extras_require(),
           license='BSD',
           classifiers=['Development Status :: 2 - Pre-Alpha',
                        'Environment :: Console',
