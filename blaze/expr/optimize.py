@@ -202,9 +202,61 @@ def _lean(expr, fields=None):
     return expr._subs({expr._child: child})[sorted(fields)], new_fields
 
 
-@dispatch((Join, Concat))
+@dispatch(Join)
 def _lean(expr, fields=None):
+    if not fields:
+        return expr, fields
+    fields_ = set(fields)
+    
+    def tuplize(x):
+        return x if isinstance(x,(tuple,list)) else (x,)
+    ljoin = tuplize(expr._on_left)
+    rjoin = tuplize(expr._on_right)
+
+    # expr.fields = join-fields + left-non-join + right-non-join
+    def getfields(flds, join, offset):
+        return [c for c in zip(filter(lambda x:x not in join, flds),
+                               expr.fields[offset:])
+                if c[1] in fields_]
+    lx, rx = expr.lhs, expr.rhs
+    nJ, nL = len(ljoin), len(lx.fields)
+    lfields = getfields(lx.fields, ljoin, nJ)
+    rfields = getfields(rx.fields, rjoin, nL)
+    
+    # In some circumstances we can drop the join altogether. For
+    # instance, in a left join, the right table can be dropped if
+    # none of its non-join columns are selected. Corresponding logic
+    # applies to a right join. Inner/outer/cross joins are never dropped.
+    s_right = not lfields and expr.how == 'right'
+    s_left  = not rfields and expr.how == 'left'
+    if not (s_right or s_left):
+        # We need all join fields if the join is actually occurring 
+        fields_.update(expr.fields[:nJ])
+
+    def oneside(x, xjoin, xfields):
+        xfields = getfields(xjoin, (), 0) + xfields
+        xnames = {k:v for k,v in xfields if k != v}
+        xfields = [c[0] for c in xfields]
+        x = _lean(x[xfields], fields=xfields)[0]
+        return x.relabel(xnames)
+    
+    if s_left:
+        expr = oneside(lx, ljoin, lfields)
+    elif s_right:
+        expr = oneside(rx, rjoin, rfields)
+    else:
+        lx = oneside(lx, ljoin, lfields) 
+        rx = oneside(rx, rjoin, rfields)
+        expr = expr._subs({expr.lhs: lx, expr.rhs: rx})
+        if len(fields_) > len(fields):
+            expr = expr[sorted(fields_, key=expr.fields.index)]
     return expr, fields
+
+
+@dispatch(Concat)
+def _lean(expr, fields=None):
+    return expr._subs({expr.lhs: _lean(expr.lhs, fields), 
+                       expr.rhs: _lean(expr.rhs, fields)}), fields
 
 
 @dispatch(Expr)
