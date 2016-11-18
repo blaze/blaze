@@ -2,7 +2,7 @@ bcolz==0.12.1
 click==6.6
 cloudpickle==0.2.1
 Cython==0.25.1
-dask==0.10.2
+dask==0.11.1
 decorator==4.0.10
 Flask==0.11.1
 Flask-Cors==3.0.2
