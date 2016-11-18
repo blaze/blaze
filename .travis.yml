@@ -46,7 +46,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask=0.10.2 pymongo=3.0 flask-cors psycopg2 pymysql odo=0.5.0
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz xlrd coverage psutil networkx numba pyyaml cytoolz toolz multipledispatch dask=0.10.2 pymongo=3.0 flask-cors psycopg2 pymysql odo=0.5.2
   - if [ -n "$PANDAS_VERSION" ]; then conda remove -n blaze pandas; fi
   - source activate blaze
   # update setuptools and pip
