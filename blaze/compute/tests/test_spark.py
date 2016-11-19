@@ -49,15 +49,15 @@ t_arc = symbol('arc', 'var * {node_out: int32, node_id: int32}')
 
 
 def test_symbol(rdd):
-    assert compute(t, rdd) == rdd
+    assert compute(t, rdd, return_type='native') == rdd
 
 
 def test_projection(rdd):
-    assert compute(t['name'], rdd).collect() == [row[0] for row in data]
+    assert compute(t['name'], rdd, return_type='native').collect() == [row[0] for row in data]
 
 
 def test_multicols_projection(rdd):
-    result = compute(t[['amount', 'name']], rdd).collect()
+    result = compute(t[['amount', 'name']], rdd, return_type='native').collect()
     expected = [(100, 'Alice'), (200, 'Bob'), (50, 'Alice')]
 
     print(result)
@@ -119,8 +119,8 @@ def tuplify(x):
 
 @pytest.mark.parametrize(['string', 'expr'], exprs)
 def test_basic(rdd, string, expr):
-    result = set(map(tuplify, compute(expr, rdd).collect()))
-    expected = set(map(tuplify, compute(expr, data)))
+    result = set(map(tuplify, compute(expr, rdd, return_type='native').collect()))
+    expected = set(map(tuplify, compute(expr, data, return_type='native')))
     assert result == expected
 
 
@@ -140,8 +140,8 @@ def test_big_by(sc, expr):
             ['Drew', 'M', 100, 5],
             ['Drew', 'M', 200, 5]]
     rdd = sc.parallelize(data)
-    result = set(map(tuplify, compute(expr, rdd).collect()))
-    expected = set(map(tuplify, compute(expr, data)))
+    result = set(map(tuplify, compute(expr, rdd, return_type='native').collect()))
+    expected = set(map(tuplify, compute(expr, data, return_type='native')))
     assert result == expected
 
 
@@ -160,13 +160,13 @@ sort_exprs = [
 
 @pytest.mark.parametrize('expr', sort_exprs)
 def test_sort(rdd, expr):
-    result = compute(expr, rdd).collect()
-    expected = list(compute(expr, data))
+    result = compute(expr, rdd, return_type='native').collect()
+    expected = list(compute(expr, data, return_type='native'))
     assert result == expected
 
 
 def test_distinct(rdd):
-    assert set(compute(t['name'].distinct(), rdd).collect()) == \
+    assert set(compute(t['name'].distinct(), rdd, return_type='native').collect()) == \
         set(['Alice', 'Bob'])
 
 
@@ -184,7 +184,7 @@ def test_join(rdd, rdd2):
     expected = [('Alice', 100, 1, 'Austin'),
                 ('Bob', 200, 2, 'Boston'),
                 ('Alice', 50, 3, 'Austin')]
-    result = compute(joined, {t: rdd, t2: rdd2}).collect()
+    result = compute(joined, {t: rdd, t2: rdd2}, return_type='native').collect()
     assert all(i in expected for i in result)
 
 
@@ -203,7 +203,7 @@ def test_multi_column_join(sc):
 
     j = join(L, R, ['x', 'y'])
 
-    result = compute(j, {L: rleft, R: rright})
+    result = compute(j, {L: rleft, R: rright}, return_type='native')
     expected = [(1, 2, 3, 30),
                 (1, 3, 5, 50),
                 (1, 3, 5, 150)]
@@ -218,7 +218,7 @@ def test_groupby(sc):
     joined = join(t_arc, t_idx, "node_id")
 
     t = by(joined['name'], count=joined['node_id'].count())
-    a = compute(t, {t_arc: rddarc, t_idx: rddidx})
+    a = compute(t, {t_arc: rddarc, t_idx: rddidx}, return_type='native')
     in_degree = dict(a.collect())
     assert in_degree == {'A': 1, 'C': 2}
 
@@ -226,28 +226,28 @@ def test_groupby(sc):
 def test_multi_level_rowfunc_works(rdd):
     expr = t['amount'].map(lambda x: x + 1, 'int')
 
-    assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
+    assert compute(expr, rdd, return_type='native').collect() == [x[1] + 1 for x in data]
 
 
 def test_merge(rdd):
     col = (t['amount'] * 2).label('new')
     expr = merge(t['name'], col)
 
-    assert compute(expr, rdd).collect() == [
+    assert compute(expr, rdd, return_type='native').collect() == [
         (row[0], row[1] * 2) for row in data]
 
 
 def test_selection_out_of_order(rdd):
     expr = t['name'][t['amount'] < 100]
 
-    assert compute(expr, rdd).collect() == ['Alice']
+    assert compute(expr, rdd, return_type='native').collect() == ['Alice']
 
 
 def test_recursive_rowfunc_is_used(rdd):
     expr = by(t['name'], total=(2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2 * (101 + 53)),
                 ('Bob', 2 * (202))]
-    assert set(compute(expr, rdd).collect()) == set(expected)
+    assert set(compute(expr, rdd, return_type='native').collect()) == set(expected)
 
 
 def test_outer_join(sc):
@@ -264,25 +264,25 @@ def test_outer_join(sc):
     L = symbol('L', 'var * {id: int, name: string, amount: real}')
     R = symbol('R', 'var * {city: string, id: int}')
 
-    assert set(compute(join(L, R), {L: left, R: right}).collect()) == set(
+    assert set(compute(join(L, R), {L: left, R: right}, return_type='native').collect()) == set(
         [(1, 'Alice', 100, 'NYC'),
          (1, 'Alice', 100, 'Boston'),
          (4, 'Dennis', 400, 'Moscow')])
 
-    assert set(compute(join(L, R, how='left'), {L: left, R: right}).collect()) == set(
+    assert set(compute(join(L, R, how='left'), {L: left, R: right}, return_type='native').collect()) == set(
         [(1, 'Alice', 100, 'NYC'),
          (1, 'Alice', 100, 'Boston'),
          (2, 'Bob', 200, None),
          (4, 'Dennis', 400, 'Moscow')])
 
-    assert set(compute(join(L, R, how='right'), {L: left, R: right}).collect()) == set(
+    assert set(compute(join(L, R, how='right'), {L: left, R: right}, return_type='native').collect()) == set(
         [(1, 'Alice', 100, 'NYC'),
          (1, 'Alice', 100, 'Boston'),
          (3, None, None, 'LA'),
          (4, 'Dennis', 400, 'Moscow')])
 
     # Full outer join not yet supported
-    assert set(compute(join(L, R, how='outer'), {L: left, R: right}).collect()) == set(
+    assert set(compute(join(L, R, how='outer'), {L: left, R: right}, return_type='native').collect()) == set(
         [(1, 'Alice', 100, 'NYC'),
          (1, 'Alice', 100, 'Boston'),
          (2, 'Bob', 200, None),

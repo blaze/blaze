@@ -129,7 +129,7 @@ experience is as follows
 .. code-block:: python
 
    >>> from blaze import compute
-   >>> list(compute(deadbeats, namespace))
+   >>> compute(deadbeats, namespace, return_type=list)
    ['Bob']
 
 But internally ``compute`` traverses our expression from the leaves (like

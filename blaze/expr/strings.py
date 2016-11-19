@@ -65,7 +65,7 @@ class Like(ElemWise):
     >>> data = [('Alice Smith', 'New York'),
     ...         ('Bob Jones', 'Chicago'),
     ...         ('Alice Walker', 'LA')]
-    >>> list(compute(expr, data))
+    >>> list(compute(expr, data, return_type='native'))
     [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
     """
     _arguments = '_child', 'pattern'
@@ -231,7 +231,7 @@ class StrCat(ElemWise):
     >>> data = [('al', 'good', 0), ('suri', 'not good', 1), ('jinka', 'ok', 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
 
-    >>> compute(s.name.str.cat(s.comment, sep=' -- '), df)
+    >>> compute(s.name.str.cat(s.comment, sep=' -- '), df, return_type='native')
     0          al -- good
     1    suri -- not good
     2         jinka -- ok
@@ -242,7 +242,7 @@ class StrCat(ElemWise):
 
     >>> data = [(None, None, 0), ('suri', 'not good', 1), ('jinka', None, 2)]
     >>> df = pd.DataFrame(data, columns=['name', 'comment', 'num'])
-    >>> compute(s.name.str.cat(s.comment, sep=' -- '), df)
+    >>> compute(s.name.str.cat(s.comment, sep=' -- '), df, return_type='native')
     0                 NaN
     1    suri -- not good
     2                 NaN

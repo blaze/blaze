@@ -416,7 +416,7 @@ def serialize_query_with_map_builtin_function(test, serial, fcn):
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
 
-    exp_res = compute(expr, {t: iris}, return_type=list)
+    exp_res = compute(expr, {t: iris})
     return (exp_res, result)
 
 
@@ -512,7 +512,7 @@ def test_server_can_compute_sqlalchemy_reductions(test, serial):
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == into(int, compute(expr, {t: tdata}))
+    assert result == into(int, compute(expr, {t: tdata}, return_type='native'))
     assert list(respdata['names']) == ['petal_length_sum']
 
 
@@ -527,7 +527,7 @@ def test_serialization_endpoints(test, serial):
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == into(int, compute(expr, {t: tdata}))
+    assert result == into(int, compute(expr, {t: tdata}, return_type='native'))
     assert list(respdata['names']) == ['petal_length_sum']
 
 
@@ -858,7 +858,8 @@ def test_add_expanded_payload_has_effect(temp_add_server, serial):
 @pytest.mark.parametrize('serial', all_formats)
 def test_odo_kwargs(test, serial):
     expr = t.dumb
-    bad_query = {'expr': to_tree(expr)}
+    bad_query = {'expr': to_tree(expr),
+                 'compute_kwargs': {'return_type': 'native'}}
 
     result = test.post('/compute',
                        headers=mimetype(serial),
@@ -867,7 +868,8 @@ def test_odo_kwargs(test, serial):
     assert b'return_df must be passed' in result.data
 
     good_query = {'expr': to_tree(expr),
-                  'odo_kwargs': {'return_df': odo(DumbResource.df, list)}}
+                  'odo_kwargs': {'return_df': odo(DumbResource.df, list)},
+                  'compute_kwargs': {'return_type': 'native'}}
     result = test.post('/compute',
                        headers=mimetype(serial),
                        data=serial.dumps(good_query))

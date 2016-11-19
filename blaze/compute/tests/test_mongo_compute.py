@@ -200,7 +200,7 @@ def test_columnwise_multiple_operands(points):
 
 def test_arithmetic(points):
     expr = p.y // p.x
-    assert set(compute(expr, points)) == set(compute(expr, points.find()))
+    assert set(compute(expr, points, return_type='native')) == set(compute(expr, points.find(), return_type='native'))
 
 
 def test_columnwise_mod(points):
@@ -325,7 +325,7 @@ def test_summary_complex_arith_multiple(bank):
 def test_like(bank):
     bank.create_index([('name', pymongo.TEXT)])
     expr = t[t.name.like('*Alice*')]
-    result = compute(expr, bank)
+    result = compute(expr, bank, return_type='native')
     assert set(result) == set((('Alice', 100), ('Alice', 200)))
 
 
@@ -358,8 +358,8 @@ def test_datetime_access(date_data):
     py_data = into(list, date_data)  # a python version of the collection
 
     for attr in ['day', 'minute', 'second', 'year', 'month']:
-        assert list(compute(getattr(t.when, attr), date_data)) == \
-            list(compute(getattr(t.when, attr), py_data))
+        assert compute(getattr(t.when, attr), date_data) == \
+               compute(getattr(t.when, attr), py_data, return_type=list)
 
 
 def test_datetime_access_and_arithmetic(date_data):
@@ -371,7 +371,7 @@ def test_datetime_access_and_arithmetic(date_data):
 
     expr = t.when.day + t.id
 
-    assert list(compute(expr, date_data)) == list(compute(expr, py_data))
+    assert compute(expr, date_data) == compute(expr, py_data, return_type=list)
 
 
 def test_floor_ceil(bank):

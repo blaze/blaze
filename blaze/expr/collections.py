@@ -160,7 +160,7 @@ class Distinct(Expr):
     ...         ('Alice', 100, 1)]
 
     >>> from blaze.compute.python import compute
-    >>> sorted(compute(e, data))
+    >>> sorted(compute(e, data, return_type='native'))
     [('Alice', 100, 1), ('Bob', 200, 2)]
 
     Use a subset by passing `on`:
@@ -172,7 +172,7 @@ class Distinct(Expr):
     ...                      ['Bob', 100, 1],
     ...                      ['Bob', 200, 2]],
     ...                     columns=['name', 'amount', 'id'])
-    >>> compute(e, data)
+    >>> compute(e, data, return_type='native')
         name  amount  id
     0  Alice     100   1
     1    Bob     100   1

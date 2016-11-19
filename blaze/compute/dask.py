@@ -16,6 +16,8 @@ from dask.array.core import _concatenate2, Array, atop, transpose, tensordot
 
 def compute_it(expr, leaves, *data, **kwargs):
     kwargs.pop('scope')
+    if 'return_type' not in kwargs:
+        kwargs['return_type'] = 'native'
     return compute(expr, dict(zip(leaves, data)), **kwargs)
 
 

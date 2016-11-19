@@ -60,26 +60,26 @@ def test_symbol():
 
 
 def test_projection():
-    assert list(compute(t['name'], data)) == [x[0] for x in data]
+    assert compute(t['name'], data, return_type=list) == [x[0] for x in data]
 
 
 def test_eq():
-    assert list(compute(t['amount'] == 100, data)) == [x[1] == 100 for x in data]
+    assert compute(t['amount'] == 100, data, return_type=list) == [x[1] == 100 for x in data]
 
 
 def test_selection():
-    assert list(compute(t[t['amount'] == 0], data)) == \
+    assert compute(t[t['amount'] == 0], data, return_type=list) == \
                 [x for x in data if x[1] == 0]
-    assert list(compute(t[t['amount'] > 150], data)) == \
+    assert compute(t[t['amount'] > 150], data, return_type=list) == \
                 [x for x in data if x[1] > 150]
 
 
 def test_arithmetic():
-    assert list(compute(t['amount'] + t['id'], data)) == \
+    assert compute(t['amount'] + t['id'], data, return_type=list) == \
                 [b + c for a, b, c, in data]
-    assert list(compute(t['amount'] * t['id'], data)) == \
+    assert compute(t['amount'] * t['id'], data, return_type=list) == \
                 [b * c for a, b, c, in data]
-    assert list(compute(t['amount'] % t['id'], data)) == \
+    assert compute(t['amount'] % t['id'], data, return_type=list) == \
                 [b % c for a, b, c, in data]
 
 
@@ -87,13 +87,13 @@ def test_unary_ops():
     for op in ('cos', 'sin', 'exp', 'ceil', 'floor', 'trunc', 'isnan'):
         f = getattr(blaze, op)
         pyf = getattr(math, op)
-        result = list(compute(f(t['amount']), data))
+        result = compute(f(t['amount']), data, return_type=list)
         assert result == [pyf(x[1]) for x in data]
 
 
 def test_neg():
     expr = optimize(-t.amount, [])
-    assert list(compute(expr, data)) == [-x[1] for x in data]
+    assert compute(expr, data, return_type=list) == [-x[1] for x in data]
 
 
 def test_reductions():
@@ -199,9 +199,9 @@ def test_by_three():
 
 
 def test_works_on_generators():
-    assert list(compute(t['amount'], iter(data))) == \
+    assert compute(t['amount'], iter(data), return_type=list) == \
             [x[1] for x in data]
-    assert list(compute(t['amount'], (i for i in data))) == \
+    assert compute(t['amount'], (i for i in data), return_type=list) == \
             [x[1] for x in data]
 
 
@@ -216,7 +216,7 @@ def test_join():
     assert dshape(joined.schema) == \
             dshape('{name: string, amount: int, id: int}')
 
-    result = list(compute(joined, {L: left, R: right}))
+    result = compute(joined, {L: left, R: right}, return_type=list)
 
     expected = [('Alice', 100, 1), ('Bob', 200, 2)]
 
@@ -235,24 +235,24 @@ def test_outer_join():
     L = symbol('L', 'var * {id: int, name: string, amount: real}')
     R = symbol('R', 'var * {city: string, id: int}')
 
-    assert set(compute(join(L, R), {L: left, R: right})) == set(
+    assert compute(join(L, R), {L: left, R: right}, return_type=set) == set(
             [(1, 'Alice', 100, 'NYC'),
              (1, 'Alice', 100, 'Boston'),
              (4, 'Dennis', 400, 'Moscow')])
 
-    assert set(compute(join(L, R, how='left'), {L: left, R: right})) == set(
+    assert compute(join(L, R, how='left'), {L: left, R: right}, return_type=set) == set(
             [(1, 'Alice', 100, 'NYC'),
              (1, 'Alice', 100, 'Boston'),
              (2, 'Bob', 200, None),
              (4, 'Dennis', 400, 'Moscow')])
 
-    assert set(compute(join(L, R, how='right'), {L: left, R: right})) == set(
+    assert compute(join(L, R, how='right'), {L: left, R: right}, return_type=set) == set(
             [(1, 'Alice', 100, 'NYC'),
              (1, 'Alice', 100, 'Boston'),
              (3, None, None, 'LA'),
              (4, 'Dennis', 400, 'Moscow')])
 
-    assert set(compute(join(L, R, how='outer'), {L: left, R: right})) == set(
+    assert compute(join(L, R, how='outer'), {L: left, R: right}, return_type=set) == set(
             [(1, 'Alice', 100, 'NYC'),
              (1, 'Alice', 100, 'Boston'),
              (2, 'Bob', 200, None),
@@ -273,23 +273,24 @@ def test_multi_column_join():
 
     j = join(L, R, ['x', 'y'])
 
-    print(list(compute(j, {L: left, R: right})))
-    assert list(compute(j, {L: left, R: right})) == [(1, 2, 3, 30),
-                                                     (1, 3, 5, 50),
-                                                     (1, 3, 5, 150)]
+    print(compute(j, {L: left, R: right}, return_type=list))
+    assert compute(j, {L: left, R: right},
+                   return_type=list) == [(1, 2, 3, 30),
+                                          (1, 3, 5, 50),
+                                          (1, 3, 5, 150)]
 
 
 @pytest.mark.xfail(reason="This doesn't necessarily make sense")
 def test_column_of_column():
-    assert list(compute(t['name']['name'], data)) == \
-            list(compute(t['name'], data))
+    assert compute(t['name']['name'], data, return_type=list) == \
+           compute(t['name'], data, return_type=list)
 
 
 def test_distinct():
-    assert set(compute(distinct(t['name']), data)) == set(['Alice', 'Bob'])
-    assert set(compute(distinct(t), data)) == set(map(tuple, data))
+    assert set(compute(distinct(t['name']), data, return_type='native')) == set(['Alice', 'Bob'])
+    assert set(compute(distinct(t), data, return_type='native')) == set(map(tuple, data))
     e = distinct(t)
-    assert list(compute(e, [])) == []
+    assert compute(e, [], return_type=list) == []
 
 
 def test_distinct_count():
@@ -300,38 +301,38 @@ def test_distinct_count():
 
 
 def test_sort():
-    assert list(compute(t.sort('amount'), data)) == \
+    assert compute(t.sort('amount'), data, return_type=list) == \
             sorted(data, key=lambda x: x[1], reverse=False)
 
-    assert list(compute(t.sort('amount', ascending=True), data)) == \
+    assert compute(t.sort('amount', ascending=True), data, return_type=list) == \
             sorted(data, key=lambda x: x[1], reverse=False)
 
-    assert list(compute(t.sort(['amount', 'id']), data)) == \
+    assert compute(t.sort(['amount', 'id']), data, return_type=list) == \
             sorted(data, key=lambda x: (x[1], x[2]), reverse=False)
 
 
 def test_fancy_sort():
-    assert list(compute(t.sort(t['amount']), data)) ==\
-            list(compute(t.sort('amount'), data))
+    assert compute(t.sort(t['amount']), data, return_type=list) ==\
+            compute(t.sort('amount'), data, return_type=list)
 
-    assert list(compute(t.sort(t[['amount', 'id']]), data)) ==\
-            list(compute(t.sort(['amount', 'id']), data))
+    assert compute(t.sort(t[['amount', 'id']]), data, return_type=list) ==\
+            compute(t.sort(['amount', 'id']), data, return_type=list)
 
-    assert list(compute(t.sort(0-t['amount']), data)) ==\
-            list(compute(t.sort('amount'), data))[::-1]
+    assert compute(t.sort(0-t['amount']), data, return_type=list) ==\
+            compute(t.sort('amount'), data, return_type=list)[::-1]
 
 
 def test_sort_on_column():
-    assert list(compute(t.name.distinct().sort('name'), data)) == \
+    assert compute(t.name.distinct().sort('name'), data, return_type=list) == \
             ['Alice', 'Bob']
 
 
 def test_head():
-    assert list(compute(t.head(1), data)) == [data[0]]
+    assert compute(t.head(1), data, return_type=list) == [data[0]]
 
     e = head(t, 101)
     p = list(range(1000))
-    assert len(list(compute(e, p))) == 101
+    assert len(compute(e, p, return_type=list)) == 101
 
 
 def test_sample():
@@ -383,7 +384,7 @@ def test_graph_double_join():
 
     j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
-    result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
+    result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted}, return_type='native')
     result = sorted(map(tuple, result))
     expected = sorted([('A', 1, 3),
                        ('A', 1, 2),
@@ -396,8 +397,8 @@ def test_graph_double_join():
 
 
 def test_label():
-    assert list(compute((t['amount'] * 1).label('foo'), data)) == \
-            list(compute((t['amount'] * 1), data))
+    assert compute((t['amount'] * 1).label('foo'), data, return_type=list) == \
+           compute((t['amount'] * 1), data, return_type=list)
 
 
 def test_relabel_join():
@@ -411,18 +412,18 @@ def test_relabel_join():
             ('Bob', 'Jones'),
             ('Charlie', 'Smith')]
 
-    print(set(compute(siblings, {names: data})))
-    assert ('Alice', 'Charlie') in set(compute(siblings, {names: data}))
-    assert ('Alice', 'Bob') not in set(compute(siblings, {names: data}))
+    print(compute(siblings, {names: data}, return_type=set))
+    assert ('Alice', 'Charlie') in compute(siblings, {names: data}, return_type=set)
+    assert ('Alice', 'Bob') not in compute(siblings, {names: data}, return_type=set)
 
 
 def test_map_column():
     inc = lambda x: x + 1
-    assert list(compute(t['amount'].map(inc, 'int'), data)) == [x[1] + 1 for x in data]
+    assert compute(t['amount'].map(inc, 'int'), data, return_type=list) == [x[1] + 1 for x in data]
 
 
 def test_map():
-    assert (list(compute(t.map(lambda tup: tup[1] + tup[2], 'int'), data)) ==
+    assert (compute(t.map(lambda tup: tup[1] + tup[2], 'int'), data, return_type=list) ==
             [x[1] + x[2] for x in data])
 
 
@@ -443,8 +444,8 @@ def test_map_datetime():
     data = [['A', 0], ['B', 1]]
     t = symbol('t', 'var * {foo: string, datetime: int64}')
 
-    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp,
-    'datetime'), data))
+    result = compute(t['datetime'].map(datetime.utcfromtimestamp,
+    'datetime'), data, return_type=list)
     expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
 
     assert result == expected
@@ -455,8 +456,8 @@ def test_by_multi_column_grouper():
     expr = by(t[['x', 'y']], total=t['z'].count())
     data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
 
-    print(set(compute(expr, data)))
-    assert set(compute(expr, data)) == set([(1, 2, 2), (1, 1, 1)])
+    print(compute(expr, data, return_type=set))
+    assert compute(expr, data, return_type=set) == set([(1, 2, 2), (1, 1, 1)])
 
 
 def test_merge():
@@ -464,12 +465,12 @@ def test_merge():
 
     expr = merge(t['name'], col)
 
-    assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
+    assert compute(expr, data, return_type=list) == [(row[0], row[1] * 2) for row in data]
 
 
 def test_transform():
     expr = transform(t, x=t.amount / t.id)
-    assert list(compute(expr, data)) == [('Alice', 100, 1, 100),
+    assert compute(expr, data, return_type=list) == [('Alice', 100, 1, 100),
                                          ('Bob',   200, 2, 100),
                                          ('Alice',  50, 3, 50 / 3)]
 
@@ -479,7 +480,7 @@ def test_map_columnwise():
 
     expr = colwise.map(lambda x: x / 10, 'int64', name='mod')
 
-    assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data]
+    assert compute(expr, data, return_type=list) == [((row[1]*row[2]) / 10) for row in data]
 
 
 def test_map_columnwise_of_selection():
@@ -488,13 +489,13 @@ def test_map_columnwise_of_selection():
 
     expr = colwise.map(lambda x: x / 10, 'int64', name='mod')
 
-    assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data[::2]]
+    assert compute(expr, data, return_type=list) == [((row[1]*row[2]) / 10) for row in data[::2]]
 
 
 def test_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
 
-    assert list(compute(expr, data)) == ['Alice']
+    assert compute(expr, data, return_type=list) == ['Alice']
 
 
 def test_recursive_rowfunc():
@@ -512,7 +513,7 @@ def test_recursive_rowfunc_is_used():
     expr = by(t['name'], total=(2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
-    assert set(compute(expr, data)) == set(expected)
+    assert compute(expr, data, return_type=set) == set(expected)
 
 
 class TestFunctionExpressions(object):
@@ -565,7 +566,7 @@ def test_by_groupby_deep():
     t2 = t[t['name'] != '']
     t3 = merge(t2.x, t2.name)
     expr = by(t3.name, avg=t3.x.mean())
-    result = set(compute(expr, data))
+    result = compute(expr, data, return_type=set)
     assert result == set([('Alice', 1.5), ('Bob', 1.0)])
 
 
@@ -644,12 +645,11 @@ def test_like():
         ('Alice Walker', 'LA')
     ]
 
-    assert list(compute(t[t.name.like('Alice*')], data)) == [data[0], data[2]]
-    assert list(compute(t[t.name.like('lice*')], data)) == []
-    assert list(compute(t[t.name.like('*Smith*')], data)) == [data[0], data[1]]
-    assert list(
-        compute(t[t.name.like('*Smith*') & t.city.like('New York')], data)
-    ) == [data[0]]
+    assert compute(t[t.name.like('Alice*')], data, return_type=list) == [data[0], data[2]]
+    assert compute(t[t.name.like('lice*')], data, return_type=list) == []
+    assert compute(t[t.name.like('*Smith*')], data, return_type=list) == [data[0], data[1]]
+    assert compute(t[t.name.like('*Smith*') & t.city.like('New York')], data,
+                   return_type=list) == [data[0]]
 
 
 def test_datetime_comparison():
@@ -659,7 +659,7 @@ def test_datetime_comparison():
 
     t = symbol('t', 'var * {name: string, when: date}')
 
-    assert list(compute(t[t.when > '2000-01-01'], data)) == data[1:]
+    assert compute(t[t.when > '2000-01-01'], data, return_type=list) == data[1:]
 
 
 def test_datetime_access():
@@ -670,14 +670,14 @@ def test_datetime_access():
     t = symbol('t',
             'var * {amount: float64, id: int64, name: string, when: datetime}')
 
-    assert list(compute(t.when.year, data)) == [2000, 2000, 2000]
-    assert list(compute(t.when.second, data)) == [1, 1, 1]
-    assert list(compute(t.when.date, data)) == [date(2000, 1, 1)] * 3
+    assert compute(t.when.year, data, return_type=list) == [2000, 2000, 2000]
+    assert compute(t.when.second, data, return_type=list) == [1, 1, 1]
+    assert compute(t.when.date, data, return_type=list) == [date(2000, 1, 1)] * 3
 
 
 def test_utcfromtimestamp():
     t = symbol('t', '1 * int64')
-    assert list(compute(t.utcfromtimestamp, [0])) == \
+    assert compute(t.utcfromtimestamp, [0], return_type=list) == \
             [datetime(1970, 1, 1, 0, 0)]
 
 
@@ -704,13 +704,13 @@ payment_dshape = 'var * {name: string, payments: var * {amount: int32, when: dat
 @pytest.mark.xfail(reason="Can't reason about nested broadcasts yet")
 def test_nested():
     t = symbol('t', payment_dshape)
-    assert list(compute(t.name, payments_ordered)) == ['Alice', 'Bob']
+    assert compute(t.name, payments_ordered, return_type=list) == ['Alice', 'Bob']
 
-    assert list(compute(t.payments, payments_ordered)) == \
+    assert compute(t.payments, payments_ordered, return_type=list) == \
                 [p[1] for p in payments_ordered]
-    assert list(compute(t.payments.amount, payments_ordered)) == \
+    assert compute(t.payments.amount, payments_ordered, return_type=list) == \
             [(100, 200), (300, -400, 500)]
-    assert list(compute(t.payments.amount + 1, payments_ordered)) ==\
+    assert compute(t.payments.amount + 1, payments_ordered, return_type=list) ==\
             [(101, 201), (301, -399, 501)]
 
 
@@ -723,29 +723,29 @@ def test_scalar():
 
     assert compute(s.name, data) == 'Alice'
     assert compute(s.id + 1, data) == 2
-    assert tuple(compute(s.payments.amount, data)) == (100, 200, 300)
-    assert tuple(compute(s.payments.amount + 1, data)) == (101, 201, 301)
+    assert compute(s.payments.amount, data, return_type=tuple) == (100, 200, 300)
+    assert compute(s.payments.amount + 1, data, return_type=tuple) == (101, 201, 301)
 
 
 def test_slice():
     assert compute(t[0], data) == data[0]
-    assert list(compute(t[:2], data)) == list(data[:2])
-    assert list(compute(t.name[:2], data)) == [data[0][0], data[1][0]]
+    assert compute(t[:2], data, return_type=list) == list(data[:2])
+    assert compute(t.name[:2], data, return_type=list) == [data[0][0], data[1][0]]
 
 
 def test_negative_slicing():
-    assert list(compute(t[-1:], data)) == data[-1:]
-    assert list(compute(t[-1:], iter(data))) == data[-1:]
-    assert list(compute(t[-1], data)) == data[-1]
-    assert list(compute(t[-1], iter(data))) == data[-1]
-    assert list(compute(t[-2], data)) == data[-2]
-    assert list(compute(t[-2], iter(data))) == data[-2]
+    assert compute(t[-1:], data, return_type=list) == data[-1:]
+    assert compute(t[-1:], iter(data), return_type=list)  == data[-1:]
+    assert compute(t[-1], data, return_type=list) == data[-1]
+    assert compute(t[-1], iter(data), return_type=list) == data[-1]
+    assert compute(t[-2], data, return_type=list) == data[-2]
+    assert compute(t[-2], iter(data), return_type=list) == data[-2]
 
 
 @pytest.mark.xfail(raises=ValueError,
                    reason="No support for stop and step having negative values")
 def test_negative_slicing_raises_on_stop_and_step_not_None():
-    assert list(compute(t[-2:-5:-1], data)) == data[-2:-5:-1]
+    assert compute(t[-2:-5:-1], data, return_type=list) == data[-2:-5:-1]
 
 
 def test_multi_dataset_broadcast():
@@ -755,8 +755,8 @@ def test_multi_dataset_broadcast():
     a = [1, 2, 3]
     b = [10, 20, 30]
 
-    assert list(compute(x + y, {x: a, y: b})) == [11, 22, 33]
-    assert list(compute(2*x + (y + 1), {x: a, y: b})) == [13, 25, 37]
+    assert compute(x + y, {x: a, y: b}, return_type=list) == [11, 22, 33]
+    assert compute(2*x + (y + 1), {x: a, y: b}, return_type=list) == [13, 25, 37]
 
 
 @pytest.mark.xfail(reason="Optimize doesn't create multi-table-broadcasts")
@@ -767,7 +767,7 @@ def test_multi_dataset_broadcast_with_Record_types():
     a = [(1, 1), (2, 2), (3, 3)]
     b = [10, 20, 30]
 
-    assert list(compute(x.p + x.q + y, {x: iter(a), y: iter(b)})) == [12, 24, 36]
+    assert compute(x.p + x.q + y, {x: iter(a), y: iter(b)}, return_type=list) == [12, 24, 36]
 
 
 def eq(a, b):
@@ -801,14 +801,14 @@ def test_dicts():
     assert list(pre_compute(t, d)) == list(map(tuple, L))
 
     for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
-        assert eq(compute(expr, {t: L}),
-                  compute(expr, {t: d}))
+        assert eq(compute(expr, {t: L}, return_type='native'),
+                  compute(expr, {t: d}, return_type='native'))
 
     for expr in [t.amount, t.amount.sum(), by(t.name, sum=t.amount.sum())]:
-        assert eq(compute(expr, {t: iter(L)}),
-                  compute(expr, {t: iter(d)}))
-        assert eq(compute(expr, {t: iter(L)}),
-                  compute(expr, {t: L}))
+        assert eq(compute(expr, {t: iter(L)}, return_type='native'),
+                  compute(expr, {t: iter(d)}, return_type='native'))
+        assert eq(compute(expr, {t: iter(L)}, return_type='native'),
+                  compute(expr, {t: L}, return_type='native'))
 
 
 def test_nelements_list_tuple():
@@ -875,8 +875,8 @@ def test_truncate_datetime():
             date(2002, 1, 2)
 
     s = symbol('x', 'var * datetime')
-    assert list(compute(s.truncate(2, 'days'),
-                        [datetime(2002, 1, 3, 12, 30)])) ==\
+    assert compute(s.truncate(2, 'days'),
+                        [datetime(2002, 1, 3, 12, 30)], return_type=list) ==\
             [date(2002, 1, 2)]
 
 
@@ -892,8 +892,8 @@ def test_notnull():
             ('Bob', 300, 'New York City')]
     t = symbol('t', 'var * {name: ?string, amount: ?int32, city: ?string}')
     expr = t.name.notnull()
-    result = compute(expr, data)
-    assert list(result) == [True, False, True]
+    result = compute(expr, data, return_type=list)
+    assert result == [True, False, True]
 
 
 def test_notnull_whole_collection():
@@ -905,7 +905,7 @@ def test_notnull_whole_collection():
 @pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])
 def test_isin(keys):
     expr = t[t.name.isin(keys)]
-    result = list(compute(expr, data))
+    result = compute(expr, data, return_type=list)
     expected = [el for el in data if el[0] in keys]
     assert result == expected
 
@@ -913,14 +913,14 @@ def test_isin(keys):
 def test_greatest():
     s_data, t_data = [1, 2], [2, 1]
     s, t = symbol('s', discover(s_data)), symbol('t', discover(t_data))
-    result = compute(greatest(s, t), {s: s_data, t: t_data})
+    result = compute(greatest(s, t), {s: s_data, t: t_data}, return_type=list)
     expected = np.maximum(s_data, t_data).tolist()
-    assert list(result) == expected
+    assert result == expected
 
 
 def test_least():
     s_data, t_data = [1, 2], [2, 1]
     s, t = symbol('s', discover(s_data)), symbol('t', discover(t_data))
-    result = compute(least(s, t), {s: s_data, t: t_data})
+    result = compute(least(s, t), {s: s_data, t: t_data}, return_type=list)
     expected = np.minimum(s_data, t_data).tolist()
-    assert list(result) == expected
+    assert result == expected

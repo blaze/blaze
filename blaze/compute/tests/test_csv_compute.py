@@ -37,7 +37,7 @@ def test_compute_chunks_on_single_csv():
     csv = CSV(example('iris.csv'))
     s = symbol('s', discover(csv))
     expr = s.sepal_length.max()
-    assert compute(expr, {s: csv}, comfortable_memory=10, blocksize=50) == 7.9
+    assert compute(expr, {s: csv}, comfortable_memory=10, blocksize=50, return_type='native') == 7.9
 
 
 def test_compute_with_projection_projects_on_data_frames():
@@ -77,7 +77,7 @@ def test_multiple_csv_files():
         for e in [s, s.name, s.name.nunique(), s.name.count_values(),
                 s.val.mean()]:
             a = compute(e, {s: r})
-            b = compute(e, {s: dta})
+            b = compute(e, {s: dta}, return_type='native')
             if iscollection(e.dshape):
                 a, b = into(set, a), into(set, b)
             assert a == b

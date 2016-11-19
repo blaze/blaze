@@ -127,7 +127,7 @@ by calling ``compute``.
    0    Bob
    1  Edith
 
-   >>> list(compute(t[t.balance < 0].name))   # Just a raw list
+   >>> compute(t[t.balance < 0].name, return_type=list)   # Just a raw list
    ['Bob', 'Edith']
 
 Alternatively use the ``odo`` operation to push your output into a suitable

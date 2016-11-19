@@ -21,7 +21,7 @@ def test_dataset():
     assert discover(d) == discover(ns)
 
     s = symbol('s', discover(d))
-    compute(s.x * 2, d) == 20
+    compute(s.x * 2, d, return_type=int) == 20
     cache == {s.x * 2: 20}
 
 

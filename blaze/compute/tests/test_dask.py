@@ -69,8 +69,8 @@ exprs = [2 * sx + 1,
 @pytest.mark.skipif(sys.platform == 'win32' and sys.version_info[:2] == (2, 7),
 		    reason="Nondeterministic exceptions relating to get_async")
 def test_compute(expr):
-    result = compute(expr, dask_ns)
-    expected = compute(expr, numpy_ns)
+    result = compute(expr, dask_ns, return_type='native')
+    expected = compute(expr, numpy_ns, return_type='native')
     assert isinstance(result, Array)
     if expr.dshape.shape:
         result2 = np.array(result)
@@ -80,7 +80,7 @@ def test_compute(expr):
 
 
 def test_elemwise_broadcasting():
-    arr = compute(sy + sb, dask_ns)
+    arr = compute(sy + sb, dask_ns, return_type='native')
     expected = [[(arr.name, i, j) for j in range(5)]
                 for i in range(6)]
     assert arr._keys() == expected
@@ -95,14 +95,14 @@ def test_ragged_blockdims():
     a = Array(dsk, 'x', chunks=[(2, 5), (2, 3)], shape=(7, 5))
     s = symbol('s', '7 * 5 * int')
 
-    assert compute(s.sum(axis=0), a).chunks == ((2, 3),)
-    assert compute(s.sum(axis=1), a).chunks == ((2, 5),)
+    assert compute(s.sum(axis=0), a, return_type='native').chunks == ((2, 3),)
+    assert compute(s.sum(axis=1), a, return_type='native').chunks == ((2, 5),)
 
-    assert compute(s + 1, a).chunks == a.chunks
+    assert compute(s + 1, a, return_type='native').chunks == a.chunks
 
 
 def test_slicing_with_singleton_dimensions():
-    arr = compute(sx[5:15, 12], dx)
+    arr = compute(sx[5:15, 12], dx, return_type='native')
     x = dx.name
     y = arr.name
     assert arr.dask[(y, 0)] == (getitem, (x, 1, 2), (slice(1, 4, 1), 2))
@@ -130,7 +130,7 @@ def test_slicing_with_lists():
     assert eq(np.array(compute(expr, dx)), compute(expr, nx))
 
     expr = sx[:, :]
-    assert compute(expr, dx).dask == dx.dask
+    assert compute(expr, dx, return_type='native').dask == dx.dask
 
     expr = sx[0]
     assert eq(np.array(compute(expr, dx)), compute(expr, nx))
@@ -145,7 +145,7 @@ def test_slicing_on_boundary_lines():
     sx = symbol('x', discover(dx))
     expr = sx[0, [1, 3, 9, 3]]
 
-    result = compute(expr, dx)
+    result = compute(expr, dx, return_type='native')
     assert eq(result, nx[0, [1, 3, 9, 3]])
 
 
@@ -155,15 +155,15 @@ def test_slicing_with_newaxis():
     sx = symbol('x', discover(dx))
 
     expr = sx[:, None, :]
-    result = compute(expr, dx)
+    result = compute(expr, dx, return_type='native')
 
     assert result.shape == (4, 1, 5)
     assert result.chunks == ((2, 2), (1,), (2, 2, 1))
     assert eq(np.array(result), compute(expr, nx))
 
     expr = sx[None, [2, 1, 3], None, None, :, None]
-    result = compute(expr, dx)
+    result = compute(expr, dx, return_type='native')
 
     assert result.shape == (1, 3, 1, 1, 5, 1)
     assert result.chunks == ((1,), (3,), (1,), (1,), (2, 2, 1), (1,))
-    assert eq(np.array(result), compute(expr, nx))
+    assert eq(np.array(result), compute(expr, nx, return_type='native'))

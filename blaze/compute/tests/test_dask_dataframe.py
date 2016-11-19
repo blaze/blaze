@@ -121,15 +121,15 @@ def test_selection_inner_inputs():
 
 
 def test_reductions():
-    assert compute(mean(t['amount']), ddf) == 350 / 3
-    assert compute(count(t['amount']), ddf) == 3
-    assert compute(sum(t['amount']), ddf) == 100 + 200 + 50
-    assert compute(min(t['amount']), ddf) == 50
-    assert compute(max(t['amount']), ddf) == 200
-    assert compute(var(t['amount']), ddf) == df.amount.var(ddof=0)
-    assert compute(var(t['amount'], unbiased=True), ddf) == df.amount.var()
-    assert compute(std(t['amount']), ddf) == df.amount.std(ddof=0)
-    assert compute(std(t['amount'], unbiased=True), ddf) == df.amount.std()
+    assert compute(mean(t['amount']), ddf, return_type='native') == 350 / 3
+    assert compute(count(t['amount']), ddf, return_type='native') == 3
+    assert compute(sum(t['amount']), ddf, return_type='native') == 100 + 200 + 50
+    assert compute(min(t['amount']), ddf, return_type='native') == 50
+    assert compute(max(t['amount']), ddf, return_type='native') == 200
+    assert compute(var(t['amount']), ddf, return_type='native') == df.amount.var(ddof=0)
+    assert compute(var(t['amount'], unbiased=True), ddf, return_type='native') == df.amount.var()
+    assert compute(std(t['amount']), ddf, return_type='native') == df.amount.std(ddof=0)
+    assert compute(std(t['amount'], unbiased=True), ddf, return_type='native') == df.amount.std()
 
 
 def test_summary():

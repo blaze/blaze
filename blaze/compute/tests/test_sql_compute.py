@@ -550,7 +550,7 @@ def test_head():
 
 def test_sample():
     order_by = select(s).order_by(sa.func.random())
-    assert str(compute(t.sample(n=5), s)) == str(order_by.limit(5))
+    assert str(compute(t.sample(n=5), s, return_type='native')) == str(order_by.limit(5))
 
 
 def test_label():
@@ -2184,7 +2184,7 @@ def test_greatest(op):
     odo([(1, 2)], db)
     s = symbol('s', dshape=ds)
 
-    assert normalize(compute(op(s.a, s.b), db)) == normalize(
+    assert normalize(compute(op(s.a, s.b), db, return_type='native')) == normalize(
         'select {op}(s.a, s.b) as {op}_1 from s'.format(op=op.__name__),
     )
 
@@ -2195,14 +2195,14 @@ def test_coalesce():
     s = symbol('s', ds)
     t = symbol('t', 'int32')
 
-    assert normalize(compute(coalesce(s.a, t), {s: db, t: 1})) == normalize(
+    assert normalize(compute(coalesce(s.a, t), {s: db, t: 1}, return_type='native')) == normalize(
         """\
         select
             coalesce(s.a, 1) as coalesce_1
         from s
         """,
     )
-    assert normalize(compute(coalesce(s.a, 1), {s: db})) == normalize(
+    assert normalize(compute(coalesce(s.a, 1), {s: db}, return_type='native')) == normalize(
         """
         select
             coalesce(s.a, 1) as a
@@ -2217,7 +2217,7 @@ def test_any():
     s = symbol('s', ds)
     t = symbol('t', 'int32')
 
-    assert normalize(compute((s.a == t).any(), {s: db, t: 1})) == normalize(
+    assert normalize(compute((s.a == t).any(), {s: db, t: 1}, return_type='native')) == normalize(
         """
         select
             sum(cast(s.a = 1 as integer)) != 0 as anon_1
@@ -2232,7 +2232,7 @@ def test_all():
     s = symbol('s', ds)
     t = symbol('t', 'int32')
 
-    assert normalize(compute((s.a == t).all(), {s: db, t: 1})) == normalize(
+    assert normalize(compute((s.a == t).all(), {s: db, t: 1}, return_type='native')) == normalize(
         """
         select
             sum(cast(s.a != 1 as integer)) = 0 as anon_1

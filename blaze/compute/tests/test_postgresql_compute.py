@@ -435,7 +435,7 @@ def test_coerce_bool_and_sum(sql):
     n = sql.name
     t = symbol(n, discover(sql))
     expr = (t.B > 1.0).coerce(to='int32').sum()
-    result = compute(expr, sql).scalar()
+    result = compute(expr, sql, return_type='native').scalar()
     expected = compute(t.B, sql, return_type=pd.Series).gt(1).sum()
     assert result == expected
 
@@ -704,7 +704,7 @@ def test_sample_frac(nyc):
 
 def test_sample(big_sql):
     nn = symbol('nn', discover(big_sql))
-    nrows = odo(compute(nn.nrows, big_sql), int)
+    nrows = odo(compute(nn.nrows, big_sql, return_type='native'), int)
     result = compute(nn.sample(n=nrows // 2), big_sql, return_type=pd.DataFrame)
     assert len(result) == nrows // 2
     result2 = compute(nn.sample(frac=0.5), big_sql, return_type=pd.DataFrame)
