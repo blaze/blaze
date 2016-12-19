@@ -295,7 +295,7 @@ class Symbol(Expr):
     dshape("5 * 3 * {x: int32, y: int32}")
     """
     _arguments = '_name', 'dshape', '_token'
-    __inputs__ = ()
+    _input_attributes = ()
 
     def __repr__(self):
         fmt = "<`{}` symbol; dshape='{}'>"
@@ -500,7 +500,7 @@ class Selection(Expr):
     >>> deadbeats = accounts[accounts.amount < 0]
     """
     _arguments = '_child', 'predicate'
-    __inputs__ = '_child', 'predicate'
+    _input_attributes = '_child', 'predicate'
 
     @property
     def _name(self):
@@ -519,7 +519,7 @@ class SimpleSelection(Selection):
     """Internal selection class that does not treat the predicate as an input.
     """
     _arguments = Selection._arguments
-    __inputs__ = '_child',
+    _input_attributes = '_child',
 
 
 @copydoc(Selection)
@@ -868,7 +868,7 @@ class Coalesce(Expr):
     True
     """
     _arguments = 'lhs', 'rhs', 'dshape'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def __str__(self):
         return 'coalesce(%s, %s)' % (self.lhs, self.rhs)

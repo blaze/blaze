@@ -484,7 +484,7 @@ class Join(Expr):
     blaze.expr.collections.Merge
     """
     _arguments = 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     @property
     def on_left(self):
@@ -700,7 +700,7 @@ class Concat(Expr):
     blaze.expr.collections.Merge
     """
     _arguments = 'lhs', 'rhs', 'axis'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def _dshape(self):
         axis = self.axis

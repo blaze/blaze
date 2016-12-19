@@ -130,7 +130,7 @@ class Node(object):
     blaze.expr.expressions.Expr
     """
     _arguments = '_child',
-    __inputs__ = '_child',
+    _input_attributes = '_child',
     __expr_instance_cache = WeakValueDictionary()
 
     def __new__(cls, *args, **kwargs):
@@ -164,7 +164,7 @@ class Node(object):
 
     @property
     def _inputs(self):
-        return tuple(getattr(self, i) for i in self.__inputs__)
+        return tuple(getattr(self, i) for i in self._input_attributes)
 
     def _leaves(self):
         """ Leaves of an expression tree
