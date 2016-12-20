@@ -1440,10 +1440,10 @@ def test_transform_where():
         abs(accounts.amount) as abs_amt,
         sin(accounts.id) as sine
     FROM accounts
-    WHERE accounts.id = :id_1
+    WHERE accounts.id = 1
     """
 
-    assert normalize(str(result)) == normalize(expected)
+    assert normalize(result) == normalize(expected)
 
 
 def test_merge():
@@ -1950,12 +1950,12 @@ def test_label_projection():
     result2 = compute(expr.one_two[expr.new_amount > 1], s, return_type='native')
 
     expected = """SELECT
-        accounts.amount * :amount_1 as one_two
+        accounts.amount * 2 as one_two
     FROM accounts
-    WHERE accounts.name = :name_1 and accounts.amount + :amount_2 > :param_1
+    WHERE accounts.name = 'Alice' and accounts.amount + 1 > 1
     """
-    assert normalize(str(result)) == normalize(expected)
-    assert normalize(str(result2)) == normalize(expected)
+    assert normalize(result) == normalize(expected)
+    assert normalize(result2) == normalize(expected)
 
 
 def test_baseball_nested_by():

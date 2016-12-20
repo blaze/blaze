@@ -50,6 +50,7 @@ except ImportError:
     DaskSeries = pd.Series
 
 from .core import compute, compute_up, base
+from .varargs import VarArgs
 from ..compatibility import _inttypes
 from ..dispatch import dispatch
 from ..expr import (
@@ -668,15 +669,53 @@ def compute_up(t, df, **kwargs):
     return t.func(df)
 
 
-@dispatch(Merge, NDFrame)
-def compute_up(t, df, scope=None, **kwargs):
-    subexpression = common_subexpression(*t.children)
-    scope = merge_dicts(scope or {}, {subexpression: df})
-    children = [
-        compute(_child, scope, return_type='native')
-        for _child in t.children
-    ]
-    return pd.concat(children, axis=1)
+def _merge(module):
+    """Helper to dispatch merge on both pandas and dask structures while
+    respecting the return type of each.
+
+    If dask structures are given, a dask structure is returned, if a pandas
+    structure is given, a pandas structure is returned.
+
+    Parameters
+    ----------
+    module : module
+        Either ``pandas`` or ``dask``.
+    """
+    @dispatch(Merge, VarArgs[module.Series, base])
+    def compute_up(expr, args, **kwargs):
+        """Optimized handler when we know the sequence doesn't contain tabular
+        elements.
+        """
+        fields = expr.fields
+        return module.DataFrame(
+            dict(zip(fields, args)),
+            # pass the columns explicitly so that the order is correct
+            columns=fields,
+        )
+
+    @dispatch(Merge, VarArgs[module.Series, module.DataFrame, base])
+    def compute_up(expr, args, **kwargs):
+        for arg in args:
+            try:
+                ix = arg.index
+            except AttributeError:
+                pass
+            else:
+                break
+
+        return module.concat(
+            [
+                pd.Series(arg, index=ix, name=e._name)
+                if isinstance(arg, base) else
+                arg
+                for e, arg in zip(expr.args, args)
+            ],
+            axis=1,
+        )
+
+_merge(pd)
+_merge(dd)
+del _merge
 
 
 @dispatch(Summary, (DataFrame, DaskDataFrame))

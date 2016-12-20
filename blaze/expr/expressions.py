@@ -10,7 +10,6 @@ from datashape import (
     DataShape,
     Record,
     Var,
-    Mono,
     Fixed,
     promote,
     Option,
@@ -20,15 +19,22 @@ from datashape.predicates import isscalar, iscollection, isboolean, isrecord
 import numpy as np
 from odo.utils import copydoc
 import toolz
-from toolz import concat, memoize, partial, first
+from toolz import concat, memoize, partial, first, unique, merge
 from toolz.curried import map, filter
 
 from ..compatibility import _strtypes, builtins, boundmethod, PY2
-from .core import Node, subs, common_subexpression, path, _setattr
+from .core import (
+    Node,
+    _setattr,
+    common_subexpression,
+    path,
+    resolve_args,
+    subs,
+)
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices, maxshape
-from ..utils import attribute
+from ..utils import attribute, as_attribute
 
 
 __all__ = [
@@ -129,7 +135,7 @@ class Expr(Node):
         if isinstance(key, _strtypes) and key in self.fields:
             return self._get_field(key)
         elif isinstance(key, Expr) and iscollection(key.dshape):
-            return selection(self, key)
+            return self._select(key)
         elif (isinstance(key, list) and
               builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
@@ -147,9 +153,6 @@ class Expr(Node):
 
     def map(self, func, schema=None, name=None):
         return Map(self, func, schema, name)
-
-    def _project(self, key):
-        return projection(self, key)
 
     @attribute
     def schema(self):
@@ -221,7 +224,7 @@ class Expr(Node):
             fields = dict(zip(map(valid_identifier, self.fields), self.fields))
 
             measure = self.dshape.measure
-            if isinstance(measure, datashape.Map): # Foreign key
+            if isinstance(measure, datashape.Map):  # Foreign key
                 measure = measure.key
 
             # prefer the method if there's a field with the same name
@@ -256,7 +259,8 @@ class Expr(Node):
                                                        measure)):
             child_measure = self._child.dshape.measure
             if isscalar(getattr(child_measure, 'key', child_measure)):
-                return self._child._name
+                # memoize the result
+                return _setattr(self, '_name', self._child._name)
 
     def __enter__(self):
         """ Enter context """
@@ -273,6 +277,17 @@ class Expr(Node):
             except AttributeError:
                 pass
         return True
+
+    # Add some placeholders to help with refactoring. If we forget to attach
+    # these methods later we will get better errors.
+    # To find the real definition, look for usage of ``@as_attribute``
+    for method in ('_project', '_select', 'cast'):
+        @attribute
+        def _(self):
+            raise AssertionError('method added after class definition')
+        locals()[method] = _
+        del _
+        del method
 
 
 def sanitized_dshape(dshape, width=50):
@@ -417,6 +432,7 @@ class Projection(ElemWise):
                                                                self.fields))
 
 
+@as_attribute(Expr, '_project')
 @copydoc(Projection)
 def projection(expr, names):
     if not names:
@@ -522,12 +538,13 @@ class SimpleSelection(Selection):
     _input_attributes = '_child',
 
 
+@as_attribute(Expr, '_select')
 @copydoc(Selection)
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
     if not builtins.all(
-            isinstance(node, (ElemWise, Symbol)) or
+            isinstance(node, (VarArgsExpr, ElemWise, Symbol)) or
             node.isidentical(subexpr)
             for node in concat([path(predicate, subexpr),
                                 path(table, subexpr)])):
@@ -820,12 +837,10 @@ class Cast(Expr):
         return 'cast(%s, to=%r)' % (self._child, str(self.to))
 
 
+@as_attribute(Expr)
 @copydoc(Cast)
 def cast(expr, to):
     return Cast(expr, dshape(to) if isinstance(to, _strtypes) else to)
-
-
-Expr.cast = cast  # method of all exprs
 
 
 def binop_name(expr):
@@ -967,3 +982,33 @@ method_properties.update([shape, ndim])
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
+
+
+class VarArgsExpr(Expr):
+    """An expression used for collecting variadic arguments into a single, typed
+    container.
+
+    Parameters
+    ----------
+    _inputs : tuple[any]
+        The arguments that this expression will compute.
+    """
+    _arguments = '_inputs',
+
+    @attribute
+    def _inputs(self):
+        raise NotImplementedError('overridden in _init')
+
+    def _dshape(self):
+        return DataShape(datashape.void)
+
+
+def varargsexpr(args):
+    """Create a varargs expr which will be materialzed as a ``VarArgs``
+    """
+    # lazy import to break cycle
+    from blaze.compute.varargs import register_varargs_arity
+    args = tuple(args)
+    register_varargs_arity(len(args))
+
+    return VarArgsExpr(args)

@@ -190,11 +190,11 @@ def test_selection_path_check():
 
 
 def test_path_issue():
-    t = symbol('t', "{topic: string, word: string, result: ?float64}")
+    t = symbol('t', "var * {topic: string, word: string, result: ?float64}")
     t2 = transform(t, sizes=t.result.map(lambda x: (x - MIN)*10/(MAX - MIN),
                                          schema='float64', name='size'))
 
-    assert builtins.any(t2.sizes.isidentical(node) for node in t2.children)
+    assert builtins.any(t2.sizes.isidentical(node) for node in t2.args)
 
 
 def test_getattr_doesnt_override_properties():
@@ -588,7 +588,8 @@ def test_symbol_printing_is_legible():
 
 def test_merge():
     t = symbol('t', 'int64')
-    p = symbol('p', 'var * {amount:int}')
+    p = symbol('p', 'var * {amount: int}')
+
     accounts = symbol('accounts',
                       'var * {name: string, balance: int32, id: int32}')
     new_amount = (accounts.balance * 1.5).label('new')
@@ -597,10 +598,13 @@ def test_merge():
     assert c.fields == ['name', 'balance', 'new']
     assert c.schema == dshape('{name: string, balance: int32, new: float64}')
 
-    with pytest.raises(ValueError):
+    d = merge(t, p)
+    assert d.fields == ['t', 'amount']
+    assert_dshape_equal(d.dshape, dshape('var * {t: int64, amount: int}'))
+
+    with pytest.raises(TypeError) as e:
         merge(t, t)
-    with pytest.raises(ValueError):
-        merge(t, p)
+    assert str(e.value) == 'cannot merge all scalar expressions'
 
 
 def test_merge_repeats():

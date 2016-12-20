@@ -6,19 +6,38 @@ from toolz import compose, identity
 from datashape.predicates import isscalar
 
 from ..expr import (
-    Expr, ElemWise, SimpleSelection, Sort, Apply, Distinct, Join, By, Label,
-    Summary, by, ReLabel, Like, Reduction, Head
+    Apply,
+    By,
+    Distinct,
+    ElemWise,
+    Expr,
+    Head,
+    Join,
+    Label,
+    Like,
+    Merge,
+    ReLabel,
+    Reduction,
+    SimpleSelection,
+    Sort,
+    Summary,
+    by,
 )
 from .python import (
-    compute, rrowfunc, rowfunc, pair_assemble, reduce_by_funcs, binops
+    binops,
+    compute,
+    pair_assemble,
+    reduce_by_funcs,
+    rowfunc,
+    rrowfunc,
 )
 from ..expr.broadcast import broadcast_collect
 from ..expr.optimize import simple_selections
 from ..compatibility import builtins, unicode
 from ..expr import reductions
 from ..dispatch import dispatch
-
 from .core import compute_up
+from .varargs import VarArgs
 
 import py4j
 from pyspark import SparkContext
@@ -47,6 +66,12 @@ def optimize(expr, seq):
 def compute_up(t, rdd, **kwargs):
     func = rowfunc(t)
     return rdd.map(func)
+
+
+@dispatch(Merge, VarArgs[RDD])
+def compute_up(expr, args, **kwargs):
+    # TODO: How is this done in spark?
+    raise NotImplementedError()
 
 
 @dispatch(SimpleSelection, RDD)

@@ -555,7 +555,7 @@ def test_foreign_key_isin(fkey):
     assert normalize(str(result)) == normalize(expected)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Not yet implemented')
+@pytest.mark.xfail(raises=ValueError, reason='Not yet implemented')
 def test_foreign_key_merge_expression(fkey):
     from blaze import merge
 
@@ -715,7 +715,7 @@ def test_sample(big_sql):
                                  slice(0, 1), slice(None, 3),
                                  slice(0, None), slice(2, None)])
 def test_str_slice(slc, sql_with_null):
-    name_series = pd.Series(['Alice', None, 'Drew', 'Bob', 'Drew', 'first', None],       
+    name_series = pd.Series(['Alice', None, 'Drew', 'Bob', 'Drew', 'first', None],
                             name='substring_1')
     t = symbol('t', discover(sql_with_null))
     result = compute(t.name.str[slc], sql_with_null, return_type=pd.Series).fillna('zzz')
@@ -775,7 +775,7 @@ def test_str_cat_bcast(sql_with_null):
     assert all(expected[~expected.isnull()] == result[~result.isnull()])
     assert all(expected[expected.isnull()].index == result[result.isnull()].index)
 
-    
+
 
 def test_str_cat_where_clause(sql_with_null):
     """
