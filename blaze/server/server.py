@@ -449,7 +449,7 @@ def to_tree(expr, names=None):
     if isinstance(expr, slice):
         # NOTE: This case must come first, since `slice` objects are not
         # hashable, so a dict lookup inside `names` will raise an execption.
-        return {u'op': 'slice',
+        return {u'op': u'slice',
                 u'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
     if names and expr in names:
@@ -544,7 +544,7 @@ def from_tree(expr, namespace=None):
     """
     if isinstance(expr, dict):
         op, args = expr[u'op'], expr[u'args']
-        if 'slice' == op:
+        if op == u'slice':
             return expr_utils._slice(*[from_tree(arg, namespace)
                                        for arg in args])
         if hasattr(blaze.expr, op):
