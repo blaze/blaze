@@ -10,13 +10,18 @@ from datashape import (
     DataShape,
     Record,
     Var,
-    Mono,
     Fixed,
     promote,
     Option,
     Null,
 )
-from datashape.predicates import isscalar, iscollection, isboolean, isrecord
+from datashape.predicates import (
+    isscalar,
+    iscollection,
+    isboolean,
+    isrecord,
+    istabular,
+)
 import numpy as np
 from odo.utils import copydoc
 import toolz
@@ -52,6 +57,7 @@ __all__ = [
     'coalesce',
     'coerce',
     'discover',
+    'drop_field',
     'label',
     'ndim',
     'projection',
@@ -949,15 +955,60 @@ def ndim(expr):
     return len(shape(expr))
 
 
+def drop_field(expr, field, *fields):
+    """Drop a field or fields from a tabular expression.
+
+    Parameters
+    ----------
+    expr : Expr
+        A tabular expression to drop columns from.
+    *fields
+       The names of the fields to drop.
+
+    Returns
+    -------
+    dropped : Expr
+       The new tabular expression with some columns missing.
+
+    Raises
+    ------
+    TypeError
+        Raised when ``expr`` is not tabular.
+    ValueError
+        Raised when a column is not in the fields of ``expr``.
+
+    See Also
+    --------
+    :func:`~blaze.expr.expression.projection`
+    """
+    to_remove = set((field,)).union(fields)
+    new_fields = []
+    for field in expr.fields:
+        if field not in to_remove:
+            new_fields.append(field)
+        else:
+            to_remove.remove(field)
+
+    if to_remove:
+        raise ValueError(
+            'fields %r were not in the fields of expr (%r)' % (
+                sorted(to_remove),
+                expr.fields
+            ),
+        )
+    return expr[new_fields]
+
+
 dshape_method_list.extend([
-    (lambda ds: True, set([apply])),
-    (iscollection, set([shape, ndim])),
-    (lambda ds: iscollection(ds) and isscalar(ds.measure), set([coerce]))
+    (lambda ds: True, {apply}),
+    (iscollection, {shape, ndim}),
+    (lambda ds: iscollection(ds) and isscalar(ds.measure), {coerce}),
+    (istabular, {drop_field}),
 ])
 
 schema_method_list.extend([
-    (isscalar, set([label, relabel, coerce])),
-    (isrecord, set([relabel])),
+    (isscalar, {label, relabel, coerce}),
+    (isrecord, {relabel}),
     (lambda ds: isinstance(ds, Option), {coalesce}),
 ])
 

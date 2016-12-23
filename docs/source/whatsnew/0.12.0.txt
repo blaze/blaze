@@ -31,7 +31,8 @@ None
 API Changes
 ~~~~~~~~~~~
 
-None
+* Adds a ``drop_field`` method to tabular expressions for taking subsets of the
+  fields of an expression while preserving order.
 
 Bug Fixes
 ~~~~~~~~~
