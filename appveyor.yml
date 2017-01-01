@@ -1,0 +1,64 @@
+skip_tags: true
+clone_depth: 50
+
+os: Visual Studio 2015
+
+environment:
+  matrix:
+    # - PY_MAJOR_VER: 2
+    #   PYTHON_ARCH: "x86_64"
+    - PY_MAJOR_VER: 3
+      PYTHON_ARCH: "x86_64"
+
+platform:
+    - x64
+
+services:
+  # - mssql2014 # No tests for mssql written yet
+  # - mysql # odo and mysql don't play well on win32
+  - postgresql93
+  - mongodb
+
+build_script:
+  - ps: Start-FileDownload "https://repo.continuum.io/miniconda/Miniconda$env:PY_MAJOR_VER-latest-Windows-$env:PYTHON_ARCH.exe" C:\Miniconda.exe; echo "Finished downloading miniconda"
+  - cmd: C:\Miniconda.exe /S /D=C:\Py
+  - SET PATH=C:\Py;C:\Py\Scripts;C:\Py\Library\bin;%PATH%
+  - conda config --set always_yes yes
+  - conda update conda --quiet
+  - conda create -n blaze python=3.5 numpy=1.11.2 numba=0.29.0 h5py=2.6.0
+  - activate blaze
+  - conda update setuptools pip
+
+  # sqlite
+  - ps: Start-FileDownload "https://sqlite.org/2016/sqlite-tools-win32-x86-3150200.zip" C:\sqlite.zip; echo "Finished downloading sqlite3"
+  - 7z e C:\sqlite.zip
+
+  # mongodb
+  - SET PATH=C:\mongodb\bin;%PATH%
+  - ps: 'mongo admin --eval "db.runCommand({setParameter: 1, textSearchEnabled: true});"'
+
+  #  MySql
+  # odo and mysql don't play nicely on win32
+  # - SET PATH=C:\Program Files\MySql\MySQL Server 5.7\bin\;%PATH%
+  # - mysql -u root -p"Password12!" -e "CREATE DATABASE IF NOT EXISTS test;"
+  # - mysql -u root -p"Password12!" -e "CREATE USER 'appveyor'@'localhost';"
+  # - mysql -u root -p"Password12!" -e "GRANT ALL PRIVILEGES ON *.* TO 'appveyor'@'localhost';"
+
+  # Postgresql
+  - SET PGUSER=postgres
+  - SET PGPASSWORD=Password12!
+  - SET PATH=C:\Program Files\PostgreSQL\9.3\bin\;%PATH%
+  - createdb test
+
+  # install the frozen ci dependencies
+  - pip install -e .[ci]
+
+  # blaze required deps
+  - pip install git+https://github.com/blaze/datashape
+  - pip install git+https://github.com/blaze/odo
+
+  - python setup.py develop
+
+test_script:
+  - conda list
+  - py.test blaze

@@ -3,9 +3,15 @@ from __future__ import absolute_import, print_function, division
 from getpass import getuser
 
 import pytest
+import sys
 
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('pymysql')
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == 'win32',
+    reason='odo and mysql don\'t play nicely on win32'
+)
 
 from odo import odo, drop, discover
 
