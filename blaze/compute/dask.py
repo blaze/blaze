@@ -39,7 +39,8 @@ try:
         func = get_numba_ufunc(expr)
         return atop(func,
                     expr_inds,
-                    *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data))
+                    *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data),
+                    dtype=data[-1].dtype)
 
     def optimize_array(expr, *data):
         return broadcast_collect(
