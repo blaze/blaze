@@ -92,7 +92,7 @@ def test_ragged_blockdims():
            ('x', 1, 0): np.ones((5, 2)),
            ('x', 1, 1): np.ones((5, 3))}
 
-    a = Array(dsk, 'x', chunks=[(2, 5), (2, 3)], shape=(7, 5))
+    a = Array(dsk, 'x', chunks=[(2, 5), (2, 3)], shape=(7, 5), dtype=int)
     s = symbol('s', '7 * 5 * int')
 
     assert compute(s.sum(axis=0), a).chunks == ((2, 3),)
