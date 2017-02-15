@@ -24,8 +24,6 @@ def json_dumps(dt):
         s = dt.isoformat()
         if isinstance(s, bytes):
             s = s.decode('utf-8')
-        if not dt.tzname():
-            s += u'Z'
 
     return {u'__!datetime': s}
 

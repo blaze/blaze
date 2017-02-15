@@ -17,6 +17,8 @@ from blaze.server.serialization import (json_dumps, json_dumps_trusted,
 @pytest.mark.parametrize('input_,serialized', (
     ([1, datetime(2000, 1, 1, 12, 30, 0, 0, utc)],
      '[1, {"__!datetime": "2000-01-01T12:30:00+00:00"}]'),
+    ([1, datetime(2000, 1, 1, 12, 30, 0, 0)],
+     '[1, {"__!datetime": "2000-01-01T12:30:00"}]'),
     ([1, pd.NaT], '[1, {"__!datetime": "NaT"}]'),
     ([1, frozenset([1, 2, 3])], '[1, {"__!frozenset": [1, 2, 3]}]'),
     ([1, timedelta(seconds=5)], '[1, {"__!timedelta": 5.0}]'),
