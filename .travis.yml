@@ -66,7 +66,9 @@ install:
 
   # Install Blaze
   - pip install -e .[ci]
-
+  
+  - pip install -e .[dev] -c etc/requirements_ci.txt
+  
 before_script:
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
   - psql -c "create database test;" -U postgres
