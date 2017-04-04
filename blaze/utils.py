@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import datetime
 from collections import Iterator
 from itertools import islice, product
+import functools
 import os
 import re
 
@@ -10,6 +11,11 @@ try:
     from cytoolz import nth, unique, concat
 except ImportError:
     from toolz import nth, unique, concat
+
+try:
+    from cPickle import dumps, PicklingError, HIGHEST_PROTOCOL
+except ImportError:
+    from pickle import dumps, PicklingError, HIGHEST_PROTOCOL
 
 import numpy as np
 # these are used throughout blaze, don't remove them
@@ -266,3 +272,27 @@ def parameter_space(*args):
     return tuple(product(*(
         arg if isinstance(arg, tuple) else (arg,) for arg in args
     )))
+
+
+def memoize_obj_mapping(fn):
+    """Memoize fn with the argument types (object, Mapping). The arguments
+       may be mutable.
+    """
+    memo = {}
+    @functools.wraps(fn)
+    def inner(o, d):
+        key = (o, tuple(d.items()))
+        try:
+            hash(key)
+        except TypeError:
+            try:
+                key = dumps((o, d), HIGHEST_PROTOCOL)
+            except (TypeError, AttributeError, PicklingError):
+                key = None
+        if key is None:
+            return fn(o, d)
+        else:
+            if not key in memo:
+                memo[key] = fn(o, d)
+            return memo[key]
+    return inner

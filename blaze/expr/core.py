@@ -15,7 +15,7 @@ from toolz import unique, concat, first
 
 from ..compatibility import _strtypes
 from ..dispatch import dispatch
-from ..utils import ordered_intersect
+from ..utils import ordered_intersect, memoize_obj_mapping
 
 __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 
@@ -404,6 +404,7 @@ def subterms(x):
     yield x
 
 
+@memoize_obj_mapping
 def subs(o, d):
     """ Substitute values within data structure
 
