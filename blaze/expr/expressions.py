@@ -857,19 +857,24 @@ def binop_inputs(expr):
 class Coalesce(Expr):
     """SQL like coalesce.
 
-    coalesce(a, b) = {
-        a if a is not NULL
-        b otherwise
-    }
+    .. code-block python
+
+        coalesce(a, b) = {
+            a if a is not NULL
+            b otherwise
+        }
 
     Examples
     --------
     >>> coalesce(1, 2)
     1
+
     >>> coalesce(1, None)
     1
+
     >>> coalesce(None, 2)
     2
+
     >>> coalesce(None, None) is None
     True
     """
@@ -979,7 +984,7 @@ def drop_field(expr, field, *fields):
 
     See Also
     --------
-    :func:`~blaze.expr.expression.projection`
+    :func:`blaze.expr.expressions.projection`
     """
     to_remove = set((field,)).union(fields)
     new_fields = []
