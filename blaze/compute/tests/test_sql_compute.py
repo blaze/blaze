@@ -5,12 +5,14 @@ import pytest
 sa = pytest.importorskip('sqlalchemy')
 
 import itertools
+import random
 import sqlite3
 from distutils.version import LooseVersion
 
 
 import datashape
 from odo import into, discover
+import blaze as bz
 import numpy as np
 import pandas as pd
 import pandas.util.testing as tm
@@ -132,6 +134,26 @@ sbig = sa.Table('accountsbig', metadata,
                 sa.Column('id', sa.Integer, primary_key=True))
 
 
+sa_float_meta = sa.MetaData(sa.create_engine('sqlite:///:memory:'))
+
+sa_float = sa.Table('float_table', sa_float_meta,
+                    sa.Column('a', sa.Float([4.0, 4.0, 4.0, 29.0])),
+                    sa.Column('b', sa.Float([782.0, 300.0, 200.0, 762.0])),
+                    sa.Column('c', sa.Float([144.0, 10.0, 1000.0, 224.0])),
+                    sa.Column('d', sa.Float([767.0, 20.0, 2000.0, 88.0])))
+
+sa_float.create()
+
+sa_float2 = sa.Table('float_table2', sa_float_meta,
+                     sa.Column('a', sa.Float([1.0, 1.0, 1.0, 19.0])),
+                     sa.Column('b', sa.Float([82.0, 30.0, 20.0, 7.0])),
+                     sa.Column('c', sa.Float([4.0, 1.0, 10.0, 2.0])),
+                     sa.Column('d', sa.Float([7.0, 2.0, 20.0, 888.0])))
+
+sa_float2.create()
+
+
+
 def test_table():
     result = str(computefull(t, s))
     expected = """
@@ -217,6 +239,26 @@ def test_join():
     # test sort on join
 
     result = compute(joined.sort('amount'), {L: lhs, R: rhs}, return_type='native')
+    assert normalize(str(result)) == normalize("""
+     select
+        anon_1.name,
+        anon_1.amount,
+        anon_1.id
+    from (select
+              amounts.name as name,
+              amounts.amount as amount,
+              ids.id as id
+          from
+              amounts
+          join
+              ids
+          on
+              amounts.name = ids.name) as anon_1
+    order by
+        anon_1.amount asc""")
+
+    # test sort_values on join
+    result = compute(joined.sort_values('amount'), {L: lhs, R: rhs}, return_type='native')
     assert normalize(str(result)) == normalize("""
      select
         anon_1.name,
@@ -2239,3 +2281,163 @@ def test_all():
         from s
         """,
     )
+
+
+def test_sort_values_invalid():
+    s = sa_float
+    data = bz.data(sa_float)
+    data2 = bz.data(sa_float2)
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values({'a': 'b'}))
+
+    with pytest.raises(TypeError):
+        compute(bz.sort_values(bz.asc(data), data))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values('a', data))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values(data, data))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values(data, 'a', 'b', 'a'))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values(data, 'a', 'b', bz.desc('a')))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values(data, 'a', 'b', bz.desc('z')))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values(data, bz.asc('a'), bz.desc('a')))
+
+    with pytest.raises(TypeError):
+        compute(bz.sort_values(data, data.asc('a'), data2.asc('b')))
+
+    with pytest.raises(ValueError):
+        compute(bz.sort_values(data.a, data2.a))
+
+    with pytest.raises(ValueError):
+        compute(data2.sort_values(data.a))
+
+    with pytest.raises(TypeError):
+        compute(data.a.sort_values(data2.asc('z')))
+
+    with pytest.raises(ValueError):
+        compute(data.a.sort_values(bz.asc('z')))
+
+def test_sort_values():
+    s = sa_float
+    data = bz.data(sa_float)
+
+    x = str(compute(bz.sort_values(data), return_type='native'))
+    y = str(select(s).order_by(sa.asc(s.c.a), sa.asc(s.c.b), sa.asc(s.c.c), sa.asc(s.c.d)))
+    assert x == y
+
+    x = str(compute(bz.sort_values(data, data.a.asc()), return_type='native'))
+    y = str(select(s).order_by(sa.asc(s.c.a)))
+    assert x == y
+
+    x = str(compute(bz.sort_values(data.c), return_type='native'))
+    y = str(select(s.c.c).order_by(sa.asc(s.c.c)))
+    assert x == y
+
+    x = str(compute(bz.sort_values(data, bz.desc(data.b)), return_type='native'))
+    y = str(select(s).order_by(sa.desc(s.c.b)))
+    assert x == y
+
+    for n in range(1, 5):
+        for keys in itertools.permutations(['a', 'b', 'c', 'd'], n):
+            x = str(compute(bz.sort_values(data, *keys), return_type='native'))
+            order = [sa.asc(getattr(s.c, col)) for col in keys]
+            y = str(select(s).order_by(*order))
+            assert x == y
+
+            xkeys = []
+            ykeys = []
+            for k in keys:
+                b = random.choice([True, False])
+                xkeys.append(bz.asc(k) if b else bz.desc(k))
+                ykeys.append(sa.asc(getattr(s.c, k)) if b else sa.desc(getattr(s.c, k)))
+
+            x = str(compute(bz.sort_values(data, *xkeys), return_type='native'))
+            y = str(select(s).order_by(*ykeys))
+            assert x == y
+
+
+def test_sort_values_compat():
+    ### test_sort
+    assert str(compute(t.sort_values('amount'), s, return_type='native')) == \
+        str(select(s).order_by(sa.asc(s.c.amount)))
+
+    assert str(compute(t.sort_values(bz.desc('amount')), s, return_type='native')) == \
+        str(select(s).order_by(sa.desc(s.c.amount)))
+
+    ### test_multicolumn_sort
+    assert str(compute(t.sort_values('amount', 'id'), s, return_type='native')) == \
+        str(select(s).order_by(sa.asc(s.c.amount), sa.asc(s.c.id)))
+
+    assert str(compute(t.sort_values(bz.desc('amount'), bz.desc('id')), s, return_type='native')) == \
+        str(select(s).order_by(sa.desc(s.c.amount), sa.desc(s.c.id)))
+
+    ### test_sort_on_distinct
+    assert normalize(str(compute(t.amount.sort_values(), s, return_type='native'))) == normalize("""
+            SELECT accounts.amount
+            FROM accounts
+            ORDER BY accounts.amount ASC""")
+
+    assert normalize(str(compute(t.amount.distinct().sort_values(), s, return_type='native'))) == normalize("""
+          SELECT DISTINCT accounts.amount as amount
+          FROM accounts
+          ORDER BY amount ASC""")
+
+    ### test_sort_compose
+    expr = t.name[:5].sort_values()
+    result = compute(expr, s, return_type='native')
+    expected = """select
+           anon_1.name
+       from (select
+                 accounts.name as name
+             from
+                 accounts
+             limit :param_1
+             offset :param_2) as anon_1
+       order by
+           anon_1.name asc"""
+    assert normalize(str(result)) == normalize(expected)
+    assert (normalize(str(compute(t.sort_values('name').name[:5], s, return_type='native'))) !=
+            normalize(expected))
+
+    ### test_tail_of_sort
+    expected = normalize(str(compute(
+        t.sort_values(bz.desc('id')).head(5).sort_values('id'),
+        {t: s}, return_type='native'
+    )))
+    result = normalize(str(compute(t.sort_values('id').tail(5), {t: s}, return_type='native')))
+    assert expected == result
+
+    expected = normalize(str(compute(
+        t.sort_values(bz.desc('id')).head(5).sort('id').name,
+        {t: s}, return_type='native'
+    )))
+    result = normalize(str(compute(t.name.sort_values('id').tail(5), {t: s}, return_type='native')))
+    assert expected == result
+
+    ### test_against_sort
+    data = bz.data(sa_float)
+
+    x = str(compute(data.head(3).tail(2).sort_values('c', 'd', 'a').tail(2).sort_values().tail(1), return_type='native'))
+    y = str(compute(data.head(3).tail(2).sort(['c', 'd', 'a']).tail(2).sort().tail(1), return_type='native'))
+    assert x == y
+
+    x = str(compute(data.b.head(3).tail(2).sort_values('b').tail(2), return_type='native'))
+    y = str(compute(data.b.head(3).tail(2).sort('b').tail(2), return_type='native'))
+    assert x == y
+
+    x = str(compute(data.c.tail(3).tail(2).sort_values().tail(2), return_type='native'))
+    y = str(compute(data.c.tail(3).tail(2).sort().tail(2), return_type='native'))
+    assert x == y
+
+    y = str(compute(data.c.tail(3).tail(2).sort().tail(2), return_type='native'))
+    assert x == y

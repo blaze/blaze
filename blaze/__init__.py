@@ -19,6 +19,7 @@ from .utils import ignoring
 import warnings
 from .expr import (
     Symbol,
+    asc,
     broadcast_collect,
     by,
     cast,
@@ -28,6 +29,7 @@ from .expr import (
     date,
     datetime,
     day,
+    desc,
     distinct,
     distinct,
     drop_field,
@@ -49,6 +51,7 @@ from .expr import (
     selection,
     shape,
     sort,
+    sort_values,
     summary,
     symbol,
     time,

@@ -74,6 +74,7 @@ from ..expr import (
     Shift,
     Slice,
     Sort,
+    SortValues,
     Sub,
     Summary,
     Tail,
@@ -953,6 +954,38 @@ def compute_up(expr, data, **kwargs):
                               group_by=grouper)
 
 
+def _sqlalchemy_sort_keys(t, column_collection):
+    cols = []
+    for k in listpack(t.keys):
+        direction = sa.asc if k.ascending else sa.desc
+        cols.append(direction(lower_column(column_collection[k.field])))
+    return cols
+
+
+@dispatch(SortValues, (Selectable, Select))
+def compute_up(t, s, **kwargs):
+    s = select(s.alias())
+    cols = _sqlalchemy_sort_keys(t, s.c)
+    return s.order_by(*cols)
+
+
+@dispatch(SortValues, sa.Table)
+def compute_up(t, s, **kwargs):
+    s = select(s)
+    cols = _sqlalchemy_sort_keys(t, s.c)
+    return s.order_by(*cols)
+
+
+@dispatch(SortValues, ColumnElement)
+def compute_up(t, s, **kwargs):
+    if hasattr(s, 'table'):
+        col_collect = s.table.c
+    else: # label or comparator objects
+        col_collect = select(s).c
+    cols = _sqlalchemy_sort_keys(t, col_collect)
+    return select(s).order_by(*cols)
+
+
 @dispatch(Sort, (Selectable, Select))
 def compute_up(t, s, **kwargs):
     s = select(s.alias())
@@ -1401,7 +1434,7 @@ def _subexpr_optimize(expr):
 @dispatch(Tail)
 def _subexpr_optimize(expr):
     child = sorter = expr._child
-    while not isinstance(sorter, Sort):
+    while not isinstance(sorter, (Sort, SortValues)):
         try:
             sorter = sorter._child
         except AttributeError:
@@ -1409,12 +1442,25 @@ def _subexpr_optimize(expr):
     else:
         # Invert the sort order, then take the head, then re-sort based on
         # the original key.
-        return child._subs({
-            sorter: sorter._child.sort(
-                sorter._key,
-                ascending=not sorter.ascending,
-            ),
-        }).head(expr.n).sort(sorter._key, ascending=sorter.ascending)
+        if isinstance(sorter, Sort):
+            return child._subs({
+                sorter: sorter._child.sort(
+                    sorter._key,
+                    ascending=not sorter.ascending,
+                ),
+            }).head(expr.n).sort(sorter._key, ascending=sorter.ascending)
+        else:
+            table, field = sorter._child, None
+            if isinstance(sorter._child, Field):
+                table, field = sorter._child._child, sorter._child._name
+
+            ret = child._subs({
+                    sorter: table.sort_values(
+                        *[k.invert() for k in sorter.keys]
+                    ),
+                  }).head(expr.n).sort_values(*[k.copy() for k in sorter.keys])
+
+            return ret[field] if field else ret
 
     # If there is no sort order, then we can swap out a head with a tail.
     # This is equivalent in this backend and considerably faster.
