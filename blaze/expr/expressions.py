@@ -857,7 +857,7 @@ def binop_inputs(expr):
 class Coalesce(Expr):
     """SQL like coalesce.
 
-    Behavior::
+    .. code-block:: python::
 
         coalesce(a, b) = {
             a if a is not NULL
