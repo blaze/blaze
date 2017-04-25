@@ -20,6 +20,7 @@ from ..utils import keywords
 
 from .core import base, compute
 from .pandas import array_coalesce
+from .varargs import register_varargs_arity
 from ..dispatch import dispatch
 from odo import into
 import pandas as pd
@@ -331,7 +332,7 @@ def compute_up(expr, x, **kwargs):
 
 @dispatch(Cast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    # resolve ambiguity
+    # resolve ambiguity with [Expr, np.array]
     return x
 
 
@@ -342,6 +343,10 @@ def compute_up(t, x, **kwargs):
         return compute_up(t, into(DataFrame, x, dshape=ds), **kwargs)
     else:
         return compute_up(t, into(Series, x, dshape=ds), **kwargs)
+
+
+# resolve the ambiguous overload here with [Expr, np.ndarray]
+register_varargs_arity(1, type_=np.ndarray)
 
 
 @dispatch(nelements, np.ndarray)

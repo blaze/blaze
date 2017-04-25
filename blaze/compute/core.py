@@ -6,11 +6,11 @@ import itertools
 import numbers
 import warnings
 
+from odo import odo
+import pandas as pd
 import toolz
 from toolz import first, unique, assoc
 from toolz.utils import no_default
-import pandas as pd
-from odo import odo
 
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join, Cast

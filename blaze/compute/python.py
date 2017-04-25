@@ -19,22 +19,24 @@ import operator
 import datetime
 import math
 import random
+from uuid import uuid4
 
 from collections import Iterator
 from functools import partial
 
-from datashape import Option, to_numpy_dtype
+from datashape import Option, to_numpy_dtype, discover
+from datashape.predicates import isscalar, iscollection, istabular
 import numpy as np
 import pandas as pd
+from odo import odo
 import toolz
-from toolz import map, filter, compose, juxt, identity, tail
+from toolz import map, filter, compose, identity, tail, flip, second
 
 try:
     from cytoolz import groupby, reduceby, unique, take, concat, nth, pluck
 except ImportError:
     from toolz import groupby, reduceby, unique, take, concat, nth, pluck
 
-from datashape.predicates import isscalar, iscollection
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
@@ -54,6 +56,7 @@ from ..utils import listpack
 from ..expr.broadcast import broadcast_collect
 from .pyfunc import lambdify, funcstr
 from . import pydatetime
+from .varargs import VarArgs
 
 # Dump exp, log, sin, ... into namespace
 from math import (
@@ -314,13 +317,6 @@ def deepmap(func, *data, **kwargs):
         return map(compose(tuple, partial(deepmap, func, n=n - 1)), *data)
 
 
-@dispatch(Merge)
-def rowfunc(t):
-    children = [optimize(child, []) for child in t.children]
-    funcs = [rrowfunc(_child, t._child) for _child in children]
-    return compose(concat_maybe_tuples, juxt(*funcs))
-
-
 @dispatch(ElemWise, Sequence)
 def compute_up(t, seq, **kwargs):
     func = rowfunc(t)
@@ -328,6 +324,26 @@ def compute_up(t, seq, **kwargs):
         return deepmap(func, seq, n=ndim(child(t)))
     else:
         return func(seq)
+
+
+def _pd_from_dshape(x, dshape):
+    if istabular(dshape) or len(dshape.shape) > 1:
+        return pd.DataFrame(list(x))
+    # We name the series something random so that it doesn't clash in the
+    # pd.concat call. Users will never see this name.
+    return pd.Series(list(x), name=uuid4().hex)
+
+
+@dispatch(Merge, VarArgs[Sequence])
+def compute_up(expr, args, **kwargs):
+    return odo(
+        compute_up(
+            expr,
+            VarArgs(map(_pd_from_dshape, args, map(discover, expr.args))),
+            **kwargs
+        ),
+        list,
+    )
 
 
 @dispatch(Broadcast, Sequence)

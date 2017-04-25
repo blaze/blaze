@@ -1,5 +1,6 @@
 from blaze.expr import Expr, symbol, Cast
 from blaze.compute import compute_up
+from blaze.compute.varargs import register_varargs_arity
 from blaze import compute
 
 
@@ -7,10 +8,12 @@ class Foo(object):
     def __init__(self, data):
         self.data = data
 
-
 @compute_up.register((Expr, Cast), Foo)
 def compute_up(expr, data, **kwargs):
     return data
+
+# We need to resolve this ambiguity for test_no_dispatch_ambiguities
+register_varargs_arity(1, Foo)
 
 
 def optimize(expr, data):

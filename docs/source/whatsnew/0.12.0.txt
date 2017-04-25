@@ -11,7 +11,9 @@ None
 Improved Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
-None
+* Adds support for variadic expressions of known
+  types. :func:`~blaze.expr.expressions.merge` is now implemented as a variadic
+  expression (:issue:`1611`).
 
 New Backends
 ~~~~~~~~~~~~

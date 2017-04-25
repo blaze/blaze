@@ -43,6 +43,7 @@ from toolz.compatibility import zip
 from toolz.curried import map
 
 from .core import compute_up, compute, base
+from .varargs import VarArgs
 from ..compatibility import reduce, basestring, _inttypes
 from ..dispatch import dispatch
 from ..expr import (
@@ -103,11 +104,82 @@ from ..utils import listpack
 __all__ = ['sa', 'select']
 
 
-def inner_columns(s):
+def unsafe_inner_columns(s):
+    """Return the inner columns of a selectable if present, otherwise return
+    the columns.
+
+    columns.
+
+    Parameters
+    ----------
+    s : Selectable
+        The selectable to extract the columns from.
+
+    Returns
+    -------
+    inner_columns : iterable[ColumnClause]
+        The inner columns if present, otherwise the columns.
+
+    Notes
+    -----
+    This function is unsafe because it can drop important clauses from a column
+    expression. The use of this function has caused countless hours of
+    debugging and sadness. Please think very carefully about how this will
+    interact with selects with where or order by clauses. If you are unsure,
+    generate worse sql that works in all cases.
+
+    See Also
+    --------
+    inner_columns
+    """
     try:
         return s.inner_columns
     except AttributeError:
         return s.columns
+
+
+_preserved_attributes = frozenset({
+    '_from_obj',
+    '_whereclause',
+    '_distinct',
+    '_group_by_clause',
+    '_having',
+    '_limit',
+    '_offset',
+    '_order_by_clause',
+})
+
+
+def inner_columns(s):
+    """Return the inner columns if it is safe to do so, otherwise return the
+    columns.
+
+    Parameters
+    ----------
+    s : Selectable
+        The selectable to extract the columns from.
+
+    Returns
+    -------
+    inner_columns : iterable[ColumnClause]
+        The inner columns if it was safe to use them, otherwise the columns.
+
+    Notes
+    -----
+    This function can lead to unneeded extra joins when merging columns
+    together. You may want to look into
+    :func:`~blaze.compute.sql.reconstruct_select` or
+    :func:`~blaze.compute.sql.unify_wheres` to make sure you are merging
+    columns correctly.
+
+    See Also
+    --------
+    unsafe_inner_columns
+    """
+    for attr in _preserved_attributes:
+        if hasattr(s, attr):
+            return s.columns
+    return unsafe_inner_columns(s)
 
 
 @dispatch(Projection, Select)
@@ -204,7 +276,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Select)
 def compute_up(t, s, **kwargs):
-    cols = list(inner_columns(s))
+    cols = list(unsafe_inner_columns(s))
     d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
     result = compute(
@@ -221,7 +293,7 @@ def compute_up(t, s, **kwargs):
 
 @dispatch(Broadcast, Selectable)
 def compute_up(t, s, **kwargs):
-    cols = list(inner_columns(s))
+    cols = list(unsafe_inner_columns(s))
     d = dict((t._scalars[0][c], cols[i])
              for i, c in enumerate(t._scalars[0].fields))
     return compute(
@@ -268,7 +340,7 @@ def _binop(type_, f):
             'Select cannot have more than a single column when doing'
             ' arithmetic'
         )
-        column = first(data.inner_columns)
+        column = first(unsafe_inner_columns(data))
         if isinstance(t.lhs, Expr):
             return f(t, column, t.rhs)
         else:
@@ -286,13 +358,13 @@ def _binop(type_, f):
                 'Select cannot have more than a single column when doing'
                 ' arithmetic, got %r' % lhs
             )
-            lhs = first(lhs.inner_columns)
+            lhs = first(unsafe_inner_columns(lhs))
         if isinstance(rhs, Select):
             assert len(rhs.c) == 1, (
                 'Select cannot have more than a single column when doing'
                 ' arithmetic, got %r' % rhs
             )
-            rhs = first(rhs.inner_columns)
+            rhs = first(unsafe_inner_columns(rhs))
 
         return f(t, lhs, rhs)
 
@@ -462,9 +534,9 @@ def compute_up(expr, tbl, predicate, scope=None, **kwargs):
 
 @dispatch(Selection, Selectable, Selectable)
 def compute_up(expr, tbl, predicate, **kwargs):
-    col, = inner_columns(predicate)
+    col, = unsafe_inner_columns(predicate)
     return reconstruct_select(
-        inner_columns(tbl),
+        unsafe_inner_columns(tbl),
         tbl,
         whereclause=unify_wheres((tbl, predicate)),
     ).where(col)
@@ -552,14 +624,14 @@ def compute_up(t, lhs, rhs, **kwargs):
         lhs = lhs.alias(next(aliases))
         left_conds = [lhs.c.get(c) for c in listpack(t.on_left)]
     else:
-        ldict = dict((c.name, c) for c in inner_columns(lhs))
+        ldict = dict((c.name, c) for c in unsafe_inner_columns(lhs))
         left_conds = [ldict.get(c) for c in listpack(t.on_left)]
 
     if isinstance(rhs, Select):
         rhs = rhs.alias(next(aliases))
         right_conds = [rhs.c.get(c) for c in listpack(t.on_right)]
     else:
-        rdict = dict((c.name, c) for c in inner_columns(rhs))
+        rdict = dict((c.name, c) for c in unsafe_inner_columns(rhs))
         right_conds = [rdict.get(c) for c in listpack(t.on_right)]
 
     condition = reduce(and_, map(eq, left_conds, right_conds))
@@ -651,7 +723,7 @@ def compute_up(expr, data, **kwargs):
     if expr.axis != (0,):
         raise ValueError('axis not equal to 0 not defined for SQL reductions')
     data = data.alias(name=next(aliases))
-    cols = list(inner_columns(data))
+    cols = list(unsafe_inner_columns(data))
     d = dict((expr._child[c], cols[i])
              for i, c in enumerate(expr._child.fields))
     return select([
@@ -748,7 +820,7 @@ def compute_up(t, s, **kwargs):
 
     result = sa.func.count(col)
 
-    return select([list(inner_columns(result))[0].label(t._name)])
+    return select([list(unsafe_inner_columns(result))[0].label(t._name)])
 
 
 @dispatch(nunique, (sa.sql.elements.Label, sa.Column))
@@ -806,7 +878,7 @@ def compute_up(expr, data, **kwargs):
                         "got %s of type %r with dshape %s" %
                         (expr.grouper, type(expr.grouper).__name__,
                          expr.grouper.dshape))
-    grouper = get_inner_columns(
+    grouper = get_unsafe_inner_columns(
         compute(
             expr.grouper,
             data,
@@ -929,14 +1001,14 @@ def compute_up(expr, data, **kwargs):
     else:
         raise TypeError('apply must be a Summary expression')
 
-    grouper = get_inner_columns(compute(
+    grouper = get_unsafe_inner_columns(compute(
         expr.grouper,
         s,
         post_compute=False,
         return_type='native',
     ))
     reduction_columns = pipe(reduction.inner_columns,
-                             map(get_inner_columns),
+                             map(get_unsafe_inner_columns),
                              concat)
     columns = list(unique(chain(grouper, reduction_columns)))
     if (not isinstance(s, sa.sql.selectable.Alias) or
@@ -1048,7 +1120,7 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(FromClause)
-def get_inner_columns(sel):
+def get_unsafe_inner_columns(sel):
     try:
         return list(sel.inner_columns)
     except AttributeError:
@@ -1056,26 +1128,26 @@ def get_inner_columns(sel):
 
 
 @dispatch(ColumnElement)
-def get_inner_columns(c):
+def get_unsafe_inner_columns(c):
     return [c]
 
 
 @dispatch(ScalarSelect)
-def get_inner_columns(sel):
+def get_unsafe_inner_columns(sel):
     inner_columns = list(sel.inner_columns)
     assert len(inner_columns) == 1, 'ScalarSelect should have only ONE column'
     return list(map(lower_column, inner_columns))
 
 
 @dispatch(sa.sql.functions.Function)
-def get_inner_columns(f):
-    unique_columns = unique(concat(map(get_inner_columns, f.clauses)))
+def get_unsafe_inner_columns(f):
+    unique_columns = unique(concat(map(get_unsafe_inner_columns, f.clauses)))
     lowered = [x.label(getattr(x, 'name', None)) for x in unique_columns]
     return [getattr(sa.func, f.name)(*lowered)]
 
 
 @dispatch(sa.sql.elements.Label)
-def get_inner_columns(label):
+def get_unsafe_inner_columns(label):
     """
     Notes
     -----
@@ -1084,9 +1156,19 @@ def get_inner_columns(label):
     This is because we need to turn ScalarSelects into an actual column
     """
     name = label.name
-    inner_columns = get_inner_columns(label.element)
+    inner_columns = get_unsafe_inner_columns(label.element)
     assert len(inner_columns) == 1
     return [lower_column(c).label(name) for c in inner_columns]
+
+
+@dispatch(base, Expr)
+def get_unsafe_inner_columns(b, expr):
+    return [sa.literal(b, dshape_to_alchemy(expr.dshape)).label(expr._name)]
+
+
+@dispatch(object, Expr)
+def get_unsafe_inner_columns(ob, expr):
+    return get_unsafe_inner_columns(ob)
 
 
 @dispatch(Select)
@@ -1118,6 +1200,10 @@ def get_all_froms(function):
 def get_all_froms(c):
     return [c.table]
 
+@dispatch(base)
+def get_all_froms(b):
+    return []
+
 
 def get_clause(data, kind):
     # arg SQLAlchemy doesn't allow things like data._group_by_clause or None
@@ -1127,34 +1213,24 @@ def get_clause(data, kind):
     return clause.clauses if clause is not None else None
 
 
-@dispatch(Merge, (Selectable, Select, sa.Column))
-def compute_up(expr, data, **kwargs):
-    # get the common subexpression of all the children in the merge
-    subexpression = common_subexpression(*expr.children)
+@dispatch(Merge, VarArgs[sa.sql.ClauseElement, base])
+def compute_up(expr, args, **kwargs):
+    from_objs = list(unique(concat(map(get_all_froms, args))))
+    if len(from_objs) > 1:
+        # TODO: how do you do this in sql? please send help
+        raise ValueError('only columns from the same table can be merged')
 
-    # compute each child, including the common subexpression
-    children = [
-        compute(
-            child,
-            {subexpression: data},
-            post_compute=False,
-            return_type='native',
-        )
-        for child in expr.children
-    ]
-
-    # Get the original columns from the selection and rip out columns from
-    # Selectables and ScalarSelects
-    columns = list(unique(concat(map(get_inner_columns, children))))
-
-    # we need these getattrs if data is a ColumnClause or Table
-    from_obj = get_all_froms(data)
-    return reconstruct_select(columns, data, from_obj=from_obj)
+    cols = list(unique(concat(map(get_unsafe_inner_columns, args, expr.args))))
+    sel = sa.select(cols, from_obj=from_objs[0])
+    where = unify_wheres(args)
+    if where is not None:
+        sel = sel.where(where)
+    return sel
 
 
 @dispatch(Summary, Select)
 def compute_up(t, s, scope=None, **kwargs):
-    d = dict((t._child[c], list(inner_columns(s))[i])
+    d = dict((t._child[c], list(unsafe_inner_columns(s))[i])
              for i, c in enumerate(t._child.fields))
 
     cols = [
@@ -1454,7 +1530,7 @@ def compute_up(expr, data, **kwargs):
     assert len(data.columns) == 1, (
         'only 1 column is allowed in a Select in IsIn'
     )
-    col, = inner_columns(data)
+    col, = unsafe_inner_columns(data)
     return reconstruct_select((col.in_(expr._keys),), data)
 
 

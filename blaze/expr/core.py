@@ -23,7 +23,7 @@ __all__ = ['Node', 'path', 'common_subexpression', 'eval_str']
 base = (numbers.Number,) + _strtypes + (datetime.datetime, datetime.timedelta)
 
 
-def _resolve_args(cls, *args, **kwargs):
+def resolve_args(cls, *args, **kwargs):
     """Resolve the arguments from a node class into an ordereddict.
     All arguments are assumed to have a default of None.
 
@@ -49,23 +49,23 @@ def _resolve_args(cls, *args, **kwargs):
     ...
 
     good cases
-    >>> _resolve_args(MyNode, 1, 2, 3)
+    >>> resolve_args(MyNode, 1, 2, 3)
     OrderedDict([('a', 1), ('b', 2), ('c', 3)])
-    >>> _resolve_args(MyNode, 1, 2, c=3)
+    >>> resolve_args(MyNode, 1, 2, c=3)
     OrderedDict([('a', 1), ('b', 2), ('c', 3)])
-    >>> _resolve_args(MyNode, a=1, b=2, c=3)
+    >>> resolve_args(MyNode, a=1, b=2, c=3)
     OrderedDict([('a', 1), ('b', 2), ('c', 3)])
 
     error cases
-    >>> _resolve_args(MyNode, 1, 2, 3, a=4)
+    >>> resolve_args(MyNode, 1, 2, 3, a=4)
     Traceback (most recent call last):
        ...
     TypeError: MyNode got multiple values for argument 'a'
-    >>> _resolve_args(MyNode, 1, 2, 3, 4)
+    >>> resolve_args(MyNode, 1, 2, 3, 4)
     Traceback (most recent call last):
        ...
     TypeError: MyNode takes 3 positional arguments but 4 were given
-    >>> _resolve_args(MyNode, 1, 2, 3, d=4)
+    >>> resolve_args(MyNode, 1, 2, 3, d=4)
     Traceback (most recent call last):
        ...
     TypeError: MyNode got unknown keywords: d
@@ -82,8 +82,10 @@ def _resolve_args(cls, *args, **kwargs):
 
     if len(args) > len(attrs):
         raise TypeError(
-            '%s takes 3 positional arguments but %d were given' % (
+            '%s takes %d positional argument%s but %d were given' % (
                 cls.__name__,
+                len(attrs),
+                's' if len(attrs) > 1 else '',
                 len(args),
             ),
         )
@@ -130,7 +132,7 @@ class Node(object):
     blaze.expr.expressions.Expr
     """
     _arguments = '_child',
-    __inputs__ = '_child',
+    _input_attributes = '_child',
     __expr_instance_cache = WeakValueDictionary()
 
     def __new__(cls, *args, **kwargs):
@@ -145,7 +147,7 @@ class Node(object):
             return self
 
     def _init(self, *args, **kwargs):
-        for name, arg in _resolve_args(type(self), *args, **kwargs).items():
+        for name, arg in resolve_args(type(self), *args, **kwargs).items():
             _setattr(self, name, arg)
 
         _setattr(self, '_hash', None)
@@ -160,11 +162,11 @@ class Node(object):
 
     @classmethod
     def _static_identity(cls, *args, **kwargs):
-        return (cls,) + tuple(_resolve_args(cls, *args, **kwargs).values())
+        return (cls,) + tuple(resolve_args(cls, *args, **kwargs).values())
 
     @property
     def _inputs(self):
-        return tuple(getattr(self, i) for i in self.__inputs__)
+        return tuple(getattr(self, i) for i in self._input_attributes)
 
     def _leaves(self):
         """ Leaves of an expression tree
@@ -217,7 +219,7 @@ class Node(object):
         yield self
         traversals = (
             arg._traverse() if isinstance(arg, Node) else [arg]
-            for arg in self._args
+            for arg in self._inputs
         )
         for item in concat(traversals):
             yield item
@@ -234,8 +236,9 @@ class Node(object):
         return subs(self, d)
 
     def _resources(self):
-        return toolz.merge([arg._resources() for arg in self._args
-                            if isinstance(arg, Node)])
+        return toolz.merge(
+            arg._resources() for arg in self._inputs if isinstance(arg, Node)
+        )
 
     def _subterms(self):
         return subterms(self)
@@ -327,7 +330,7 @@ class Node(object):
         return self._and(other)
 
     def __rand__(self, other):
-        return self._rand(other)
+       return self._rand(other)
 
     def __neg__(self):
         return self._neg()

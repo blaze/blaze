@@ -15,7 +15,6 @@ from odo import into, append
 from odo.backends.csv import CSV
 
 from blaze import discover, transform
-from blaze.compatibility import pickle
 from blaze.expr import symbol
 from blaze.interactive import (
     coerce_core,
@@ -28,7 +27,7 @@ from blaze.interactive import (
     iscoretype,
     to_html,
 )
-from blaze.utils import tmpfile, example
+from blaze.utils import tmpfile, example, normalize
 
 tdata = (('Alice', 100),
          ('Bob', 200))
@@ -114,12 +113,24 @@ def test_repr():
 
 def test_str_does_not_repr():
     # see GH issue #1240.
-    d = data([('aa', 1), ('b', 2)], name="ZZZ",
-             dshape='2 * {a: string, b: int64}')
+    d = data(
+        [('aa', 1), ('b', 2)],
+        name="ZZZ",
+        dshape='2 * {a: string, b: int64}',
+    )
     expr = transform(d, c=d.a.str.len() + d.b)
-    assert (str(expr) ==
-            "Merge(_child=ZZZ, children=(ZZZ, label(len(_child=ZZZ.a)"
-            " + ZZZ.b, 'c')))")
+    assert (
+        normalize(str(expr)) ==
+        normalize("""
+            Merge(
+                args=(ZZZ, label(len(_child=ZZZ.a) + ZZZ.b, 'c')),
+                _varargsexpr=VarArgsExpr(
+                    _inputs=(ZZZ, label(len(_child=ZZZ.a) + ZZZ.b, 'c'))
+                ),
+                _shape=(2,)
+            )
+        """)
+    )
 
 
 def test_repr_of_scalar():

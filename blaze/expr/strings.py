@@ -250,7 +250,7 @@ class StrCat(ElemWise):
 
     """
     _arguments = 'lhs', 'rhs', 'sep'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def _dshape(self):
         '''

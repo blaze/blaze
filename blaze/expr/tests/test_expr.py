@@ -229,8 +229,8 @@ def test_coalesce():
     expr = coalesce(a_expr, b_expr)
     assert expr.isidentical(a_expr)
 
-    c = symbol('c', '{a: int32, b: int32}')
-    d = symbol('d', '{a: int32, b: int32}')
+    c = symbol('c', 'var * {a: int32, b: int32}')
+    d = symbol('d', 'var * {a: int32, b: int32}')
     expr = coalesce(c, d)
     assert expr.isidentical(c)
 

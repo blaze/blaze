@@ -71,7 +71,7 @@ class TensorDot(Expr):
     tensordot(x, y, axes=[0, 0])
     """
     _arguments = 'lhs', 'rhs', '_left_axes', '_right_axes'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def _dshape(self):
         # Compute shape

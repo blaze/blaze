@@ -17,6 +17,7 @@ from odo.utils import tmpfile, filetext, filetexts, raises, keywords, ignoring
 import pandas as pd
 import psutil
 import sqlalchemy as sa
+from toolz.curried import do
 
 # Imports that replace older utils.
 from .compatibility import map, zip
@@ -266,3 +267,23 @@ def parameter_space(*args):
     return tuple(product(*(
         arg if isinstance(arg, tuple) else (arg,) for arg in args
     )))
+
+
+def as_attribute(ob, name=None):
+    """Decorator to define an object as an attribute of another object.
+
+    Parameters
+    ----------
+    ob : any
+       The object to attach this to.
+    name : str, optional
+       The name of the attribute. By default this is the decorated value's
+       ``__name__``.
+
+    Returns
+    -------
+    dec : callable[any, any]
+        Decorator that registers an object as an attribute of another object and
+        returns it unchanged.
+    """
+    return do(lambda f: setattr(ob, f.__name__ if name is None else name, f))
