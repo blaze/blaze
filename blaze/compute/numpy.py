@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import Iterable
 import datetime
 
 import numpy as np
@@ -435,9 +436,9 @@ def compute_up(expr, lhs, rhs, **kwargs):
     return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])
 
 
-@dispatch(IsIn, np.ndarray)
-def compute_up(expr, data, **kwargs):
-    return np.in1d(data, tuple(expr._keys))
+@dispatch(IsIn, np.ndarray, Iterable)
+def compute_up(expr, data, keys, **kwargs):
+    return np.in1d(data, keys)
 
 
 @compute_up.register(Join, DataFrame, np.ndarray)

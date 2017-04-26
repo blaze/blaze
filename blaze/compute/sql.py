@@ -17,6 +17,7 @@ WHERE accounts.amount < :amount_1
 
 from __future__ import absolute_import, division, print_function
 
+from collections import Iterable
 from copy import copy
 import datetime
 import itertools
@@ -1520,18 +1521,32 @@ def post_compute(_, s, **kwargs):
     return select(s)
 
 
-@dispatch(IsIn, ColumnElement)
-def compute_up(expr, data, **kwargs):
-    return data.in_(expr._keys)
+@dispatch(IsIn, ColumnElement, (Iterable, Selectable))
+def compute_up(expr, data, keys, **kwargs):
+    return data.in_(keys)
 
 
-@dispatch(IsIn, Selectable)
-def compute_up(expr, data, **kwargs):
+@dispatch(IsIn, ColumnElement, ColumnElement)
+def compute_up(expr, data, keys, **kwargs):
+    return data.in_(Select([keys]))
+
+
+@dispatch(IsIn, Selectable, (Iterable, Selectable))
+def compute_up(expr, data, keys, **kwargs):
     assert len(data.columns) == 1, (
         'only 1 column is allowed in a Select in IsIn'
     )
     col, = unsafe_inner_columns(data)
-    return reconstruct_select((col.in_(expr._keys),), data)
+    return reconstruct_select((col.in_(keys),), data)
+
+
+@dispatch(IsIn, Selectable, ColumnElement)
+def compute_up(expr, data, keys, **kwargs):
+    assert len(data.columns) == 1, (
+        'only 1 column is allowed in a Select in IsIn'
+    )
+    col, = unsafe_inner_columns(data)
+    return col.in_(Select([keys]))
 
 
 @dispatch(Slice, (Select, Selectable, ColumnElement))

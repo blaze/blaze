@@ -250,11 +250,16 @@ def test_isin():
     assert not hasattr(a, 'isin')
 
 
-def test_isin_no_expressions():
+def test_isin_expressions():
     a = symbol('a', 'var * int')
     b = symbol('b', 'var * int')
-    with pytest.raises(TypeError):
-        a.isin(b)
+    assert a.isin(b).dshape == dshape('var * bool')
+
+
+def test_isin_literal():
+    a = symbol('a', 'var * int')
+    b = [1, 2, 3]
+    assert a.isin(b).dshape == dshape('var * bool')
 
 
 def test_concat_table():
