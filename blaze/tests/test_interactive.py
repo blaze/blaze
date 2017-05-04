@@ -187,11 +187,6 @@ def test_to_html_on_arrays():
     assert 'br>' in s
 
 
-def test_repr_html():
-    assert '<table' in t._repr_html_()
-    assert '<table' in t.name._repr_html_()
-
-
 def test_into():
     assert into(list, t) == into(list, tdata)
 
