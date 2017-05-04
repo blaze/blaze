@@ -129,6 +129,9 @@ class Expr(Node):
     holds all tree traversal logic
     """
 
+    def __repr__(self):
+        return str(self)
+
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, (Record, datashape.Map)):
             if fieldname == self._name:

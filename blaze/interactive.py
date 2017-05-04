@@ -6,7 +6,6 @@ import datetime
 from functools import reduce, partial
 import itertools
 import operator
-import warnings
 
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var, Map
@@ -30,7 +29,7 @@ from .dispatch import dispatch
 from .compatibility import _strtypes
 
 
-__all__ = ['Data', 'into', 'to_html', 'data']
+__all__ = ['into', 'to_html', 'data']
 
 
 names = ('_%d' % i for i in itertools.count(1))
@@ -82,7 +81,7 @@ class _Data(Symbol):
     ...           (4, 'Denis', 400),
     ...           (5, 'Edith', -500)],
     ...          fields=['id', 'name', 'balance'])
-    >>> t[t.balance < 0].name
+    >>> t[t.balance < 0].name.peek()
         name
     0    Bob
     1  Edith
@@ -118,25 +117,6 @@ class _Data(Symbol):
         return fmt.format(type(self.data).__name__,
                           self._name,
                           sanitized_dshape(self.dshape))
-
-
-class InteractiveSymbol(_Data):
-    """Deprecated and replaced by the _Data class. ``InteractiveSymbol`` will
-    be removed in version 0.10.  ``data`` is the public API for creating
-    ``Data`` objects.
-    """
-
-    def __new__(cls, *args, **kwargs):
-        warnings.warn("InteractiveSymbol has been deprecated in 0.10 and will"
-                      " be removed in 0.11.  Use ``data`` to create ``Data``"
-                      " objects directly.", DeprecationWarning)
-        return data(*args, **kwargs)
-
-
-def Data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
-    warnings.warn("""The `Data` callable has been deprecated in 0.10 and willbe removed in
-                   version >= 0.11. It has been renamed `data`.""", DeprecationWarning)
-    return data(data_source, dshape=dshape, name=name, fields=fields, schema=schema, **kwargs)
 
 
 @copydoc(_Data)
@@ -427,40 +407,8 @@ def table_length(expr):
     except ValueError:
         return int(expr.count())
 
-_warning_msg = """
-In version 0.11, Blaze's expresssion repr will return a standard
-representation and will no longer implicitly compute.  Use the `peek()`
-method to see a preview of the expression's results.\
-"""
 
-use_new_repr = False
-
-
-def _choose_repr(self):
-    if use_new_repr:
-        return new_repr(self)
-    else:
-        warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
-        return expr_repr(self)
-
-
-def _warning_repr_html(self):
-    if use_new_repr:
-        return new_repr(self)
-    else:
-        warnings.warn(_warning_msg, DeprecationWarning, stacklevel=2)
-        return to_html(self)
-
-
-def new_repr(self):
-    fmt = "<`{}` expression; dshape='{}'>"
-    return fmt.format(type(self).__name__,
-                      sanitized_dshape(self.dshape))
-
-
-Expr.__repr__ = _choose_repr
 Expr.peek = _peek
-Expr._repr_html_ = _warning_repr_html
 Expr.__len__ = table_length
 
 
