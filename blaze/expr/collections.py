@@ -47,8 +47,8 @@ from .expressions import (
     varargsexpr,
 )
 from .utils import maxshape
+from .literal import data
 from ..compatibility import zip_longest, _strtypes
-from ..interactive import data
 from ..utils import listpack
 
 

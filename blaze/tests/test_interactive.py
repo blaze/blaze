@@ -4,7 +4,6 @@ import pickle
 import sys
 from types import MethodType
 
-import dask.array as da
 from datashape import dshape
 from datashape.util.testing import assert_dshape_equal
 import pandas as pd
@@ -15,12 +14,10 @@ from odo import into, append
 from odo.backends.csv import CSV
 
 from blaze import discover, transform
-from blaze.expr import symbol
+from blaze.compute import compute
+from blaze.expr import data, symbol
 from blaze.interactive import (
-    coerce_core,
-    compute,
     concrete_head,
-    data,
     expr_repr,
     to_html,
 )
@@ -539,25 +536,3 @@ def test_isidentical_regr():
     tdata = np.array([(np.nan,), (np.nan,)], dtype=[('a', 'float64')])
     ds = data(tdata)
     assert ds.a.isidentical(ds.a)
-
-
-@pytest.mark.parametrize('data,dshape,exp_type',
-                         [(1, symbol('x', 'int').dshape, int),
-                          # test 1-d to series
-                          (into(da.core.Array, [1, 2], chunks=(10,)),
-                           dshape('2 * int'),
-                           pd.Series),
-                          # test 2-d tabular to dataframe
-                          (into(da.core.Array,
-                                [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
-                                chunks=(10,)),
-                           dshape('2 * {a: int, b: int}'),
-                           pd.DataFrame),
-                          # test 2-d non tabular to ndarray
-                          (into(da.core.Array,
-                                [[1, 2], [3, 4]],
-                                chunks=(10, 10)),
-                           dshape('2 *  2 * int'),
-                           np.ndarray)])
-def test_coerce_core(data, dshape, exp_type):
-    assert isinstance(coerce_core(data, dshape), exp_type)

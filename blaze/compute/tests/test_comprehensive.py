@@ -6,8 +6,7 @@ import numpy as np
 from pandas import DataFrame
 from odo import into
 from datashape.predicates import isscalar, iscollection, isrecord
-from blaze.expr import symbol, by
-from blaze.interactive import data
+from blaze.expr import symbol, by, data
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 
