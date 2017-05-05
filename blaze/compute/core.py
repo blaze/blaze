@@ -1,21 +1,32 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator, Mapping
+import decimal
 from datetime import date, datetime, timedelta
+from functools import partial
 import itertools
 import numbers
 import warnings
 
+from datashape.predicates import (
+    isscalar,
+    iscollection,
+    isrecord,
+    istabular,
+    _dimensions,
+)
 from odo import odo
+from odo.compatibility import unicode
+import numpy as np
 import pandas as pd
 import toolz
 from toolz import first, unique, assoc
 from toolz.utils import no_default
 
 from ..compatibility import basestring
-from ..expr import Expr, Field, Symbol, symbol, Join, Cast
+from ..expr import Data, Expr, Field, Symbol, symbol, Join, Cast
 from ..dispatch import dispatch
-from ..interactive import coerce_core, into
+from ..types import iscoretype
 
 
 __all__ = ['compute', 'compute_up']
@@ -357,6 +368,30 @@ def swap_resources_into_scope(expr, scope):
     return expr, new_scope
 
 
+@dispatch((object, type, str, unicode), Data)
+def into(a, b, **kwargs):
+    return into(a, b.data, **kwargs)
+
+
+@dispatch((object, type, str, unicode), Expr)
+def into(a, b, **kwargs):
+    result = compute(b, return_type='native', **kwargs)
+    kwargs['dshape'] = b.dshape
+    return into(a, result, **kwargs)
+
+
+Expr.__iter__ = into(Iterator)
+
+
+@dispatch(Expr)
+def compute(expr, **kwargs):
+    resources = expr._resources()
+    if not resources:
+        raise ValueError("No data resources found")
+    else:
+        return compute(expr, resources, **kwargs)
+
+
 @dispatch(Expr, Mapping)
 def compute(expr, d, return_type=no_default, **kwargs):
     """Compute expression against data sources.
@@ -470,3 +505,55 @@ def join_dataframe_to_selectable(expr, lhs, rhs, scope=None, **kwargs):
         },
         **kwargs
     )
+
+
+def coerce_to(typ, x, odo_kwargs=None):
+    try:
+        return typ(x)
+    except TypeError:
+        return odo(x, typ, **(odo_kwargs or {}))
+
+
+def coerce_scalar(result, dshape, odo_kwargs=None):
+    dshape = str(dshape)
+    coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
+    if 'float' in dshape:
+        return coerce_(float)
+    if 'decimal' in dshape:
+        return coerce_(decimal.Decimal)
+    elif 'int' in dshape:
+        return coerce_(int)
+    elif 'bool' in dshape:
+        return coerce_(bool)
+    elif 'datetime' in dshape:
+        return coerce_(pd.Timestamp)
+    elif 'date' in dshape:
+        return coerce_(date)
+    elif 'timedelta' in dshape:
+        return coerce_(timedelta)
+    else:
+        return result
+
+
+def coerce_core(result, dshape, odo_kwargs=None):
+    """Coerce data to a core data type."""
+    if iscoretype(result):
+        return result
+    elif isscalar(dshape):
+        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
+    elif istabular(dshape) and isrecord(dshape.measure):
+        result = into(pd.DataFrame, result, **(odo_kwargs or {}))
+    elif iscollection(dshape):
+        dim = _dimensions(dshape)
+        if dim == 1:
+            result = into(pd.Series, result, **(odo_kwargs or {}))
+        elif dim > 1:
+            result = into(np.ndarray, result, **(odo_kwargs or {}))
+        else:
+            msg = "Expr with dshape dimensions < 1 should have been handled earlier: dim={}"
+            raise ValueError(msg.format(str(dim)))
+    else:
+        msg = "Expr does not evaluate to a core return type"
+        raise ValueError(msg)
+
+    return result

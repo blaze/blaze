@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from blaze.interactive import into
+from blaze.compute.core import into
 from blaze.types import (
     iscorescalar,
     iscoresequence,

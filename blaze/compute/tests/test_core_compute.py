@@ -5,14 +5,19 @@ import operator
 
 from datashape import discover, dshape
 
-from blaze.compute.core import (compute_up, compute, bottom_up_until_type_break,
-                                top_then_bottom_then_top_again_etc,
-                                swap_resources_into_scope)
+from blaze.compute.core import (
+    coerce_core,
+    compute_up,
+    compute,
+    into,
+    bottom_up_until_type_break,
+    top_then_bottom_then_top_again_etc,
+    swap_resources_into_scope
+)
 from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises, reduce
 from blaze.utils import example
-from blaze.interactive import into
 
 import pandas as pd
 import numpy as np
@@ -160,3 +165,25 @@ def test_simple_add(n):
 ])
 def test_compute_return_type(data, expr, ret_type, exp_type):
     assert isinstance(compute(expr, data, return_type=ret_type), exp_type)
+
+
+@pytest.mark.parametrize('data,dshape,exp_type',
+                         [(1, symbol('x', 'int').dshape, int),
+                          # test 1-d to series
+                          (into(da.core.Array, [1, 2], chunks=(10,)),
+                           dshape('2 * int'),
+                           pd.Series),
+                          # test 2-d tabular to dataframe
+                          (into(da.core.Array,
+                                [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
+                                chunks=(10,)),
+                           dshape('2 * {a: int, b: int}'),
+                           pd.DataFrame),
+                          # test 2-d non tabular to ndarray
+                          (into(da.core.Array,
+                                [[1, 2], [3, 4]],
+                                chunks=(10, 10)),
+                           dshape('2 *  2 * int'),
+                           np.ndarray)])
+def test_coerce_core(data, dshape, exp_type):
+    assert isinstance(coerce_core(data, dshape), exp_type)

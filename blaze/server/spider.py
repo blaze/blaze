@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 import yaml
 
-from blaze.interactive import data as bz_data
+from blaze.expr import data as bz_data
 from odo.utils import ignoring
 
 from .server import Server, DEFAULT_PORT

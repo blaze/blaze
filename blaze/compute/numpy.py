@@ -7,6 +7,8 @@ from pandas import DataFrame, Series
 from datashape import to_numpy, to_numpy_dtype
 from numbers import Number
 
+from odo import odo
+
 from ..expr import (
     Reduction, Field, Projection, Broadcast, Selection, ndim,
     Distinct, Sort, Tail, Head, Label, ReLabel, Expr, Slice, Join,
@@ -473,3 +475,14 @@ def compute_up(t, data, **kwargs):
         rhs = data
 
     return array_coalesce(t, lhs, rhs)
+
+
+def intonumpy(data, dtype=None, **kwargs):
+    # TODO: Don't ignore other kwargs like copy
+    result = odo(data, np.ndarray)
+    if dtype and result.dtype != dtype:
+        result = result.astype(dtype)
+    return result
+
+
+Expr.__array__ = intonumpy

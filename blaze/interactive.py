@@ -1,199 +1,35 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterator, Mapping
-import decimal
-import datetime
-from functools import reduce, partial
-import itertools
+from functools import reduce
 import operator
+import warnings
 
 import datashape
-from datashape import discover, Tuple, Record, DataShape, var, Map
+from datashape import var, Map
 from datashape.predicates import (
     isscalar,
     iscollection,
     isrecord,
     istabular,
-    _dimensions,
 )
-import numpy as np
-from odo import resource, odo, append, drop
-from odo.utils import ignoring, copydoc
-from odo.compatibility import unicode
-from pandas import DataFrame, Series, Timestamp
+from odo import odo
+from pandas import DataFrame, Series
 
-
+import blaze
+from .compute import compute
+from .compute.core import coerce_scalar
 from .expr import Expr, Symbol, ndim
-from .expr.expressions import sanitized_dshape
 from .dispatch import dispatch
 from .compatibility import _strtypes
-from .types import iscoretype
 
 
-__all__ = ['into', 'to_html', 'data']
+__all__ = ['to_html']
 
 
-names = ('_%d' % i for i in itertools.count(1))
-not_an_iterator = []
-
-
-with ignoring(ImportError):
-    import bcolz
-    not_an_iterator.append(bcolz.carray)
-
-
-with ignoring(ImportError):
-    import pymongo
-    not_an_iterator.append(pymongo.collection.Collection)
-    not_an_iterator.append(pymongo.database.Database)
-
-
-class _Data(Symbol):
-
-    # NOTE: This docstring is meant to correspond to the ``data()`` API, which
-    # is why the Parameters section doesn't match the arguments to
-    # ``_Data.__init__()``.
-
-    """Bind a data resource to a symbol, for use in expressions and
-    computation.
-
-    A ``data`` object presents a consistent view onto a variety of concrete
-    data sources.  Like ``symbol`` objects, they are meant to be used in
-    expressions.  Because they are tied to concrete data resources, ``data``
-    objects can be used with ``compute`` directly, making them convenient for
-    interactive exploration.
-
-    Parameters
-    ----------
-    data_source : object
-        Any type with ``discover`` and ``compute`` implementations
-    fields : list, optional
-        Field or column names, will be inferred from data_source if possible
-    dshape : str or DataShape, optional
-        DataShape describing input data
-    name : str, optional
-        A name for the data.
-
-    Examples
-    --------
-    >>> t = data([(1, 'Alice', 100),
-    ...           (2, 'Bob', -200),
-    ...           (3, 'Charlie', 300),
-    ...           (4, 'Denis', 400),
-    ...           (5, 'Edith', -500)],
-    ...          fields=['id', 'name', 'balance'])
-    >>> t[t.balance < 0].name.peek()
-        name
-    0    Bob
-    1  Edith
-    """
-    _arguments = 'data', 'dshape', '_name'
-
-    def __new__(cls, data, dshape, name=None):
-        return super(Symbol, cls).__new__(
-            cls,
-            data,
-            dshape,
-            name or (
-                next(names)
-                if isrecord(dshape.measure) else None
-            ),
-        )
-
-    def _resources(self):
-        return {self: self.data}
-
-    @classmethod
-    def _static_identity(cls, data, dshape, _name):
-        try:
-            # cannot use isinstance(data, Hashable)
-            # some classes give a false positive
-            hash(data)
-        except TypeError:
-            data = id(data)
-        return cls, data, dshape, _name
-
-    def __repr__(self):
-        fmt = "<'{}' data; _name='{}', dshape='{}'>"
-        return fmt.format(type(self.data).__name__,
-                          self._name,
-                          sanitized_dshape(self.dshape))
-
-
-@copydoc(_Data)
-def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
-    if schema and dshape:
-        raise ValueError("Please specify one of schema= or dshape= keyword"
-                         " arguments")
-
-    if isinstance(data_source, _Data):
-        return data(data_source.data, dshape, name, fields, schema, **kwargs)
-
-    if schema and not dshape:
-        dshape = var * schema
-    if dshape and isinstance(dshape, _strtypes):
-        dshape = datashape.dshape(dshape)
-
-    if isinstance(data_source, _strtypes):
-        data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
-
-    if (isinstance(data_source, Iterator) and
-            not isinstance(data_source, tuple(not_an_iterator))):
-        data_source = tuple(data_source)
-    if not dshape:
-        dshape = discover(data_source)
-        types = None
-        if isinstance(dshape.measure, Tuple) and fields:
-            types = dshape[1].dshapes
-            schema = Record(list(zip(fields, types)))
-            dshape = DataShape(*(dshape.shape + (schema,)))
-        elif isscalar(dshape.measure) and fields:
-            types = (dshape.measure,) * int(dshape[-2])
-            schema = Record(list(zip(fields, types)))
-            dshape = DataShape(*(dshape.shape[:-1] + (schema,)))
-        elif isrecord(dshape.measure) and fields:
-            ds = discover(data_source)
-            assert isrecord(ds.measure)
-            names = ds.measure.names
-            if names != fields:
-                raise ValueError('data column names %s\n'
-                                 '\tnot equal to fields parameter %s,\n'
-                                 '\tuse data(data_source).relabel(%s) to rename '
-                                 'fields' % (names,
-                                             fields,
-                                             ', '.join('%s=%r' % (k, v)
-                                                       for k, v in
-                                                       zip(names, fields))))
-            types = dshape.measure.types
-            schema = Record(list(zip(fields, types)))
-            dshape = DataShape(*(dshape.shape + (schema,)))
-
-    ds = datashape.dshape(dshape)
-    return _Data(data_source, ds, name)
-
-
-@dispatch(_Data, Mapping)
-def _subs(o, d):
-    return o
-
-
-@dispatch(Expr)
-def compute(expr, **kwargs):
-    resources = expr._resources()
-    if not resources:
-        raise ValueError("No data resources found")
-    else:
-        return compute(expr, resources, **kwargs)
-
-
-@dispatch(Expr, _Data)
-def compute_down(expr, dta, **kwargs):
-    return compute(expr, dta.data, **kwargs)
-
-
-@dispatch(Expr, _Data)
-def pre_compute(expr, dta, **kwargs):
-    return pre_compute(expr, dta.data, **kwargs)
+def data(*args, **kwargs):
+    warnings.warn(DeprecationWarning(
+        'blaze.interactive.data has been moved to blaze.data'))
+    return blaze.expr.literal.data(*args, **kwargs)
 
 
 def concrete_head(expr, n=10):
@@ -245,58 +81,6 @@ def short_dshape(ds, nlines=5):
     if len(lines) > 5:
         s = '\n'.join(lines[:nlines]) + '\n  ...'
     return s
-
-
-def coerce_to(typ, x, odo_kwargs=None):
-    try:
-        return typ(x)
-    except TypeError:
-        return odo(x, typ, **(odo_kwargs or {}))
-
-
-def coerce_scalar(result, dshape, odo_kwargs=None):
-    dshape = str(dshape)
-    coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
-    if 'float' in dshape:
-        return coerce_(float)
-    if 'decimal' in dshape:
-        return coerce_(decimal.Decimal)
-    elif 'int' in dshape:
-        return coerce_(int)
-    elif 'bool' in dshape:
-        return coerce_(bool)
-    elif 'datetime' in dshape:
-        return coerce_(Timestamp)
-    elif 'date' in dshape:
-        return coerce_(datetime.date)
-    elif 'timedelta' in dshape:
-        return coerce_(datetime.timedelta)
-    else:
-        return result
-
-
-def coerce_core(result, dshape, odo_kwargs=None):
-    """Coerce data to a core data type."""
-    if iscoretype(result):
-        return result
-    elif isscalar(dshape):
-        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
-    elif istabular(dshape) and isrecord(dshape.measure):
-        result = into(DataFrame, result, **(odo_kwargs or {}))
-    elif iscollection(dshape):
-        dim = _dimensions(dshape)
-        if dim == 1:
-            result = into(Series, result, **(odo_kwargs or {}))
-        elif dim > 1:
-            result = into(np.ndarray, result, **(odo_kwargs or {}))
-        else:
-            msg = "Expr with dshape dimensions < 1 should have been handled earlier: dim={}"
-            raise ValueError(msg.format(str(dim)))
-    else:
-        msg = "Expr does not evaluate to a core return type"
-        raise ValueError(msg)
-
-    return result
 
 
 def _peek(expr):
@@ -380,28 +164,6 @@ def to_html(o):
     return o.replace('\n', '<br>')
 
 
-@dispatch((object, type, str, unicode), Expr)
-def into(a, b, **kwargs):
-    result = compute(b, return_type='native', **kwargs)
-    kwargs['dshape'] = b.dshape
-    return into(a, result, **kwargs)
-
-
-@dispatch((object, type, str, unicode), _Data)
-def into(a, b, **kwargs):
-    return into(a, b.data, **kwargs)
-
-
-@dispatch(_Data, object)
-def append(a, b, **kwargs):
-    return append(a.data, b, **kwargs)
-
-
-@dispatch(_Data)
-def drop(d):
-    return drop(d.data)
-
-
 def table_length(expr):
     try:
         return expr._len()
@@ -413,14 +175,6 @@ Expr.peek = _peek
 Expr.__len__ = table_length
 
 
-def intonumpy(data, dtype=None, **kwargs):
-    # TODO: Don't ignore other kwargs like copy
-    result = odo(data, np.ndarray)
-    if dtype and result.dtype != dtype:
-        result = result.astype(dtype)
-    return result
-
-
 def convert_base(typ, x):
     x = compute(x)
     try:
@@ -429,10 +183,8 @@ def convert_base(typ, x):
         return typ(odo(x, typ))
 
 
-Expr.__array__ = intonumpy
 Expr.__int__ = lambda x: convert_base(int, x)
 Expr.__float__ = lambda x: convert_base(float, x)
 Expr.__complex__ = lambda x: convert_base(complex, x)
 Expr.__bool__ = lambda x: convert_base(bool, x)
 Expr.__nonzero__ = lambda x: convert_base(bool, x)
-Expr.__iter__ = into(Iterator)

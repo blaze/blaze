@@ -28,8 +28,7 @@ from blaze import compute, resource
 from blaze.compatibility import ExitStack, u8
 from blaze.compute import compute_up
 from .serialization import json, all_formats
-from ..interactive import _Data
-from ..expr import Expr, symbol, utils as expr_utils, Symbol
+from ..expr import Data, Expr, symbol, utils as expr_utils, Symbol
 
 
 __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
@@ -335,9 +334,9 @@ class Server(object):
                  loglevel='WARNING',
                  log_exception_formatter=_default_log_exception_formatter):
         if isinstance(data, collections.Mapping):
-            data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
+            data = valmap(lambda v: v.data if isinstance(v, Data) else v,
                           data)
-        elif isinstance(data, _Data):
+        elif isinstance(data, Data):
             data = data._resources()
         app = self.app = FlaskWithExceptionFormatting('blaze.server.server',
                                                       log_exception_formatter=log_exception_formatter)
@@ -458,7 +457,7 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
-    elif isinstance(expr, _Data):
+    elif isinstance(expr, Data):
         return to_tree(symbol(u8(expr._name), expr.dshape), names)
     elif isinstance(expr, Expr):
         return {u'op': u8(type(expr).__name__),
