@@ -27,6 +27,7 @@ from .expr import Expr, Symbol, ndim
 from .expr.expressions import sanitized_dshape
 from .dispatch import dispatch
 from .compatibility import _strtypes
+from .types import iscoretype
 
 
 __all__ = ['into', 'to_html', 'data']
@@ -426,24 +427,6 @@ def convert_base(typ, x):
         return typ(x)
     except:
         return typ(odo(x, typ))
-
-
-CORE_SCALAR_TYPES = (float, decimal.Decimal, int, bool, str, Timestamp,
-                     datetime.date, datetime.timedelta)
-CORE_SEQUENCE_TYPES = (list, dict, tuple, set, Series, DataFrame, np.ndarray)
-CORE_TYPES = CORE_SCALAR_TYPES + CORE_SEQUENCE_TYPES
-
-
-def iscorescalar(x):
-    return isinstance(x, CORE_SCALAR_TYPES)
-
-
-def iscoresequence(x):
-    return isinstance(x, CORE_SEQUENCE_TYPES)
-
-
-def iscoretype(x):
-    return isinstance(x, CORE_TYPES)
 
 
 Expr.__array__ = intonumpy
