@@ -33,7 +33,7 @@ from blaze import (
     symbol,
     transform,
 )
-from blaze.interactive import iscorescalar
+from blaze.types import iscorescalar
 from blaze.utils import example, normalize
 
 
