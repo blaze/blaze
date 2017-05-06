@@ -392,14 +392,18 @@ def test_scalar_sql_compute():
     assert expr_repr(d.amount.sum()) == '300'
 
 
-def test_no_name_for_simple_data():
-    d = data([1, 2, 3])
-    assert expr_repr(d) == '    \n0  1\n1  2\n2  3'
-    assert not d._name
+def test_simple_data_equality():
+    # see GH issue #1546
+    x = data(157)
+    y = data(101)
+    z = data(157)
+    assert compute(x == y) is False
+    assert compute(x == z) is True
 
-    d = data(1)
-    assert not d._name
-    assert expr_repr(d) == '1'
+
+def test_Data_invalid_args():
+    with pytest.raises(TypeError):
+        x = data(1, name=10)
 
 
 def test_coerce_date_and_datetime():
