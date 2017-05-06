@@ -531,7 +531,7 @@ def test_partially_bound_expr():
     tdata = data(df, name='data')
     a = symbol('a', 'int')
     expr = tdata.name[tdata.balance > a]
-    assert expr_repr(expr) == 'data[data.balance > a].name'
+    assert expr_repr(expr) == 'data.name[data.balance > a]'
 
 
 def test_isidentical_regr():

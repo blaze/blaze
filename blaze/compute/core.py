@@ -14,6 +14,7 @@ from toolz.utils import no_default
 
 from ..compatibility import basestring
 from ..expr import Expr, Field, Symbol, symbol, Join, Cast
+from ..expr.rewrite import rewrite
 from ..dispatch import dispatch
 from ..interactive import coerce_core, into
 
@@ -387,6 +388,7 @@ def compute(expr, d, return_type=no_default, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     post_compute_ = kwargs.get('post_compute', post_compute)
+    expr = rewrite(expr)
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
         d3 = dict(
