@@ -16,10 +16,10 @@ from ..compatibility import _strtypes
 from ..dispatch import dispatch
 from .expressions import sanitized_dshape, Symbol
 
-__all__ = ['Data', 'data']
+__all__ = ['Literal', 'literal', 'data']
 
 
-names = ('_%d' % i for i in itertools.count(1))
+_names = ('_%d' % i for i in itertools.count(1))
 not_an_iterator = []
 
 
@@ -34,11 +34,20 @@ with ignoring(ImportError):
     not_an_iterator.append(pymongo.database.Database)
 
 
-class Data(Symbol):
+class generate(object):
+    """A sentinel value, indicating whether or not `literal` should
+    generate a name for the returned `Literal`.
+    """
 
-    # NOTE: This docstring is meant to correspond to the ``data()`` API, which
-    # is why the Parameters section doesn't match the arguments to
-    # ``Data.__init__()``.
+    def __new__(cls):
+        raise NotImplementedError('Can not create instance of sentinel type.')
+
+
+class Literal(Symbol):
+
+    # NOTE: This docstring is meant to correspond to the ``literal()`` and
+    # ``data()`` APIs, which is why the Parameters section doesn't match the
+    # arguments to ``Literal.__new__()``.
 
     """Bind a data resource to a symbol, for use in expressions and
     computation.
@@ -80,10 +89,7 @@ class Data(Symbol):
             cls,
             data,
             dshape,
-            name or (
-                next(names)
-                if isrecord(dshape.measure) else None
-            ),
+            name
         )
 
     def _resources(self):
@@ -100,20 +106,34 @@ class Data(Symbol):
         return cls, data, dshape, _name
 
     def __repr__(self):
+        if self._name is not None:
+            return self._name
+        else:
+            return repr(self.data)
+
+
+class _Data(Literal):
+    def __repr__(self):
         fmt = "<'{}' data; _name='{}', dshape='{}'>"
         return fmt.format(type(self.data).__name__,
                           self._name,
                           sanitized_dshape(self.dshape))
 
 
-@copydoc(Data)
-def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs):
+@copydoc(Literal)
+def literal(data_source,
+            dshape=None,
+            name=None,
+            fields=None,
+            schema=None,
+            **kwargs):
     if schema and dshape:
         raise ValueError("Please specify one of schema= or dshape= keyword"
                          " arguments")
 
-    if isinstance(data_source, Data):
-        return data(data_source.data, dshape, name, fields, schema, **kwargs)
+    if isinstance(data_source, Literal):
+        return literal(data_source.data, dshape, name, fields, schema,
+                       **kwargs)
 
     if schema and not dshape:
         dshape = var * schema
@@ -121,7 +141,8 @@ def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs
         dshape = datashape.dshape(dshape)
 
     if isinstance(data_source, _strtypes):
-        data_source = resource(data_source, schema=schema, dshape=dshape, **kwargs)
+        data_source = resource(data_source, schema=schema, dshape=dshape,
+                               **kwargs)
 
     if (isinstance(data_source, Iterator) and
             not isinstance(data_source, tuple(not_an_iterator))):
@@ -155,9 +176,28 @@ def data(data_source, dshape=None, name=None, fields=None, schema=None, **kwargs
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
-    return Data(data_source, ds, name)
+
+    cls = Literal
+
+    if name is generate:
+        if not isscalar(dshape):
+            name = next(_names)
+            cls = _Data
+
+    return cls(data_source, ds, name)
 
 
-@dispatch(Data, Mapping)
+@copydoc(Literal)
+def data(data_source, dshape=None, name=generate, fields=None, schema=None,
+         **kwargs):
+    return literal(data_source,
+                   dshape=dshape,
+                   name=name,
+                   fields=fields,
+                   schema=schema,
+                   **kwargs)
+
+
+@dispatch(Literal, Mapping)
 def _subs(o, d):
     return o

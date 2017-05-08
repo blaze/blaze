@@ -13,15 +13,15 @@ import numpy as np
 from odo import into, append
 from odo.backends.csv import CSV
 
-from blaze import discover, transform
+from blaze import discover
 from blaze.compute import compute
-from blaze.expr import data, symbol
+from blaze.expr import data, literal, symbol
 from blaze.interactive import (
     concrete_head,
     expr_repr,
     to_html,
 )
-from blaze.utils import tmpfile, example, normalize
+from blaze.utils import tmpfile, example
 
 tdata = (('Alice', 100),
          ('Bob', 200))
@@ -37,51 +37,9 @@ t = data(tdata, fields=['name', 'amount'])
 x = np.ones((2, 2))
 
 
-def test_discover_on_data():
-    assert discover(t) == dshape("2 * {name: string, amount: int64}")
-
-
-def test_table_raises_on_inconsistent_inputs():
-    with pytest.raises(ValueError) as excinfo:
-        data(tdata, schema='{name: string, amount: float32}',
-             dshape=dshape("{name: string, amount: float32}"))
-    assert "specify one of schema= or dshape= keyword" in str(excinfo.value)
-
-
-def test_resources():
-    assert t._resources() == {t: t.data}
-
-
-def test_resources_fail():
-    t = symbol('t', 'var * {x: int, y: int}')
-    d = t[t['x'] > 100]
-    with pytest.raises(ValueError):
-        compute(d)
-
-
-def test_compute_on_Data_gives_back_data():
-    assert compute(data([1, 2, 3])) == [1, 2, 3]
-
-
 def test_len():
     assert len(t) == 2
     assert len(t.name) == 2
-
-
-def test_compute():
-    assert list(compute(t['amount'] + 1)) == [101, 201]
-
-
-def test_create_with_schema():
-    t = data(tdata, schema='{name: string, amount: float32}')
-    assert t.schema == dshape('{name: string, amount: float32}')
-
-
-def test_create_with_raw_data():
-    t = data(tdata, fields=['name', 'amount'])
-    assert t.schema == dshape('{name: string, amount: int64}')
-    assert t.name
-    assert t.data == tdata
 
 
 def test_repr():
@@ -103,28 +61,6 @@ def test_repr():
     print(result)
     assert len(result.split('\n')) < 20
     assert '...' in result
-
-
-def test_str_does_not_repr():
-    # see GH issue #1240.
-    d = data(
-        [('aa', 1), ('b', 2)],
-        name="ZZZ",
-        dshape='2 * {a: string, b: int64}',
-    )
-    expr = transform(d, c=d.a.str.len() + d.b)
-    assert (
-        normalize(str(expr)) ==
-        normalize("""
-            Merge(
-                args=(ZZZ, label(len(_child=ZZZ.a) + ZZZ.b, 'c')),
-                _varargsexpr=VarArgsExpr(
-                    _inputs=(ZZZ, label(len(_child=ZZZ.a) + ZZZ.b, 'c'))
-                ),
-                _shape=(2,)
-            )
-        """)
-    )
 
 
 def test_repr_of_scalar():
@@ -179,10 +115,6 @@ def test_to_html_on_arrays():
     s = to_html(data(np.ones((2, 2))))
     assert '1' in s
     assert 'br>' in s
-
-
-def test_into():
-    assert into(list, t) == into(list, tdata)
 
 
 def test_serialization():
@@ -323,17 +255,6 @@ def test_generator_reprs_concretely():
     assert '4' in expr_repr(expr)
 
 
-def test_incompatible_types():
-    d = data(pd.DataFrame(L, columns=['id', 'name', 'amount']))
-
-    with pytest.raises(ValueError):
-        d.id == 'foo'
-
-    result = compute(d.id == 3)
-    expected = pd.Series([False, False, True, False, False], name='id')
-    tm.assert_series_equal(result, expected)
-
-
 def test___array__():
     x = np.ones(4)
     d = data(x)
@@ -350,12 +271,6 @@ def test_python_scalar_protocols():
     assert float(d + 1.0) == 2.0
     assert bool(d > 0) is True
     assert complex(d + 1.0j) == 1 + 1.0j
-
-
-def test_iter():
-    x = np.ones(4)
-    d = data(x)
-    assert list(d + 1) == [2, 2, 2, 2]
 
 
 @pytest.mark.xfail(
@@ -390,11 +305,11 @@ def test_scalar_sql_compute():
 
 
 def test_no_name_for_simple_data():
-    d = data([1, 2, 3])
+    d = literal([1, 2, 3])
     assert expr_repr(d) == '    \n0  1\n1  2\n2  3'
     assert not d._name
 
-    d = data(1)
+    d = literal(1)
     assert not d._name
     assert expr_repr(d) == '1'
 
@@ -529,10 +444,3 @@ def test_partially_bound_expr():
     a = symbol('a', 'int')
     expr = tdata.name[tdata.balance > a]
     assert expr_repr(expr) == 'data[data.balance > a].name'
-
-
-def test_isidentical_regr():
-    # regression test for #1387
-    tdata = np.array([(np.nan,), (np.nan,)], dtype=[('a', 'float64')])
-    ds = data(tdata)
-    assert ds.a.isidentical(ds.a)

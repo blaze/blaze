@@ -24,7 +24,7 @@ from toolz import first, unique, assoc
 from toolz.utils import no_default
 
 from ..compatibility import basestring
-from ..expr import Data, Expr, Field, Symbol, symbol, Join, Cast
+from ..expr import Expr, Field, Literal, Symbol, symbol, Join, Cast
 from ..dispatch import dispatch
 from ..types import iscoretype
 
@@ -368,7 +368,7 @@ def swap_resources_into_scope(expr, scope):
     return expr, new_scope
 
 
-@dispatch((object, type, str, unicode), Data)
+@dispatch((object, type, str, unicode), Literal)
 def into(a, b, **kwargs):
     return into(a, b.data, **kwargs)
 

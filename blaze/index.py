@@ -1,6 +1,6 @@
 from .dispatch import dispatch
 from .compatibility import basestring
-from blaze.expr.literal import Data
+from blaze.expr.literal import Literal
 from blaze.expr.literal import data as bz_data
 
 
@@ -35,7 +35,7 @@ def create_index(t, column_name_or_names, name=None):
     raise NotImplementedError("create_index not implemented for type %r" %
                               type(t).__name__)
 
-@dispatch(Data, (basestring, list, tuple))
+@dispatch(Literal, (basestring, list, tuple))
 def create_index(dta, column_name_or_names, name=None, **kwargs):
     return create_index(dta.data, column_name_or_names, name=name, **kwargs)
 
