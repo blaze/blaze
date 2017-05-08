@@ -46,6 +46,7 @@ try:
     DaskDataFrame = dd.DataFrame
     DaskSeries = dd.Series
 except ImportError:
+    dd = None
     DaskDataFrame = pd.DataFrame
     DaskSeries = pd.Series
 
@@ -681,6 +682,9 @@ def _merge(module):
     module : module
         Either ``pandas`` or ``dask``.
     """
+    if module is None:
+        return
+
     @dispatch(Merge, VarArgs[module.Series, base])
     def compute_up(expr, args, **kwargs):
         """Optimized handler when we know the sequence doesn't contain tabular

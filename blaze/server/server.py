@@ -24,11 +24,19 @@ from werkzeug.http import parse_options_header
 from toolz import valmap, compose
 
 import blaze
+import blaze as bz
 from blaze import compute, resource
 from blaze.compatibility import ExitStack, u8
 from blaze.compute import compute_up
 from .serialization import json, all_formats
-from ..expr import Literal, Expr, symbol, utils as expr_utils, Symbol
+from ..expr import (
+    BoundSymbol,
+    Data,
+    Expr,
+    Symbol,
+    symbol,
+    utils as expr_utils,
+)
 
 
 __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
@@ -334,9 +342,9 @@ class Server(object):
                  loglevel='WARNING',
                  log_exception_formatter=_default_log_exception_formatter):
         if isinstance(data, collections.Mapping):
-            data = valmap(lambda v: v.data if isinstance(v, Literal) else v,
+            data = valmap(lambda v: v.data if isinstance(v, BoundSymbol) else v,
                           data)
-        elif isinstance(data, Literal):
+        elif isinstance(data, BoundSymbol):
             data = data._resources()
         app = self.app = FlaskWithExceptionFormatting('blaze.server.server',
                                                       log_exception_formatter=log_exception_formatter)
@@ -457,8 +465,9 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
-    elif isinstance(expr, Literal):
-        return to_tree(symbol(u8(expr._name), expr.dshape), names)
+    elif isinstance(expr, Data) and isinstance(expr.data, bz.Client):
+        name = u8(expr._name) if expr._name is not None else None
+        return to_tree(symbol(name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {u'op': u8(type(expr).__name__),
                 u'args': [to_tree(arg, names) for arg in expr._args]}
@@ -627,10 +636,6 @@ def compserver(payload, serial):
         ns[':leaf'] = symbol('leaf', discover(dataset))
 
         expr = from_tree(payload[u'expr'], namespace=ns)
-
-        if len(expr._leaves()) != 1:
-            return ('too many leaves, expected 1 got %d' % len(expr._leaves()),
-                    RC.BAD_REQUEST)
 
         leaf = expr._leaves()[0]
 

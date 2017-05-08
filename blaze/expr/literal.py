@@ -6,6 +6,7 @@ import itertools
 import datashape
 from datashape import discover, Tuple, Record, DataShape, var
 from datashape.predicates import (
+    istabular,
     isscalar,
     isrecord,
 )
@@ -16,7 +17,7 @@ from ..compatibility import _strtypes
 from ..dispatch import dispatch
 from .expressions import sanitized_dshape, Symbol
 
-__all__ = ['Literal', 'literal', 'data']
+__all__ = ['BoundSymbol', 'Literal', 'Data', 'literal', 'data']
 
 
 _names = ('_%d' % i for i in itertools.count(1))
@@ -36,14 +37,14 @@ with ignoring(ImportError):
 
 class generate(object):
     """A sentinel value, indicating whether or not `literal` should
-    generate a name for the returned `Literal`.
+    generate a name for the returned `BoundSymbol`.
     """
 
     def __new__(cls):
         raise NotImplementedError('Can not create instance of sentinel type.')
 
 
-class Literal(Symbol):
+class BoundSymbol(Symbol):
 
     # NOTE: This docstring is meant to correspond to the ``literal()`` and
     # ``data()`` APIs, which is why the Parameters section doesn't match the
@@ -84,16 +85,12 @@ class Literal(Symbol):
     """
     _arguments = 'data', 'dshape', '_name'
 
-    def __new__(cls, data, dshape, name=None):
-        return super(Symbol, cls).__new__(
-            cls,
-            data,
-            dshape,
-            name
-        )
-
     def _resources(self):
         return {self: self.data}
+
+    @property
+    def _token(self):
+        return 0
 
     @classmethod
     def _static_identity(cls, data, dshape, _name):
@@ -105,35 +102,48 @@ class Literal(Symbol):
             data = id(data)
         return cls, data, dshape, _name
 
+    def __str__(self):
+        name = self._name
+        return name if name is not None else repr(self)
+
+
+class Literal(BoundSymbol):
     def __repr__(self):
-        if self._name is not None:
-            return self._name
-        else:
-            return repr(self.data)
+        name = self._name
+        return name if name is not None else repr(self.data)
 
 
-class _Data(Literal):
+class Data(BoundSymbol):
     def __repr__(self):
-        fmt = "<'{}' data; _name='{}', dshape='{}'>"
-        return fmt.format(type(self.data).__name__,
-                          self._name,
-                          sanitized_dshape(self.dshape))
+        return "<'{}' data; _name='{}', dshape='{}'>".format(
+            type(self.data).__name__,
+            self._name,
+            sanitized_dshape(self.dshape),
+        )
 
 
-@copydoc(Literal)
-def literal(data_source,
-            dshape=None,
-            name=None,
-            fields=None,
-            schema=None,
-            **kwargs):
+def _bound_symbol(cls,
+                  data_source,
+                  dshape,
+                  name,
+                  fields,
+                  schema,
+                  **kwargs):
     if schema and dshape:
-        raise ValueError("Please specify one of schema= or dshape= keyword"
-                         " arguments")
+        raise ValueError(
+            'Please specify one of schema= or dshape= keyword  arguments',
+        )
 
-    if isinstance(data_source, Literal):
-        return literal(data_source.data, dshape, name, fields, schema,
-                       **kwargs)
+    if isinstance(data_source, BoundSymbol):
+        return _bound_symbol(
+            cls,
+            data_source.data,
+            dshape,
+            name,
+            fields,
+            schema,
+            **kwargs
+        )
 
     if schema and not dshape:
         dshape = var * schema
@@ -141,12 +151,17 @@ def literal(data_source,
         dshape = datashape.dshape(dshape)
 
     if isinstance(data_source, _strtypes):
-        data_source = resource(data_source, schema=schema, dshape=dshape,
-                               **kwargs)
+        data_source = resource(
+            data_source,
+            schema=schema,
+            dshape=dshape,
+            **kwargs
+        )
 
     if (isinstance(data_source, Iterator) and
             not isinstance(data_source, tuple(not_an_iterator))):
         data_source = tuple(data_source)
+
     if not dshape:
         dshape = discover(data_source)
         types = None
@@ -163,41 +178,71 @@ def literal(data_source,
             assert isrecord(ds.measure)
             names = ds.measure.names
             if names != fields:
-                raise ValueError('data column names %s\n'
-                                 '\tnot equal to fields parameter %s,\n'
-                                 '\tuse data(data_source).relabel(%s) to rename '
-                                 'fields' % (names,
-                                             fields,
-                                             ', '.join('%s=%r' % (k, v)
-                                                       for k, v in
-                                                       zip(names, fields))))
+                raise ValueError(
+                    'data column names %s\n'
+                    '\tnot equal to fields parameter %s,\n'
+                    '\tuse data(data_source).relabel(%s) to rename '
+                    'fields' % (
+                        names,
+                        fields,
+                        ', '.join(
+                            '%s=%r' % (k, v)
+                            for k, v in
+                            zip(names, fields)
+                        ),
+                    ),
+                )
             types = dshape.measure.types
             schema = Record(list(zip(fields, types)))
             dshape = DataShape(*(dshape.shape + (schema,)))
 
     ds = datashape.dshape(dshape)
 
-    cls = Literal
-
     if name is generate:
-        if not isscalar(dshape):
+        if istabular(dshape):
             name = next(_names)
-            cls = _Data
+        else:
+            name = None
 
     return cls(data_source, ds, name)
 
 
-@copydoc(Literal)
-def data(data_source, dshape=None, name=generate, fields=None, schema=None,
+@copydoc(BoundSymbol)
+def literal(data_source,
+            dshape=None,
+            name=None,
+            fields=None,
+            schema=None,
+            **kwargs):
+    return _bound_symbol(
+        Literal,
+        data_source,
+        dshape=dshape,
+        name=name,
+        fields=fields,
+        schema=schema,
+        **kwargs
+    )
+
+
+@copydoc(BoundSymbol)
+def data(data_source,
+         dshape=None,
+         name=generate,
+         fields=None,
+         schema=None,
          **kwargs):
-    return literal(data_source,
-                   dshape=dshape,
-                   name=name,
-                   fields=fields,
-                   schema=schema,
-                   **kwargs)
+    return _bound_symbol(
+        Data,
+        data_source,
+        dshape=dshape,
+        name=name,
+        fields=fields,
+        schema=schema,
+        **kwargs
+    )
 
 
-@dispatch(Literal, Mapping)
+@dispatch(BoundSymbol, Mapping)
 def _subs(o, d):
     return o

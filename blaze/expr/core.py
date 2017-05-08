@@ -236,9 +236,7 @@ class Node(object):
         return subs(self, d)
 
     def _resources(self):
-        return toolz.merge(
-            arg._resources() for arg in self._inputs if isinstance(arg, Node)
-        )
+        return toolz.merge(arg._resources() for arg in self._inputs)
 
     def _subterms(self):
         return subterms(self)

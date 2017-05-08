@@ -15,7 +15,7 @@ from odo.backends.csv import CSV
 
 from blaze import discover
 from blaze.compute import compute
-from blaze.expr import data, literal, symbol
+from blaze.expr import data, symbol
 from blaze.interactive import (
     concrete_head,
     expr_repr,
@@ -305,11 +305,11 @@ def test_scalar_sql_compute():
 
 
 def test_no_name_for_simple_data():
-    d = literal([1, 2, 3])
+    d = data([1, 2, 3])
     assert expr_repr(d) == '    \n0  1\n1  2\n2  3'
     assert not d._name
 
-    d = literal(1)
+    d = data(1)
     assert not d._name
     assert expr_repr(d) == '1'
 
