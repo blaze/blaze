@@ -4,6 +4,7 @@ import pytest
 import operator
 
 from datashape import discover, dshape
+from datashape.util.testing import assert_dshape_equal
 
 from blaze.compute.core import (
     coerce_core,
@@ -97,21 +98,22 @@ def test_swap_resources_into_scope():
 
     from blaze import data
     t = data([1, 2, 3], dshape='3 * int', name='t')
-    expr, scope = swap_resources_into_scope(t.head(2), {t: t.data})
+    scope = swap_resources_into_scope(t.head(2), {})
 
     assert t._resources()
-    assert not expr._resources()
-
-    assert t not in scope
+    assert t in scope
 
 
 def test_compute_up_on_dict():
     d = {'a': [1, 2, 3], 'b': [4, 5, 6]}
 
-    assert str(discover(d)) == str(dshape('{a: 3 * int64, b: 3 * int64}'))
+    assert_dshape_equal(
+        discover(d),
+        dshape('{a: 3 * int64, b: 3 * int64}').measure,
+        check_record_order=False,  # dict order undefined
+    )
 
     s = symbol('s', discover(d))
-
     assert compute(s.a, {s: d}) == [1, 2, 3]
 
 

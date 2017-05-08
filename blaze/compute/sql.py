@@ -189,21 +189,21 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(Projection, Selectable)
-def compute_up(expr, data, **kwargs):
+def compute_up(expr, data, scope=None, **kwargs):
     return compute(
         expr,
-        sa.select([data]),
+        toolz.merge(scope, {expr._child: sa.select([data])}),
         post_compute=False,
         return_type='native',
     )
 
 
 @dispatch(Projection, sa.Column)
-def compute_up(expr, data, **kwargs):
+def compute_up(expr, data, scope=None, **kwargs):
     selectables = [
         compute(
             expr._child[field],
-            data,
+            scope,
             post_compute=False,
             return_type='native',
         )
@@ -218,11 +218,11 @@ def compute_up(expr, data, **kwargs):
 
 
 @dispatch(Projection, Select)
-def compute_up(expr, data, **kwargs):
+def compute_up(expr, data, scope=None, **kwargs):
     return data.with_only_columns(
         first(compute(
             expr._child[field],
-            data,
+            scope,
             post_compute=False,
             return_type='native',
         ).inner_columns)
@@ -246,7 +246,7 @@ def unify_wheres(selectables):
 
 
 @dispatch(Field, Select)
-def compute_up(expr, data, **kwargs):
+def compute_up(expr, data, scope=None, **kwargs):
     name = expr._name
     try:
         inner_columns = list(data.inner_columns)
@@ -255,7 +255,7 @@ def compute_up(expr, data, **kwargs):
     except (KeyError, ValueError):
         single_column_select = compute(
             expr,
-            first(data.inner_columns),
+            toolz.merge(scope, {expr._child: first(data.inner_columns)}),
             post_compute=False,
             return_type='native',
         )
