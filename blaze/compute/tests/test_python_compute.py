@@ -68,10 +68,46 @@ def test_eq():
 
 
 def test_selection():
-    assert list(compute(t[t['amount'] == 0], data)) == \
+    assert list(compute(t[t['amount'] == 0], data)) ==\
                 [x for x in data if x[1] == 0]
-    assert list(compute(t[t['amount'] > 150], data)) == \
+    assert list(compute(t[t['amount'] > 150], data)) ==\
                 [x for x in data if x[1] > 150]
+    # Also test with it in interactive mode, i.e. backed directly by data
+    # on the leaves. We are effectively doing the inverse of
+    # `swap_resources_into_scope` here.
+    # NOTE: It's possible this should go in `tests/test_interactive`
+    t2_data = blaze.data(data, dshape=t.dshape)
+    t2 = t._subs({t: t2_data})
+    assert list(compute(t2[t2['amount'] == 0])) ==\
+        [x for x in data if x[1] == 0]
+    assert list(compute(t2[t2['amount'] > 150])) ==\
+        [x for x in data if x[1] > 150]
+
+
+selection_data = [{'id': 1, 'url': '/'},
+                  {'id': 2, 'url': '/foo'},
+                  {'id': 3, 'url': '/'},
+                  {'id': 4, 'url': '/foo'},
+                  {'id': 5, 'url': '/'},
+                  {'id': 6, 'url': '/foo'},
+                  {'id': 7, 'url': '/'}]
+
+s1 = blaze.data(selection_data)
+
+def test_selection_interactive():
+    assert list(compute(s1[s1['url'] == '/'])) == \
+        [(s['id'], s['url']) for s in selection_data if s['url'] == '/']
+    # assert list(compute(s1[s1['url'] != '/'])) == \
+    #     [(s['id'], s['url']) for s in selection_data if s['url'] != '/']
+
+
+def test_selection_some_more():
+    d = symbol('d', s1.dshape)
+    d_data = [(x['id'], x['url']) for x in selection_data]
+    assert list(compute(d[d['url'] == '/'], d_data)) == \
+        [(s['id'], s['url']) for s in selection_data if s['url'] == '/']
+    assert list(compute(d[d['url'] != '/'], d_data)) == \
+        [(s['id'], s['url']) for s in selection_data if s['url'] != '/']
 
 
 def test_arithmetic():

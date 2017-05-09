@@ -82,6 +82,7 @@ def compute_down(expr, **kwargs):
 
     inputs match up to leaves of the expression
     """
+
     return expr
 
 
@@ -149,6 +150,13 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     top_to_bottom -- older version
     bottom_up -- older version still
     """
+    # rl = kwargs.get('_recurse_level', 0)
+    # kwargs['_recurse_level'] = rl
+    # print('\t' * rl, ' -- ttbttae:', str(expr))
+    # for k, v in scope.items():
+    #     if rl > 2:
+    #         v = list(v)
+    #     print('\t' * rl, '\t', k, '->', v)
     # 0. Base case: expression is in dict, return associated data
     if expr in scope:
         return scope[expr]
@@ -197,6 +205,7 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
                                   "expr: %s\n"
                                   "data: %s" % (type(expr3), expr3, scope4))
     else:
+        # kwargs['_recurse_level'] += 1
         return top_then_bottom_then_top_again_etc(expr3, scope4, **kwargs)
 
 
@@ -418,17 +427,22 @@ def compute(expr, d, return_type=no_default, **kwargs):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
+    # import ipdb; ipdb.set_trace()
     _reset_leaves()
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     post_compute_ = kwargs.get('post_compute', post_compute)
     expr2, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
-        d3 = dict(
-            (e, pre_compute_(e, dat, **kwargs))
-            for e, dat in d2.items()
-            if e in expr2
-        )
+        d3 = {}
+        for e, dat in d2.items():
+            if e in expr2:
+                d3[e] = pre_compute(e, dat, **kwargs)
+        # d3 = dict(
+        #     (e, pre_compute_(e, dat, **kwargs))
+        #     for e, dat in d2.items()
+        #     if e in expr2
+        # )
     else:
         d3 = d2
 

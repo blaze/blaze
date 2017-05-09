@@ -108,10 +108,18 @@ Sequence = (tuple, list, Iterator, type(dict().items()))
 
 @dispatch(Expr, Sequence)
 def pre_compute(expr, seq, scope=None, **kwargs):
+    # import ipdb; ipdb.set_trace()
+    # seq, copy_ = itertools.tee(seq)
+    # rl = kwargs.get('_recurse_level', 0) + 1
+    # print('\t' * rl, '>> pre_compute:')
+    # print('\t' * rl, '\t expr:', expr)
+    # print('\t' * rl, '\t seq:', seq)
+    # print('\t' * rl, '\t scope:', scope)
+    # print('\t' * rl, '\t kwargs:', kwargs)
     try:
         if isinstance(seq, Iterator):
             first = next(seq)
-            seq = concat([[first], seq])
+            seq = itertools.chain([first], seq)
         else:
             first = next(iter(seq))
     except StopIteration:
@@ -376,8 +384,19 @@ def compute_up(t, seq, **kwargs):
 
 @dispatch(Selection, Sequence, Sequence)
 def compute_up(expr, seq, predicate, **kwargs):
+    # seq, copy_seq = itertools.tee(seq)
+    # predicate, copy_preds = itertools.tee(predicate)
+    # print('compute_up seq:', list(copy_seq))
+    # print('compute_up preds:', list(copy_preds))
     preds = iter(predicate)
-    return filter(lambda _: next(preds), seq)
+    import uuid
+    filter_id = uuid.uuid4()
+    def filter_(item):
+        include_ = next(preds)
+        # print('filter:', filter_id, item, include_)
+        return include_
+
+    return filter(filter_, seq)
 
 
 @dispatch(Reduction, Sequence)
