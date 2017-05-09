@@ -104,6 +104,12 @@ def test_swap_resources_into_scope():
 
     assert t not in scope
 
+    t1 = data([1, 2, 3], dshape='3 * int', name='t')
+    t2 = data([1, 2, 3], dshape='3 * int', name='t')
+    addtwo = t1 + t2
+    expr, scope = swap_resources_into_scope(addtwo, addtwo._resources())
+    assert len(scope) == len(addtwo._resources())
+
 
 def test_compute_up_on_dict():
     d = {'a': [1, 2, 3], 'b': [4, 5, 6]}

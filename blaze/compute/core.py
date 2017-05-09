@@ -350,15 +350,15 @@ def swap_resources_into_scope(expr, scope):
 
     >>> from blaze import data
     >>> t = data([1, 2, 3], dshape='3 * int', name='t')
-    >>> swap_resources_into_scope(t.head(2), {})
-    (t.head(2), {<`t` symbol; dshape='3 * int32'>: [1, 2, 3]})
+    >>> swap_resources_into_scope(t.head(2), {})     # doctest: +ELLIPSIS
+    (t....head(2), {<`t...` symbol; dshape='3 * int32'>: [1, 2, 3]})
 
     >>> expr, scope = _
     >>> list(scope.keys())[0]._resources()
     {}
     """
     resources = expr._resources()
-    symbol_dict = dict((t, symbol(t._name, t.dshape)) for t in resources)
+    symbol_dict = dict((t, symbol(t._name+str(id(t)) if t._name else None, t.dshape)) for t in resources)
     resources = dict((symbol_dict[k], v) for k, v in resources.items())
     other_scope = dict((k, v) for k, v in scope.items()
                        if k not in symbol_dict)
