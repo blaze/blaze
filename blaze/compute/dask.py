@@ -36,7 +36,8 @@ try:
         func = get_numba_ufunc(expr)
         return atop(func,
                     expr_inds,
-                    *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data))
+                    *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data),
+                    dtype=data[-1].dtype)
 
     def optimize_array(expr, *data):
         return broadcast_collect(
@@ -67,12 +68,12 @@ def compute_up(expr, data, **kwargs):
 
     inds = tuple(range(ndim(leaf)))
     tmp = atop(curry(compute_it, chunk_expr, [chunk], **kwargs), inds, data,
-               inds)
+               inds, dtype=data.dtype)
 
     return atop(compose(curry(compute_it, agg_expr, [agg], **kwargs),
                         curry(_concatenate2, axes=expr.axis)),
                 tuple(i for i in inds if i not in expr.axis),
-                tmp, inds)
+                tmp, inds, dtype=tmp.dtype)
 
 
 @dispatch(Transpose, Array)
