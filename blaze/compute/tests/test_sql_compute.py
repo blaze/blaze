@@ -1804,6 +1804,46 @@ def test_not_isin_select_expression():
     assert normalize(result_sql_expr) == normalize(expected)
 
 
+def test_isin_of_single_col_select_literal():
+    expr = t.amount[t.amount > 100].isin([200, 300])
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT accounts.amount
+        FROM accounts
+        WHERE accounts.amount > :amount_1
+        AND accounts.amount IN (:amount_2, :amount_3)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_of_single_col_select_and_column():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[L.amount > 100].name.isin(R.name)
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT accounts.name
+        FROM accounts
+        WHERE accounts.amount > :amount_1
+        AND accounts.name IN (
+          SELECT ids.name
+          FROM ids
+        )
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
 @pytest.mark.skipif('1.0.0' <= LooseVersion(sa.__version__) <= '1.0.1',
                     reason=("SQLAlchemy generates different code in 1.0.0"
                             " and 1.0.1"))

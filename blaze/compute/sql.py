@@ -1537,7 +1537,7 @@ def compute_up(expr, data, keys, **kwargs):
         'only 1 column is allowed in a Select in IsIn'
     )
     col, = unsafe_inner_columns(data)
-    return reconstruct_select((col.in_(keys),), data)
+    return data.where(col.in_(keys))
 
 
 @dispatch(IsIn, Selectable, ColumnElement)
@@ -1546,7 +1546,7 @@ def compute_up(expr, data, keys, **kwargs):
         'only 1 column is allowed in a Select in IsIn'
     )
     col, = unsafe_inner_columns(data)
-    return col.in_(select(keys))
+    return data.where(col.in_(select(keys)))
 
 
 @dispatch(Slice, (Select, Selectable, ColumnElement))
