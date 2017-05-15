@@ -708,7 +708,7 @@ def test_isin_expr(test, serial):
     resp = serial.loads(result.data)
     assert list(serial.data_loads(resp['data'])) == expected['data']
     assert list(resp['names']) == expected['names']
-    assert resp['datashape'] == expected['datashape']
+    assert_dshape_equal(resp['datashape'], expected['datashape'])
 
 
 @pytest.mark.parametrize('serial', all_formats)
