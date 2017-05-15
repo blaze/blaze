@@ -1567,7 +1567,7 @@ def compute_up(expr, data, keys, **kwargs):
         'only 1 column is allowed in a Select in IsIn'
     )
     col, = unsafe_inner_columns(data)
-    return data.where(col.in_(_coerce_op_input(keys)))
+    return reconstruct_select((col.in_(_coerce_op_input(keys)),), data)
 
 
 @dispatch(Slice, (Select, Selectable, ColumnElement))

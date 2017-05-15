@@ -1804,8 +1804,23 @@ def test_not_isin_select_expression():
     assert normalize(result_sql_expr) == normalize(expected)
 
 
-def test_isin_of_single_col_select_literal():
-    expr = t.amount[t.amount > 100].isin([200, 300])
+def test_isin_of_single_col_select_with_literal():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100.isin([200, 300])
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT accounts.amount in ( :amount_1, :amount_2 ) as anon_1
+        FROM accounts
+        WHERE accounts.amount > :amount_3
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_values_of_single_col_select_with_literal():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100[gt_100.isin([200, 300])]
     result_sql_expr = str(compute(expr, s, return_type='native'))
     expected = """
         SELECT accounts.amount
@@ -1816,7 +1831,7 @@ def test_isin_of_single_col_select_literal():
     assert normalize(result_sql_expr) == normalize(expected)
 
 
-def test_isin_of_single_col_select_and_column():
+def test_isin_of_single_col_select_with_column():
     metadata = sa.MetaData()
     lhs = sa.Table('accounts', metadata,
                    sa.Column('name', sa.String),
@@ -1833,13 +1848,22 @@ def test_isin_of_single_col_select_and_column():
     result = compute(want, {L: lhs, R: rhs}, return_type='native')
     result_sql_expr = str(result)
     expected = """
-        SELECT accounts.name
-        FROM accounts
+        SELECT accounts.name in ( select ids.name from ids ) as anon_1
+        FROM accounts where accounts.amount > :amount_1
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_arithmetic_plus_filter():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100[(gt_100 + 1).isin([200, 300])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+
+    expected = """
+        SELECT accounts.amount from accounts
         WHERE accounts.amount > :amount_1
-        AND accounts.name IN (
-          SELECT ids.name
-          FROM ids
-        )
+        AND accounts.amount + :amount_2 in ( :param_1, :param_2 )
     """
     assert normalize(result_sql_expr) == normalize(expected)
 
