@@ -1528,7 +1528,7 @@ def compute_up(expr, data, keys, **kwargs):
 
 @dispatch(IsIn, ColumnElement, ColumnElement)
 def compute_up(expr, data, keys, **kwargs):
-    return data.in_(Select([keys]))
+    return data.in_(select(keys))
 
 
 @dispatch(IsIn, Selectable, (Iterable, Selectable))
