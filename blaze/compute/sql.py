@@ -1521,32 +1521,53 @@ def post_compute(_, s, **kwargs):
     return select(s)
 
 
-@dispatch(IsIn, ColumnElement, (Iterable, Selectable))
+@dispatch((Iterable, Selectable))
+def _coerce_op_input(i):
+    """Make input to SQLAlchemy operator an amenable type.
+
+    Parameters
+    ----------
+    i : (Iterable, Selectable)
+       The iterable or selectable to coerce.
+
+    Returns
+    -------
+    coerced_input : (Iterable, Selectable)
+       The iterable or selectable passed to the function.
+       These types are already the amenable types.
+    """
+    return i
+
+
+@dispatch(ColumnElement)
+def _coerce_op_input(i):
+    """Make input to SQLAlchemy operator an amenable type.
+
+    Parameters
+    ----------
+    i : ColumnElement
+       The column element to coerce.
+
+    Returns
+    -------
+    coerced_input : sa.selectable.Select
+       A select wrapping the column element.
+    """
+    return select(i)
+
+
+@dispatch(IsIn, ColumnElement, (Iterable, Selectable, ColumnElement))
 def compute_up(expr, data, keys, **kwargs):
-    return data.in_(keys)
+    return data.in_(_coerce_op_input(keys))
 
 
-@dispatch(IsIn, ColumnElement, ColumnElement)
-def compute_up(expr, data, keys, **kwargs):
-    return data.in_(select(keys))
-
-
-@dispatch(IsIn, Selectable, (Iterable, Selectable))
+@dispatch(IsIn, Selectable, (Iterable, Selectable, ColumnElement))
 def compute_up(expr, data, keys, **kwargs):
     assert len(data.columns) == 1, (
         'only 1 column is allowed in a Select in IsIn'
     )
     col, = unsafe_inner_columns(data)
-    return data.where(col.in_(keys))
-
-
-@dispatch(IsIn, Selectable, ColumnElement)
-def compute_up(expr, data, keys, **kwargs):
-    assert len(data.columns) == 1, (
-        'only 1 column is allowed in a Select in IsIn'
-    )
-    col, = unsafe_inner_columns(data)
-    return data.where(col.in_(select(keys)))
+    return data.where(col.in_(_coerce_op_input(keys)))
 
 
 @dispatch(Slice, (Select, Selectable, ColumnElement))
