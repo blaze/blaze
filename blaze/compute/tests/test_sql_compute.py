@@ -1674,8 +1674,8 @@ def test_transform_order():
 
 
 def test_isin_literal():
-    result = t[t.name.isin(['foo', 'bar'])]
-    result_sql_expr = str(compute(result, s, return_type='native'))
+    expr = t[t.name.isin(['foo', 'bar'])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
     expected = """
         SELECT
             accounts.name,
@@ -1693,8 +1693,8 @@ def test_isin_literal():
 
 
 def test_not_isin_literal():
-    result = t[~t.name.isin(['foo', 'bar'])]
-    result_sql_expr = str(compute(result, s, return_type='native'))
+    expr = t[~t.name.isin(['foo', 'bar'])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
     expected = """
         SELECT
             accounts.name,
