@@ -902,6 +902,8 @@ def test_notnull_whole_collection():
         t.notnull
 
 
+@pytest.mark.xfail(raises=NotImplementedError,
+                   reason="IsIn not implemented.")
 @pytest.mark.parametrize('keys', [['Alice'], ['Bob', 'Alice']])
 def test_isin(keys):
     expr = t[t.name.isin(keys)]

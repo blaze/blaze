@@ -11,7 +11,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping
+from collections import Iterable, Mapping
 import itertools
 import numbers
 import fnmatch
@@ -189,11 +189,6 @@ def rowfunc(t):
 def rowfunc(t):
     index = t._child.fields.index(t._name)
     return lambda x, index=index: x[index]
-
-
-@dispatch(IsIn)
-def rowfunc(t):
-    return t._keys.__contains__
 
 
 @dispatch(Broadcast)

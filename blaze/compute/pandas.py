@@ -21,7 +21,7 @@ import fnmatch
 import itertools
 from distutils.version import LooseVersion
 import warnings
-from collections import defaultdict
+from collections import defaultdict, Iterable
 
 import numpy as np
 
@@ -845,9 +845,9 @@ def compute_up(expr, data, **kwargs):
                   name=expr._name)
 
 
-@dispatch(IsIn, (Series, DaskSeries))
-def compute_up(expr, data, **kwargs):
-    return data.isin(expr._keys)
+@dispatch(IsIn, (Series, DaskSeries), Iterable)
+def compute_up(expr, data, keys, **kwargs):
+    return data.isin(keys)
 
 
 @dispatch(Coerce, (Series, DaskSeries))

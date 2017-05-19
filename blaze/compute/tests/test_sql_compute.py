@@ -30,6 +30,7 @@ from blaze.expr import (
     exp,
     floor,
     greatest,
+    isin,
     join,
     least,
     mean,
@@ -1672,9 +1673,9 @@ def test_transform_order():
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_isin():
-    result = t[t.name.isin(['foo', 'bar'])]
-    result_sql_expr = str(compute(result, s, return_type='native'))
+def test_isin_literal():
+    expr = t[t.name.isin(['foo', 'bar'])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
     expected = """
         SELECT
             accounts.name,
@@ -1687,6 +1688,182 @@ def test_isin():
         IN
             (:name_1,
             :name_2)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_not_isin_literal():
+    expr = t[~t.name.isin(['foo', 'bar'])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount,
+            accounts.id
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        NOT IN
+            (:name_1,
+            :name_2)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_expression():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[L.name.isin(R.name)]
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        IN
+            (SELECT ids.name
+             FROM ids)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_not_isin_expression():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[~L.name.isin(R.name)]
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        NOT IN
+            (SELECT ids.name
+             FROM ids)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_not_isin_select_expression():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[~L.name.isin(R.name[R.id > 1])]
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        NOT IN
+            (SELECT ids.name
+             FROM ids where ids.id > :id_1)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_of_single_col_select_with_literal():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100.isin([200, 300])
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT accounts.amount in ( :amount_1, :amount_2 ) as anon_1
+        FROM accounts
+        WHERE accounts.amount > :amount_3
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_values_of_single_col_select_with_literal():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100[gt_100.isin([200, 300])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT accounts.amount
+        FROM accounts
+        WHERE accounts.amount > :amount_1
+        AND accounts.amount IN (:amount_2, :amount_3)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_of_single_col_select_with_column():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[L.amount > 100].name.isin(R.name)
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT accounts.name in ( select ids.name from ids ) as anon_1
+        FROM accounts where accounts.amount > :amount_1
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_arithmetic_plus_filter():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100[(gt_100 + 1).isin([200, 300])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+
+    expected = """
+        SELECT accounts.amount from accounts
+        WHERE accounts.amount > :amount_1
+        AND accounts.amount + :amount_2 in ( :param_1, :param_2 )
     """
     assert normalize(result_sql_expr) == normalize(expected)
 

@@ -408,7 +408,8 @@ def test_interactive_dshape_works(bank, mongo_host_port):
     assert dshape(d.dshape.measure) == dshape('{amount: int64, name: string}')
 
 
-@pytest.mark.xfail(raises=TypeError, reason="IsIn not yet implemented")
+@pytest.mark.xfail(raises=NotImplementedError,
+                   reason="IsIn not yet implemented")
 def test_isin_fails(bank):
     expr = t[t.amount.isin([100])]
     result = compute(expr, bank)

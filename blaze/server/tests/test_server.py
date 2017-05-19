@@ -694,6 +694,24 @@ def test_isin(test, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
+def test_isin_expr(test, serial):
+    name_filter = t.accounts[t.accounts.amount > 100].name
+    expr = t.cities.name.isin(name_filter)
+    query = {'expr': to_tree(expr)}
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(query))
+    expected = {'data': [False, True],
+                'names': ['name'],
+                'datashape': '2 * bool'}
+    assert result.status_code == RC.OK
+    resp = serial.loads(result.data)
+    assert list(serial.data_loads(resp['data'])) == expected['data']
+    assert list(resp['names']) == expected['names']
+    assert_dshape_equal(resp['datashape'], expected['datashape'])
+
+
+@pytest.mark.parametrize('serial', all_formats)
 def test_add_errors(temp_add_server, serial):
     pre_datashape = datashape.dshape(temp_add_server
                                      .get('/datashape')
