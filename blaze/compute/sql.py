@@ -24,6 +24,7 @@ import itertools
 from itertools import chain
 from operator import and_, eq, attrgetter
 import warnings
+from collections import defaultdict
 
 from datashape import TimeDelta, Option, int32
 from datashape.predicates import iscollection, isscalar, isrecord
@@ -375,6 +376,26 @@ _binop(
     (greatest, least),
     lambda expr, lhs, rhs: getattr(sa.func, type(expr).__name__)(lhs, rhs),
 )
+
+
+class smart_dict(dict):
+    def __missing__(self, key):
+        return key
+
+
+postgres_to_mssql = smart_dict({'pow': 'power',
+                                'stddev_pop': 'stdevp',
+                                'stddev_samp': 'stdev',
+                                'var_pop': 'varp',
+                                'var_samp': 'var'})
+
+
+@compiles(sa.sql.functions.Function, 'mssql')
+def mssql_comiles(element, compiler, **kwargs):
+    func_name = postgres_to_mssql[element.name]
+    func = getattr(sa.func, func_name)(*element.clauses)
+    return compiler.visit_function(func, **kwargs)
+
 
 
 @dispatch(Pow, ColumnElement)
