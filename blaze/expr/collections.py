@@ -647,7 +647,7 @@ class Join(Expr):
             self.rhs.dshape.measure.dict,
         )
         joined = (
-            (name, promote(dt, right_types[name], promote_option=False))
+            (name, promote(extract_key(dt), extract_key(right_types[name]), promote_option=False))
             for n, (name, dt) in enumerate(filter(
                 compose(op.contains(on_left), first),
                 self.lhs.dshape.measure.fields,
@@ -717,6 +717,10 @@ def types_of_fields(fields, expr):
         return expr.dshape.measure
 
 
+def extract_key(m):
+    return m.measure.key if isinstance(m.measure, datashape.coretypes.Map) else m
+
+
 @copydoc(Join)
 def join(lhs, rhs, on_left=None, on_right=None,
          how='inner', suffixes=('_left', '_right')):
@@ -736,6 +740,9 @@ def join(lhs, rhs, on_left=None, on_right=None,
         )
     left_types = listpack(types_of_fields(on_left, lhs))
     right_types = listpack(types_of_fields(on_right, rhs))
+    # Replace map[x, y] with x to resolve foreign keys.
+    left_types = list(map(extract_key, left_types))
+    right_types = list(map(extract_key, right_types))
     if len(left_types) != len(right_types):
         raise ValueError(
             'Length of on_left=%d not equal to length of on_right=%d' % (
