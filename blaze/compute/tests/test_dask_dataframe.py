@@ -121,13 +121,13 @@ def test_selection_inner_inputs():
 
 
 def test_reductions():
-    assert compute(mean(t['amount']), ddf) == 350 / 3
+    assert compute(mean(t['amount']), ddf) == 350 / 3.0
     assert compute(count(t['amount']), ddf) == 3
     assert compute(sum(t['amount']), ddf) == 100 + 200 + 50
     assert compute(min(t['amount']), ddf) == 50
     assert compute(max(t['amount']), ddf) == 200
-    assert compute(var(t['amount']), ddf) == df.amount.var(ddof=0)
-    assert compute(var(t['amount'], unbiased=True), ddf) == df.amount.var()
+    tm.assert_almost_equal(compute(var(t['amount']), ddf), df.amount.var(ddof=0))
+    tm.assert_almost_equal(compute(var(t['amount'], unbiased=True), ddf), df.amount.var())
     assert compute(std(t['amount']), ddf) == df.amount.std(ddof=0)
     assert compute(std(t['amount'], unbiased=True), ddf) == df.amount.std()
 

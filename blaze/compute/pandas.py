@@ -249,6 +249,8 @@ def get_scalar(result):
     try:
         return result.item()
     except (AttributeError, ValueError):
+        if isinstance(result, dd.core.Scalar):
+            return result.compute()
         return result
 
 
@@ -260,7 +262,7 @@ def compute_up(t, s, **kwargs):
     return result
 
 
-@dispatch((std, var), (Series, SeriesGroupBy))
+@dispatch((std, var), (Series, SeriesGroupBy, DaskSeries))
 def compute_up(t, s, **kwargs):
     measure = t.schema.measure
     is_timedelta = isinstance(
