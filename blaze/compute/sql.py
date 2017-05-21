@@ -96,6 +96,7 @@ from ..expr import (
     StrSlice,
     var,
 )
+from ..expr.datetime import dayofweek
 from ..expr.strings import len as str_len
 from ..expr.broadcast import broadcast_collect
 from ..expr.math import isnan
@@ -1393,10 +1394,54 @@ def compute_up(expr, data, **kwargs):
 
 @dispatch(DateTime, ColumnElement)
 def compute_up(expr, data, **kwargs):
-    if expr.attr == 'date':
+    attr = expr.attr
+    if attr == 'date':
         return sa.func.date(data).label(expr._name)
+    elif attr == 'dayofyear':
+        attr = 'doy'
 
-    return sa.extract(expr.attr, data).label(expr._name)
+    return sa.extract(attr, data).cast(dshape_to_alchemy(expr.schema)).label(
+        expr._name,
+    )
+
+
+@dispatch(dayofweek, ColumnElement)
+def compute_up(expr, data, **kwargs):
+    # ``datetime.datetime.weekday()`` and ``pandas.Timestamp.dayofweek`` use
+    # monday=0 but sql uses sunday=0. We add 6 (7 - 1) to subtract 1 in Z7
+    # which will align on monday=0.
+    # We cannot use ``(extract(dow from data) - 1) % 7`` because in sql
+    # ``-1 % 7 = -1``, so instead we roll forward by 6 which is functionally
+    # equivalent.
+    # We also need to cast the result of the extract to a small integer because
+    # postgres returns a double precision for the result.
+
+    #     January 2014
+    # Su Mo Tu We Th Fr Sa
+    #           1  2  3  4
+    #  5  6  7  8  9 10 11
+    # 12 13 14 15 16 17 18
+    # 19 20 21 22 23 24 25
+    # 26 27 28 29 30 3
+
+    # 2014-01-05 is a Sunday
+    # bz=# select extract('dow' from '2014-01-05'::timestamp);
+    #  date_part
+    # -----------
+    #          0
+    # (1 row)
+    #
+    # In [1]: pd.Timestamp('2014-01-05').dayofweek
+    # Out[1]: 6
+    #
+    # bz=# select extract('dow' from '2014-01-05'::timestamp)::smallint + 6 % 7;
+    #  ?column?
+    # ----------
+    #         6
+    # (1 row)
+    return ((sa.extract('dow', data).cast(sa.SmallInteger) + 6) % 7).label(
+        expr._name,
+    )
 
 
 @dispatch(DateTimeTruncate, ColumnElement)

@@ -836,18 +836,31 @@ def test_rowwise_by():
     tm.assert_frame_equal(result, expected)
 
 
-def test_datetime_access():
+@pytest.mark.parametrize(
+    'attr', (
+        'day',
+        'month',
+        'week',
+        'minute',
+        'second',
+        'dayofweek',
+        'weekday',
+        'dayofyear',
+        'quarter',
+    ),
+)
+def test_datetime_access(attr):
     df = DataFrame({'name': ['Alice', 'Bob', 'Joe'],
-                    'when': [datetime(2010, 1, 1, 1, 1, 1)] * 3,
+                    # 2002 is used because the dayofyear 1 is the same as
+                    # dayofweek 1
+                    'when': [datetime(2002, 1, 1, 1, 1, 1)] * 3,
                     'amount': [100, 200, 300],
                     'id': [1, 2, 3]})
 
     t = symbol('t', discover(df))
-
-    for attr in ['day', 'month', 'minute', 'second']:
-        expr = getattr(t.when, attr)
-        assert_series_equal(compute(expr, df),
-                            Series([1, 1, 1], name=expr._name))
+    expr = getattr(t.when.dt, attr)()
+    assert_series_equal(compute(expr, df),
+                        Series([1, 1, 1], name=expr._name))
 
 
 @pytest.mark.parametrize('attr, args, expected',

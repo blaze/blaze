@@ -35,6 +35,7 @@ from blaze import (
 )
 from blaze.types import iscorescalar
 from blaze.utils import example, normalize
+from blaze.compatibility import assert_series_equal
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -863,3 +864,26 @@ def test_selection_selectable(sql):
                     return_type=pd.DataFrame) ==
             pd.DataFrame([['a', 1]],
                          columns=s.dshape.measure.names)).all().all()
+
+
+@pytest.mark.parametrize(
+    'attr', (
+        'day',
+        'month',
+        'week',
+        'minute',
+        'second',
+        'dayofweek',
+        'weekday',
+        'dayofyear',
+        'quarter',
+    ),
+)
+def test_datetime_access(attr, sql_with_dts):
+    s = symbol('s', discover(sql_with_dts))
+    expr = getattr(s.A.dt, attr)()
+    assert_series_equal(
+        compute(expr, sql_with_dts, return_type=pd.Series),
+        getattr(compute(s.A, sql_with_dts, return_type=pd.Series).dt, attr),
+        check_names=False,
+    )
