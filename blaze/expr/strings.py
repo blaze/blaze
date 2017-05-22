@@ -13,6 +13,10 @@ from ..deprecation import deprecated
 
 __all__ = ['Like',
            'like',
+           'StrStartswith',
+           'startswith',
+           'StrEndswith',
+           'endswith',
            'Pad',
            'Replace',
            'SliceReplace',
@@ -140,6 +144,51 @@ def find(col, sub):
     if not isinstance(sub, basestring):
         raise TypeError("'sub' argument must be a String")
     return StrFind(col, sub)
+
+
+class StrStartswith(Like):
+    """ Filter expression by startswith predicate.
+
+    >>> from blaze import symbol, like, compute
+    >>> t = symbol('t', 'var * {name: string, city: string}')
+    >>> expr = t[t.name.startswith('Ali')]
+
+    >>> data = [('Alice Smith', 'New York'),
+    ...         ('Bob Jones', 'Chicago'),
+    ...         ('Alice Walker', 'LA')]
+    >>> list(compute(expr, data))
+    [('Alice Smith', 'New York'), ('Alice Walker', 'LA')]
+    """
+
+
+@copydoc(StrStartswith)
+def startswith(child, pattern):
+    if not isinstance(pattern, basestring):
+        raise TypeError('pattern argument must be a string')
+    return StrStartswith(child, pattern)
+
+
+class StrEndswith(Like):
+    """ Filter expression by startswith predicate.
+
+    >>> from blaze import symbol, like, compute
+    >>> t = symbol('t', 'var * {name: string, city: string}')
+    >>> expr = t[t.name.endswith('th')]
+
+    >>> data = [('Alice Smith', 'New York'),
+    ...         ('Bob Jones', 'Chicago'),
+    ...         ('Alice Walker', 'LA')]
+    >>> list(compute(expr, data))
+    [('Alice Smith', 'New York')]
+    """
+
+
+@copydoc(StrEndswith)
+def endswith(child, pattern):
+    if not isinstance(pattern, basestring):
+        raise TypeError('pattern argument must be a string')
+    return StrEndswith(child, pattern)
+
 
 class Replace(ElemWise):
     _arguments = '_child', 'old', 'new', 'max'
@@ -304,6 +353,8 @@ class str_ns(object):
 
     def upper(self): return upper(self.field)
     def lower(self): return lower(self.field)
+    def startswith(self, pattern): return startswith(self.field, pattern)
+    def endswith(self, pattern): return endswith(self.field, pattern)
     def len(self): return len(self.field)
     def like(self, pattern): return like(self.field, pattern)
     def cat(self, other, sep=None): return cat(self.field, other, sep=sep)
@@ -356,6 +407,8 @@ schema_method_list.extend([(isstring,
                                  repeat,
                                  interp,
                                  like,
+                                 startswith,
+                                 endswith,
                                  str_len, # deprecated
                                  str_upper, # deprecated
                                  str_lower, # deprecated

@@ -53,6 +53,8 @@ def test_upper_schema(ds):
 
 def test_str_namespace():
     t = symbol('t', 'var * {name: string}')
+    assert bzs.startswith(t.name, 'zzz').isidentical(t.name.str.startswith('zzz'))
+    assert bzs.endswith(t.name, 'zzz').isidentical(t.name.str.endswith('zzz'))
     assert bzs.upper(t.name).isidentical(t.name.str.upper())
     assert bzs.lower(t.name).isidentical(t.name.str.lower())
     assert (bzs.lower(bzs.upper(t.name))
@@ -98,4 +100,3 @@ def test_cat_exception_non_string_sep(strcat_sym):
 def test_cat_exception_non_string_col_to_cat(strcat_sym):
     with pytest.raises(TypeError):
         strcat_sym.name.str.cat(strcat_sym.num)
-

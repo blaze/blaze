@@ -1,0 +1,40 @@
+Release 0.11.3
+-----------------
+
+:Release: 0.11.3
+
+New Expressions
+~~~~~~~~~~~~~~~
+
+* The ``str`` subnamespace now supports ``startswith()`` and ``endswith()``
+predicates (:issue:`1569`).
+
+Improved Expressions
+~~~~~~~~~~~~~~~~~~~~
+
+None
+
+New Backends
+~~~~~~~~~~~~
+
+None
+
+Improved Backends
+~~~~~~~~~~~~~~~~~
+
+None
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+None
+
+API Changes
+~~~~~~~~~~~
+
+None
+
+Bug Fixes
+~~~~~~~~~
+
+None
