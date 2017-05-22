@@ -4,22 +4,22 @@ Release 0.10.2
 :Release: 0.10.2
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 None
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 * Adds support for ``any`` and ``all`` to the sql backend (:issue:`1511`).
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 * To allow access to the ``map`` and ``apply`` expressions in client / server
   interactions when in a trusted environment, new ``_trusted`` versions of the
@@ -30,17 +30,17 @@ Improved Backends
   environments (:issue:`1497` :issue:`1504`).
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 None
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 None
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * Fixed a bug with ``to_tree()`` and ``slice`` objects. Have to change the
   order of cases in ``to_tree()`` to ensure ``slice`` objects are handled
@@ -53,10 +53,10 @@ Bug Fixes
   (:issue:`1528`).
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 Expression Identity Rework
-``````````````````````````
+""""""""""""""""""""""""""
 
 Expression are now memoized by their inputs. This means that two identical
 expressions will always be the same object, or that ``a.isidentical(b)`` is the

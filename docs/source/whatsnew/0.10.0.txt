@@ -5,7 +5,7 @@ Release 0.10.0
 :Date: TBD
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 * The ``sample`` expression allows random sampling of rows to facilitate
   interactive data exploration (:issue:`1410`).  It is implemented for the
@@ -32,7 +32,7 @@ New Expressions
   (:issue:`1409`).
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 * The test suite was expanded to validate proper expression input error handling
   (:issue:`1420`).
@@ -43,12 +43,12 @@ Improved Expressions
   ordering of the columns in the result (:issue:`1447`).
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 * Adds :class:`~blaze.expr.math.greatest` and :class:`~blaze.expr.math.least`
   support to the sql backend (:issue:`1428`).
@@ -56,7 +56,7 @@ Improved Backends
   (:issue:`1467`).
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 * The :class:`~blaze.expr.strings.str_upper` and
   :class:`~blaze.expr.strings.str_lower` expressions were added for the Pandas
@@ -65,7 +65,7 @@ Experimental Features
   versions.
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 * The :class:`~blaze.expr.strings.strlen` expression was deprecated in favor of
   :class:`~blaze.expr.strings.str_len` (:issue:`1462`).
@@ -106,7 +106,7 @@ API Changes
 
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * The :class:`~blaze.expr.strings.str_upper` and
   :class:`~blaze.expr.strings.str_lower` schemas were fixed to pass through
@@ -125,7 +125,7 @@ Bug Fixes
 
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 * Adds logging to server compute endpoint.  Includes expression being computed
   and total time to compute. (:issue:`1436`)

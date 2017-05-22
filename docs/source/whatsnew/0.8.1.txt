@@ -6,7 +6,7 @@ Release 0.8.1
 
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 * String arithmetic is now possible across the numpy and pandas backends via the ``+`` (concatenation) and ``*`` (repeat) operators (:issue:`1058`).
 * Datetime arithmetic is now available (:issue:`1112`).
@@ -16,28 +16,28 @@ New Expressions
 
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 * :class:`~blaze.expr.expressions.ReLabel` expressions ``repr`` differently
   depending on whether the existing column names are valid Python variable names (:issue:`1070`).
 
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 CSV
-^^^
+"""
 
 * *In-memory* merges of CSV files are now possible (:issue:`1121`).
 
 Blaze Server
-^^^^^^^^^^^^
+""""""""""""
 
 * Tie blueprint registration to data registration (:issue:`1061`).
 * Don't catch import error when flask doesn't exist, since blaze does this
@@ -53,7 +53,7 @@ Blaze Server
   a YAML file (:issue:`1115`).
 
 SQL
-^^^
+"""
 
 * Use aliases to allow expressions on the SQL backend that involve a multiple step reduction operation (:issue:`1066`, :issue:`1126`).
 * Fix unary not operator ``~`` (:issue:`1091`).
@@ -63,7 +63,7 @@ SQL
 
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 * Remove old :func:`~blaze.server.client.ExprClient`. Use :class:`~blaze.server.client.Client` instead (:issue:`1154`).
 * Make sort + slice and sort + slice semantics of the SQL backend reflect those
@@ -82,7 +82,7 @@ API Changes
 
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * Handle SQLAlchemy API churn around reference of ``ColumnElement`` objects in the 1.0.x series (:issue:`1071`, :issue:`1076`).
 * Obscure hashing bug when passing in both a pandas Timestamp and a ``datetime.datetime`` object. Both objects hash to the same value but don't necessarily compare equal; this makes Python call ``__eq__`` which caused an ``Eq`` expression to be constructed (:issue:`1097`).

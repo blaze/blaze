@@ -4,37 +4,37 @@ Release 0.11.2
 :Release: 0.11.2
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 None
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 None
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 None
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 None
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 None
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * `blaze.data()` now respects an explicit `dshape` argument in all cases
 (:issue:`1589`).
