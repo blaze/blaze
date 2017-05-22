@@ -112,3 +112,13 @@ Blaze can simplify and make more readable some common IO tasks that one would wa
 |                 |    df = pd.read_sql('select * from t',                          |                                                   |
 |                 |                     con=sa.create_engine('sqlite:///db.db'))    |                                                   |
 +-----------------+-----------------------------------------------------------------+---------------------------------------------------+
+
+
+Moving from Blaze to Pandas
+---------------------------
+
+You've done all of the transformations that you would like to do in your backend, and you're ready to pull the data in to pandas to check some quick plots. You can use odo for this, as well.
+
+```python
+pandas_data = bz.odo(blaze_data, pd.DataFrame)
+```
