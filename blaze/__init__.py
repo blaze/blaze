@@ -98,6 +98,8 @@ with ignoring(ImportError):
 with ignoring(ImportError):
     from .pytables import *
     from .compute.pytables import *
+with ignoring(ImportError):
+    from .compute.dato import *
 
 
 from .expr import concat  # Some module re-export toolz.concat and * catches it.
