@@ -628,12 +628,12 @@ def compute_up(t, df, **kwargs):
 
 @dispatch(Label, DataFrame)
 def compute_up(t, df, **kwargs):
-    return type(df)(df, columns=[t.label])
+    return type(df)(df, columns=[t._label])
 
 
 @dispatch(Label, Series)
 def compute_up(t, df, **kwargs):
-    return Series(df, name=t.label)
+    return Series(df, name=t._label)
 
 
 @dispatch(ReLabel, (DataFrame, DaskDataFrame))

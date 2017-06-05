@@ -587,14 +587,14 @@ class Label(ElemWise):
     --------
     blaze.expr.expressions.ReLabel
     """
-    _arguments = '_child', 'label'
+    _arguments = '_child', '_label'
 
     def _schema(self):
         return self._child.schema
 
     @property
     def _name(self):
-        return self.label
+        return self._label
 
     def _get_field(self, key):
         if key[0] == self.fields[0]:
@@ -602,7 +602,7 @@ class Label(ElemWise):
         raise ValueError("Column Mismatch: %s" % key)
 
     def __str__(self):
-        return 'label(%s, %r)' % (self._child, self.label)
+        return 'label(%s, %r)' % (self._child, self._label)
 
 
 @copydoc(Label)
