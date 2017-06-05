@@ -2,6 +2,8 @@
 .. image:: svg/blaze_med.png
    :align: center
 
+**Blaze** is a framework for querying heterogeneous data stores.
+
 **The Blaze Ecosystem** provides Python users high-level access to efficient
 computation on inconveniently large data.  Blaze can refer to both a particular
 *library* as well as an *ecosystem* of related projects that have spun off of
