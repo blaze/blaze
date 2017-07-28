@@ -55,7 +55,7 @@ install:
   # pulling from master), this speeds up the builds a lot. Use the normal pip
   # install for the rest.
   - conda create -n odo numpy=1.11.2
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy=1.11.2 numba==0.29.0
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy=1.11.2 numba==0.34.0
   - if [ -n "$PANDAS_VERSION" ]; then pip install cython==0.24.1; pip install $PANDAS_VERSION; else conda install pandas=0.19.0; fi
   - source activate blaze
   # update setuptools and pip
