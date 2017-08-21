@@ -22,7 +22,6 @@ pandas
 partd
 psutil
 psycopg2
-PyHive
 pymongo
 PyMySQL
 pytest
