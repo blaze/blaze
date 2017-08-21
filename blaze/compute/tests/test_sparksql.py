@@ -362,12 +362,20 @@ def test_by_with_date(ctx, db, attr):
     expr = by(getattr(db.dates.ds, attr), mean=db.dates.amount.mean())
     result = odo(
         compute(expr, ctx, return_type='native'), pd.DataFrame
-    ).sort('mean').reset_index(drop=True)
+    )
+    try:
+        result = result.sort_values('mean').reset_index(drop=True)
+    except AttributeError:
+        result = result.sort('mean').reset_index(drop=True)
     expected = compute(
         expr,
         {db: {'dates': date_df}},
         return_type='native'
-    ).sort('mean').reset_index(drop=True)
+    )
+    try:
+        expected = expected.sort_values('mean').reset_index(drop=True)
+    except AttributeError:
+        expected = expected.sort('mean').reset_index(drop=True)
     tm.assert_frame_equal(result, expected, check_dtype=False)
 
 
