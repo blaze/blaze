@@ -59,18 +59,19 @@ install:
   # update setuptools and pip
   - conda update setuptools pip
 
-  - if [ -n "$SPARK_VERSION" ]; then conda install spark=$SPARK_VERSION pyhive -c blaze -c anaconda-cluster; fi
+  - if [ -n "$SPARK_VERSION" ]; then conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; fi
 
   # Install CI packages
   - conda install --file etc/requirements_ciconda.txt
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
-  - pip install git+https://github.com/blaze/odo
+  # - pip install git+https://github.com/blaze/odo
+  - pip install git+https://github.com/thequackdaddy/odo.git@reversion
 
   # Install coveralls
   - pip install coveralls
-
+  - conda list
   # Install Blaze
   - pip install -e .[ci]
   
