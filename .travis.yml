@@ -11,15 +11,17 @@ matrix:
       env: SPARK_VERSION=1.5
     - python: 3.4
       env: SPARK_VERSION=1.4
-    - python: 3.4
-      env: SPARK_VERSION=1.5
     - python: 3.5
+      env: SPARK_VERSION=1.5
+    - python: 3.6
       env: SPARK_VERSION=1.5
     - python: 2.7
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.4
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+    - python: 3.6
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
   allow_failures:
     - python: 2.7
@@ -27,6 +29,8 @@ matrix:
     - python: 3.4
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+    - python: 3.6
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
 
 services:
@@ -48,10 +52,9 @@ install:
   # Install dependencies Use conda **ONLY** for numpy, numba, and pandas (if not
   # pulling from master), this speeds up the builds a lot. Use the normal pip
   # install for the rest.
-  - conda create -n odo numpy=1.11.2
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy=1.11.2 numba==0.29.0
-  - if [ -n "$PANDAS_VERSION" ]; then pip install cython==0.24.1; pip install $PANDAS_VERSION; else conda install pandas=0.19.0; fi
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy numba
   - source activate blaze
+  - if [ -n "$PANDAS_VERSION" ]; then conda install cython; pip install $PANDAS_VERSION; else conda install pandas; fi
   # update setuptools and pip
   - conda update setuptools pip
 
