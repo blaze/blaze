@@ -6,32 +6,32 @@ matrix:
   fast_finish: true
   include:
     - python: 2.7
-      env: SPARK_VERSION=1.4
+      env: SPARK_VERSION=2.1
     - python: 2.7
-      env: SPARK_VERSION=1.5
+      env: SPARK_VERSION=2.2
     - python: 3.4
-      env: SPARK_VERSION=1.4
+      env: SPARK_VERSION=2.1
     - python: 3.5
-      env: SPARK_VERSION=1.5
+      env: SPARK_VERSION=2.2
     - python: 3.6
-      env: SPARK_VERSION=1.5
+      env: SPARK_VERSION=2.2
     - python: 2.7
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
     - python: 3.4
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
     - python: 3.5
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
     - python: 3.6
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
   allow_failures:
     - python: 2.7
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
     - python: 3.4
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
     - python: 3.5
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
     - python: 3.6
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
 
 services:
     - mongodb
@@ -52,13 +52,13 @@ install:
   # Install dependencies Use conda **ONLY** for numpy, numba, and pandas (if not
   # pulling from master), this speeds up the builds a lot. Use the normal pip
   # install for the rest.
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy numba
+  - conda create -n blaze python=$TRAVIS_PYTHON_VERSION numpy numba
   - source activate blaze
   - if [ -n "$PANDAS_VERSION" ]; then conda install cython; pip install $PANDAS_VERSION; else conda install pandas; fi
   # update setuptools and pip
   - conda update setuptools pip
 
-  - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster
+  - conda install pyspark=$SPARK_VERSION -c conda-forge
 
   # Install CI packages
   - conda install --file etc/requirements_ciconda.txt
