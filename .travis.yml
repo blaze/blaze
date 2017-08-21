@@ -6,32 +6,33 @@ matrix:
   fast_finish: true
   include:
     - python: 2.7
-      env: SPARK_VERSION=2.1
+      env: SPARK_VERSION=1.4
     - python: 2.7
-      env: SPARK_VERSION=2.2
+      env: SPARK_VERSION=1.5
     - python: 3.4
-      env: SPARK_VERSION=2.1
+      env: SPARK_VERSION=1.4
+    - python: 3.4
+      env: SPARK_VERSION=1.5
     - python: 3.5
-      env: SPARK_VERSION=2.2
+      env: SPARK_VERSION=1.5
     - python: 3.6
-      env: SPARK_VERSION=2.2
     - python: 2.7
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.4
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.5
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.6
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
   allow_failures:
     - python: 2.7
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.4
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.5
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.6
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=2.2
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
 
 services:
     - mongodb
@@ -58,7 +59,7 @@ install:
   # update setuptools and pip
   - conda update setuptools pip
 
-  - conda install pyspark=$SPARK_VERSION -c conda-forge
+  - if [ -n "$SPARK_VERSION" ]; then conda install spark=$SPARK_VERSION pyhive -c blaze -c anaconda-cluster; fi
 
   # Install CI packages
   - conda install --file etc/requirements_ciconda.txt
