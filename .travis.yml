@@ -71,7 +71,7 @@ install:
 
   # Install coveralls
   - pip install coveralls
-  - conda list
+
   # Install Blaze
   - pip install -e .[ci]
   

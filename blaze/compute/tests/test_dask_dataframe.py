@@ -126,10 +126,14 @@ def test_reductions():
     assert compute(sum(t['amount']), ddf) == 100 + 200 + 50
     assert compute(min(t['amount']), ddf) == 50
     assert compute(max(t['amount']), ddf) == 200
-    tm.assert_almost_equal(compute(var(t['amount']), ddf), df.amount.var(ddof=0))
-    tm.assert_almost_equal(compute(var(t['amount'], unbiased=True), ddf), df.amount.var())
-    assert compute(std(t['amount']), ddf) == df.amount.std(ddof=0)
-    assert compute(std(t['amount'], unbiased=True), ddf) == df.amount.std()
+    tm.assert_almost_equal(compute(var(t['amount']), ddf),
+                           df.amount.var(ddof=0))
+    tm.assert_almost_equal(compute(var(t['amount'], unbiased=True), ddf),
+                           df.amount.var())
+    tm.assert_almost_equal(compute(std(t['amount']), ddf),
+                           df.amount.std(ddof=0))
+    tm.assert_almost_equal(compute(std(t['amount'], unbiased=True), ddf),
+                           df.amount.std())
 
 
 def test_summary():
