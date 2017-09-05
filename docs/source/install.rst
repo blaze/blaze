@@ -34,7 +34,7 @@ obtain the source from Github.
     $ git clone git@github.com:blaze/blaze.git
 
 Anaconda can be downloaded for all platforms here:
-http://continuum.io/anaconda.html .
+https://www.anaconda.com/download/ .
 
 Introduction
 ~~~~~~~~~~~~
