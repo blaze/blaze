@@ -4,39 +4,39 @@ Release 0.11.1
 :Release: 0.11.1
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 None
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 None
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 * The CSV backend was refactored to use ``dask.dataframe``.  Previously it used
 ``odo.chunks`` (:issue:`1549`).
 * Configurable blaze server logging was added (:issue:`1521`).
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 None
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 None
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * Fixed a testing regression introduced by the latest pymysql version
 (:issue:`1571`).
@@ -48,6 +48,6 @@ Bug Fixes
   (:issue:`1585`).
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 * Support for Python 3.5 added.

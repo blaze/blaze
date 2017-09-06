@@ -4,7 +4,7 @@ Release 0.11.0
 :Release: 0.11.0
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 * Many new string utility expressions were added that follow the Pandas
   vectorized string methods API closely
@@ -21,27 +21,27 @@ New Expressions
   `<http://pandas.pydata.org/pandas-docs/stable/timeseries.html>`_.
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 None
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 None
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 None
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 * The following functions were deprecated in favor of equivalent functions
   without the `str_` name prefix:
@@ -57,11 +57,11 @@ API Changes
 
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 None
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 None

@@ -5,23 +5,23 @@ Release 0.9.0
 :Date: December 17th, 2015
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 * Add a :func:`~blaze.expr.collections.shift` expression for shifting
   data backwards or forwards by *N* rows (:issue:`1266`).
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 * Initial support for dask.dataframe has been added, see (:issue:`1317`).
   Please send feedback via an issue or pull request if we missed any
   expressions you need.
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 * Adds support for :func:`~blaze.expr.collections.tail` in the sql backend
   (:issue:`1289`).
@@ -40,7 +40,7 @@ Improved Backends
   (:issue:`1336`).
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 * There is now support for joining tables from multiple sources. This
   is **very experimental** right now, so use it at your own risk. It
@@ -49,7 +49,7 @@ Experimental Features
   can now be accessed with a more concise syntax (:issue:`1192`).
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 * Removed support for Python 2.6 (:issue:`1267`).
 * Removed support for Python 3.3 (:issue:`1270`).
@@ -68,7 +68,7 @@ API Changes
   consistent linebreaks for use by non-Python clients (:issue:`1361`).
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * Fixed a bug where ``Merge`` expressions would unpack option types in their
   fields. This could cause you to have a table where ``expr::{a: int32}`` but
@@ -120,11 +120,11 @@ Bug Fixes
   ``Decimal`` dshape.
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 * :meth:`blaze.server.Server.run` now uses :func:`warnings.warn` instead of
   ``print`` when it fails to bind to a port and is retrying (:issue:`1316`).
-* Make expressions (subclasses of Expr) weak referencable (:issue:`1319).
+* Make expressions (subclasses of Expr) weak referencable (:issue:`1319`).
 * Memoize dshape and schema methods (:issue:`1319`).
 * Use ``pandas.DataFrame.sort_values()`` with pandas version >= 0.17.0
   (:issue:`1321`).

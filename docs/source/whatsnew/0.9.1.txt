@@ -5,10 +5,10 @@ Release 0.9.1
 :Date: December 17th, 2015
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 * The :class:`~blaze.expr.string.Like` expression was improved to support more
   general ``Select`` queries that result from
@@ -18,32 +18,32 @@ Improved Expressions
   backends (:issue:`1382`).
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 * Blaze Server no longer depends on `Bokeh` for CORS handling, and now uses the
   `flask-cors` third-party package (:issue:`1378`).
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 None
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 None
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * Fixed a ``blaze-server`` entry point bug regarding an ambiguity between the
   :func:`~blaze.server.spider.spider` function and the
-  :module:`~blaze.server.spider` module (:issue:`1385`).
+  :mod:`~blaze.server.spider` module (:issue:`1385`).
 * Fixed :func:`blaze.expr.datetime.truncate` handling for the sql backend
   (:issue:`1393`).
 * Fix :func:`blaze.expr.core.isidentical` to check the ``_hashargs`` instead of
@@ -63,7 +63,7 @@ Bug Fixes
 * Fixed relabeling columns over selects by using `reconstruct_select` (:issue: `1471`).
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 * Removed support for Spark 1.3 (:issue:`1386`) based on community consensus.
 * Added :func:`blaze.utils.literal_compile` for converting sqlalchemy

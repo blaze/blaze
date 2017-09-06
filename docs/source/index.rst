@@ -120,6 +120,7 @@ User facing
    ooc
    server
    datashape
+   timeseries
    what-blaze-isnt
    api
    releases
