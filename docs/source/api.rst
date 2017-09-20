@@ -6,16 +6,6 @@ Docstrings should provide sufficient understanding for any individual function
 or class.
 
 
-Interactive Use
----------------
-
-.. currentmodule:: blaze.interactive
-
-.. autosummary::
-
-   _Data
-
-
 Expressions
 -----------
 

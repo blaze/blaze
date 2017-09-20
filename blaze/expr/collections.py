@@ -403,7 +403,7 @@ class Merge(ElemWise):
 
     See Also
     --------
-    :class:`~blaze.expr.expressions.label`
+    :class:`blaze.expr.expressions.label`
     """
     _arguments = 'args', '_varargsexpr', '_shape'
     _input_attributes = '_varargsexpr',
@@ -526,7 +526,7 @@ def transform(expr, replace=True, **kwargs):
 
     See Also
     --------
-    :class:`~blaze.expr.collections.merge`
+    :class:`blaze.expr.collections.merge`
     """
     if replace and set(expr.fields).intersection(set(kwargs)):
         expr = expr[[c for c in expr.fields if c not in kwargs]]
