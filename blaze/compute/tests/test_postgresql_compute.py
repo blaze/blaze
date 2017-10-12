@@ -867,23 +867,26 @@ def test_selection_selectable(sql):
 
 
 @pytest.mark.parametrize(
-    'attr', (
-        'day',
-        'month',
-        'week',
-        'minute',
-        'second',
-        'dayofweek',
-        'weekday',
-        'dayofyear',
-        'quarter',
+    'attr,dtype', (
+        ('day', np.int64),
+        ('month', np.int64),
+        ('week', np.int16),
+        ('minute', np.int64),
+        ('second', np.int64),
+        ('dayofweek', np.int16),
+        ('weekday', np.int16),
+        ('dayofyear', np.int16),
+        ('quarter', np.int16),
     ),
 )
-def test_datetime_access(attr, sql_with_dts):
+def test_datetime_access(attr, dtype, sql_with_dts):
     s = symbol('s', discover(sql_with_dts))
     expr = getattr(s.A.dt, attr)()
+    result = compute(expr, sql_with_dts, return_type=pd.Series)
+    assert result.dtype == dtype
     assert_series_equal(
-        compute(expr, sql_with_dts, return_type=pd.Series),
+        result,
         getattr(compute(s.A, sql_with_dts, return_type=pd.Series).dt, attr),
         check_names=False,
+        check_dtype=False,
     )
