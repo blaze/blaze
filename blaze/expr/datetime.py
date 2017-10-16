@@ -99,7 +99,7 @@ def minute(expr):
 
 
 class Second(DateTime):
-    _dtype = datashape.int64
+    _dtype = datashape.float64
 
 
 def second(expr):

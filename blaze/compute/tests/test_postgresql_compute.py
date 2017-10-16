@@ -168,6 +168,26 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
+def sql_with_subsecond_dts(url):
+    try:
+        t = data(url % next(names), dshape='var * {A: datetime}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo(
+            [(d,) for d in pd.to_datetime([
+                '2014-01-01 00:00:00.042',
+                '2014-01-01 00:00:00.047'
+            ])],
+            t
+        )
+        try:
+            yield t
+        finally:
+            drop(t)
+            
+
+@pytest.yield_fixture
 def sql_with_timedeltas(url):
     try:
         t = data(url % next(names), dshape='var * {N: timedelta}')
@@ -418,6 +438,14 @@ def test_timedelta_arith(sql_with_dts):
         (dates - (dates - delta))
     ).all()
 
+
+def test_subsecond(sql_with_subsecond_dts):
+    """Verify that `.second` returns a value with subsecond resolution and does not
+    truncate to the second.
+    """
+    t = data(sql_with_subsecond_dts)
+    result = compute(t.A.second, sql_with_subsecond_dts, return_type=pd.Series)
+    assert_series_equal(result, pd.Series([0.042, 0.047], name='A_second'))
 
 @pytest.mark.parametrize('func', ('var', 'std'))
 def test_timedelta_stat_reduction(sql_with_timedeltas, func):
@@ -872,7 +900,7 @@ def test_selection_selectable(sql):
         ('month', np.int64),
         ('week', np.int16),
         ('minute', np.int64),
-        ('second', np.int64),
+        ('second', np.float64),
         ('dayofweek', np.int16),
         ('weekday', np.int16),
         ('dayofyear', np.int16),
