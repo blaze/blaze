@@ -17,7 +17,6 @@ requirements:
     - python
     - setuptools
     - contextlib2 # [py2k]
-    - dask
     - flask >=0.10.1
     - flask-cors
     - odo >=0.5.0
@@ -29,7 +28,6 @@ requirements:
     - python
     - contextlib2 # [py2k]
     - cytoolz
-    - dask
     - flask >=0.10.1
     - flask-cors
     - h5py
