@@ -50,7 +50,7 @@ build_script:
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
-  - pip install git+https://github.com/thequackdaddy/odo.git@reversion
+  - pip install git+https://github.com/blaze/odo
 
   # install the ciconda dependencies
   - conda install --file etc/requirements_ciconda.txt
