@@ -16,7 +16,6 @@ matrix:
     - python: 3.5
       env: SPARK_VERSION=1.5
     - python: 3.6
-      env: SPARK_VERSION=1.5
     - python: 2.7
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.4
@@ -24,7 +23,7 @@ matrix:
     - python: 3.5
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.6
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
   allow_failures:
     - python: 2.7
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
@@ -33,7 +32,7 @@ matrix:
     - python: 3.5
       env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
     - python: 3.6
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
 
 services:
     - mongodb
@@ -61,7 +60,7 @@ install:
   # update setuptools and pip
   - conda update setuptools pip
 
-  - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster
+  - if [ -n "$SPARK_VERSION" ]; then conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster; else conda install pyspark -c conda-forge; fi
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
