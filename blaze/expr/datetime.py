@@ -131,14 +131,14 @@ def utcfromtimestamp(expr):
 
 
 class nanosecond(DateTime): _dtype = datashape.int64
-class week(DateTime): _dtype = datashape.int64
+class week(DateTime): _dtype = datashape.int16
 class weekday_name(DateTime): _dtype = datashape.string
 class daysinmonth(DateTime): _dtype = datashape.int16
-class weekofyear(DateTime): _dtype = datashape.int64
-class dayofyear(DateTime): _dtype = datashape.int64
-class dayofweek(DateTime): _dtype = datashape.int64
+class weekofyear(DateTime): _dtype = datashape.int16
+class dayofyear(DateTime): _dtype = datashape.int16
+class dayofweek(DateTime): _dtype = datashape.int16
 weekday = dayofweek  # alias
-class quarter(DateTime): _dtype = datashape.int64
+class quarter(DateTime): _dtype = datashape.int16
 class is_month_start(DateTime): _dtype = datashape.bool_
 class is_month_end(DateTime): _dtype = datashape.bool_
 class is_quarter_start(DateTime): _dtype = datashape.bool_
