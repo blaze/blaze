@@ -2,7 +2,7 @@ bcolz
 click
 cloudpickle
 Cython
-dask
+dask <= 0.15.1
 decorator
 Flask
 Flask-Cors

@@ -10,14 +10,15 @@ build:
     - blaze-server = blaze.server.spider:_main
 
 source:
-  git_url: https://github.com/blaze/blaze.git
+  #git_url: https://github.com/blaze/blaze.git
+    path: ../
 
 requirements:
   build:
     - python
     - setuptools
     - contextlib2 # [py2k]
-    - dask
+    - dask <=0.15.1
     - flask >=0.10.1
     - flask-cors
     - odo >=0.5.0
@@ -29,7 +30,7 @@ requirements:
     - python
     - contextlib2 # [py2k]
     - cytoolz
-    - dask
+    - dask <=0.15.1
     - flask >=0.10.1
     - flask-cors
     - h5py
