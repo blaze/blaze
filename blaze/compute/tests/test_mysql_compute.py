@@ -22,8 +22,7 @@ def data():
     try:
         t = odo(
             example('nyc.csv'),
-            'mysql+pymysql://%s@localhost/test::nyc' % getuser(),
-            local='LOCAL'
+            'mysql+pymysql://%s@localhost/test::nyc' % getuser()
         )
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))

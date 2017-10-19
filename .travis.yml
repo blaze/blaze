@@ -78,7 +78,6 @@ before_script:
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
   - psql -c "create database test;" -U postgres
   - mysql -e "create database if not exists test;" -u root
-  - mysql -e "set global local_infile=ON;" -u root
   - conda list
   - sleep 15
 
