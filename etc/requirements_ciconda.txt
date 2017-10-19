@@ -23,7 +23,7 @@ partd
 psutil
 psycopg2
 pymongo
-PyMySQL
+PyMySQL == 0.7.11
 pytest
 pytest-cov
 python-dateutil
