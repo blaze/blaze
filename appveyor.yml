@@ -54,6 +54,7 @@ build_script:
 
   # install the ciconda dependencies
   - conda install --file etc/requirements_ciconda.txt
+  - pip install pymysql==0.7.11
 
   # install the frozen ci dependencies
   - pip install -e .[ci]

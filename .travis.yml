@@ -63,6 +63,7 @@ install:
 
   # Install CI packages
   - conda install --file etc/requirements_ciconda.txt
+  - pip install pymysql==0.7.11
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
