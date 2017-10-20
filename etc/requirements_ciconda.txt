@@ -14,7 +14,7 @@ llvmlite
 locket
 MarkupSafe
 multipledispatch
-networkx
+networkx == 1.11
 numba
 numexpr
 numpy
