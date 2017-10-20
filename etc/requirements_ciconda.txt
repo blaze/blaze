@@ -30,7 +30,7 @@ pytest-cov
 python-dateutil
 pytz
 pyyaml
-requests>
+requests
 six
 SQLAlchemy
 #tables
