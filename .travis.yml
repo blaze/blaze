@@ -74,7 +74,7 @@ install:
   # Install Blaze
   - pip install -e .[ci]
 
-  - if [ "$TRAVIS_PYTHON_VERSION" == "3.4" ]; then conda uninstall pymysql; pip uninstall pymysql --yes; fi
+  - if [ "$TRAVIS_PYTHON_VERSION" == "3.4" ]; then conda uninstall pymysql; fi
   
 before_script:
   - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
