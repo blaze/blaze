@@ -2,7 +2,7 @@ bcolz
 click
 cloudpickle
 Cython
-dask
+dask <= 0.15.1
 decorator
 Flask
 Flask-Cors
@@ -22,7 +22,6 @@ pandas
 partd
 psutil
 psycopg2
-#PyHive
 pymongo
 PyMySQL
 pytest
@@ -30,9 +29,9 @@ pytest-cov
 python-dateutil
 pytz
 pyyaml
-requests
+requests>=2.11.1
 six
 SQLAlchemy
-#tables
+pytables
 toolz
 Werkzeug
