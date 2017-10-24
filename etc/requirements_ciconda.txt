@@ -15,7 +15,6 @@ llvmlite==0.20.0
 locket==0.2.0
 lzo==2.10
 MarkupSafe==1.0
-mkl==2018.0.0
 multipledispatch==0.4.9
 networkx==1.11
 numba==0.35.0  # please update the .travis.yml file!
