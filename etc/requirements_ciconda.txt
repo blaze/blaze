@@ -7,8 +7,7 @@ decorator==4.1.2
 Flask==0.12.2
 Flask-Cors==3.0.3
 future==0.16.0
-h5py==2.7.0
-hdf5==1.10.1
+h5py==2.6.0
 itsdangerous==0.24
 Jinja2==2.9.6
 libgfortran-ng==7.2.0
