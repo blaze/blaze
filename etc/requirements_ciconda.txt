@@ -1,4 +1,4 @@
-bcolz==1.0.6
+bcolz==1.0.0
 click==6.6
 cloudpickle==0.4.0
 Cython==0.26.1
