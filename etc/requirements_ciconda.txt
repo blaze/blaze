@@ -20,7 +20,7 @@ multipledispatch==0.4.9
 networkx==1.11
 numba==0.35.0  # please update the .travis.yml file!
 numexpr==2.6.2
-numpy==1.13.3  # please update the .travis.yml file!
+numpy==1.11  # please update the .travis.yml file!
 pandas==0.20.3  # please update the .travis.yml file!
 partd==0.3.8
 psutil==5.4.0
