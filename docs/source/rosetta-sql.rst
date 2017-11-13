@@ -50,7 +50,7 @@ been executed:
 +-----------------+-------------------------------------------------+-----------------------------------------+
 |                 | .. code-block:: sql                             | .. code-block:: python                  |
 |                 |                                                 |                                         |
-| Selection       |    selelct * from df where amount > 300         |    df[df.amount > 300]                  |
+| Selection       |    select * from df where amount > 300          |    df[df.amount > 300]                  |
 +-----------------+-------------------------------------------------+-----------------------------------------+
 |                 | .. code-block:: sql                             | .. code-block:: python                  |
 |  Group By       |                                                 |                                         |
