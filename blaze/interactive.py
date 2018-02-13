@@ -83,58 +83,6 @@ def short_dshape(ds, nlines=5):
     return s
 
 
-def coerce_to(typ, x, odo_kwargs=None):
-    try:
-        return typ(x)
-    except TypeError:
-        return odo(x, typ, **(odo_kwargs or {}))
-
-
-def coerce_scalar(result, dshape, odo_kwargs=None):
-    dshape = str(dshape)
-    coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
-    if 'float' in dshape:
-        return coerce_(float)
-    if 'decimal' in dshape:
-        return coerce_(decimal.Decimal)
-    elif 'int' in dshape:
-        return coerce_(int)
-    elif 'bool' in dshape:
-        return coerce_(bool)
-    elif 'datetime' in dshape:
-        return coerce_(Timestamp)
-    elif 'date' in dshape:
-        return coerce_(datetime.date)
-    elif 'timedelta' in dshape:
-        return coerce_(datetime.timedelta)
-    else:
-        return result
-
-
-def coerce_core(result, dshape, odo_kwargs=None):
-    """Coerce data to a core data type."""
-    if iscoretype(result):
-        return result
-    elif isscalar(dshape):
-        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
-    elif istabular(dshape) or isrecord(dshape):
-        result = into(DataFrame, result, **(odo_kwargs or {}))
-    elif iscollection(dshape):
-        dim = _dimensions(dshape)
-        if dim == 1:
-            result = into(Series, result, **(odo_kwargs or {}))
-        elif dim > 1:
-            result = into(np.ndarray, result, **(odo_kwargs or {}))
-        else:
-            msg = "Expr with dshape dimensions < 1 should have been handled earlier: dim={}"
-            raise ValueError(msg.format(str(dim)))
-    else:
-        msg = "Expr does not evaluate to a core return type"
-        raise ValueError(msg)
-
-    return result
-
-
 def _peek(expr):
     # Pure Expressions, not interactive
     if not set(expr._resources().keys()).issuperset(expr._leaves()):
