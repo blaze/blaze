@@ -229,6 +229,7 @@ def test_multi_level_rowfunc_works(rdd):
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
 
+@pytest.mark.xfail(NotImplementedError, reason='how is this done in spark?')
 def test_merge(rdd):
     col = (t['amount'] * 2).label('new')
     expr = merge(t['name'], col)

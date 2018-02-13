@@ -22,9 +22,12 @@ def compute_it(expr, leaves, *data, **kwargs):
 def elemwise_array(expr, *data, **kwargs):
     leaves = expr._inputs
     expr_inds = tuple(range(ndim(expr)))[::-1]
-    return atop(curry(compute_it, expr, leaves, **kwargs),
-                expr_inds,
-                *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data))
+    return atop(
+        curry(compute_it, expr, leaves, **kwargs),
+        expr_inds,
+        *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data),
+        dtype=expr.dshape.measure.to_numpy_dtype()
+    )
 
 
 try:
@@ -66,13 +69,25 @@ def compute_up(expr, data, **kwargs):
                                                  chunk=chunk)
 
     inds = tuple(range(ndim(leaf)))
-    tmp = atop(curry(compute_it, chunk_expr, [chunk], **kwargs), inds, data,
-               inds)
+    dtype = expr.dshape.measure.to_numpy_dtype()
+    tmp = atop(
+        curry(compute_it, chunk_expr, [chunk], **kwargs),
+        inds,
+        data,
+        inds,
+        dtype=dtype,
+    )
 
-    return atop(compose(curry(compute_it, agg_expr, [agg], **kwargs),
-                        curry(_concatenate2, axes=expr.axis)),
-                tuple(i for i in inds if i not in expr.axis),
-                tmp, inds)
+    return atop(
+        compose(
+            curry(compute_it, agg_expr, [agg], **kwargs),
+            curry(_concatenate2, axes=expr.axis),
+        ),
+        tuple(i for i in inds if i not in expr.axis),
+        tmp,
+        inds,
+        dtype=dtype,
+    )
 
 
 @dispatch(Transpose, Array)

@@ -14,7 +14,7 @@ import numpy as np
 
 from blaze import symbol, compute
 from blaze.utils import example, normalize
-from blaze.interactive import iscoretype, iscorescalar, iscoresequence
+from blaze.types import iscoretype, iscorescalar, iscoresequence
 
 
 @pytest.yield_fixture(scope='module')

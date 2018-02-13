@@ -9,11 +9,11 @@ The BSD 2-clause license allows you almost unlimited freedom with the
 software so long as you include the BSD copyright notice in it (found
 below).
 
-Continuum Analytics sponsors development on Blaze.
+Anaconda (formerly Continuum Analytics) sponsors development on Blaze.
 
 License::
 
-    Copyright (c) 2014, Continuum Analytics, Inc.
+    Copyright (c) 2014, Continuum Analytics, Inc. (dba Anaconda, Inc.)
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

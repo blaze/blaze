@@ -24,12 +24,19 @@ from werkzeug.http import parse_options_header
 from toolz import valmap, compose
 
 import blaze
+import blaze as bz
 from blaze import compute, resource
 from blaze.compatibility import ExitStack, u8
 from blaze.compute import compute_up
 from .serialization import json, all_formats
-from ..interactive import _Data
-from ..expr import Expr, symbol, utils as expr_utils, Symbol
+from ..expr import (
+    BoundSymbol,
+    Data,
+    Expr,
+    Symbol,
+    symbol,
+    utils as expr_utils,
+)
 
 
 __all__ = 'Server', 'to_tree', 'from_tree', 'expr_md5'
@@ -335,9 +342,9 @@ class Server(object):
                  loglevel='WARNING',
                  log_exception_formatter=_default_log_exception_formatter):
         if isinstance(data, collections.Mapping):
-            data = valmap(lambda v: v.data if isinstance(v, _Data) else v,
+            data = valmap(lambda v: v.data if isinstance(v, BoundSymbol) else v,
                           data)
-        elif isinstance(data, _Data):
+        elif isinstance(data, BoundSymbol):
             data = data._resources()
         app = self.app = FlaskWithExceptionFormatting('blaze.server.server',
                                                       log_exception_formatter=log_exception_formatter)
@@ -449,7 +456,7 @@ def to_tree(expr, names=None):
     if isinstance(expr, slice):
         # NOTE: This case must come first, since `slice` objects are not
         # hashable, so a dict lookup inside `names` will raise an execption.
-        return {u'op': 'slice',
+        return {u'op': u'slice',
                 u'args': [to_tree(arg, names=names) for arg in
                          [expr.start, expr.stop, expr.step]]}
     if names and expr in names:
@@ -458,8 +465,9 @@ def to_tree(expr, names=None):
         return [to_tree(arg, names=names) for arg in expr]
     if isinstance(expr, expr_utils._slice):
         return to_tree(expr.as_slice(), names=names)
-    elif isinstance(expr, _Data):
-        return to_tree(symbol(u8(expr._name), expr.dshape), names)
+    elif isinstance(expr, Data) and isinstance(expr.data, bz.Client):
+        name = u8(expr._name) if expr._name is not None else None
+        return to_tree(symbol(name, expr.dshape), names)
     elif isinstance(expr, Expr):
         return {u'op': u8(type(expr).__name__),
                 u'args': [to_tree(arg, names) for arg in expr._args]}
@@ -544,7 +552,7 @@ def from_tree(expr, namespace=None):
     """
     if isinstance(expr, dict):
         op, args = expr[u'op'], expr[u'args']
-        if 'slice' == op:
+        if op == u'slice':
             return expr_utils._slice(*[from_tree(arg, namespace)
                                        for arg in args])
         if hasattr(blaze.expr, op):
@@ -573,6 +581,17 @@ accepted_mimetypes = {'application/vnd.blaze+{}'.format(x.name): x.name for x
 @check_request
 @_logging
 def compserver(payload, serial):
+    expected_keys = {u'namespace',
+                     u'odo_kwargs',
+                     u'compute_kwargs',
+                     u'expr',
+                     u'profile',
+                     u'profiler_output'}
+    if not set(payload.keys()) < expected_keys:
+        return ('unexpected keys in payload: %r' % sorted(set(payload.keys()) -
+                                                          expected_keys),
+                RC.BAD_REQUEST)
+
     app = flask.current_app
     (allow_profiler,
      default_profiler_output,
@@ -617,12 +636,12 @@ def compserver(payload, serial):
         ns[':leaf'] = symbol('leaf', discover(dataset))
 
         expr = from_tree(payload[u'expr'], namespace=ns)
-        assert len(expr._leaves()) == 1
+
         leaf = expr._leaves()[0]
 
+        formatter = getattr(flask.current_app, 'log_exception_formatter',
+                            _default_log_exception_formatter)
         try:
-            formatter = getattr(flask.current_app, 'log_exception_formatter',
-                                _default_log_exception_formatter)
             result = serial.materialize(compute(expr,
                                                 {leaf: dataset},
                                                 **compute_kwargs),

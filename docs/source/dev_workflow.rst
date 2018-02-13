@@ -5,7 +5,7 @@ Developer Workflow
 This page describes how to install and improve the development version of Blaze.
 
 If this documentation isn't sufficiently clear or if you have other questions
-then please email blaze-dev@continuum.io.
+then please email blaze-dev@anaconda.com.
 
 Installing Development Blaze
 ----------------------------
@@ -33,7 +33,7 @@ New developers likely only need to interact with one or two of these libraries s
 .. _Blaze: https://github.com/blaze/blaze
 .. _DataShape: https://github.com/blaze/datashape
 .. _conda: http://conda.pydata.org/
-.. _Anaconda: http://continuum.io/downloads
+.. _Anaconda: https://www.anaconda.com/download/
 .. _anaconda.org: https://anaconda.org/
 
 
@@ -104,11 +104,11 @@ For cross submodule imports, import from the module api.  For example::
     #file: blaze/objects/table.py
     from ..io import printing
 
-Relation with Continuum
------------------------
+Relation with Anaconda
+----------------------
 
-Blaze is developed in part by `Continuum Analytics`_, a for profit company.
-Continuum's efforts on Blaze are open source and freely available to the public.
-The open nature of Blaze is protected by a BSD license.
+Blaze is developed in part by `Anaconda`_, formerly Continuum Analytics, a for
+profit company. Anaconda's efforts on Blaze are open source and freely
+available to the public. The open nature of Blaze is protected by a BSD license.
 
-.. _Continuum Analytics: http://continuum.io/
+.. _Anaconda: https://www.anaconda.com/

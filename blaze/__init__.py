@@ -29,7 +29,8 @@ from .expr import (
     datetime,
     day,
     distinct,
-    distinct, head,
+    distinct,
+    drop_field,
     head,
     hour,
     join,
@@ -57,6 +58,7 @@ from .expr import (
 )
 from .expr.arrays import (tensordot, transpose)
 from .expr.functions import *
+from .expr.literal import data
 from .index import create_index
 from .interactive import *
 from .compute.pmap import set_default_pmap

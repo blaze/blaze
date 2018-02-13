@@ -1,9 +1,9 @@
+import textwrap
 import datetime
 import pickle
 import sys
 from types import MethodType
 
-import dask.array as da
 from datashape import dshape
 from datashape.util.testing import assert_dshape_equal
 import pandas as pd
@@ -13,18 +13,12 @@ import numpy as np
 from odo import into, append
 from odo.backends.csv import CSV
 
-from blaze import discover, transform
-from blaze.compatibility import pickle
-from blaze.expr import symbol
+from blaze import discover
+from blaze.compute import compute
+from blaze.expr import data, symbol
 from blaze.interactive import (
-    coerce_core,
-    compute,
     concrete_head,
-    data,
     expr_repr,
-    iscorescalar,
-    iscoresequence,
-    iscoretype,
     to_html,
 )
 from blaze.utils import tmpfile, example
@@ -43,51 +37,9 @@ t = data(tdata, fields=['name', 'amount'])
 x = np.ones((2, 2))
 
 
-def test_discover_on_data():
-    assert discover(t) == dshape("2 * {name: string, amount: int64}")
-
-
-def test_table_raises_on_inconsistent_inputs():
-    with pytest.raises(ValueError) as excinfo:
-        data(tdata, schema='{name: string, amount: float32}',
-             dshape=dshape("{name: string, amount: float32}"))
-    assert "specify one of schema= or dshape= keyword" in str(excinfo.value)
-
-
-def test_resources():
-    assert t._resources() == {t: t.data}
-
-
-def test_resources_fail():
-    t = symbol('t', 'var * {x: int, y: int}')
-    d = t[t['x'] > 100]
-    with pytest.raises(ValueError):
-        compute(d)
-
-
-def test_compute_on_Data_gives_back_data():
-    assert compute(data([1, 2, 3])) == [1, 2, 3]
-
-
 def test_len():
     assert len(t) == 2
     assert len(t.name) == 2
-
-
-def test_compute():
-    assert list(compute(t['amount'] + 1)) == [101, 201]
-
-
-def test_create_with_schema():
-    t = data(tdata, schema='{name: string, amount: float32}')
-    assert t.schema == dshape('{name: string, amount: float32}')
-
-
-def test_create_with_raw_data():
-    t = data(tdata, fields=['name', 'amount'])
-    assert t.schema == dshape('{name: string, amount: int64}')
-    assert t.name
-    assert t.data == tdata
 
 
 def test_repr():
@@ -109,16 +61,6 @@ def test_repr():
     print(result)
     assert len(result.split('\n')) < 20
     assert '...' in result
-
-
-def test_str_does_not_repr():
-    # see GH issue #1240.
-    d = data([('aa', 1), ('b', 2)], name="ZZZ",
-             dshape='2 * {a: string, b: int64}')
-    expr = transform(d, c=d.a.str.len() + d.b)
-    assert (str(expr) ==
-            "Merge(_child=ZZZ, children=(ZZZ, label(len(_child=ZZZ.a)"
-            " + ZZZ.b, 'c')))")
 
 
 def test_repr_of_scalar():
@@ -175,15 +117,6 @@ def test_to_html_on_arrays():
     assert 'br>' in s
 
 
-def test_repr_html():
-    assert '<table' in t._repr_html_()
-    assert '<table' in t.name._repr_html_()
-
-
-def test_into():
-    assert into(list, t) == into(list, tdata)
-
-
 def test_serialization():
     t2 = pickle.loads(pickle.dumps(t, protocol=pickle.HIGHEST_PROTOCOL))
 
@@ -200,6 +133,25 @@ def test_table_resource():
         t = data(filename)
         assert isinstance(t.data, CSV)
         assert into(list, compute(t)) == into(list, csv)
+
+
+def test_explicit_override_dshape():
+    ds = dshape("""var * {a: ?float64,
+                        b: ?string,
+                        c: ?float32}""")
+    # If not overridden, the dshape discovery will return:
+    # var * {a: int64, b: string, c: int64}.
+    s = textwrap.dedent("""\
+                        a,b,c
+                        1,x,3
+                        2,y,4
+                        3,z,5
+                        """)
+    with tmpfile('.csv') as filename:
+        with open(filename, 'w') as fd:
+            fd.write(s)
+        bdf = data(filename, dshape=ds)
+        assert bdf.dshape == ds
 
 
 def test_concretehead_failure():
@@ -303,17 +255,6 @@ def test_generator_reprs_concretely():
     assert '4' in expr_repr(expr)
 
 
-def test_incompatible_types():
-    d = data(pd.DataFrame(L, columns=['id', 'name', 'amount']))
-
-    with pytest.raises(ValueError):
-        d.id == 'foo'
-
-    result = compute(d.id == 3)
-    expected = pd.Series([False, False, True, False, False], name='id')
-    tm.assert_series_equal(result, expected)
-
-
 def test___array__():
     x = np.ones(4)
     d = data(x)
@@ -330,12 +271,6 @@ def test_python_scalar_protocols():
     assert float(d + 1.0) == 2.0
     assert bool(d > 0) is True
     assert complex(d + 1.0j) == 1 + 1.0j
-
-
-def test_iter():
-    x = np.ones(4)
-    d = data(x)
-    assert list(d + 1) == [2, 2, 2, 2]
 
 
 @pytest.mark.xfail(
@@ -509,69 +444,3 @@ def test_partially_bound_expr():
     a = symbol('a', 'int')
     expr = tdata.name[tdata.balance > a]
     assert expr_repr(expr) == 'data[data.balance > a].name'
-
-
-def test_isidentical_regr():
-    # regression test for #1387
-    tdata = np.array([(np.nan,), (np.nan,)], dtype=[('a', 'float64')])
-    ds = data(tdata)
-    assert ds.a.isidentical(ds.a)
-
-
-@pytest.mark.parametrize('data,dshape,exp_type',
-                         [(1, symbol('x', 'int').dshape, int),
-                          # test 1-d to series
-                          (into(da.core.Array, [1, 2], chunks=(10,)),
-                           dshape('2 * int'),
-                           pd.Series),
-                          # test 2-d tabular to dataframe
-                          (into(da.core.Array,
-                                [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
-                                chunks=(10, 10)),
-                           dshape('2 * {a: int, b: int}'),
-                           pd.DataFrame),
-                          # test 2-d non tabular to ndarray
-                          (into(da.core.Array,
-                                [[1, 2], [3, 4]],
-                                chunks=(10, 10)),
-                           dshape('2 *  2 * int'),
-                           np.ndarray)])
-def test_coerce_core(data, dshape, exp_type):
-    assert isinstance(coerce_core(data, dshape), exp_type)
-
-
-@pytest.mark.parametrize('data,res',
-                         [(1, True),
-                          (1.1, True),
-                          ("foo", True),
-                          ([1, 2], False),
-                          ((1, 2), False),
-                          (pd.Series([1, 2]), False)])
-def test_iscorescalar(data, res):
-    assert iscorescalar(data) == res
-
-
-@pytest.mark.parametrize('data,res',
-                         [(1, False),
-                          ("foo", False),
-                          ([1, 2], True),
-                          ((1, 2), True),
-                          (pd.Series([1, 2]), True),
-                          (pd.DataFrame([[1, 2], [3, 4]]), True),
-                          (np.ndarray([1, 2]), True),
-                          (into(da.core.Array, [1, 2], chunks=(10,)), False)])
-def test_iscoresequence(data, res):
-    assert iscoresequence(data) == res
-
-
-@pytest.mark.parametrize('data,res',
-                         [(1, True),
-                          ("foo", True),
-                          ([1, 2], True),
-                          ((1, 2), True),
-                          (pd.Series([1, 2]), True),
-                          (pd.DataFrame([[1, 2], [3, 4]]), True),
-                          (np.ndarray([1, 2]), True),
-                          (into(da.core.Array, [1, 2], chunks=(10,)), False)])
-def test_iscoretype(data, res):
-    assert iscoretype(data) == res

@@ -33,8 +33,9 @@ from blaze import (
     symbol,
     transform,
 )
-from blaze.interactive import iscorescalar
+from blaze.types import iscorescalar
 from blaze.utils import example, normalize
+from blaze.compatibility import assert_series_equal
 
 
 names = ('tbl%d' % i for i in itertools.count())
@@ -167,6 +168,26 @@ def sql_with_dts(url):
 
 
 @pytest.yield_fixture
+def sql_with_subsecond_dts(url):
+    try:
+        t = data(url % next(names), dshape='var * {A: datetime}')
+    except sa.exc.OperationalError as e:
+        pytest.skip(str(e))
+    else:
+        t = odo(
+            [(d,) for d in pd.to_datetime([
+                '2014-01-01 00:00:00.042',
+                '2014-01-01 00:00:00.047'
+            ])],
+            t
+        )
+        try:
+            yield t
+        finally:
+            drop(t)
+            
+
+@pytest.yield_fixture
 def sql_with_timedeltas(url):
     try:
         t = data(url % next(names), dshape='var * {N: timedelta}')
@@ -220,7 +241,10 @@ def orders(url, products):
         orders = data(url % 'orders',
                       dshape="""var * {
                         order_id: int64,
-                        product_id: map[int64, T],
+                        product_id: map[int64,
+                                        {product_id: int64,
+                                         color: ?string,
+                                         price: float64}],
                         quantity: int64}""",
                       foreign_keys=dict(product_id=products.data.c.product_id),
                       primary_key=['order_id'])
@@ -264,7 +288,12 @@ def pkey(url, main):
                     np.random.randint(main.count().scalar(), size=n).tolist()))
     try:
         pkey = odo(data, url % 'pkey',
-                   dshape=dshape('var * {id: int64, sym: string, price: float64, main: map[int64, T]}'),
+                dshape=dshape('''var * {id: int64,
+                                        sym: string,
+                                        price: float64,
+                                        main: map[int64,
+                                                  {id: int64,
+                                                   data: int64}]}'''),
                    foreign_keys=dict(main=main.c.id),
                    primary_key=['id'])
     except sa.exc.OperationalError as e:
@@ -284,7 +313,15 @@ def fkey(url, pkey):
                      int(np.random.randint(10000)))
                     for i in range(10)],
                    url % 'fkey',
-                   dshape=dshape('var * {id: int64, sym_id: map[int64, T], size: int64}'),
+                   dshape=dshape('''var * {id: int64,
+                                           sym_id: map[int64,
+                                                       {id: int64,
+                                                        sym: string,
+                                                        price: float64,
+                                                        main: map[int64,
+                                                                  {id: int64,
+                                                                  data: int64}]}],
+                                           size: int64}'''),
                    foreign_keys=dict(sym_id=pkey.c.id),
                    primary_key=['id'])
     except sa.exc.OperationalError as e:
@@ -338,7 +375,7 @@ def test_postgres_isnan(sql_with_float):
     dta = (1.0,), (float('nan'),)
     table = odo(dta, sql_with_float)
     sym = symbol('s', discover(dta))
-    assert compute(sym.isnan(), table, return_type=list) == [(False,), (True,)]
+    assert compute(sym.isnan(), table, return_type=list) == [False, True]
 
 
 def test_insert_from_subselect(sql_with_float):
@@ -398,9 +435,17 @@ def test_timedelta_arith(sql_with_dts):
     ).all()
     assert (
         compute(sym - (sym - delta), sql_with_dts, return_type=pd.Series) ==
-        dates - (dates - delta)
+        (dates - (dates - delta))
     ).all()
 
+
+def test_subsecond(sql_with_subsecond_dts):
+    """Verify that `.second` returns a value with subsecond resolution and does not
+    truncate to the second.
+    """
+    t = data(sql_with_subsecond_dts)
+    result = compute(t.A.second, sql_with_subsecond_dts, return_type=pd.Series)
+    assert_series_equal(result, pd.Series([0.042, 0.047], name='A_second'))
 
 @pytest.mark.parametrize('func', ('var', 'std'))
 def test_timedelta_stat_reduction(sql_with_timedeltas, func):
@@ -539,7 +584,7 @@ def test_foreign_key_isin(fkey):
     assert normalize(str(result)) == normalize(expected)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Not yet implemented')
+@pytest.mark.xfail(raises=ValueError, reason='Not yet implemented')
 def test_foreign_key_merge_expression(fkey):
     from blaze import merge
 
@@ -699,7 +744,7 @@ def test_sample(big_sql):
                                  slice(0, 1), slice(None, 3),
                                  slice(0, None), slice(2, None)])
 def test_str_slice(slc, sql_with_null):
-    name_series = pd.Series(['Alice', None, 'Drew', 'Bob', 'Drew', 'first', None],       
+    name_series = pd.Series(['Alice', None, 'Drew', 'Bob', 'Drew', 'first', None],
                             name='substring_1')
     t = symbol('t', discover(sql_with_null))
     result = compute(t.name.str[slc], sql_with_null, return_type=pd.Series).fillna('zzz')
@@ -720,7 +765,6 @@ def test_str_cat_with_null(sql_with_null, sep):
     t = symbol('t', discover(sql_with_null))
     res = compute(t.name.str_cat(t.sex, sep=sep), sql_with_null,
                   return_type=list)
-    res = [r[0] for r in res]
     cols = compute(t[['name', 'sex']], sql_with_null, return_type=list)
 
     for r, (n, s) in zip(res, cols):
@@ -736,7 +780,6 @@ def test_chain_str_cat_with_null(sql_with_null):
             .str_cat(t.comment, sep=' ++ ')
             .str_cat(t.sex, sep=' -- '))
     res = compute(expr, sql_with_null, return_type=list)
-    res = [r[0] for r in res]
     cols = compute(t[['name', 'comment', 'sex']], sql_with_null,
                    return_type=list)
 
@@ -761,7 +804,7 @@ def test_str_cat_bcast(sql_with_null):
     assert all(expected[~expected.isnull()] == result[~result.isnull()])
     assert all(expected[expected.isnull()].index == result[result.isnull()].index)
 
-    
+
 
 def test_str_cat_where_clause(sql_with_null):
     """
@@ -808,11 +851,11 @@ def test_coalesce(sqla):
     t = symbol('t', discover(sqla))
     assert (
         compute(coalesce(t.B, -1), {t: sqla}, return_type=list) ==
-        [(1,), (1,), (-1,)]
+        [1, 1, -1]
     )
     assert (
         compute(coalesce(t.A, 'z'), {t: sqla}, return_type=list) ==
-        [('a',), ('z',), ('c',)]
+        ['a', 'z', 'c']
     )
 
 
@@ -837,7 +880,7 @@ def test_isin_selectable(sql):
     # wrap the resource in a select
     assert compute(s.B.isin({1, 3}),
                    sa.select(sql._resources()[sql].columns),
-                   return_type=list) == [(True,), (False,)]
+                   return_type=list) == [True, False]
 
 
 def test_selection_selectable(sql):
@@ -849,3 +892,29 @@ def test_selection_selectable(sql):
                     return_type=pd.DataFrame) ==
             pd.DataFrame([['a', 1]],
                          columns=s.dshape.measure.names)).all().all()
+
+
+@pytest.mark.parametrize(
+    'attr,dtype', (
+        ('day', np.int64),
+        ('month', np.int64),
+        ('week', np.int16),
+        ('minute', np.int64),
+        ('second', np.float64),
+        ('dayofweek', np.int16),
+        ('weekday', np.int16),
+        ('dayofyear', np.int16),
+        ('quarter', np.int16),
+    ),
+)
+def test_datetime_access(attr, dtype, sql_with_dts):
+    s = symbol('s', discover(sql_with_dts))
+    expr = getattr(s.A.dt, attr)()
+    result = compute(expr, sql_with_dts, return_type=pd.Series)
+    assert result.dtype == dtype
+    assert_series_equal(
+        result,
+        getattr(compute(s.A, sql_with_dts, return_type=pd.Series).dt, attr),
+        check_names=False,
+        check_dtype=False,
+    )

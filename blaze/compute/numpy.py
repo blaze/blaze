@@ -1,11 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import Iterable
 import datetime
 
 import numpy as np
 from pandas import DataFrame, Series
 from datashape import to_numpy, to_numpy_dtype
 from numbers import Number
+
+from odo import odo
 
 from ..expr import (
     Reduction, Field, Projection, Broadcast, Selection, ndim,
@@ -20,6 +23,7 @@ from ..utils import keywords
 
 from .core import base, compute
 from .pandas import array_coalesce
+from .varargs import register_varargs_arity
 from ..dispatch import dispatch
 from odo import into
 import pandas as pd
@@ -331,7 +335,7 @@ def compute_up(expr, x, **kwargs):
 
 @dispatch(Cast, np.ndarray)
 def compute_up(t, x, **kwargs):
-    # resolve ambiguity
+    # resolve ambiguity with [Expr, np.array]
     return x
 
 
@@ -342,6 +346,10 @@ def compute_up(t, x, **kwargs):
         return compute_up(t, into(DataFrame, x, dshape=ds), **kwargs)
     else:
         return compute_up(t, into(Series, x, dshape=ds), **kwargs)
+
+
+# resolve the ambiguous overload here with [Expr, np.ndarray]
+register_varargs_arity(1, type_=np.ndarray)
 
 
 @dispatch(nelements, np.ndarray)
@@ -428,9 +436,9 @@ def compute_up(expr, lhs, rhs, **kwargs):
     return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])
 
 
-@dispatch(IsIn, np.ndarray)
-def compute_up(expr, data, **kwargs):
-    return np.in1d(data, tuple(expr._keys))
+@dispatch(IsIn, np.ndarray, Iterable)
+def compute_up(expr, data, keys, **kwargs):
+    return np.in1d(data, keys)
 
 
 @compute_up.register(Join, DataFrame, np.ndarray)
@@ -468,3 +476,14 @@ def compute_up(t, data, **kwargs):
         rhs = data
 
     return array_coalesce(t, lhs, rhs)
+
+
+def intonumpy(data, dtype=None, **kwargs):
+    # TODO: Don't ignore other kwargs like copy
+    result = odo(data, np.ndarray)
+    if dtype and result.dtype != dtype:
+        result = result.astype(dtype)
+    return result
+
+
+Expr.__array__ = intonumpy

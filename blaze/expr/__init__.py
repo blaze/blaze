@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .core import *
 from .expressions import *
+from .literal import *
 from .strings import *
 from .datetime import *
 from .math import *

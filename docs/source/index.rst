@@ -8,7 +8,7 @@ computation on inconveniently large data.  Blaze can refer to both a particular
 Blaze development.
 
 Blaze is sponsored primarily by
-`Continuum Analytics <http://www.continuum.io>`_, and a
+`Anaconda <https://www.anaconda.com/>`_, and a
 `DARPA XDATA <http://www.darpa.mil/program/XDATA>`_ grant.
 
 Parts of the Blaze ecosystem are described below:
@@ -120,6 +120,7 @@ User facing
    ooc
    server
    datashape
+   timeseries
    what-blaze-isnt
    api
    releases

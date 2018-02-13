@@ -4,42 +4,45 @@ Release 0.12.0
 :Release: 0.12.0
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 None
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
-None
+* Adds support for variadic expressions of known
+  types. :func:`~blaze.expr.expressions.merge` is now implemented as a variadic
+  expression (:issue:`1611`).
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 None
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 None
 
 Experimental Features
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 None
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
-None
+* Adds a ``drop_field`` method to tabular expressions for taking subsets of the
+  fields of an expression while preserving order.
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * The ``flask.ext.cors`` import was updated to resolve a ``DeprecationWarning``
 (:issue:`1556`).
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 None

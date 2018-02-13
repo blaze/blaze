@@ -5,7 +5,7 @@ Release 0.8.3
 :Date: September 15, 2015
 
 New Expressions
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 * Adds :class:`~blaze.expr.collections.Tail` which acts as an opposite to
   head. This is exposed throught the :func:`~blaze.expr.collections.tail`
@@ -15,7 +15,7 @@ New Expressions
   values in a field are null (:issue:`697`, :issue:`733`)
 
 Improved Expressions
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 * :class:`~blaze.expr.collections.Distinct` expressions now support an `on`
   parameter to allow distinct on a subset of columns (:issue:`1159`)
@@ -27,17 +27,17 @@ Improved Expressions
   any type ``a`` with ``?a``. (:issue:`1193`, :issue:`1218`).
 
 New Backends
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 Improved Backends
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 * Blaze now tries a bit harder to avoid generating ``ScalarSelects`` when using
   the SQL backend (:issue:`1201`, :issue:`1205`)
 * ReLabel expressions on the SQL backend are now flattened (:issue:`1217`).
 
 API Changes
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 * Serialization format in blaze server is now passed in as a mimetype
   (:issue:`1176`)
@@ -73,7 +73,7 @@ API Changes
      AttributeError: ...
 
 Bug Fixes
-~~~~~~~~~
+^^^^^^^^^
 
 * Upgrade versioneer so that our version string is now :pep:`440` compliant
   (:issue:`1171`)
@@ -111,7 +111,7 @@ Bug Fixes
   the library side (:issue:`1251`).
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 * We now run tests against pandas master to catch incompatibility issues
   (:issue:`1243`).

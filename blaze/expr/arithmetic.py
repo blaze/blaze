@@ -61,7 +61,7 @@ Not
 
 class BinOp(ElemWise):
     _arguments = 'lhs', 'rhs'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def __str__(self):
         lhs = parenthesize(eval_str(self.lhs))

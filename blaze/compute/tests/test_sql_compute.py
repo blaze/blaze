@@ -30,6 +30,7 @@ from blaze.expr import (
     exp,
     floor,
     greatest,
+    isin,
     join,
     least,
     mean,
@@ -592,6 +593,28 @@ def test_relabel_projection():
             accounts.id AS new_id
         FROM accounts""",
     )
+
+
+def test_relabel_join():
+    metadata = sa.MetaData()
+    amounts_tbl = sa.Table('amounts', metadata,
+                           sa.Column('id', sa.Integer),
+                           sa.Column('amount', sa.Integer))
+    ids_tbl = sa.Table('ids', metadata,
+                       sa.Column('name', sa.String),
+                       sa.Column('id', sa.Integer))
+    joined_sql = amounts_tbl.join(ids_tbl, amounts_tbl.c.id == ids_tbl.c.id)
+
+    amounts = symbol('amounts', discover(amounts_tbl))
+    ids = symbol('ids', discover(ids_tbl))
+    joined_expr = join(amounts, ids, 'id').relabel({'amount': 'balance'})
+
+    ns = {amounts: amounts_tbl, ids: ids_tbl}
+    result = str(compute(joined_expr, ns, return_type='native'))
+    expected = sa.select([amounts_tbl.c.id, amounts_tbl.c.amount.label('balance'),
+                          ids_tbl.c.name], from_obj=joined_sql)
+    assert result == literal_compile(expected)
+
 
 
 def test_merge():
@@ -1418,10 +1441,10 @@ def test_transform_where():
         abs(accounts.amount) as abs_amt,
         sin(accounts.id) as sine
     FROM accounts
-    WHERE accounts.id = :id_1
+    WHERE accounts.id = 1
     """
 
-    assert normalize(str(result)) == normalize(expected)
+    assert normalize(result) == normalize(expected)
 
 
 def test_merge():
@@ -1650,9 +1673,9 @@ def test_transform_order():
     assert normalize(str(result)) == normalize(expected)
 
 
-def test_isin():
-    result = t[t.name.isin(['foo', 'bar'])]
-    result_sql_expr = str(compute(result, s, return_type='native'))
+def test_isin_literal():
+    expr = t[t.name.isin(['foo', 'bar'])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
     expected = """
         SELECT
             accounts.name,
@@ -1665,6 +1688,182 @@ def test_isin():
         IN
             (:name_1,
             :name_2)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_not_isin_literal():
+    expr = t[~t.name.isin(['foo', 'bar'])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount,
+            accounts.id
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        NOT IN
+            (:name_1,
+            :name_2)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_expression():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[L.name.isin(R.name)]
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        IN
+            (SELECT ids.name
+             FROM ids)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_not_isin_expression():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[~L.name.isin(R.name)]
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        NOT IN
+            (SELECT ids.name
+             FROM ids)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_not_isin_select_expression():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[~L.name.isin(R.name[R.id > 1])]
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT
+            accounts.name,
+            accounts.amount
+        FROM
+            accounts
+        WHERE
+            accounts.name
+        NOT IN
+            (SELECT ids.name
+             FROM ids where ids.id > :id_1)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_of_single_col_select_with_literal():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100.isin([200, 300])
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT accounts.amount in ( :amount_1, :amount_2 ) as anon_1
+        FROM accounts
+        WHERE accounts.amount > :amount_3
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_values_of_single_col_select_with_literal():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100[gt_100.isin([200, 300])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+    expected = """
+        SELECT accounts.amount
+        FROM accounts
+        WHERE accounts.amount > :amount_1
+        AND accounts.amount IN (:amount_2, :amount_3)
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_of_single_col_select_with_column():
+    metadata = sa.MetaData()
+    lhs = sa.Table('accounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = symbol('L', 'var * {name: string, amount: int}')
+    R = symbol('R', 'var * {name: string, id: int}')
+    want = L[L.amount > 100].name.isin(R.name)
+
+    result = compute(want, {L: lhs, R: rhs}, return_type='native')
+    result_sql_expr = str(result)
+    expected = """
+        SELECT accounts.name in ( select ids.name from ids ) as anon_1
+        FROM accounts where accounts.amount > :amount_1
+    """
+    assert normalize(result_sql_expr) == normalize(expected)
+
+
+def test_isin_arithmetic_plus_filter():
+    a = t.amount
+    gt_100 = a[a > 100]
+    expr = gt_100[(gt_100 + 1).isin([200, 300])]
+    result_sql_expr = str(compute(expr, s, return_type='native'))
+
+    expected = """
+        SELECT accounts.amount from accounts
+        WHERE accounts.amount > :amount_1
+        AND accounts.amount + :amount_2 in ( :param_1, :param_2 )
     """
     assert normalize(result_sql_expr) == normalize(expected)
 
@@ -1682,10 +1881,10 @@ def test_date_grouper_repeats_not_one_point_oh():
 
     # FYI spark sql isn't able to parse this correctly
     expected = """SELECT
-        EXTRACT(year FROM t.ds) as ds_year,
+        CAST(EXTRACT(year FROM t.ds) AS INTEGER) as ds_year,
         AVG(t.amount) as avg_amt
     FROM t
-    GROUP BY EXTRACT(year FROM t.ds)
+    GROUP BY CAST(EXTRACT(year FROM t.ds) AS INTEGER)
     """
     assert normalize(result) == normalize(expected)
 
@@ -1928,12 +2127,12 @@ def test_label_projection():
     result2 = compute(expr.one_two[expr.new_amount > 1], s, return_type='native')
 
     expected = """SELECT
-        accounts.amount * :amount_1 as one_two
+        accounts.amount * 2 as one_two
     FROM accounts
-    WHERE accounts.name = :name_1 and accounts.amount + :amount_2 > :param_1
+    WHERE accounts.name = 'Alice' and accounts.amount + 1 > 1
     """
-    assert normalize(str(result)) == normalize(expected)
-    assert normalize(str(result2)) == normalize(expected)
+    assert normalize(result) == normalize(expected)
+    assert normalize(result2) == normalize(expected)
 
 
 def test_baseball_nested_by():

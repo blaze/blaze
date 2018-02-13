@@ -23,11 +23,13 @@ from pandas import DataFrame
 from pandas.util.testing import assert_frame_equal
 from toolz import pipe, partial
 
+import blaze as bz
 from blaze.dispatch import dispatch
-from blaze.compatibility import _inttypes
-from blaze.expr import Expr
+from blaze.compatibility import _inttypes, PY2
+from blaze.expr import Expr, literal
 from blaze.utils import example
 from blaze import discover, symbol, by, CSV, compute, join, into, data
+from blaze.server import client
 from blaze.server.client import mimetype
 from blaze.server.server import Server, to_tree, from_tree, RC
 from blaze.server.serialization import all_formats, trusted_formats, fastmsgpack
@@ -180,14 +182,38 @@ def test_to_tree():
     t = symbol('t', 'var * {name: string, amount: int32}')
     expr = t.amount.sum()
     dshape = datashape.dshape('var * {name: string, amount: int32}')
-    sum_args = [{'op': 'Field',
-                 'args': [{'op': 'Symbol',
-                           'args': ['t', dshape, 0]},
-                          'amount']},
-                [0],
-                False]
+    sum_args = [
+        {
+            'op': 'Field',
+            'args': [
+                {
+                    'op': 'Symbol',
+                    'args': ['t', dshape, 0],
+                },
+                'amount',
+            ],
+        },
+        [0],
+        False,
+    ]
     expected = {'op': 'sum', 'args': sum_args}
     assert to_tree(expr) == expected
+
+
+def test_to_and_from_tree_with_literal():
+    data = frozenset([1, 2])
+    expr = literal(data)
+    as_tree = {
+        'args': [
+            frozenset({1, 2}),
+            datashape.dshape("2 * int64"),
+            None,
+        ],
+        'op': 'Literal',
+    }
+    assert to_tree(expr) == as_tree
+
+    assert from_tree(as_tree).isidentical(expr)
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -229,6 +255,17 @@ def test_compute(test, serial):
     tdata = serial.loads(response.data)
     assert serial.data_loads(tdata['data']) == expected
     assert list(tdata['names']) == ['amount_sum']
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_compute_literal_from_client(test, serial, server):
+    client.requests = server.app.test_client()
+    c = bz.Client('localhost:6363')
+    t = symbol('t', c.dshape)
+    expr = t.accounts.amount + literal(1000)
+    expected = [1100, 1200]
+    tdata = compute(expr, c)
+    assert list(tdata) == expected
 
 
 @pytest.mark.parametrize('serial', all_formats)
@@ -489,7 +526,7 @@ def test_map_pandas_client_server(iris_server, serial):
 def test_apply_client_server(iris_server, serial):
     test = iris_server
     t = symbol('t', discover(iris))
-    expr = t.species.apply(id, 'int') # Very dumb example...
+    expr = t.species.apply(id, 'int')  # Very dumb example...
     query = {'expr': to_tree(expr)}
     response = test.post('/compute',
                          data=serial.dumps(query),
@@ -502,7 +539,9 @@ def test_apply_client_server(iris_server, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_server_can_compute_sqlalchemy_reductions(test, serial):
+def test_server_can_compute_sqlalchemy_reductions(test, serial, server):
+    client.requests = server.app.test_client()
+    t = data(bz.Client('localhost:6363'))
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post('/compute',
@@ -512,12 +551,14 @@ def test_server_can_compute_sqlalchemy_reductions(test, serial):
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == into(int, compute(expr, {t: tdata}))
+    assert result == compute(expr, {t: tdata}, return_type='core')
     assert list(respdata['names']) == ['petal_length_sum']
 
 
 @pytest.mark.parametrize('serial', all_formats)
-def test_serialization_endpoints(test, serial):
+def test_serialization_endpoints(test, serial, server):
+    client.requests = server.app.test_client()
+    t = data(bz.Client('localhost:6363'))
     expr = t.db.iris.petal_length.sum()
     query = {'expr': to_tree(expr)}
     response = test.post('/compute',
@@ -527,7 +568,8 @@ def test_serialization_endpoints(test, serial):
     assert 'OK' in response.status
     respdata = serial.loads(response.data)
     result = serial.data_loads(respdata['data'])
-    assert result == into(int, compute(expr, {t: tdata}))
+    assert result == compute(expr, {t: tdata}, return_type='core'
+    )
     assert list(respdata['names']) == ['petal_length_sum']
 
 
@@ -652,6 +694,24 @@ def test_isin(test, serial):
 
 
 @pytest.mark.parametrize('serial', all_formats)
+def test_isin_expr(test, serial):
+    name_filter = t.accounts[t.accounts.amount > 100].name
+    expr = t.cities.name.isin(name_filter)
+    query = {'expr': to_tree(expr)}
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps(query))
+    expected = {'data': [False, True],
+                'names': ['name'],
+                'datashape': '2 * bool'}
+    assert result.status_code == RC.OK
+    resp = serial.loads(result.data)
+    assert list(serial.data_loads(resp['data'])) == expected['data']
+    assert list(resp['names']) == expected['names']
+    assert_dshape_equal(resp['datashape'], expected['datashape'])
+
+
+@pytest.mark.parametrize('serial', all_formats)
 def test_add_errors(temp_add_server, serial):
     pre_datashape = datashape.dshape(temp_add_server
                                      .get('/datashape')
@@ -714,7 +774,8 @@ def test_add_data_to_server(temp_add_server, serial):
                         expected2.measure.dict['iris'])
 
     # compute on added data
-    t = data({'iris': data(iris_path)})
+    client.requests = temp_add_server
+    t = data(bz.Client('localhost:6363'))
     expr = t.iris.petal_length.sum()
 
     response3 = temp_add_server.post('/compute',
@@ -843,7 +904,8 @@ def test_add_expanded_payload_has_effect(temp_add_server, serial):
                         expected2.measure.dict['iris'])
 
     # compute on added data
-    t = data({'iris': data(iris_path, **csv_kwargs)})
+    client.requests = temp_add_server
+    t = data(bz.Client('localhost:6363'))
     expr = t.iris.petal_length.sum()
 
     response3 = temp_add_server.post('/compute',
@@ -921,3 +983,19 @@ def test_fastmsgmpack_mutable_dataframe(test):
     for block in data._data.blocks:
         # make sure all the blocks are mutable
         assert block.values.flags.writeable
+
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_bad_payload_keys(test, serial):
+    result = test.post('/compute',
+                       headers=mimetype(serial),
+                       data=serial.dumps({u'ayy': 'lmao',
+                                          u'nah': 'fam',
+                                          u'profile': True,
+                                          u'profiler_output': ':response'}))
+
+    assert result.status_code == RC.BAD_REQUEST
+    assert (result.data ==
+            "unexpected keys in payload: [{u}'ayy', {u}'nah']".format(
+                u='u' if PY2 else '',
+            ).encode('ascii'))

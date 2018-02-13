@@ -229,8 +229,8 @@ def test_coalesce():
     expr = coalesce(a_expr, b_expr)
     assert expr.isidentical(a_expr)
 
-    c = symbol('c', '{a: int32, b: int32}')
-    d = symbol('d', '{a: int32, b: int32}')
+    c = symbol('c', 'var * {a: int32, b: int32}')
+    d = symbol('d', 'var * {a: int32, b: int32}')
     expr = coalesce(c, d)
     assert expr.isidentical(c)
 
@@ -330,4 +330,45 @@ def test_cast():
     assert_dshape_equal(
         s.cast(dshape('var * int64')).dshape,
         dshape('var * int64'),
+    )
+
+
+def test_drop_field():
+    s = symbol('s', 'var * {a: int32, b: int64, c: float32, d: float64}')
+
+    # dropping one field preserves order
+    assert s.drop_field('a').isidentical(s[['b', 'c', 'd']])
+    assert s.drop_field('b').isidentical(s[['a', 'c', 'd']])
+    assert s.drop_field('c').isidentical(s[['a', 'b', 'd']])
+    assert s.drop_field('d').isidentical(s[['a', 'b', 'c']])
+
+    # dropping two fields preserves order
+    assert s.drop_field('a', 'b').isidentical(s[['c', 'd']])
+    assert s.drop_field('a', 'c').isidentical(s[['b', 'd']])
+    assert s.drop_field('b', 'c').isidentical(s[['a', 'd']])
+    assert s.drop_field('b', 'd').isidentical(s[['a', 'c']])
+
+    # test dropping a field that is not actually a field of ``expr``.
+    with pytest.raises(ValueError) as e:
+        s.drop_field('fake')
+    assert (
+        str(e.value) ==
+        "fields ['fake'] were not in the fields of expr (['a', 'b', 'c', 'd'])"
+    )
+
+    # test dropping a multiple fields that is not actually a field of ``expr``.
+    with pytest.raises(ValueError) as e:
+        s.drop_field('e', 'f')
+    assert (
+        str(e.value) ==
+        "fields ['e', 'f'] were not in the fields of expr"
+        " (['a', 'b', 'c', 'd'])"
+    )
+
+    # test dropping a mix of correct and missing fields
+    with pytest.raises(ValueError) as e:
+        s.drop_field('a', 'fake')
+    assert (
+        str(e.value) ==
+        "fields ['fake'] were not in the fields of expr (['a', 'b', 'c', 'd'])"
     )

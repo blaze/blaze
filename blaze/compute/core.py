@@ -1,21 +1,41 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict, Iterator, Mapping
+import decimal
 from datetime import date, datetime, timedelta
+from functools import partial
 import itertools
 import numbers
 import warnings
 
+from datashape.predicates import (
+    isscalar,
+    iscollection,
+    isrecord,
+    istabular,
+    _dimensions,
+)
+from odo import odo
+from odo.compatibility import unicode
+import numpy as np
+import pandas as pd
 import toolz
 from toolz import first, unique, assoc
 from toolz.utils import no_default
-import pandas as pd
-from odo import odo
 
 from ..compatibility import basestring
-from ..expr import Expr, Field, Symbol, symbol, Join, Cast
+from ..expr import (
+    BoundSymbol,
+    Cast,
+    Expr,
+    Field,
+    Join,
+    Literal,
+    Symbol,
+    symbol,
+)
 from ..dispatch import dispatch
-from ..interactive import coerce_core, into
+from ..types import iscoretype
 
 
 __all__ = ['compute', 'compute_up']
@@ -71,7 +91,7 @@ def compute_down(expr, **kwargs):
 
     inputs match up to leaves of the expression
     """
-    return expr
+    raise NotImplementedError()
 
 
 def issubtype(a, b):
@@ -145,9 +165,10 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     if not hasattr(expr, '_leaves'):
         return expr
 
-    leaf_exprs = list(expr._leaves())
-    leaf_data = [scope.get(leaf) for leaf in leaf_exprs]
-
+    leaf_data = (
+        scope.get(leaf) for leaf in expr._leaves()
+        if not isinstance(leaf, Literal)
+    )
     # 1. See if we have a direct computation path with compute_down
     try:
         return compute_down(expr, *leaf_data, **kwargs)
@@ -161,9 +182,10 @@ def top_then_bottom_then_top_again_etc(expr, scope, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     if pre_compute_:
-        scope3 = dict((e, pre_compute_(e, datum,
-                                       **assoc(kwargs, 'scope', scope2)))
-                      for e, datum in scope2.items())
+        scope3 = {
+            e: pre_compute_(e, datum, **assoc(kwargs, 'scope', scope2))
+            for e, datum in scope2.items()
+        }
     else:
         scope3 = scope2
     if optimize_:
@@ -338,23 +360,35 @@ def swap_resources_into_scope(expr, scope):
     --------
 
     >>> from blaze import data
-    >>> t = data([1, 2, 3], dshape='3 * int', name='t')
+    >>> t = data([1, 2, 3], dshape='3 * int32', name='t')
     >>> swap_resources_into_scope(t.head(2), {})
-    (t.head(2), {<`t` symbol; dshape='3 * int32'>: [1, 2, 3]})
-
-    >>> expr, scope = _
-    >>> list(scope.keys())[0]._resources()
-    {}
+    {<'list' data; _name='t', dshape='3 * int32'>: [1, 2, 3]}
     """
-    resources = expr._resources()
-    symbol_dict = dict((t, symbol(t._name, t.dshape)) for t in resources)
-    resources = dict((symbol_dict[k], v) for k, v in resources.items())
-    other_scope = dict((k, v) for k, v in scope.items()
-                       if k not in symbol_dict)
-    new_scope = toolz.merge(resources, other_scope)
-    expr = expr._subs(symbol_dict)
+    return toolz.merge(expr._resources(), scope)
 
-    return expr, new_scope
+
+@dispatch((object, type, str, unicode), BoundSymbol)
+def into(a, b, **kwargs):
+    return into(a, b.data, **kwargs)
+
+
+@dispatch((object, type, str, unicode), Expr)
+def into(a, b, **kwargs):
+    result = compute(b, return_type='native', **kwargs)
+    kwargs['dshape'] = b.dshape
+    return into(a, result, **kwargs)
+
+
+Expr.__iter__ = into(Iterator)
+
+
+@dispatch(Expr)
+def compute(expr, **kwargs):
+    resources = expr._resources()
+    if not resources:
+        raise ValueError("No data resources found")
+    else:
+        return compute(expr, resources, **kwargs)
 
 
 @dispatch(Expr, Mapping)
@@ -387,31 +421,31 @@ def compute(expr, d, return_type=no_default, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     post_compute_ = kwargs.get('post_compute', post_compute)
-    expr2, d2 = swap_resources_into_scope(expr, d)
+    d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
         d3 = dict(
             (e, pre_compute_(e, dat, **kwargs))
             for e, dat in d2.items()
-            if e in expr2
+            if e in expr
         )
     else:
         d3 = d2
 
     if optimize_:
         try:
-            expr3 = optimize_(expr2, *[v for e, v in d3.items() if e in expr2])
-            _d = dict(zip(expr2._leaves(), expr3._leaves()))
+            expr2 = optimize_(expr, *[v for e, v in d3.items() if e in expr])
+            _d = dict(zip(expr._leaves(), expr2._leaves()))
             d4 = dict((e._subs(_d), d) for e, d in d3.items())
         except NotImplementedError:
-            expr3 = expr2
+            expr2 = expr
             d4 = d3
     else:
-        expr3 = expr2
+        expr2 = expr
         d4 = d3
 
-    result = top_then_bottom_then_top_again_etc(expr3, d4, **kwargs)
+    result = top_then_bottom_then_top_again_etc(expr2, d4, **kwargs)
     if post_compute_:
-        result = post_compute_(expr3, result, scope=d4)
+        result = post_compute_(expr2, result, scope=d4)
 
     # return the backend's native response
     if return_type is no_default:
@@ -424,7 +458,7 @@ def compute(expr, d, return_type=no_default, **kwargs):
         result = coerce_core(result, expr.dshape)
     # user specified type
     elif isinstance(return_type, type):
-        result = into(return_type, result)
+        result = into(return_type, result, dshape=expr2.dshape)
     elif return_type != 'native':
         raise ValueError(
             "Invalid return_type passed to compute: {}".format(return_type),
@@ -447,7 +481,11 @@ def compute_single_object(expr, o, **kwargs):
     >>> list(compute(deadbeats, data))
     ['Bob', 'Charlie']
     """
-    ts = set([x for x in expr._subterms() if isinstance(x, Symbol)])
+    resources = expr._resources()
+    ts = set(expr._leaves()) - set(resources)
+    if not ts and o in resources.values():
+        # the data is already bound to an expression
+        return compute(expr, **kwargs)
     if len(ts) == 1:
         return compute(expr, {first(ts): o}, **kwargs)
     else:
@@ -470,3 +508,55 @@ def join_dataframe_to_selectable(expr, lhs, rhs, scope=None, **kwargs):
         },
         **kwargs
     )
+
+
+def coerce_to(typ, x, odo_kwargs=None):
+    try:
+        return typ(x)
+    except TypeError:
+        return odo(x, typ, **(odo_kwargs or {}))
+
+
+def coerce_scalar(result, dshape, odo_kwargs=None):
+    dshape = str(dshape)
+    coerce_ = partial(coerce_to, x=result, odo_kwargs=odo_kwargs)
+    if 'float' in dshape:
+        return coerce_(float)
+    if 'decimal' in dshape:
+        return coerce_(decimal.Decimal)
+    elif 'int' in dshape:
+        return coerce_(int)
+    elif 'bool' in dshape:
+        return coerce_(bool)
+    elif 'datetime' in dshape:
+        return coerce_(pd.Timestamp)
+    elif 'date' in dshape:
+        return coerce_(date)
+    elif 'timedelta' in dshape:
+        return coerce_(timedelta)
+    else:
+        return result
+
+
+def coerce_core(result, dshape, odo_kwargs=None):
+    """Coerce data to a core data type."""
+    if iscoretype(result):
+        return result
+    elif isscalar(dshape):
+        result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
+    elif istabular(dshape) and isrecord(dshape.measure):
+        result = into(pd.DataFrame, result, **(odo_kwargs or {}))
+    elif iscollection(dshape):
+        dim = _dimensions(dshape)
+        if dim == 1:
+            result = into(pd.Series, result, **(odo_kwargs or {}))
+        elif dim > 1:
+            result = into(np.ndarray, result, **(odo_kwargs or {}))
+        else:
+            msg = "Expr with dshape dimensions < 1 should have been handled earlier: dim={}"
+            raise ValueError(msg.format(str(dim)))
+    else:
+        msg = "Expr does not evaluate to a core return type"
+        raise ValueError(msg)
+
+    return result

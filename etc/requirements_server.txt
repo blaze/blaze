@@ -1,0 +1,2 @@
+pyyaml>=3.11
+requests>=2.0.0

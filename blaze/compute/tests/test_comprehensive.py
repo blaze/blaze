@@ -1,70 +1,72 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 import numpy as np
 from pandas import DataFrame
-import numpy as np
 from odo import into
 from datashape.predicates import isscalar, iscollection, isrecord
-from blaze.expr import symbol, by
-from blaze.interactive import data
+from blaze.expr import symbol, by, data
 from blaze.compute import compute
 from blaze.expr.functions import sin, exp
 
 
-sources = []
-
 t = symbol('t', 'var * {amount: int64, id: int64, name: string}')
 
-L = [[ 100, 1, 'Alice'],
-     [ 200, 2, 'Bob'],
-     [ 300, 3, 'Charlie'],
-     [-400, 4, 'Dan'],
-     [ 500, 5, 'Edith']]
 
-df = DataFrame(L, columns=['amount', 'id', 'name'])
+@pytest.fixture
+def sources():
+    L = [[ 100, 1, 'Alice'],
+         [ 200, 2, 'Bob'],
+         [ 300, 3, 'Charlie'],
+         [-400, 4, 'Dan'],
+         [ 500, 5, 'Edith']]
 
-x = into(np.ndarray, df)
+    df = DataFrame(L, columns=['amount', 'id', 'name'])
 
-sources = [df, x]
-
-try:
-    import sqlalchemy
-    sql = data('sqlite:///:memory:::accounts', dshape=t.dshape)
-    into(sql, L)
-    sources.append(sql)
-except:
-    sql = None
-
-
-try:
-    import bcolz
-    bc = into(bcolz.ctable, df)
-    sources.append(bc)
-except ImportError:
-    bc = None
-
-try:
-    import pymongo
-except ImportError:
-    pymongo = mongo = None
-if pymongo:
+    x = into(np.ndarray, df)
 
     try:
-        db = pymongo.MongoClient().db
+        import sqlalchemy
+        sql = data('sqlite:///:memory:::accounts', dshape=t.dshape)
+        into(sql, L)
+    except:
+        sql = None
+
+    try:
+        import bcolz
+        bc = into(bcolz.ctable, df)
+    except ImportError:
+        bc = None
+
+    try:
+        import pymongo
+    except ImportError:
+        pymongo = mongo = None
+    if pymongo:
 
         try:
-            coll = db._test_comprehensive
-        except AttributeError:
-            coll = db['_test_comprehensive']
+            db = pymongo.MongoClient().db
 
-        coll.drop()
-        mongo = into(coll, df)
-        sources.append(mongo)
-    except pymongo.errors.ConnectionFailure:
-        mongo = None
+            try:
+                coll = db._test_comprehensive
+            except AttributeError:
+                coll = db['_test_comprehensive']
+
+            coll.drop()
+            mongo = into(coll, df)
+        except pymongo.errors.ConnectionFailure:
+            mongo = None
+
+    return df, x, sql, bc, mongo
+
 
 # {expr: [list-of-exclusions]}
-expressions = {
+@pytest.fixture
+def expressions(sources):
+    df, x, sql, bc, mongo = sources
+
+    return {
         t: [],
         t['id']: [],
         abs(t['amount']): [],
@@ -106,9 +108,7 @@ expressions = {
         t.nelements(axis=0): [],
         t.nelements(axis=None): [],
         t.amount.truncate(200): [sql]
-        }
-
-base = df
+    }
 
 
 def df_eq(a, b):
@@ -121,7 +121,8 @@ def typename(obj):
     return type(obj).__name__
 
 
-def test_base():
+def test_base(expressions, sources):
+    base, x, sql, bc, mongo = sources
     for expr, exclusions in expressions.items():
         if iscollection(expr.dshape):
             model = into(DataFrame, into(np.ndarray, expr._subs({t: data(base, t.dshape)})))
@@ -129,7 +130,7 @@ def test_base():
             model = compute(expr._subs({t: data(base, t.dshape)}))
         print('\nexpr: %s\n' % expr)
         for source in sources:
-            if id(source) in map(id, exclusions):
+            if source is None or id(source) in map(id, exclusions):
                 continue
             print('%s <- %s' % (typename(model), typename(source)))
             T = data(source)

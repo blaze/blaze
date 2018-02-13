@@ -4,15 +4,21 @@ import pytest
 import operator
 
 from datashape import discover, dshape
+from datashape.util.testing import assert_dshape_equal
 
-from blaze.compute.core import (compute_up, compute, bottom_up_until_type_break,
-                                top_then_bottom_then_top_again_etc,
-                                swap_resources_into_scope)
+from blaze.compute.core import (
+    coerce_core,
+    compute_up,
+    compute,
+    into,
+    bottom_up_until_type_break,
+    top_then_bottom_then_top_again_etc,
+    swap_resources_into_scope
+)
 from blaze.expr import by, symbol, Expr, Symbol
 from blaze.dispatch import dispatch
 from blaze.compatibility import raises, reduce
 from blaze.utils import example
-from blaze.interactive import into
 
 import pandas as pd
 import numpy as np
@@ -92,21 +98,22 @@ def test_swap_resources_into_scope():
 
     from blaze import data
     t = data([1, 2, 3], dshape='3 * int', name='t')
-    expr, scope = swap_resources_into_scope(t.head(2), {t: t.data})
+    scope = swap_resources_into_scope(t.head(2), {})
 
     assert t._resources()
-    assert not expr._resources()
-
-    assert t not in scope
+    assert t in scope
 
 
 def test_compute_up_on_dict():
     d = {'a': [1, 2, 3], 'b': [4, 5, 6]}
 
-    assert str(discover(d)) == str(dshape('{a: 3 * int64, b: 3 * int64}'))
+    assert_dshape_equal(
+        discover(d),
+        dshape('{a: 3 * int64, b: 3 * int64}').measure,
+        check_record_order=False,  # dict order undefined
+    )
 
     s = symbol('s', discover(d))
-
     assert compute(s.a, {s: d}) == [1, 2, 3]
 
 
@@ -154,9 +161,31 @@ def test_simple_add(n):
     (1, symbol('x', 'int'), 'core', int),
     # use dask array to test core since isn't core type
     (into(da.core.Array, [1, 2], chunks=(10,)), symbol('x', '2 * int'), 'core', pd.Series),  # test 1-d to series
-    (into(da.core.Array, [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], chunks=(10,10)), symbol('x', '2 * {a: int, b: int}'), 'core', pd.DataFrame),  # test 2-d tabular to dataframe
+    (into(da.core.Array, [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], chunks=(10,)), symbol('x', '2 * {a: int, b: int}'), 'core', pd.DataFrame),  # test 2-d tabular to dataframe
     (into(da.core.Array, [[1, 2], [3, 4]], chunks=(10, 10)), symbol('x', '2 *  2 * int'), 'core', np.ndarray),  # test 2-d non tabular to ndarray
     ([1, 2], symbol('x', '2 * int') , tuple, tuple)
 ])
 def test_compute_return_type(data, expr, ret_type, exp_type):
     assert isinstance(compute(expr, data, return_type=ret_type), exp_type)
+
+
+@pytest.mark.parametrize('data,dshape,exp_type',
+                         [(1, symbol('x', 'int').dshape, int),
+                          # test 1-d to series
+                          (into(da.core.Array, [1, 2], chunks=(10,)),
+                           dshape('2 * int'),
+                           pd.Series),
+                          # test 2-d tabular to dataframe
+                          (into(da.core.Array,
+                                [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}],
+                                chunks=(10,)),
+                           dshape('2 * {a: int, b: int}'),
+                           pd.DataFrame),
+                          # test 2-d non tabular to ndarray
+                          (into(da.core.Array,
+                                [[1, 2], [3, 4]],
+                                chunks=(10, 10)),
+                           dshape('2 *  2 * int'),
+                           np.ndarray)])
+def test_coerce_core(data, dshape, exp_type):
+    assert isinstance(coerce_core(data, dshape), exp_type)

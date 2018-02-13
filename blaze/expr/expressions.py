@@ -10,25 +10,37 @@ from datashape import (
     DataShape,
     Record,
     Var,
-    Mono,
     Fixed,
     promote,
     Option,
     Null,
 )
-from datashape.predicates import isscalar, iscollection, isboolean, isrecord
+from datashape.predicates import (
+    isscalar,
+    iscollection,
+    isboolean,
+    isrecord,
+    istabular,
+)
 import numpy as np
 from odo.utils import copydoc
 import toolz
-from toolz import concat, memoize, partial, first
+from toolz import concat, memoize, partial, first, unique, merge
 from toolz.curried import map, filter
 
 from ..compatibility import _strtypes, builtins, boundmethod, PY2
-from .core import Node, subs, common_subexpression, path, _setattr
+from .core import (
+    Node,
+    _setattr,
+    common_subexpression,
+    path,
+    resolve_args,
+    subs,
+)
 from .method_dispatch import select_functions
 from ..dispatch import dispatch
 from .utils import hashable_index, replace_slices, maxshape
-from ..utils import attribute
+from ..utils import attribute, as_attribute
 
 
 __all__ = [
@@ -52,6 +64,7 @@ __all__ = [
     'coalesce',
     'coerce',
     'discover',
+    'drop_field',
     'label',
     'ndim',
     'projection',
@@ -116,6 +129,9 @@ class Expr(Node):
     holds all tree traversal logic
     """
 
+    def __repr__(self):
+        return str(self)
+
     def _get_field(self, fieldname):
         if not isinstance(self.dshape.measure, (Record, datashape.Map)):
             if fieldname == self._name:
@@ -129,7 +145,7 @@ class Expr(Node):
         if isinstance(key, _strtypes) and key in self.fields:
             return self._get_field(key)
         elif isinstance(key, Expr) and iscollection(key.dshape):
-            return selection(self, key)
+            return self._select(key)
         elif (isinstance(key, list) and
               builtins.all(isinstance(k, _strtypes) for k in key)):
             if set(key).issubset(self.fields):
@@ -147,9 +163,6 @@ class Expr(Node):
 
     def map(self, func, schema=None, name=None):
         return Map(self, func, schema, name)
-
-    def _project(self, key):
-        return projection(self, key)
 
     @attribute
     def schema(self):
@@ -221,7 +234,7 @@ class Expr(Node):
             fields = dict(zip(map(valid_identifier, self.fields), self.fields))
 
             measure = self.dshape.measure
-            if isinstance(measure, datashape.Map): # Foreign key
+            if isinstance(measure, datashape.Map):  # Foreign key
                 measure = measure.key
 
             # prefer the method if there's a field with the same name
@@ -256,7 +269,8 @@ class Expr(Node):
                                                        measure)):
             child_measure = self._child.dshape.measure
             if isscalar(getattr(child_measure, 'key', child_measure)):
-                return self._child._name
+                # memoize the result
+                return _setattr(self, '_name', self._child._name)
 
     def __enter__(self):
         """ Enter context """
@@ -273,6 +287,17 @@ class Expr(Node):
             except AttributeError:
                 pass
         return True
+
+    # Add some placeholders to help with refactoring. If we forget to attach
+    # these methods later we will get better errors.
+    # To find the real definition, look for usage of ``@as_attribute``
+    for method in ('_project', '_select', 'cast'):
+        @attribute
+        def _(self):
+            raise AssertionError('method added after class definition')
+        locals()[method] = _
+        del _
+        del method
 
 
 def sanitized_dshape(dshape, width=50):
@@ -295,7 +320,7 @@ class Symbol(Expr):
     dshape("5 * 3 * {x: int32, y: int32}")
     """
     _arguments = '_name', 'dshape', '_token'
-    __inputs__ = ()
+    _input_attributes = ()
 
     def __repr__(self):
         fmt = "<`{}` symbol; dshape='{}'>"
@@ -417,6 +442,7 @@ class Projection(ElemWise):
                                                                self.fields))
 
 
+@as_attribute(Expr, '_project')
 @copydoc(Projection)
 def projection(expr, names):
     if not names:
@@ -500,7 +526,7 @@ class Selection(Expr):
     >>> deadbeats = accounts[accounts.amount < 0]
     """
     _arguments = '_child', 'predicate'
-    __inputs__ = '_child', 'predicate'
+    _input_attributes = '_child', 'predicate'
 
     @property
     def _name(self):
@@ -519,15 +545,16 @@ class SimpleSelection(Selection):
     """Internal selection class that does not treat the predicate as an input.
     """
     _arguments = Selection._arguments
-    __inputs__ = '_child',
+    _input_attributes = '_child',
 
 
+@as_attribute(Expr, '_select')
 @copydoc(Selection)
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
     if not builtins.all(
-            isinstance(node, (ElemWise, Symbol)) or
+            isinstance(node, (VarArgsExpr, ElemWise, Symbol)) or
             node.isidentical(subexpr)
             for node in concat([path(predicate, subexpr),
                                 path(table, subexpr)])):
@@ -820,12 +847,10 @@ class Cast(Expr):
         return 'cast(%s, to=%r)' % (self._child, str(self.to))
 
 
+@as_attribute(Expr)
 @copydoc(Cast)
 def cast(expr, to):
     return Cast(expr, dshape(to) if isinstance(to, _strtypes) else to)
-
-
-Expr.cast = cast  # method of all exprs
 
 
 def binop_name(expr):
@@ -851,24 +876,29 @@ def binop_inputs(expr):
 class Coalesce(Expr):
     """SQL like coalesce.
 
-    coalesce(a, b) = {
-        a if a is not NULL
-        b otherwise
-    }
+    .. code-block:: python
+
+        coalesce(a, b) = {
+            a if a is not NULL
+            b otherwise
+        }
 
     Examples
     --------
     >>> coalesce(1, 2)
     1
+
     >>> coalesce(1, None)
     1
+
     >>> coalesce(None, 2)
     2
+
     >>> coalesce(None, None) is None
     True
     """
     _arguments = 'lhs', 'rhs', 'dshape'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def __str__(self):
         return 'coalesce(%s, %s)' % (self.lhs, self.rhs)
@@ -949,15 +979,60 @@ def ndim(expr):
     return len(shape(expr))
 
 
+def drop_field(expr, field, *fields):
+    """Drop a field or fields from a tabular expression.
+
+    Parameters
+    ----------
+    expr : Expr
+        A tabular expression to drop columns from.
+    *fields
+       The names of the fields to drop.
+
+    Returns
+    -------
+    dropped : Expr
+       The new tabular expression with some columns missing.
+
+    Raises
+    ------
+    TypeError
+        Raised when ``expr`` is not tabular.
+    ValueError
+        Raised when a column is not in the fields of ``expr``.
+
+    See Also
+    --------
+    :func:`blaze.expr.expressions.projection`
+    """
+    to_remove = set((field,)).union(fields)
+    new_fields = []
+    for field in expr.fields:
+        if field not in to_remove:
+            new_fields.append(field)
+        else:
+            to_remove.remove(field)
+
+    if to_remove:
+        raise ValueError(
+            'fields %r were not in the fields of expr (%r)' % (
+                sorted(to_remove),
+                expr.fields
+            ),
+        )
+    return expr[new_fields]
+
+
 dshape_method_list.extend([
-    (lambda ds: True, set([apply])),
-    (iscollection, set([shape, ndim])),
-    (lambda ds: iscollection(ds) and isscalar(ds.measure), set([coerce]))
+    (lambda ds: True, {apply}),
+    (iscollection, {shape, ndim}),
+    (lambda ds: iscollection(ds) and isscalar(ds.measure), {coerce}),
+    (istabular, {drop_field}),
 ])
 
 schema_method_list.extend([
-    (isscalar, set([label, relabel, coerce])),
-    (isrecord, set([relabel])),
+    (isscalar, {label, relabel, coerce}),
+    (isrecord, {relabel}),
     (lambda ds: isinstance(ds, Option), {coalesce}),
 ])
 
@@ -967,3 +1042,33 @@ method_properties.update([shape, ndim])
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
+
+
+class VarArgsExpr(Expr):
+    """An expression used for collecting variadic arguments into a single, typed
+    container.
+
+    Parameters
+    ----------
+    _inputs : tuple[any]
+        The arguments that this expression will compute.
+    """
+    _arguments = '_inputs',
+
+    @attribute
+    def _inputs(self):
+        raise NotImplementedError('overridden in _init')
+
+    def _dshape(self):
+        return DataShape(datashape.void)
+
+
+def varargsexpr(args):
+    """Create a varargs expr which will be materialzed as a ``VarArgs``
+    """
+    # lazy import to break cycle
+    from blaze.compute.varargs import register_varargs_arity
+    args = tuple(args)
+    register_varargs_arity(len(args))
+
+    return VarArgsExpr(args)

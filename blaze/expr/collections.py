@@ -6,42 +6,75 @@ from functools import partial
 from itertools import chain
 
 import datashape
-from datashape import (DataShape, Option, Record, Unit, dshape, var, Fixed,
-                       Var, promote, object_)
+from datashape import (
+    DataShape,
+    Fixed,
+    Option,
+    Record,
+    Unit,
+    Var,
+    dshape,
+    object_,
+    promote,
+    var,
+)
 from datashape.predicates import isscalar, iscollection, isrecord
-from toolz import (isdistinct, frequencies, concat as tconcat, unique, get,
-                   first, compose, keymap)
+from toolz import (
+    compose,
+    concat as tconcat,
+    concatv,
+    first,
+    frequencies,
+    get,
+    isdistinct,
+    keymap,
+)
 import toolz.curried.operator as op
 from odo.utils import copydoc
 
 from .core import common_subexpression
-from .expressions import Expr, ElemWise, label, Field
-from .expressions import dshape_method_list
+from .expressions import (
+    attribute,
+    _setattr,
+    ElemWise,
+    Expr,
+    Field,
+    Selection,
+    dshape_method_list,
+    label,
+    ndim,
+    shape,
+    varargsexpr,
+)
+from .utils import maxshape
+from .literal import data, literal
 from ..compatibility import zip_longest, _strtypes
 from ..utils import listpack
 
 
-__all__ = ['Concat',
-           'concat',
-           'Distinct',
-           'distinct',
-           'Head',
-           'head',
-           'IsIn',
-           'isin',
-           'Join',
-           'join',
-           'Merge',
-           'merge',
-           'Sample',
-           'sample',
-           'Shift',
-           'shift',
-           'Sort',
-           'sort',
-           'Tail',
-           'tail',
-           'transform']
+__all__ = [
+    'Concat',
+    'concat',
+    'Distinct',
+    'distinct',
+    'Head',
+    'head',
+    'IsIn',
+    'isin',
+    'Join',
+    'join',
+    'Merge',
+    'merge',
+    'Sample',
+    'sample',
+    'Shift',
+    'shift',
+    'Sort',
+    'sort',
+    'Tail',
+    'tail',
+    'transform',
+]
 
 
 class Sort(Expr):
@@ -182,7 +215,7 @@ class Distinct(Expr):
     _arguments = '_child', 'on'
 
     def _dshape(self):
-        return datashape.var * self._child.dshape.measure
+        return var * self._child.dshape.measure
 
     @property
     def fields(self):
@@ -323,21 +356,6 @@ def sample(child, n=None, frac=None):
     return Sample(child, n, frac)
 
 
-def transform(t, replace=True, **kwargs):
-    """ Add named columns to table
-
-    >>> from blaze import symbol
-    >>> t = symbol('t', 'var * {x: int, y: int}')
-    >>> transform(t, z=t.x + t.y).fields
-    ['x', 'y', 'z']
-    """
-    if replace and set(t.fields).intersection(set(kwargs)):
-        t = t[[c for c in t.fields if c not in kwargs]]
-
-    args = [t] + [v.label(k) for k, v in sorted(kwargs.items(), key=first)]
-    return merge(*args)
-
-
 def schema_concat(exprs):
     """ Concatenate schemas together.  Supporting both Records and Units
 
@@ -357,8 +375,15 @@ def schema_concat(exprs):
 
 
 class Merge(ElemWise):
-
     """ Merge many fields together
+
+    Parameters
+    ----------
+    *labeled_exprs : iterable[Expr]
+        The positional expressions to merge. These will use the expression's
+        _name as the key in the resulting table.
+    **named_exprs : dict[str, Expr]
+        The named expressions to label and merge into the table.
 
     Examples
     --------
@@ -367,57 +392,103 @@ class Merge(ElemWise):
     >>> merge(accounts.name, z=accounts.x + accounts.y).fields
     ['name', 'z']
 
+    Notes
+    -----
     To control the ordering of the fields, use ``label``:
 
     >>> merge(label(accounts.name, 'NAME'), label(accounts.x, 'X')).dshape
     dshape("var * {NAME: string, X: int32}")
     >>> merge(label(accounts.x, 'X'), label(accounts.name, 'NAME')).dshape
     dshape("var * {X: int32, NAME: string}")
-    """
-    _arguments = '_child', 'children'
 
-    def _schema(self):
-        return schema_concat(self.children)
+    See Also
+    --------
+    :class:`~blaze.expr.expressions.label`
+    """
+    _arguments = 'args', '_varargsexpr', '_shape'
+    _input_attributes = '_varargsexpr',
+
+    def _dshape(self):
+        return DataShape(*self._shape + (schema_concat(self.args),))
 
     @property
     def fields(self):
-        return list(tconcat(child.fields for child in self.children))
-
-    def _subterms(self):
-        yield self
-        for i in self.children:
-            for node in i._subterms():
-                yield node
+        return list(tconcat(arg.fields for arg in self.args))
 
     def _get_field(self, key):
-        for child in self.children:
-            if key in child.fields:
-                if isscalar(child.dshape.measure):
-                    return child
+        for arg in self.args:
+            if key in arg.fields:
+                if isscalar(arg.dshape.measure):
+                    return arg
                 else:
-                    return child[key]
+                    return arg[key]
 
     def _project(self, key):
         if not isinstance(key, (tuple, list)):
             raise TypeError("Expected tuple or list, got %s" % key)
-        return merge(*[self[c] for c in key])
+        return merge(*(self[c] for c in key))
 
-    def _leaves(self):
-        return list(unique(tconcat(i._leaves() for i in self.children)))
+    def _select(self, predicate):
+        subexpr = common_subexpression(predicate, *self.args)
+        return self._subs({subexpr: Selection(subexpr, predicate)})
+
+    @attribute
+    def _child(self):
+        return _setattr(
+            self,
+            '_common_subexpr',
+            common_subexpression(*self.args),
+        )
+
+
+def _wrap(ob, name):
+    """Wrap an object in an interactive expression if it is not already
+    an object, otherwise return it unchanged.
+
+    Parameters
+    ----------
+    ob : any
+        The object to potentially wrap.
+    name : str
+        The name of the interactive expression if created.
+
+    Returns
+    -------
+    maybe_wrapped : Expr
+        A blaze expression.
+    """
+    return data(ob, name=name) if not isinstance(ob, Expr) else ob
 
 
 @copydoc(Merge)
 def merge(*exprs, **kwargs):
     if len(exprs) + len(kwargs) == 1:
+        # we only have one object so don't need to construct a merge
         if exprs:
+            # we only have a positional argumnent, return it unchanged
             return exprs[0]
         if kwargs:
+            # we only have a single keyword argument, label it and return it
             [(k, v)] = kwargs.items()
             return v.label(k)
-    # Get common sub expression
-    exprs += tuple(label(v, k) for k, v in sorted(kwargs.items(), key=first))
-    child = common_subexpression(*exprs)
-    result = Merge(child, exprs)
+
+    # label all the kwargs and sort in key order
+    exprs = tuple(concatv(
+        (_wrap(expr, '_%s' % n) for n, expr in enumerate(exprs)),
+        (
+            label(_wrap(v, k), k)
+            for k, v in sorted(kwargs.items(), key=first)
+        ),
+    ))
+
+    if all(ndim(expr) == 0 for expr in exprs):
+        raise TypeError('cannot merge all scalar expressions')
+
+    result = Merge(
+        exprs,
+        varargsexpr(exprs),
+        maxshape(map(shape, exprs)),
+    )
 
     if not isdistinct(result.fields):
         raise ValueError(
@@ -427,6 +498,44 @@ def merge(*exprs, **kwargs):
         )
 
     return result
+
+
+def transform(expr, replace=True, **kwargs):
+    """Add named columns to table
+
+    Parameters
+    ----------
+    expr : Expr
+        A tabular expression.
+    replace : bool, optional
+        Should new columns be allowed to replace old columns?
+    **kwargs
+        The new columns to add to the table
+
+    Returns
+    -------
+    merged : Merge
+        A new tabular expression with the new columns merged into the table.
+
+    Examples
+    --------
+    >>> from blaze import symbol
+    >>> t = symbol('t', 'var * {x: int, y: int}')
+    >>> transform(t, z=t.x + t.y).fields
+    ['x', 'y', 'z']
+
+    See Also
+    --------
+    :class:`~blaze.expr.collections.merge`
+    """
+    if replace and set(expr.fields).intersection(set(kwargs)):
+        expr = expr[[c for c in expr.fields if c not in kwargs]]
+
+    args = [expr] + [
+        _wrap(v, k).label(k) for k, v in sorted(kwargs.items(), key=first)
+    ]
+    return merge(*args)
+
 
 
 def unpack(l):
@@ -484,7 +593,7 @@ class Join(Expr):
     blaze.expr.collections.Merge
     """
     _arguments = 'lhs', 'rhs', '_on_left', '_on_right', 'how', 'suffixes'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     @property
     def on_left(self):
@@ -538,7 +647,7 @@ class Join(Expr):
             self.rhs.dshape.measure.dict,
         )
         joined = (
-            (name, promote(dt, right_types[name], promote_option=False))
+            (name, promote(extract_key(dt), extract_key(right_types[name]), promote_option=False))
             for n, (name, dt) in enumerate(filter(
                 compose(op.contains(on_left), first),
                 self.lhs.dshape.measure.fields,
@@ -608,6 +717,10 @@ def types_of_fields(fields, expr):
         return expr.dshape.measure
 
 
+def extract_key(m):
+    return m.measure.key if isinstance(m.measure, datashape.coretypes.Map) else m
+
+
 @copydoc(Join)
 def join(lhs, rhs, on_left=None, on_right=None,
          how='inner', suffixes=('_left', '_right')):
@@ -627,6 +740,9 @@ def join(lhs, rhs, on_left=None, on_right=None,
         )
     left_types = listpack(types_of_fields(on_left, lhs))
     right_types = listpack(types_of_fields(on_right, rhs))
+    # Replace map[x, y] with x to resolve foreign keys.
+    left_types = list(map(extract_key, left_types))
+    right_types = list(map(extract_key, right_types))
     if len(left_types) != len(right_types):
         raise ValueError(
             'Length of on_left=%d not equal to length of on_right=%d' % (
@@ -700,7 +816,7 @@ class Concat(Expr):
     blaze.expr.collections.Merge
     """
     _arguments = 'lhs', 'rhs', 'axis'
-    __inputs__ = 'lhs', 'rhs'
+    _input_attributes = 'lhs', 'rhs'
 
     def _dshape(self):
         axis = self.axis
@@ -774,9 +890,14 @@ class IsIn(ElemWise):
     dshape("10 * bool")
     """
     _arguments = '_child', '_keys'
+    _input_attributes = '_child', '_keys'
 
     def _schema(self):
         return datashape.bool_
+
+    @property
+    def _name(self):
+        return self._child._name
 
     def __str__(self):
         return '%s.%s(%s)' % (self._child, type(self).__name__.lower(),
@@ -785,11 +906,9 @@ class IsIn(ElemWise):
 
 @copydoc(IsIn)
 def isin(expr, keys):
-    if isinstance(keys, Expr):
-        raise TypeError('keys argument cannot be an expression, '
-                        'it must be an iterable object such as a list, '
-                        'tuple or set')
-    return IsIn(expr, frozenset(keys))
+    if not isinstance(keys, Expr):
+        keys = literal(keys)
+    return IsIn(expr, keys)
 
 
 class Shift(Expr):

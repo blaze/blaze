@@ -178,7 +178,7 @@ Command Line Interface
 
   2. Windows
 
-    .. code-block:: powershell
+    .. code-block:: none
 
        # If you're on Windows you can do this with powershell
        PS C:\> @'
