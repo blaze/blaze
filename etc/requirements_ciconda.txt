@@ -1,0 +1,40 @@
+bcolz==1.0.0
+click==6.6
+cloudpickle==0.4.0
+Cython==0.26.1
+dask==0.15.1
+decorator==4.1.2
+Flask==0.12.2
+Flask-Cors==3.0.3
+future==0.16.0
+h5py==2.6.0
+itsdangerous==0.24
+Jinja2==2.9.6
+libgfortran-ng==7.2.0
+llvmlite==0.20.0
+locket==0.2.0
+lzo==2.10
+MarkupSafe==1.0
+multipledispatch==0.4.9
+networkx==1.11
+numba==0.35.0  # please update the .travis.yml file!
+numexpr==2.6.2
+numpy==1.11  # please update the .travis.yml file!
+pandas==0.20.3  # please update the .travis.yml file!
+partd==0.3.8
+psutil==5.4.0
+psycopg2==2.7.3.1
+#PyHive
+pymongo==3.4.0
+PyMySQL<=0.7.11
+pytables==3.4.2
+pytest==3.0.3
+pytest-cov==2.3.1
+python-dateutil==2.6.1
+pytz==2017.2
+pyyaml==3.12
+requests>=2.11.1
+six==1.10.0
+SQLAlchemy==1.1.3
+toolz==0.8.2
+Werkzeug==0.12.2

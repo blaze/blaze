@@ -385,7 +385,10 @@ def test_sort():
 
 
 def test_sort_on_series_no_warning(recwarn):
-    expected = df.amount.order()
+    try:
+        expected = df.amount.sort_values(ascending=True)
+    except AttributeError:
+        expected = df.amount.order(ascending=True)
 
     recwarn.clear()
 

@@ -13,7 +13,10 @@ from pandas.io.packers import (
     decode as pd_msgpack_object_hook,
     encode as pd_msgpack_default,
 )
-import pandas.msgpack as msgpack_module
+try:
+    import pandas.msgpack as msgpack_module
+except ImportError:
+    import pandas.io.msgpack as msgpack_module
 from toolz import identity
 
 from blaze.compatibility import pickle as pickle_module, unicode, PY2

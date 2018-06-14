@@ -32,14 +32,16 @@ def elemwise_array(expr, *data, **kwargs):
 
 try:
     from blaze.compute.numba import (get_numba_ufunc, broadcast_collect,
-            Broadcastable)
+                                     Broadcastable)
 
     def compute_broadcast(expr, *data, **kwargs):
         expr_inds = tuple(range(ndim(expr)))[::-1]
         func = get_numba_ufunc(expr)
         return atop(func,
                     expr_inds,
-                    *concat((dat, tuple(range(ndim(dat))[::-1])) for dat in data))
+                    *concat((dat, tuple(range(ndim(dat))[::-1]))
+                            for dat in data),
+                    dtype=data[-1].dtype)
 
     def optimize_array(expr, *data):
         return broadcast_collect(
@@ -49,7 +51,8 @@ try:
         )
 
     for i in range(5):
-        compute_up.register(Broadcast, *([(Array, Number)] * i))(compute_broadcast)
+        compute_up.register(Broadcast,
+                            *([(Array, Number)] * i))(compute_broadcast)
         optimize.register(Expr, *([(Array, Number)] * i))(optimize_array)
 
 except ImportError:
