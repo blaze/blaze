@@ -68,16 +68,10 @@ def install_requires():
 
 def extras_require():
     extras = {req: read_reqs('etc/requirements_%s.txt' % req)
-              for req in {'bcolz',
-                          'ci',
-                          'dask',
-                          'h5py',
-                          'mongo',
+              for req in {'ci',
                           'mysql',
                           'numba',
                           'postgres',
-                          'pyhive',
-                          'pytables',
                           'server',
                           'sql',
                           'test'}}

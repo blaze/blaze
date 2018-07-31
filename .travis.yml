@@ -6,35 +6,33 @@ matrix:
   fast_finish: true
   include:
     - python: 2.7
-      env: SPARK_VERSION=1.4
-    - python: 2.7
-      env: SPARK_VERSION=1.5
     - python: 3.4
-      env: SPARK_VERSION=1.4
-    - python: 3.4
-      env: SPARK_VERSION=1.5
     - python: 3.5
-      env: SPARK_VERSION=1.5
+    - python: 3.6
     - python: 2.7
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
     - python: 3.4
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
     - python: 3.5
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
+    - python: 3.6
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
   allow_failures:
     - python: 2.7
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
     - python: 3.4
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
     - python: 3.5
-      env: PANDAS_VERSION="git+https://github.com/pydata/pandas" SPARK_VERSION=1.5
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
+    - python: 3.6
+      env: PANDAS_VERSION="git+https://github.com/pydata/pandas"
 
 services:
     - mongodb
     - mysql
 
 addons:
-  postgresql: "9.3"
+  postgresql: "9.5"
 
 
 install:
@@ -48,14 +46,13 @@ install:
   # Install dependencies Use conda **ONLY** for numpy, numba, and pandas (if not
   # pulling from master), this speeds up the builds a lot. Use the normal pip
   # install for the rest.
-  - conda create -n odo numpy=1.11.2
-  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy=1.11.2 numba==0.29.0
-  - if [ -n "$PANDAS_VERSION" ]; then pip install cython==0.24.1; pip install $PANDAS_VERSION; else conda install pandas=0.19.0; fi
+  - conda create -n odo numpy=1.14
+  - conda create -n blaze -c blaze python=$TRAVIS_PYTHON_VERSION numpy=1.14 numba==0.39
+  - if [ -n "$PANDAS_VERSION" ]; then pip install cython==0.28; pip install $PANDAS_VERSION; else conda install pandas=0.23; fi
   - source activate blaze
   # update setuptools and pip
   - conda update setuptools pip
 
-  - conda install spark=$SPARK_VERSION -c blaze -c anaconda-cluster
 
   # blaze required deps
   - pip install git+https://github.com/blaze/datashape
@@ -70,7 +67,6 @@ install:
   - pip install -e .[dev] -c etc/requirements_ci.txt
   
 before_script:
-  - "mongo admin --eval 'db.runCommand({setParameter: 1, textSearchEnabled: true});'"
   - psql -c "create database test;" -U postgres
   - mysql -e "create database if not exists test;" -u root
   - conda list
