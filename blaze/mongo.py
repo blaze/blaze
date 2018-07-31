@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from .compatibility import basestring
-from .compute.mongo import dispatch
+from blaze.old.mongo import dispatch
 
 try:
     from pymongo.collection import Collection

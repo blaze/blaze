@@ -77,28 +77,7 @@ with ignoring(ImportError):
     from .sql import *
     from .compute.sql import *
 with ignoring(ImportError):
-    from .compute.dask import *
-with ignoring(ImportError, AttributeError):
-    from .compute.spark import *
-with ignoring(ImportError, TypeError):
-    from .compute.sparksql import *
-with ignoring(ImportError):
-    from .compute.h5py import *
-with ignoring(ImportError):
-    from .compute.hdfstore import *
-with ignoring(ImportError):
-    from .compute.pytables import *
-with ignoring(ImportError):
     from .compute.chunks import *
-with ignoring(ImportError):
-    from .compute.bcolz import *
-with ignoring(ImportError):
-    from .mongo import *
-    from .compute.mongo import *
-with ignoring(ImportError):
-    from .pytables import *
-    from .compute.pytables import *
-
 
 from .expr import concat  # Some module re-export toolz.concat and * catches it.
 
