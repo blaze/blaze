@@ -18,7 +18,7 @@ numpy==1.14  # please update the .travis.yml file!
 pandas==0.23 # please update the .travis.yml file!
 partd==0.3.6
 psutil==5.4.2
-psycopg2==2.7. 5
+psycopg2==2.7.5
 PyMySQL==0.7.9
 pytest==3.0.3
 pytest-cov==2.0.0
