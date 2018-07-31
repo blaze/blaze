@@ -51,6 +51,7 @@ install:
   - if [ -n "$PANDAS_VERSION" ]; then pip install cython==0.28; pip install $PANDAS_VERSION; else conda install pandas=0.23; fi
   - source activate blaze
   # update setuptools and pip
+  - conda install -c numba llvmdev
   - conda update setuptools pip
 
 

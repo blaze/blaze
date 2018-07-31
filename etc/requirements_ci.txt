@@ -7,7 +7,7 @@ Flask-Cors==3.0.2
 future==0.16.0
 itsdangerous==0.24
 Jinja2==2.8
-llvmlite==0.14.0
+llvmlite==0.24
 locket==0.2.0
 MarkupSafe==0.23
 multipledispatch==0.4.9
@@ -18,7 +18,7 @@ numpy==1.14  # please update the .travis.yml file!
 pandas==0.23 # please update the .travis.yml file!
 partd==0.3.6
 psutil==5.4.2
-psycopg2==2.7.5
+psycopg2==2.7. 5
 PyMySQL==0.7.9
 pytest==3.0.3
 pytest-cov==2.0.0
