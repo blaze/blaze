@@ -139,7 +139,7 @@ and an ``orders`` table with this schema:
 
      create table orders (
          id integer primary key,
-         product_id integer references (id) products,
+         product_id integer references products(id),
          quantity integer
      )
 
