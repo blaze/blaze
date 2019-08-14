@@ -111,6 +111,26 @@ def ensure_dir(path):
 _default_log_exception_formatter = compose(''.join, traceback.format_tb)
 
 
+def _default_compute_hook(expr):
+    """Default compute hook that just returns the expression provided.
+
+    Returns
+    -------
+    expr : Expr
+        The result of applying the hook to ``expr``.
+    status : int
+        HTTP status code.
+    error_msg : str or None
+        Error message to report, if any.
+
+    Notes
+    -----
+    Custom hooks can take additional arguments, which should be provided to
+    ``/compute`` using the ``compute_hook_kwargs`` key.
+    """
+    return expr, RC.OK, None
+
+
 def _register_api(app, options, first_registration=False):
     """
     Register the data with the blueprint.
@@ -143,6 +163,9 @@ def _register_api(app, options, first_registration=False):
     if allow_add:
         app.add_url_rule('/add', 'addserver', addserver,
                          methods=['POST', 'HEAD', 'OPTIONS'])
+
+    # Register compute hook to apply to expression
+    app.compute_hook = options.pop('compute_hook', _default_compute_hook)
 
     # Call the original register function.
     Blueprint.register(api, app, options, first_registration)
@@ -340,7 +363,8 @@ class Server(object):
                  allow_add=False,
                  logfile=sys.stdout,
                  loglevel='WARNING',
-                 log_exception_formatter=_default_log_exception_formatter):
+                 log_exception_formatter=_default_log_exception_formatter,
+                 compute_hook=_default_compute_hook):
         if isinstance(data, collections.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, BoundSymbol) else v,
                           data)
@@ -357,7 +381,8 @@ class Server(object):
                                allow_profiler=allow_profiler,
                                profiler_output=profiler_output,
                                profile_by_default=profile_by_default,
-                               allow_add=allow_add)
+                               allow_add=allow_add,
+                               compute_hook=compute_hook)
         self.data = data
         if logfile:
             if isinstance(logfile, (str, bytes)):
@@ -584,6 +609,7 @@ def compserver(payload, serial):
     expected_keys = {u'namespace',
                      u'odo_kwargs',
                      u'compute_kwargs',
+                     u'compute_hook_kwargs',
                      u'expr',
                      u'profile',
                      u'profiler_output'}
@@ -637,11 +663,18 @@ def compserver(payload, serial):
 
         expr = from_tree(payload[u'expr'], namespace=ns)
 
-        leaf = expr._leaves()[0]
+        compute_hook = getattr(
+            flask.current_app, 'compute_hook', _default_compute_hook
+        )
+        compute_hook_kwargs = payload.get('compute_hook_kwargs', {})
+        expr, status, error_msg = compute_hook(expr, **compute_hook_kwargs)
+        if status != RC.OK:
+            return (error_msg, status)
 
         formatter = getattr(flask.current_app, 'log_exception_formatter',
                             _default_log_exception_formatter)
         try:
+            leaf = expr._leaves()[0]
             result = serial.materialize(compute(expr,
                                                 {leaf: dataset},
                                                 **compute_kwargs),
