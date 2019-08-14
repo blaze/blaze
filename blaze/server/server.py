@@ -669,7 +669,7 @@ def compserver(payload, serial):
         compute_hook_kwargs = payload.get('compute_hook_kwargs', {})
         expr, status, error_msg = compute_hook(expr, **compute_hook_kwargs)
         if status != RC.OK:
-            return (error_msg, status)
+            return ("Pre-processing failed with:\n%s" % error_msg, status)
 
         formatter = getattr(flask.current_app, 'log_exception_formatter',
                             _default_log_exception_formatter)
