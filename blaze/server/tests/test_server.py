@@ -129,17 +129,16 @@ def temp_server_with_excfmt(request):
         yield (client, stream)
 
 
-@pytest.yield_fixture(params=[None, tdata])
+@pytest.yield_fixture
 def temp_server_with_custom_hook(request):
     """Server with custom compute hook"""
-    data = request.param
 
-    def custom_compute_hook(expr):
-        """Custom compute hoook that always results in bad request response.
+    def custom_compute_hook(expr, kwargs):
+        """Custom compute hook that sets the status of the response.
         """
-        return expr, RC.BAD_REQUEST, 'INVALID REQUEST'
+        return expr, kwargs.get('status'), 'ERROR MSG'
 
-    s = Server(copy(data), formats=all_formats, compute_hook=custom_compute_hook)
+    s = Server(tdata, formats=all_formats, compute_hook=custom_compute_hook)
     s.app.testing = True
     with s.app.test_client() as c:
         yield c
@@ -772,9 +771,19 @@ def test_log_format_exc(temp_server_with_excfmt, serial):
 @pytest.mark.parametrize('serial', all_formats)
 def test_custom_compute_hook(temp_server_with_custom_hook, serial):
     expr = t.accounts.amount.sum()
-    query = {'expr': to_tree(expr)}
+    query = {
+        'expr': to_tree(expr),
+        'compute_hook_kwargs': {'status': RC.OK},
+    }
+    response = temp_server_with_custom_hook.post('/compute',
+                                                 data=serial.dumps(query),
+                                                 headers=mimetype(serial))
+    assert response.status_code == RC.OK
 
-    # Custom hook produces BAD RESPONSE for any expression.
+    query = {
+        'expr': to_tree(expr),
+        'compute_hook_kwargs': {'status': RC.BAD_REQUEST},
+    }
     response = temp_server_with_custom_hook.post('/compute',
                                                  data=serial.dumps(query),
                                                  headers=mimetype(serial))

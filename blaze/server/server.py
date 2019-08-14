@@ -111,13 +111,20 @@ def ensure_dir(path):
 _default_log_exception_formatter = compose(''.join, traceback.format_tb)
 
 
-def _default_compute_hook(expr):
+def _default_compute_hook(expr, kwargs):
     """Default compute hook that just returns the expression provided.
+
+    Parameters
+    ----------
+    expr : Expr
+        The expression to be pre-processed.
+    kwargs : dict
+        Additional information to be used for pre-processing.
 
     Returns
     -------
     expr : Expr
-        The result of applying the hook to ``expr``.
+        The result of pre-processing ``expr``.
     status : int
         HTTP status code.
     error_msg : str or None
@@ -667,7 +674,7 @@ def compserver(payload, serial):
             flask.current_app, 'compute_hook', _default_compute_hook
         )
         compute_hook_kwargs = payload.get('compute_hook_kwargs', {})
-        expr, status, error_msg = compute_hook(expr, **compute_hook_kwargs)
+        expr, status, error_msg = compute_hook(expr, compute_hook_kwargs)
         if status != RC.OK:
             return ("Pre-processing failed with:\n%s" % error_msg, status)
 
