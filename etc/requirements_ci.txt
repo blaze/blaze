@@ -21,7 +21,7 @@ numpy==1.11.2  # please update the .travis.yml file!
 pandas==0.19.1  # please update the .travis.yml file!
 partd==0.3.6
 psutil==4.4.2
-psycopg2==2.6.2
+psycopg2==2.7.3
 PyHive==0.2.1
 pymongo==2.9.4
 PyMySQL==0.7.9
