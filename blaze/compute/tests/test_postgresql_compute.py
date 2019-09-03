@@ -877,21 +877,29 @@ def test_all(sql):
 def test_isin_selectable(sql):
     s = symbol('s', discover(sql))
 
-    # wrap the resource in a select
-    assert compute(s.B.isin({1, 3}),
-                   sa.select(sql._resources()[sql].columns),
-                   return_type=list) == [True, False]
+    assert (
+        compute(s.B.isin({1, 3}), {s: sql}, return_type=list) ==
+        [True, False]
+    )
 
 
 def test_selection_selectable(sql):
     s = symbol('s', discover(sql))
 
+    tm.assert_frame_equal(
+        compute(s[s.B.isin({1, 3})], {s: sql}, return_type=pd.DataFrame),
+        pd.DataFrame([['a', 1]], columns=s.dshape.measure.names)
+    )
+
+
+def test_selection_inverted_selectable(sql):
+    s = symbol('s', discover(sql))
+
     # wrap the resource in a select
-    assert (compute(s[s.B.isin({1, 3})],
-                    sa.select(sql._resources()[sql].columns),
-                    return_type=pd.DataFrame) ==
-            pd.DataFrame([['a', 1]],
-                         columns=s.dshape.measure.names)).all().all()
+    tm.assert_frame_equal(
+        compute(s[~s.B.isin({1, 3})], {s: sql}, return_type=pd.DataFrame),
+        pd.DataFrame([['b', 2]], columns=s.dshape.measure.names)
+    )
 
 
 @pytest.mark.parametrize(
