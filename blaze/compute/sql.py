@@ -529,7 +529,13 @@ def compute_up(expr, sel, scope=None, **kwargs):
 @dispatch(Selection, Selectable, ColumnElement)
 def compute_up(expr, tbl, predicate, scope=None, **kwargs):
     try:
-        return tbl.where(predicate)
+        if hasattr(tbl, '_group_by_clause') and len(tbl._group_by_clause) > 0:
+            # aggregate functions in predicate use 'having' clause
+            # if we have group_by elements, assume the predicate operates on
+            # groups so use 'having'
+            return tbl.having(predicate)
+        else:
+            return tbl.where(predicate)
     except AttributeError:
         return select([tbl]).where(predicate)
 

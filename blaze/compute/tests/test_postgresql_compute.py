@@ -118,7 +118,8 @@ def big_sql(url):
     except sa.exc.OperationalError as e:
         pytest.skip(str(e))
     else:
-        t = odo(zip(list('a'*100), list(range(100))), t)
+        t = odo(zip("".join(['a' * 25, 'b' * 25, 'c' * 25, 'd' * 25]),
+                    range(1, 101)), t)
         try:
             yield t
         finally:
@@ -918,3 +919,115 @@ def test_datetime_access(attr, dtype, sql_with_dts):
         check_names=False,
         check_dtype=False,
     )
+
+
+def test_having_exp_group_by(big_sql):
+    '''
+    The following three tests (test_having, test_having_multiple_conditions,
+    test_having_where) expect big_sql column B to contain range(1, 101). Verify
+    results of 'group by' before proceeding - just to ensure the data in
+    big_sql isn't changed inadvertently.
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+    g1 = by(nn['A'], quant=nn.B.sum())
+
+    # expected result of group by for big_sql table
+    #    A  quant
+    # 0  a    325
+    # 1  b    950
+    # 2  c   1575
+    # 3  d   2200
+    # ensure this is correct for one of the tests
+    g1_res = compute(g1.sort('A'), big_sql, return_type=list)
+    assert g1_res == [('a', 325), ('b', 950), ('c', 1575), ('d', 2200)]
+
+
+def test_having(big_sql):
+    '''
+    The blaze expression generated in 'res' below is incorrect. It invokes the
+    where clause but it should be using a HAVING clause. Need to add HAVING
+    clause to blaze
+
+        print(res)
+        SELECT tbl0."A", sum(tbl0."B") AS quant
+        FROM tbl0
+        WHERE sum(tbl0."B") > 125
+        GROUP BY
+            tbl0."A"
+
+    The correct expression uses HAVING for aggregate function:
+
+        SELECT tbl0."A", sum(tbl0."B") AS quant
+        FROM tbl0
+        GROUP BY
+            tbl0."A" HAVING sum(tbl0."B") > 125
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+    g1 = by(nn['A'], quant=nn.B.sum())
+    expr = g1[(g1.quant > 325) & (g1.quant < 2000)]
+    bz_res = compute(expr, big_sql, return_type=list)
+
+    assert len(bz_res) == 2
+    assert ('b', 950) in bz_res and ('c', 1575) in bz_res
+
+
+def test_having_multiple_conditions(big_sql):
+    '''
+    Similar to test_having(); however, it has multiple conditions that
+    HAVING must satisfy
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+    g1 = by(nn['A'], quant=nn.B.sum())
+
+    # expected result of group by for big_sql table
+    #    A  quant
+    # 0  a    325
+    # 1  b    950
+    # 2  c   1575
+    # 3  d   2200
+    #
+    expr = g1[(g1.A.like('a')) | (g1.quant > 1000)]
+    bz_res = compute(expr, big_sql, return_type=pd.DataFrame)
+
+    # assert both conditions are met in the result:
+    # either 'a' is in bz_res or the remaining rows are > 1000
+    assert len(bz_res) == 3
+    assert all(bz_res.A.isin(['a', 'c', 'd']))
+    assert all(bz_res.quant[~bz_res.A.str.contains('a')] > 1000)
+
+
+def test_having_where(big_sql):
+    '''
+    compount SQL/blaze expression containg WHERE, GROUP BY and HAVING
+    The HAVING statement also has multiple conditions to satisfy
+
+    Expected outcome:
+        SELECT "A", sum("B")
+        FROM tbl0
+        WHERE "B" > 5
+        GROUP BY "A" HAVING sum("B") > 75
+    '''
+    ds = discover(big_sql)
+    nn = symbol('nn', ds)
+
+    # blaze expression generates:
+    #    SELECT tbl0."A", tbl0."B"
+    #    FROM tbl0
+    #    WHERE tbl0."B" > 5
+    s1 = nn[nn.B > 5]
+    g1 = by(s1['A'], quant=s1.B.sum())
+
+    # expected result of group by for big_sql table
+    #    A  quant
+    # 0  a    310
+    # 1  b    950
+    # 2  c   1575
+    # 3  d   2200
+    #
+    expr = g1[(g1.quant > 310) & (g1.quant < 2000)]
+    bz_res = compute(expr, big_sql, return_type=list)
+    assert len(bz_res) == 2
+    assert ('b', 950) in bz_res and ('c', 1575) in bz_res
