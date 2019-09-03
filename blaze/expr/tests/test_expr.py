@@ -94,6 +94,10 @@ def test_label():
     assert e._name == 'e'
     assert label(e, 'foo')._name == 'foo'
     assert label(e, 'e').isidentical(e)
+    assert label(e, 'foo').label('bar')._name == 'bar'
+    e = symbol('t', 'var * {name: string}')
+    r = e.name.label('a').label('b')
+    assert r._label == r._name
 
 
 def test_fields_with_spaces():

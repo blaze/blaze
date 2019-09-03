@@ -297,7 +297,7 @@ def compute_up(t, x, **kwargs):
 
 @dispatch(Label, np.ndarray)
 def compute_up(t, x, **kwargs):
-    return np.array(x, dtype=[(t.label, x.dtype.type)])
+    return np.array(x, dtype=[(t._label, x.dtype.type)])
 
 
 @dispatch(ReLabel, np.ndarray)
