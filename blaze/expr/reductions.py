@@ -194,11 +194,11 @@ class std(FloatingReduction):
 class count(Reduction):
 
     """ The number of non-null elements """
-    schema = dshape(ct.int32)
+    schema = dshape(ct.int64)
 
 
 class nunique(Reduction):
-    schema = dshape(ct.int32)
+    schema = dshape(ct.int64)
 
 
 class nelements(Reduction):
@@ -216,7 +216,7 @@ class nelements(Reduction):
     >>> t[t.amount < 1].nelements()
     nelements(t[t.amount < 1])
     """
-    schema = dshape(ct.int32)
+    schema = dshape(ct.int64)
 
 
 def nrows(expr):
