@@ -544,7 +544,7 @@ def coerce_core(result, dshape, odo_kwargs=None):
         return result
     elif isscalar(dshape):
         result = coerce_scalar(result, dshape, odo_kwargs=odo_kwargs)
-    elif istabular(dshape) and isrecord(dshape.measure):
+    elif istabular(dshape) or isrecord(dshape):
         result = into(pd.DataFrame, result, **(odo_kwargs or {}))
     elif iscollection(dshape):
         dim = _dimensions(dshape)
