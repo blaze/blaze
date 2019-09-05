@@ -129,6 +129,20 @@ def temp_server_with_excfmt(request):
         yield (client, stream)
 
 
+@pytest.yield_fixture
+def temp_server_with_custom_hook(request):
+    """Server with custom compute hook"""
+
+    def custom_compute_hook(expr, kwargs):
+        """Custom compute hook that sets the status of the response.
+        """
+        return expr, kwargs.get('status'), 'ERROR MSG'
+
+    s = Server(tdata, formats=all_formats, compute_hook=custom_compute_hook)
+    s.app.testing = True
+    with s.app.test_client() as c:
+        yield c
+
 
 @pytest.yield_fixture
 def test(server):
@@ -753,6 +767,27 @@ def test_log_format_exc(temp_server_with_excfmt, serial):
 
     assert 'CUSTOM TRACEBACK' in log_stream.getvalue()
 
+
+@pytest.mark.parametrize('serial', all_formats)
+def test_custom_compute_hook(temp_server_with_custom_hook, serial):
+    expr = t.accounts.amount.sum()
+    query = {
+        'expr': to_tree(expr),
+        'compute_hook_kwargs': {'status': RC.OK},
+    }
+    response = temp_server_with_custom_hook.post('/compute',
+                                                 data=serial.dumps(query),
+                                                 headers=mimetype(serial))
+    assert response.status_code == RC.OK
+
+    query = {
+        'expr': to_tree(expr),
+        'compute_hook_kwargs': {'status': RC.BAD_REQUEST},
+    }
+    response = temp_server_with_custom_hook.post('/compute',
+                                                 data=serial.dumps(query),
+                                                 headers=mimetype(serial))
+    assert response.status_code == RC.BAD_REQUEST
 
 
 @pytest.mark.parametrize('serial', all_formats)
