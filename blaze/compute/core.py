@@ -364,7 +364,13 @@ def swap_resources_into_scope(expr, scope):
     >>> swap_resources_into_scope(t.head(2), {})
     {<'list' data; _name='t', dshape='3 * int32'>: [1, 2, 3]}
     """
-    return toolz.merge(expr._resources(), scope)
+    resources = expr._resources()
+    symbol_dict = {t: symbol(t._name, t.dshape) for t in resources}
+    resources = {symbol_dict[k]: v for k, v in resources.items()}
+    other_scope = {k: v for k, v in scope.items() if k not in symbol_dict}
+    new_scope = toolz.merge(resources, other_scope)
+    expr = expr._subs(symbol_dict)
+    return expr, new_scope
 
 
 @dispatch((object, type, str, unicode), BoundSymbol)
@@ -421,7 +427,7 @@ def compute(expr, d, return_type=no_default, **kwargs):
     optimize_ = kwargs.get('optimize', optimize)
     pre_compute_ = kwargs.get('pre_compute', pre_compute)
     post_compute_ = kwargs.get('post_compute', post_compute)
-    d2 = swap_resources_into_scope(expr, d)
+    expr, d2 = swap_resources_into_scope(expr, d)
     if pre_compute_:
         d3 = dict(
             (e, pre_compute_(e, dat, **kwargs))

@@ -98,10 +98,11 @@ def test_swap_resources_into_scope():
 
     from blaze import data
     t = data([1, 2, 3], dshape='3 * int', name='t')
-    scope = swap_resources_into_scope(t.head(2), {})
+    expr, scope = swap_resources_into_scope(t.head(2), {})
 
     assert t._resources()
-    assert t in scope
+    assert not expr._resources()
+    assert t not in scope
 
 
 def test_compute_up_on_dict():
