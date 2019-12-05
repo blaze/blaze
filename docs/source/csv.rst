@@ -38,7 +38,7 @@ robustly.
 
 Interacting with CSV files often breaks down in one of two ways
 
-1.  We incorrectly guess the dialect of the CSV file (e.g. wrong delimiter, presence or absense of a header, ...)
+1.  We incorrectly guess the dialect of the CSV file (e.g. wrong delimiter, presence or absence of a header, ...)
 2.  We incorrectly guess the type of a column with the CSV file (e.g. an integer column turns out to have floats in it)
 
 Because Blaze operates in a lazy way, giving you access to large CSV files
