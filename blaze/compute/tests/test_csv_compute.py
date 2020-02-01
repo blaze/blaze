@@ -1,5 +1,6 @@
 from blaze.compute.csv import pre_compute, CSV
 from blaze import compute, discover, dshape, into, join, concat, data
+from blaze.compatibility import collections_abc
 from blaze.utils import example, filetext, filetexts
 from blaze.expr import symbol
 from pandas import DataFrame, Series
@@ -8,7 +9,6 @@ from datashape.predicates import iscollection
 import numpy as np
 import pandas as pd
 from toolz import first
-from collections import Iterator
 from odo import odo
 from odo.chunks import chunks
 import dask.dataframe
@@ -30,7 +30,7 @@ def test_pre_compute_with_head_on_large_csv_yields_iterator():
     csv = CSV(example('iris.csv'))
     s = symbol('s', discover(csv))
     assert isinstance(pre_compute(s.species.head(), csv, comfortable_memory=10),
-                      Iterator)
+                      collections_abc.Iterator)
 
 
 def test_compute_chunks_on_single_csv():

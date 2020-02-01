@@ -1,5 +1,4 @@
 from __future__ import absolute_import, division, print_function
-from collections import Mapping
 
 import math
 import itertools
@@ -8,13 +7,12 @@ import pytest
 from datetime import datetime, date
 import datashape
 from datashape.py2help import mappingproxy
-from collections import Iterator, Iterable
 
 import blaze
 from blaze.compute.python import (nunique, mean, rrowfunc, rowfunc,
                                   reduce_by_funcs, optimize)
 from blaze import dshape, symbol, discover
-from blaze.compatibility import PY2
+from blaze.compatibility import collections_abc, PY2
 from blaze.compute.core import compute, compute_up, pre_compute
 from blaze.expr import (by, merge, join, distinct, sum, min, max, any, summary,
                         count, std, head, sample, transform, greatest, least)
@@ -771,9 +769,9 @@ def test_multi_dataset_broadcast_with_Record_types():
 
 
 def eq(a, b):
-    if isinstance(a, (Iterable, Iterator)):
+    if isinstance(a, (collections_abc.Iterable, collections_abc.Iterator)):
         a = list(a)
-    if isinstance(b, (Iterable, Iterator)):
+    if isinstance(b, (collections_abc.Iterable, collections_abc.Iterator)):
         b = list(b)
     return a == b
 
@@ -837,7 +835,7 @@ def test_compute_field_on_dicts():
     assert compute(s.x, {s: d}) == [1, 2, 3]
 
 
-class _MapProxy(Mapping):  # pragma: no cover
+class _MapProxy(collections_abc.Mapping):  # pragma: no cover
     def __init__(self, mapping):
         self._map = mapping
 

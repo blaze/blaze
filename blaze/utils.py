@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import datetime
-from collections import Iterator
 from itertools import islice, product
 import os
 import re
@@ -20,7 +19,7 @@ import sqlalchemy as sa
 from toolz.curried import do
 
 # Imports that replace older utils.
-from .compatibility import map, zip
+from .compatibility import collections_abc, map, zip
 
 
 def nth_list(n, seq):
@@ -68,11 +67,11 @@ def get(ind, coll, lazy=False):
     elif isinstance(ind, slice):
         result = islice(coll, ind.start, ind.stop, ind.step)
     else:
-        if isinstance(coll, Iterator):
+        if isinstance(coll, collections_abc.Iterator):
             result = nth(ind, coll)
         else:
             result = coll[ind]
-    if not lazy and isinstance(result, Iterator):
+    if not lazy and isinstance(result, collections_abc.Iterator):
         result = tuple(result)
     return result
 

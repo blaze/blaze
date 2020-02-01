@@ -143,3 +143,9 @@ if PY2:
         return cs.decode('utf-8')
 else:
     u8 = identity
+
+
+if PY3:
+    import collections.abc as collections_abc
+else:
+    import collections as collections_abc

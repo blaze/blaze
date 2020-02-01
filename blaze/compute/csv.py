@@ -5,13 +5,13 @@ import os
 from toolz import curry, concat
 import pandas as pd
 import numpy as np
-from collections import Iterator, Iterable
 from odo import into, Temp
 from odo.backends.csv import CSV
 from odo.backends.url import URL
 from multipledispatch import MDNotImplementedError
 import dask.dataframe as dd
 
+from ..compatibility import collections_abc
 from ..dispatch import dispatch
 from ..expr import Expr, Head, ElemWise, Distinct, Symbol, Projection, Field
 from ..expr.core import path
@@ -74,6 +74,6 @@ Cheap = (Head, ElemWise, Distinct, Symbol)
 def pre_compute(expr, data, **kwargs):
     leaf = expr._leaves()[0]
     if all(isinstance(e, Cheap) for e in path(expr, leaf)):
-        return into(Iterator, data, chunksize=10000, dshape=leaf.dshape)
+        return into(collections_abc.Iterator, data, chunksize=10000, dshape=leaf.dshape)
     else:
         raise MDNotImplementedError()

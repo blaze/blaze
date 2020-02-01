@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import defaultdict, Iterator, Mapping
+from collections import defaultdict
 import decimal
 from datetime import date, datetime, timedelta
 from functools import partial
@@ -23,7 +23,7 @@ import toolz
 from toolz import first, unique, assoc
 from toolz.utils import no_default
 
-from ..compatibility import basestring
+from ..compatibility import collections_abc, basestring
 from ..expr import (
     BoundSymbol,
     Cast,
@@ -98,9 +98,9 @@ def issubtype(a, b):
     """ A custom issubclass """
     if issubclass(a, b):
         return True
-    if issubclass(a, (tuple, list, set)) and issubclass(b, Iterator):
+    if issubclass(a, (tuple, list, set)) and issubclass(b, collections_abc.Iterator):
         return True
-    if issubclass(b, (tuple, list, set)) and issubclass(a, Iterator):
+    if issubclass(b, (tuple, list, set)) and issubclass(a, collections_abc.Iterator):
         return True
     return False
 
@@ -379,7 +379,7 @@ def into(a, b, **kwargs):
     return into(a, result, **kwargs)
 
 
-Expr.__iter__ = into(Iterator)
+Expr.__iter__ = into(collections_abc.Iterator)
 
 
 @dispatch(Expr)
@@ -391,7 +391,7 @@ def compute(expr, **kwargs):
         return compute(expr, resources, **kwargs)
 
 
-@dispatch(Expr, Mapping)
+@dispatch(Expr, collections_abc.Mapping)
 def compute(expr, d, return_type=no_default, **kwargs):
     """Compute expression against data sources.
 
@@ -492,7 +492,7 @@ def compute_single_object(expr, o, **kwargs):
         raise ValueError("Give compute dictionary input, got %s" % str(o))
 
 
-@dispatch(Field, Mapping)
+@dispatch(Field, collections_abc.Mapping)
 def compute_up(expr, data, **kwargs):
     return data[expr._name]
 

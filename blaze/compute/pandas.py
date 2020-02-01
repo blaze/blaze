@@ -21,7 +21,7 @@ import fnmatch
 import itertools
 from distutils.version import LooseVersion
 import warnings
-from collections import defaultdict, Iterable
+from collections import defaultdict
 
 import numpy as np
 
@@ -52,7 +52,7 @@ except ImportError:
 
 from .core import compute, compute_up, base
 from .varargs import VarArgs
-from ..compatibility import _inttypes
+from ..compatibility import collections_abc, _inttypes
 from ..dispatch import dispatch
 from ..expr import (
     Apply,
@@ -847,7 +847,7 @@ def compute_up(expr, data, **kwargs):
                   name=expr._name)
 
 
-@dispatch(IsIn, (Series, DaskSeries), Iterable)
+@dispatch(IsIn, (Series, DaskSeries), collections_abc.Iterable)
 def compute_up(expr, data, keys, **kwargs):
     return data.isin(keys)
 
