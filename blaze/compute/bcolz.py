@@ -5,6 +5,7 @@ from weakref import WeakKeyDictionary
 from toolz import curry, concat, first, memoize
 from multipledispatch import MDNotImplementedError
 
+from ..compatibility import collections_abc
 from ..expr import (
     Distinct,
     ElemWise,
@@ -23,7 +24,6 @@ from ..partition import partitions
 from .core import compute
 from .pmap import get_default_pmap
 
-from collections import Iterator, Iterable
 import datashape
 import bcolz
 import numpy as np
@@ -106,7 +106,7 @@ def compute_down(expr, data, **kwargs):
         val = data.value
         return compute(
             expr,
-            {leaf: into(Iterator, val)},
+            {leaf: into(collections_abc.Iterator, val)},
             return_type='native',
             **kwargs
         )
@@ -177,7 +177,7 @@ def compute_down(expr, data, chunksize=None, map=None, **kwargs):
         intermediate = np.concatenate(parts)
     elif isinstance(parts[0], pd.DataFrame):
         intermediate = pd.concat(parts)
-    elif isinstance(parts[0], Iterable):
+    elif isinstance(parts[0], collections_abc.Iterable):
         intermediate = list(concat(parts))
     else:
         raise TypeError("Don't know how to concatenate objects of type %r" %
@@ -192,7 +192,7 @@ def _asarray(a):
     return np.array(list(a))
 
 
-@compute_down.register(Expr, (box(bcolz.carray), box(bcolz.ctable)), Iterable)
+@compute_down.register(Expr, (box(bcolz.carray), box(bcolz.ctable)), collections_abc.Iterable)
 @compute_down.register(Expr, Iterable, (box(bcolz.carray), box(bcolz.ctable)))
 def bcolz_mixed(expr, a, b, **kwargs):
     return compute(

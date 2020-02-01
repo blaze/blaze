@@ -1,7 +1,7 @@
+from blaze.compatibility import collections_abc
 from blaze.cached import CachedDataset
 from blaze import symbol, discover, compute, into
 import pandas as pd
-from collections import Iterator
 
 
 df = pd.DataFrame([['Alice', 100, 1],
@@ -36,5 +36,5 @@ def test_streaming():
     expr = s.t.x * 2
     result = compute(expr, d)
 
-    assert not isinstance(d.cache[expr], Iterator)
+    assert not isinstance(d.cache[expr], collections_abc.Iterator)
     assert into(list, d.cache[expr]) == [2, 2]

@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable
 import datetime
 
 import numpy as np
@@ -10,6 +9,7 @@ from numbers import Number
 
 from odo import odo
 
+from ..compatibility import collections_abc
 from ..expr import (
     Reduction, Field, Projection, Broadcast, Selection, ndim,
     Distinct, Sort, Tail, Head, Label, ReLabel, Expr, Slice, Join,
@@ -436,7 +436,7 @@ def compute_up(expr, lhs, rhs, **kwargs):
     return np.tensordot(lhs, rhs, axes=[expr._left_axes, expr._right_axes])
 
 
-@dispatch(IsIn, np.ndarray, Iterable)
+@dispatch(IsIn, np.ndarray, collections_abc.Iterable)
 def compute_up(expr, data, keys, **kwargs):
     return np.in1d(data, keys)
 

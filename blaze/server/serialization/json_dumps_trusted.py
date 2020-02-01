@@ -1,9 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Callable
 
 from blaze.dispatch import dispatch
-from blaze.compatibility import u8
+from blaze.compatibility import collections_abc, u8
 from functools import partial
 
 from .json_dumps import json_dumps
@@ -13,7 +12,7 @@ json_dumps_trusted_ns = dict()
 dispatch = partial(dispatch, namespace=json_dumps_trusted_ns)
 
 
-@dispatch(Callable)
+@dispatch(collections_abc.Callable)
 def json_dumps_trusted(f):
     # let the server serialize any callable - this is only used for testing
     # at present - do the error handling when json comes from client so in

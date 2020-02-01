@@ -17,7 +17,6 @@ WHERE accounts.amount < :amount_1
 
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable
 from copy import copy
 import datetime
 import itertools
@@ -45,7 +44,7 @@ from toolz.curried import map
 
 from .core import compute_up, compute, base
 from .varargs import VarArgs
-from ..compatibility import reduce, basestring, _inttypes
+from ..compatibility import collections_abc, reduce, basestring, _inttypes
 from ..dispatch import dispatch
 from ..expr import (
     BinOp,
@@ -1566,7 +1565,7 @@ def post_compute(_, s, **kwargs):
     return select(s)
 
 
-@dispatch((Iterable, Selectable))
+@dispatch((collections_abc.Iterable, Selectable))
 def _coerce_op_input(i):
     """Make input to SQLAlchemy operator an amenable type.
 
@@ -1601,12 +1600,12 @@ def _coerce_op_input(i):
     return select(i)
 
 
-@dispatch(IsIn, ColumnElement, (Iterable, Selectable, ColumnElement))
+@dispatch(IsIn, ColumnElement, (collections_abc.Iterable, Selectable, ColumnElement))
 def compute_up(expr, data, keys, **kwargs):
     return data.in_(_coerce_op_input(keys))
 
 
-@dispatch(IsIn, Selectable, (Iterable, Selectable, ColumnElement))
+@dispatch(IsIn, Selectable, (collections_abc.Iterable, Selectable, ColumnElement))
 def compute_up(expr, data, keys, **kwargs):
     assert len(data.columns) == 1, (
         'only 1 column is allowed in a Select in IsIn'

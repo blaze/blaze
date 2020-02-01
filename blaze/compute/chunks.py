@@ -2,13 +2,13 @@ from __future__ import absolute_import, division, print_function
 
 from multipledispatch import MDNotImplementedError
 from odo import Chunks, convert, into
-from collections import Iterator, Iterable
 from toolz import curry, concat
 from datashape.dispatch import dispatch
 
 import pandas as pd
 import numpy as np
 
+from ..compatibility import collections_abc
 from ..expr import Head, ElemWise, Distinct, Symbol, Expr, path
 from ..expr.split import split
 from .core import compute
@@ -49,7 +49,7 @@ def compute_down(expr, data, map=None, **kwargs):
         intermediate = np.concatenate(parts)
     elif isinstance(parts[0], pd.DataFrame):
         intermediate = pd.concat(parts)
-    elif isinstance(parts[0], (Iterable, Iterator)):
+    elif isinstance(parts[0], (collections_abc.Iterable, collections_abc.Iterator)):
         intermediate = list(concat(parts))
 
     return compute(agg_expr, {agg: intermediate})

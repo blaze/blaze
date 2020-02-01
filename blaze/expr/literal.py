@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterator, Mapping
 import itertools
 
 import datashape
@@ -13,7 +12,7 @@ from datashape.predicates import (
 from odo import resource
 from odo.utils import ignoring, copydoc
 
-from ..compatibility import _strtypes
+from ..compatibility import collections_abc, _strtypes
 from ..dispatch import dispatch
 from .expressions import sanitized_dshape, Symbol
 
@@ -158,7 +157,7 @@ def _bound_symbol(cls,
             **kwargs
         )
 
-    if (isinstance(data_source, Iterator) and
+    if (isinstance(data_source, collections_abc.Iterator) and
             not isinstance(data_source, tuple(not_an_iterator))):
         data_source = tuple(data_source)
 
@@ -243,6 +242,6 @@ def data(data_source,
     )
 
 
-@dispatch(BoundSymbol, Mapping)
+@dispatch(BoundSymbol, collections_abc.Mapping)
 def _subs(o, d):
     return o

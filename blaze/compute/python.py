@@ -11,7 +11,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable, Mapping
+
 import itertools
 import numbers
 import fnmatch
@@ -21,7 +21,6 @@ import math
 import random
 from uuid import uuid4
 
-from collections import Iterator
 from functools import partial
 
 from datashape import Option, to_numpy_dtype, discover
@@ -38,6 +37,7 @@ except ImportError:
     from toolz import groupby, reduceby, unique, take, concat, nth, pluck
 
 
+from ..compatibility import collections_abc
 from ..dispatch import dispatch
 from ..expr import (Projection, Field, Broadcast, Map, Label, ReLabel,
                     Merge, Join, Selection, Reduction, Distinct,
@@ -103,20 +103,20 @@ from math import (
 
 __all__ = ['compute', 'compute_up', 'Sequence', 'rowfunc', 'rrowfunc']
 
-Sequence = (tuple, list, Iterator, type(dict().items()))
+Sequence = (tuple, list, collections_abc.Iterator, type(dict().items()))
 
 
 @dispatch(Expr, Sequence)
 def pre_compute(expr, seq, scope=None, **kwargs):
     try:
-        if isinstance(seq, Iterator):
+        if isinstance(seq, collections_abc.Iterator):
             first = next(seq)
             seq = concat([[first], seq])
         else:
             first = next(iter(seq))
     except StopIteration:
         return []
-    if isinstance(first, Mapping):
+    if isinstance(first, collections_abc.Mapping):
         leaf = expr._leaves()[0]
         return pluck(leaf.fields, seq)
     else:
@@ -732,7 +732,7 @@ def compute_up(t, seq, **kwargs):
 def compute_up(expr, data, **kwargs):
     if expr._child.ndim != 1:
         raise NotImplementedError('Only 1D reductions currently supported')
-    if isinstance(data, Iterator):
+    if isinstance(data, collections_abc.Iterator):
         datas = itertools.tee(data, len(expr.values))
         result = tuple(
             compute(val, {expr._child: data}, return_type='native')

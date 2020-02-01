@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping
 from keyword import iskeyword
 import re
 
@@ -28,7 +27,7 @@ import toolz
 from toolz import concat, memoize, partial, first, unique, merge
 from toolz.curried import map, filter
 
-from ..compatibility import _strtypes, builtins, boundmethod, PY2
+from ..compatibility import collections_abc, _strtypes, builtins, boundmethod, PY2
 from .core import (
     Node,
     _setattr,
@@ -338,7 +337,7 @@ def symbol(name, dshape, token=None):
     return Symbol(name, datashape.dshape(dshape), token or 0)
 
 
-@dispatch(Symbol, Mapping)
+@dispatch(Symbol, collections_abc.Mapping)
 def _subs(o, d):
     """ Subs symbols using symbol function
 
@@ -682,7 +681,7 @@ def relabel(child, labels=None, **kwargs):
                          ', '.join(map(repr, non_existent_fields)))
     if not labels:
         return child
-    if isinstance(labels, Mapping):  # Turn dict into tuples
+    if isinstance(labels, collections_abc.Mapping):  # Turn dict into tuples
         labels = tuple(sorted(labels.items()))
     if isscalar(child.dshape.measure):
         if child._name == labels[0][0]:

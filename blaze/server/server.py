@@ -5,7 +5,6 @@ import logging
 from logging import Formatter
 from functools import wraps
 import traceback
-import collections
 from datetime import datetime
 import errno
 import functools
@@ -26,7 +25,7 @@ from toolz import valmap, compose
 import blaze
 import blaze as bz
 from blaze import compute, resource
-from blaze.compatibility import ExitStack, u8
+from blaze.compatibility import collections_abc, ExitStack, u8
 from blaze.compute import compute_up
 from .serialization import json, all_formats
 from ..expr import (
@@ -341,7 +340,7 @@ class Server(object):
                  logfile=sys.stdout,
                  loglevel='WARNING',
                  log_exception_formatter=_default_log_exception_formatter):
-        if isinstance(data, collections.Mapping):
+        if isinstance(data, collections_abc.Mapping):
             data = valmap(lambda v: v.data if isinstance(v, BoundSymbol) else v,
                           data)
         elif isinstance(data, BoundSymbol):
@@ -700,13 +699,13 @@ def addserver(payload, serial):
 
     data = _get_data.cache[flask.current_app]
 
-    if not isinstance(data, collections.MutableMapping):
+    if not isinstance(data, collections_abc.MutableMapping):
         data_not_mm_msg = ("Cannot update blaze server data since its current "
                            "data is a %s and not a mutable mapping (dictionary "
                            "like).")
         return (data_not_mm_msg % type(data), RC.UNPROCESSABLE_ENTITY)
 
-    if not isinstance(payload, collections.Mapping):
+    if not isinstance(payload, collections_abc.Mapping):
         payload_not_mm_msg = ("Need a dictionary-like payload; instead was "
                               "given %s of type %s.")
         return (payload_not_mm_msg % (payload, type(payload)),

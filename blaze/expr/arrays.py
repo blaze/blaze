@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable
 
 from datashape import DataShape
 from odo.utils import copydoc
 
+from ..compatibility import collections_abc
 from .expressions import Expr, ndim, symbol
 
 __all__ = 'Transpose', 'TensorDot', 'dot', 'transpose', 'tensordot'
@@ -107,7 +107,7 @@ def tensordot(lhs, rhs, axes=None):
     if axes is None:
         left = ndim(lhs) - 1
         right = 0
-    elif isinstance(axes, Iterable):
+    elif isinstance(axes, collections_abc.Iterable):
         left, right = axes
     else:
         left, right = axes, axes

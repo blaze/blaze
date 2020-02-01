@@ -1,9 +1,9 @@
 from .core import pre_compute
+from ..compatibility import collections_abc
 from ..dispatch import dispatch
 from ..expr import Expr
 from odo.backends.json import JSON, JSONLines
 from odo import into
-from collections import Iterator
 from odo.utils import records_to_tuples
 
 
@@ -19,6 +19,6 @@ def pre_compute(expr, data, **kwargs):
 
 @dispatch(Expr, JSONLines)
 def pre_compute(expr, data, **kwargs):
-    seq = into(Iterator, data, **kwargs)
+    seq = into(collections_abc.Iterator, data, **kwargs)
     leaf = expr._leaves()[0]
     return records_to_tuples(leaf.dshape, seq)

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
 import datetime
 from functools import reduce, partial
 import inspect
@@ -13,7 +13,7 @@ from weakref import WeakValueDictionary
 import toolz
 from toolz import unique, concat, first
 
-from ..compatibility import _strtypes
+from ..compatibility import collections_abc, _strtypes
 from ..dispatch import dispatch
 from ..utils import ordered_intersect
 
@@ -426,12 +426,12 @@ def subs(o, d):
     return _subs(o, d)
 
 
-@dispatch((tuple, list), Mapping)
+@dispatch((tuple, list), collections_abc.Mapping)
 def _subs(o, d):
     return type(o)(subs(arg, d) for arg in o)
 
 
-@dispatch(Node, Mapping)
+@dispatch(Node, collections_abc.Mapping)
 def _subs(o, d):
     """
 
@@ -444,7 +444,7 @@ def _subs(o, d):
     return type(o)(*newargs)
 
 
-@dispatch(object, Mapping)
+@dispatch(object, collections_abc.Mapping)
 def _subs(o, d):
     """ Private dispatched version of ``subs``
 
