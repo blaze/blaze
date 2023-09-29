@@ -10,11 +10,7 @@ from ..compatibility import builtins
 # Here follows a large number of unary operators.  These were selected by
 # taking the intersection of the functions in ``math`` and ``numpy``
 
-__all__ = ['abs', 'sqrt', 'sin', 'sinh', 'cos', 'cosh', 'tan', 'tanh', 'exp',
-           'expm1', 'log', 'log10', 'log1p', 'acos', 'acosh', 'asin', 'asinh',
-           'atan', 'atanh', 'radians', 'degrees', 'atan2', 'ceil', 'floor',
-           'trunc', 'isnan', 'notnull', 'UnaryMath', 'BinaryMath',
-           'greatest', 'least']
+__all__ = ['isnan', 'notnull', 'UnaryMath', 'BinaryMath', 'greatest', 'least']
 
 
 class UnaryMath(UnaryOp):
