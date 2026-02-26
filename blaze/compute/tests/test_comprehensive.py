@@ -30,7 +30,7 @@ def sources():
         import sqlalchemy
         sql = data('sqlite:///:memory:::accounts', dshape=t.dshape)
         into(sql, L)
-    except:
+    except Exception:
         sql = None
 
     try:

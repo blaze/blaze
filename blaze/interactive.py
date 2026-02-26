@@ -179,7 +179,7 @@ def convert_base(typ, x):
     x = compute(x)
     try:
         return typ(x)
-    except:
+    except Exception:
         return typ(odo(x, typ))
 
 

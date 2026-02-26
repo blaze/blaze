@@ -617,7 +617,7 @@ def pair_assemble(t, on_left=None, on_right=None):
     """
     try:
         from cytoolz import get  # not curried version
-    except:
+    except Exception:
         from toolz import get
     on_left = (
         on_left
@@ -765,7 +765,7 @@ def compute_up(expr, seq, **kwargs):
     if isinstance(index, _inttypes):
         try:
             return seq[index]
-        except:
+        except Exception:
             if index >= 0:
                 return nth(index, seq)
             else:

@@ -59,7 +59,7 @@ def ishashable(x):
     try:
         hash(x)
         return True
-    except:
+    except Exception:
         return False
 
 
