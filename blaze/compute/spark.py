@@ -53,7 +53,7 @@ __all__ = ['RDD', 'pyspark', 'SparkContext']
 try:
     import signal
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-except:
+except Exception:
     pass
 
 
